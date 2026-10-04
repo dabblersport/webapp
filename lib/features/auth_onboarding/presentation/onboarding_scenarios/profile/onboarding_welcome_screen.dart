@@ -160,6 +160,8 @@ class _ProfileOnboardingWelcomeScreenState
       bodyGap: DabblerSpacing.space9,
       title: l10n.onb_setup_title,
       subtitle: l10n.onb_setup_subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: [
         switch (_step.status) {
           _StepStatus.running => const DabblerProgressBar.indeterminate(),

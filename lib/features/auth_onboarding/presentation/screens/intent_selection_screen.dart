@@ -121,6 +121,8 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
       stepLabel: l10n.onb_step_label(2, 5),
       title: l10n.onb_persona_title,
       subtitle: l10n.onb_persona_subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       bodyGap: DabblerSpacing.space4,
       content: [
         for (final opt in _personaOptions.where(

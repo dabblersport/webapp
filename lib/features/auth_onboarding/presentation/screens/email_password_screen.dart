@@ -367,10 +367,10 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
       title: l10n.auth_login_title,
-      titleStyle: DabblerType.largeTitle,
+      titleStyle: DabblerType.displayScreen,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: l10n.auth_login_subtitle,
-      subtitleStyle: DabblerType.body,
+      subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_login_button,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
@@ -380,6 +380,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           Center(
             child: DabblerTextLink(
               label: l10n.auth_login_email_code,
+              style: authLinkStyle(context, DabblerType.copy),
               underline: false,
               onPressed: _isLoading || !_isEmailValid
                   ? null

@@ -54,7 +54,7 @@ class _SocialOnboardingFriendsScreenState
               ? [
                   DabblerText(
                     'Friend suggestions are coming soon.',
-                    style: DabblerType.subheadline,
+                    style: DabblerType.copy,
                     tone: DabblerTextTone.secondary,
                     textAlign: TextAlign.center,
                   ),

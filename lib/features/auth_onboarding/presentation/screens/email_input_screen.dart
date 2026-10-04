@@ -140,7 +140,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           Expanded(
             child: DabblerText(
               l10n.auth_email_marketing,
-              style: DabblerType.subheadline,
+              style: DabblerType.copy,
             ),
           ),
           const DabblerGap.h(DabblerSpacing.space4),
@@ -163,10 +163,10 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
       title: l10n.auth_email_title,
-      titleStyle: DabblerType.largeTitle,
+      titleStyle: DabblerType.displayScreen,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: l10n.auth_email_subtitle,
-      subtitleStyle: DabblerType.body,
+      subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_email_send_code,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleSubmit : null,

@@ -35,66 +35,39 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
 
-    return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        onBack: () => Navigator.of(context).maybePop(),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space4,
-          DabblerSpacing.space8,
-          DabblerSpacing.space11,
+    return DabblerFlowPage(
+      onBack: () => Navigator.of(context).maybePop(),
+      backLabel: l10n.auth_back,
+      title: l10n.forgot_password_title,
+      titleStyle: DabblerType.displayScreen,
+      headerTopPadding: DabblerSpacing.space4,
+      subtitle: l10n.forgot_password_subtitle,
+      subtitleStyle: DabblerType.lead,
+      content: [
+        DabblerTextField(
+          controller: _emailController,
+          placeholder: l10n.forgot_password_email_hint,
+          errorText: _error,
+          keyboardType: TextInputType.emailAddress,
+          autofillHints: const [AutofillHints.username, AutofillHints.email],
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _submit(context),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DabblerText(
-              l10n.forgot_password_title,
-              style: DabblerType.largeTitle,
-            ),
-            const DabblerGap.v(DabblerSpacing.space3),
-            DabblerText(
-              l10n.forgot_password_subtitle,
-              tone: DabblerTextTone.secondary,
-            ),
-            const DabblerGap.v(DabblerSpacing.space9),
-            DabblerTextField(
-              controller: _emailController,
-              placeholder: l10n.forgot_password_email_hint,
-              errorText: _error,
-              keyboardType: TextInputType.emailAddress,
-              autofillHints: const [
-                AutofillHints.username,
-                AutofillHints.email,
-              ],
-              textInputAction: TextInputAction.done,
-              onSubmitted: (_) => _submit(context),
-            ),
-            const DabblerGap.v(DabblerSpacing.space8),
-            DabblerButton(
-              label: l10n.forgot_password_send_btn,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              loading: _isLoading,
-              onPressed: () => _submit(context),
-            ),
-            const DabblerGap.v(DabblerSpacing.space5),
-            if (_sent)
-              DabblerBanner(
-                tone: DabblerBannerTone.success,
-                message: l10n.forgot_password_sent_msg,
-              ),
-            const DabblerGap.v(DabblerSpacing.space8),
-            DabblerButton(
-              label: l10n.forgot_password_back_to_signin,
-              tone: DabblerButtonTone.text,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              onPressed: () => context.go(RoutePaths.authWelcome),
-            ),
-          ],
-        ),
+        if (_sent)
+          DabblerBanner(
+            tone: DabblerBannerTone.success,
+            message: l10n.forgot_password_sent_msg,
+          ),
+      ],
+      primaryLabel: l10n.forgot_password_send_btn,
+      primaryLoading: _isLoading,
+      onPrimary: () => _submit(context),
+      secondary: DabblerButton(
+        label: l10n.forgot_password_back_to_signin,
+        tone: DabblerButtonTone.text,
+        size: DabblerButtonSize.full,
+        fullWidth: true,
+        onPressed: () => context.go(RoutePaths.authWelcome),
       ),
     );
   }

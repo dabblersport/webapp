@@ -28,6 +28,12 @@ final RegExp _emojiRun = RegExp(
 String authStripEmoji(String text) =>
     text.replaceAll(_emojiRun, '').replaceAll(RegExp(r'\s+$'), '');
 
+/// A link's text style at the frame's [role], medium weight, resolved for the
+/// ambient direction (`DabblerTextLink` takes a resolved style).
+TextStyle authLinkStyle(BuildContext context, DabblerTypeStyle role) => role
+    .resolveForDirection(Directionality.of(context))
+    .copyWith(fontWeight: DabblerType.medium);
+
 /// Wraps [child] with a stable semantics identifier for end-to-end tests.
 Widget authIdentify(String? identifier, Widget child) => identifier == null
     ? child
@@ -74,7 +80,7 @@ Future<void> _showLegal(
   return showDabblerSheet<void>(
     context: context,
     title: title,
-    detents: const <double>[0.85],
+    detents: const <double>[0.5],
     footerBuilder: _gotIt,
     builder: (BuildContext ctx) {
       return Column(
@@ -82,22 +88,26 @@ Future<void> _showLegal(
         children: <Widget>[
           DabblerText(
             intro,
-            style: DabblerType.subheadline,
+            style: DabblerType.copy,
             tone: DabblerTextTone.secondary,
           ),
           const DabblerGap.v(DabblerSpacing.space2),
           DabblerText(
             'Last updated: $kLegalLastUpdated',
-            style: DabblerType.caption1,
-            tone: DabblerTextTone.secondary,
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.tertiary,
           ),
           for (final LegalSection s in sections) ...<Widget>[
             const DabblerGap.v(DabblerSpacing.space6),
-            DabblerText(s.title, style: DabblerType.headline),
+            DabblerText(
+              s.title,
+              style: DabblerType.rowTitle,
+              weight: DabblerTextWeight.semibold,
+            ),
             const DabblerGap.v(DabblerSpacing.space2),
             DabblerText(
               s.content,
-              style: DabblerType.subheadline,
+              style: DabblerType.copy,
               tone: DabblerTextTone.secondary,
             ),
           ],
@@ -130,7 +140,7 @@ class AuthLegalNotice extends StatelessWidget {
         const DabblerTextSpan('.'),
       ],
       style: DabblerType.caption1,
-      tone: DabblerTextTone.secondary,
+      tone: DabblerTextTone.tertiary,
       textAlign: TextAlign.center,
     );
   }
@@ -163,7 +173,7 @@ class AuthAccountLine extends StatelessWidget {
           onTap: onAction,
         ),
       ],
-      style: DabblerType.subheadline,
+      style: DabblerType.copy,
       tone: DabblerTextTone.secondary,
       textAlign: TextAlign.center,
     );

@@ -121,6 +121,9 @@ Future<void> _pump(
 ) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
+  // The frames reserve a 50px status bar above the screen.
+  tester.view.padding = const FakeViewPadding(top: 50);
+  tester.view.viewPadding = const FakeViewPadding(top: 50);
   addTearDown(tester.view.reset);
   final GoRouter router = GoRouter(
     routes: <RouteBase>[

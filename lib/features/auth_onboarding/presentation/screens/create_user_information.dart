@@ -398,6 +398,8 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       stepLabel: l10n.onb_step_label(1, 5),
       title: l10n.onb_dob_title,
       subtitle: l10n.onb_dob_subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: [
         DabblerTextField(
           variant: DabblerTextFieldVariant.select,

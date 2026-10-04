@@ -90,7 +90,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               ),
             ),
             title: l10n.auth_welcome_back_title(name),
-            titleStyle: DabblerType.largeTitle,
+            titleStyle: DabblerType.displayScreen,
+            bodyGap: DabblerSpacing.space8,
             primaryLabel: l10n.auth_welcome_continue,
             onPrimary: _continue,
             footerBottomPadding: DabblerSpacing.space9,
@@ -117,11 +118,14 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DabblerText(persona.headline, style: DabblerType.largeTitle),
+                  DabblerText(
+                    persona.headline,
+                    style: DabblerType.displayWelcome,
+                  ),
                   const DabblerGap.v(DabblerSpacing.space4),
                   DabblerText(
                     persona.principle,
-                    style: DabblerType.headline,
+                    style: DabblerType.leadLarge,
                     weight: DabblerTextWeight.semibold,
                   ),
                 ],
@@ -163,7 +167,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             children: [
               DabblerText(
                 name,
-                style: DabblerType.headline,
+                style: DabblerType.rowTitle,
                 weight: DabblerTextWeight.semibold,
                 tone: onArtwork
                     ? DabblerTextTone.onBrand

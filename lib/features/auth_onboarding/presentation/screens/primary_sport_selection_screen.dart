@@ -1,3 +1,4 @@
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
@@ -123,13 +124,15 @@ class _PrimarySportSelectionScreenState
       stepLabel: _isOnboarding ? l10n.onb_step_label(4, 5) : null,
       title: title,
       subtitle: subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       bodyGap: DabblerSpacing.space3,
       content: sportsAsync.when<List<Widget>>(
         loading: () => [const Center(child: DabblerSpinner())],
         error: (err, _) => [
           DabblerText(
             l10n.primary_sport_failed_load,
-            style: DabblerType.subheadline,
+            style: DabblerType.copy,
             tone: DabblerTextTone.secondary,
           ),
           DabblerButton(
@@ -153,7 +156,7 @@ class _PrimarySportSelectionScreenState
             return [
               DabblerText(
                 l10n.primary_sport_no_sports,
-                style: DabblerType.subheadline,
+                style: DabblerType.copy,
                 tone: DabblerTextTone.secondary,
               ),
             ];
@@ -161,10 +164,14 @@ class _PrimarySportSelectionScreenState
 
           return [
             for (final sport in sports) _row(sport),
-            DabblerTextLink(
-              label: l10n.onb_primary_more,
-              underline: false,
-              onPressed: () => context.pop(),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DabblerTextLink(
+                label: l10n.onb_primary_more,
+                style: authLinkStyle(context, DabblerType.small),
+                underline: false,
+                onPressed: () => context.pop(),
+              ),
             ),
           ];
         },

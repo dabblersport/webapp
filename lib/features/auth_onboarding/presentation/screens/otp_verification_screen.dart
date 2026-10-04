@@ -10,6 +10,7 @@ import 'package:dabbler/core/utils/validators.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -286,9 +287,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final List<Widget> body = <Widget>[
       DabblerSurface.card(
         radius: DabblerRadius.lg,
+        // The "Change" link is itself a 45px target, so the card needs no
+        // vertical padding of its own (the frame's card is 12 + 21 + 12).
         padding: const EdgeInsetsDirectional.symmetric(
           horizontal: DabblerSpacing.space5,
-          vertical: DabblerSpacing.space4,
         ),
         child: Row(
           children: <Widget>[
@@ -303,7 +305,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 textDirection: TextDirection.ltr,
                 child: DabblerText(
                   _identifier,
-                  style: DabblerType.subheadline,
+                  style: DabblerType.copy,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
@@ -311,6 +313,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             ),
             DabblerTextLink(
               label: changeLabel,
+              style: authLinkStyle(context, DabblerType.small),
               underline: false,
               onPressed: () => context.go(changeRoute),
             ),
@@ -335,15 +338,18 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       ),
       Align(
         alignment: AlignmentDirectional.centerStart,
-        child: _resendCountdown > 0
+        // An expired code offers a new one at once (the frame's rule).
+        child: _resendCountdown > 0 && messageIcon != 'clock'
             ? DabblerText(
                 l10n.auth_otp_resend_in(_resendCountdown),
+                style: DabblerType.copy,
                 tone: DabblerTextTone.tertiary,
               )
             : DabblerTextLink(
                 label: _isResending
                     ? l10n.otp_verify_sending
                     : l10n.auth_otp_resend,
+                style: authLinkStyle(context, DabblerType.copy),
                 underline: false,
                 onPressed: _isResending ? null : _handleResend,
               ),
@@ -354,10 +360,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       onBack: () => context.pop(),
       backLabel: l10n.auth_back,
       title: title,
-      titleStyle: DabblerType.largeTitle,
+      titleStyle: DabblerType.displayScreen,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: subtitle,
-      subtitleStyle: DabblerType.body,
+      subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_otp_continue,
       primaryLoading: _isLoading,
       onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,

@@ -99,6 +99,9 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 Future<void> _pump(WidgetTester tester, Widget screen, Locale locale) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
+  // The frames reserve a 50px status bar above the screen.
+  tester.view.padding = const FakeViewPadding(top: 50);
+  tester.view.viewPadding = const FakeViewPadding(top: 50);
   addTearDown(tester.view.reset);
   const Key key = Key('shot');
   await tester.pumpWidget(
@@ -147,6 +150,7 @@ void main() {
       displayName: 'Marcus',
       personaType: 'organiser',
       isFirstTime: true,
+      primarySportKey: 'football',
     ),
     'auth-welcome': () => const AuthWelcomeScreen(),
     'email': () => const EmailInputScreen(),
@@ -159,7 +163,11 @@ void main() {
       testWidgets('renders ${e.key} - $dir', (tester) async {
         await _pump(tester, e.value(), locale);
         expect(tester.takeException(), isNull);
-        expect(find.byType(DabblerPage), findsOneWidget);
+        expect(
+          find.byType(DabblerPage).evaluate().isNotEmpty ||
+              find.byType(DabblerFlowPage).evaluate().isNotEmpty,
+          isTrue,
+        );
         await _shoot(tester, const Key('shot'), '${e.key}-$dir');
       }, variant: desktop);
     }
@@ -202,6 +210,16 @@ void main() {
         identifierType: IdentifierType.email,
       ),
       (t) async {
+        await t.pump();
+      },
+    ),
+    'otp-typed': (
+      () => const OtpVerificationScreen(
+        identifier: 'marcus@dabbler.ae',
+        identifierType: IdentifierType.email,
+      ),
+      (t) async {
+        await t.enterText(find.byType(EditableText).first, '318');
         await t.pump();
       },
     ),

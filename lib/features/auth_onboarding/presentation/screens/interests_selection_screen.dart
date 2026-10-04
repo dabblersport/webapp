@@ -152,6 +152,8 @@ class _InterestsSelectionScreenState
       stepLabel: l10n.onb_step_label(3, 5),
       title: title,
       subtitle: subtitle,
+      titleStyle: DabblerType.displayStep,
+      subtitleStyle: DabblerType.copy,
       content: [
         DabblerSearchField(
           initialValue: _query,
@@ -164,7 +166,7 @@ class _InterestsSelectionScreenState
           error: (err, _) => [
             DabblerText(
               l10n.interests_failed_load,
-              style: DabblerType.subheadline,
+              style: DabblerType.copy,
               tone: DabblerTextTone.secondary,
             ),
             DabblerButton(
@@ -185,7 +187,7 @@ class _InterestsSelectionScreenState
               if (filtered.isEmpty)
                 DabblerText(
                   l10n.onb_sports_none,
-                  style: DabblerType.subheadline,
+                  style: DabblerType.copy,
                   tone: DabblerTextTone.tertiary,
                 ),
               DabblerTileGrid(

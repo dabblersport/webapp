@@ -164,13 +164,12 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                 children: <Widget>[
                   DabblerText(
                     l10n.auth_entry_title,
-                    style: DabblerType.largeTitle,
+                    style: DabblerType.displayScreen,
                   ),
                   const DabblerGap.v(DabblerSpacing.space3),
                   DabblerText(
                     l10n.auth_entry_subtitle,
-                    style: DabblerType.callout,
-                    weight: DabblerTextWeight.regular,
+                    style: DabblerType.lead,
                     tone: DabblerTextTone.secondary,
                   ),
                   const DabblerGap.v(DabblerSpacing.space8),
@@ -232,10 +231,6 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                   'auth-welcome-continue-google',
                   DabblerButton(
                     label: l10n.auth_entry_continue_google,
-                    leadingWidget: const DabblerProviderMark.google(
-                      size: DabblerSizing.iconLg,
-                      excludeFromSemantics: true,
-                    ),
                     tone: DabblerButtonTone.outlined,
                     size: DabblerButtonSize.full,
                     fullWidth: true,
@@ -249,10 +244,6 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                     'auth-welcome-continue-apple',
                     DabblerButton(
                       label: l10n.auth_entry_continue_apple,
-                      leadingWidget: const DabblerProviderMark.apple(
-                        size: DabblerSizing.iconLg,
-                        excludeFromSemantics: true,
-                      ),
                       tone: DabblerButtonTone.outlined,
                       size: DabblerButtonSize.full,
                       fullWidth: true,
