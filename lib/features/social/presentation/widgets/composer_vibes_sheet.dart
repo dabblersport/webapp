@@ -25,7 +25,7 @@ Future<void> showComposerVibesSheet(
     context,
     title: "What's the vibe?",
     subtitle: vibes.isEmpty ? null : '${vibes.length} vibes',
-    onClear: selectedVibeId == null ? null : onClear,
+    onClear: onClear,
     tall: true,
     confirm: ComposerSheetConfirm(
       label: AppLocalizations.of(context).composer_confirm,

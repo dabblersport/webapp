@@ -22,7 +22,8 @@ Future<void> showComposerGameLinkSheet(BuildContext context, WidgetRef ref) {
   return showComposerSheet<void>(
     context,
     title: l.composer_link_a_game,
-    onClear: state.gameId == null ? null : notifier.clearGame,
+    subtitle: l.composer_games_hint,
+    onClear: notifier.clearGame,
     confirm: ComposerSheetConfirm(
       label: l.composer_confirm,
       onTap: () {
@@ -120,6 +121,11 @@ class _ComposerGameLinkSheetState extends ConsumerState<ComposerGameLinkSheet> {
       day: start == null ? '' : '${start.day}',
       title: title,
       sportKey: sport.isEmpty ? null : sport,
+      place: [
+        if (sport.isNotEmpty) game['sport'] as String,
+        if ((game['game_type'] as String? ?? '').isNotEmpty)
+          game['game_type'] as String,
+      ].join(' · '),
       time: start == null ? null : DateFormat.jm(locale).format(start),
       selected: current?.id == id,
       onTap: () => widget.pending.value = (id: id, name: title),

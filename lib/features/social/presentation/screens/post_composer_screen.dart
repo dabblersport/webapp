@@ -17,6 +17,7 @@ import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -127,7 +128,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  void _showVibesPicker() {
+  Future<void> _showVibesPicker() async {
+    await ref.read(vibesProvider.future).catchError((_) => <Vibe>[]);
+    if (!mounted) return;
     final state = ref.read(postComposerProvider);
     final notifier = ref.read(postComposerProvider.notifier);
     showComposerVibesSheet(
@@ -155,7 +158,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       title: AppLocalizations.of(context).composer_which_sport,
       sportsProvider: activeSportsByProfileCountryProvider,
       selected: selectedSport,
-      showClear: composerState.sportId != null,
+      showClear: true,
       onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
       onConfirm: (sport) => ref
           .read(postComposerProvider.notifier)

@@ -42,7 +42,7 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
   return showComposerSheet<void>(
     context,
     title: l.composer_add_location,
-    onClear: state.locationName == null ? null : notifier.clearLocation,
+    onClear: notifier.clearLocation,
     confirm: ComposerSheetConfirm(
       label: l.composer_confirm,
       onTap: () {
