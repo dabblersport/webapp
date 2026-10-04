@@ -134,6 +134,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: _tag,
+        plain: true,
         border: true,
         onBack: () => Navigator.of(context).maybePop(),
       ),
@@ -185,7 +186,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
             );
           }
 
-          return resolvePostLayout(_posts[index - 1]);
+          return resolvePostLayout(_posts[index - 1], showActions: false);
         },
       ),
     );

@@ -281,7 +281,7 @@ class _FullList extends StatelessWidget {
         ),
       ],
       SearchMode.games => [
-        for (final g in b.games) SearchGameCard(game: g, query: q),
+        for (final g in b.games) SearchGameEventCard(game: g, query: q),
       ],
       SearchMode.venues => [
         for (final v in b.venues) SearchVenueCard(venue: v, query: q),
@@ -293,7 +293,8 @@ class _FullList extends StatelessWidget {
         for (final c in b.comments) SearchCommentCard(comment: c, query: q),
       ],
       SearchMode.meetups => [
-        for (final m in b.meetups) SearchMeetupCard(meetup: m, query: q),
+        for (final m in b.meetups)
+          SearchMeetupEventCard(meetup: m, query: q),
       ],
       SearchMode.all => const [],
     };
@@ -319,10 +320,7 @@ class _FullList extends StatelessWidget {
         ),
         const SizedBox(height: DabblerSpacing.space5),
         if (mode == SearchMode.profiles)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: rows,
-          )
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows)
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,

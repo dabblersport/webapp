@@ -340,7 +340,6 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
     ).show(DabblerToastSpec(message: message, tone: tone));
   }
 
-
   List<String> _getPositionsForSport(String sport) {
     switch (sport) {
       case 'football':
@@ -430,7 +429,9 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
           };
         }).toList();
 
-        await supabase.from(SupabaseConfig.sportProfilesTable).insert(sportsData);
+        await supabase
+            .from(SupabaseConfig.sportProfilesTable)
+            .insert(sportsData);
 
         // Refresh sports profiles in the controller
         final sportsController = ref.read(
@@ -439,7 +440,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
         await sportsController.loadSportsProfiles(userId, profileId: profileId);
       } else {
         // Delete all existing organiser records for this profile (organiser/business profiles)
-        await supabase.from(SupabaseConfig.organiserTable).delete().eq('profile_id', profileId);
+        await supabase
+            .from(SupabaseConfig.organiserTable)
+            .delete()
+            .eq('profile_id', profileId);
 
         // Insert new/updated organiser records
         final organiserData = enabledSports.map((entry) {
@@ -458,7 +462,9 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
           };
         }).toList();
 
-        await supabase.from(SupabaseConfig.organiserTable).insert(organiserData);
+        await supabase
+            .from(SupabaseConfig.organiserTable)
+            .insert(organiserData);
 
         // Refresh organiser profiles in the controller
         final organiserController = ref.read(
@@ -603,7 +609,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
           _sportPreferences[sportKey] = preference.copyWith(isEnabled: true);
         });
 
-        _toast('${_formatSportName(sportKey)} enabled', DabblerToastTone.success);
+        _toast(
+          '${_formatSportName(sportKey)} enabled',
+          DabblerToastTone.success,
+        );
       }
     } catch (e) {
       if (mounted) {
@@ -683,7 +692,10 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
           _sportPreferences[sportKey] = preference.copyWith(isEnabled: false);
         });
 
-        _toast('${_formatSportName(sportKey)} removed', DabblerToastTone.warning);
+        _toast(
+          '${_formatSportName(sportKey)} removed',
+          DabblerToastTone.warning,
+        );
       }
     } catch (e) {
       if (mounted) {

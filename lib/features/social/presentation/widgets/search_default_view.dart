@@ -73,6 +73,7 @@ class SearchDefaultView extends StatelessWidget {
                           ),
                           onTap: () => onPickRecent(q),
                           onRemove: () => onRemoveRecent(q),
+                          mutedRemove: true,
                           removeSemanticLabel: 'Remove $q',
                         ),
                     ],
@@ -94,10 +95,7 @@ class SearchDefaultView extends StatelessWidget {
                         selected: f.active,
                         leadingIcon: f.icon.isEmpty
                             ? null
-                            : DabblerIcon(
-                                f.icon,
-                                size: DabblerSizing.iconXs,
-                              ),
+                            : DabblerIcon(f.icon, size: DabblerSizing.iconXs),
                       ),
                   ],
                 ),

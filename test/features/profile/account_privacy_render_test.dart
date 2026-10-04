@@ -1,17 +1,3 @@
-import 'dart:io';
-import 'dart:ui' as ui;
-
-import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/themes/dabbler_design_system_theme.dart';
-import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter/rendering.dart';
-import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:flutter_test/flutter_test.dart';
-
-import '../home/home_test_harness.dart';
-
 import 'package:dabbler/data/models/profile/privacy_settings.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
@@ -20,99 +6,13 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart';
 import 'package:dabbler/features/social/block_providers.dart';
-import '../../support/render_mode.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
 
-/// Writes PNGs only with `--dart-define=SETTINGS_SHOTS_DIR=<dir>`.
-const String _shotsDir = String.fromEnvironment('SETTINGS_SHOTS_DIR');
-
-Future<void> _pump(
-  WidgetTester tester,
-  Widget home,
-  Locale locale,
-  Key key, {
-  List<Override> overrides = const [],
-  Size size = const Size(393, 852),
-}) async {
-  tester.view.physicalSize = size;
-  tester.view.devicePixelRatio = 1;
-  addTearDown(tester.view.reset);
-  await tester.pumpWidget(
-    ProviderScope(
-      overrides: overrides,
-      child: MaterialApp(
-        debugShowCheckedModeBanner: false,
-        builder: (context, child) => DabblerToastProvider(
-          child: RepaintBoundary(key: key, child: child),
-        ),
-        locale: locale,
-        localizationsDelegates: AppLocalizations.localizationsDelegates,
-        supportedLocales: AppLocalizations.supportedLocales,
-        theme: DabblerDesignSystemTheme.withFonts(
-          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
-          locale: locale,
-        ),
-        home: home,
-      ),
-    ),
-  );
-  for (var i = 0; i < 10; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-}
-
-Future<void> _loadFonts() async {
-  final String dsFonts = '${Directory.current.parent.path}/dabbler-design-system/fonts';
-  Future<void> family(String name, List<String> files) async {
-    final FontLoader loader = FontLoader(name);
-    for (final String f in files) {
-      final File file = File('$dsFonts/$f');
-      if (!file.existsSync()) return;
-      loader.addFont(
-        file.readAsBytes().then((b) => ByteData.sublistView(b)),
-      );
-    }
-    await loader.load();
-  }
-
-  const String pkg = 'packages/dabbler_design_system';
-  const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
-  ];
-  const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
-  ];
-  for (final String prefix in <String>['$pkg/', '']) {
-    await family('${prefix}Glory', glory);
-    await family('${prefix}Gloock', <String>['Gloock-Regular.ttf']);
-    await family('${prefix}Meral Sans', meral);
-    await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
-  }
-  final String home = Platform.environment['HOME'] ?? '';
-  final File iconsax = File(
-    '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
-  );
-  if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader('packages/iconsax_flutter/FlutterIconsax')
-      ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
-    await loader.load();
-  }
-}
-
-Future<void> _shoot(WidgetTester tester, Key key, String name) async {
-  if (_shotsDir.isEmpty) return;
-  await tester.runAsync(() async {
-    final RenderRepaintBoundary boundary =
-        tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
-    final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
-    Directory(_shotsDir).createSync(recursive: true);
-    File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
-  });
-}
-
-
+import '../home/home_test_harness.dart';
+import 'settings_render_support.dart';
 
 class _FakePrivacy extends PrivacyController {
   _FakePrivacy(PrivacyState initial) {
@@ -120,177 +20,205 @@ class _FakePrivacy extends PrivacyController {
   }
 }
 
-Future<void> _settle(WidgetTester tester) async {
-  for (var i = 0; i < 10; i++) {
-    await tester.pump(const Duration(milliseconds: 100));
-  }
-}
+List<Override> _overrides(
+  PrivacyState state, {
+  List<Map<String, dynamic>> blocked = const [],
+}) => [
+  currentUserIdProvider.overrideWithValue(null),
+  privacyControllerProvider.overrideWith((ref) => _FakePrivacy(state)),
+  blockedUsersWithProfilesProvider.overrideWith((ref) async => blocked),
+];
 
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
-    await _loadFonts();
+    await loadSettingsFonts();
   });
 
-  const tall = Size(393, 1400);
+  const tall = Size(393, 1100);
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
-    final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final bool ar = locale.languageCode == 'ar';
+    final String dir = ar ? 'rtl' : 'ltr';
 
-    testWidgets('account screen (no session) — $dir', (tester) async {
-      const Key key = Key('shot');
-      await _pump(tester, const AccountManagementScreen(), locale, key,
-          size: tall);
-      await _settle(tester);
-      expect(tester.takeException(), isNull);
-      expect(find.text('Account Management'), findsOneWidget);
-      await _shoot(tester, key, 'account-default-$dir');
-    });
+    String t(String en, String arabic) => ar ? arabic : en;
 
-    testWidgets('account pieces — $dir', (tester) async {
-      const Key key = Key('shot');
-      await _pump(
+    testWidgets('account screen — $dir', (tester) async {
+      await pumpSettings(
         tester,
-        DabblerPage(
-          body: ListView(
-            padding: const EdgeInsets.all(DabblerSpacing.space6),
-            children: [
-              AccountDangerZone(onDelete: () {}),
-            ],
-          ),
-        ),
+        const AccountManagementScreen(),
         locale,
-        key,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
       );
       expect(tester.takeException(), isNull);
-      expect(find.text('Delete Account'), findsOneWidget);
-      await _shoot(tester, key, 'account-pieces-$dir');
+      expect(find.text(t('Sign-in', 'تسجيل الدخول')), findsOneWidget);
+      expect(find.byType(DabblerToggle), findsNWidgets(2));
+      expect(find.text(t('Delete account', 'حذف الحساب')), findsOneWidget);
+      await shootSettings(tester, 'account-default-$dir');
     });
 
-    testWidgets('account delete dialog — $dir', (tester) async {
-      const Key key = Key('shot');
-      final c = TextEditingController();
-      addTearDown(c.dispose);
-      await _pump(
+    testWidgets('account email sheet — $dir', (tester) async {
+      await pumpSettings(
         tester,
-        DabblerDialog(
-          title: 'Delete Account',
-          destructive: true,
-          secondaryAction: const DabblerDialogAction(label: 'Cancel'),
-          primaryAction:
-              DabblerDialogAction(label: 'Delete Account', onPressed: () {}),
-          child: DeleteAccountDialogContent(confirmController: c, enabled: true),
-        ),
+        const AccountManagementScreen(),
         locale,
-        key,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
       );
+      await tester.tap(find.text(t('Email address', 'البريد الإلكتروني')));
+      await settleSettings(tester);
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerTextField), findsOneWidget);
-      await _shoot(tester, key, 'account-delete-dialog-$dir');
+      expect(find.byType(DabblerButton), findsOneWidget);
+      await shootSettings(tester, 'account-email-sheet-$dir');
     });
 
-    testWidgets('account delete dialog deleting — $dir', (tester) async {
-      const Key key = Key('shot');
-      final c = TextEditingController(text: 'DELETE');
-      addTearDown(c.dispose);
-      await _pump(
+    testWidgets('account password sheet — $dir', (tester) async {
+      await pumpSettings(
         tester,
-        DabblerDialog(
-          title: 'Delete Account',
-          destructive: true,
-          secondaryAction: const DabblerDialogAction(label: 'Cancel'),
-          primaryAction: DabblerDialogAction(
-            label: 'Delete Account',
-            loading: true,
-            onPressed: () {},
-          ),
-          child: DeleteAccountDialogContent(
-            confirmController: c,
-            enabled: false,
-          ),
-        ),
+        const AccountManagementScreen(),
         locale,
-        key,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
       );
+      await tester.tap(find.text(t('Password', 'كلمة المرور')));
+      await settleSettings(tester);
       expect(tester.takeException(), isNull);
-      // The primary button carries the spinner while the account is deleted.
-      expect(find.byType(DabblerSpinner), findsOneWidget);
-      await _shoot(tester, key, 'account-delete-dialog-deleting-$dir');
+      // No session: the account has no password yet, so the form is the "set"
+      // form — a new password and its confirmation.
+      expect(find.byType(DabblerTextField), findsNWidgets(2));
+      await shootSettings(tester, 'account-password-sheet-$dir');
     });
 
-    final privacyStates = <String, (PrivacyState, List<Map<String, dynamic>>)>{
-      'loading': (const PrivacyState(isLoading: true), const []),
-      'default': (const PrivacyState(settings: PrivacySettings()), const []),
-      'blocked': (
-        const PrivacyState(
-          settings: PrivacySettings(
-            profileVisibility: ProfileVisibility.friends,
-          ),
-        ),
-        const [
-          {'user_id': 'b1', 'display_name': 'Khalid Saeed', 'username': 'khalid'},
-          {'user_id': 'b2', 'display_name': 'Mona', 'username': ''},
-        ],
-      ),
-    };
+    testWidgets('account delete sheet — $dir', (tester) async {
+      await pumpSettings(
+        tester,
+        const AccountManagementScreen(),
+        locale,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
+      );
+      await tester.tap(find.text(t('Delete account', 'حذف الحساب')));
+      await settleSettings(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DabblerTextField), findsOneWidget);
+      expect(find.byType(DabblerButton), findsNWidgets(2));
+      await shootSettings(tester, 'account-delete-sheet-$dir');
+    });
 
-    for (final entry in privacyStates.entries) {
-      testWidgets('privacy settings ${entry.key} — $dir', (tester) async {
-        const Key key = Key('shot');
-        await _pump(
-          tester,
-          const PrivacySettingsScreen(),
-          locale,
-          key,
-          size: const Size(393, 5200),
-          overrides: [
-            currentUserIdProvider.overrideWithValue(null),
-            privacyControllerProvider
-                .overrideWith((ref) => _FakePrivacy(entry.value.$1)),
-            blockedUsersWithProfilesProvider
-                .overrideWith((ref) async => entry.value.$2),
-          ],
-        );
-        await _settle(tester);
-        expect(tester.takeException(), isNull);
-        expect(find.text('Privacy Settings'), findsOneWidget);
-        if (entry.key == 'loading') {
-          expect(find.byType(DabblerSpinner), findsOneWidget);
-        } else {
-          expect(find.text('Privacy Presets'), findsOneWidget);
-          expect(find.byType(DabblerToggle), findsWidgets);
-        }
-        if (entry.key == 'blocked') {
-          expect(find.text('Khalid Saeed'), findsOneWidget);
-          expect(find.text(lookupAppLocalizations(locale).blocked_accounts_unblock), findsNWidgets(2));
-        }
-        await _shoot(tester, key, 'privacy-${entry.key}-$dir');
-      });
-    }
-
-    testWidgets('privacy settings preference sheet — $dir', (tester) async {
-      const Key key = Key('shot');
-      await _pump(
+    testWidgets('privacy hub — $dir', (tester) async {
+      await pumpSettings(
         tester,
         const PrivacySettingsScreen(),
         locale,
-        key,
-        size: const Size(393, 1600),
-        overrides: [
-          currentUserIdProvider.overrideWithValue(null),
-          privacyControllerProvider.overrideWith(
-            (ref) => _FakePrivacy(
-              const PrivacyState(settings: PrivacySettings()),
-            ),
-          ),
-          blockedUsersWithProfilesProvider.overrideWith((ref) async => []),
-        ],
+        size: const Size(393, 1500),
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
       );
-      await tester.tap(find.text('Direct Messages'));
-      await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerRadio), findsWidgets);
-      await _shoot(tester, key, 'privacy-preference-sheet-$dir');
+      expect(find.byType(DabblerPresetCard), findsNWidgets(3));
+      expect(find.byType(DabblerRowHint), findsOneWidget);
+      await shootSettings(tester, 'privacy-hub-$dir');
+    });
+
+    testWidgets('privacy loading — $dir', (tester) async {
+      await pumpSettings(
+        tester,
+        const PrivacySettingsScreen(),
+        locale,
+        overrides: _overrides(const PrivacyState(isLoading: true)),
+      );
+      expect(find.byType(DabblerSpinner), findsOneWidget);
+    });
+
+    testWidgets('privacy profile page, switch makes the preset custom — $dir', (
+      tester,
+    ) async {
+      await pumpSettings(
+        tester,
+        const PrivacySettingsScreen(),
+        locale,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
+      );
+      await tester.tap(find.text(t('Profile & identity', 'الملف والهوية')));
+      await settleSettings(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DabblerToggle), findsNWidgets(8));
+      await shootSettings(tester, 'privacy-profile-$dir');
+
+      await tester.tap(find.byType(DabblerToggle).first);
+      await settleSettings(tester);
+      // Back to the hub: the preset the switch broke is now Custom.
+      await tester.binding.handlePopRoute();
+      await settleSettings(tester);
+      expect(find.byType(DabblerPresetCard), findsNWidgets(4));
+      await shootSettings(tester, 'privacy-hub-custom-$dir');
+    });
+
+    testWidgets('privacy contact page and audience sheet — $dir', (
+      tester,
+    ) async {
+      await pumpSettings(
+        tester,
+        const PrivacySettingsScreen(),
+        locale,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
+      );
+      await tester.tap(
+        find.text(t('Who can contact you', 'من يمكنه التواصل معك')),
+      );
+      await settleSettings(tester);
+      await shootSettings(tester, 'privacy-contact-$dir');
+      await tester.tap(find.text(t('Direct messages', 'الرسائل المباشرة')));
+      await settleSettings(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text(t('No one', 'لا أحد')), findsOneWidget);
+      await shootSettings(tester, 'privacy-contact-sheet-$dir');
+    });
+
+    testWidgets('privacy blocked page — $dir', (tester) async {
+      await pumpSettings(
+        tester,
+        const PrivacySettingsScreen(),
+        locale,
+        size: tall,
+        overrides: _overrides(
+          const PrivacyState(settings: PrivacySettings()),
+          blocked: const [
+            {
+              'user_id': 'b1',
+              'display_name': 'Youssef El Khatib',
+              'username': 'youssef.elkhatib',
+            },
+            {
+              'user_id': 'b2',
+              'display_name': 'Priya Nair',
+              'username': 'priya.nair.dxb',
+            },
+          ],
+        ),
+      );
+      await tester.tap(find.text(t('Blocked accounts', 'الحسابات المحظورة')));
+      await settleSettings(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text(t('Unblock', 'إلغاء الحظر')), findsNWidgets(2));
+      await shootSettings(tester, 'privacy-blocked-$dir');
+    });
+
+    testWidgets('privacy blocked page, empty — $dir', (tester) async {
+      await pumpSettings(
+        tester,
+        const PrivacySettingsScreen(),
+        locale,
+        size: tall,
+        overrides: _overrides(const PrivacyState(settings: PrivacySettings())),
+      );
+      await tester.tap(find.text(t('Blocked accounts', 'الحسابات المحظورة')));
+      await settleSettings(tester);
+      expect(find.byType(DabblerRowHint), findsOneWidget);
+      await shootSettings(tester, 'privacy-blocked-empty-$dir');
     });
   }
 }

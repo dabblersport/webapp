@@ -234,10 +234,7 @@ class LegalDocContent extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          DabblerText(
-            intro,
-            tone: DabblerTextTone.secondary,
-          ),
+          DabblerText(intro, tone: DabblerTextTone.secondary),
           const SizedBox(height: DabblerSpacing.space4),
           Row(
             children: [

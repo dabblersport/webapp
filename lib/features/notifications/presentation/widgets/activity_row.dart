@@ -28,8 +28,9 @@ class ActivityRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final visual = _activityVisual(event);
     final pill = _activityPill(context, event);
-    final upcoming =
-        event.timeBucket == 'upcoming' ? l10n.activity_pill_upcoming : null;
+    final upcoming = event.timeBucket == 'upcoming'
+        ? l10n.activity_pill_upcoming
+        : null;
     // The DS row has one neutral badge slot; both labels share it when both
     // apply (they were two separate pills).
     final badge = [pill, upcoming].whereType<String>().join(' · ');
@@ -80,7 +81,11 @@ class ActivityRow extends StatelessWidget {
     }
     if (p['location'] is String) parts.add('at ${p['location']}');
     if (p['participants_count'] != null) {
-      parts.add(AppLocalizations.of(context).activity_participants_count(p['participants_count'] as int));
+      parts.add(
+        AppLocalizations.of(
+          context,
+        ).activity_participants_count(p['participants_count'] as int),
+      );
     }
     if (parts.isEmpty) return null;
     return parts.join(' · ');

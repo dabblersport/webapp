@@ -137,8 +137,9 @@ void main() {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      expect(find.text('Create Post'), findsOneWidget);
-      expect(find.byType(DabblerTextField), findsOneWidget);
+      expect(find.text('Create post'), findsOneWidget);
+      expect(find.byType(DabblerComposerBox), findsOneWidget);
+      expect(find.text('Add GIF'), findsNothing);
       await _shoot(tester, key, 'post-$dir');
     }, variant: desktop);
 
@@ -150,7 +151,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Happy'), findsWidgets);
+      expect(find.text(dir == 'rtl' ? 'سعيد' : 'Happy'), findsWidgets);
       await _shoot(tester, key, 'post-vibes-$dir');
     }, variant: desktop);
 
@@ -158,7 +159,7 @@ void main() {
         (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
-      await tester.tap(find.text('Media'));
+      await tester.tap(find.bySemanticsLabel('Add media'));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -171,7 +172,7 @@ void main() {
       const Key key = Key('shot');
       await _pump(tester, const GameComposerScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      expect(find.text('Quick Game'), findsOneWidget);
+      expect(find.text('Create game'), findsWidgets);
       await _shoot(tester, key, 'game-$dir');
     }, variant: desktop);
 

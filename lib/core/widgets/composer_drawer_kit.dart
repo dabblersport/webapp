@@ -52,7 +52,7 @@ class ComposerDrawerShell extends StatelessWidget {
               Expanded(child: DabblerText(title, style: DabblerType.title3)),
               DabblerButton(
                 label: 'Cancel',
-                tone: DabblerButtonTone.text,
+                tone: DabblerButtonTone.neutral,
                 size: DabblerButtonSize.small,
                 onPressed: () => Navigator.of(context).maybePop(),
               ),
@@ -105,7 +105,7 @@ class ComposerDrawerShell extends StatelessWidget {
   }
 }
 
-/// Small caps section heading inside a composer.
+/// Small section heading inside a composer.
 class ComposerSectionLabel extends StatelessWidget {
   const ComposerSectionLabel({super.key, required this.label});
 
@@ -116,7 +116,6 @@ class ComposerSectionLabel extends StatelessWidget {
     return DabblerText(
       label,
       style: DabblerType.caption1,
-      weight: DabblerTextWeight.semibold,
       tone: DabblerTextTone.secondary,
     );
   }
@@ -204,39 +203,13 @@ class ComposerSelectPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final color = onTap == null ? colors.textTertiary : colors.textSecondary;
-    final direction = Directionality.of(context);
-    final glyph = caret == ComposerSelectCaret.down
-        ? 'arrow-down-1'
-        : (direction == TextDirection.rtl ? 'arrow-left-2' : 'arrow-right-3');
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    final rtl = Directionality.of(context) == TextDirection.rtl;
+    return DabblerSelectPill(
+      label: value,
       onTap: onTap,
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(
-          minHeight: DabblerSizing.touchTargetMin,
-          maxWidth: 190,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Flexible(
-              child: DabblerText(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: DabblerType.footnote,
-                tone: onTap == null
-                    ? DabblerTextTone.tertiary
-                    : DabblerTextTone.secondary,
-              ),
-            ),
-            const SizedBox(width: DabblerSpacing.space1),
-            DabblerIcon(glyph, size: DabblerSizing.iconInline, color: color),
-          ],
-        ),
-      ),
+      trailingIcon: caret == ComposerSelectCaret.down
+          ? 'arrow-circle-down'
+          : (rtl ? 'arrow-circle-left' : 'arrow-circle-right'),
     );
   }
 }
@@ -314,19 +287,144 @@ class ComposerGlassInput extends StatelessWidget {
   );
 }
 
+/// The footer action of a composer sheet (`Confirm`).
+class ComposerSheetConfirm {
+  const ComposerSheetConfirm({
+    required this.label,
+    required this.onTap,
+    this.enabled = true,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool enabled;
+}
+
 /// Opens [builder] as a design-system sheet that sizes to its content (capped
 /// by the design system's content max fraction). All composer pickers go
-/// through here so they share one sheet chrome.
+/// through here so they share one sheet chrome: the page-coloured panel, a
+/// title with an optional [subtitle], an optional text [onClear] and a
+/// neutral Cancel at the header's end, and an optional [confirm] footer
+/// (`Home Feed.dc.html:578-690`).
 Future<T?> showComposerSheet<T>(
   BuildContext context, {
   required String title,
   required WidgetBuilder builder,
+  String? subtitle,
+  String clearLabel = 'Clear',
+  VoidCallback? onClear,
+  ComposerSheetConfirm? confirm,
+  bool tall = false,
 }) => showDabblerSheet<T>(
   context: context,
   title: title,
-  detent: DabblerSheetDetent.content,
+  titleWidget: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            DabblerText(
+              title,
+              style: DabblerType.headline,
+              weight: DabblerTextWeight.semibold,
+            ),
+            if (subtitle != null)
+              DabblerText(
+                subtitle,
+                style: DabblerType.caption1,
+                tone: DabblerTextTone.secondary,
+              ),
+          ],
+        ),
+  detent: tall ? DabblerSheetDetent.fractions : DabblerSheetDetent.content,
+  detents: tall ? const [0.82] : const [0.5],
+  pageBackground: true,
+  showCloseButton: false,
+  headerActionBuilder: (ctx) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      if (onClear != null)
+        DabblerButton(
+          label: clearLabel,
+          tone: DabblerButtonTone.text,
+          size: DabblerButtonSize.small,
+          onPressed: () {
+            onClear();
+            Navigator.of(ctx).maybePop();
+          },
+        ),
+      DabblerButton(
+        label: 'Cancel',
+        tone: DabblerButtonTone.neutral,
+        size: DabblerButtonSize.small,
+        onPressed: () => Navigator.of(ctx).maybePop(),
+      ),
+    ],
+  ),
+  footerBuilder: confirm == null
+      ? null
+      : (ctx) => DabblerButton(
+          label: confirm.label,
+          fullWidth: true,
+          disabled: !confirm.enabled,
+          onPressed: confirm.enabled ? confirm.onTap : null,
+        ),
   builder: builder,
 );
+
+/// One option of a [showComposerChoiceSheet].
+class ComposerChoice<T> {
+  const ComposerChoice({
+    required this.value,
+    required this.title,
+    this.subtitle,
+    this.icon,
+  });
+
+  final T value;
+  final String title;
+  final String? subtitle;
+  final String? icon;
+}
+
+/// A pick-one composer sheet: rows with a check on the chosen one and a
+/// `Confirm` footer that applies the choice (`Home Feed.dc.html:614-648`).
+Future<void> showComposerChoiceSheet<T>(
+  BuildContext context, {
+  required String title,
+  required List<ComposerChoice<T>> choices,
+  required T selected,
+  required ValueChanged<T> onConfirm,
+  String confirmLabel = 'Confirm',
+}) {
+  final picked = ValueNotifier<T>(selected);
+  return showComposerSheet<void>(
+    context,
+    title: title,
+    confirm: ComposerSheetConfirm(
+      label: confirmLabel,
+      onTap: () {
+        onConfirm(picked.value);
+        Navigator.of(context).maybePop();
+      },
+    ),
+    builder: (ctx) => ValueListenableBuilder<T>(
+      valueListenable: picked,
+      builder: (_, value, __) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (final c in choices)
+            ComposerPickerRow(
+              icon: c.icon,
+              title: c.title,
+              subtitle: c.subtitle,
+              selected: value == c.value,
+              onTap: () => picked.value = c.value,
+            ),
+        ],
+      ),
+    ),
+  );
+}
 
 /// A tappable list row for the pickers: icon, title, optional subtitle, and a
 /// check when [selected].

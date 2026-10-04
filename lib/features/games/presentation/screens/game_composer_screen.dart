@@ -603,7 +603,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     );
 
     return ComposerDrawerShell(
-      title: _isEditing ? 'Edit Game' : 'Quick Game',
+      title: _isEditing ? 'Edit Game' : 'Create game',
       ctaLabel: _isEditing ? 'Save changes' : 'Create game',
       canSubmit: state.canSubmit,
       isSubmitting: state.isSubmitting,
@@ -616,7 +616,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'SPORT'),
+              const ComposerSectionLabel(label: 'Sport'),
               const SizedBox(height: DabblerSpacing.space3),
               // Sport is locked in edit mode — capacity and the roster
               // derive from the sport/format chosen at creation.
@@ -656,6 +656,21 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           ),
         ),
 
+        // ── D. Venue ────────────────────────────────────────────────────────
+        Padding(
+          padding: gutter,
+          child: ComposerSettingsRow(
+            icon: 'location',
+            title: 'Venue',
+            subtitle: 'Where to play',
+            trailing: ComposerSelectPill(
+              value: _venueLabel(state),
+              caret: ComposerSelectCaret.right,
+              onTap: () => _openVenuePicker(context),
+            ),
+          ),
+        ),
+
         // ── C. Date & Time ──────────────────────────────────────────────────
         Padding(
           padding: gutter,
@@ -674,27 +689,28 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                   value: _formatTimeChip(context, state.selectedTime),
                   onTap: () => _pickTime(context),
                 ),
-                ComposerCompactSelectPill(
-                  value: _formatDurationChip(state.durationMinutes),
-                  highlighted: true,
-                  onTap: () => _openDurationPicker(context),
-                ),
               ],
             ),
           ),
         ),
 
-        // ── D. Venue ────────────────────────────────────────────────────────
+        // ── C2. Duration ────────────────────────────────────────────────────
         Padding(
           padding: gutter,
           child: ComposerSettingsRow(
-            icon: 'location',
-            title: 'Venue',
-            subtitle: 'Where to play',
-            trailing: ComposerSelectPill(
-              value: _venueLabel(state),
-              caret: ComposerSelectCaret.right,
-              onTap: () => _openVenuePicker(context),
+            icon: 'timer',
+            title: 'Duration',
+            subtitle: 'How long it runs',
+            trailing: Wrap(
+              spacing: DabblerSpacing.space2,
+              children: [
+                for (final m in {30, 60, 120, state.durationMinutes})
+                  ComposerCompactSelectPill(
+                    value: _formatDurationChip(m),
+                    highlighted: state.durationMinutes == m,
+                    onTap: () => notifier.setDuration(m),
+                  ),
+              ],
             ),
           ),
         ),
@@ -705,7 +721,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'JOIN POLICY'),
+              const ComposerSectionLabel(label: 'Join policy'),
               const SizedBox(height: DabblerSpacing.space3),
               Wrap(
                 spacing: DabblerSpacing.space3,
@@ -735,7 +751,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'VISIBILITY'),
+              const ComposerSectionLabel(label: 'Visibility'),
               const SizedBox(height: DabblerSpacing.space3),
               Wrap(
                 spacing: DabblerSpacing.space3,
@@ -783,25 +799,19 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             trailing: Wrap(
               spacing: DabblerSpacing.space2,
               children: [
-                ComposerCompactSelectPill(
-                  value: state.minPlayers?.toString() ?? '—',
-                  suffixLabel: 'min',
-                  onTap: () => _openPlayerCountPicker(
-                    context,
-                    title: 'Minimum players',
-                    initial: state.minPlayers ?? state.requiredPlayers ?? 2,
-                    onSelect: notifier.setMinPlayers,
-                  ),
+                DabblerStepperPill(
+                  value: state.minPlayers ?? state.requiredPlayers ?? 2,
+                  min: 1,
+                  decreaseLabel: 'Fewer minimum players',
+                  increaseLabel: 'More minimum players',
+                  onChanged: notifier.setMinPlayers,
                 ),
-                ComposerCompactSelectPill(
-                  value: state.maxPlayers?.toString() ?? '—',
-                  suffixLabel: 'max',
-                  onTap: () => _openPlayerCountPicker(
-                    context,
-                    title: 'Maximum players',
-                    initial: state.maxPlayers ?? state.requiredPlayers ?? 10,
-                    onSelect: notifier.setMaxPlayers,
-                  ),
+                DabblerStepperPill(
+                  value: state.maxPlayers ?? state.requiredPlayers ?? 10,
+                  min: 1,
+                  decreaseLabel: 'Fewer maximum players',
+                  increaseLabel: 'More maximum players',
+                  onChanged: notifier.setMaxPlayers,
                 ),
               ],
             ),
@@ -842,7 +852,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const ComposerSectionLabel(label: 'DETAILS (OPTIONAL)'),
+              const ComposerSectionLabel(label: 'Details (optional)'),
               const SizedBox(height: DabblerSpacing.space3),
               ComposerGlassInput(
                 controller: _titleController,
@@ -940,20 +950,18 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         : null;
     if (!context.mounted) return;
 
-    await showComposerSheet<void>(
+    await showComposerSportSheet(
       context,
-      title: 'Sports',
-      builder: (_) => SportSelectionSheet(
-        sportsProvider: activeChallengeSportsByProfileCountryProvider,
-        selectedSport: selectedSport,
-        onSelect: (sport) => notifier.selectSport({
-          'id': sport.id,
-          'name_en': sport.nameEn,
-          'emoji': sport.emoji,
-          'sport_key': sport.sportKey,
-          'color_code': sport.colorCode,
-        }),
-      ),
+      title: 'Which sport?',
+      sportsProvider: activeChallengeSportsByProfileCountryProvider,
+      selected: selectedSport,
+      onConfirm: (sport) => notifier.selectSport({
+        'id': sport.id,
+        'name_en': sport.nameEn,
+        'emoji': sport.emoji,
+        'sport_key': sport.sportKey,
+        'color_code': sport.colorCode,
+      }),
     );
   }
 
@@ -980,18 +988,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       builder: (_) => _TimePickerSheet(
         initial: current ?? const TimeOfDay(hour: 18, minute: 0),
         onPicked: ref.read(_gameComposerProvider.notifier).selectTime,
-      ),
-    );
-  }
-
-  Future<void> _openDurationPicker(BuildContext context) async {
-    final current = ref.read(_gameComposerProvider).durationMinutes;
-    await showComposerSheet<void>(
-      context,
-      title: 'Duration',
-      builder: (_) => _DurationPickerSheet(
-        currentMinutes: current,
-        onSelect: ref.read(_gameComposerProvider.notifier).setDuration,
       ),
     );
   }
@@ -1023,20 +1019,6 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
         canClear: ref.read(_gameComposerProvider).skillLevel != null,
       ),
-    );
-  }
-
-  Future<void> _openPlayerCountPicker(
-    BuildContext context, {
-    required String title,
-    required int initial,
-    required ValueChanged<int> onSelect,
-  }) async {
-    await showComposerSheet<void>(
-      context,
-      title: title,
-      builder: (_) =>
-          _PlayerCountPickerSheet(initialValue: initial, onSelect: onSelect),
     );
   }
 }
@@ -1078,41 +1060,25 @@ class _SportChipsRow extends StatelessWidget {
       );
     }
     final colors = DabblerColors.of(context);
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final sport in sports) ...[
-            Builder(
-              builder: (_) {
-                final id = sport['id'] as String;
-                final label = sport['name_en'] as String? ?? 'Sport';
-                final selected = id == selectedSportId;
-                return Semantics(
-                  label: 'Sport: $label, tap to select',
-                  button: true,
-                  selected: selected,
-                  excludeSemantics: true,
-                  child: DabblerChip(
-                    label: label,
-                    selected: selected,
-                    leadingIcon: DabblerSportIcon.fromKey(
-                      ((sport['sport_key'] as String?) ?? '').replaceAll(
-                        '_',
-                        '-',
-                      ),
-                      size: DabblerSizing.iconInline,
-                      color: selected ? colors.onBrand : colors.textSecondary,
-                    ),
-                    onTap: () => onSelect(sport),
-                  ),
-                );
-              },
+    return Wrap(
+      spacing: DabblerSpacing.space3,
+      runSpacing: DabblerSpacing.space3,
+      children: [
+        for (final sport in sports)
+          DabblerSelectableCard(
+            layout: DabblerSelectableCardLayout.tile,
+            title: sport['name_en'] as String? ?? 'Sport',
+            leading: DabblerSportIcon.fromKey(
+              ((sport['sport_key'] as String?) ?? '').replaceAll('_', '-'),
+              size: DabblerSizing.iconLg,
+              color: colors.textPrimary,
             ),
-            const SizedBox(width: DabblerSpacing.space2),
-          ],
-        ],
-      ),
+            selected: (sport['id'] as String) == selectedSportId,
+            onChanged: (_) => onSelect(sport),
+            semanticLabel:
+                'Sport: ${sport['name_en'] ?? 'Sport'}, tap to select',
+          ),
+      ],
     );
   }
 }
@@ -1144,42 +1110,6 @@ class _VariantPickerSheet extends StatelessWidget {
                 : null,
             onTap: () {
               onSelect(v);
-              Navigator.pop(context);
-            },
-          ),
-      ],
-    );
-  }
-}
-
-class _DurationPickerSheet extends StatelessWidget {
-  const _DurationPickerSheet({
-    required this.currentMinutes,
-    required this.onSelect,
-  });
-
-  final int currentMinutes;
-  final void Function(int) onSelect;
-
-  static const _options = [30, 45, 60, 75, 90, 120, 150, 180];
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        for (final m in _options)
-          ComposerPickerRow(
-            title: () {
-              final h = m ~/ 60;
-              final min = m % 60;
-              return h > 0
-                  ? (min > 0 ? '$h h $min min' : '$h hour${h > 1 ? 's' : ''}')
-                  : '$m minutes';
-            }(),
-            selected: m == currentMinutes,
-            onTap: () {
-              onSelect(m);
               Navigator.pop(context);
             },
           ),
@@ -1400,77 +1330,6 @@ class _SkillPickerSheet extends StatelessWidget {
             },
           ),
       ],
-    );
-  }
-}
-
-/// Number stepper sheet shared between Min and Max players.
-class _PlayerCountPickerSheet extends StatefulWidget {
-  const _PlayerCountPickerSheet({
-    required this.initialValue,
-    required this.onSelect,
-  });
-
-  final int initialValue;
-  final ValueChanged<int> onSelect;
-
-  @override
-  State<_PlayerCountPickerSheet> createState() =>
-      _PlayerCountPickerSheetState();
-}
-
-class _PlayerCountPickerSheetState extends State<_PlayerCountPickerSheet> {
-  late int _value;
-
-  @override
-  void initState() {
-    super.initState();
-    _value = widget.initialValue.clamp(1, 50);
-  }
-
-  void _bump(int delta) {
-    setState(() => _value = (_value + delta).clamp(1, 50));
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: DabblerSpacing.space8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              DabblerButton.icon(
-                icon: 'minus',
-                semanticLabel: 'Decrease',
-                tone: DabblerButtonTone.neutral,
-                onPressed: _value > 1 ? () => _bump(-1) : null,
-              ),
-              DabblerText('$_value', style: DabblerType.title1),
-              DabblerButton.icon(
-                icon: 'add',
-                semanticLabel: 'Increase',
-                tone: DabblerButtonTone.neutral,
-                onPressed: _value < 50 ? () => _bump(1) : null,
-              ),
-            ],
-          ),
-          const SizedBox(height: DabblerSpacing.space6),
-          DabblerButton(
-            label: 'Done',
-            fullWidth: true,
-            onPressed: () {
-              widget.onSelect(_value);
-              Navigator.pop(context);
-            },
-          ),
-          const SizedBox(height: DabblerSpacing.space6),
-        ],
-      ),
     );
   }
 }

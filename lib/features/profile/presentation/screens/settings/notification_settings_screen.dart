@@ -58,7 +58,11 @@ class NotificationSettingsScreen extends ConsumerWidget {
       l.notif_settings_kind_likes,
       l.notif_settings_kind_likes_sub,
       'heart',
-      const ['social.post_liked', 'social.post_reacted', 'social.comment_liked'],
+      const [
+        'social.post_liked',
+        'social.post_reacted',
+        'social.comment_liked',
+      ],
     ),
     _KindToggle(
       l.notif_settings_kind_comments,
@@ -112,8 +116,9 @@ class NotificationSettingsScreen extends ConsumerWidget {
         if (next.error != null && next.error != prev?.error) {
           DabblerToastProvider.of(context).show(
             DabblerToastSpec(
-              message: AppLocalizations.of(context)
-                  .notif_settings_update_failed('${next.error}'),
+              message: AppLocalizations.of(
+                context,
+              ).notif_settings_update_failed('${next.error}'),
               tone: DabblerToastTone.error,
             ),
           );
@@ -133,9 +138,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
           DabblerSpacing.space6,
           DabblerSpacing.space11,
         ),
-        children: [
-          _buildBody(context, ref, state),
-        ],
+        children: [_buildBody(context, ref, state)],
       ),
     );
   }

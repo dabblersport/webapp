@@ -271,22 +271,10 @@ Future<void> _pumpSport(
           metrics: empty
               ? const []
               : const [
-                  SportProfileMetric(
-                    label: 'Matches',
-                    value: '86',
-                  ),
-                  SportProfileMetric(
-                    label: 'Rating',
-                    value: '4.9',
-                  ),
-                  SportProfileMetric(
-                    label: 'Form',
-                    value: '7.2',
-                  ),
-                  SportProfileMetric(
-                    label: 'Reliability',
-                    value: '99',
-                  ),
+                  SportProfileMetric(label: 'Matches', value: '86'),
+                  SportProfileMetric(label: 'Rating', value: '4.9'),
+                  SportProfileMetric(label: 'Form', value: '7.2'),
+                  SportProfileMetric(label: 'Reliability', value: '99'),
                 ],
         ),
       ),
@@ -295,7 +283,11 @@ Future<void> _pumpSport(
           badges: empty
               ? const []
               : const [
-                  SportProfileBadge(id: 'b1', key: 'streak', name: '5-win streak'),
+                  SportProfileBadge(
+                    id: 'b1',
+                    key: 'streak',
+                    name: '5-win streak',
+                  ),
                   SportProfileBadge(id: 'b2', key: 'regular', name: 'Regular'),
                 ],
           recentEvents: empty
@@ -327,9 +319,8 @@ Future<void> _pumpSport(
 String _fakeSession(String userId) {
   String b64(Map<String, dynamic> m) =>
       base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
-  final int exp = DateTime.now()
-          .add(const Duration(days: 30))
-          .millisecondsSinceEpoch ~/
+  final int exp =
+      DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch ~/
       1000;
   final String jwt =
       '${b64({'alg': 'HS256', 'typ': 'JWT'})}.${b64({'sub': userId, 'exp': exp, 'aud': 'authenticated', 'role': 'authenticated'})}.sig';
