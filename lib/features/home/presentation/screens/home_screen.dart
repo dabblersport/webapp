@@ -18,6 +18,7 @@ import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
@@ -311,94 +312,83 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
     return DabblerPage(
       topBar: _buildHeader(),
-      body: Stack(
+      body: Column(
         children: [
-          Column(
-            children: [
-              Expanded(
-                // The DS rows and tabs carry no screen gutter of their own.
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.symmetric(
-                    horizontal: DabblerSpacing.space6,
-                  ),
-                  child: DabblerTabPager(
-                    scrollable: true,
-                    onChanged: _onTabChanged,
-                    items: <DabblerTabItem>[
-                      for (final tab in _tabs)
-                        DabblerTabItem(id: tab.name, label: tab.label(l)),
-                    ],
-                    pages: [
-                      _ForYouTabBody(
-                        state: forYouState,
-                        scrollController: _scrollControllers[0],
-                        onRefresh: _handleRefresh,
-                        onRetry: () =>
-                            ref.read(feedNotifierProvider.notifier).load(),
-                        onClearBadge: () => ref
-                            .read(feedNotifierProvider.notifier)
-                            .clearNewPostsBadge(),
-                      ),
-                      _FollowingFeedTabBody(
-                        scrollController: _scrollControllers[1],
-                        onRefresh: _handleRefresh,
-                        onRetry: () {
-                          ref.read(followingFeedProvider.notifier).load();
-                          ref.read(followingActivitiesProvider.notifier).load();
-                        },
-                      ),
-                      _NearbyFeedTabBody(
-                        state: ref.watch(nearbyFeedProvider),
-                        scrollController: _scrollControllers[2],
-                        onRefresh: _handleRefresh,
-                        onRetry: () =>
-                            ref.read(nearbyFeedProvider.notifier).load(),
-                      ),
-                      _ActiveFeedTabBody(
-                        state: ref.watch(activeFeedProvider),
-                        scrollController: _scrollControllers[3],
-                        onRefresh: _handleRefresh,
-                        onRetry: () =>
-                            ref.read(activeFeedProvider.notifier).load(),
-                      ),
-                      _NewsFeedTabBody(
-                        state: ref.watch(newsTabFeedProvider),
-                        scrollController: _scrollControllers[4],
-                        onRefresh: _handleRefresh,
-                        onRetry: () =>
-                            ref.read(newsTabFeedProvider.notifier).load(),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          // New-posts indicator floats over the For You tab.
+          const HomeUpcoming(),
           if (forYouState.hasNewPosts && _activeIndex == 0)
-            SafeArea(
-              child: Align(
-                alignment: Alignment.topCenter,
-                child: DabblerButton(
-                  label: 'New posts',
-                  icon: 'arrow-circle-up',
-                  size: DabblerButtonSize.small,
-                  onPressed: () {
-                    ref
-                        .read(feedNotifierProvider.notifier)
-                        .clearNewPostsBadge();
-                    _scrollControllers[0].animateTo(
-                      0,
-                      duration: DabblerMotion.durationOf(
-                        context,
-                        DabblerMotion.scrollTo,
-                      ),
-                      curve: DabblerMotion.easeOut,
-                    );
-                  },
-                ),
+            Center(
+              child: DabblerButton(
+                label: 'New posts',
+                icon: 'arrow-circle-up',
+                size: DabblerButtonSize.small,
+                onPressed: () {
+                  ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
+                  _scrollControllers[0].animateTo(
+                    0,
+                    duration: DabblerMotion.durationOf(
+                      context,
+                      DabblerMotion.scrollTo,
+                    ),
+                    curve: DabblerMotion.easeOut,
+                  );
+                },
               ),
             ),
+          Expanded(
+            // The DS rows and tabs carry no screen gutter of their own.
+            child: Padding(
+              padding: const EdgeInsetsDirectional.symmetric(
+                horizontal: DabblerSpacing.space6,
+              ),
+              child: DabblerTabPager(
+                scrollable: true,
+                onChanged: _onTabChanged,
+                items: <DabblerTabItem>[
+                  for (final tab in _tabs)
+                    DabblerTabItem(id: tab.name, label: tab.label(l)),
+                ],
+                pages: [
+                  _ForYouTabBody(
+                    state: forYouState,
+                    scrollController: _scrollControllers[0],
+                    onRefresh: _handleRefresh,
+                    onRetry: () =>
+                        ref.read(feedNotifierProvider.notifier).load(),
+                    onClearBadge: () => ref
+                        .read(feedNotifierProvider.notifier)
+                        .clearNewPostsBadge(),
+                  ),
+                  _FollowingFeedTabBody(
+                    scrollController: _scrollControllers[1],
+                    onRefresh: _handleRefresh,
+                    onRetry: () {
+                      ref.read(followingFeedProvider.notifier).load();
+                      ref.read(followingActivitiesProvider.notifier).load();
+                    },
+                  ),
+                  _NearbyFeedTabBody(
+                    state: ref.watch(nearbyFeedProvider),
+                    scrollController: _scrollControllers[2],
+                    onRefresh: _handleRefresh,
+                    onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
+                  ),
+                  _ActiveFeedTabBody(
+                    state: ref.watch(activeFeedProvider),
+                    scrollController: _scrollControllers[3],
+                    onRefresh: _handleRefresh,
+                    onRetry: () => ref.read(activeFeedProvider.notifier).load(),
+                  ),
+                  _NewsFeedTabBody(
+                    state: ref.watch(newsTabFeedProvider),
+                    scrollController: _scrollControllers[4],
+                    onRefresh: _handleRefresh,
+                    onRetry: () =>
+                        ref.read(newsTabFeedProvider.notifier).load(),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ],
       ),
     );
@@ -1014,9 +1004,19 @@ class _NewsFilterChips extends ConsumerWidget {
       return const SizedBox.shrink();
     }
 
-    Widget chip(String label, bool selected, VoidCallback onTap) => Padding(
+    Widget chip(
+      String label,
+      bool selected,
+      VoidCallback onTap, {
+      Widget? leading,
+    }) => Padding(
       padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-      child: DabblerChip(label: label, selected: selected, onTap: onTap),
+      child: DabblerChip(
+        label: label,
+        selected: selected,
+        onTap: onTap,
+        leadingIcon: leading,
+      ),
     );
 
     return SingleChildScrollView(
@@ -1038,10 +1038,14 @@ class _NewsFilterChips extends ConsumerWidget {
           // ── One chip per interest sport ──────────────────────────────
           ...interestSports.map((sport) {
             final selected = state.selectedSportId == sport.id;
+            final key = sport.sportKey;
             return chip(
-              '${sport.emoji ?? ''} ${sport.localizedName(context)}'.trim(),
+              sport.localizedName(context),
               selected,
               () => notifier.setFilterSport(selected ? null : sport.id),
+              leading: key == null
+                  ? null
+                  : DabblerSportIcon.fromKey(key, size: DabblerSizing.iconXs),
             );
           }),
 

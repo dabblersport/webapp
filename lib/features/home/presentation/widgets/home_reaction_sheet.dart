@@ -14,7 +14,7 @@ Future<void> showHomeReactionSheet(
   BuildContext context, {
   required String postId,
   required Set<String> myReactions,
-  String title = 'React with a Vibe',
+  String title = "What's the vibe?",
 }) {
   return showDabblerSheet<void>(
     context: context,
@@ -64,6 +64,7 @@ class HomeReactionSheet extends ConsumerWidget {
               for (final vibe in vibes)
                 DabblerChip(
                   label: _label(vibe),
+                  vibe: DabblerVibe.fromKey(vibe.key.replaceAll('_', '-')),
                   selected: myReactions.contains(vibe.id),
                   onTap: () => _toggle(
                     context,
@@ -86,11 +87,9 @@ class HomeReactionSheet extends ConsumerWidget {
   }
 
   static String _label(Vibe vibe) {
-    final emoji = vibe.emoji ?? '';
-    final name = vibe.labelEn.isNotEmpty
+    return vibe.labelEn.isNotEmpty
         ? vibe.labelEn
         : vibe.key[0].toUpperCase() + vibe.key.substring(1);
-    return emoji.isEmpty ? name : '$emoji $name';
   }
 
   void _toggle(BuildContext context, WidgetRef ref, Vibe vibe, bool selected) {

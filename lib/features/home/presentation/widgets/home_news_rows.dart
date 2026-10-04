@@ -13,7 +13,6 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
     show myReactionsProvider, postActionsProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-
 void _openNews(BuildContext context, FeedNewsItem item) => context.pushNamed(
   RouteNames.newsDetail,
   pathParameters: {'newsId': item.newsId},
@@ -37,7 +36,8 @@ class HomeNewsCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final lang = ref.watch(localeProvider).languageCode;
-    final mine = ref.watch(myReactionsProvider(item.newsId)).valueOrNull ??
+    final mine =
+        ref.watch(myReactionsProvider(item.newsId)).valueOrNull ??
         const <String>{};
     final counts =
         ref.watch(homeNewsReactionCountsProvider(item.newsId)).valueOrNull ??
@@ -87,19 +87,18 @@ class HomeNewsCard extends ConsumerWidget {
 
 /// The six reactions a news item takes (same ids as the previous like bar).
 class _NewsReaction {
-  const _NewsReaction(this.id, this.emoji, this.label);
+  const _NewsReaction(this.id, this.label);
   final String id;
-  final String emoji;
   final String label;
 }
 
 const List<_NewsReaction> _newsReactions = <_NewsReaction>[
-  _NewsReaction('bbcccbeb-e506-4906-8a58-018659d0a43d', '❤️', 'Loving'),
-  _NewsReaction('477472a9-7535-42b6-b08d-d6054eee9856', '💪', 'Determined'),
-  _NewsReaction('350a7cca-b044-4b22-8c96-add0dd39c059', '🔥', 'Motivated'),
-  _NewsReaction('177211d5-73a4-4835-a7f2-48fd238c778d', '🏅', 'Proud'),
-  _NewsReaction('f4a9f402-2dbd-40a9-8a6c-61cbea065145', '🥲', 'Disappointed'),
-  _NewsReaction('4af43b42-a0f3-4008-812b-0b40548e32f6', '😡', 'Angry'),
+  _NewsReaction('bbcccbeb-e506-4906-8a58-018659d0a43d', 'Loving'),
+  _NewsReaction('477472a9-7535-42b6-b08d-d6054eee9856', 'Determined'),
+  _NewsReaction('350a7cca-b044-4b22-8c96-add0dd39c059', 'Motivated'),
+  _NewsReaction('177211d5-73a4-4835-a7f2-48fd238c778d', 'Proud'),
+  _NewsReaction('f4a9f402-2dbd-40a9-8a6c-61cbea065145', 'Disappointed'),
+  _NewsReaction('4af43b42-a0f3-4008-812b-0b40548e32f6', 'Angry'),
 ];
 
 final homeNewsReactionCountsProvider = FutureProvider.autoDispose
@@ -216,7 +215,11 @@ class HomeActivityRow extends StatelessWidget {
       actor: activity.actorUsername,
       verb: activity.actionLabel,
       subject: hasNewsTarget && newsTitle.isNotEmpty ? newsTitle : null,
-      when: timeago.format(activity.createdAt, allowFromNow: true, locale: locale),
+      when: timeago.format(
+        activity.createdAt,
+        allowFromNow: true,
+        locale: locale,
+      ),
       thumbnail: hasNewsTarget && activity.targetCoverImageUrl != null
           ? DabblerImage(
               url: activity.targetCoverImageUrl,

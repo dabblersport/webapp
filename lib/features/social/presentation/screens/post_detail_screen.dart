@@ -20,9 +20,8 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
-import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
-import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/features/venues/presentation/widgets/place_picker_sheet.dart';
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/social/utils/post_sport_label.dart';
 
@@ -56,6 +55,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   String? _attachedImageUrl;
   String? _attachedGifUrl;
   Place? _attachedPlace;
+
+  final Set<String> _collapsed = <String>{};
 
   RealtimeChannel? _realtimeChannel;
 
@@ -223,17 +224,35 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     );
   }
 
-  void _showGifPicker() {
-    showGifPickerSheet(
-      context,
-      onSelected: (url) {
-        setState(() {
-          _attachedGifUrl = url;
-          _attachedImageUrl = null;
-          _hasText = true;
-        });
-      },
+  Future<void> _toggleFollow(
+    String targetProfileId,
+    String currentProfileId,
+    bool following,
+  ) async {
+    final db = Supabase.instance.client;
+    final key = (
+      currentProfileId: currentProfileId,
+      targetProfileId: targetProfileId,
     );
+    try {
+      if (following) {
+        await db.rpc(
+          SupabaseConfig.rpcUnfollowUserFn,
+          params: {'p_target_profile_id': targetProfileId},
+        );
+      } else {
+        await db.from(SupabaseConfig.profileFollowsTable).insert({
+          'follower_profile_id': currentProfileId,
+          'following_profile_id': targetProfileId,
+        });
+      }
+    } catch (_) {
+      _toast(
+        'Something went wrong. Please try again.',
+        tone: DabblerToastTone.error,
+      );
+    }
+    ref.invalidate(isFollowingProvider(key));
   }
 
   Future<void> _pickLocation() async {
@@ -289,25 +308,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       action();
     },
   );
-
-  void _showRepostMenu(Post post) {
-    _showActionSheet(
-      (ctx) => [
-        _sheetButton(
-          ctx,
-          'Repost',
-          'refresh',
-          () => ref.read(postActionsProvider.notifier).repostPost(post.id),
-        ),
-        _sheetButton(
-          ctx,
-          'Quote Repost',
-          'edit-2',
-          () => showQuoteRepostSheet(context, post),
-        ),
-      ],
-    );
-  }
 
   void _showPostMenu(Post post, String? myProfileId) {
     final isOwner = myProfileId != null && post.authorProfileId == myProfileId;
@@ -441,25 +441,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     PostVisibility.link => 'share',
   };
 
-  String? _expiryLabel(DateTime? exp) {
-    if (exp == null) return null;
-    final diff = exp.difference(DateTime.now());
-    if (diff.isNegative) return 'Expired';
-    if (diff.inDays > 0) return 'Expires in ${diff.inDays}d';
-    if (diff.inHours > 0) return 'Expires in ${diff.inHours}h';
-    if (diff.inMinutes > 0) return 'Expires in ${diff.inMinutes}m';
-    return 'Expiring soon';
-  }
-
-  String _originLabel(OriginType o) => switch (o) {
-    OriginType.game => 'Game',
-    OriginType.achievement => 'Achievement',
-    OriginType.venue => 'Venue',
-    OriginType.admin => 'Admin',
-    OriginType.system => 'System',
-    _ => '',
-  };
-
   // ── Build ────────────────────────────────────────────────────────────────────
 
   @override
@@ -502,25 +483,17 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     return CustomScrollView(
       controller: _scrollController,
       slivers: [
-        SliverPadding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space6,
-          ),
-          sliver: SliverToBoxAdapter(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                if (post.originType == OriginType.repost)
-                  HomePostRow.resolve(post, detail: _postDetail(post))
-                else
-                  _buildPostRow(post, isAuthor),
-                _buildDetails(post, isAuthor: isAuthor),
-                const DabblerDivider(),
-              ],
-            ),
-          ),
+        SliverToBoxAdapter(
+          child: post.originType == OriginType.repost
+              ? Padding(
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: DabblerSpacing.space6,
+                  ),
+                  child: HomePostRow.resolve(post, detail: _postDetail(post)),
+                )
+              : _buildOpenPost(post, isAuthor, myProfileId),
         ),
-        _buildCommentsSection(commentsAsync, myProfileId),
+        _buildCommentsSection(commentsAsync, myProfileId, post.commentCount),
         const SliverToBoxAdapter(
           child: SizedBox(height: DabblerSpacing.space6),
         ),
@@ -528,65 +501,82 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     );
   }
 
-  /// The post itself, fed to [DabblerPostRow] the way `HomePostRow` feeds it,
-  /// with detail-screen callbacks (no self-navigation, reply focuses the
-  /// composer, share copies the link, more opens this screen's menu).
-  Widget _buildPostRow(Post post, bool isAuthor) {
+  /// The post as the design's open-post block (`Post.dc.html` :58-126).
+  Widget _buildOpenPost(Post post, bool isAuthor, String? myProfileId) {
     final isLiked = ref.watch(hasLikedProvider(post.id)).valueOrNull ?? false;
-    final isReposted =
-        ref.watch(hasRepostedProvider(post.id)).valueOrNull ?? false;
     final myReactions =
         ref.watch(myReactionsProvider(post.id)).valueOrNull ?? <String>{};
-    final myProfileId = ref.watch(myProfileIdProvider).valueOrNull;
-    final canRepost = post.allowReposts && post.originType != OriginType.repost;
     final name = (post.authorDisplayName ?? '').trim();
     final label = name.isEmpty ? 'Anonymous' : name;
     final actions = ref.read(postActionsProvider.notifier);
     final hasMedia = PostMediaCarousel.imageUrls(post.media).isNotEmpty;
+    final canFollow = !isAuthor && myProfileId != null;
+    final following = canFollow
+        ? ref
+                  .watch(
+                    isFollowingProvider((
+                      currentProfileId: myProfileId,
+                      targetProfileId: post.authorProfileId,
+                    )),
+                  )
+                  .valueOrNull ??
+              false
+        : false;
+    final breakdown = post.reactionBreakdown['breakdown'];
+    final vibeTotal = breakdown is Map
+        ? breakdown.values.whereType<int>().fold<int>(0, (a, b) => a + b)
+        : 0;
+    final visLabel = _visibilityLabel(post.visibility);
+    final lang = post.lang?.trim() ?? '';
 
-    return DabblerPostRow(
+    return DabblerOpenPost(
       name: label,
       seed: label,
       imageUrl: post.authorAvatarUrl,
+      roleLabel: post.personaTypeSnapshot == null
+          ? null
+          : (post.personaTypeSnapshot == 'organiser' ? 'Org' : 'Player'),
+      handle: (post.authorUsername ?? '').isEmpty
+          ? null
+          : '@${post.authorUsername}',
       onAuthorTap: name.isEmpty
           ? null
           : () => _openProfile(
               authorUserId: post.authorUserId,
               authorProfileId: post.authorProfileId,
             ),
-      roleLabel: post.personaTypeSnapshot == null
-          ? null
-          : (post.personaTypeSnapshot == 'organiser' ? 'Org' : 'Player'),
-      kindBadge: post.isPinned
-          ? const DabblerBadge(label: 'Pinned', tone: DabblerBadgeTone.primary)
+      followLabel: canFollow ? (following ? 'Following' : 'Follow') : null,
+      following: following,
+      onFollow: canFollow
+          ? () => _toggleFollow(post.authorProfileId, myProfileId, following)
           : null,
-      media: hasMedia
-          ? PostMediaCarousel(media: post.media, carouselHeight: 280)
-          : null,
-      onRepost: canRepost
-          ? () =>
-                isReposted ? actions.undoRepost(post.id) : _showRepostMenu(post)
-          : null,
-      reposts: post.repostCount,
-      reposted: isReposted,
-      reactions: _reactionSummary(post, myReactions),
-      views: isAuthor ? post.viewCount : null,
-      time: homeRelativeTime(post.createdAt),
-      place: post.locationName ?? '',
       segments: <DabblerPostSegment>[
         if (post.body?.trim().isNotEmpty == true)
           DabblerPostSegment(post.body!),
         for (final tag in post.tags.skip(1))
           DabblerPostSegment(' #$tag', link: true),
       ],
+      media: hasMedia
+          ? PostMediaCarousel(media: post.media, carouselHeight: 280)
+          : null,
       sportLabel: post.sport?.isNotEmpty == true
           ? resolvePostSportLabel(context, ref, post)
           : null,
+      placeLabel: (post.locationName ?? '').isEmpty ? null : post.locationName,
+      timeLabel: DateFormat.jm().format(post.createdAt),
+      dateLabel: DateFormat.yMMMd().format(post.createdAt),
+      viewsLabel: post.viewCount > 0
+          ? '${NumberFormat.decimalPattern().format(post.viewCount)} views'
+          : null,
+      audienceIcon: visLabel == null
+          ? 'global'
+          : _visibilityIcon(post.visibility),
+      audienceLabel: visLabel ?? (lang.isEmpty ? null : lang.toUpperCase()),
       likes: post.likeCount,
+      vibes: vibeTotal,
       replies: post.commentCount,
       liked: isLiked,
       vibed: myReactions.isNotEmpty,
-      divider: false,
       onLike: () =>
           isLiked ? actions.unlikePost(post.id) : actions.likePost(post.id),
       onVibe: () => showHomeReactionSheet(
@@ -596,8 +586,6 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       ),
       onComment: () => _commentFocusNode.requestFocus(),
       onShare: () => _copyLink(post),
-      onMore: () => _showPostMenu(post, myProfileId),
-      detail: _postDetail(post),
     );
   }
 
@@ -609,120 +597,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     visibilityIcon: _visibilityIcon(post.visibility),
   );
 
-  /// Reaction-breakdown chips; tapping one toggles that vibe.
-  Widget? _reactionSummary(Post post, Set<String> myReactions) {
-    final raw = post.reactionBreakdown['breakdown'];
-    if (raw is! Map) return null;
-    final entries = raw.entries
-        .where((e) => e.value is int && (e.value as int) > 0)
-        .toList();
-    if (entries.isEmpty) return null;
-    final vibes = ref.watch(vibesProvider).valueOrNull ?? const [];
-    return Wrap(
-      spacing: DabblerSpacing.space2,
-      runSpacing: DabblerSpacing.space1,
-      children: [
-        for (final entry in entries)
-          Builder(
-            builder: (_) {
-              final key = entry.key.toString();
-              final matched = vibes.where((v) => v.key == key).firstOrNull;
-              final mine = matched != null && myReactions.contains(matched.id);
-              final label = matched == null
-                  ? key
-                  : (matched.labelEn.isNotEmpty
-                        ? matched.labelEn
-                        : matched.key);
-              return DabblerChip(
-                label: '$label ${entry.value}',
-                selected: mine,
-                onTap: () {
-                  if (matched == null) return;
-                  final actions = ref.read(postActionsProvider.notifier);
-                  mine
-                      ? actions.removeReaction(post.id, matched.id)
-                      : actions.reactToPost(post.id, matched.id);
-                },
-              );
-            },
-          ),
-      ],
-    );
-  }
-
-  /// Vibes and context badges under the post row; the post row (or the
-  /// repost's, via `HomePostRow.resolve(detail:)`) carries the timestamp line.
-  Widget _buildDetails(Post post, {required bool isAuthor}) {
-    final expiry = _expiryLabel(post.expiresAt);
-    final visLabel = _visibilityLabel(post.visibility);
-    final hasGeo = post.geoLat != null && post.geoLng != null;
-    final origin =
-        post.originType != OriginType.manual &&
-            post.originType != OriginType.repost
-        ? _originLabel(post.originType)
-        : '';
-
-    final badges = <Widget>[
-      for (final vibe in post.vibes.take(5))
-        DabblerChip(
-          label: vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key,
-          vibe: DabblerVibe.fromKey(vibe.key),
-        ),
-      if (origin.isNotEmpty) DabblerBadge(label: origin),
-      if (hasGeo)
-        DabblerBadge(
-          label: post.locationName ?? 'Location',
-          icon: const DabblerIcon('location', size: DabblerSizing.iconXs),
-        ),
-      if (post.lang?.isNotEmpty == true)
-        DabblerBadge(label: post.lang!.toUpperCase()),
-      if (visLabel != null)
-        DabblerBadge(
-          label: visLabel,
-          icon: DabblerIcon(
-            _visibilityIcon(post.visibility),
-            size: DabblerSizing.iconXs,
-          ),
-        ),
-      if (post.requiresModeration)
-        const DabblerBadge(
-          label: 'Pending review',
-          tone: DabblerBadgeTone.warning,
-        ),
-      if (expiry != null)
-        DabblerBadge(label: expiry, tone: DabblerBadgeTone.warning),
-    ];
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (badges.isNotEmpty) ...[
-            Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: badges,
-            ),
-            const SizedBox(height: DabblerSpacing.space3),
-          ],
-          if (isAuthor && post.viewCount > 0)
-            DabblerText(
-              '${homeCompactCount(post.viewCount)} Views',
-              style: DabblerType.footnote,
-              tone: DabblerTextTone.secondary,
-              weight: DabblerTextWeight.semibold,
-            ),
-        ],
-      ),
-    );
-  }
-
   // ── Comments section ─────────────────────────────────────────────────────────
 
   Widget _buildCommentsSection(
     AsyncValue<List<PostComment>> commentsAsync,
     String? myProfileId,
+    int replyCount,
   ) {
     return commentsAsync.when(
       loading: () => const SliverToBoxAdapter(
@@ -743,9 +623,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             hasScrollBody: false,
             child: Center(
               child: DabblerEmptyState(
-                icon: 'message',
+                size: DabblerEmptyStateSize.plain,
+                icon: 'message-text',
                 title: 'No replies yet',
-                text: 'Be the first to reply!',
+                text: 'Be the first to reply.',
               ),
             ),
           );
@@ -765,9 +646,16 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           PostComment c, {
           required PostComment thread,
           bool reply = false,
+          int kids = 0,
         }) => _commentRow(
           c,
           reply: reply,
+          repliesLabel: kids == 0
+              ? null
+              : (_collapsed.contains(c.id) ? 'View replies' : 'Hide replies'),
+          onToggleReplies: () => setState(() {
+            if (!_collapsed.remove(c.id)) _collapsed.add(c.id);
+          }),
           onReply: () => setState(() {
             _replyingTo = thread;
             _commentFocusNode.requestFocus();
@@ -788,10 +676,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                       top: DabblerSpacing.space5,
                       bottom: DabblerSpacing.space1,
                     ),
-                    child: const DabblerText(
-                      'Replies',
-                      style: DabblerType.headline,
-                      weight: DabblerTextWeight.bold,
+                    child: DabblerText(
+                      '$replyCount replies',
+                      style: DabblerType.footnote,
+                      weight: DabblerTextWeight.semibold,
                     ),
                   ),
                 ),
@@ -802,10 +690,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                   return Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      row(parent, thread: parent),
-                      for (final r
-                          in children[parent.id] ?? const <PostComment>[])
-                        row(r, thread: parent, reply: true),
+                      row(
+                        parent,
+                        thread: parent,
+                        kids: (children[parent.id] ?? const []).length,
+                      ),
+                      if (!_collapsed.contains(parent.id))
+                        for (final r
+                            in children[parent.id] ?? const <PostComment>[])
+                          row(r, thread: parent, reply: true),
                       if (i != topLevel.length - 1) const DabblerDivider(),
                     ],
                   );
@@ -825,6 +718,8 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     required bool reply,
     required VoidCallback onReply,
     required VoidCallback onLongPress,
+    String? repliesLabel,
+    VoidCallback? onToggleReplies,
   }) {
     final name = (c.authorDisplayName ?? '').trim();
     final displayName = name.isEmpty ? 'Anonymous' : name;
@@ -874,6 +769,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       divider: false,
       attachments: attachments.isEmpty ? null : attachments,
       onLongPress: onLongPress,
+      onMore: onLongPress,
+      repliesLabel: repliesLabel,
+      onViewReplies: onToggleReplies,
       onReply: reply ? null : onReply,
       onAuthorTap: name.isEmpty
           ? null
@@ -891,6 +789,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final canAttach = !hasVisual && !_isUploading;
     final replyName = (_replyingTo?.authorDisplayName ?? '').trim();
     final showAttachments = hasVisual || _attachedPlace != null || _isUploading;
+    final composing = _hasText || showAttachments || _replyingTo != null;
 
     return DabblerReplyComposer(
       controller: _commentController,
@@ -904,16 +803,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       // Text or an attached image/GIF makes a reply sendable, as before.
       canSendEmpty: _hasText,
       sendLabel: 'Send reply',
+      replyLabel: 'Reply',
+      composing: composing,
+      multiline: composing,
       onSend: (_) => _submitComment(postId),
       attachActions: [
         DabblerReplyComposerAction(
           icon: 'gallery',
           label: 'Add image',
           onTap: canAttach ? () => _pickImage(ImageSource.gallery) : null,
-        ),
-        DabblerReplyComposerAction.text(
-          label: 'GIF',
-          onTap: canAttach ? _showGifPicker : null,
         ),
         DabblerReplyComposerAction(
           icon: 'location',
@@ -931,6 +829,17 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       scrollDirection: Axis.horizontal,
       child: Row(
         children: [
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              end: DabblerSpacing.space2,
+            ),
+            child: DabblerAttachmentAddTile(
+              label: 'Add',
+              onTap: _isUploading
+                  ? null
+                  : () => _pickImage(ImageSource.gallery),
+            ),
+          ),
           if (_isUploading)
             const SizedBox(
               width: DabblerSizing.thumbnail,

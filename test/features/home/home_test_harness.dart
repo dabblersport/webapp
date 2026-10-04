@@ -1,7 +1,10 @@
 /// Shared harness for the Home presentation tests: every data source faked.
 library;
 
+import 'package:dabbler/data/models/games/game.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
+import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
@@ -37,7 +40,7 @@ class FakeFeed extends StateNotifier<FeedState> implements FeedNotifier {
 }
 
 class _Tab extends StateNotifier<TabFeedState> implements TabFeedNotifier {
-  _Tab() : super(const TabFeedLoading());
+  _Tab([TabFeedState state = const TabFeedLoading()]) : super(state);
   @override
   Future<void> load() async {}
   @override
@@ -75,7 +78,8 @@ class _Acts extends StateNotifier<PublicActivitiesState>
 }
 
 class _News extends StateNotifier<NewsTabState> implements NewsTabNotifier {
-  _News() : super(const NewsTabState(isLoading: true));
+  _News([NewsTabState state = const NewsTabState(isLoading: true)])
+    : super(state);
   @override
   Future<void> load() async {}
   @override
@@ -120,34 +124,66 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
   Locale locale = const Locale('en'),
   Key? boundaryKey,
   ProfileState profileState = const ProfileState(),
+  List<Game> upcoming = const <Game>[],
+  bool inShell = false,
+  TabFeedState followingState = const TabFeedLoading(),
+  TabFeedState nearbyState = const TabFeedLoading(),
+  NewsTabState newsState = const NewsTabState(isLoading: true),
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   final feed = FakeFeed(feedState);
   final pushed = <String>[];
-  final router = GoRouter(
-    routes: [
-      GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
-      GoRoute(
-        path: '/:rest(.*)',
-        builder: (_, s) {
-          pushed.add(s.uri.toString());
-          return const SizedBox.shrink();
-        },
-      ),
-    ],
-  );
+  Widget empty() => const SizedBox.shrink();
+  final router = inShell
+      ? GoRouter(
+          initialLocation: '/home',
+          routes: [
+            StatefulShellRoute.indexedStack(
+              builder: (_, __, shell) =>
+                  MainNavigationScreen(navigationShell: shell),
+              branches: [
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+                ]),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/community', builder: (_, __) => empty()),
+                ]),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/venues', builder: (_, __) => empty()),
+                ]),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/games', builder: (_, __) => empty()),
+                ]),
+              ],
+            ),
+          ],
+        )
+      : GoRouter(
+          routes: [
+            GoRoute(path: '/', builder: (_, __) => const HomeScreen()),
+            GoRoute(
+              path: '/:rest(.*)',
+              builder: (_, s) {
+                pushed.add(s.uri.toString());
+                return const SizedBox.shrink();
+              },
+            ),
+          ],
+        );
   addTearDown(router.dispose);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        initializeProfileDataProvider.overrideWith((ref) async => false),
+        userUpcomingGamesProvider.overrideWith((ref) async => upcoming),
         feedNotifierProvider.overrideWith((ref) => feed),
-        followingFeedProvider.overrideWith((ref) => _Tab()),
-        nearbyFeedProvider.overrideWith((ref) => _Tab()),
+        followingFeedProvider.overrideWith((ref) => _Tab(followingState)),
+        nearbyFeedProvider.overrideWith((ref) => _Tab(nearbyState)),
         followingActivitiesProvider.overrideWith((ref) => _Acts()),
         activeFeedProvider.overrideWith((ref) => _Active(activeState)),
-        newsTabFeedProvider.overrideWith((ref) => _News()),
+        newsTabFeedProvider.overrideWith((ref) => _News(newsState)),
         profileControllerProvider.overrideWith((ref) => _Profile(profileState)),
         unreadNotificationCountProvider.overrideWithValue(3),
         activeLocationProvider.overrideWith(_Location.new),
