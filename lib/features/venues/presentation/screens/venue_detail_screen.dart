@@ -106,7 +106,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
   Widget _content(games_venue.Venue venue, bool isFavorited) {
     final sports = venue.supportedSports;
     final isOpen = venue.isOpenAt(DateTime.now());
-    final hasHours = venue.openingTime.isNotEmpty && venue.closingTime.isNotEmpty;
+    final hasHours =
+        venue.openingTime.isNotEmpty && venue.closingTime.isNotEmpty;
     final address = [
       venue.addressLine1,
       venue.city,
@@ -118,24 +119,25 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       venue.country,
     ].where((p) => p.isNotEmpty).join(', ');
 
-    final contacts = <({String icon, String label, String value, VoidCallback? onTap})>[
-      if (venue.phone?.isNotEmpty ?? false)
-        (
-          icon: 'call',
-          label: 'Phone',
-          value: venue.phone!,
-          onTap: () => _callVenue(venue.phone!),
-        ),
-      if (venue.email?.isNotEmpty ?? false)
-        (icon: 'sms', label: 'Email', value: venue.email!, onTap: null),
-      if (venue.website?.isNotEmpty ?? false)
-        (
-          icon: 'global',
-          label: 'Website',
-          value: venue.website!,
-          onTap: () => _openWebsite(venue.website!),
-        ),
-    ];
+    final contacts =
+        <({String icon, String label, String value, VoidCallback? onTap})>[
+          if (venue.phone?.isNotEmpty ?? false)
+            (
+              icon: 'call',
+              label: 'Phone',
+              value: venue.phone!,
+              onTap: () => _callVenue(venue.phone!),
+            ),
+          if (venue.email?.isNotEmpty ?? false)
+            (icon: 'sms', label: 'Email', value: venue.email!, onTap: null),
+          if (venue.website?.isNotEmpty ?? false)
+            (
+              icon: 'global',
+              label: 'Website',
+              value: venue.website!,
+              onTap: () => _openWebsite(venue.website!),
+            ),
+        ];
 
     return DabblerDetailPage(
       header: DabblerGalleryHero(
@@ -163,7 +165,15 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
             color: isFavorited ? DabblerColors.of(context).error.base : null,
             selected: isFavorited,
             semanticLabel: isFavorited ? 'Unsave venue' : 'Save venue',
-            onPressed: _favoriteBusy ? null : () => _toggleFavorite(isFavorited),
+            onPressed: _favoriteBusy
+                ? null
+                : () => _toggleFavorite(isFavorited),
+          ),
+          DabblerOnColorIconButton(
+            onSurface: true,
+            icon: 'share',
+            semanticLabel: 'Share venue',
+            onPressed: _shareVenue,
           ),
         ],
       ),
@@ -292,17 +302,44 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         DabblerSection(
           style: DabblerSectionStyle.label,
           title: 'Where',
-          action: DabblerTextLink(label: 'Open map', onPressed: _getDirections),
           children: [
-            DabblerListGroup(
-              children: [
-                DabblerListRow(
-                  title: venue.name,
-                  subtitle: fullAddress.isEmpty
-                      ? 'Address unavailable'
-                      : fullAddress,
+            DabblerCard(
+              padding: EdgeInsets.zero,
+              media: DabblerImage(
+                height: DabblerSizing.illustrationMd + DabblerSpacing.space11,
+                radius: BorderRadius.zero,
+                semanticLabel: 'Map of the venue',
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(DabblerSpacing.space6),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          DabblerText(
+                            venue.name,
+                            style: DabblerType.smallTight,
+                            weight: DabblerTextWeight.semibold,
+                          ),
+                          DabblerText(
+                            fullAddress.isEmpty
+                                ? 'Address unavailable'
+                                : fullAddress,
+                            style: DabblerType.footnote,
+                            tone: DabblerTextTone.secondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                    DabblerTextLink(
+                      label: 'Open map',
+                      onPressed: _getDirections,
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),
@@ -406,6 +443,8 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       },
     );
   }
+
+  void _shareVenue() => _snack('Sharing coming soon');
 
   void _getDirections() {
     final async = ref.read(venueDetailProvider(widget.venueId));

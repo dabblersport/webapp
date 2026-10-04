@@ -515,4 +515,19 @@ void main() {
     expect(find.text('Book Space'), findsNothing);
     await _unmount(tester);
   });
+
+  testWidgets('venue: share button and Open map are present', (tester) async {
+    await _pump(
+      tester,
+      const VenueDetailScreen(venueId: 'v1'),
+      const Locale('en'),
+      overrides: _venueOverrides(_venue()),
+    );
+    expect(find.bySemanticsLabel('Share venue'), findsOneWidget);
+    expect(find.text('Open map'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Share venue'));
+    await tester.pump();
+    expect(find.text('Sharing coming soon'), findsOneWidget);
+    await _unmount(tester);
+  });
 }
