@@ -2170,7 +2170,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_btn_manage_profiles_tooltip => 'Manage profiles';
 
   @override
-  String get profile_manage_profiles_title => 'Manage Profiles';
+  String get profile_manage_profiles_title => 'Switch profile';
 
   @override
   String get profile_add_profile => 'Add Profile';
@@ -2971,5 +2971,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String profile_stat_sport_matches(String sport) {
     return '$sport matches';
+  }
+
+  @override
+  String get profile_create_another_profile => 'Create another profile';
+
+  @override
+  String profile_create_persona_profile(String persona) {
+    return 'Create $persona profile';
+  }
+
+  @override
+  String sport_profile_overall_level(String sport, String level) {
+    return '$sport · overall level $level';
   }
 }

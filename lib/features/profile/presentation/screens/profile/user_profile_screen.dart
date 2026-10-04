@@ -11,6 +11,8 @@ import '../../../../../utils/constants/route_constants.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
+import 'package:dabbler/data/models/profile/sports_profile.dart';
 import '../../models/sport_profile_route_args.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/social/block_providers.dart';
@@ -41,6 +43,16 @@ class UserProfileScreen extends ConsumerStatefulWidget {
 
 class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   final _activitiesKey = GlobalKey();
+
+  // Drives the top bar: tinted with no title until the identity block has
+  // scrolled away, then the page ground with the handle.
+  final ScrollController _scroll = ScrollController();
+
+  @override
+  void dispose() {
+    _scroll.dispose();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -170,7 +182,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: (username != null && username.isNotEmpty) ? username : null,
+        title: (username != null && username.isNotEmpty)
+            ? '\u200E@$username'
+            : null,
+        scrollController: _scroll,
+        heroTint: true,
         onBack: () => context.canPop() ? context.pop() : context.go('/home'),
         actions: [
           DabblerNavigationAction(
@@ -183,6 +199,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       body: DabblerRefresh(
         onRefresh: _loadProfileData,
         child: ListView(
+          controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
           padding: const EdgeInsets.only(bottom: DabblerSpacing.space11),
           children: [
@@ -212,6 +229,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const DabblerGap.v(DabblerSpacing.space8),
             if (mySports.isNotEmpty) ...[
               OwnProfileSportPicker(
+                title: l10n.profile_section_their_sports,
                 sports: mySports,
                 selectedId: null,
                 primaryId: profile?.primarySport,
@@ -285,52 +303,30 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     SportsProfileState sportsState,
   ) {
     final statistics = profile.statistics;
-    final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: _gutter,
-      child: DabblerStatGrid(
-        children: [
-          DabblerStatTile(
-            size: DabblerStatTileSize.hero,
-            tone: DabblerStatTileTone.brand,
-            value: statistics.totalGamesPlayed.toString(),
-            label: l10n.user_profile_stat_games,
-            fitValue: true,
-          ),
-          DabblerStatTile(
-            value: statistics.winRateFormatted,
-            label: l10n.user_profile_stat_win_rate,
-            tone: DabblerStatTileTone.ink,
-            fitValue: true,
-          ),
-          DabblerStatTile(
-            value: '${statistics.getReliabilityScore().round()}%',
-            label: l10n.user_profile_stat_reliability,
-            tone: DabblerStatTileTone.amber,
-            fitValue: true,
-          ),
-          DabblerStatTile(
-            value: sportsState.profiles.length.toString(),
-            label: l10n.user_profile_stat_sports,
-            fitValue: true,
-          ),
-          DabblerStatTile(
-            value: statistics.getActivityLevel(),
-            label: l10n.user_profile_stat_activity,
-            sub:
-                '${l10n.user_profile_stat_last_play}: ${statistics.lastActiveFormatted}',
-            tone: DabblerStatTileTone.sunken,
-            span: 4,
-            rows: 1,
-          ),
-        ],
-      ),
+    final List<SportProfile> sports = sportsState.profiles;
+    final List<SportProfile> rated = [
+      for (final p in sports)
+        if (p.averageRating > 0) p,
+    ];
+    return OwnProfileStats(
+      posts: 0,
+      otherUser: true,
+      sportsCount: sports.length,
+      gamesPlayed: statistics.totalGamesPlayed,
+      rating: rated.isEmpty
+          ? null
+          : rated.fold<double>(0, (a, p) => a + p.averageRating) / rated.length,
+      winRate: statistics.winRateFormatted,
+      reliability: statistics.getReliabilityScore().round(),
+      primarySports: sports.where((p) => p.isPrimarySport).length,
+      heroSub: sports.isEmpty
+          ? null
+          : [
+              for (final p in sports)
+                if (p.isPrimarySport) p.sportName,
+            ].take(3).join(' · '),
     );
   }
-
-  static const EdgeInsetsGeometry _gutter = EdgeInsets.symmetric(
-    horizontal: DabblerSpacing.space6,
-  );
 
   // ── Actions ──────────────────────────────────────────────────────────
 
@@ -432,7 +428,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     return DabblerButton(
       label: l10n.user_profile_btn_follow,
-      icon: 'user-add',
+      leadingWidget: const DabblerIcon(
+        'add',
+        weight: DabblerIconWeight.bold,
+        size: DabblerSizing.iconSm,
+      ),
       tone: DabblerButtonTone.primary,
       fullWidth: true,
       onPressed: () => _toggleFollow(

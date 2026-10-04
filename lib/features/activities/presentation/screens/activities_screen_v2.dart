@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/activities/presentation/controllers/activity_feed_controller.dart'
+    show ActivityFeedState;
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/presentation/widgets/activity_event_card.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
@@ -143,35 +145,36 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
       {'name': 'Rewards', 'value': 'Rewards'},
     ];
 
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: categories
-            .map((category) {
-              final categoryValue = category['value'];
-              final isSelected = state.currentCategory == categoryValue;
-              final categoryName = category['name']!;
+    return DabblerChipRail(
+      size: DabblerChipSize.small,
+      items: [
+        for (final category in categories)
+          _categoryItem(state, category['name']!, category['value']),
+      ],
+    );
+  }
 
-              // Count activities for this category
-              final count = categoryValue == null
-                  ? state.activities.length
-                  : _getCategoryCount(state.activities, categoryValue);
-
-              return DabblerChip(
-                label: count > 0 ? '$categoryName ($count)' : categoryName,
-                selected: isSelected,
-                onTap: () {
-                  if (!isSelected) {
-                    ref
-                        .read(activityFeedControllerProvider.notifier)
-                        .changeCategory(categoryValue);
-                  }
-                },
-              );
-            })
-            .expand((chip) => [chip, const DabblerGap.h(DabblerSpacing.space2)])
-            .toList(),
-      ),
+  DabblerChipRailItem _categoryItem(
+    ActivityFeedState state,
+    String name,
+    String? value,
+  ) {
+    final isSelected = state.currentCategory == value;
+    // Count activities for this category
+    final count = value == null
+        ? state.activities.length
+        : _getCategoryCount(state.activities, value);
+    return DabblerChipRailItem(
+      label: name,
+      count: count > 0 ? '$count' : null,
+      selected: isSelected,
+      onTap: () {
+        if (!isSelected) {
+          ref
+              .read(activityFeedControllerProvider.notifier)
+              .changeCategory(value);
+        }
+      },
     );
   }
 

@@ -5,8 +5,9 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
-/// The Profiles design's sport picker: a titled header with the edit action
-/// and a horizontal rail of sport chips; the selected sport scopes the bento.
+/// The Profiles design's sport picker: a section label ("My sports") with the
+/// Manage link and a rail of sport chips, each drawn in its sport's accent;
+/// the selected sport scopes the bento.
 class OwnProfileSportPicker extends StatelessWidget {
   const OwnProfileSportPicker({
     super.key,
@@ -15,6 +16,7 @@ class OwnProfileSportPicker extends StatelessWidget {
     required this.primaryId,
     required this.onSelect,
     this.onManage,
+    this.title,
   });
 
   final List<Sport> sports;
@@ -24,13 +26,21 @@ class OwnProfileSportPicker extends StatelessWidget {
   final String? primaryId;
   final ValueChanged<String?> onSelect;
 
-  /// The edit action; null hides it (another user's profile).
+  /// The Manage link; null hides it (another user's profile).
   final VoidCallback? onManage;
+
+  /// The section label; defaults to "My sports".
+  final String? title;
+
+  /// The kebab-case key the DS accent table reads.
+  static String sportKeyOf(Sport s) =>
+      s.sportKey ?? s.nameEn.toLowerCase().replaceAll(' ', '_');
 
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     final DabblerColors colors = DabblerColors.of(context);
+    final TextDirection direction = Directionality.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
@@ -39,15 +49,16 @@ class OwnProfileSportPicker extends StatelessWidget {
             horizontal: DabblerSpacing.space6,
           ),
           child: DabblerSection(
-            title: l10n.profile_section_sports,
+            title: title ?? l10n.profile_section_my_sports,
             style: DabblerSectionStyle.label,
             action: onManage == null
                 ? null
-                : DabblerButton.icon(
-                    icon: 'edit',
-                    tone: DabblerButtonTone.neutral,
-                    size: DabblerButtonSize.small,
-                    semanticLabel: l10n.profile_btn_edit,
+                : DabblerTextLink(
+                    label: l10n.profile_btn_manage,
+                    underline: false,
+                    style: DabblerType.footnote
+                        .resolveForDirection(direction)
+                        .copyWith(fontWeight: DabblerType.semibold),
                     onPressed: onManage,
                   ),
           ),
@@ -65,41 +76,41 @@ class OwnProfileSportPicker extends StatelessWidget {
             ),
           )
         else
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(
+          DabblerChipRail(
+            size: DabblerChipSize.large,
+            padding: const EdgeInsetsDirectional.symmetric(
               horizontal: DabblerSpacing.space6,
             ),
-            child: Row(
-              children: <Widget>[
-                DabblerChip(
-                  label: l10n.user_profile_stat_sports,
-                  selected: selectedId == null,
-                  onTap: () => onSelect(null),
-                  leadingIcon: const DabblerIcon(
-                    'activity',
+            items: <DabblerChipRailItem>[
+              DabblerChipRailItem(
+                label: l10n.profile_sport_picker_all,
+                selected: selectedId == null,
+                onTap: () => onSelect(null),
+                leadingIcon: DabblerIcon(
+                  'activity',
+                  weight: selectedId == null
+                      ? DabblerIconWeight.bold
+                      : DabblerIconWeight.linear,
+                  size: DabblerSizing.iconSm,
+                ),
+              ),
+              for (final Sport s in sports)
+                DabblerChipRailItem(
+                  label: s.nameEn,
+                  selected: selectedId == s.id,
+                  accent: DabblerSportAccent.of(sportKeyOf(s)),
+                  dot: s.id == primaryId,
+                  onTap: () => onSelect(s.id),
+                  leadingIcon: OnboardingSportGlyph(
+                    sport: s,
+                    selected: selectedId == s.id,
                     size: DabblerSizing.iconSm,
+                    color: selectedId == s.id
+                        ? colors.onBrand
+                        : colors.textSecondary,
                   ),
                 ),
-                for (final Sport s in sports) ...<Widget>[
-                  const DabblerGap.h(DabblerSpacing.space2),
-                  DabblerChip(
-                    label: s.nameEn,
-                    selected: selectedId == s.id,
-                    dot: s.id == primaryId,
-                    onTap: () => onSelect(s.id),
-                    leadingIcon: OnboardingSportGlyph(
-                      sport: s,
-                      selected: selectedId == s.id,
-                      size: DabblerSizing.iconSm,
-                      color: selectedId == s.id
-                          ? colors.onBrand
-                          : colors.textPrimary,
-                    ),
-                  ),
-                ],
-              ],
-            ),
+            ],
           ),
       ],
     );

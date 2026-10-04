@@ -193,20 +193,15 @@ class _TransactionsHistoryViewState extends State<TransactionsHistoryView> {
     String selected,
     ValueChanged<String> onSelect,
   ) {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final item in items) ...[
-            DabblerChip(
-              label: item,
-              selected: selected == item,
-              onTap: () => onSelect(item),
-            ),
-            const DabblerGap.h(DabblerSpacing.space3),
-          ],
-        ],
-      ),
+    return DabblerChipRail(
+      items: [
+        for (final item in items)
+          DabblerChipRailItem(
+            label: item,
+            selected: selected == item,
+            onTap: () => onSelect(item),
+          ),
+      ],
     );
   }
 

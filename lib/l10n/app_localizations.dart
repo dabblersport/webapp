@@ -3956,7 +3956,7 @@ abstract class AppLocalizations {
   /// No description provided for @profile_manage_profiles_title.
   ///
   /// In en, this message translates to:
-  /// **'Manage Profiles'**
+  /// **'Switch profile'**
   String get profile_manage_profiles_title;
 
   /// No description provided for @profile_add_profile.
@@ -5326,6 +5326,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{sport} matches'**
   String profile_stat_sport_matches(String sport);
+
+  /// No description provided for @profile_create_another_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create another profile'**
+  String get profile_create_another_profile;
+
+  /// No description provided for @profile_create_persona_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Create {persona} profile'**
+  String profile_create_persona_profile(String persona);
+
+  /// No description provided for @sport_profile_overall_level.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} · overall level {level}'**
+  String sport_profile_overall_level(String sport, String level);
 }
 
 class _AppLocalizationsDelegate

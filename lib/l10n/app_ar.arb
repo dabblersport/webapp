@@ -1068,5 +1068,10 @@
   "profile_stat_rated": "تقييم اللاعبين",
   "profile_stat_primary_sports": "الرياضات الأساسية",
   "profile_stat_sport_matches": "مباريات {sport}",
-  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}}
+  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}},
+  "profile_create_another_profile": "إنشاء ملف شخصي آخر",
+  "profile_create_persona_profile": "إنشاء ملف {persona}",
+  "@profile_create_persona_profile": {"placeholders": {"persona": {"type": "String"}}},
+  "sport_profile_overall_level": "{sport} · المستوى العام {level}",
+  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}}
 }

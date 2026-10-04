@@ -44,6 +44,20 @@ class OwnProfileHeader extends StatelessWidget {
         _ => 'people',
       };
 
+  /// The persona badge's glyph in the identity block: the Profiles frames
+  /// draw the organiser badge with `people`, where the switch sheet uses the
+  /// calendar ([personaIcon]).
+  static String badgeIcon(String? persona) =>
+      persona?.toLowerCase() == 'organiser' ? 'people' : personaIcon(persona);
+
+  /// The name steps down with its length, as the Profiles frame does: up to
+  /// 14 characters 22/28, up to 20 characters 19/25, longer 17/22.
+  static DabblerTypeStyle nameStyle(String name) => name.length <= 14
+      ? DabblerType.title2
+      : name.length <= 20
+      ? DabblerType.displayNameMid
+      : DabblerType.displayNameSmall;
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
@@ -56,11 +70,13 @@ class OwnProfileHeader extends StatelessWidget {
 
     return DabblerSurface.brandTintBleed(
       child: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
+        // The counters are 45 tall touch targets (the frame's are 21), so the
+        // spacing around them gives up the 12 the target adds each side.
+        padding: EdgeInsetsDirectional.fromSTEB(
           DabblerSpacing.space6,
           DabblerSpacing.space6,
           DabblerSpacing.space6,
-          DabblerSpacing.space7,
+          actions == null ? DabblerSpacing.space3 : DabblerSpacing.space7,
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -81,15 +97,15 @@ class OwnProfileHeader extends StatelessWidget {
                         name.isNotEmpty
                             ? name
                             : l10n.profile_complete_your_profile,
-                        style: DabblerType.title2,
+                        style: nameStyle(name),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (username != null && username.isNotEmpty)
                         DabblerText(
                           '\u200E@$username',
-                          style: DabblerType.subheadline,
-                          tone: DabblerTextTone.secondary,
+                          style: DabblerType.smallTight,
+                          tone: DabblerTextTone.tertiary,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
@@ -109,7 +125,7 @@ class OwnProfileHeader extends StatelessWidget {
                     label: personaLabel(context, persona),
                     comfortable: true,
                     icon: DabblerIcon(
-                      personaIcon(persona),
+                      badgeIcon(persona),
                       weight: DabblerIconWeight.bold,
                       size: DabblerSizing.iconXs,
                     ),
@@ -131,12 +147,12 @@ class OwnProfileHeader extends StatelessWidget {
               bio != null && bio.isNotEmpty
                   ? bio
                   : l10n.profile_bio_placeholder,
-              style: DabblerType.subheadline,
+              style: DabblerType.copy,
               tone: DabblerTextTone.secondary,
               maxLines: 3,
               overflow: TextOverflow.ellipsis,
             ),
-            const DabblerGap.v(DabblerSpacing.space5),
+            const DabblerGap.v(DabblerSpacing.space1),
             Wrap(
               spacing: DabblerSpacing.space6,
               crossAxisAlignment: WrapCrossAlignment.center,
@@ -159,7 +175,7 @@ class OwnProfileHeader extends StatelessWidget {
               ],
             ),
             if (actions != null) ...<Widget>[
-              const DabblerGap.v(DabblerSpacing.space5),
+              const DabblerGap.v(DabblerSpacing.space1),
               actions!,
             ],
           ],

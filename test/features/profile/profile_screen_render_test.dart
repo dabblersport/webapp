@@ -317,7 +317,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerSheet), findsOneWidget);
       expect(find.text(l10n.profile_manage_profiles_title), findsWidgets);
-      expect(find.text(l10n.profile_add_profile), findsOneWidget);
+      expect(find.text(l10n.profile_create_another_profile), findsOneWidget);
       await _shoot(tester, 'profile-switch-sheet-$dir');
     });
   }

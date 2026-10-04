@@ -2912,4 +2912,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String profile_stat_sport_matches(String sport) {
     return 'مباريات $sport';
   }
+
+  @override
+  String get profile_create_another_profile => 'إنشاء ملف شخصي آخر';
+
+  @override
+  String profile_create_persona_profile(String persona) {
+    return 'إنشاء ملف $persona';
+  }
+
+  @override
+  String sport_profile_overall_level(String sport, String level) {
+    return '$sport · المستوى العام $level';
+  }
 }

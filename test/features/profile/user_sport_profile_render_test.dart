@@ -4,7 +4,9 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/data/models/sport_profiles/sport_profile.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_badge.dart';
+import 'package:dabbler/data/models/sport_profiles/sport_profile_tier.dart';
 import 'package:dabbler/data/models/sport_profiles/sport_profile_event.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_history_screen.dart'
     show PastGame;
@@ -268,6 +270,16 @@ Future<void> _pumpSport(
     _app(SportProfileScreen(args: args), locale, [
       sportProfileCoreProvider.overrideWith(
         (ref, a) async => SportProfileCoreData(
+          playerProfile: empty
+              ? null
+              : const SportProfile(
+                  profileId: 'profile-1',
+                  sportKey: 'padel',
+                  overallLevel: 1.0,
+                ),
+          playerTier: empty
+              ? null
+              : const SportProfileTier(id: 'tier-1', key: 'challenger'),
           metrics: empty
               ? const []
               : const [
@@ -413,7 +425,7 @@ void main() {
       await tester.tap(find.text('History'));
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerCardEventMedium), findsNWidgets(2));
+      expect(find.byType(DabblerProfileRow), findsNWidgets(2));
       await _shoot(tester, 'sport-profile-history-$dir');
     });
 

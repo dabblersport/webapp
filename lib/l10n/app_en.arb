@@ -831,7 +831,7 @@
   "profile_btn_edit": "Edit profile",
   "profile_btn_share": "Share profile",
   "profile_btn_manage_profiles_tooltip": "Manage profiles",
-  "profile_manage_profiles_title": "Manage Profiles",
+  "profile_manage_profiles_title": "Switch profile",
   "profile_add_profile": "Add Profile",
   "profile_no_profiles_found": "No profiles found",
   "profile_error_loading_profiles": "Error loading profiles",
@@ -1114,5 +1114,10 @@
   "profile_stat_rated": "Rated by players",
   "profile_stat_primary_sports": "Primary sports",
   "profile_stat_sport_matches": "{sport} matches",
-  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}}
+  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}},
+  "profile_create_another_profile": "Create another profile",
+  "profile_create_persona_profile": "Create {persona} profile",
+  "@profile_create_persona_profile": {"placeholders": {"persona": {"type": "String"}}},
+  "sport_profile_overall_level": "{sport} · overall level {level}",
+  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}}
 }
