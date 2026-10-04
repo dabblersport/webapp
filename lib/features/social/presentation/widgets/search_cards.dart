@@ -145,6 +145,7 @@ class SearchPersonRow extends StatelessWidget {
       size: DabblerButtonSize.small,
       onPressed: onTap,
     ),
+    flat: true,
     onTap: onTap,
   );
 }
@@ -230,6 +231,7 @@ class SearchTileCard extends StatelessWidget {
           icon,
           weight: DabblerIconWeight.bold,
           tone: DabblerIconTileTone.sunken,
+          size: DabblerSizing.tileSm,
         ),
         Expanded(
           child: Column(
@@ -438,4 +440,66 @@ class SearchCommentCard extends StatelessWidget {
       ],
     ),
   );
+}
+
+/// A game as the events row of `View_all_events` (date tile, kind, Join). The
+/// card and Join both open the game.
+class SearchGameEventCard extends StatelessWidget {
+  const SearchGameEventCard({
+    super.key,
+    required this.game,
+    required this.query,
+  });
+
+  final GameModel game;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = game.scheduledDate;
+    void open() => context.push(RoutePaths.gameDetail(game.id));
+    return DabblerCardEventResult(
+      month: DateFormat('MMM').format(d),
+      day: DateFormat('d').format(d),
+      kind: 'Game',
+      kindIcon: 'game',
+      time: _formatWhen(d),
+      title: game.title,
+      query: searchNeedle(query),
+      place: (game.venueName ?? '').isEmpty ? null : game.venueName,
+      meta: game.maxPlayers > 0
+          ? '${game.currentPlayers}/${game.maxPlayers} spots'
+          : null,
+      actionLabel: 'Join',
+      onAction: open,
+      onTap: open,
+    );
+  }
+}
+
+/// A meet-up as the events row of `View_all_events`. The app has no RSVP or
+/// meet-up detail route, so it carries no action.
+class SearchMeetupEventCard extends StatelessWidget {
+  const SearchMeetupEventCard({
+    super.key,
+    required this.meetup,
+    required this.query,
+  });
+
+  final MeetupSearchResult meetup;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final d = meetup.startAt;
+    return DabblerCardEventResult(
+      month: d == null ? '' : DateFormat('MMM').format(d),
+      day: d == null ? '' : DateFormat('d').format(d),
+      kind: 'Meet-up',
+      kindIcon: 'calendar',
+      time: d == null ? '' : _formatWhen(d),
+      title: meetup.title,
+      query: searchNeedle(query),
+    );
+  }
 }
