@@ -339,6 +339,21 @@ void main() {
         // ...and the post-condition block checks them (single-quoted signature).
         expect(sql, contains("'$sig'"), reason: sig);
       }
+      // meetup_slots_left is a definer function but closed to clients.
+      expect(
+        sql,
+        contains(
+          'REVOKE ALL ON FUNCTION public.meetup_slots_left(uuid) '
+          'FROM PUBLIC, anon, authenticated;',
+        ),
+      );
+      expect(
+        sql,
+        contains(
+          'GRANT EXECUTE ON FUNCTION public.meetup_slots_left(uuid) '
+          'TO service_role;',
+        ),
+      );
       // anon keeps EXECUTE on the rsvp-eligibility check (it answers 'anon').
       expect(
         sql.contains(
@@ -404,6 +419,15 @@ void main() {
         ).hasMatch(probes),
         isFalse,
       );
+    });
+
+    test('has the eligibility-after-revoke and remove_attendee probes', () {
+      expect(probes, contains("'cta' <> 'already'"));
+      expect(probes, contains('B4b FAIL: cta'));
+      expect(probes, contains('rpc_meetup_remove_attendee(mid, u1)'));
+      expect(probes, contains("'cannot_remove_host'"));
+      expect(probes, contains('non-host remove_attendee'));
+      expect(probes, contains('meetup_slots_left(uuid)'));
     });
 
     test('covers each required behavioural scenario', () {

@@ -79,6 +79,12 @@ ALTER FUNCTION public.can_current_user_rsvp_meetup(uuid, uuid) SECURITY DEFINER;
 ALTER FUNCTION public.can_current_user_rsvp_meetup(uuid, uuid) SET search_path = public;
 ALTER FUNCTION public.meetup_slots_left(uuid) SECURITY DEFINER;
 ALTER FUNCTION public.meetup_slots_left(uuid) SET search_path = public;
+-- meetup_slots_left must not be callable by clients (as a definer function it
+-- would leak the existence and capacity of private meetups). Its only callers,
+-- rpc_meetup_rsvp and rpc_meetup_decide_request, are SECURITY DEFINER themselves;
+-- nothing in lib/, supabase/functions or test/ calls it.
+REVOKE ALL ON FUNCTION public.meetup_slots_left(uuid) FROM PUBLIC, anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.meetup_slots_left(uuid) TO service_role;
 
 -- ============================================================================
 -- (i) Retire duplicates. git grep over Canary, Alpha, the KAN-428 branch (lib,
@@ -834,6 +840,20 @@ BEGIN
       RAISE EXCEPTION 'POST-CONDITION FAILED: % has no search_path', v_sig;
     END IF;
   END LOOP;
+
+  -- meetup_slots_left is closed to clients (see the grants after section (c)).
+  v_oid := 'public.meetup_slots_left(uuid)'::regprocedure;
+  IF has_function_privilege('anon', v_oid, 'EXECUTE')
+     OR has_function_privilege('authenticated', v_oid, 'EXECUTE') THEN
+    RAISE EXCEPTION 'POST-CONDITION FAILED: anon/authenticated can EXECUTE meetup_slots_left(uuid)';
+  END IF;
+  IF EXISTS (
+    SELECT 1 FROM pg_proc p,
+           aclexplode(COALESCE(p.proacl, acldefault('f', p.proowner))) a
+     WHERE p.oid = v_oid AND a.grantee = 0 AND a.privilege_type = 'EXECUTE'
+  ) THEN
+    RAISE EXCEPTION 'POST-CONDITION FAILED: PUBLIC can EXECUTE meetup_slots_left(uuid)';
+  END IF;
 
   IF EXISTS (SELECT 1 FROM pg_policy
               WHERE polrelid = 'public.meetup_rsvps'::regclass AND polname = 'rsvp_self_write') THEN

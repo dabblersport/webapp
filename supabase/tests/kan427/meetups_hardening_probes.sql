@@ -159,6 +159,9 @@ begin
   end loop;
   if not has_function_privilege('anon','public.can_current_user_rsvp_meetup(uuid, uuid)','EXECUTE') then
     raise exception 'B4b FAIL: anon lost EXECUTE on can_current_user_rsvp_meetup'; end if;
+  if has_function_privilege('anon','public.meetup_slots_left(uuid)','EXECUTE')
+     or has_function_privilege('authenticated','public.meetup_slots_left(uuid)','EXECUTE') then
+    raise exception 'B4b FAIL: anon or authenticated can EXECUTE meetup_slots_left(uuid)'; end if;
   raise notice 'B4b PASS';
 end $$;
 
@@ -279,6 +282,9 @@ begin
   set local role authenticated;
   st := public.rpc_meetup_rsvp(mid, 'request', null, null);
   if st <> 'pending' then raise exception 'C2 FAIL: request gave %', st; end if;
+  -- B4b behavioural: the definer eligibility check still works for the caller after the grant revoke
+  if public.can_current_user_rsvp_meetup(mid, null)->>'cta' <> 'already' then
+    raise exception 'B4b FAIL: cta %', public.can_current_user_rsvp_meetup(mid, null)->>'cta'; end if;
 
   -- non-host decide fails
   begin
@@ -332,6 +338,29 @@ begin
   -- ---- attendees list reads meetup_rsvps (host sees pending/cancelled too)
   if not exists (select 1 from public.rpc_meetup_attendees(mid) a where a.status = 'going') then
     raise exception 'C2 FAIL: attendees list empty / not from meetup_rsvps'; end if;
+
+  -- ---- rpc_meetup_remove_attendee: host removes a going attendee; the host cannot be removed
+  if public.rpc_meetup_remove_attendee(mid, u1) <> 'cancelled' then
+    raise exception 'C2 FAIL: host remove_attendee did not return cancelled'; end if;
+  begin
+    perform public.rpc_meetup_remove_attendee(mid, host_u);
+    raise exception 'C2 FAIL: removing the host accepted';
+  exception when others then
+    if sqlerrm like 'C2 FAIL%' then raise; end if;
+    if sqlerrm <> 'cannot_remove_host' then raise exception 'C2 FAIL: remove host gave %', sqlerrm; end if;
+  end;
+  reset role;
+
+  -- non-host remove_attendee fails
+  perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role','authenticated')::text, true);
+  set local role authenticated;
+  begin
+    perform public.rpc_meetup_remove_attendee(mid, u3);
+    raise exception 'C2 FAIL: non-host remove_attendee allowed';
+  exception when others then
+    if sqlerrm like 'C2 FAIL%' then raise; end if;
+    if sqlerrm <> 'not_host' then raise exception 'C2 FAIL: non-host remove_attendee gave %', sqlerrm; end if;
+  end;
   reset role;
 
   -- ---- non-host cancel fails; non-host update fails
