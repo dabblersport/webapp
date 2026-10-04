@@ -106,10 +106,52 @@ void main() {
 
   test('update ok + failure', () async {
     const u = UpdateMeetupInput(meetupId: 'm', title: 'New');
-    when(ds.update(any)).thenAnswer((_) async {});
-    expect((await repo.update(u)).isSuccess, isTrue);
+    when(ds.update(any)).thenAnswer(
+      (_) async => {'id': 'm', 'title': 'New', 'is_host': true},
+    );
+    final card = (await repo.update(u)).requireValue;
+    expect(card.title, 'New');
+    expect(card.isHost, isTrue);
     when(ds.update(any)).thenThrow(boom);
     expectFailure(await repo.update(u));
+  });
+
+  test('decideRequest and removeAttendee ok + failure', () async {
+    when(ds.decideRequest('m', 'u', 'approve')).thenAnswer((_) async => 'interested');
+    when(ds.decideRequest('m', 'u', 'decline')).thenAnswer((_) async => 'cancelled');
+    when(ds.removeAttendee('m', 'u')).thenAnswer((_) async => 'cancelled');
+    expect((await repo.decideRequest('m', 'u', MeetupDecision.approve)).requireValue,
+        RsvpStatus.interested);
+    expect((await repo.decideRequest('m', 'u', MeetupDecision.decline)).requireValue,
+        RsvpStatus.cancelled);
+    expect((await repo.removeAttendee('m', 'u')).requireValue, RsvpStatus.cancelled);
+    when(ds.removeAttendee('m', 'u')).thenThrow(boom);
+    expectFailure(await repo.removeAttendee('m', 'u'));
+  });
+
+  test('RPC error messages map to typed failures', () async {
+    const expected = {
+      'organiser_required': FailureCode.forbidden,
+      'visibility_not_supported': FailureCode.validation,
+      'free_meetups_only': FailureCode.validation,
+      'not_host': FailureCode.forbidden,
+      'meetup_cancelled': FailureCode.conflict,
+      'capacity_below_going_count': FailureCode.conflict,
+      'invalid_capacity': FailureCode.validation,
+      'title_invalid': FailureCode.validation,
+      'invalid_time_range': FailureCode.validation,
+      'no_pending_request': FailureCode.conflict,
+      'invalid_decision': FailureCode.validation,
+      'cannot_remove_host': FailureCode.forbidden,
+      'attendee_not_found': FailureCode.notFound,
+      'auth_required': FailureCode.unauthorized,
+    };
+    for (final e in expected.entries) {
+      when(ds.cancel('m')).thenThrow(Exception('PostgrestException(message: ${e.key}, code: P0001)'));
+      final f = (await repo.cancel('m')).requireError;
+      expect(f.category, e.value, reason: e.key);
+      expect(f.code, e.key);
+    }
   });
 
   test('list, sports, variants ok + failure', () async {

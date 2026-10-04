@@ -6,6 +6,7 @@ import '../../domain/models/meetup_inputs.dart';
 import '../../domain/models/meetup_models.dart';
 import '../../domain/repositories/meetup_repository.dart';
 import '../datasources/meetup_datasource.dart';
+import '../mappers/meetup_failures.dart';
 import '../mappers/meetup_mappers.dart';
 
 class MeetupRepositoryImpl implements MeetupRepository {
@@ -13,7 +14,7 @@ class MeetupRepositoryImpl implements MeetupRepository {
   final MeetupDataSource _ds;
 
   Future<Result<T, Failure>> _guard<T>(Future<T> Function() body) =>
-      Result.guard<T, Failure>(body, (e) => Failure.from(e));
+      Result.guard<T, Failure>(body, MeetupFailures.from);
 
   @override
   Future<Result<List<MeetupListItem>, Failure>> fetchMeetups({
@@ -106,8 +107,27 @@ class MeetupRepositoryImpl implements MeetupRepository {
   Future<Result<void, Failure>> cancel(String meetupId) =>
       _guard(() => _ds.cancel(meetupId));
 
-  // requires KAN-427 migration
   @override
-  Future<Result<void, Failure>> update(UpdateMeetupInput input) =>
-      _guard(() => _ds.update(input));
+  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) => _guard(
+    () async => MeetupMappers.card(await _ds.update(input)),
+  );
+
+  @override
+  Future<Result<RsvpStatus, Failure>> decideRequest(
+    String meetupId,
+    String userId,
+    MeetupDecision decision,
+  ) => _guard(
+    () async => RsvpStatus.fromDb(
+      await _ds.decideRequest(meetupId, userId, decision.rpcValue),
+    ),
+  );
+
+  @override
+  Future<Result<RsvpStatus, Failure>> removeAttendee(
+    String meetupId,
+    String userId,
+  ) => _guard(
+    () async => RsvpStatus.fromDb(await _ds.removeAttendee(meetupId, userId)),
+  );
 }

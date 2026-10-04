@@ -91,15 +91,27 @@ void main() {
     expect(body(), {'p_meetup_id': 'm'});
   });
 
-  test('update targets rpc_meetup_update (KAN-427) with plan param names', () async {
-    ds = build((r) => _ok(r, jsonEncode('ok')));
-    await ds.update(const UpdateMeetupInput(meetupId: 'm', title: 'N', capacity: 4));
+  test('update targets rpc_meetup_update with its final param names', () async {
+    ds = build((r) => _ok(r, jsonEncode({'id': 'm'})));
+    final card = await ds.update(const UpdateMeetupInput(meetupId: 'm', title: 'N', capacity: 4));
+    expect(card, isA<Map<String, dynamic>>());
     expect(path(), '/rest/v1/rpc/rpc_meetup_update');
     expect(body().keys.toSet(), {
       'p_meetup_id', 'p_title', 'p_description', 'p_start_at',
       'p_end_at', 'p_location_name', 'p_capacity',
     });
     expect(body()['p_capacity'], 4);
+  });
+
+  test('decide_request and remove_attendee names and keys', () async {
+    ds = build((r) => _ok(r, jsonEncode('going')));
+    expect(await ds.decideRequest('m', 'u', 'approve'), 'going');
+    expect(path(), '/rest/v1/rpc/rpc_meetup_decide_request');
+    expect(body(), {'p_meetup_id': 'm', 'p_user_id': 'u', 'p_decision': 'approve'});
+    ds = build((r) => _ok(r, jsonEncode('cancelled')));
+    expect(await ds.removeAttendee('m', 'u'), 'cancelled');
+    expect(path(), '/rest/v1/rpc/rpc_meetup_remove_attendee');
+    expect(body(), {'p_meetup_id': 'm', 'p_user_id': 'u'});
   });
 
   test('retired overload names are never used', () {

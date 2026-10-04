@@ -62,6 +62,15 @@ enum RsvpAction {
   final String rpcValue;
 }
 
+/// `p_decision` accepted by `rpc_meetup_decide_request`.
+enum MeetupDecision {
+  approve('approve'),
+  decline('decline');
+
+  const MeetupDecision(this.rpcValue);
+  final String rpcValue;
+}
+
 /// `cta` values returned by `can_current_user_rsvp_meetup`.
 enum RsvpCta {
   rsvpGoing('rsvp_going'),

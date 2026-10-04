@@ -55,6 +55,20 @@ abstract class MeetupRepository {
 
   Future<Result<void, Failure>> cancel(String meetupId);
 
-  // requires KAN-427 migration
-  Future<Result<void, Failure>> update(UpdateMeetupInput input);
+  /// Host edit; returns the refreshed card.
+  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input);
+
+  /// Host approves/declines a pending request. Approve may yield
+  /// [RsvpStatus.interested] when the meetup is full; decline yields cancelled.
+  Future<Result<RsvpStatus, Failure>> decideRequest(
+    String meetupId,
+    String userId,
+    MeetupDecision decision,
+  );
+
+  /// Host removes an attendee; yields [RsvpStatus.cancelled].
+  Future<Result<RsvpStatus, Failure>> removeAttendee(
+    String meetupId,
+    String userId,
+  );
 }

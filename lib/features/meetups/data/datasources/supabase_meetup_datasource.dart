@@ -138,12 +138,34 @@ class SupabaseMeetupDataSource implements MeetupDataSource {
     );
   }
 
-  // requires KAN-427 migration
   @override
-  Future<void> update(UpdateMeetupInput input) async {
-    await _client.rpc(
+  Future<Map<String, dynamic>> update(UpdateMeetupInput input) async {
+    final data = await _client.rpc(
       SupabaseConfig.rpcMeetupUpdateFn,
       params: MeetupRpcParams.update(input),
     );
+    return Map<String, dynamic>.from(data as Map);
+  }
+
+  @override
+  Future<String> decideRequest(
+    String meetupId,
+    String userId,
+    String decision,
+  ) async {
+    final data = await _client.rpc(
+      SupabaseConfig.rpcMeetupDecideRequestFn,
+      params: MeetupRpcParams.decideRequest(meetupId, userId, decision),
+    );
+    return data.toString();
+  }
+
+  @override
+  Future<String> removeAttendee(String meetupId, String userId) async {
+    final data = await _client.rpc(
+      SupabaseConfig.rpcMeetupRemoveAttendeeFn,
+      params: MeetupRpcParams.removeAttendee(meetupId, userId),
+    );
+    return data.toString();
   }
 }

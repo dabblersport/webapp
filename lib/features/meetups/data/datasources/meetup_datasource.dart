@@ -65,6 +65,17 @@ class MeetupRpcParams {
     'p_radius': radius,
   };
 
+  static Map<String, dynamic> decideRequest(
+    String meetupId,
+    String userId,
+    String decision,
+  ) => {'p_meetup_id': meetupId, 'p_user_id': userId, 'p_decision': decision};
+
+  static Map<String, dynamic> removeAttendee(
+    String meetupId,
+    String userId,
+  ) => {'p_meetup_id': meetupId, 'p_user_id': userId};
+
   static Map<String, dynamic> canCreate(String actorProfileId) => {
     'p_actor': actorProfileId,
   };
@@ -73,7 +84,6 @@ class MeetupRpcParams {
     'p_meetup_id': meetupId,
   };
 
-  // requires KAN-427 migration: parameter names modelled from the plan.
   static Map<String, dynamic> update(UpdateMeetupInput i) => {
     'p_meetup_id': i.meetupId,
     'p_title': i.title,
@@ -110,5 +120,7 @@ abstract class MeetupDataSource {
   Future<String> create(CreateMeetupInput input, {required String actorType});
   Future<String> rsvp(String meetupId, String action, {String? profileId});
   Future<void> cancel(String meetupId);
-  Future<void> update(UpdateMeetupInput input);
+  Future<Map<String, dynamic>> update(UpdateMeetupInput input);
+  Future<String> decideRequest(String meetupId, String userId, String decision);
+  Future<String> removeAttendee(String meetupId, String userId);
 }

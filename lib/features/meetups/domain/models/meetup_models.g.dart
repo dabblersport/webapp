@@ -148,6 +148,7 @@ _$MeetupCountsImpl _$$MeetupCountsImplFromJson(Map<String, dynamic> json) =>
       going: (json['going'] as num?)?.toInt() ?? 0,
       interested: (json['interested'] as num?)?.toInt() ?? 0,
       declined: (json['declined'] as num?)?.toInt() ?? 0,
+      pending: (json['pending'] as num?)?.toInt(),
     );
 
 Map<String, dynamic> _$$MeetupCountsImplToJson(_$MeetupCountsImpl instance) =>
@@ -155,17 +156,25 @@ Map<String, dynamic> _$$MeetupCountsImplToJson(_$MeetupCountsImpl instance) =>
       'going': instance.going,
       'interested': instance.interested,
       'declined': instance.declined,
+      'pending': instance.pending,
     };
 
 _$MeetupCardImpl _$$MeetupCardImplFromJson(Map<String, dynamic> json) =>
     _$MeetupCardImpl(
       id: json['id'] as String,
       title: json['title'] as String?,
+      description: json['description'] as String?,
       startAt: json['start_at'] == null
           ? null
           : DateTime.parse(json['start_at'] as String),
+      endAt: json['end_at'] == null
+          ? null
+          : DateTime.parse(json['end_at'] as String),
+      locationName: json['location_name'] as String?,
+      capacity: (json['capacity'] as num?)?.toInt(),
+      isCancelled: json['is_cancelled'] as bool? ?? false,
+      isHost: json['is_host'] as bool? ?? false,
       visibility: json['visibility'] as String?,
-      ownerUserId: json['owner_user_id'] as String?,
       ownerProfileId: json['owner_profile_id'] as String?,
       host: json['host'] == null
           ? null
@@ -180,9 +189,14 @@ Map<String, dynamic> _$$MeetupCardImplToJson(_$MeetupCardImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
       'title': instance.title,
+      'description': instance.description,
       'start_at': instance.startAt?.toIso8601String(),
+      'end_at': instance.endAt?.toIso8601String(),
+      'location_name': instance.locationName,
+      'capacity': instance.capacity,
+      'is_cancelled': instance.isCancelled,
+      'is_host': instance.isHost,
       'visibility': instance.visibility,
-      'owner_user_id': instance.ownerUserId,
       'owner_profile_id': instance.ownerProfileId,
       'host': instance.host,
       'counts': instance.counts,
@@ -191,7 +205,7 @@ Map<String, dynamic> _$$MeetupCardImplToJson(_$MeetupCardImpl instance) =>
 
 _$MeetupAttendeeImpl _$$MeetupAttendeeImplFromJson(Map<String, dynamic> json) =>
     _$MeetupAttendeeImpl(
-      actorProfileId: json['actor_profile_id'] as String,
+      actorProfileId: json['actor_profile_id'] as String?,
       displayName: json['display_name'] as String?,
       username: json['username'] as String?,
       status:

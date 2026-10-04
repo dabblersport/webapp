@@ -32,7 +32,8 @@ class CreateMeetupInput {
   final String rsvpPolicy;
 }
 
-/// Input for `rpc_meetup_update` (requires KAN-427 migration). Null = unchanged.
+/// Input for `rpc_meetup_update`. Null = unchanged (the RPC cannot clear
+/// description, end time or capacity).
 class UpdateMeetupInput {
   const UpdateMeetupInput({
     required this.meetupId,

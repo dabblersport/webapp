@@ -100,23 +100,29 @@ abstract class MeetupCounts with _$MeetupCounts {
     @Default(0) int going,
     @Default(0) int interested,
     @Default(0) int declined,
+    // Host-only: the RPC omits `pending` for everyone else.
+    int? pending,
   }) = _MeetupCounts;
 
   factory MeetupCounts.fromJson(Map<String, dynamic> json) =>
       _$MeetupCountsFromJson(json);
 }
 
-/// jsonb returned by `rpc_meetup_card`. Shape per the baseline body; the body
-/// reads columns the baseline table lacks (see KAN-428 open questions), so
-/// every field except [id] is optional.
+/// jsonb returned by `rpc_meetup_card` (and by `rpc_meetup_update`), final
+/// shape from the meetups hardening migration. No creator user id is exposed.
 @freezed
 abstract class MeetupCard with _$MeetupCard {
   const factory MeetupCard({
     required String id,
     String? title,
+    String? description,
     @JsonKey(name: 'start_at') DateTime? startAt,
+    @JsonKey(name: 'end_at') DateTime? endAt,
+    @JsonKey(name: 'location_name') String? locationName,
+    int? capacity,
+    @JsonKey(name: 'is_cancelled') @Default(false) bool isCancelled,
+    @JsonKey(name: 'is_host') @Default(false) bool isHost,
     String? visibility,
-    @JsonKey(name: 'owner_user_id') String? ownerUserId,
     @JsonKey(name: 'owner_profile_id') String? ownerProfileId,
     MeetupHost? host,
     @Default(MeetupCounts()) MeetupCounts counts,
@@ -131,7 +137,8 @@ abstract class MeetupCard with _$MeetupCard {
 @freezed
 abstract class MeetupAttendee with _$MeetupAttendee {
   const factory MeetupAttendee({
-    @JsonKey(name: 'actor_profile_id') required String actorProfileId,
+    // meetup_rsvps.profile_id is nullable.
+    @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown)

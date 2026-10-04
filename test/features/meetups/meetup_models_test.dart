@@ -69,16 +69,28 @@ void main() {
       'title': 'T',
       'start_at': '2026-11-01T10:00:00Z',
       'visibility': 'public',
-      'owner_user_id': 'u',
+      'description': 'Easy pace',
+      'end_at': '2026-11-01T11:00:00Z',
+      'location_name': 'Park',
+      'capacity': 12,
+      'is_cancelled': false,
+      'is_host': true,
+      'owner_profile_id': 'pp',
       'host': {'actor_profile_id': 'p', 'display_name': 'H', 'username': 'h'},
-      'counts': {'going': 3, 'interested': 1, 'declined': 0},
+      'counts': {'going': 3, 'interested': 1, 'declined': 0, 'pending': 2},
       'my_status': 'going',
     });
     expect(c.host!.displayName, 'H');
     expect(c.counts.going, 3);
+    expect(c.counts.pending, 2);
+    expect(c.isHost, isTrue);
+    expect(c.locationName, 'Park');
+    expect(c.toJson().containsKey('owner_user_id'), isFalse);
     final sparse = MeetupCard.fromJson({'id': 'm'});
     expect(sparse.counts.going, 0);
     expect(sparse.host, isNull);
+    expect(sparse.counts.pending, isNull);
+    expect(sparse.isHost, isFalse);
   });
 
   test('attendee status + eligibility + sport shapes', () {

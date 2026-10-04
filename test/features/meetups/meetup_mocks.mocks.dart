@@ -226,11 +226,57 @@ class MockMeetupDataSource extends _i1.Mock implements _i2.MeetupDataSource {
           as _i3.Future<void>);
 
   @override
-  _i3.Future<void> update(_i4.UpdateMeetupInput? input) =>
+  _i3.Future<Map<String, dynamic>> update(_i4.UpdateMeetupInput? input) =>
       (super.noSuchMethod(
             Invocation.method(#update, [input]),
-            returnValue: _i3.Future<void>.value(),
-            returnValueForMissingStub: _i3.Future<void>.value(),
+            returnValue: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
+            returnValueForMissingStub: _i3.Future<Map<String, dynamic>>.value(
+              <String, dynamic>{},
+            ),
           )
-          as _i3.Future<void>);
+          as _i3.Future<Map<String, dynamic>>);
+
+  @override
+  _i3.Future<String> decideRequest(
+    String? meetupId,
+    String? userId,
+    String? decision,
+  ) =>
+      (super.noSuchMethod(
+            Invocation.method(#decideRequest, [meetupId, userId, decision]),
+            returnValue: _i3.Future<String>.value(
+              _i5.dummyValue<String>(
+                this,
+                Invocation.method(#decideRequest, [meetupId, userId, decision]),
+              ),
+            ),
+            returnValueForMissingStub: _i3.Future<String>.value(
+              _i5.dummyValue<String>(
+                this,
+                Invocation.method(#decideRequest, [meetupId, userId, decision]),
+              ),
+            ),
+          )
+          as _i3.Future<String>);
+
+  @override
+  _i3.Future<String> removeAttendee(String? meetupId, String? userId) =>
+      (super.noSuchMethod(
+            Invocation.method(#removeAttendee, [meetupId, userId]),
+            returnValue: _i3.Future<String>.value(
+              _i5.dummyValue<String>(
+                this,
+                Invocation.method(#removeAttendee, [meetupId, userId]),
+              ),
+            ),
+            returnValueForMissingStub: _i3.Future<String>.value(
+              _i5.dummyValue<String>(
+                this,
+                Invocation.method(#removeAttendee, [meetupId, userId]),
+              ),
+            ),
+          )
+          as _i3.Future<String>);
 }

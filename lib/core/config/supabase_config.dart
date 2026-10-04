@@ -177,7 +177,9 @@ class SupabaseConfig {
   static const String rpcMeetupCancelFn = 'rpc_meetup_cancel';
   static const String rpcMeetupCardFn = 'rpc_meetup_card';
   static const String rpcMeetupAttendeesFn = 'rpc_meetup_attendees';
-  static const String rpcMeetupUpdateFn = 'rpc_meetup_update'; // requires KAN-427 migration
+  static const String rpcMeetupUpdateFn = 'rpc_meetup_update';
+  static const String rpcMeetupDecideRequestFn = 'rpc_meetup_decide_request';
+  static const String rpcMeetupRemoveAttendeeFn = 'rpc_meetup_remove_attendee';
   static const String getNearbyMeetupsFn = 'getnearbymeetups';
   static const String canCreateMeetupFn = 'can_create_meetup';
   static const String canCurrentUserRsvpMeetupFn = 'can_current_user_rsvp_meetup';

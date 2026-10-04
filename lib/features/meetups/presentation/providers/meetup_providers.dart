@@ -138,10 +138,28 @@ class MeetupActionsController {
     return r;
   }
 
-  // requires KAN-427 migration
-  Future<Result<void, Failure>> update(UpdateMeetupInput input) async {
+  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) async {
     final r = await _repo.update(input);
     if (r.isSuccess) _refresh(input.meetupId);
+    return r;
+  }
+
+  Future<Result<RsvpStatus, Failure>> decideRequest(
+    String meetupId,
+    String userId,
+    MeetupDecision decision,
+  ) async {
+    final r = await _repo.decideRequest(meetupId, userId, decision);
+    if (r.isSuccess) _refresh(meetupId);
+    return r;
+  }
+
+  Future<Result<RsvpStatus, Failure>> removeAttendee(
+    String meetupId,
+    String userId,
+  ) async {
+    final r = await _repo.removeAttendee(meetupId, userId);
+    if (r.isSuccess) _refresh(meetupId);
     return r;
   }
 }

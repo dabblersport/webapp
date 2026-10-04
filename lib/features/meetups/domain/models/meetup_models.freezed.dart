@@ -1576,7 +1576,9 @@ MeetupCounts _$MeetupCountsFromJson(Map<String, dynamic> json) {
 mixin _$MeetupCounts {
   int get going => throw _privateConstructorUsedError;
   int get interested => throw _privateConstructorUsedError;
-  int get declined => throw _privateConstructorUsedError;
+  int get declined =>
+      throw _privateConstructorUsedError; // Host-only: the RPC omits `pending` for everyone else.
+  int? get pending => throw _privateConstructorUsedError;
 
   /// Serializes this MeetupCounts to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -1595,7 +1597,7 @@ abstract class $MeetupCountsCopyWith<$Res> {
     $Res Function(MeetupCounts) then,
   ) = _$MeetupCountsCopyWithImpl<$Res, MeetupCounts>;
   @useResult
-  $Res call({int going, int interested, int declined});
+  $Res call({int going, int interested, int declined, int? pending});
 }
 
 /// @nodoc
@@ -1616,6 +1618,7 @@ class _$MeetupCountsCopyWithImpl<$Res, $Val extends MeetupCounts>
     Object? going = null,
     Object? interested = null,
     Object? declined = null,
+    Object? pending = freezed,
   }) {
     return _then(
       _value.copyWith(
@@ -1631,6 +1634,10 @@ class _$MeetupCountsCopyWithImpl<$Res, $Val extends MeetupCounts>
                 ? _value.declined
                 : declined // ignore: cast_nullable_to_non_nullable
                       as int,
+            pending: freezed == pending
+                ? _value.pending
+                : pending // ignore: cast_nullable_to_non_nullable
+                      as int?,
           )
           as $Val,
     );
@@ -1646,7 +1653,7 @@ abstract class _$$MeetupCountsImplCopyWith<$Res>
   ) = __$$MeetupCountsImplCopyWithImpl<$Res>;
   @override
   @useResult
-  $Res call({int going, int interested, int declined});
+  $Res call({int going, int interested, int declined, int? pending});
 }
 
 /// @nodoc
@@ -1666,6 +1673,7 @@ class __$$MeetupCountsImplCopyWithImpl<$Res>
     Object? going = null,
     Object? interested = null,
     Object? declined = null,
+    Object? pending = freezed,
   }) {
     return _then(
       _$MeetupCountsImpl(
@@ -1681,6 +1689,10 @@ class __$$MeetupCountsImplCopyWithImpl<$Res>
             ? _value.declined
             : declined // ignore: cast_nullable_to_non_nullable
                   as int,
+        pending: freezed == pending
+            ? _value.pending
+            : pending // ignore: cast_nullable_to_non_nullable
+                  as int?,
       ),
     );
   }
@@ -1693,6 +1705,7 @@ class _$MeetupCountsImpl implements _MeetupCounts {
     this.going = 0,
     this.interested = 0,
     this.declined = 0,
+    this.pending,
   });
 
   factory _$MeetupCountsImpl.fromJson(Map<String, dynamic> json) =>
@@ -1707,10 +1720,13 @@ class _$MeetupCountsImpl implements _MeetupCounts {
   @override
   @JsonKey()
   final int declined;
+  // Host-only: the RPC omits `pending` for everyone else.
+  @override
+  final int? pending;
 
   @override
   String toString() {
-    return 'MeetupCounts(going: $going, interested: $interested, declined: $declined)';
+    return 'MeetupCounts(going: $going, interested: $interested, declined: $declined, pending: $pending)';
   }
 
   @override
@@ -1722,12 +1738,14 @@ class _$MeetupCountsImpl implements _MeetupCounts {
             (identical(other.interested, interested) ||
                 other.interested == interested) &&
             (identical(other.declined, declined) ||
-                other.declined == declined));
+                other.declined == declined) &&
+            (identical(other.pending, pending) || other.pending == pending));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(runtimeType, going, interested, declined);
+  int get hashCode =>
+      Object.hash(runtimeType, going, interested, declined, pending);
 
   /// Create a copy of MeetupCounts
   /// with the given fields replaced by the non-null parameter values.
@@ -1748,6 +1766,7 @@ abstract class _MeetupCounts implements MeetupCounts {
     final int going,
     final int interested,
     final int declined,
+    final int? pending,
   }) = _$MeetupCountsImpl;
 
   factory _MeetupCounts.fromJson(Map<String, dynamic> json) =
@@ -1758,7 +1777,9 @@ abstract class _MeetupCounts implements MeetupCounts {
   @override
   int get interested;
   @override
-  int get declined;
+  int get declined; // Host-only: the RPC omits `pending` for everyone else.
+  @override
+  int? get pending;
 
   /// Create a copy of MeetupCounts
   /// with the given fields replaced by the non-null parameter values.
@@ -1776,11 +1797,19 @@ MeetupCard _$MeetupCardFromJson(Map<String, dynamic> json) {
 mixin _$MeetupCard {
   String get id => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
+  String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'start_at')
   DateTime? get startAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'end_at')
+  DateTime? get endAt => throw _privateConstructorUsedError;
+  @JsonKey(name: 'location_name')
+  String? get locationName => throw _privateConstructorUsedError;
+  int? get capacity => throw _privateConstructorUsedError;
+  @JsonKey(name: 'is_cancelled')
+  bool get isCancelled => throw _privateConstructorUsedError;
+  @JsonKey(name: 'is_host')
+  bool get isHost => throw _privateConstructorUsedError;
   String? get visibility => throw _privateConstructorUsedError;
-  @JsonKey(name: 'owner_user_id')
-  String? get ownerUserId => throw _privateConstructorUsedError;
   @JsonKey(name: 'owner_profile_id')
   String? get ownerProfileId => throw _privateConstructorUsedError;
   MeetupHost? get host => throw _privateConstructorUsedError;
@@ -1808,9 +1837,14 @@ abstract class $MeetupCardCopyWith<$Res> {
   $Res call({
     String id,
     String? title,
+    String? description,
     @JsonKey(name: 'start_at') DateTime? startAt,
+    @JsonKey(name: 'end_at') DateTime? endAt,
+    @JsonKey(name: 'location_name') String? locationName,
+    int? capacity,
+    @JsonKey(name: 'is_cancelled') bool isCancelled,
+    @JsonKey(name: 'is_host') bool isHost,
     String? visibility,
-    @JsonKey(name: 'owner_user_id') String? ownerUserId,
     @JsonKey(name: 'owner_profile_id') String? ownerProfileId,
     MeetupHost? host,
     MeetupCounts counts,
@@ -1838,9 +1872,14 @@ class _$MeetupCardCopyWithImpl<$Res, $Val extends MeetupCard>
   $Res call({
     Object? id = null,
     Object? title = freezed,
+    Object? description = freezed,
     Object? startAt = freezed,
+    Object? endAt = freezed,
+    Object? locationName = freezed,
+    Object? capacity = freezed,
+    Object? isCancelled = null,
+    Object? isHost = null,
     Object? visibility = freezed,
-    Object? ownerUserId = freezed,
     Object? ownerProfileId = freezed,
     Object? host = freezed,
     Object? counts = null,
@@ -1856,17 +1895,37 @@ class _$MeetupCardCopyWithImpl<$Res, $Val extends MeetupCard>
                 ? _value.title
                 : title // ignore: cast_nullable_to_non_nullable
                       as String?,
+            description: freezed == description
+                ? _value.description
+                : description // ignore: cast_nullable_to_non_nullable
+                      as String?,
             startAt: freezed == startAt
                 ? _value.startAt
                 : startAt // ignore: cast_nullable_to_non_nullable
                       as DateTime?,
+            endAt: freezed == endAt
+                ? _value.endAt
+                : endAt // ignore: cast_nullable_to_non_nullable
+                      as DateTime?,
+            locationName: freezed == locationName
+                ? _value.locationName
+                : locationName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            capacity: freezed == capacity
+                ? _value.capacity
+                : capacity // ignore: cast_nullable_to_non_nullable
+                      as int?,
+            isCancelled: null == isCancelled
+                ? _value.isCancelled
+                : isCancelled // ignore: cast_nullable_to_non_nullable
+                      as bool,
+            isHost: null == isHost
+                ? _value.isHost
+                : isHost // ignore: cast_nullable_to_non_nullable
+                      as bool,
             visibility: freezed == visibility
                 ? _value.visibility
                 : visibility // ignore: cast_nullable_to_non_nullable
-                      as String?,
-            ownerUserId: freezed == ownerUserId
-                ? _value.ownerUserId
-                : ownerUserId // ignore: cast_nullable_to_non_nullable
                       as String?,
             ownerProfileId: freezed == ownerProfileId
                 ? _value.ownerProfileId
@@ -1926,9 +1985,14 @@ abstract class _$$MeetupCardImplCopyWith<$Res>
   $Res call({
     String id,
     String? title,
+    String? description,
     @JsonKey(name: 'start_at') DateTime? startAt,
+    @JsonKey(name: 'end_at') DateTime? endAt,
+    @JsonKey(name: 'location_name') String? locationName,
+    int? capacity,
+    @JsonKey(name: 'is_cancelled') bool isCancelled,
+    @JsonKey(name: 'is_host') bool isHost,
     String? visibility,
-    @JsonKey(name: 'owner_user_id') String? ownerUserId,
     @JsonKey(name: 'owner_profile_id') String? ownerProfileId,
     MeetupHost? host,
     MeetupCounts counts,
@@ -1957,9 +2021,14 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
   $Res call({
     Object? id = null,
     Object? title = freezed,
+    Object? description = freezed,
     Object? startAt = freezed,
+    Object? endAt = freezed,
+    Object? locationName = freezed,
+    Object? capacity = freezed,
+    Object? isCancelled = null,
+    Object? isHost = null,
     Object? visibility = freezed,
-    Object? ownerUserId = freezed,
     Object? ownerProfileId = freezed,
     Object? host = freezed,
     Object? counts = null,
@@ -1975,17 +2044,37 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
             ? _value.title
             : title // ignore: cast_nullable_to_non_nullable
                   as String?,
+        description: freezed == description
+            ? _value.description
+            : description // ignore: cast_nullable_to_non_nullable
+                  as String?,
         startAt: freezed == startAt
             ? _value.startAt
             : startAt // ignore: cast_nullable_to_non_nullable
                   as DateTime?,
+        endAt: freezed == endAt
+            ? _value.endAt
+            : endAt // ignore: cast_nullable_to_non_nullable
+                  as DateTime?,
+        locationName: freezed == locationName
+            ? _value.locationName
+            : locationName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        capacity: freezed == capacity
+            ? _value.capacity
+            : capacity // ignore: cast_nullable_to_non_nullable
+                  as int?,
+        isCancelled: null == isCancelled
+            ? _value.isCancelled
+            : isCancelled // ignore: cast_nullable_to_non_nullable
+                  as bool,
+        isHost: null == isHost
+            ? _value.isHost
+            : isHost // ignore: cast_nullable_to_non_nullable
+                  as bool,
         visibility: freezed == visibility
             ? _value.visibility
             : visibility // ignore: cast_nullable_to_non_nullable
-                  as String?,
-        ownerUserId: freezed == ownerUserId
-            ? _value.ownerUserId
-            : ownerUserId // ignore: cast_nullable_to_non_nullable
                   as String?,
         ownerProfileId: freezed == ownerProfileId
             ? _value.ownerProfileId
@@ -2014,9 +2103,14 @@ class _$MeetupCardImpl implements _MeetupCard {
   const _$MeetupCardImpl({
     required this.id,
     this.title,
+    this.description,
     @JsonKey(name: 'start_at') this.startAt,
+    @JsonKey(name: 'end_at') this.endAt,
+    @JsonKey(name: 'location_name') this.locationName,
+    this.capacity,
+    @JsonKey(name: 'is_cancelled') this.isCancelled = false,
+    @JsonKey(name: 'is_host') this.isHost = false,
     this.visibility,
-    @JsonKey(name: 'owner_user_id') this.ownerUserId,
     @JsonKey(name: 'owner_profile_id') this.ownerProfileId,
     this.host,
     this.counts = const MeetupCounts(),
@@ -2031,13 +2125,26 @@ class _$MeetupCardImpl implements _MeetupCard {
   @override
   final String? title;
   @override
+  final String? description;
+  @override
   @JsonKey(name: 'start_at')
   final DateTime? startAt;
   @override
-  final String? visibility;
+  @JsonKey(name: 'end_at')
+  final DateTime? endAt;
   @override
-  @JsonKey(name: 'owner_user_id')
-  final String? ownerUserId;
+  @JsonKey(name: 'location_name')
+  final String? locationName;
+  @override
+  final int? capacity;
+  @override
+  @JsonKey(name: 'is_cancelled')
+  final bool isCancelled;
+  @override
+  @JsonKey(name: 'is_host')
+  final bool isHost;
+  @override
+  final String? visibility;
   @override
   @JsonKey(name: 'owner_profile_id')
   final String? ownerProfileId;
@@ -2052,7 +2159,7 @@ class _$MeetupCardImpl implements _MeetupCard {
 
   @override
   String toString() {
-    return 'MeetupCard(id: $id, title: $title, startAt: $startAt, visibility: $visibility, ownerUserId: $ownerUserId, ownerProfileId: $ownerProfileId, host: $host, counts: $counts, myStatus: $myStatus)';
+    return 'MeetupCard(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, locationName: $locationName, capacity: $capacity, isCancelled: $isCancelled, isHost: $isHost, visibility: $visibility, ownerProfileId: $ownerProfileId, host: $host, counts: $counts, myStatus: $myStatus)';
   }
 
   @override
@@ -2062,11 +2169,19 @@ class _$MeetupCardImpl implements _MeetupCard {
             other is _$MeetupCardImpl &&
             (identical(other.id, id) || other.id == id) &&
             (identical(other.title, title) || other.title == title) &&
+            (identical(other.description, description) ||
+                other.description == description) &&
             (identical(other.startAt, startAt) || other.startAt == startAt) &&
+            (identical(other.endAt, endAt) || other.endAt == endAt) &&
+            (identical(other.locationName, locationName) ||
+                other.locationName == locationName) &&
+            (identical(other.capacity, capacity) ||
+                other.capacity == capacity) &&
+            (identical(other.isCancelled, isCancelled) ||
+                other.isCancelled == isCancelled) &&
+            (identical(other.isHost, isHost) || other.isHost == isHost) &&
             (identical(other.visibility, visibility) ||
                 other.visibility == visibility) &&
-            (identical(other.ownerUserId, ownerUserId) ||
-                other.ownerUserId == ownerUserId) &&
             (identical(other.ownerProfileId, ownerProfileId) ||
                 other.ownerProfileId == ownerProfileId) &&
             (identical(other.host, host) || other.host == host) &&
@@ -2081,9 +2196,14 @@ class _$MeetupCardImpl implements _MeetupCard {
     runtimeType,
     id,
     title,
+    description,
     startAt,
+    endAt,
+    locationName,
+    capacity,
+    isCancelled,
+    isHost,
     visibility,
-    ownerUserId,
     ownerProfileId,
     host,
     counts,
@@ -2108,9 +2228,14 @@ abstract class _MeetupCard implements MeetupCard {
   const factory _MeetupCard({
     required final String id,
     final String? title,
+    final String? description,
     @JsonKey(name: 'start_at') final DateTime? startAt,
+    @JsonKey(name: 'end_at') final DateTime? endAt,
+    @JsonKey(name: 'location_name') final String? locationName,
+    final int? capacity,
+    @JsonKey(name: 'is_cancelled') final bool isCancelled,
+    @JsonKey(name: 'is_host') final bool isHost,
     final String? visibility,
-    @JsonKey(name: 'owner_user_id') final String? ownerUserId,
     @JsonKey(name: 'owner_profile_id') final String? ownerProfileId,
     final MeetupHost? host,
     final MeetupCounts counts,
@@ -2125,13 +2250,26 @@ abstract class _MeetupCard implements MeetupCard {
   @override
   String? get title;
   @override
+  String? get description;
+  @override
   @JsonKey(name: 'start_at')
   DateTime? get startAt;
   @override
-  String? get visibility;
+  @JsonKey(name: 'end_at')
+  DateTime? get endAt;
   @override
-  @JsonKey(name: 'owner_user_id')
-  String? get ownerUserId;
+  @JsonKey(name: 'location_name')
+  String? get locationName;
+  @override
+  int? get capacity;
+  @override
+  @JsonKey(name: 'is_cancelled')
+  bool get isCancelled;
+  @override
+  @JsonKey(name: 'is_host')
+  bool get isHost;
+  @override
+  String? get visibility;
   @override
   @JsonKey(name: 'owner_profile_id')
   String? get ownerProfileId;
@@ -2157,8 +2295,9 @@ MeetupAttendee _$MeetupAttendeeFromJson(Map<String, dynamic> json) {
 
 /// @nodoc
 mixin _$MeetupAttendee {
+  // meetup_rsvps.profile_id is nullable.
   @JsonKey(name: 'actor_profile_id')
-  String get actorProfileId => throw _privateConstructorUsedError;
+  String? get actorProfileId => throw _privateConstructorUsedError;
   @JsonKey(name: 'display_name')
   String? get displayName => throw _privateConstructorUsedError;
   String? get username => throw _privateConstructorUsedError;
@@ -2183,7 +2322,7 @@ abstract class $MeetupAttendeeCopyWith<$Res> {
   ) = _$MeetupAttendeeCopyWithImpl<$Res, MeetupAttendee>;
   @useResult
   $Res call({
-    @JsonKey(name: 'actor_profile_id') String actorProfileId,
+    @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown) RsvpStatus status,
@@ -2205,17 +2344,17 @@ class _$MeetupAttendeeCopyWithImpl<$Res, $Val extends MeetupAttendee>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? actorProfileId = null,
+    Object? actorProfileId = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
     Object? status = null,
   }) {
     return _then(
       _value.copyWith(
-            actorProfileId: null == actorProfileId
+            actorProfileId: freezed == actorProfileId
                 ? _value.actorProfileId
                 : actorProfileId // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             displayName: freezed == displayName
                 ? _value.displayName
                 : displayName // ignore: cast_nullable_to_non_nullable
@@ -2244,7 +2383,7 @@ abstract class _$$MeetupAttendeeImplCopyWith<$Res>
   @override
   @useResult
   $Res call({
-    @JsonKey(name: 'actor_profile_id') String actorProfileId,
+    @JsonKey(name: 'actor_profile_id') String? actorProfileId,
     @JsonKey(name: 'display_name') String? displayName,
     String? username,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown) RsvpStatus status,
@@ -2265,17 +2404,17 @@ class __$$MeetupAttendeeImplCopyWithImpl<$Res>
   @pragma('vm:prefer-inline')
   @override
   $Res call({
-    Object? actorProfileId = null,
+    Object? actorProfileId = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
     Object? status = null,
   }) {
     return _then(
       _$MeetupAttendeeImpl(
-        actorProfileId: null == actorProfileId
+        actorProfileId: freezed == actorProfileId
             ? _value.actorProfileId
             : actorProfileId // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         displayName: freezed == displayName
             ? _value.displayName
             : displayName // ignore: cast_nullable_to_non_nullable
@@ -2297,7 +2436,7 @@ class __$$MeetupAttendeeImplCopyWithImpl<$Res>
 @JsonSerializable()
 class _$MeetupAttendeeImpl implements _MeetupAttendee {
   const _$MeetupAttendeeImpl({
-    @JsonKey(name: 'actor_profile_id') required this.actorProfileId,
+    @JsonKey(name: 'actor_profile_id') this.actorProfileId,
     @JsonKey(name: 'display_name') this.displayName,
     this.username,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown)
@@ -2307,9 +2446,10 @@ class _$MeetupAttendeeImpl implements _MeetupAttendee {
   factory _$MeetupAttendeeImpl.fromJson(Map<String, dynamic> json) =>
       _$$MeetupAttendeeImplFromJson(json);
 
+  // meetup_rsvps.profile_id is nullable.
   @override
   @JsonKey(name: 'actor_profile_id')
-  final String actorProfileId;
+  final String? actorProfileId;
   @override
   @JsonKey(name: 'display_name')
   final String? displayName;
@@ -2362,7 +2502,7 @@ class _$MeetupAttendeeImpl implements _MeetupAttendee {
 
 abstract class _MeetupAttendee implements MeetupAttendee {
   const factory _MeetupAttendee({
-    @JsonKey(name: 'actor_profile_id') required final String actorProfileId,
+    @JsonKey(name: 'actor_profile_id') final String? actorProfileId,
     @JsonKey(name: 'display_name') final String? displayName,
     final String? username,
     @JsonKey(unknownEnumValue: RsvpStatus.unknown) final RsvpStatus status,
@@ -2371,9 +2511,10 @@ abstract class _MeetupAttendee implements MeetupAttendee {
   factory _MeetupAttendee.fromJson(Map<String, dynamic> json) =
       _$MeetupAttendeeImpl.fromJson;
 
+  // meetup_rsvps.profile_id is nullable.
   @override
   @JsonKey(name: 'actor_profile_id')
-  String get actorProfileId;
+  String? get actorProfileId;
   @override
   @JsonKey(name: 'display_name')
   String? get displayName;
