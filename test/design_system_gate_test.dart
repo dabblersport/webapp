@@ -174,12 +174,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 120',
   ),
   GateAllow(
-    'lib/core/widgets/composer_drawer_kit.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 190',
-  ),
-  GateAllow(
     'lib/features/location/presentation/widgets/location_search_field.dart',
     ['numeric named arg'],
     _maxWidthReason,
