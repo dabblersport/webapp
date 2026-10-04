@@ -6,7 +6,6 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
@@ -273,9 +272,6 @@ void main() {
           tileLayerBuilder: _stubTiles,
         ),
       ),
-    ),
-    'home-location-bar': () => const DabblerPage(
-      body: Column(children: <Widget>[SizedBox(height: 60), HomeLocationBar()]),
     ),
     'saved-locations': () => const SavedLocationsScreen(),
     'place-picker': () => _SheetHost(open: (c) => PlacePickerSheet.show(c)),
