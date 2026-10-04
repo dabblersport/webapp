@@ -33,7 +33,10 @@ class GamesScreen extends ConsumerWidget {
       loading: () => const DabblerPage(body: Center(child: DabblerSpinner())),
       error: (_, __) => DabblerPage(
         body: Center(
-          child: DabblerEmptyState.error(title: 'Failed to load sports'),
+          child: DabblerEmptyState.error(
+            title: AppLocalizations.of(context).listing_load_sports_failed,
+            retryLabel: AppLocalizations.of(context).feed_retry,
+          ),
         ),
       ),
       data: (sports) => _GamesTabScreen(
@@ -147,6 +150,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
   Widget build(BuildContext context) {
     // The header's count and the applied-filters rail both follow every filter
     // that narrows the list.
+    final l = AppLocalizations.of(context);
     final nearby = ref.watch(nearbyGamesFilterEnabledProvider);
     final radius = ref.watch(nearbyRadiusProvider);
     final dateFilter = ref.watch(gamesDateFilterProvider);
@@ -158,31 +162,31 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     final active = <DabblerFilterRailItem>[
       if (nearby)
         DabblerFilterRailItem(
-          label: nearbyRadiusLabel(radius),
+          label: nearbyRadiusLabel(l, radius),
           onRemove: () =>
               ref.read(nearbyGamesFilterEnabledProvider.notifier).state = false,
         ),
       if (dateFilter != GamesDateFilter.any)
         DabblerFilterRailItem(
-          label: dateFilter.label,
+          label: _dateLabel(l, dateFilter),
           onRemove: () => ref.read(gamesDateFilterProvider.notifier).state =
               GamesDateFilter.any,
         ),
       if (skillFilter != GamesSkillFilter.any)
         DabblerFilterRailItem(
-          label: skillFilter.label,
+          label: _skillLabel(l, skillFilter),
           onRemove: () => ref.read(gamesSkillFilterProvider.notifier).state =
               GamesSkillFilter.any,
         ),
       if (openSpots)
         DabblerFilterRailItem(
-          label: 'Open spots',
+          label: l.listing_open_spots,
           onRemove: () =>
               ref.read(gamesOpenSpotsOnlyProvider.notifier).state = false,
         ),
       if (sortOrder != NearbySortOrder.nearest)
         DabblerFilterRailItem(
-          label: 'Starting soonest',
+          label: l.listing_sort_soonest,
           onRemove: () => ref.read(nearbyGameSortProvider.notifier).state =
               NearbySortOrder.nearest,
         ),
@@ -193,17 +197,17 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
         title: AppLocalizations.of(context).nav_games,
         locationLabel: locState is ActiveLocationReady
             ? locState.location.area.name
-            : 'Set location',
+            : l.listing_set_location,
         onLocationPressed: () => HomeLocationPickerSheet.show(context),
         actions: <DabblerPageHeaderAction>[
           DabblerPageHeaderAction(
             icon: 'search-normal',
-            semanticLabel: 'Search',
+            semanticLabel: l.listing_search,
             onPressed: () => context.push(RoutePaths.socialSearch),
           ),
           DabblerPageHeaderAction(
             icon: 'filter',
-            semanticLabel: 'Filters',
+            semanticLabel: l.listing_filters,
             onPressed: _openFilters,
             count: active.length,
           ),
@@ -217,7 +221,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
         child: DabblerTabPager(
           scrollable: true,
           items: <DabblerTabItem>[
-            const DabblerTabItem(id: 'all', label: 'All sports'),
+            DabblerTabItem(id: 'all', label: l.listing_all_sports),
             for (final sport in widget.sports)
               DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
           ],
@@ -229,7 +233,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
               children: [
                 DabblerFilterRail(
                   items: active,
-                  clearAllLabel: 'Clear all',
+                  clearAllLabel: l.listing_clear_all,
                   onClearAll: _resetFilters,
                 ),
                 Expanded(
@@ -261,6 +265,7 @@ class _GamesFilterBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final dateFilter = ref.watch(gamesDateFilterProvider);
     final skillFilter = ref.watch(gamesSkillFilterProvider);
     final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
@@ -271,16 +276,20 @@ class _GamesFilterBody extends ConsumerWidget {
       spacing: DabblerSpacing.space6,
       children: [
         DabblerFilterGroup(
-          label: 'Distance',
-          children: nearbyDistanceChips(ref, nearbyGamesFilterEnabledProvider),
+          label: l.listing_group_distance,
+          children: nearbyDistanceChips(
+            context,
+            ref,
+            nearbyGamesFilterEnabledProvider,
+          ),
         ),
         DabblerFilterGroup(
-          label: 'Date',
+          label: l.listing_group_date,
           children: [
             for (final f in GamesDateFilter.values)
               if (f != GamesDateFilter.any)
                 DabblerChip(
-                  label: f.label,
+                  label: _dateLabel(l, f),
                   selected: f == dateFilter,
                   onTap: () =>
                       ref.read(gamesDateFilterProvider.notifier).state =
@@ -289,12 +298,12 @@ class _GamesFilterBody extends ConsumerWidget {
           ],
         ),
         DabblerFilterGroup(
-          label: 'Skill level',
+          label: l.listing_group_skill,
           children: [
             for (final f in GamesSkillFilter.values)
               if (f != GamesSkillFilter.any)
                 DabblerChip(
-                  label: f.label,
+                  label: _skillLabel(l, f),
                   selected: f == skillFilter,
                   onTap: () =>
                       ref.read(gamesSkillFilterProvider.notifier).state =
@@ -303,10 +312,10 @@ class _GamesFilterBody extends ConsumerWidget {
           ],
         ),
         DabblerFilterGroup(
-          label: 'Availability',
+          label: l.listing_group_availability,
           children: [
             DabblerChip(
-              label: 'Open spots',
+              label: l.listing_open_spots,
               selected: openSpotsOnly,
               onTap: () => ref.read(gamesOpenSpotsOnlyProvider.notifier).state =
                   !openSpotsOnly,
@@ -314,8 +323,8 @@ class _GamesFilterBody extends ConsumerWidget {
           ],
         ),
         DabblerFilterGroup(
-          label: 'Sort by',
-          children: nearbySortChips(ref, nearbyGameSortProvider),
+          label: l.listing_group_sort,
+          children: nearbySortChips(context, ref, nearbyGameSortProvider),
         ),
       ],
     );
@@ -333,7 +342,9 @@ class _ShowGamesButton extends ConsumerWidget {
     final now = DateTime.now();
     final count = games.valueOrNull?.where((g) => _passes(ref, g, now)).length;
     return DabblerButton(
-      label: count == null ? 'Show games' : 'Show $count games',
+      label: count == null
+          ? AppLocalizations.of(context).listing_show_games_plain
+          : AppLocalizations.of(context).listing_show_games(count),
       fullWidth: true,
       onPressed: () => Navigator.of(context).pop(),
     );
@@ -361,6 +372,7 @@ class _GameTabBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final params = _paramsFor(ref, sportId);
     final isFiltered = params.lat != null;
 
@@ -385,10 +397,10 @@ class _GameTabBody extends ConsumerWidget {
       ),
       error: (e, _) => Center(
         child: DabblerEmptyState.error(
-          title: "Couldn't load games",
+          title: l.listing_load_games_failed,
           size: DabblerEmptyStateSize.inline,
           onRetry: onRetry,
-          retryLabel: 'Retry',
+          retryLabel: l.feed_retry,
         ),
       ),
       data: (games) {
@@ -413,17 +425,17 @@ class _GameTabBody extends ConsumerWidget {
             child: DabblerEmptyState(
               icon: 'game',
               title: narrowed
-                  ? 'No games match your filters'
+                  ? l.listing_games_filtered_title
                   : isFiltered
-                  ? 'No games found nearby.'
-                  : 'No games yet',
+                  ? l.listing_games_nearby_title
+                  : l.listing_games_none_title,
               text: narrowed
-                  ? 'Adjust or clear the filters.'
+                  ? l.listing_games_filtered_text
                   : isFiltered
-                  ? 'Try widening your search radius in the filter.'
-                  : 'Be the first to create a game in your area!',
+                  ? l.listing_games_nearby_text
+                  : l.listing_games_none_text,
               action: DabblerButton(
-                label: 'Change filters',
+                label: l.listing_change_filters,
                 onPressed: onChangeFilters,
               ),
             ),
@@ -441,7 +453,7 @@ class _GameTabBody extends ConsumerWidget {
             ),
             children: [
               if (pinned.isNotEmpty) ...[
-                DabblerText('Upcoming', style: DabblerType.title2),
+                DabblerText(l.listing_upcoming, style: DabblerType.title2),
                 const DabblerGap.v(DabblerSpacing.space4),
                 _UpcomingRail(games: pinned),
                 const DabblerGap.v(DabblerSpacing.space4),
@@ -492,6 +504,7 @@ class _UpcomingRail extends StatelessWidget {
     String locale,
     bool single,
   ) {
+    final l = AppLocalizations.of(context);
     final at = g.scheduledAt;
     final left = at?.difference(DateTime.now());
     final remaining = left == null || left.isNegative ? Duration.zero : left;
@@ -499,13 +512,15 @@ class _UpcomingRail extends StatelessWidget {
     final String unit;
     if (remaining.inDays > 0) {
       value = '${remaining.inDays}';
-      unit = remaining.inDays == 1 ? 'day' : 'days';
+      unit = remaining.inDays == 1 ? l.listing_unit_day : l.listing_unit_days;
     } else if (remaining.inHours > 0) {
       value = '${remaining.inHours}';
-      unit = remaining.inHours == 1 ? 'hour' : 'hours';
+      unit = remaining.inHours == 1
+          ? l.listing_unit_hour
+          : l.listing_unit_hours;
     } else {
       value = '${remaining.inMinutes}';
-      unit = 'min';
+      unit = l.listing_unit_min;
     }
     return DabblerCardUpcoming(
       width: single ? null : DabblerSizing.railCardWidth,
@@ -542,6 +557,7 @@ class _GameCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final at = game.scheduledAt;
     final colors = DabblerColors.of(context);
@@ -557,7 +573,7 @@ class _GameCard extends StatelessWidget {
           ),
         if (skill != null)
           DabblerBadge(
-            label: skill.label,
+            label: _skillLabel(l, skill),
             status: colors.status(switch (skill) {
               GamesSkillFilter.beginner => DabblerStatusTone.success,
               GamesSkillFilter.intermediate => DabblerStatusTone.warning,
@@ -566,11 +582,11 @@ class _GameCard extends StatelessWidget {
           ),
         if (game.isMine)
           DabblerBadge(
-            label: game.isCreated ? 'Created' : 'Joined',
+            label: game.isCreated ? l.listing_created : l.listing_joined,
             status: colors.status(DabblerStatusTone.success),
           ),
       ],
-      dayLabel: at == null ? null : _dayLabel(at, locale),
+      dayLabel: at == null ? null : _dayLabel(l, at, locale),
       timeLabel: at == null ? null : DateFormat.jm(locale).format(at),
       meta: [
         if (game.venueName?.isNotEmpty == true) game.venueName!,
@@ -578,13 +594,15 @@ class _GameCard extends StatelessWidget {
       ],
       progress: game.spotsRemaining != null && game.playerCount != null
           ? DabblerCardEventPlayers(
-              label:
-                  '${game.playerCount} of ${game.playerCount! + game.spotsRemaining!} players in',
+              label: l.listing_players_in(
+                game.playerCount!,
+                game.playerCount! + game.spotsRemaining!,
+              ),
               joined: game.playerCount!,
               capacity: game.playerCount! + game.spotsRemaining!,
               note: game.spotsRemaining! == 0
-                  ? 'Full'
-                  : '${game.spotsRemaining} spots left',
+                  ? l.listing_full
+                  : l.listing_spots_left(game.spotsRemaining!),
               tone: game.spotsRemaining! == 0
                   ? DabblerProgressBarTone.error
                   : game.spotsRemaining! <= 2
@@ -609,13 +627,28 @@ class _GameCard extends StatelessWidget {
     return null;
   }
 
-  static String _dayLabel(DateTime dt, String locale) {
+  static String _dayLabel(AppLocalizations l, DateTime dt, String locale) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final gameDay = DateTime(dt.year, dt.month, dt.day);
     final diff = gameDay.difference(today).inDays;
-    if (diff == 0) return 'Today';
-    if (diff == 1) return 'Tomorrow';
+    if (diff == 0) return l.listing_today;
+    if (diff == 1) return l.listing_tomorrow;
     return DateFormat.MMMd(locale).format(dt);
   }
 }
+
+String _dateLabel(AppLocalizations l, GamesDateFilter f) => switch (f) {
+  GamesDateFilter.any => l.listing_date_any,
+  GamesDateFilter.today => l.listing_today,
+  GamesDateFilter.tomorrow => l.listing_tomorrow,
+  GamesDateFilter.thisWeek => l.listing_this_week,
+};
+
+String _skillLabel(AppLocalizations l, GamesSkillFilter f) => switch (f) {
+  GamesSkillFilter.any => l.listing_skill_any,
+  GamesSkillFilter.beginner => l.listing_skill_beginner,
+  GamesSkillFilter.intermediate => l.listing_skill_intermediate,
+  GamesSkillFilter.advanced => l.listing_skill_advanced,
+  GamesSkillFilter.pro => l.listing_skill_pro,
+};

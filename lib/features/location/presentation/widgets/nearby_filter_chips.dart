@@ -1,4 +1,5 @@
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -14,20 +15,23 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 const List<int> kNearbyRadiusPresets = <int>[5000, 10000];
 
 /// "Within N km" label for [meters].
-String nearbyRadiusLabel(int meters) => 'Within ${(meters / 1000).round()} km';
+String nearbyRadiusLabel(AppLocalizations l, int meters) =>
+    l.listing_within_km((meters / 1000).round());
 
 /// "Within 5 km", "Within 10 km", "Any distance". Picking a preset turns the
 /// nearby filter on at that radius; "Any distance" turns it off.
 List<Widget> nearbyDistanceChips(
+  BuildContext context,
   WidgetRef ref,
   StateProvider<bool> enabledProvider,
 ) {
+  final AppLocalizations l = AppLocalizations.of(context);
   final bool enabled = ref.watch(enabledProvider);
   final int radius = ref.watch(nearbyRadiusProvider);
   return <Widget>[
     for (final int meters in kNearbyRadiusPresets)
       DabblerChip(
-        label: nearbyRadiusLabel(meters),
+        label: nearbyRadiusLabel(l, meters),
         selected: enabled && radius == meters,
         onTap: () {
           ref.read(enabledProvider.notifier).state = true;
@@ -35,7 +39,7 @@ List<Widget> nearbyDistanceChips(
         },
       ),
     DabblerChip(
-      label: 'Any distance',
+      label: l.listing_any_distance,
       selected: !enabled,
       onTap: () => ref.read(enabledProvider.notifier).state = false,
     ),
@@ -44,19 +48,21 @@ List<Widget> nearbyDistanceChips(
 
 /// "Nearest" and "Starting soonest", bound to [sortProvider].
 List<Widget> nearbySortChips(
+  BuildContext context,
   WidgetRef ref,
   StateProvider<NearbySortOrder> sortProvider,
 ) {
+  final AppLocalizations l = AppLocalizations.of(context);
   final NearbySortOrder sort = ref.watch(sortProvider);
   return <Widget>[
     DabblerChip(
-      label: 'Nearest',
+      label: l.listing_sort_nearest,
       selected: sort == NearbySortOrder.nearest,
       onTap: () =>
           ref.read(sortProvider.notifier).state = NearbySortOrder.nearest,
     ),
     DabblerChip(
-      label: 'Starting soonest',
+      label: l.listing_sort_soonest,
       selected: sort == NearbySortOrder.defaultOrder,
       onTap: () =>
           ref.read(sortProvider.notifier).state = NearbySortOrder.defaultOrder,

@@ -15,6 +15,7 @@ import 'package:dabbler/features/location/presentation/screens/saved_locations_s
 import 'package:dabbler/features/location/presentation/widgets/location_picker_row.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Home-screen location picker (design H06, City picker).
 ///
@@ -99,7 +100,10 @@ class _HomeLocationPickerSheetState
             end: DabblerSpacing.space6,
             bottom: DabblerSpacing.space4,
           ),
-          child: DabblerText('Change location', style: DabblerType.headline),
+          child: DabblerText(
+            AppLocalizations.of(context).location_change_title,
+            style: DabblerType.headline,
+          ),
         ),
         Padding(
           padding: const EdgeInsetsDirectional.only(
@@ -113,7 +117,7 @@ class _HomeLocationPickerSheetState
             children: [
               DabblerSearchField(
                 controller: _searchController,
-                placeholder: 'Search areas…',
+                placeholder: AppLocalizations.of(context).location_search_areas,
                 onChanged: (v) => setState(() => _query = v.trim()),
                 onCleared: () => setState(() => _query = ''),
               ),
@@ -121,7 +125,7 @@ class _HomeLocationPickerSheetState
               _GpsTile(isLoading: _gpsLoading, onTap: () => _useGps()),
 
               // ── Saved locations ────────────────────────────────────────
-              const _SectionLabel(label: 'Saved'),
+              _SectionLabel(label: AppLocalizations.of(context).location_saved),
               savedAsync.when(
                 loading: () => const Padding(
                   padding: EdgeInsets.symmetric(
@@ -148,7 +152,7 @@ class _HomeLocationPickerSheetState
                         size: DabblerSizing.iconSm,
                         color: colors.textPrimary,
                       ),
-                      title: 'Add location',
+                      title: AppLocalizations.of(context).location_add,
                       onTap: () => Navigator.of(context).push(
                         MaterialPageRoute(
                           builder: (_) => const SavedLocationsScreen(),
@@ -190,16 +194,16 @@ class _HomeLocationPickerSheetState
           context: context,
           builder: (ctx) => DabblerDialog(
             onClose: () => Navigator.pop(ctx),
-            title: 'Location access required',
-            description:
-                'Location permission is permanently denied. '
-                'Open Settings to enable it.',
+            title: AppLocalizations.of(ctx).location_access_required,
+            description: AppLocalizations.of(
+              ctx,
+            ).location_permission_denied_forever,
             secondaryAction: DabblerDialogAction(
-              label: 'Cancel',
+              label: AppLocalizations.of(ctx).profile_btn_cancel,
               onPressed: () => Navigator.pop(ctx),
             ),
             primaryAction: DabblerDialogAction(
-              label: 'Open Settings',
+              label: AppLocalizations.of(ctx).location_open_settings,
               onPressed: () {
                 Navigator.pop(ctx);
                 Geolocator.openAppSettings();
@@ -208,13 +212,19 @@ class _HomeLocationPickerSheetState
           ),
         );
       case LocationServiceOff():
-        if (mounted) _toast('Please enable location services');
+        if (mounted) {
+          _toast(AppLocalizations.of(context).location_enable_services);
+        }
       case LocationDenied():
-        if (mounted) _toast('Location permission denied');
+        if (mounted) {
+          _toast(AppLocalizations.of(context).location_permission_denied);
+        }
       case LocationTimeout():
-        if (mounted) _toast('Could not get location — try again');
+        if (mounted) _toast(AppLocalizations.of(context).location_timeout);
       case LocationError(:final message):
-        if (mounted) _toast('Error: $message');
+        if (mounted) {
+          _toast(AppLocalizations.of(context).location_error(message));
+        }
     }
   }
 
@@ -270,8 +280,10 @@ class _GpsTile extends StatelessWidget {
         size: DabblerSizing.iconSm,
         color: colors.brandPrimary,
       ),
-      title: 'Use current location',
-      subtitle: isLoading ? 'Detecting…' : null,
+      title: AppLocalizations.of(context).location_use_current,
+      subtitle: isLoading
+          ? AppLocalizations.of(context).location_detecting
+          : null,
       trailing: isLoading
           ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
           : null,
@@ -370,7 +382,7 @@ class _AreaBrowser extends ConsumerWidget {
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(
               icon: 'search-normal',
-              text: 'No areas match "$query"',
+              text: AppLocalizations.of(context).location_no_areas(query),
             ),
           );
         }

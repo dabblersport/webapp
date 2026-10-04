@@ -38,7 +38,10 @@ class VenuesScreen extends ConsumerWidget {
       loading: () => const DabblerPage(body: Center(child: DabblerSpinner())),
       error: (_, __) => DabblerPage(
         body: Center(
-          child: DabblerEmptyState.error(title: 'Failed to load sports'),
+          child: DabblerEmptyState.error(
+            title: AppLocalizations.of(context).listing_load_sports_failed,
+            retryLabel: AppLocalizations.of(context).feed_retry,
+          ),
         ),
       ),
       data: (sports) => _VenuesTabScreen(
@@ -74,7 +77,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
       onReset: _resetFilters,
       builder: (_) => const _VenuesFilterBody(),
       footerBuilder: (ctx) => DabblerButton(
-        label: 'Show venues',
+        label: AppLocalizations.of(ctx).listing_show_venues,
         fullWidth: true,
         onPressed: () => Navigator.of(ctx).pop(),
       ),
@@ -83,6 +86,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final nearby = ref.watch(nearbyVenuesFilterEnabledProvider);
     final radius = ref.watch(nearbyRadiusProvider);
     final sort = ref.watch(nearbyVenueSortProvider);
@@ -95,14 +99,14 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
     final active = <DabblerFilterRailItem>[
       if (nearby)
         DabblerFilterRailItem(
-          label: nearbyRadiusLabel(radius),
+          label: nearbyRadiusLabel(l, radius),
           onRemove: () =>
               ref.read(nearbyVenuesFilterEnabledProvider.notifier).state =
                   false,
         ),
       if (sort != NearbySortOrder.nearest)
         DabblerFilterRailItem(
-          label: 'Starting soonest',
+          label: l.listing_sort_soonest,
           onRemove: () => ref.read(nearbyVenueSortProvider.notifier).state =
               NearbySortOrder.nearest,
         ),
@@ -113,18 +117,18 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
         title: AppLocalizations.of(context).nav_venues,
         locationLabel: locState is ActiveLocationReady
             ? locState.location.area.name
-            : 'Set location',
+            : l.listing_set_location,
         onLocationPressed: () => HomeLocationPickerSheet.show(context),
         actions: <DabblerPageHeaderAction>[
           if (isOrganiser)
             DabblerPageHeaderAction(
               icon: 'add',
-              semanticLabel: 'Add venue',
+              semanticLabel: l.listing_add_venue,
               onPressed: () => context.push(RoutePaths.createVenueSubmission),
             ),
           DabblerPageHeaderAction(
             icon: 'heart',
-            semanticLabel: 'Saved venues',
+            semanticLabel: l.listing_saved_venues,
             onPressed: () => Navigator.of(context).push(
               MaterialPageRoute(
                 builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
@@ -133,12 +137,12 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
           ),
           DabblerPageHeaderAction(
             icon: 'search-normal',
-            semanticLabel: 'Search',
+            semanticLabel: l.listing_search,
             onPressed: () => context.push(RoutePaths.socialSearch),
           ),
           DabblerPageHeaderAction(
             icon: 'filter',
-            semanticLabel: 'Filters',
+            semanticLabel: l.listing_filters,
             onPressed: _openFilters,
             count: active.length,
           ),
@@ -168,7 +172,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
                       children: [
                         DabblerFilterRail(
                           items: active,
-                          clearAllLabel: 'Clear all',
+                          clearAllLabel: l.listing_clear_all,
                           onClearAll: _resetFilters,
                         ),
                         Expanded(
@@ -197,18 +201,23 @@ class _VenuesFilterBody extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       spacing: DabblerSpacing.space6,
       children: [
         DabblerFilterGroup(
-          label: 'Distance',
-          children: nearbyDistanceChips(ref, nearbyVenuesFilterEnabledProvider),
+          label: l.listing_group_distance,
+          children: nearbyDistanceChips(
+            context,
+            ref,
+            nearbyVenuesFilterEnabledProvider,
+          ),
         ),
         DabblerFilterGroup(
-          label: 'Sort by',
-          children: nearbySortChips(ref, nearbyVenueSortProvider),
+          label: l.listing_group_sort,
+          children: nearbySortChips(context, ref, nearbyVenueSortProvider),
         ),
       ],
     );
@@ -229,6 +238,7 @@ class _AllVenuesList extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
     final nearbyEnabled = ref.watch(nearbyVenuesFilterEnabledProvider);
     final locState = nearbyEnabled
         ? ref.watch(activeLocationProvider).valueOrNull
@@ -250,11 +260,13 @@ class _AllVenuesList extends ConsumerWidget {
 
       return nearbyAsync.when(
         loading: _loading,
-        error: (_, __) => _error(ref),
+        error: (_, __) => _error(context, ref),
         data: (venues) => venues.isEmpty
             ? _empty(
-                hint:
-                    'No venues within ${(location.nearbyRadiusMeters / 1000).round()} km — try widening your search radius.',
+                context,
+                hint: l.listing_venues_radius_text(
+                  (location.nearbyRadiusMeters / 1000).round(),
+                ),
               )
             : _cards(
                 ref,
@@ -281,9 +293,9 @@ class _AllVenuesList extends ConsumerWidget {
 
     return venuesAsync.when(
       loading: _loading,
-      error: (_, __) => _error(ref),
+      error: (_, __) => _error(context, ref),
       data: (venues) => venues.isEmpty
-          ? _empty()
+          ? _empty(context)
           : _cards(
               ref,
               venues
@@ -316,25 +328,25 @@ class _AllVenuesList extends ConsumerWidget {
     ],
   );
 
-  Widget _error(WidgetRef ref) => Center(
+  Widget _error(BuildContext context, WidgetRef ref) => Center(
     child: DabblerEmptyState.error(
-      title: "Couldn't load venues",
+      title: AppLocalizations.of(context).listing_load_venues_failed,
       size: DabblerEmptyStateSize.inline,
       onRetry: () {
         ref.invalidate(nearbyVenuesProvider);
         ref.invalidate(venuesBySportWithFiltersProvider);
       },
-      retryLabel: 'Retry',
+      retryLabel: AppLocalizations.of(context).feed_retry,
     ),
   );
 
-  Widget _empty({String? hint}) => Center(
+  Widget _empty(BuildContext context, {String? hint}) => Center(
     child: DabblerEmptyState(
       icon: 'building-3',
-      title: 'No venues found',
-      text: hint ?? 'Try selecting a different sport.',
+      title: AppLocalizations.of(context).listing_venues_none_title,
+      text: hint ?? AppLocalizations.of(context).listing_venues_none_text,
       action: DabblerButton(
-        label: 'Change filters',
+        label: AppLocalizations.of(context).listing_change_filters,
         onPressed: onChangeFilters,
       ),
     ),
@@ -468,6 +480,7 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
 
   @override
   Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
     final venue = widget.venue;
     final favIds = ref
         .watch(favoriteVenueIdsForCurrentUserProvider)
@@ -482,8 +495,8 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
     final String? priceLabel = venue.pricePerHour == null
         ? null
         : (venue.pricePerHour! > 0
-              ? 'AED ${venue.pricePerHour!.toStringAsFixed(0)} / hour'
-              : 'Free');
+              ? l.listing_price_per_hour(venue.pricePerHour!.toStringAsFixed(0))
+              : l.listing_free);
 
     return DabblerCardVenue(
       name: venue.name,
@@ -491,7 +504,7 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
       tags: [
         if (venue.distanceLabel != null)
           DabblerBadge(
-            label: '${venue.distanceLabel} away',
+            label: l.listing_km_away(venue.distanceLabel!),
             tone: DabblerBadgeTone.pill,
             icon: const DabblerIcon(
               'location',
@@ -501,7 +514,7 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
           ),
         if (venue.isIndoor != null)
           DabblerBadge(
-            label: venue.isIndoor! ? 'Indoor' : 'Outdoor',
+            label: venue.isIndoor! ? l.listing_indoor : l.listing_outdoor,
             tone: DabblerBadgeTone.warning,
           ),
       ],
@@ -515,15 +528,15 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
       ],
       favourite: DabblerButton.icon(
         icon: 'heart',
-        semanticLabel: isFav ? 'Remove from saved' : 'Save venue',
+        semanticLabel: isFav ? l.listing_remove_saved : l.listing_save_venue,
         tone: isFav ? DabblerButtonTone.primary : DabblerButtonTone.outlined,
         size: DabblerButtonSize.small,
         onPressed: _busy ? null : () => _toggle(isFav),
       ),
       price: priceLabel,
-      priceCaption: priceLabel == null ? null : 'Starting from',
+      priceCaption: priceLabel == null ? null : l.listing_starting_from,
       trailing: DabblerButton(
-        label: 'View venue',
+        label: l.listing_view_venue,
         onPressed: () => context.push(RoutePaths.venueDetail(venue.id)),
       ),
       onTap: () => context.push(RoutePaths.venueDetail(venue.id)),

@@ -1,3 +1,4 @@
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -36,9 +37,9 @@ Future<void> showListingFilterSheet(
   return showDabblerSheet<void>(
     context: context,
     detents: const <double>[0.8],
-    title: 'Filters',
+    title: AppLocalizations.of(context).listing_filters,
     headerActionBuilder: (BuildContext ctx) => DabblerButton(
-      label: 'Reset',
+      label: AppLocalizations.of(ctx).listing_reset,
       tone: DabblerButtonTone.neutral,
       size: DabblerButtonSize.small,
       onPressed: onReset,

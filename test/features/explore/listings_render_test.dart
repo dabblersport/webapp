@@ -275,6 +275,7 @@ void main() {
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
     final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final l = lookupAppLocalizations(locale);
     const Key key = Key('shot');
 
     testWidgets('games listing - $dir', (tester) async {
@@ -282,7 +283,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(dir == 'rtl' ? 'الماتشات' : 'Games'), findsOneWidget);
       // The viewer's own game counts down in the Upcoming rail.
-      expect(find.text('Upcoming'), findsOneWidget);
+      expect(find.text(l.listing_upcoming), findsOneWidget);
       expect(find.byType(DabblerCardUpcoming), findsOneWidget);
       expect(find.text('Tuesday 5-a-side'), findsOneWidget);
       expect(find.byType(DabblerCardGame), findsWidgets);
@@ -302,19 +303,19 @@ void main() {
         ],
       );
       // The applied rail shows under the header.
-      expect(find.text('This week'), findsOneWidget);
-      await tester.tap(find.bySemanticsLabel(RegExp('^Filters')));
+      expect(find.text(l.listing_this_week), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel(RegExp('^${l.listing_filters}')));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Skill level'), findsOneWidget);
-      expect(find.text('Distance'), findsOneWidget);
-      expect(find.textContaining('Show'), findsOneWidget);
-      expect(find.text('Open spots'), findsWidgets);
+      expect(find.text(l.listing_group_skill), findsOneWidget);
+      expect(find.text(l.listing_group_distance), findsOneWidget);
+      expect(find.textContaining(l.listing_show_games(0).substring(0, 2)), findsOneWidget);
+      expect(find.text(l.listing_open_spots), findsWidgets);
       // "Filters" and Reset sit in the sheet header, Reset once.
-      expect(find.text('Filters'), findsOneWidget);
-      expect(find.text('Reset'), findsOneWidget);
+      expect(find.text(l.listing_filters), findsOneWidget);
+      expect(find.text(l.listing_reset), findsOneWidget);
       await _shoot(tester, key, 'games-filter-sheet-$dir');
     }, variant: desktop);
 
@@ -328,7 +329,7 @@ void main() {
     testWidgets('games listing: empty - $dir', (tester) async {
       await _pump(tester, const GamesScreen(), locale, mode: _Mode.empty);
       expect(tester.takeException(), isNull);
-      expect(find.text('No games yet'), findsOneWidget);
+      expect(find.text(l.listing_games_none_title), findsOneWidget);
       await _shoot(tester, key, 'games-empty-$dir');
     }, variant: desktop);
 
@@ -343,13 +344,13 @@ void main() {
 
     testWidgets('venues listing: filter sheet - $dir', (tester) async {
       await _pump(tester, const VenuesScreen(), locale);
-      await tester.tap(find.bySemanticsLabel(RegExp('^Filters')));
+      await tester.tap(find.bySemanticsLabel(RegExp('^${l.listing_filters}')));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text('Within 5 km'), findsWidgets);
-      expect(find.text('Reset'), findsOneWidget);
+      expect(find.text(l.listing_within_km(5)), findsWidgets);
+      expect(find.text(l.listing_reset), findsOneWidget);
       await _shoot(tester, key, 'venues-filter-sheet-$dir');
     }, variant: desktop);
 
@@ -362,7 +363,7 @@ void main() {
     testWidgets('venues listing: empty - $dir', (tester) async {
       await _pump(tester, const VenuesScreen(), locale, mode: _Mode.empty);
       expect(tester.takeException(), isNull);
-      expect(find.text('No venues found'), findsOneWidget);
+      expect(find.text(l.listing_venues_none_title), findsOneWidget);
       await _shoot(tester, key, 'venues-empty-$dir');
     }, variant: desktop);
 

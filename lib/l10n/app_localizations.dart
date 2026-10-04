@@ -3544,6 +3544,468 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You unlocked a new achievement'**
   String get notif_kind_achievement_earned;
+
+  /// No description provided for @listing_set_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Set location'**
+  String get listing_set_location;
+
+  /// No description provided for @listing_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get listing_search;
+
+  /// No description provided for @listing_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Filters'**
+  String get listing_filters;
+
+  /// No description provided for @listing_reset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get listing_reset;
+
+  /// No description provided for @listing_clear_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear all'**
+  String get listing_clear_all;
+
+  /// No description provided for @listing_all_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'All sports'**
+  String get listing_all_sports;
+
+  /// No description provided for @listing_upcoming.
+  ///
+  /// In en, this message translates to:
+  /// **'Upcoming'**
+  String get listing_upcoming;
+
+  /// No description provided for @listing_open_spots.
+  ///
+  /// In en, this message translates to:
+  /// **'Open spots'**
+  String get listing_open_spots;
+
+  /// No description provided for @listing_sort_nearest.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearest'**
+  String get listing_sort_nearest;
+
+  /// No description provided for @listing_sort_soonest.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting soonest'**
+  String get listing_sort_soonest;
+
+  /// No description provided for @listing_group_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get listing_group_distance;
+
+  /// No description provided for @listing_group_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get listing_group_date;
+
+  /// No description provided for @listing_group_skill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill level'**
+  String get listing_group_skill;
+
+  /// No description provided for @listing_group_availability.
+  ///
+  /// In en, this message translates to:
+  /// **'Availability'**
+  String get listing_group_availability;
+
+  /// No description provided for @listing_group_sort.
+  ///
+  /// In en, this message translates to:
+  /// **'Sort by'**
+  String get listing_group_sort;
+
+  /// No description provided for @listing_within_km.
+  ///
+  /// In en, this message translates to:
+  /// **'Within {km} km'**
+  String listing_within_km(int km);
+
+  /// No description provided for @listing_any_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Any distance'**
+  String get listing_any_distance;
+
+  /// No description provided for @listing_date_any.
+  ///
+  /// In en, this message translates to:
+  /// **'Any date'**
+  String get listing_date_any;
+
+  /// No description provided for @listing_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get listing_today;
+
+  /// No description provided for @listing_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get listing_tomorrow;
+
+  /// No description provided for @listing_this_week.
+  ///
+  /// In en, this message translates to:
+  /// **'This week'**
+  String get listing_this_week;
+
+  /// No description provided for @listing_skill_beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get listing_skill_beginner;
+
+  /// No description provided for @listing_skill_intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get listing_skill_intermediate;
+
+  /// No description provided for @listing_skill_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get listing_skill_advanced;
+
+  /// No description provided for @listing_skill_pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get listing_skill_pro;
+
+  /// No description provided for @listing_load_sports_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load sports'**
+  String get listing_load_sports_failed;
+
+  /// No description provided for @listing_load_games_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load games'**
+  String get listing_load_games_failed;
+
+  /// No description provided for @listing_load_venues_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load venues'**
+  String get listing_load_venues_failed;
+
+  /// No description provided for @listing_games_filtered_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No games match your filters'**
+  String get listing_games_filtered_title;
+
+  /// No description provided for @listing_games_filtered_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Adjust or clear the filters.'**
+  String get listing_games_filtered_text;
+
+  /// No description provided for @listing_games_nearby_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No games found nearby.'**
+  String get listing_games_nearby_title;
+
+  /// No description provided for @listing_games_nearby_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try widening your search radius in the filter.'**
+  String get listing_games_nearby_text;
+
+  /// No description provided for @listing_games_none_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No games yet'**
+  String get listing_games_none_title;
+
+  /// No description provided for @listing_games_none_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to create a game in your area!'**
+  String get listing_games_none_text;
+
+  /// No description provided for @listing_change_filters.
+  ///
+  /// In en, this message translates to:
+  /// **'Change filters'**
+  String get listing_change_filters;
+
+  /// No description provided for @listing_created.
+  ///
+  /// In en, this message translates to:
+  /// **'Created'**
+  String get listing_created;
+
+  /// No description provided for @listing_joined.
+  ///
+  /// In en, this message translates to:
+  /// **'Joined'**
+  String get listing_joined;
+
+  /// No description provided for @listing_full.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get listing_full;
+
+  /// No description provided for @listing_spots_left.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} spots left'**
+  String listing_spots_left(int count);
+
+  /// No description provided for @listing_players_in.
+  ///
+  /// In en, this message translates to:
+  /// **'{joined} of {total} players in'**
+  String listing_players_in(int joined, int total);
+
+  /// No description provided for @listing_show_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} games'**
+  String listing_show_games(int count);
+
+  /// No description provided for @listing_show_games_plain.
+  ///
+  /// In en, this message translates to:
+  /// **'Show games'**
+  String get listing_show_games_plain;
+
+  /// No description provided for @listing_show_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Show venues'**
+  String get listing_show_venues;
+
+  /// No description provided for @listing_unit_day.
+  ///
+  /// In en, this message translates to:
+  /// **'day'**
+  String get listing_unit_day;
+
+  /// No description provided for @listing_unit_days.
+  ///
+  /// In en, this message translates to:
+  /// **'days'**
+  String get listing_unit_days;
+
+  /// No description provided for @listing_unit_hour.
+  ///
+  /// In en, this message translates to:
+  /// **'hour'**
+  String get listing_unit_hour;
+
+  /// No description provided for @listing_unit_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'hours'**
+  String get listing_unit_hours;
+
+  /// No description provided for @listing_unit_min.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get listing_unit_min;
+
+  /// No description provided for @listing_saved_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved venues'**
+  String get listing_saved_venues;
+
+  /// No description provided for @listing_add_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'Add venue'**
+  String get listing_add_venue;
+
+  /// No description provided for @listing_venues_none_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues found'**
+  String get listing_venues_none_title;
+
+  /// No description provided for @listing_venues_none_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try selecting a different sport.'**
+  String get listing_venues_none_text;
+
+  /// No description provided for @listing_venues_radius_text.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues within {km} km — try widening your search radius.'**
+  String listing_venues_radius_text(int km);
+
+  /// No description provided for @listing_starting_from.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting from'**
+  String get listing_starting_from;
+
+  /// No description provided for @listing_view_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'View venue'**
+  String get listing_view_venue;
+
+  /// No description provided for @listing_save_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'Save venue'**
+  String get listing_save_venue;
+
+  /// No description provided for @listing_remove_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from saved'**
+  String get listing_remove_saved;
+
+  /// No description provided for @listing_indoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor'**
+  String get listing_indoor;
+
+  /// No description provided for @listing_outdoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor'**
+  String get listing_outdoor;
+
+  /// No description provided for @listing_km_away.
+  ///
+  /// In en, this message translates to:
+  /// **'{distance} away'**
+  String listing_km_away(String distance);
+
+  /// No description provided for @listing_free.
+  ///
+  /// In en, this message translates to:
+  /// **'Free'**
+  String get listing_free;
+
+  /// No description provided for @listing_price_per_hour.
+  ///
+  /// In en, this message translates to:
+  /// **'AED {amount} / hour'**
+  String listing_price_per_hour(String amount);
+
+  /// No description provided for @location_change_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Change location'**
+  String get location_change_title;
+
+  /// No description provided for @location_search_areas.
+  ///
+  /// In en, this message translates to:
+  /// **'Search areas…'**
+  String get location_search_areas;
+
+  /// No description provided for @location_use_current.
+  ///
+  /// In en, this message translates to:
+  /// **'Use current location'**
+  String get location_use_current;
+
+  /// No description provided for @location_detecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Detecting…'**
+  String get location_detecting;
+
+  /// No description provided for @location_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved'**
+  String get location_saved;
+
+  /// No description provided for @location_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get location_add;
+
+  /// No description provided for @location_no_areas.
+  ///
+  /// In en, this message translates to:
+  /// **'No areas match \"{query}\"'**
+  String location_no_areas(String query);
+
+  /// No description provided for @location_access_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access required'**
+  String get location_access_required;
+
+  /// No description provided for @location_permission_denied_forever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission is permanently denied. Open Settings to enable it.'**
+  String get location_permission_denied_forever;
+
+  /// No description provided for @location_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get location_open_settings;
+
+  /// No description provided for @location_enable_services.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enable location services'**
+  String get location_enable_services;
+
+  /// No description provided for @location_permission_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location permission denied'**
+  String get location_permission_denied;
+
+  /// No description provided for @location_timeout.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not get location — try again'**
+  String get location_timeout;
+
+  /// No description provided for @location_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Error: {message}'**
+  String location_error(String message);
+
+  /// No description provided for @listing_skill_any.
+  ///
+  /// In en, this message translates to:
+  /// **'Any skill'**
+  String get listing_skill_any;
 }
 
 class _AppLocalizationsDelegate
