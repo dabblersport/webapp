@@ -63,6 +63,8 @@ Post _post(String id, String body) => Post(
   body: body,
   tags: const <String>['padel'],
   sport: 'padel',
+  personaTypeSnapshot: 'player',
+  locationName: 'Nad Al Sheba',
   likeCount: 3,
   commentCount: 1,
   createdAt: DateTime.now().subtract(const Duration(hours: 2)),
@@ -132,6 +134,8 @@ void main() {
       expect(find.textContaining('#padel'), findsWidgets);
       expect(find.text(lookupAppLocalizations(locale).sfx_posts_count(2)), findsOneWidget);
       expect(find.byType(DabblerPostRow), findsNWidgets(2));
+      expect(find.text(lookupAppLocalizations(locale).post_card_persona_player), findsNWidgets(2));
+      expect(find.text('Nad Al Sheba'), findsNWidgets(2));
       await _shoot(tester, key, 'hashtag-feed-posts-$dir');
     }, variant: desktop);
 
