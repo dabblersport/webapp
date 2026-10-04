@@ -159,7 +159,7 @@ Future<void> pumpFrameHome(
           priorityScore: 0,
           createdAt: DateTime.now().subtract(const Duration(hours: 3)),
           feedLabel: d.football,
-          regions: const <String>['Dubai'],
+          regions: <String>[d.region],
         ),
       ],
       loaded: true,

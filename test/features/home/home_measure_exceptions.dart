@@ -11,7 +11,7 @@ const String kExArabicRuleReason =
 
 /// arstring
 const String kExArabicStringReason =
-    'copy: the app\'s Arabic string is not the frame\'s (frame draws a Latin / different label in the Arabic frame); content seat owns the copy';
+    'copy: the Arabic frame draws the untranslated Latin label Done on the city sheet while the app shows its l10n home_location_done; no frame Arabic exists to adopt (see arabic-diffs.md)';
 
 /// chipglyph
 const String kExChipGlyphReason =
@@ -47,7 +47,7 @@ const String kExMoreRtlReason =
 
 /// sheetcontent
 const String kExSheetContentReason =
-    'content-sized sheet: the frame lists Hide post and Report user (65 high each); the app lists Report post (65) and Block user (48, no note), so the panel is 18 shorter (no Hide-post feature: Canary home_post_row has none)';
+    'content-sized sheet: the frame lists Hide post and Report user (65 high each); the app lists Report post (65) and Block user (48, no note), so the panel is 17 shorter (no Hide-post feature; Block is App Review 1.2: a git grep for Hide post or hide_post on origin/Canary lib/features finds nothing)';
 
 /// sort
 const String kExSortReason =
@@ -55,126 +55,12 @@ const String kExSortReason =
 
 const Map<String, MeasureException>
 kMeasureExceptions = <String, MeasureException>{
-  'LTR|City sheet (Change location)|title (17/22, semibold)': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.01,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|City sheet (Change location)|Done button (45 box)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.01,
-    dy: -1.01,
-    dw: -0.01,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|City sheet (Change location)|search field (42, radius 24)':
-      MeasureException(
-        kExCitySearchReason,
-        dx: -1.0,
-        dy: -1.01,
-        dw: 2.0,
-        dh: 3.0,
-        tol: 0.06,
-      ),
-  'LTR|City sheet (Change location)|use current location row': MeasureException(
-    kExCityListReason,
-    dx: -1.0,
-    dy: 0.0,
-    dw: 2.0,
-    dh: 1.0,
-    tol: 0.06,
-  ),
-  'LTR|City sheet (Change location)|area row': MeasureException(
-    kExCityListReason,
-    dx: -1.0,
-    dy: 0.0,
-    dw: 2.0,
-    dh: -1.0,
-    tol: 0.06,
-  ),
   'LTR|Post options sheet|panel (x, width, bottom-anchored)': MeasureException(
     kExSheetContentReason,
     dx: 0.0,
-    dy: 18.0,
+    dy: 17.0,
     dw: 0.0,
-    dh: -18.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|grabber 40x4': MeasureException(
-    kExSheetHairlineReason,
-    dx: 0.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|title (display 20/25)': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|subtitle (12/16, muted)': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|header hairline': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 2.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|first action row (padding 14/15, radius 12)':
-      MeasureException(
-        kExSheetHairlineReason,
-        dx: -1.0,
-        dy: -1.0,
-        dw: 2.0,
-        dh: 0.0,
-        tol: 0.06,
-      ),
-  'LTR|Post options sheet|action glyph (20)': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|action label (15/20)': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|Post options sheet|action note (12/16)': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'LTR|News tab|sub-chip (first), height and padding': MeasureException(
-    kExChipGlyphReason,
-    dx: 0.0,
-    dy: -1.0,
-    dw: -20.0,
-    dh: 0.0,
+    dh: -17.0,
     tol: 0.06,
   ),
   'LTR|News tab|news card': MeasureException(
@@ -185,49 +71,8 @@ kMeasureExceptions = <String, MeasureException>{
     dh: 0.0,
     tol: 0.06,
   ),
-  'RTL|City sheet (Change location)|title (17/22, semibold)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.0,
-    dy: -1.01,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|City sheet (Change location)|Done button (45 box)': MeasureException(
-    kExCityDoneReason,
-    dx: -1.0,
-    dy: -1.01,
-    dw: -15.95,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|City sheet (Change location)|search field (42, radius 24)':
-      MeasureException(
-        kExCitySearchReason,
-        dx: -1.0,
-        dy: -1.01,
-        dw: 2.0,
-        dh: 3.0,
-        tol: 0.06,
-      ),
-  'RTL|City sheet (Change location)|use current location row': MeasureException(
-    kExCityListReason,
-    dx: -1.0,
-    dy: 0.0,
-    dw: 2.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|City sheet (Change location)|area row': MeasureException(
-    kExCityListReason,
-    dx: -1.0,
-    dy: 0.0,
-    dw: 2.0,
-    dh: -1.0,
-    tol: 0.06,
-  ),
   'RTL|Upcoming strip (folded)|count label (11/13)': MeasureException(
-    kExArabicStringReason,
+    kExArabicRuleReason,
     dx: 0.0,
     dy: 0.0,
     dw: -2.77,
@@ -237,82 +82,9 @@ kMeasureExceptions = <String, MeasureException>{
   'RTL|Post options sheet|panel (x, width, bottom-anchored)': MeasureException(
     kExSheetContentReason,
     dx: 0.0,
-    dy: 18.0,
+    dy: 17.0,
     dw: 0.0,
-    dh: -18.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|grabber 40x4': MeasureException(
-    kExSheetHairlineReason,
-    dx: 0.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|title (display 20/25)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|subtitle (12/16, muted)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|header hairline': MeasureException(
-    kExSheetHairlineReason,
-    dx: -1.0,
-    dy: -1.0,
-    dw: 2.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|first action row (padding 14/15, radius 12)':
-      MeasureException(
-        kExSheetHairlineReason,
-        dx: -1.0,
-        dy: -1.0,
-        dw: 2.0,
-        dh: 0.0,
-        tol: 0.06,
-      ),
-  'RTL|Post options sheet|action glyph (20)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|action label (15/20)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post options sheet|action note (12/16)': MeasureException(
-    kExSheetHairlineReason,
-    dx: 1.0,
-    dy: -1.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|News tab|sub-chip (first), height and padding': MeasureException(
-    kExChipGlyphRtlReason,
-    dx: 9.01,
-    dy: -1.0,
-    dw: -9.01,
-    dh: 0.0,
+    dh: -17.0,
     tol: 0.06,
   ),
   'RTL|News tab|news card': MeasureException(
@@ -560,6 +332,30 @@ kMeasureExceptions = <String, MeasureException>{
     dx: -107.8,
     dy: -3.0,
     dw: -0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|City sheet (Change location)|Done button (45 box)': MeasureException(
+    kExArabicStringReason,
+    dx: 0.0,
+    dy: -0.01,
+    dw: -15.95,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|News tab|sub-chip (first), height and padding': MeasureException(
+    kExSortReason,
+    dx: 0.0,
+    dy: -1.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|News tab|sub-chip (first), height and padding': MeasureException(
+    '$kExSortReason; and $kExArabicRuleReason',
+    dx: 1.36,
+    dy: -1.0,
+    dw: -1.36,
     dh: 0.0,
     tol: 0.06,
   ),

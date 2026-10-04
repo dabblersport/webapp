@@ -327,6 +327,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
       detent: DabblerSheetDetent.content,
       dragHandle: true,
       pageBackground: true,
+      hairlineOutside: true,
       showCloseButton: false,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,

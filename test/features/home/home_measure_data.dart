@@ -20,6 +20,7 @@ class FrameData {
     required this.newsExcerpt,
     required this.newsTitleKey,
     required this.newsExcerptKey,
+    required this.region,
   });
 
   final String location;
@@ -36,6 +37,7 @@ class FrameData {
   /// A short prefix of [newsTitle] / [newsExcerpt] to find them by.
   final String newsTitleKey;
   final String newsExcerptKey;
+  final String region;
 
   static const FrameData en = FrameData(
     location: 'Sheikha Fatima Bint Mubarak Street',
@@ -56,6 +58,7 @@ class FrameData {
         'public courts.',
     newsTitleKey: 'Dubai adds twelve',
     newsExcerptKey: 'The municipality confirmed',
+    region: 'Dubai',
   );
 
   static const FrameData ar = FrameData(
@@ -75,6 +78,7 @@ class FrameData {
         'نفسها التي يستخدمها السكان للملاعب العامة.',
     newsTitleKey: 'دبي تضيف',
     newsExcerptKey: 'أكدت البلدية',
+    region: 'دبي',
   );
 
   static FrameData of(bool rtl) => rtl ? ar : en;

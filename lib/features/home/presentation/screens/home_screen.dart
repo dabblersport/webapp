@@ -1084,6 +1084,10 @@ class _NewsFilterChips extends ConsumerWidget {
                 region,
                 selected,
                 () => notifier.setFilterRegion(selected ? null : region),
+                leading: const DabblerIcon(
+                  'location',
+                  weight: DabblerIconWeight.bold,
+                ),
               );
             }),
           ],
@@ -1188,6 +1192,7 @@ class _HomeHeader extends ConsumerWidget {
       context: context,
       detents: const <double>[0.66],
       pageBackground: true,
+      hairlineOutside: true,
       showCloseButton: false,
       builder: (_) => const _LocationPickerHost(),
     );

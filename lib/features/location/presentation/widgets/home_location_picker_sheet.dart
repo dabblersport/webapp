@@ -167,17 +167,31 @@ class _HomeLocationPickerSheetState
             const SizedBox(height: DabblerSpacing.space4),
           DabblerSearchField(
             controller: _searchController,
-            placeholder: l10n.home_location_search_venues,
+            metrics: widget.frameHeader
+                ? DabblerFeedMetrics.drawn
+                : DabblerFeedMetrics.touch,
+            placeholder: widget.frameHeader
+                ? l10n.home_location_search
+                : l10n.home_location_search_venues,
             onChanged: (v) => setState(() => _query = v.trim()),
             onCleared: () => setState(() => _query = ''),
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          SizedBox(
+            height: widget.frameHeader
+                ? DabblerSpacing.space4
+                : DabblerSpacing.space3,
+          ),
           DabblerListRow(
             flat: true,
             brand: true,
+            metrics: widget.frameHeader
+                ? DabblerFeedMetrics.drawn
+                : DabblerFeedMetrics.touch,
             leading: DabblerIcon(
               'gps',
-              size: DabblerSizing.iconRow,
+              size: widget.frameHeader
+                  ? DabblerHomeFrame.listRowGlyph
+                  : DabblerSizing.iconRow,
               weight: DabblerIconWeight.bold,
               color: DabblerColors.of(context).brandPrimary,
             ),
@@ -188,6 +202,7 @@ class _HomeLocationPickerSheetState
             onTap: _gpsLoading ? null : _useGps,
           ),
           HomeLocationPlaces(
+            frame: widget.frameHeader,
             areas: _areas,
             saved: saved ?? const <ProfileLocation>[],
             query: _query,

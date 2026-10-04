@@ -21,7 +21,12 @@ class HomeLocationPlaces extends StatelessWidget {
     required this.onSaved,
     required this.onArea,
     required this.onAdd,
+    this.frame = false,
   });
+
+  /// The Home Feed frame's rows: drawn metrics, 20 glyphs, the selected area's
+  /// title in the brand ink and the group label at the regular weight.
+  final bool frame;
 
   final Future<Map<String, List<Area>>> areas;
   final List<ProfileLocation> saved;
@@ -97,7 +102,9 @@ class HomeLocationPlaces extends StatelessWidget {
           child: DabblerText(
             text,
             style: DabblerType.caption1,
-            weight: DabblerTextWeight.semibold,
+            weight: frame
+                ? DabblerTextWeight.regular
+                : DabblerTextWeight.semibold,
             tone: DabblerTextTone.secondary,
           ),
         );
@@ -110,9 +117,11 @@ class HomeLocationPlaces extends StatelessWidget {
           required VoidCallback onTap,
         }) => DabblerListRow(
           flat: true,
+          metrics: frame ? DabblerFeedMetrics.drawn : DabblerFeedMetrics.touch,
+          brand: frame && selected,
           leading: DabblerIcon(
             icon,
-            size: DabblerSizing.iconRow,
+            size: frame ? DabblerHomeFrame.listRowGlyph : DabblerSizing.iconRow,
             weight: selected
                 ? DabblerIconWeight.bold
                 : DabblerIconWeight.linear,
@@ -123,7 +132,9 @@ class HomeLocationPlaces extends StatelessWidget {
           trailing: selected
               ? DabblerIcon(
                   'tick-circle',
-                  size: DabblerSizing.iconRow,
+                  size: frame
+                      ? DabblerHomeFrame.listRowGlyph
+                      : DabblerSizing.iconRow,
                   weight: DabblerIconWeight.bold,
                   color: colors.brandPrimary,
                 )
