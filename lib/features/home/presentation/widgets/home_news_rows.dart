@@ -47,6 +47,7 @@ class HomeNewsCard extends ConsumerWidget {
     final url = item.coverImageUrl;
 
     final Widget card = DabblerNewsCard(
+      metrics: DabblerFeedMetrics.drawn,
       media: url == null
           ? null
           : DabblerImage(url: url, radius: BorderRadius.zero),
@@ -207,6 +208,7 @@ class HomeActivityRow extends StatelessWidget {
     final newsTitle = activity.localizedTargetTitle(locale);
 
     return DabblerActivityRow(
+      metrics: DabblerFeedMetrics.drawn,
       leading: DabblerAvatar(
         seed: activity.actorUsername,
         imageUrl: activity.actorAvatarUrl,

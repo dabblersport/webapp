@@ -35,7 +35,13 @@ class HomePostRow extends ConsumerStatefulWidget {
     this.isEmbedded = false,
     this.showNearbyChipInHeader = false,
     this.showActions = true,
+    this.metrics = DabblerFeedMetrics.touch,
   });
+
+  /// [DabblerFeedMetrics.drawn] draws the row exactly as the Home Feed frame
+  /// measures it; the Home screen passes it. Every other screen that shows a
+  /// post keeps the touch-first default.
+  final DabblerFeedMetrics metrics;
 
   final Post post;
   final bool isEmbedded;
@@ -52,6 +58,7 @@ class HomePostRow extends ConsumerStatefulWidget {
     bool showNearbyChipInHeader = false,
     bool showActions = true,
     DabblerPostDetail? detail,
+    DabblerFeedMetrics metrics = DabblerFeedMetrics.touch,
   }) {
     if (post.originType == OriginType.repost) {
       return HomeRepostRow(post: post, detail: detail);
@@ -60,6 +67,7 @@ class HomePostRow extends ConsumerStatefulWidget {
       post: post,
       showNearbyChipInHeader: showNearbyChipInHeader,
       showActions: showActions,
+      metrics: metrics,
     );
   }
 
@@ -320,58 +328,56 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
       dragHandle: true,
       pageBackground: true,
       showCloseButton: false,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsetsDirectional.only(
-          start: DabblerSpacing.space6,
-          end: DabblerSpacing.space6,
-          bottom: DabblerSpacing.space8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // The frame's own header: title, who posted it, then a hairline.
-            DabblerText(
-              l10n.home_post_options_title,
-              style: DabblerType.title3,
-            ),
-            DabblerText(
-              l10n.home_post_options_by(authorName),
-              style: DabblerType.caption1,
-              tone: DabblerTextTone.secondary,
-            ),
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // The frame's header block: 9 above the title, 2 between title and
+          // who posted it, 12 below, then a hairline.
+          const SizedBox(height: DabblerSpacing.space3),
+          DabblerText(l10n.home_post_options_title, style: DabblerType.title3),
+          const SizedBox(height: DabblerHomeFrame.sheetTitleGap),
+          DabblerText(
+            l10n.home_post_options_by(authorName),
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.secondary,
+          ),
+          const SizedBox(height: DabblerSpacing.space4),
+          const DabblerDivider(),
+          // 12 of gap and 12 of padding before the actions.
+          const SizedBox(height: DabblerSpacing.space8),
+          DabblerActionRow(
+            metrics: DabblerFeedMetrics.drawn,
+            icon: 'danger',
+            label: l10n.home_post_report,
+            note: l10n.home_post_report_note,
+            destructive: true,
+            onTap: () {
+              Navigator.of(ctx).pop();
+              // The report form is the shared dialog (legacy widgets).
+              _showLegacyReportDialog(
+                context,
+                postId: post.id,
+                authorUserId: post.authorUserId,
+              );
+            },
+          ),
+          if (!isAuthor) ...[
             const SizedBox(height: DabblerSpacing.space3),
-            const DabblerDivider(),
-            const SizedBox(height: DabblerSpacing.space4),
             DabblerActionRow(
-              icon: 'danger',
-              label: l10n.home_post_report,
-              note: l10n.home_post_report_note,
+              metrics: DabblerFeedMetrics.drawn,
+              icon: 'user-remove',
+              label: l10n.home_post_block,
               destructive: true,
               onTap: () {
                 Navigator.of(ctx).pop();
-                // The report form is the shared dialog (legacy widgets).
-                _showLegacyReportDialog(
-                  context,
-                  postId: post.id,
-                  authorUserId: post.authorUserId,
-                );
+                _blockAuthor();
               },
             ),
-            if (!isAuthor) ...[
-              const SizedBox(height: DabblerSpacing.space3),
-              DabblerActionRow(
-                icon: 'user-remove',
-                label: l10n.home_post_block,
-                destructive: true,
-                onTap: () {
-                  Navigator.of(ctx).pop();
-                  _blockAuthor();
-                },
-              ),
-            ],
           ],
-        ),
+          // The actions block closes with 24.
+          const SizedBox(height: DabblerSpacing.space8),
+        ],
       ),
     );
   }
@@ -463,6 +469,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DabblerPostRow(
+          metrics: widget.metrics,
           name: authorLabel,
           seed: authorLabel,
           imageUrl: post.authorAvatarUrl,

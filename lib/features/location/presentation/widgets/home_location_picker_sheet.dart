@@ -32,7 +32,14 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
     super.key,
     required this.scrollController,
     this.showHeader = true,
+    this.frameHeader = false,
   });
+
+  /// Draws the header the Home Feed frame draws (`Home Feed.dc.html` city
+  /// sheet): the title in the 17/22 headline step beside a "Done" pill, with no
+  /// hairline under it. Default false keeps the Listings frame's header, which
+  /// the Games and Venues screens open.
+  final bool frameHeader;
 
   /// Kept for existing callers (home screen, app top bar). The DabblerSheet
   /// body is its own scroll view, so the picker no longer attaches it.
@@ -85,10 +92,8 @@ class _PickerHostState extends State<_PickerHost> {
   }
 
   @override
-  Widget build(BuildContext context) => HomeLocationPickerSheet(
-    scrollController: _controller,
-    showHeader: false,
-  );
+  Widget build(BuildContext context) =>
+      HomeLocationPickerSheet(scrollController: _controller, showHeader: false);
 }
 
 class _HomeLocationPickerSheetState
@@ -119,7 +124,26 @@ class _HomeLocationPickerSheetState
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          if (widget.showHeader) ...[
+          if (widget.showHeader && widget.frameHeader) ...[
+            Row(
+              children: [
+                Expanded(
+                  child: DabblerText(
+                    l10n.home_location_title,
+                    style: DabblerType.headline,
+                  ),
+                ),
+                DabblerButton(
+                  label: l10n.home_location_done,
+                  tone: DabblerButtonTone.neutral,
+                  size: DabblerButtonSize.small,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ],
+            ),
+            // 12 of header padding and 12 of gap before the search field.
+            const SizedBox(height: DabblerSpacing.space8),
+          ] else if (widget.showHeader) ...[
             Row(
               children: [
                 Expanded(

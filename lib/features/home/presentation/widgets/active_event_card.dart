@@ -57,11 +57,15 @@ class GroupedJoinCard extends StatelessWidget {
     final int count = event.joinCount;
     final String? gameId = event.gameId;
     return DabblerActivityRow(
+      metrics: DabblerFeedMetrics.drawn,
       leading: event.avatarUrls.isNotEmpty
           ? _joinedPlayers(event.avatarUrls, count)
           : (count > 1
                 ? DabblerAvatarGroup(overflow: count)
-                : const DabblerActivitySystemTile('flash')),
+                : const DabblerActivitySystemTile(
+                    'flash',
+                    metrics: DabblerFeedMetrics.drawn,
+                  )),
       actor: count > 1 ? '$count players' : 'A player',
       verb: 'joined this game',
       subject: event.gameTitle,
@@ -85,7 +89,11 @@ class GameCard extends StatelessWidget {
     final String? gameId = event.gameId;
     void open() => context.push(RoutePaths.gameDetail(gameId!));
     return DabblerActivityRow(
-      leading: const DabblerActivitySystemTile('game'),
+      metrics: DabblerFeedMetrics.drawn,
+      leading: const DabblerActivitySystemTile(
+        'game',
+        metrics: DabblerFeedMetrics.drawn,
+      ),
       actor: event.gameTitle ?? 'New Game',
       verb: 'is open',
       place: event.venueName,
@@ -112,7 +120,8 @@ class PostCard extends ConsumerWidget {
     final asyncPost = ref.watch(postDetailProvider(postId));
 
     return asyncPost.when(
-      data: (post) => HomePostRow.resolve(post),
+      data: (post) =>
+          HomePostRow.resolve(post, metrics: DabblerFeedMetrics.drawn),
       loading: () => const Padding(
         padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space4),
         child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
@@ -131,6 +140,7 @@ class NewUserCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final String name = event.displayName ?? 'Someone';
     return DabblerActivityRow(
+      metrics: DabblerFeedMetrics.drawn,
       leading: DabblerAvatar(
         seed: name,
         imageUrl: event.avatarUrl,
