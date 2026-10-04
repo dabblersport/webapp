@@ -1,94 +1,121 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
-/// Opens a DS sheet with a [DabblerCalendar] for a date of birth and resolves
-/// with the confirmed date, or null when dismissed. The calendar's year chip
-/// swaps the grid for a year list, since a birth year is decades back.
+import 'package:dabbler/l10n/app_localizations.dart';
+
+/// Opens the design's date-of-birth sheet — three scrolling columns for day,
+/// month and year over a full-width confirm action — and resolves with the
+/// confirmed date, or null when dismissed.
+///
+/// [initialDate] is null when nothing has been chosen yet; the primary action
+/// then reads Cancel, as in the design (`Auth and Onboarding.dc.html:586`).
 Future<DateTime?> showBirthDateSheet({
   required BuildContext context,
-  required DateTime initialDate,
+  required DateTime? initialDate,
   required DateTime firstDate,
   required DateTime lastDate,
 }) {
   return showDabblerSheet<DateTime>(
     context: context,
+    title: AppLocalizations.of(context).onb_dob_label,
     detents: const <double>[0.75],
-    builder: (_) =>
-        _BirthDateSheet(initial: initialDate, first: firstDate, last: lastDate),
+    builder: (_) => _BirthDateColumns(
+      initial: initialDate,
+      first: firstDate,
+      last: lastDate,
+    ),
   );
 }
 
-class _BirthDateSheet extends StatefulWidget {
-  const _BirthDateSheet({
+class _BirthDateColumns extends StatefulWidget {
+  const _BirthDateColumns({
     required this.initial,
     required this.first,
     required this.last,
   });
 
-  final DateTime initial;
+  final DateTime? initial;
   final DateTime first;
   final DateTime last;
 
   @override
-  State<_BirthDateSheet> createState() => _BirthDateSheetState();
+  State<_BirthDateColumns> createState() => _BirthDateColumnsState();
 }
 
-class _BirthDateSheetState extends State<_BirthDateSheet> {
-  late DateTime _selected = widget.initial;
-  late DateTime _month = DateTime(widget.initial.year, widget.initial.month);
-  // Opens on the year list: a birth date is picked year first.
-  bool _pickingYear = true;
+class _BirthDateColumnsState extends State<_BirthDateColumns> {
+  int? _day;
+  int? _month;
+  int? _year;
 
-  void _pickYear(int year) {
-    setState(() {
-      var d = DateTime(year, _selected.month, _selected.day);
-      if (d.isAfter(widget.last)) d = widget.last;
-      if (d.isBefore(widget.first)) d = widget.first;
-      _selected = d;
-      _month = DateTime(d.year, d.month);
-      _pickingYear = false;
-    });
+  @override
+  void initState() {
+    super.initState();
+    _day = widget.initial?.day;
+    _month = widget.initial?.month;
+    _year = widget.initial?.year;
+  }
+
+  bool get _complete => _day != null && _month != null && _year != null;
+
+  /// The chosen date, with the day held inside the month and the whole date
+  /// held inside the allowed range.
+  DateTime _resolve() {
+    final lastDayOfMonth = DateTime(_year!, _month! + 1, 0).day;
+    var date = DateTime(
+      _year!,
+      _month!,
+      _day! > lastDayOfMonth ? lastDayOfMonth : _day!,
+    );
+    if (date.isAfter(widget.last)) date = widget.last;
+    if (date.isBefore(widget.first)) date = widget.first;
+    return date;
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_pickingYear) {
-      final years = <int>[
-        for (var y = widget.last.year; y >= widget.first.year; y--) y,
-      ];
-      return GridView.count(
-        crossAxisCount: 4,
-        padding: const EdgeInsetsDirectional.all(DabblerSpacing.space6),
-        mainAxisSpacing: DabblerSpacing.space3,
-        crossAxisSpacing: DabblerSpacing.space3,
-        childAspectRatio: 2,
-        children: [
-          for (final y in years)
-            Center(
-              child: DabblerChip(
-                label: '$y',
-                selected: y == _selected.year,
-                onTap: () => _pickYear(y),
-              ),
-            ),
-        ],
-      );
-    }
-    return SingleChildScrollView(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: DabblerSpacing.space6,
-      ),
-      child: DabblerCalendar(
-        month: _month,
-        selected: <DateTime>{_selected},
-        minimum: widget.first,
-        maximum: widget.last,
-        onSelect: (d) => setState(() => _selected = d),
-        onMonthChanged: (m) => setState(() => _month = m),
-        onYearPressed: () => setState(() => _pickingYear = true),
-        onConfirm: () => Navigator.pop(context, _selected),
-        onCancel: () => Navigator.pop(context),
-      ),
+    final l10n = AppLocalizations.of(context);
+    final months = <String>[
+      l10n.onb_month_1,
+      l10n.onb_month_2,
+      l10n.onb_month_3,
+      l10n.onb_month_4,
+      l10n.onb_month_5,
+      l10n.onb_month_6,
+      l10n.onb_month_7,
+      l10n.onb_month_8,
+      l10n.onb_month_9,
+      l10n.onb_month_10,
+      l10n.onb_month_11,
+      l10n.onb_month_12,
+    ];
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerDateColumns(
+          dayLabel: l10n.onb_day,
+          monthLabel: l10n.onb_month,
+          yearLabel: l10n.onb_year,
+          monthNames: months,
+          firstYear: widget.first.year,
+          lastYear: widget.last.year,
+          day: _day,
+          month: _month,
+          year: _year,
+          onDayChanged: (d) => setState(() => _day = d),
+          onMonthChanged: (m) => setState(() => _month = m),
+          onYearChanged: (y) => setState(() => _year = y),
+        ),
+        const DabblerGap.v(DabblerSpacing.space6),
+        DabblerButton(
+          label: _complete
+              ? l10n.onb_dob_sheet_confirm
+              : l10n.onb_dob_sheet_cancel,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
+          onPressed: () =>
+              Navigator.pop(context, _complete ? _resolve() : null),
+        ),
+      ],
     );
   }
 }

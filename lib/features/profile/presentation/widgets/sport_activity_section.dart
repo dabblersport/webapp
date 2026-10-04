@@ -52,7 +52,7 @@ class SportActivitySection extends ConsumerWidget {
                               )
                               .toList(),
                         ),
-                        const SizedBox(height: DabblerSpacing.space2),
+                        const DabblerGap.v(DabblerSpacing.space2),
                         resolvePostLayout(item.post),
                       ],
                     ),

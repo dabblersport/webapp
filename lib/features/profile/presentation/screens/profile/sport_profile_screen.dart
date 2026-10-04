@@ -78,7 +78,7 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   _Header(args: args, data: core.valueOrNull),
-                  const SizedBox(height: DabblerSpacing.space6),
+                  const DabblerGap.v(DabblerSpacing.space6),
                   DabblerTabs(
                     variant: DabblerTabsVariant.segmented,
                     // Arabic labels scale down rather than ellipsise.
@@ -94,7 +94,7 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
                       DabblerTabItem(id: _tabHistory, label: 'History'),
                     ],
                   ),
-                  const SizedBox(height: DabblerSpacing.space6),
+                  const DabblerGap.v(DabblerSpacing.space6),
                   ..._tabContent(context, core, isOwnProfile),
                 ],
               ),
@@ -118,7 +118,7 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
         // returns games the viewer is allowed to see.
         return [
           SportGameHistorySection(args: args),
-          const SizedBox(height: DabblerSpacing.space6),
+          const DabblerGap.v(DabblerSpacing.space6),
           SportActivitySection(args: args),
         ];
       case _tabTracker:
@@ -228,42 +228,17 @@ class _Header extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         DabblerText(args.sportName, style: DabblerType.largeTitle),
-        const SizedBox(height: DabblerSpacing.space4),
-        Row(
-          children: [
-            DabblerAvatar(
-              seed: args.displayName,
-              imageUrl: args.avatarUrl,
-              size: DabblerAvatarSize.md,
-            ),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  DabblerText(args.displayName, style: DabblerType.headline),
-                  if (subtitle != null)
-                    DabblerText(
-                      subtitle,
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
-                    ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: DabblerSpacing.space4),
+        if (subtitle != null)
+          DabblerText(
+            subtitle,
+            style: DabblerType.subheadline,
+            tone: DabblerTextTone.secondary,
+          ),
+        const DabblerGap.v(DabblerSpacing.space3),
         Wrap(
           spacing: DabblerSpacing.space2,
           runSpacing: DabblerSpacing.space2,
           children: [
-            DabblerBadge(
-              label: args.isOrganiserPersona
-                  ? 'Organiser persona'
-                  : 'Player persona',
-              tone: DabblerBadgeTone.withIcon,
-            ),
             if (loaded?.playerTier != null)
               DabblerBadge(
                 label: loaded!.playerTier!.key.toUpperCase(),
@@ -450,7 +425,7 @@ class _SportPreferencesSectionState
             style: DabblerType.subheadline,
             weight: DabblerTextWeight.medium,
           ),
-          const SizedBox(height: DabblerSpacing.space2),
+          const DabblerGap.v(DabblerSpacing.space2),
           Wrap(
             spacing: DabblerSpacing.space2,
             runSpacing: DabblerSpacing.space2,
@@ -464,13 +439,13 @@ class _SportPreferencesSectionState
           ),
           // Position selector (player only, sports that have positions)
           if (!widget.args.isOrganiserPersona && positions.isNotEmpty) ...[
-            const SizedBox(height: DabblerSpacing.space6),
+            const DabblerGap.v(DabblerSpacing.space6),
             DabblerText(
               'Preferred Position',
               style: DabblerType.subheadline,
               weight: DabblerTextWeight.medium,
             ),
-            const SizedBox(height: DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space2),
             Wrap(
               spacing: DabblerSpacing.space2,
               runSpacing: DabblerSpacing.space2,
@@ -485,7 +460,7 @@ class _SportPreferencesSectionState
               }).toList(),
             ),
           ],
-          const SizedBox(height: DabblerSpacing.space6),
+          const DabblerGap.v(DabblerSpacing.space6),
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: DabblerButton(

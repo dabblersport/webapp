@@ -81,7 +81,7 @@ class ProfileSportsView extends StatelessWidget {
                   showCreateGame: showCreateGame,
                   onCreateGame: onCreateGame,
                 ),
-                const SizedBox(height: DabblerSpacing.space8),
+                const DabblerGap.v(DabblerSpacing.space8),
                 DabblerSection(
                   title: 'My Sports',
                   subtitle:
@@ -103,7 +103,7 @@ class ProfileSportsView extends StatelessWidget {
                       ),
                   ],
                 ),
-                const SizedBox(height: DabblerSpacing.space8),
+                const DabblerGap.v(DabblerSpacing.space8),
                 DabblerSection(
                   title: 'General Preferences',
                   children: [
@@ -171,12 +171,12 @@ class _Header extends StatelessWidget {
                 size: DabblerSizing.iconMd,
                 color: colors.brandPrimary,
               ),
-              const SizedBox(width: DabblerSpacing.space4),
+              const DabblerGap.h(DabblerSpacing.space4),
               Expanded(
                 child: DabblerText('Sports & Games', style: DabblerType.title3),
               ),
               if (showCreateGame) ...[
-                const SizedBox(width: DabblerSpacing.space4),
+                const DabblerGap.h(DabblerSpacing.space4),
                 DabblerButton(
                   label: 'Create game',
                   icon: 'add-circle',
@@ -186,7 +186,7 @@ class _Header extends StatelessWidget {
               ],
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          const DabblerGap.v(DabblerSpacing.space3),
           DabblerText(
             'Customize your sports preferences and skill levels to get the best game recommendations.',
             style: DabblerType.subheadline,
@@ -258,7 +258,7 @@ class _SportItem extends StatelessWidget {
                   style: DabblerType.footnote,
                   tone: DabblerTextTone.secondary,
                 ),
-                const SizedBox(height: DabblerSpacing.space3),
+                const DabblerGap.v(DabblerSpacing.space3),
                 Wrap(
                   spacing: DabblerSpacing.space3,
                   runSpacing: DabblerSpacing.space3,
@@ -273,7 +273,7 @@ class _SportItem extends StatelessWidget {
                 ),
                 if (preference.preferredPosition != null &&
                     positions.isNotEmpty) ...[
-                  const SizedBox(height: DabblerSpacing.space5),
+                  const DabblerGap.v(DabblerSpacing.space5),
                   DabblerSelect<String>(
                     label: 'Preferred Position',
                     value: preference.preferredPosition,

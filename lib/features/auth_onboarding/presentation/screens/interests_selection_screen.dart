@@ -34,6 +34,9 @@ class _InterestsSelectionScreenState
   List<Sport> _loadedSports = [];
   String _query = '';
 
+  /// Tiles per row of the sport grid.
+  static const int _columns = 4;
+
   void _toggleSport(String sportId) {
     HapticFeedback.lightImpact();
     setState(() {
@@ -87,61 +90,39 @@ class _InterestsSelectionScreenState
     }
   }
 
-  (String, String) _getPersonaSpecificCopy() {
+  /// The persona the copy is written for: `player`, `organiser`, `host` or
+  /// `socialiser`.
+  String _personaKey() {
     if (widget.mode == InterestsSelectionMode.addPersona) {
-      final addPersonaData = ref.read(addPersonaDataProvider);
-      final targetPersona = addPersonaData?.targetPersona;
-
+      final targetPersona = ref.read(addPersonaDataProvider)?.targetPersona;
       return switch (targetPersona) {
-        PersonaType.player => (
-          'What do you regularly practice?',
-          'You can change and add more sports later',
-        ),
-        PersonaType.organiser => (
-          'What do you intend to organise?',
-          'You can change and add more sports later',
-        ),
-        PersonaType.host => (
-          'Which sports do you host?',
-          'You can change and add more sports later',
-        ),
-        PersonaType.socialiser => (
-          'Which sports are you interested in?',
-          'You can change and add more sports later',
-        ),
-        _ => (
-          'What do you regularly practice?',
-          'You can change and add more sports later',
-        ),
+        PersonaType.organiser => 'organiser',
+        PersonaType.host => 'host',
+        PersonaType.socialiser => 'socialiser',
+        _ => 'player',
       };
     }
-
-    final onboardingData = ref.read(onboardingDataProvider);
-    final intention = onboardingData?.intention;
-
+    final intention = ref.read(onboardingDataProvider)?.intention;
     return switch (intention) {
-      'player' => (
-        'What do you regularly practice?',
-        'You can change and add more sports later',
-      ),
-      'organiser' => (
-        'What do you intend to organise?',
-        'You can change and add more sports later',
-      ),
-      'host' => (
-        'Which sports do you host?',
-        'You can change and add more sports later',
-      ),
-      'socialiser' => (
-        'Which sports are you interested in?',
-        'You can change and add more sports later',
-      ),
-      _ => (
-        'What do you regularly practice?',
-        'You can change and add more sports later',
-      ),
+      'organiser' => 'organiser',
+      'host' => 'host',
+      'socialiser' => 'socialiser',
+      _ => 'player',
     };
   }
+
+  (String, String) _copy(AppLocalizations l10n) => switch (_personaKey()) {
+    'organiser' => (
+      l10n.onb_sports_title_organiser,
+      l10n.onb_sports_subtitle_organiser,
+    ),
+    'host' => (l10n.onb_sports_title_host, l10n.onb_sports_subtitle_host),
+    'socialiser' => (
+      l10n.onb_sports_title_socialiser,
+      l10n.onb_sports_subtitle_socialiser,
+    ),
+    _ => (l10n.onb_sports_title_player, l10n.onb_sports_subtitle_player),
+  };
 
   void _handleBack() {
     if (widget.mode == InterestsSelectionMode.addPersona) {
@@ -150,163 +131,99 @@ class _InterestsSelectionScreenState
     context.pop();
   }
 
+  String _countLabel(AppLocalizations l10n) {
+    final n = _selectedSportIds.length;
+    if (n == 0) return l10n.onb_sports_count_zero;
+    if (n == 1) return l10n.onb_sports_count_one;
+    return l10n.onb_sports_count_many(n);
+  }
+
   @override
   Widget build(BuildContext context) {
-    final (title, subtitle) = _getPersonaSpecificCopy();
+    final l10n = AppLocalizations.of(context);
+    final (title, subtitle) = _copy(l10n);
     final sportsAsync = ref.watch(sportsForSelectedCountryProvider);
 
-    return OnboardingStepFrame(
+    return DabblerFlowPage(
       onBack: _handleBack,
-      step: 3,
-      stepLabel: 'Step 3 of 5',
+      backLabel: l10n.onb_back,
+      stepCount: 5,
+      stepIndex: 2,
+      stepLabel: l10n.onb_step_label(3, 5),
       title: title,
       subtitle: subtitle,
-      ctaLabel: AppLocalizations.of(context).interests_continue,
-      ctaLoading: _isLoading,
-      onCta: (_isLoading || _selectedSportIds.isEmpty) ? null : _handleContinue,
-      body: sportsAsync.when(
-        loading: () => const Center(child: DabblerSpinner()),
-        error: (err, _) => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DabblerText(
-                'Failed to load sports',
-                style: DabblerType.subheadline,
-                tone: DabblerTextTone.secondary,
-              ),
-              const SizedBox(height: DabblerSpacing.space5),
-              DabblerButton(
-                label: 'Retry',
-                tone: DabblerButtonTone.text,
-                onPressed: () =>
-                    ref.invalidate(sportsForSelectedCountryProvider),
-              ),
-            ],
-          ),
+      content: [
+        DabblerSearchField(
+          initialValue: _query,
+          placeholder: l10n.onb_sports_search,
+          onChanged: (v) => setState(() => _query = v),
+          onCleared: () => setState(() => _query = ''),
         ),
-        data: (sports) {
-          _loadedSports = sports;
-          final filtered = _query.isEmpty
-              ? sports
-              : sports
-                    .where(
-                      (s) =>
-                          s.nameEn.toLowerCase().contains(_query.toLowerCase()),
-                    )
-                    .toList();
-
-          return CustomScrollView(
-            slivers: [
-              SliverPadding(
-                padding: const EdgeInsetsDirectional.only(
-                  start: DabblerSpacing.space8,
-                  end: DabblerSpacing.space8,
-                  bottom: DabblerSpacing.space6,
+        ...sportsAsync.when(
+          loading: () => [const Center(child: DabblerSpinner())],
+          error: (err, _) => [
+            DabblerText(
+              l10n.interests_failed_load,
+              style: DabblerType.subheadline,
+              tone: DabblerTextTone.secondary,
+            ),
+            DabblerButton(
+              label: l10n.interests_retry,
+              tone: DabblerButtonTone.text,
+              onPressed: () => ref.invalidate(sportsForSelectedCountryProvider),
+            ),
+          ],
+          data: (sports) {
+            _loadedSports = sports;
+            final needle = _query.trim().toLowerCase();
+            final filtered = needle.isEmpty
+                ? sports
+                : sports
+                      .where((s) => s.nameEn.toLowerCase().contains(needle))
+                      .toList();
+            return [
+              if (filtered.isEmpty)
+                DabblerText(
+                  l10n.onb_sports_none,
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.tertiary,
                 ),
-                sliver: SliverToBoxAdapter(
-                  child: DabblerSearchField(
-                    initialValue: _query,
-                    placeholder: 'Search sports…',
-                    onChanged: (v) => setState(() => _query = v),
-                    onCleared: () => setState(() => _query = ''),
-                  ),
-                ),
+              DabblerTileGrid(
+                columns: _columns,
+                children: [for (final sport in filtered) _tile(sport)],
               ),
-              SliverPadding(
-                padding: const EdgeInsetsDirectional.only(
-                  start: DabblerSpacing.space8,
-                  end: DabblerSpacing.space8,
-                  bottom: DabblerSpacing.space8,
-                ),
-                sliver: SliverGrid.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 4,
-                    crossAxisSpacing: DabblerSpacing.space3,
-                    mainAxisSpacing: DabblerSpacing.space3,
-                    childAspectRatio: 0.9,
-                  ),
-                  itemCount: filtered.length,
-                  itemBuilder: (context, index) {
-                    final sport = filtered[index];
-                    return _SportTile(
-                      sport: sport,
-                      isSelected: _selectedSportIds.contains(sport.id),
-                      onTap: () => _toggleSport(sport.id),
-                    );
-                  },
-                ),
+              DabblerText(
+                _countLabel(l10n),
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.tertiary,
               ),
-            ],
-          );
-        },
-      ),
+            ];
+          },
+        ),
+      ],
+      primaryLabel: l10n.onb_continue,
+      primaryLoading: _isLoading,
+      onPrimary: (_isLoading || _selectedSportIds.isEmpty)
+          ? null
+          : _handleContinue,
     );
   }
-}
 
-class _SportTile extends StatelessWidget {
-  const _SportTile({
-    required this.sport,
-    required this.isSelected,
-    required this.onTap,
-  });
-
-  final Sport sport;
-  final bool isSelected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final name = sport.localizedName(context);
-    return OnboardingOptionCard(
-      selected: isSelected,
-      onTap: onTap,
-      semanticLabel: name,
-      radius: DabblerRadius.md,
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: DabblerSpacing.space1,
-        vertical: DabblerSpacing.space4,
+  Widget _tile(Sport sport) {
+    final selected = _selectedSportIds.contains(sport.id);
+    final tone = onboardingSportTone(sport);
+    return DabblerSelectableCard(
+      layout: DabblerSelectableCardLayout.tile,
+      leading: OnboardingSportGlyph(
+        sport: sport,
+        selected: selected,
+        size: DabblerSizing.iconLg,
+        color: tone.deep,
       ),
-      child: Stack(
-        clipBehavior: Clip.none,
-        children: [
-          Positioned.fill(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                OnboardingSportGlyph(
-                  sport: sport,
-                  selected: isSelected,
-                  size: DabblerSizing.iconLg,
-                  color: isSelected ? colors.brandPrimary : colors.textPrimary,
-                ),
-                const SizedBox(height: DabblerSpacing.space2),
-                DabblerText(
-                  name,
-                  style: DabblerType.caption2,
-                  weight: DabblerTextWeight.medium,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  textAlign: TextAlign.center,
-                ),
-              ],
-            ),
-          ),
-          if (isSelected)
-            PositionedDirectional(
-              top: -DabblerSpacing.space2,
-              end: 0,
-              child: DabblerIcon(
-                'tick-circle',
-                weight: DabblerIconWeight.bold,
-                size: DabblerSizing.iconInline,
-                color: colors.brandPrimary,
-              ),
-            ),
-        ],
-      ),
+      title: sport.localizedName(context),
+      selected: selected,
+      tone: tone,
+      onChanged: (_) => _toggleSport(sport.id),
     );
   }
 }

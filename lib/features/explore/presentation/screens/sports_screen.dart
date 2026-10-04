@@ -374,7 +374,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               // Sport-Specific Filters
               if (sportFilters != null) ...[
                 sportFilters,
-                const SizedBox(height: DabblerSpacing.space5),
+                const DabblerGap.v(DabblerSpacing.space5),
               ],
               // Area
               DabblerSelect<String>(
@@ -385,7 +385,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                 onChanged: (value) =>
                     setModalState(() => _selectedArea = value),
               ),
-              const SizedBox(height: DabblerSpacing.space5),
+              const DabblerGap.v(DabblerSpacing.space5),
               // Price Range
               label('Price Range (AED)'),
               DabblerSlider.range(
@@ -399,7 +399,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               caption(
                 'AED ${_selectedPriceRange.low.round()} - AED ${_selectedPriceRange.high.round()}',
               ),
-              const SizedBox(height: DabblerSpacing.space5),
+              const DabblerGap.v(DabblerSpacing.space5),
               // Rating
               label('Minimum Rating'),
               DabblerSlider(
@@ -415,10 +415,10 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     ? 'Any rating'
                     : '${_selectedRating.toStringAsFixed(1)}+ stars',
               ),
-              const SizedBox(height: DabblerSpacing.space5),
+              const DabblerGap.v(DabblerSpacing.space5),
               // Amenities
               label('Amenities'),
-              const SizedBox(height: DabblerSpacing.space2),
+              const DabblerGap.v(DabblerSpacing.space2),
               Wrap(
                 spacing: DabblerSpacing.space2,
                 runSpacing: DabblerSpacing.space2,
@@ -443,7 +443,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     ),
                 ],
               ),
-              const SizedBox(height: DabblerSpacing.space8),
+              const DabblerGap.v(DabblerSpacing.space8),
               Row(
                 children: [
                   Expanded(
@@ -465,7 +465,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       },
                     ),
                   ),
-                  const SizedBox(width: DabblerSpacing.space3),
+                  const DabblerGap.h(DabblerSpacing.space3),
                   Expanded(
                     child: DabblerButton(
                       label: 'Apply Filters',
@@ -480,7 +480,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: DabblerSpacing.space4),
+              const DabblerGap.v(DabblerSpacing.space4),
             ],
           ),
         );
@@ -521,9 +521,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             parent: BouncingScrollPhysics(),
           ),
           slivers: [
-            const SliverToBoxAdapter(
-              child: SizedBox(height: DabblerSpacing.space2),
-            ),
+            const DabblerGap.sliver(DabblerSpacing.space2),
             // ── Header ──
             SliverToBoxAdapter(child: _buildHeader()),
             // ── Search row ──
@@ -746,7 +744,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                   style: DabblerType.title1,
                   weight: DabblerTextWeight.bold,
                 ),
-                const SizedBox(height: DabblerSpacing.space1),
+                const DabblerGap.v(DabblerSpacing.space1),
                 Row(
                   children: [
                     DabblerIcon(
@@ -754,7 +752,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       size: DabblerSizing.iconInline,
                       color: colors.brandPrimary,
                     ),
-                    const SizedBox(width: DabblerSpacing.space1),
+                    const DabblerGap.h(DabblerSpacing.space1),
                     Flexible(
                       child: DabblerText(
                         areaLabel ?? 'Location not available',
@@ -763,36 +761,33 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                         overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    const SizedBox(width: DabblerSpacing.space1),
-                    GestureDetector(
-                      behavior: HitTestBehavior.opaque,
-                      onTap: () {
+                    const DabblerGap.h(DabblerSpacing.space1),
+                    DabblerButton.icon(
+                      icon: 'refresh',
+                      semanticLabel: 'Change location',
+                      tone: DabblerButtonTone.text,
+                      size: DabblerButtonSize.small,
+                      onPressed: () {
                         showDabblerSheet<void>(
                           context: context,
                           detent: DabblerSheetDetent.content,
                           builder: (context) => const ManualLocationDrawer(),
                         );
                       },
-                      child: DabblerIcon(
-                        'refresh',
-                        size: DabblerSizing.iconInline,
-                        color: colors.brandPrimary,
-                        semanticLabel: 'Change location',
-                      ),
                     ),
                   ],
                 ),
               ],
             ),
           ),
-          const SizedBox(width: DabblerSpacing.space3),
+          const DabblerGap.h(DabblerSpacing.space3),
           if (isOrganiser && isVenuesTab) ...[
             DabblerButton.icon(
               icon: 'add',
               semanticLabel: 'Add venue',
               onPressed: () => context.push(RoutePaths.createVenueSubmission),
             ),
-            const SizedBox(width: DabblerSpacing.space2),
+            const DabblerGap.h(DabblerSpacing.space2),
           ],
           DabblerButton.icon(
             icon: 'archive',
@@ -826,7 +821,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               onCleared: () => _onSearchChanged(''),
             ),
           ),
-          const SizedBox(width: DabblerSpacing.space2),
+          const DabblerGap.h(DabblerSpacing.space2),
           DabblerButton.icon(
             icon: 'setting-4',
             semanticLabel: 'Filters',
@@ -914,7 +909,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           onTap: onTap,
         ),
         if (showCount) ...[
-          const SizedBox(width: DabblerSpacing.space1),
+          const DabblerGap.h(DabblerSpacing.space1),
           DabblerBadge(label: '$venueCount'),
         ],
       ],
@@ -1045,7 +1040,7 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 for (var i = 0; i < filteredVenues.length; i++) ...[
-                  if (i > 0) const SizedBox(height: DabblerSpacing.space3),
+                  if (i > 0) const DabblerGap.v(DabblerSpacing.space3),
                   VenueCard(
                     venue: {
                       'id': filteredVenues[i].id,

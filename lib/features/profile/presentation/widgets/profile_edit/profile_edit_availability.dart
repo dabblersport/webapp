@@ -123,7 +123,7 @@ class _ProfileEditAddAvailabilitySheetState
             style: DabblerType.subheadline,
             weight: DabblerTextWeight.semibold,
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          const DabblerGap.v(DabblerSpacing.space3),
           Wrap(
             spacing: DabblerSpacing.space3,
             runSpacing: DabblerSpacing.space3,
@@ -136,7 +136,7 @@ class _ProfileEditAddAvailabilitySheetState
                 ),
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space7),
+          const DabblerGap.v(DabblerSpacing.space7),
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -149,7 +149,7 @@ class _ProfileEditAddAvailabilitySheetState
                   onChanged: (h) => setState(() => _startHour = h),
                 ),
               ),
-              const SizedBox(width: DabblerSpacing.space5),
+              const DabblerGap.h(DabblerSpacing.space5),
               Expanded(
                 child: DabblerSelect<int>(
                   label: 'End Time',
@@ -161,7 +161,7 @@ class _ProfileEditAddAvailabilitySheetState
               ),
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space8),
+          const DabblerGap.v(DabblerSpacing.space8),
           DabblerButton(
             label: 'Add Availability',
             fullWidth: true,

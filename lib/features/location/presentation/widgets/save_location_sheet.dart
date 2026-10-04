@@ -173,7 +173,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             // Title (handle and close come from DabblerSheet; the emoji the
             // old title carried is dropped, CEO rule).
             DabblerText('Save this location', style: DabblerType.title3),
-            const SizedBox(height: DabblerSpacing.space5),
+            const DabblerGap.v(DabblerSpacing.space5),
 
             // Mapbox place search
             LocationSearchField(
@@ -195,7 +195,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 _mapController.move(LatLng(place.lat, place.lng), 15);
               },
             ),
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
 
             // Map thumbnail — flutter_map tiles are content inside the DS
             // surface; the marker is a DS icon.
@@ -238,7 +238,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 ],
               ),
             ),
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
 
             // Area name + accuracy badge
             Row(
@@ -248,18 +248,18 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                   size: DabblerSizing.iconInline,
                   color: colors.brandPrimary,
                 ),
-                const SizedBox(width: DabblerSpacing.space1),
+                const DabblerGap.h(DabblerSpacing.space1),
                 Expanded(
                   child: DabblerText(_areaName, style: DabblerType.headline),
                 ),
                 DabblerBadge(label: _accuracyText(), status: accuracy),
               ],
             ),
-            const SizedBox(height: DabblerSpacing.space8),
+            const DabblerGap.v(DabblerSpacing.space8),
 
             // Label picker
             DabblerText('Label', style: DabblerType.headline),
-            const SizedBox(height: DabblerSpacing.space3),
+            const DabblerGap.v(DabblerSpacing.space3),
             Wrap(
               spacing: DabblerSpacing.space3,
               runSpacing: DabblerSpacing.space3,
@@ -271,7 +271,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 );
               }).toList(),
             ),
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
 
             // Custom name field
             if (_selectedLabel == ProfileLocationLabel.custom) ...[
@@ -280,7 +280,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
                 placeholder: 'e.g. My gym, Parents\' house',
                 onChanged: (_) => setState(() {}),
               ),
-              const SizedBox(height: DabblerSpacing.space4),
+              const DabblerGap.v(DabblerSpacing.space4),
             ],
 
             // Primary toggle
@@ -293,7 +293,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
               ),
               onTap: () => setState(() => _isPrimary = !_isPrimary),
             ),
-            const SizedBox(height: DabblerSpacing.space6),
+            const DabblerGap.v(DabblerSpacing.space6),
 
             // Save button
             DabblerButton(
@@ -303,7 +303,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
               disabled: !_canSave || _isSaving,
               onPressed: _save,
             ),
-            const SizedBox(height: DabblerSpacing.space3),
+            const DabblerGap.v(DabblerSpacing.space3),
 
             // Use once button
             if (widget.onUseOnce != null)
