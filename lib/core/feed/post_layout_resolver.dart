@@ -11,5 +11,12 @@ import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 ///
 /// Callers must not branch on [Post.originType] or [Post.postType] directly;
 /// all layout decisions live here.
-Widget resolvePostLayout(Post post, {bool showNearbyChipInHeader = false}) =>
-    HomePostRow.resolve(post, showNearbyChipInHeader: showNearbyChipInHeader);
+Widget resolvePostLayout(
+  Post post, {
+  bool showNearbyChipInHeader = false,
+  bool showActions = true,
+}) => HomePostRow.resolve(
+  post,
+  showNearbyChipInHeader: showNearbyChipInHeader,
+  showActions: showActions,
+);

@@ -34,11 +34,15 @@ class HomePostRow extends ConsumerStatefulWidget {
     required this.post,
     this.isEmbedded = false,
     this.showNearbyChipInHeader = false,
+    this.showActions = true,
   });
 
   final Post post;
   final bool isEmbedded;
   final bool showNearbyChipInHeader;
+
+  /// Off for result lists (`Results.dc.html`), which end on the sport chip.
+  final bool showActions;
 
   /// The row for [post]: a repost shows its quote and the embedded original, an
   /// allocated kind shows its kind badge, everything else is the plain row.
@@ -46,6 +50,7 @@ class HomePostRow extends ConsumerStatefulWidget {
   static Widget resolve(
     Post post, {
     bool showNearbyChipInHeader = false,
+    bool showActions = true,
     DabblerPostDetail? detail,
   }) {
     if (post.originType == OriginType.repost) {
@@ -54,6 +59,7 @@ class HomePostRow extends ConsumerStatefulWidget {
     return HomePostRow(
       post: post,
       showNearbyChipInHeader: showNearbyChipInHeader,
+      showActions: showActions,
     );
   }
 
@@ -464,12 +470,23 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               : null,
           reposts: post.repostCount,
           reposted: hasReposted,
-          reactions: _reactionSummary(post, myReactions),
+          reactions: widget.showActions
+              ? _reactionSummary(post, myReactions)
+              : null,
+          showActions: widget.showActions,
           views: isAuthor ? post.viewCount : null,
           time: homeRelativeTime(post.createdAt),
           place: place,
           segments: _segments(post),
           sportLabel: sportLabel,
+          sportLeading: widget.showActions || sportLabel == null
+              ? null
+              : DabblerIcon(
+                  'game',
+                  weight: DabblerIconWeight.bold,
+                  size: DabblerSizing.iconXs,
+                  color: DabblerColors.of(context).brandPrimary,
+                ),
           likes: _localLikeCount,
           replies: post.commentCount,
           liked: hasLiked,

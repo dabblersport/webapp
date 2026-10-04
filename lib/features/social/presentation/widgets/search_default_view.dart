@@ -73,6 +73,7 @@ class SearchDefaultView extends StatelessWidget {
                           ),
                           onTap: () => onPickRecent(q),
                           onRemove: () => onRemoveRecent(q),
+                          mutedRemove: true,
                           removeSemanticLabel: 'Remove $q',
                         ),
                     ],
