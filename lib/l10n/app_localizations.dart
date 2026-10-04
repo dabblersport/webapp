@@ -5530,6 +5530,732 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No areas match \"{query}\"'**
   String home_location_no_match(String query);
+
+  /// No description provided for @blocked_accounts_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage users you\'ve blocked from contacting you.'**
+  String get blocked_accounts_note;
+
+  /// No description provided for @blocked_accounts_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t blocked anyone.'**
+  String get blocked_accounts_empty;
+
+  /// No description provided for @blocked_accounts_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load your blocked accounts.'**
+  String get blocked_accounts_load_failed;
+
+  /// No description provided for @blocked_accounts_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get blocked_accounts_unknown;
+
+  /// No description provided for @blocked_accounts_unblock.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblock'**
+  String get blocked_accounts_unblock;
+
+  /// No description provided for @blocked_accounts_unblocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Unblocked'**
+  String get blocked_accounts_unblocked;
+
+  /// No description provided for @blocked_accounts_unblock_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not unblock: {message}'**
+  String blocked_accounts_unblock_failed(String message);
+
+  /// No description provided for @notif_settings_push.
+  ///
+  /// In en, this message translates to:
+  /// **'Push notifications'**
+  String get notif_settings_push;
+
+  /// No description provided for @notif_settings_push_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive push notifications on your device'**
+  String get notif_settings_push_sub;
+
+  /// No description provided for @notif_settings_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Email notifications'**
+  String get notif_settings_email;
+
+  /// No description provided for @notif_settings_email_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive notifications via email'**
+  String get notif_settings_email_sub;
+
+  /// No description provided for @notif_settings_sms.
+  ///
+  /// In en, this message translates to:
+  /// **'SMS notifications'**
+  String get notif_settings_sms;
+
+  /// No description provided for @notif_settings_sms_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Receive important updates via SMS'**
+  String get notif_settings_sms_sub;
+
+  /// No description provided for @notif_settings_quiet_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours'**
+  String get notif_settings_quiet_header;
+
+  /// No description provided for @notif_settings_quiet_mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute during quiet hours'**
+  String get notif_settings_quiet_mute;
+
+  /// No description provided for @notif_settings_quiet_mute_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Pause push notifications overnight'**
+  String get notif_settings_quiet_mute_off;
+
+  /// No description provided for @notif_settings_quiet_mute_on.
+  ///
+  /// In en, this message translates to:
+  /// **'No push between {start} and {end}'**
+  String notif_settings_quiet_mute_on(String start, String end);
+
+  /// No description provided for @notif_settings_quiet_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get notif_settings_quiet_start;
+
+  /// No description provided for @notif_settings_quiet_end.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get notif_settings_quiet_end;
+
+  /// No description provided for @notif_settings_quiet_urgent.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow urgent notifications'**
+  String get notif_settings_quiet_urgent;
+
+  /// No description provided for @notif_settings_quiet_urgent_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'High-priority alerts still come through during quiet hours'**
+  String get notif_settings_quiet_urgent_sub;
+
+  /// No description provided for @notif_settings_quiet_all.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow all notifications'**
+  String get notif_settings_quiet_all;
+
+  /// No description provided for @notif_settings_quiet_all_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Every push still comes through during quiet hours'**
+  String get notif_settings_quiet_all_sub;
+
+  /// No description provided for @notif_settings_group_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Game notifications'**
+  String get notif_settings_group_game;
+
+  /// No description provided for @notif_settings_group_social.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications'**
+  String get notif_settings_group_social;
+
+  /// No description provided for @notif_settings_group_connections.
+  ///
+  /// In en, this message translates to:
+  /// **'Connections'**
+  String get notif_settings_group_connections;
+
+  /// No description provided for @notif_settings_kind_game_invites.
+  ///
+  /// In en, this message translates to:
+  /// **'Game invites & requests'**
+  String get notif_settings_kind_game_invites;
+
+  /// No description provided for @notif_settings_kind_game_invites_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites, join requests, approvals'**
+  String get notif_settings_kind_game_invites_sub;
+
+  /// No description provided for @notif_settings_kind_game_reminders.
+  ///
+  /// In en, this message translates to:
+  /// **'Game reminders'**
+  String get notif_settings_kind_game_reminders;
+
+  /// No description provided for @notif_settings_kind_game_reminders_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders for upcoming games'**
+  String get notif_settings_kind_game_reminders_sub;
+
+  /// No description provided for @notif_settings_kind_game_updates.
+  ///
+  /// In en, this message translates to:
+  /// **'Game updates'**
+  String get notif_settings_kind_game_updates;
+
+  /// No description provided for @notif_settings_kind_game_updates_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes, waitlist promotions, players joining'**
+  String get notif_settings_kind_game_updates_sub;
+
+  /// No description provided for @notif_settings_kind_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Booking payments'**
+  String get notif_settings_kind_booking;
+
+  /// No description provided for @notif_settings_kind_booking_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a booking needs payment'**
+  String get notif_settings_kind_booking_sub;
+
+  /// No description provided for @notif_settings_kind_likes.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes & reactions'**
+  String get notif_settings_kind_likes;
+
+  /// No description provided for @notif_settings_kind_likes_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes and reactions on your content'**
+  String get notif_settings_kind_likes_sub;
+
+  /// No description provided for @notif_settings_kind_comments.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments'**
+  String get notif_settings_kind_comments;
+
+  /// No description provided for @notif_settings_kind_comments_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Comments on your posts'**
+  String get notif_settings_kind_comments_sub;
+
+  /// No description provided for @notif_settings_kind_mentions.
+  ///
+  /// In en, this message translates to:
+  /// **'Mentions'**
+  String get notif_settings_kind_mentions;
+
+  /// No description provided for @notif_settings_kind_mentions_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone mentions you'**
+  String get notif_settings_kind_mentions_sub;
+
+  /// No description provided for @notif_settings_kind_followers.
+  ///
+  /// In en, this message translates to:
+  /// **'New followers'**
+  String get notif_settings_kind_followers;
+
+  /// No description provided for @notif_settings_kind_followers_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone follows you'**
+  String get notif_settings_kind_followers_sub;
+
+  /// No description provided for @notif_settings_kind_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests'**
+  String get notif_settings_kind_friends;
+
+  /// No description provided for @notif_settings_kind_friends_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'New and accepted friend requests'**
+  String get notif_settings_kind_friends_sub;
+
+  /// No description provided for @notif_settings_kind_squads.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad invites'**
+  String get notif_settings_kind_squads;
+
+  /// No description provided for @notif_settings_kind_squads_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites to join a squad'**
+  String get notif_settings_kind_squads_sub;
+
+  /// No description provided for @notif_settings_kind_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup invites'**
+  String get notif_settings_kind_meetups;
+
+  /// No description provided for @notif_settings_kind_meetups_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites and players joining meetups'**
+  String get notif_settings_kind_meetups_sub;
+
+  /// No description provided for @notif_settings_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not update settings: {error}'**
+  String notif_settings_update_failed(String error);
+
+  /// No description provided for @game_prefs_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game preferences'**
+  String get game_prefs_title;
+
+  /// No description provided for @game_prefs_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get game_prefs_save;
+
+  /// No description provided for @game_prefs_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Game preferences saved'**
+  String get game_prefs_saved;
+
+  /// No description provided for @game_prefs_types_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred game types'**
+  String get game_prefs_types_header;
+
+  /// No description provided for @game_prefs_types_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Select the types of games you enjoy most'**
+  String get game_prefs_types_note;
+
+  /// No description provided for @game_prefs_type_pickup.
+  ///
+  /// In en, this message translates to:
+  /// **'Pickup games'**
+  String get game_prefs_type_pickup;
+
+  /// No description provided for @game_prefs_type_pickup_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Casual games with other players'**
+  String get game_prefs_type_pickup_sub;
+
+  /// No description provided for @game_prefs_type_tournaments.
+  ///
+  /// In en, this message translates to:
+  /// **'Tournaments'**
+  String get game_prefs_type_tournaments;
+
+  /// No description provided for @game_prefs_type_tournaments_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Competitive organized events'**
+  String get game_prefs_type_tournaments_sub;
+
+  /// No description provided for @game_prefs_type_practice.
+  ///
+  /// In en, this message translates to:
+  /// **'Practice sessions'**
+  String get game_prefs_type_practice;
+
+  /// No description provided for @game_prefs_type_practice_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill development and training'**
+  String get game_prefs_type_practice_sub;
+
+  /// No description provided for @game_prefs_type_leagues.
+  ///
+  /// In en, this message translates to:
+  /// **'Leagues'**
+  String get game_prefs_type_leagues;
+
+  /// No description provided for @game_prefs_type_leagues_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Season-long competitions'**
+  String get game_prefs_type_leagues_sub;
+
+  /// No description provided for @game_prefs_type_friendly.
+  ///
+  /// In en, this message translates to:
+  /// **'Friendly matches'**
+  String get game_prefs_type_friendly;
+
+  /// No description provided for @game_prefs_type_friendly_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Non-competitive social games'**
+  String get game_prefs_type_friendly_sub;
+
+  /// No description provided for @game_prefs_type_camps.
+  ///
+  /// In en, this message translates to:
+  /// **'Training camps'**
+  String get game_prefs_type_camps;
+
+  /// No description provided for @game_prefs_type_camps_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Intensive skill workshops'**
+  String get game_prefs_type_camps_sub;
+
+  /// No description provided for @game_prefs_duration_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Game duration'**
+  String get game_prefs_duration_header;
+
+  /// No description provided for @game_prefs_duration_note.
+  ///
+  /// In en, this message translates to:
+  /// **'How long do you prefer games to last?'**
+  String get game_prefs_duration_note;
+
+  /// No description provided for @game_prefs_duration_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Short games'**
+  String get game_prefs_duration_short;
+
+  /// No description provided for @game_prefs_duration_short_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'30-60 minutes'**
+  String get game_prefs_duration_short_sub;
+
+  /// No description provided for @game_prefs_duration_medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium games'**
+  String get game_prefs_duration_medium;
+
+  /// No description provided for @game_prefs_duration_medium_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'60-90 minutes'**
+  String get game_prefs_duration_medium_sub;
+
+  /// No description provided for @game_prefs_duration_long.
+  ///
+  /// In en, this message translates to:
+  /// **'Long games'**
+  String get game_prefs_duration_long;
+
+  /// No description provided for @game_prefs_duration_long_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'90+ minutes'**
+  String get game_prefs_duration_long_sub;
+
+  /// No description provided for @game_prefs_duration_flexible.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible duration'**
+  String get game_prefs_duration_flexible;
+
+  /// No description provided for @game_prefs_duration_flexible_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Any duration'**
+  String get game_prefs_duration_flexible_sub;
+
+  /// No description provided for @game_prefs_duration_custom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom duration range'**
+  String get game_prefs_duration_custom;
+
+  /// No description provided for @game_prefs_duration_min.
+  ///
+  /// In en, this message translates to:
+  /// **'Min duration'**
+  String get game_prefs_duration_min;
+
+  /// No description provided for @game_prefs_duration_max.
+  ///
+  /// In en, this message translates to:
+  /// **'Max duration'**
+  String get game_prefs_duration_max;
+
+  /// No description provided for @game_prefs_minutes_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'{value} min'**
+  String game_prefs_minutes_hint(String value);
+
+  /// No description provided for @game_prefs_minutes_suffix.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get game_prefs_minutes_suffix;
+
+  /// No description provided for @game_prefs_team_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Team size'**
+  String get game_prefs_team_header;
+
+  /// No description provided for @game_prefs_team_note.
+  ///
+  /// In en, this message translates to:
+  /// **'What team sizes do you prefer?'**
+  String get game_prefs_team_note;
+
+  /// No description provided for @game_prefs_team_flexible.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible team size'**
+  String get game_prefs_team_flexible;
+
+  /// No description provided for @game_prefs_team_flexible_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Open to various team sizes'**
+  String get game_prefs_team_flexible_sub;
+
+  /// No description provided for @game_prefs_team_preferred.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred team size: {low} - {high} players'**
+  String game_prefs_team_preferred(String low, String high);
+
+  /// No description provided for @game_prefs_team_min_label.
+  ///
+  /// In en, this message translates to:
+  /// **'2 players'**
+  String get game_prefs_team_min_label;
+
+  /// No description provided for @game_prefs_team_max_label.
+  ///
+  /// In en, this message translates to:
+  /// **'22 players'**
+  String get game_prefs_team_max_label;
+
+  /// No description provided for @game_prefs_level_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Competition level'**
+  String get game_prefs_level_header;
+
+  /// No description provided for @game_prefs_level_note.
+  ///
+  /// In en, this message translates to:
+  /// **'What level of competition do you prefer?'**
+  String get game_prefs_level_note;
+
+  /// No description provided for @game_prefs_level_casual.
+  ///
+  /// In en, this message translates to:
+  /// **'Casual'**
+  String get game_prefs_level_casual;
+
+  /// No description provided for @game_prefs_level_casual_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Just for fun, relaxed atmosphere'**
+  String get game_prefs_level_casual_sub;
+
+  /// No description provided for @game_prefs_level_recreational.
+  ///
+  /// In en, this message translates to:
+  /// **'Recreational'**
+  String get game_prefs_level_recreational;
+
+  /// No description provided for @game_prefs_level_recreational_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Friendly competition, moderate intensity'**
+  String get game_prefs_level_recreational_sub;
+
+  /// No description provided for @game_prefs_level_competitive.
+  ///
+  /// In en, this message translates to:
+  /// **'Competitive'**
+  String get game_prefs_level_competitive;
+
+  /// No description provided for @game_prefs_level_competitive_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Serious competition, high intensity'**
+  String get game_prefs_level_competitive_sub;
+
+  /// No description provided for @game_prefs_level_professional.
+  ///
+  /// In en, this message translates to:
+  /// **'Professional'**
+  String get game_prefs_level_professional;
+
+  /// No description provided for @game_prefs_level_professional_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Elite level competition'**
+  String get game_prefs_level_professional_sub;
+
+  /// No description provided for @game_prefs_equipment_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment'**
+  String get game_prefs_equipment_header;
+
+  /// No description provided for @game_prefs_equipment_note.
+  ///
+  /// In en, this message translates to:
+  /// **'What are your equipment needs?'**
+  String get game_prefs_equipment_note;
+
+  /// No description provided for @game_prefs_equipment_own.
+  ///
+  /// In en, this message translates to:
+  /// **'I have my own equipment'**
+  String get game_prefs_equipment_own;
+
+  /// No description provided for @game_prefs_equipment_own_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'You can bring your own gear'**
+  String get game_prefs_equipment_own_sub;
+
+  /// No description provided for @game_prefs_equipment_provide.
+  ///
+  /// In en, this message translates to:
+  /// **'I can provide equipment for others'**
+  String get game_prefs_equipment_provide;
+
+  /// No description provided for @game_prefs_equipment_provide_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'You can share equipment with teammates'**
+  String get game_prefs_equipment_provide_sub;
+
+  /// No description provided for @game_prefs_equipment_need.
+  ///
+  /// In en, this message translates to:
+  /// **'I need equipment provided'**
+  String get game_prefs_equipment_need;
+
+  /// No description provided for @game_prefs_equipment_need_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment should be available at the venue'**
+  String get game_prefs_equipment_need_sub;
+
+  /// No description provided for @game_prefs_equipment_types.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment types'**
+  String get game_prefs_equipment_types;
+
+  /// No description provided for @game_prefs_equipment_ball.
+  ///
+  /// In en, this message translates to:
+  /// **'Ball'**
+  String get game_prefs_equipment_ball;
+
+  /// No description provided for @game_prefs_equipment_gear.
+  ///
+  /// In en, this message translates to:
+  /// **'Protective gear'**
+  String get game_prefs_equipment_gear;
+
+  /// No description provided for @game_prefs_equipment_uniforms.
+  ///
+  /// In en, this message translates to:
+  /// **'Uniforms'**
+  String get game_prefs_equipment_uniforms;
+
+  /// No description provided for @game_prefs_equipment_goals.
+  ///
+  /// In en, this message translates to:
+  /// **'Goals'**
+  String get game_prefs_equipment_goals;
+
+  /// No description provided for @game_prefs_equipment_nets.
+  ///
+  /// In en, this message translates to:
+  /// **'Nets'**
+  String get game_prefs_equipment_nets;
+
+  /// No description provided for @game_prefs_equipment_markers.
+  ///
+  /// In en, this message translates to:
+  /// **'Markers'**
+  String get game_prefs_equipment_markers;
+
+  /// No description provided for @game_prefs_referee_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Referee'**
+  String get game_prefs_referee_header;
+
+  /// No description provided for @game_prefs_referee_note.
+  ///
+  /// In en, this message translates to:
+  /// **'How do you prefer games to be officiated?'**
+  String get game_prefs_referee_note;
+
+  /// No description provided for @game_prefs_referee_prefer.
+  ///
+  /// In en, this message translates to:
+  /// **'Prefer games with a referee'**
+  String get game_prefs_referee_prefer;
+
+  /// No description provided for @game_prefs_referee_prefer_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Official referee for fair play'**
+  String get game_prefs_referee_prefer_sub;
+
+  /// No description provided for @game_prefs_referee_can.
+  ///
+  /// In en, this message translates to:
+  /// **'I can referee games'**
+  String get game_prefs_referee_can;
+
+  /// No description provided for @game_prefs_referee_can_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re qualified to officiate'**
+  String get game_prefs_referee_can_sub;
+
+  /// No description provided for @game_prefs_referee_strict.
+  ///
+  /// In en, this message translates to:
+  /// **'Strict rule enforcement'**
+  String get game_prefs_referee_strict;
+
+  /// No description provided for @game_prefs_referee_strict_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Games should follow official rules closely'**
+  String get game_prefs_referee_strict_sub;
 }
 
 class _AppLocalizationsDelegate

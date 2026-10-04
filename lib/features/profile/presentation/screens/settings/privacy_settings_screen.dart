@@ -2,7 +2,8 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/profile/presentation/widgets/blocked_accounts_group.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
@@ -594,49 +595,10 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   }
 
   Widget _buildBlockedUsersSection() {
-    final blockedUsersAsync = ref.watch(blockedUsersWithProfilesProvider);
-
-    return blockedUsersAsync.when(
-      loading: () => const Center(child: DabblerSpinner()),
-      error: (e, _) => DabblerRowGroup(
-        header: 'Blocked Users',
-        note: 'Failed to load blocked users',
-        children: [
-          DabblerBanner(tone: DabblerBannerTone.error, message: 'Error: $e'),
-        ],
-      ),
-      data: (blockedUsers) => DabblerRowGroup(
-        header: 'Blocked Users',
-        note: 'Manage users you\'ve blocked from contacting you',
-        children: [
-          if (blockedUsers.isEmpty)
-            const DabblerEmptyState(
-              icon: 'tick-circle',
-              text: 'You haven\'t blocked any users',
-            )
-          else
-            for (final user in blockedUsers) _blockedRow(user),
-        ],
-      ),
-    );
-  }
-
-  Widget _blockedRow(Map<String, dynamic> user) {
-    final displayName = user['display_name'] as String? ?? 'Unknown';
-    final username = user['username'] as String? ?? '';
-    final userId = user['user_id'] as String;
-    return DabblerInputRow(
-      flat: true,
-      showDivider: false,
-      title: displayName,
-      subtitle: username.isNotEmpty ? '@$username' : null,
-      leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.sm),
-      trailing: DabblerButton(
-        label: 'Unblock',
-        tone: DabblerButtonTone.outlined,
-        size: DabblerButtonSize.small,
-        onPressed: () => _unblockUser(userId, displayName),
-      ),
+    final l10n = AppLocalizations.of(context);
+    return BlockedAccountsGroup(
+      header: l10n.settings_tile_blocked,
+      note: l10n.blocked_accounts_note,
     );
   }
 
@@ -789,23 +751,6 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     DabblerToastProvider.of(
       context,
     ).show(DabblerToastSpec(message: message, tone: tone));
-  }
-
-  Future<void> _unblockUser(String userId, String displayName) async {
-    final repo = ref.read(blockRepositoryProvider);
-    final result = await repo.unblockUser(userId);
-
-    result.fold(
-      (err) {
-        _toast('Failed to unblock: ${err.message}', DabblerToastTone.neutral);
-      },
-      (_) {
-        ref.invalidate(blockedUserIdsProvider);
-        ref.invalidate(blockedUsersWithProfilesProvider);
-        ref.invalidate(isUserBlockedProvider(userId));
-        _toast('$displayName has been unblocked', DabblerToastTone.neutral);
-      },
-    );
   }
 
   Future<void> _saveSettings() async {

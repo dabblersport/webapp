@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/sport.dart';
@@ -103,37 +104,36 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   void _showVisibilityPicker() {
     final state = ref.read(postComposerProvider);
-
-    showComposerSheet<void>(
+    // Circle visibility has no picker wired in this composer yet
+    // (KAN-47) — selecting it always fails at submit time.
+    showComposerChoiceSheet<PostVisibility>(
       context,
       title: 'Who can see this?',
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Circle visibility has no picker wired in this composer yet
-          // (KAN-47) — selecting it always fails at submit time.
-          for (final v in PostVisibility.values)
-            if (v != PostVisibility.circle)
-              ComposerPickerRow(
-                icon: _visibilityIcon(v),
-                title: _visibilityLabel(v),
-                subtitle: _visibilityDescription(v),
-                selected: state.visibility == v,
-                onTap: () {
-                  ref.read(postComposerProvider.notifier).setVisibility(v);
-                  Navigator.pop(ctx);
-                },
-              ),
-        ],
-      ),
+      selected: state.visibility,
+      onConfirm: ref.read(postComposerProvider.notifier).setVisibility,
+      choices: [
+        for (final v in PostVisibility.values)
+          if (v != PostVisibility.circle)
+            ComposerChoice(
+              value: v,
+              icon: _visibilityIcon(v),
+              title: _visibilityLabel(v),
+              subtitle: _visibilityDescription(v),
+            ),
+      ],
     );
   }
 
   void _showVibesPicker() {
-    showComposerSheet<void>(
+    final state = ref.read(postComposerProvider);
+    final notifier = ref.read(postComposerProvider.notifier);
+    showComposerVibesSheet(
       context,
-      title: 'Vibes',
-      builder: (ctx) => const _ComposerVibesPickerSheet(),
+      ref,
+      selectedVibeId: state.vibeId,
+      onClear: notifier.clearVibe,
+      onConfirm: (vibe) =>
+          notifier.setVibe(id: vibe.id, label: vibe.labelEn, emoji: vibe.emoji),
     );
   }
 
@@ -147,22 +147,20 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           )
         : null;
 
-    showComposerSheet<void>(
+    showComposerSportSheet(
       context,
-      title: 'Sports',
-      builder: (_) => SportSelectionSheet(
-        sportsProvider: activeSportsByProfileCountryProvider,
-        selectedSport: selectedSport,
-        showClear: composerState.sportId != null,
-        onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
-        onSelect: (sport) => ref
-            .read(postComposerProvider.notifier)
-            .setSport(
-              id: sport.id,
-              name: sport.localizedName(context),
-              emoji: sport.emoji,
-            ),
-      ),
+      title: 'Which sport?',
+      sportsProvider: activeSportsByProfileCountryProvider,
+      selected: selectedSport,
+      showClear: composerState.sportId != null,
+      onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
+      onConfirm: (sport) => ref
+          .read(postComposerProvider.notifier)
+          .setSport(
+            id: sport.id,
+            name: sport.localizedName(context),
+            emoji: sport.emoji,
+          ),
     );
   }
 
@@ -202,29 +200,20 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   void _showPostTypePicker() {
     final state = ref.read(postComposerProvider);
-    final selectableTypes = PostType.values
-        .where((t) => t.isUserSelectable)
-        .toList(growable: false);
-
-    showComposerSheet<void>(
+    showComposerChoiceSheet<PostType>(
       context,
-      title: 'Post Type',
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final t in selectableTypes)
-            ComposerPickerRow(
-              icon: _postTypeIcon(t),
-              title: _postTypeLabel(t),
-              subtitle: _postTypeDescription(t),
-              selected: state.postType == t,
-              onTap: () {
-                ref.read(postComposerProvider.notifier).setPostType(t);
-                Navigator.pop(ctx);
-              },
-            ),
-        ],
-      ),
+      title: 'What kind of post?',
+      selected: state.postType,
+      onConfirm: ref.read(postComposerProvider.notifier).setPostType,
+      choices: [
+        for (final t in PostType.values.where((t) => t.isUserSelectable))
+          ComposerChoice(
+            value: t,
+            icon: _postTypeIcon(t),
+            title: _postTypeLabel(t),
+            subtitle: _postTypeDescription(t),
+          ),
+      ],
     );
   }
 
@@ -282,7 +271,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             },
           ),
           ComposerPickerRow(
-            icon: 'image',
+            icon: 'search-normal',
             title: 'Search GIFs',
             subtitle: 'Powered by GIPHY',
             onTap: () {
@@ -415,7 +404,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final composerState = ref.watch(postComposerProvider);
 
     final shell = ComposerDrawerShell(
-      title: 'Create Post',
+      title: 'Create post',
       ctaLabel: 'Post',
       canSubmit: composerState.canSubmit,
       isSubmitting: composerState.isSubmitting,
@@ -451,7 +440,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           ),
           child: composerState.hasMedia
               ? _buildMediaTilesRow(composerState)
-              : _buildMediaActions(),
+              : const SizedBox.shrink(),
         ),
         _buildOptionsSection(composerState),
       ],
@@ -495,7 +484,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  DabblerText(displayName, style: DabblerType.headline),
+                  DabblerText(displayName, style: DabblerType.subheadline),
                   if (canSwitch)
                     DabblerText(
                       _prettifyLabel(
@@ -523,36 +512,23 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       spacing: DabblerSpacing.space3,
       runSpacing: DabblerSpacing.space3,
       children: [
-        Semantics(
-          label:
+        DabblerSelectPill(
+          label: _postTypeLabel(composerState.postType),
+          icon: _postTypeIcon(composerState.postType),
+          tone: colors.info,
+          semanticLabel:
               'Post type: ${_postTypeLabel(composerState.postType)}. '
               'Tap to change.',
-          excludeSemantics: true,
-          child: DabblerChip(
-            label: _postTypeLabel(composerState.postType),
-            selected: true,
-            leadingIcon: DabblerIcon(
-              _postTypeIcon(composerState.postType),
-              size: DabblerSizing.iconInline,
-              color: colors.onBrand,
-            ),
-            onTap: _showPostTypePicker,
-          ),
+          onTap: _showPostTypePicker,
         ),
-        Semantics(
-          label:
+        DabblerSelectPill(
+          label: _visibilityLabel(composerState.visibility),
+          icon: _visibilityIcon(composerState.visibility),
+          tone: colors.success,
+          semanticLabel:
               'Visibility: ${_visibilityLabel(composerState.visibility)}. '
               'Tap to change.',
-          excludeSemantics: true,
-          child: DabblerChip(
-            label: _visibilityLabel(composerState.visibility),
-            leadingIcon: DabblerIcon(
-              _visibilityIcon(composerState.visibility),
-              size: DabblerSizing.iconInline,
-              color: colors.textSecondary,
-            ),
-            onTap: _showVisibilityPicker,
-          ),
+          onTap: _showVisibilityPicker,
         ),
       ],
     );
@@ -570,172 +546,88 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     final tagPills = <Widget>[
       if (composerState.hasSport && composerState.sportName != null)
-        _tagBadge('cup', composerState.sportName!.toUpperCase()),
-      if (hasLocation) _tagBadge('location', composerState.locationName!),
+        _tagBadge(composerState.sportName!.toUpperCase()),
+      if (hasLocation) _tagBadge(composerState.locationName!),
       if (composerState.hasGame && composerState.gameName != null)
-        _tagBadge('game', composerState.gameName!),
+        _tagBadge(composerState.gameName!),
     ];
-
     final vibe = composerState.hasVibe && composerState.vibeName != null
         ? DabblerVibe.fromKey(composerState.vibeName!.toLowerCase())
         : null;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (tagPills.isNotEmpty) ...[
-          Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
-            children: tagPills,
-          ),
-          const SizedBox(height: DabblerSpacing.space3),
-        ],
-        DabblerTextField(
-          variant: DabblerTextFieldVariant.multiline,
-          controller: _bodyController,
-          focusNode: _bodyFocusNode,
-          rows: 4,
-          placeholder: "What's on your mind? Use #hashtags",
-          onChanged: (value) {
-            ref.read(postComposerProvider.notifier).setBody(value);
-          },
+    return DabblerComposerBox(
+      controller: _bodyController,
+      focusNode: _bodyFocusNode,
+      placeholder: "What's on your mind? Use #hashtags",
+      onChanged: (value) =>
+          ref.read(postComposerProvider.notifier).setBody(value),
+      counter: '$bodyLen/$maxLen',
+      counterSemanticLabel: '$bodyLen of $maxLen characters used',
+      counterEmphasised: nearLimit,
+      tags: tagPills.isEmpty && !composerState.hasVibe
+          ? null
+          : Wrap(
+              spacing: DabblerSpacing.space2,
+              runSpacing: DabblerSpacing.space2,
+              children: [
+                if (composerState.hasVibe && composerState.vibeName != null)
+                  DabblerChip(
+                    label: composerState.vibeName!,
+                    vibe: vibe,
+                    selected: true,
+                  ),
+                ...tagPills,
+              ],
+            ),
+      tools: [
+        DabblerComposerTool(
+          icon: 'gallery',
+          label: 'Add media',
+          active: composerState.hasMedia,
+          onTap: _showMediaInput,
         ),
-        const SizedBox(height: DabblerSpacing.space2),
-        Row(
-          children: [
-            if (composerState.hasVibe && composerState.vibeName != null)
-              DabblerChip(
-                label: composerState.vibeName!,
-                vibe: vibe,
-                selected: true,
-              ),
-            const Spacer(),
-            // Non-colour cue (WCAG 1.4.1): weight bumps to bold near the
-            // limit alongside the colour change.
-            DabblerText(
-              '$bodyLen/$maxLen',
-              semanticsLabel: '$bodyLen of $maxLen characters used',
-              style: DabblerType.caption1,
-              tone: nearLimit
-                  ? DabblerTextTone.primary
-                  : DabblerTextTone.tertiary,
-              weight: nearLimit ? DabblerTextWeight.bold : null,
-            ),
-          ],
+        DabblerComposerTool(
+          icon: 'emoji-happy',
+          label: composerState.hasVibe
+              ? 'Vibe: ${composerState.vibeName ?? "set"}. Tap to change.'
+              : 'Add vibe',
+          active: composerState.hasVibe,
+          onTap: _showVibesPicker,
         ),
-        const SizedBox(height: DabblerSpacing.space2),
-        const DabblerDivider(),
-        Row(
-          children: [
-            Expanded(
-              child: _enrichButton(
-                icon: 'happyemoji',
-                active: composerState.hasVibe,
-                label: composerState.hasVibe
-                    ? 'Vibe: ${composerState.vibeName ?? "set"}. '
-                          'Tap to change.'
-                    : 'Add vibe',
-                onTap: _showVibesPicker,
-              ),
-            ),
-            Expanded(
-              child: _enrichButton(
-                icon: 'cup',
-                active: composerState.hasSport,
-                label: composerState.hasSport
-                    ? 'Sport: ${composerState.sportName ?? "set"}. '
-                          'Tap to change.'
-                    : 'Add sport',
-                onTap: _showSportsPicker,
-              ),
-            ),
-            Expanded(
-              child: _enrichButton(
-                icon: 'location',
-                active: hasLocation,
-                label: hasLocation
-                    ? 'Location: ${composerState.locationName}. '
-                          'Tap to change.'
-                    : 'Add location',
-                onTap: _showLocationPicker,
-              ),
-            ),
-            Expanded(
-              child: _enrichButton(
-                icon: 'game',
-                active: composerState.hasGame,
-                label: composerState.hasGame
-                    ? 'Game: ${composerState.gameName ?? "set"}. '
-                          'Tap to change.'
-                    : 'Link a game',
-                onTap: _showGamePicker,
-              ),
-            ),
-          ],
+        DabblerComposerTool(
+          icon: 'cup',
+          label: composerState.hasSport
+              ? 'Sport: ${composerState.sportName ?? "set"}. Tap to change.'
+              : 'Add sport',
+          active: composerState.hasSport,
+          onTap: _showSportsPicker,
+        ),
+        DabblerComposerTool(
+          icon: 'location',
+          label: hasLocation
+              ? 'Location: ${composerState.locationName}. Tap to change.'
+              : 'Add location',
+          active: hasLocation,
+          onTap: _showLocationPicker,
+        ),
+        DabblerComposerTool(
+          icon: 'game',
+          label: composerState.hasGame
+              ? 'Game: ${composerState.gameName ?? "set"}. Tap to change.'
+              : 'Link a game',
+          active: composerState.hasGame,
+          onTap: _showGamePicker,
         ),
       ],
     );
   }
 
-  Widget _tagBadge(String icon, String label) {
-    final colors = DabblerColors.of(context);
-    return DabblerBadge(
-      label: label,
-      tone: DabblerBadgeTone.primary,
-      icon: DabblerIcon(
-        icon,
-        size: DabblerSizing.iconXs,
-        color: colors.onBrand,
-      ),
-    );
-  }
-
-  Widget _enrichButton({
-    required String icon,
-    required bool active,
-    required String label,
-    required VoidCallback onTap,
-  }) {
-    return Center(
-      child: DabblerButton.icon(
-        icon: icon,
-        semanticLabel: label,
-        tone: active ? DabblerButtonTone.primary : DabblerButtonTone.neutral,
-        onPressed: onTap,
-      ),
-    );
-  }
+  Widget _tagBadge(String label) =>
+      DabblerBadge(label: label, tone: DabblerBadgeTone.warning);
 
   // ═══════════════════════════════════════════════════════════════════════
   // MEDIA SECTION
   // ═══════════════════════════════════════════════════════════════════════
-
-  Widget _buildMediaActions() {
-    return Row(
-      children: [
-        Expanded(
-          child: DabblerButton(
-            label: 'Media',
-            icon: 'gallery-add',
-            tone: DabblerButtonTone.outlined,
-            fullWidth: true,
-            onPressed: _showMediaInput,
-          ),
-        ),
-        const SizedBox(width: DabblerSpacing.space3),
-        Expanded(
-          child: DabblerButton(
-            label: 'Add GIF',
-            icon: 'image',
-            tone: DabblerButtonTone.outlined,
-            fullWidth: true,
-            onPressed: _showGifPicker,
-          ),
-        ),
-      ],
-    );
-  }
 
   /// Filled state — horizontal 150-tall row: main 200 wide + extras 100 wide +
   /// trailing "Add More" button. Each image tile has its own remove button.
@@ -789,7 +681,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ComposerSettingsRow(
-            icon: 'repeat',
+            icon: 'share',
             title: 'Allow reposts',
             subtitle: 'Others can share this post',
             trailing: ComposerToggle(
@@ -799,9 +691,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
             ),
           ),
           ComposerSettingsRow(
-            // The design system carries no push-pin glyph; bookmark is the
-            // nearest (listed as a DS gap).
-            icon: 'bookmark',
+            icon: 'star',
             title: 'Pin to profile',
             subtitle: 'Keep at the top of your profile',
             trailing: ComposerToggle(
@@ -1012,183 +902,6 @@ class _ExpiryPickerSheetState extends State<_ExpiryPickerSheet> {
         },
         onCancel: () => Navigator.pop(context),
       ),
-    );
-  }
-}
-
-// ═════════════════════════════════════════════════════════════════════════════
-// VIBES PICKER SHEET (for composer)
-// ═════════════════════════════════════════════════════════════════════════════
-
-class _ComposerVibesPickerSheet extends ConsumerStatefulWidget {
-  const _ComposerVibesPickerSheet();
-
-  @override
-  ConsumerState<_ComposerVibesPickerSheet> createState() =>
-      _ComposerVibesPickerSheetState();
-}
-
-class _ComposerVibesPickerSheetState
-    extends ConsumerState<_ComposerVibesPickerSheet> {
-  String? _activeTypeFilter;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final vibesAsync = ref.watch(vibesProvider);
-    final composerState = ref.watch(postComposerProvider);
-
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (composerState.vibeId != null)
-          ComposerClearRow(
-            onClear: () {
-              ref.read(postComposerProvider.notifier).clearVibe();
-              Navigator.pop(context);
-            },
-          ),
-        vibesAsync.when(
-          loading: () => const SizedBox.shrink(),
-          error: (_, __) => const SizedBox.shrink(),
-          data: (vibes) {
-            final types =
-                vibes
-                    .where((v) => v.type != null && v.type!.isNotEmpty)
-                    .map((v) => v.type!)
-                    .toSet()
-                    .toList()
-                  ..sort();
-            if (types.length <= 1) return const SizedBox.shrink();
-            return Padding(
-              padding: const EdgeInsetsDirectional.only(
-                start: DabblerSpacing.space6,
-                end: DabblerSpacing.space6,
-                bottom: DabblerSpacing.space3,
-              ),
-              child: SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(
-                  children: [
-                    DabblerChip(
-                      label: 'All',
-                      selected: _activeTypeFilter == null,
-                      onTap: () => setState(() => _activeTypeFilter = null),
-                    ),
-                    for (final type in types) ...[
-                      const SizedBox(width: DabblerSpacing.space2),
-                      DabblerChip(
-                        label: _prettifyLabel(type),
-                        selected: _activeTypeFilter == type,
-                        onTap: () => setState(() => _activeTypeFilter = type),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            );
-          },
-        ),
-        ComposerScrollArea(
-          fraction: 0.55,
-          child: vibesAsync.when(
-            loading: () => const ComposerCenteredState.loading(),
-            error: (e, _) =>
-                const ComposerCenteredState.message('Failed to load vibes'),
-            data: (vibes) {
-              var filtered = vibes.toList();
-              if (_activeTypeFilter != null) {
-                filtered = filtered
-                    .where((v) => v.type == _activeTypeFilter)
-                    .toList();
-              }
-              if (filtered.isEmpty) {
-                return const ComposerCenteredState.message(
-                  'No vibes available',
-                );
-              }
-              return GridView.builder(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space1,
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space6,
-                ),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 3,
-                  mainAxisSpacing: DabblerSpacing.space3,
-                  crossAxisSpacing: DabblerSpacing.space3,
-                  childAspectRatio: 2.2,
-                ),
-                itemCount: filtered.length,
-                itemBuilder: (ctx, i) {
-                  final vibe = filtered[i];
-                  final isSelected = vibe.id == composerState.vibeId;
-                  final tokens = DabblerVibe.fromKey(vibe.key)?.resolve(colors);
-                  return Semantics(
-                    button: true,
-                    selected: isSelected,
-                    label: vibe.labelEn,
-                    excludeSemantics: true,
-                    child: DabblerFeedTappable(
-                      onTap: () {
-                        ref
-                            .read(postComposerProvider.notifier)
-                            .setVibe(
-                              id: vibe.id,
-                              label: vibe.labelEn,
-                              emoji: vibe.emoji,
-                            );
-                        Navigator.pop(context);
-                      },
-                      child: DabblerSurface(
-                        radius: DabblerRadius.lg,
-                        fill: isSelected
-                            ? (tokens?.selectedSurface ?? colors.surfaceGrey)
-                            : (tokens?.surface ?? colors.surfaceSunken),
-                        borderColor: isSelected
-                            ? (tokens?.selectedBorder ?? colors.borderStrong)
-                            : (tokens?.border ?? colors.borderDefault),
-                        borderWidth: DabblerSizing.borderDefault,
-                        child: Center(
-                          child: Padding(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: DabblerSpacing.space2,
-                            ),
-                            // The vibe's ink is a palette colour, not a text
-                            // tone: make it ambient and let the text inherit.
-                            child: DefaultTextStyle.merge(
-                              style:
-                                  DabblerText.resolveStyle(
-                                    context,
-                                    style: DabblerType.footnote,
-                                  ).copyWith(
-                                    color: tokens?.ink ?? colors.textPrimary,
-                                  ),
-                              child: DabblerText(
-                                vibe.labelEn,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                textAlign: TextAlign.center,
-                                style: DabblerType.footnote,
-                                tone: DabblerTextTone.inherit,
-                                weight: isSelected
-                                    ? DabblerTextWeight.bold
-                                    : DabblerTextWeight.medium,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-        ),
-      ],
     );
   }
 }
