@@ -1952,4 +1952,154 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
+
+  @override
+  String get settings_identity_subtitle => 'الحساب وكلمة المرور والأمان';
+
+  @override
+  String get settings_tile_privacy_preset => 'إعداد الخصوصية';
+
+  @override
+  String get settings_preset_public => 'عام';
+
+  @override
+  String get settings_preset_friends => 'الأصدقاء فقط';
+
+  @override
+  String get settings_preset_private => 'خاص';
+
+  @override
+  String get settings_theme_light => 'فاتح';
+
+  @override
+  String get settings_theme_dark => 'داكن';
+
+  @override
+  String get settings_theme_system => 'النظام';
+
+  @override
+  String get settings_country_short_eg => 'مصر';
+
+  @override
+  String get settings_country_short_ae => 'الإمارات';
+
+  @override
+  String get settings_country_short_sa => 'السعودية';
+
+  @override
+  String get settings_country_short_ma => 'المغرب';
+
+  @override
+  String get settings_organiser_title => 'كن منظّمًا';
+
+  @override
+  String get settings_organiser_subtitle => 'أنشئ الفعاليات الرياضية وأدرها';
+
+  @override
+  String get settings_organiser_info_body =>
+      'ينشئ المنظّمون المباريات ويحددون الملاعب والأسعار ويديرون المنضمّين. الإعداد يستغرق دقائق وتحتفظ بملف اللاعب.';
+
+  @override
+  String get settings_organiser_start => 'ابدأ الإعداد';
+
+  @override
+  String get settings_about_title => 'حول دابلر';
+
+  @override
+  String get settings_about_subtitle => 'الشروط، سياسة الخصوصية، التراخيص';
+
+  @override
+  String settings_search_results(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count نتيجة',
+      few: '$count نتائج',
+      two: 'نتيجتان',
+      one: 'نتيجة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_search_no_match => 'لا إعدادات تطابق ذلك';
+
+  @override
+  String get settings_path_account => 'الحساب والأمان';
+
+  @override
+  String get settings_path_privacy => 'الخصوصية';
+
+  @override
+  String get settings_path_privacy_safety => 'الخصوصية › السلامة';
+
+  @override
+  String get settings_path_appearance => 'المظهر';
+
+  @override
+  String get settings_path_profiles => 'الإعدادات › الملفات';
+
+  @override
+  String get settings_path_root => 'الإعدادات';
+
+  @override
+  String get settings_sign_out_confirm_body =>
+      'سيتم تسجيل خروجك على هذا الجهاز. تبقى مبارياتك وملفك في حسابك.';
+
+  @override
+  String notif_group_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count عنصرًا',
+      few: '$count عناصر',
+      two: 'عنصران',
+      one: 'عنصر واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_prefs_title => 'ما يصلك';
+
+  @override
+  String get notif_prefs_done => 'تم';
+
+  @override
+  String get notif_pref_invites_title => 'دعوات المباريات';
+
+  @override
+  String get notif_pref_invites_sub => 'عندما يضيفك أحد إلى مباراة';
+
+  @override
+  String get notif_pref_waitlist_title => 'أماكن قائمة الانتظار';
+
+  @override
+  String get notif_pref_waitlist_sub => 'لحظة توفّر مكان';
+
+  @override
+  String get notif_pref_payments_title => 'المدفوعات والمشاركة';
+
+  @override
+  String get notif_pref_payments_sub => 'الطلبات والإيصالات والمبالغ المستردة';
+
+  @override
+  String get notif_pref_social_title => 'النشاط الاجتماعي';
+
+  @override
+  String get notif_pref_social_sub => 'المتابعات والردود والإشارات';
+
+  @override
+  String get notif_quiet_hours_title => 'ساعات الهدوء';
+
+  @override
+  String get notif_quiet_hours_sub => 'لا اهتزازات بين هذين الوقتين';
+
+  @override
+  String get notif_quiet_hours_off => 'مغلق';
+
+  @override
+  String notif_quiet_hours_range(String start, String end) {
+    return '$start – $end';
+  }
 }

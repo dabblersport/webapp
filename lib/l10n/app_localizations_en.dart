@@ -1992,4 +1992,150 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
+
+  @override
+  String get settings_identity_subtitle => 'Account, password & security';
+
+  @override
+  String get settings_tile_privacy_preset => 'Privacy preset';
+
+  @override
+  String get settings_preset_public => 'Public';
+
+  @override
+  String get settings_preset_friends => 'Friends only';
+
+  @override
+  String get settings_preset_private => 'Private';
+
+  @override
+  String get settings_theme_light => 'Light';
+
+  @override
+  String get settings_theme_dark => 'Dark';
+
+  @override
+  String get settings_theme_system => 'System';
+
+  @override
+  String get settings_country_short_eg => 'Egypt';
+
+  @override
+  String get settings_country_short_ae => 'UAE';
+
+  @override
+  String get settings_country_short_sa => 'Saudi';
+
+  @override
+  String get settings_country_short_ma => 'Morocco';
+
+  @override
+  String get settings_organiser_title => 'Become an organiser';
+
+  @override
+  String get settings_organiser_subtitle => 'Create and manage sports events';
+
+  @override
+  String get settings_organiser_info_body =>
+      'Organisers create games, set venues and prices, and manage who joins. Setting one up takes a few minutes and you keep your player profile.';
+
+  @override
+  String get settings_organiser_start => 'Start setup';
+
+  @override
+  String get settings_about_title => 'About Dabbler';
+
+  @override
+  String get settings_about_subtitle => 'Terms, privacy policy, licenses';
+
+  @override
+  String settings_search_results(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count results',
+      one: '1 result',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get settings_search_no_match => 'No settings match that';
+
+  @override
+  String get settings_path_account => 'Account & security';
+
+  @override
+  String get settings_path_privacy => 'Privacy';
+
+  @override
+  String get settings_path_privacy_safety => 'Privacy › Safety';
+
+  @override
+  String get settings_path_appearance => 'Appearance';
+
+  @override
+  String get settings_path_profiles => 'Settings › Profiles';
+
+  @override
+  String get settings_path_root => 'Settings';
+
+  @override
+  String get settings_sign_out_confirm_body =>
+      'You will be signed out on this device. Your games and profile stay on your account.';
+
+  @override
+  String notif_group_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count items',
+      one: '1 item',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_prefs_title => 'What reaches you';
+
+  @override
+  String get notif_prefs_done => 'Done';
+
+  @override
+  String get notif_pref_invites_title => 'Game invites';
+
+  @override
+  String get notif_pref_invites_sub => 'When someone adds you to a game';
+
+  @override
+  String get notif_pref_waitlist_title => 'Waitlist spots';
+
+  @override
+  String get notif_pref_waitlist_sub => 'The moment a place frees up';
+
+  @override
+  String get notif_pref_payments_title => 'Payments and splits';
+
+  @override
+  String get notif_pref_payments_sub => 'Requests, receipts, refunds';
+
+  @override
+  String get notif_pref_social_title => 'Social activity';
+
+  @override
+  String get notif_pref_social_sub => 'Follows, replies, mentions';
+
+  @override
+  String get notif_quiet_hours_title => 'Quiet hours';
+
+  @override
+  String get notif_quiet_hours_sub => 'Nothing buzzes between these times';
+
+  @override
+  String get notif_quiet_hours_off => 'Off';
+
+  @override
+  String notif_quiet_hours_range(String start, String end) {
+    return '$start – $end';
+  }
 }

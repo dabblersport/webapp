@@ -15,6 +15,9 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
+import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
+import '../profile/settings_test_overrides.dart' show FakeNotificationSettings;
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -207,6 +210,13 @@ Future<void> _pump(
         activityFeedControllerProvider
             .overrideWith((ref) => _FakeActivity(activity ?? ActivityFeedState())),
         myProfileIdProvider.overrideWith((ref) async => null),
+        notificationSettingsControllerProvider.overrideWith(
+          (ref) => FakeNotificationSettings(const NotificationSettings(
+            userId: _userId,
+            quietStartMin: 23 * 60,
+            quietEndMin: 7 * 60,
+          )),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -261,6 +271,20 @@ void main() {
       expect(find.byType(DabblerChip), findsWidgets);
       expect(find.text(l10n.notif_title_notifications), findsWidgets);
       await _shoot(tester, key, 'notifications-all-$dir');
+    });
+
+    testWidgets('what reaches you sheet — $dir', (tester) async {
+      await _pump(tester, locale, key,
+          notifs: NotificationsState(
+              notifications: _sample(), unreadCount: 3, hasMore: true));
+      await tester.tap(find.bySemanticsLabel(l10n.settings_header_title));
+      for (var i = 0; i < 10; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.takeException(), isNull);
+      expect(find.text(l10n.notif_prefs_title), findsOneWidget);
+      expect(find.byType(DabblerToggle), findsNWidgets(4));
+      await _shoot(tester, key, 'notifications-prefs-$dir');
     });
 
     testWidgets('notifications filtered — $dir', (tester) async {

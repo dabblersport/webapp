@@ -24,12 +24,16 @@ class TopBar extends StatelessWidget {
   /// When non-null a "mark all read" action shows at the end of the bar.
   final VoidCallback? onMarkAllRead;
 
+  /// Opens the "What reaches you" preferences sheet.
+  final VoidCallback onOpenSettings;
+
   const TopBar({
     super.key,
     required this.title,
     required this.mode,
     required this.onModeChanged,
     this.onMarkAllRead,
+    required this.onOpenSettings,
   });
 
   @override
@@ -47,12 +51,16 @@ class TopBar extends StatelessWidget {
             DabblerNavigationAction(
               icon: 'tick-circle',
               label: l10n.notif_mark_all_read,
+              // Brand while something is unread, subtle once nothing is.
+              tone: onMarkAllRead != null
+                  ? DabblerNavigationActionTone.brand
+                  : DabblerNavigationActionTone.subtle,
               onPressed: onMarkAllRead,
             ),
             DabblerNavigationAction(
               icon: 'setting-2',
               label: l10n.settings_header_title,
-              onPressed: () => context.push('/settings/notifications'),
+              onPressed: onOpenSettings,
             ),
           ],
         ),
@@ -96,7 +104,9 @@ class ModeToggle extends StatelessWidget {
         ),
       ],
       onChanged: (id) => onChanged(
-        id == ViewMode.activity.name ? ViewMode.activity : ViewMode.notifications,
+        id == ViewMode.activity.name
+            ? ViewMode.activity
+            : ViewMode.notifications,
       ),
     );
   }

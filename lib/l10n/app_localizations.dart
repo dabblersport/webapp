@@ -3592,6 +3592,258 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You unlocked a new achievement'**
   String get notif_kind_achievement_earned;
+
+  /// No description provided for @settings_identity_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Account, password & security'**
+  String get settings_identity_subtitle;
+
+  /// No description provided for @settings_tile_privacy_preset.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy preset'**
+  String get settings_tile_privacy_preset;
+
+  /// No description provided for @settings_preset_public.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get settings_preset_public;
+
+  /// No description provided for @settings_preset_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friends only'**
+  String get settings_preset_friends;
+
+  /// No description provided for @settings_preset_private.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get settings_preset_private;
+
+  /// No description provided for @settings_theme_light.
+  ///
+  /// In en, this message translates to:
+  /// **'Light'**
+  String get settings_theme_light;
+
+  /// No description provided for @settings_theme_dark.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark'**
+  String get settings_theme_dark;
+
+  /// No description provided for @settings_theme_system.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settings_theme_system;
+
+  /// No description provided for @settings_country_short_eg.
+  ///
+  /// In en, this message translates to:
+  /// **'Egypt'**
+  String get settings_country_short_eg;
+
+  /// No description provided for @settings_country_short_ae.
+  ///
+  /// In en, this message translates to:
+  /// **'UAE'**
+  String get settings_country_short_ae;
+
+  /// No description provided for @settings_country_short_sa.
+  ///
+  /// In en, this message translates to:
+  /// **'Saudi'**
+  String get settings_country_short_sa;
+
+  /// No description provided for @settings_country_short_ma.
+  ///
+  /// In en, this message translates to:
+  /// **'Morocco'**
+  String get settings_country_short_ma;
+
+  /// No description provided for @settings_organiser_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Become an organiser'**
+  String get settings_organiser_title;
+
+  /// No description provided for @settings_organiser_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Create and manage sports events'**
+  String get settings_organiser_subtitle;
+
+  /// No description provided for @settings_organiser_info_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Organisers create games, set venues and prices, and manage who joins. Setting one up takes a few minutes and you keep your player profile.'**
+  String get settings_organiser_info_body;
+
+  /// No description provided for @settings_organiser_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start setup'**
+  String get settings_organiser_start;
+
+  /// No description provided for @settings_about_title.
+  ///
+  /// In en, this message translates to:
+  /// **'About Dabbler'**
+  String get settings_about_title;
+
+  /// No description provided for @settings_about_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Terms, privacy policy, licenses'**
+  String get settings_about_subtitle;
+
+  /// No description provided for @settings_search_results.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 result} other{{count} results}}'**
+  String settings_search_results(int count);
+
+  /// No description provided for @settings_search_no_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No settings match that'**
+  String get settings_search_no_match;
+
+  /// No description provided for @settings_path_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & security'**
+  String get settings_path_account;
+
+  /// No description provided for @settings_path_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy'**
+  String get settings_path_privacy;
+
+  /// No description provided for @settings_path_privacy_safety.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy › Safety'**
+  String get settings_path_privacy_safety;
+
+  /// No description provided for @settings_path_appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settings_path_appearance;
+
+  /// No description provided for @settings_path_profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings › Profiles'**
+  String get settings_path_profiles;
+
+  /// No description provided for @settings_path_root.
+  ///
+  /// In en, this message translates to:
+  /// **'Settings'**
+  String get settings_path_root;
+
+  /// No description provided for @settings_sign_out_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'You will be signed out on this device. Your games and profile stay on your account.'**
+  String get settings_sign_out_confirm_body;
+
+  /// No description provided for @notif_group_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 item} other{{count} items}}'**
+  String notif_group_count(int count);
+
+  /// No description provided for @notif_prefs_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What reaches you'**
+  String get notif_prefs_title;
+
+  /// No description provided for @notif_prefs_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get notif_prefs_done;
+
+  /// No description provided for @notif_pref_invites_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game invites'**
+  String get notif_pref_invites_title;
+
+  /// No description provided for @notif_pref_invites_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone adds you to a game'**
+  String get notif_pref_invites_sub;
+
+  /// No description provided for @notif_pref_waitlist_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Waitlist spots'**
+  String get notif_pref_waitlist_title;
+
+  /// No description provided for @notif_pref_waitlist_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'The moment a place frees up'**
+  String get notif_pref_waitlist_sub;
+
+  /// No description provided for @notif_pref_payments_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Payments and splits'**
+  String get notif_pref_payments_title;
+
+  /// No description provided for @notif_pref_payments_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests, receipts, refunds'**
+  String get notif_pref_payments_sub;
+
+  /// No description provided for @notif_pref_social_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Social activity'**
+  String get notif_pref_social_title;
+
+  /// No description provided for @notif_pref_social_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows, replies, mentions'**
+  String get notif_pref_social_sub;
+
+  /// No description provided for @notif_quiet_hours_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours'**
+  String get notif_quiet_hours_title;
+
+  /// No description provided for @notif_quiet_hours_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing buzzes between these times'**
+  String get notif_quiet_hours_sub;
+
+  /// No description provided for @notif_quiet_hours_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get notif_quiet_hours_off;
+
+  /// No description provided for @notif_quiet_hours_range.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} – {end}'**
+  String notif_quiet_hours_range(String start, String end);
 }
 
 class _AppLocalizationsDelegate

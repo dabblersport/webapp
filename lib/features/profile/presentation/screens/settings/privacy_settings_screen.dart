@@ -379,7 +379,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     }
 
     final topBar = DabblerNavigationTopBar.titled(
-        border: true,
+      border: true,
       title: 'Privacy Settings',
       onBack: () => context.pop(),
       actions: [
@@ -768,15 +768,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
     ctrl.applyPreset(presetSettings);
   }
 
-  PrivacyPreset _detectPreset(PrivacySettings s) {
-    if (s.profileVisibility == ProfileVisibility.private) {
-      return PrivacyPreset.private;
-    }
-    if (s.profileVisibility == ProfileVisibility.friends) {
-      return PrivacyPreset.friendsOnly;
-    }
-    return PrivacyPreset.public;
-  }
+  PrivacyPreset _detectPreset(PrivacySettings s) => privacyPresetOf(s);
 
   void _showTooltip(String title, String description) {
     showDabblerDialog<void>(
@@ -835,8 +827,21 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen>
   }
 }
 
+/// Which preset the profile visibility currently matches — shown as the
+/// Settings root's privacy tile value.
+PrivacyPreset privacyPresetOf(PrivacySettings s) {
+  if (s.profileVisibility == ProfileVisibility.private) {
+    return PrivacyPreset.private;
+  }
+  if (s.profileVisibility == ProfileVisibility.friends) {
+    return PrivacyPreset.friendsOnly;
+  }
+  return PrivacyPreset.public;
+}
+
 /// How many of the profile-visibility toggles are on, as `n/total`.
-String privacyProfileShownCount(PrivacySettings s) => _count(_profileToggles, s);
+String privacyProfileShownCount(PrivacySettings s) =>
+    _count(_profileToggles, s);
 
 /// How many of the activity-visibility toggles are on, as `n/total`.
 String privacyActivityShownCount(PrivacySettings s) =>
