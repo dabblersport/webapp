@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the sport picker as a composer sheet (`Home Feed.dc.html:731-760`):
 /// the sport rows, a Clear action when [showClear], and a `Confirm` footer
@@ -27,7 +28,7 @@ Future<void> showComposerSportSheet(
     title: title,
     onClear: showClear ? onClear : null,
     confirm: ComposerSheetConfirm(
-      label: 'Confirm',
+      label: AppLocalizations.of(context).composer_confirm,
       onTap: () {
         final sport = pending.value;
         if (sport != null) onConfirm(sport);
@@ -59,15 +60,15 @@ class SportSelectionSheet extends ConsumerWidget {
         padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space10),
         child: ComposerCenteredState.loading(),
       ),
-      error: (_, __) => const Padding(
+      error: (_, __) => Padding(
         padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-        child: ComposerCenteredState.message('Failed to load sports'),
+        child: ComposerCenteredState.message(AppLocalizations.of(context).composer_sports_failed),
       ),
       data: (sports) {
         if (sports.isEmpty) {
-          return const Padding(
+          return Padding(
             padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-            child: ComposerCenteredState.message('No sports available'),
+            child: ComposerCenteredState.message(AppLocalizations.of(context).composer_sports_none),
           );
         }
         final colors = DabblerColors.of(context);
