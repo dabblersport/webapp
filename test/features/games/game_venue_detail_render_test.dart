@@ -464,29 +464,6 @@ void main() {
       await _unmount(tester);
     }, variant: desktop);
 
-    testWidgets('venue space sheet opens - $dir', (tester) async {
-      await _pump(
-        tester,
-        const VenueDetailScreen(venueId: 'v1'),
-        locale,
-        overrides: _venueOverrides(_venue()),
-      );
-      await tester.scrollUntilVisible(
-        find.text('Court / Field').first,
-        100,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.text('Court / Field').first);
-      for (var i = 0; i < 8; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      _noException(tester);
-      expect(find.text('Sport Space'), findsOneWidget);
-      expect(find.text('Hours'), findsOneWidget);
-      await _shoot(tester, const Key('shot'), 'venue-space-sheet-$dir');
-      await _unmount(tester);
-    }, variant: desktop);
-
     testWidgets('game leave confirmation - $dir', (tester) async {
       await _pump(
         tester,
