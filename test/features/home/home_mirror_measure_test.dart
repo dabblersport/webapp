@@ -10,6 +10,7 @@ library;
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Override;
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -107,6 +108,23 @@ void main() {
         tester,
         rtl: rtl,
         countLabel: l.home_upcoming_strip_count(3),
+      );
+      // The strip's fill: `background:var(--faint)` = rgb(232, 224, 207)
+      // (`Home Feed.dc.html:82`, computed in `out/base.json`), light theme.
+      final Iterable<Color?> fills = tester
+          .widgetList<DecoratedBox>(
+            find.ancestor(
+              of: find.byType(DabblerIcon),
+              matching: find.byType(DecoratedBox),
+            ),
+          )
+          .map((DecoratedBox b) => b.decoration)
+          .whereType<BoxDecoration>()
+          .map((BoxDecoration b) => b.color);
+      expect(
+        fills.any((Color? c) => c == const Color(0xFFE8E0CF)),
+        isTrue,
+        reason: 'folded strip fill must be the frame\'s faint rgb(232,224,207)',
       );
       table.write('Home, folded Upcoming strip, $dir');
       final List<String> failures = table.failures();
