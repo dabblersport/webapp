@@ -9,10 +9,10 @@ enum FeedTab {
   news;
 
   String label(AppLocalizations l) => switch (this) {
-        FeedTab.forYou => l.tab_most_recent,
-        FeedTab.following => l.tab_following,
-        FeedTab.nearby => l.tab_nearby,
-        FeedTab.active => l.tab_active,
-        FeedTab.news => l.tab_news,
-      };
+    FeedTab.forYou => l.tab_most_recent,
+    FeedTab.following => l.tab_following,
+    FeedTab.nearby => l.tab_nearby,
+    FeedTab.active => l.tab_active,
+    FeedTab.news => l.tab_news,
+  };
 }

@@ -6,7 +6,7 @@ import 'package:flutter/widgets.dart';
 /// and fields are all `Dabbler*` components, coloured through
 /// [DabblerColors].
 
-/// The composer panel: a drag handle, a title with a Cancel action, the
+/// The composer sheet content: a title with a Cancel action, the
 /// scrolling [children], an optional error banner and the call-to-action.
 class ComposerDrawerShell extends StatelessWidget {
   const ComposerDrawerShell({
@@ -32,112 +32,82 @@ class ComposerDrawerShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final keyboard = MediaQuery.viewInsetsOf(context).bottom;
+    final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final safeBottom = MediaQuery.paddingOf(context).bottom;
-    final keyboardOpen = keyboard > 0;
-    final maxHeight = MediaQuery.sizeOf(context).height * 0.92;
 
-    return Padding(
-      padding: EdgeInsets.only(bottom: keyboard),
-      child: ConstrainedBox(
-        constraints: BoxConstraints(maxHeight: maxHeight),
-        child: DecoratedBox(
-          decoration: BoxDecoration(
-            color: colors.surfaceCard,
-            borderRadius: const BorderRadius.vertical(
-              top: Radius.circular(DabblerRadius.xxl),
-            ),
-            border: Border.all(color: colors.borderDefault),
+    // The route's modal frame supplies the sheet surface, its corners, the
+    // keyboard inset and the height cap; the shell is only its content.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space8,
+            DabblerSpacing.space6,
+            DabblerSpacing.space4,
+            DabblerSpacing.space2,
           ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+          child: Row(
             children: [
-              const SizedBox(height: DabblerSpacing.space3),
-              Container(
-                width: DabblerSheet.handleWidth,
-                height: DabblerSheet.handleHeight,
-                decoration: BoxDecoration(
-                  color: colors.borderStrong,
-                  borderRadius: BorderRadius.circular(DabblerRadius.pill),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space2,
-                ),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: DabblerText(title, style: DabblerType.title3),
-                    ),
-                    DabblerButton(
-                      label: 'Cancel',
-                      tone: DabblerButtonTone.text,
-                      size: DabblerButtonSize.small,
-                      onPressed: () => Navigator.of(context).maybePop(),
-                    ),
-                  ],
-                ),
-              ),
-              Flexible(
-                child: SingleChildScrollView(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ...children,
-                      SizedBox(height: bottomSpacer),
-                    ],
-                  ),
-                ),
-              ),
-              if (errorMessage != null && errorMessage!.isNotEmpty)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    start: DabblerSpacing.space8,
-                    top: DabblerSpacing.space2,
-                    end: DabblerSpacing.space8,
-                  ),
-                  child: DabblerBanner(
-                    tone: DabblerBannerTone.error,
-                    message: errorMessage,
-                  ),
-                ),
-              Padding(
-                padding: EdgeInsetsDirectional.only(
-                  start: DabblerSpacing.space8,
-                  top: DabblerSpacing.space4,
-                  end: DabblerSpacing.space8,
-                  bottom: keyboardOpen
-                      ? DabblerSpacing.space4
-                      : DabblerSpacing.space4 + safeBottom,
-                ),
-                child: DabblerButton(
-                  label: ctaLabel,
-                  fullWidth: true,
-                  loading: isSubmitting,
-                  disabled: !canSubmit,
-                  onPressed: canSubmit && !isSubmitting ? onCtaTap : null,
-                ),
+              Expanded(child: DabblerText(title, style: DabblerType.title3)),
+              DabblerButton(
+                label: 'Cancel',
+                tone: DabblerButtonTone.text,
+                size: DabblerButtonSize.small,
+                onPressed: () => Navigator.of(context).maybePop(),
               ),
             ],
           ),
         ),
-      ),
+        Flexible(
+          child: SingleChildScrollView(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                ...children,
+                SizedBox(height: bottomSpacer),
+              ],
+            ),
+          ),
+        ),
+        if (errorMessage != null && errorMessage!.isNotEmpty)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space8,
+              top: DabblerSpacing.space2,
+              end: DabblerSpacing.space8,
+            ),
+            child: DabblerBanner(
+              tone: DabblerBannerTone.error,
+              message: errorMessage,
+            ),
+          ),
+        Padding(
+          padding: EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space8,
+            top: DabblerSpacing.space4,
+            end: DabblerSpacing.space8,
+            bottom: keyboardOpen
+                ? DabblerSpacing.space4
+                : DabblerSpacing.space4 + safeBottom,
+          ),
+          child: DabblerButton(
+            label: ctaLabel,
+            fullWidth: true,
+            loading: isSubmitting,
+            disabled: !canSubmit,
+            onPressed: canSubmit && !isSubmitting ? onCtaTap : null,
+          ),
+        ),
+      ],
     );
   }
 }
 
 /// Small caps section heading inside a composer.
 class ComposerSectionLabel extends StatelessWidget {
-  const ComposerSectionLabel({
-    super.key,
-    required this.label,
-  });
+  const ComposerSectionLabel({super.key, required this.label});
 
   final String label;
 

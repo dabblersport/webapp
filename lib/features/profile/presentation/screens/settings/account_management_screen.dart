@@ -151,6 +151,7 @@ class _AccountManagementScreenState
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Account Management',
         onBack: () => context.pop(),
       ),
@@ -185,8 +186,6 @@ class _AccountManagementScreenState
                         ),
                         const SizedBox(height: DabblerSpacing.space4),
                       ],
-                      AccountSecurityIntro(),
-                      const SizedBox(height: DabblerSpacing.space7),
                       _buildEmailSection(),
                       const SizedBox(height: DabblerSpacing.space7),
                       _buildPasswordSection(),
@@ -274,9 +273,11 @@ class _AccountManagementScreenState
 
   Widget _buildDataExportSection() {
     final colors = DabblerColors.of(context);
-    return DabblerSection(
+    return DabblerRowGroup(
       children: [
         DabblerInputRow(
+          flat: true,
+          showDivider: false,
           title: 'Export My Data',
           subtitle:
               'Request a copy of your Dabbler data (PDPL data portability)',
@@ -682,32 +683,6 @@ class _AccountManagementScreenState
 
 /// The "Secure your account" intro at the top of the account screen.
 ///
-/// Public so the render test can pump it without the screen's Supabase
-/// session.
-class AccountSecurityIntro extends StatelessWidget {
-  const AccountSecurityIntro({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DabblerText(
-          'Secure your account',
-          style: DabblerType.footnote,
-          tone: DabblerTextTone.secondary,
-        ),
-        const SizedBox(height: DabblerSpacing.space2),
-        const DabblerBanner(
-          tone: DabblerBannerTone.neutral,
-          title: 'Manage credentials & security',
-          message:
-              'Update your email, password, and security settings to keep your account safe.',
-        ),
-      ],
-    );
-  }
-}
 
 /// The delete-account row. Public so the render test can pump it.
 class AccountDangerZone extends StatelessWidget {
@@ -717,9 +692,12 @@ class AccountDangerZone extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return DabblerSection(
+    return DabblerRowGroup(
+      header: 'Danger zone',
       children: [
         DabblerInputRow(
+          flat: true,
+          showDivider: false,
           title: 'Delete Account',
           subtitle: 'Permanently delete your account and all data',
           tone: DabblerInputRowTone.destructive,

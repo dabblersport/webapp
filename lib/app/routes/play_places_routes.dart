@@ -193,7 +193,6 @@ RouteBase get createGameRoute =>
       // composer's glass surface blur the screen behind it.
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        transparentSurface: true,
         child: const GameComposerScreen(),
       ),
     );
@@ -219,7 +218,6 @@ RouteBase get createGameBasicInfoRoute =>
       },
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        transparentSurface: true,
         child: const GameComposerScreen(),
       ),
     );
@@ -233,7 +231,6 @@ RouteBase get editGameRoute =>
       parentNavigatorKey: rootNavigatorKey,
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        transparentSurface: true,
         child: GameComposerScreen(
           editGameId: state.pathParameters['gameId']!,
         ),

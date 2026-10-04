@@ -263,11 +263,8 @@ RouteBase get socialCreatePostRoute =>
       parentNavigatorKey: rootNavigatorKey,
       path: RoutePaths.socialCreatePost,
       name: RouteNames.socialCreatePost,
-      // transparentSurface: the composer draws its own glass panel — without
-      // it the modal frame paints a second opaque sheet behind it.
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        transparentSurface: true,
         child: const PostComposerScreen(),
       ),
     );
@@ -280,7 +277,6 @@ RouteBase get postComposerRoute =>
       name: RouteNames.postComposer,
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        transparentSurface: true,
         child: const PostComposerScreen(),
       ),
     );

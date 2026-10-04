@@ -9,6 +9,7 @@ class HelpCenterScreen extends StatelessWidget {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: 'Help Center',
+        border: true,
         onBack: () => Navigator.maybePop(context),
       ),
       body: const Center(

@@ -41,14 +41,19 @@ class TopBar extends StatelessWidget {
         DabblerNavigationTopBar.titled(
           title: title,
           safeArea: false,
+          border: true,
           onBack: () => context.canPop() ? context.pop() : context.go('/home'),
           actions: [
-            if (onMarkAllRead != null)
-              DabblerNavigationAction(
-                icon: 'tick-circle',
-                label: l10n.notif_mark_all_read,
-                onPressed: onMarkAllRead,
-              ),
+            DabblerNavigationAction(
+              icon: 'tick-circle',
+              label: l10n.notif_mark_all_read,
+              onPressed: onMarkAllRead,
+            ),
+            DabblerNavigationAction(
+              icon: 'setting-2',
+              label: l10n.settings_header_title,
+              onPressed: () => context.push('/settings/notifications'),
+            ),
           ],
         ),
         if (onModeChanged != null)

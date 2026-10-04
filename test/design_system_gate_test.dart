@@ -174,12 +174,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 120',
   ),
   GateAllow(
-    'lib/features/social/presentation/screens/post_composer_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 600',
-  ),
-  GateAllow(
     'lib/core/widgets/composer_drawer_kit.dart',
     ['numeric named arg'],
     _maxWidthReason,

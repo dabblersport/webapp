@@ -106,6 +106,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Notifications',
         onBack: () => context.pop(),
       ),
@@ -117,8 +118,6 @@ class NotificationSettingsScreen extends ConsumerWidget {
           DabblerSpacing.space11,
         ),
         children: [
-          _buildHero(context),
-          const SizedBox(height: DabblerSpacing.space7),
           _buildBody(context, ref, state),
         ],
       ),
@@ -186,33 +185,13 @@ class NotificationSettingsScreen extends ConsumerWidget {
     );
   }
 
-  Widget _buildHero(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        DabblerText(
-          'Stay informed',
-          style: DabblerType.footnote,
-          tone: DabblerTextTone.secondary,
-        ),
-        const SizedBox(height: DabblerSpacing.space2),
-        const DabblerBanner(
-          tone: DabblerBannerTone.neutral,
-          title: 'Manage notifications',
-          message:
-              'Control how and when you receive notifications about games, social activity, and account updates.',
-        ),
-      ],
-    );
-  }
-
   Widget _buildGeneralSection(
     BuildContext context,
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
-    return DabblerSection(
-      title: 'General Preferences',
+    return DabblerRowGroup(
+      header: 'General Preferences',
       children: [
         _switchRow(
           context,
@@ -248,8 +227,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettingsController controller,
   ) {
     final enabled = settings.hasQuietHours;
-    return DabblerSection(
-      title: 'Quiet Hours',
+    return DabblerRowGroup(
+      header: 'Quiet Hours',
       children: [
         _switchRow(
           context,
@@ -309,8 +288,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
     NotificationSettings settings,
     NotificationSettingsController controller,
   ) {
-    return DabblerSection(
-      title: title,
+    return DabblerRowGroup(
+      header: title,
       children: [
         for (final t in toggles)
           _switchRow(
@@ -333,6 +312,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
   ) {
     final colors = DabblerColors.of(context);
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       title: label,
       leading: DabblerIcon(
         'clock',
@@ -368,6 +349,8 @@ class NotificationSettingsScreen extends ConsumerWidget {
   ) {
     final colors = DabblerColors.of(context);
     return DabblerInputRow(
+      flat: true,
+      showDivider: false,
       title: title,
       subtitle: subtitle,
       leading: DabblerIcon(

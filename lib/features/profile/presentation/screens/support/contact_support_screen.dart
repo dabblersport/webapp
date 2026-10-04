@@ -57,6 +57,7 @@ class _ContactSupportScreenState extends ConsumerState<ContactSupportScreen> {
   Widget build(BuildContext context) {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
+        border: true,
         title: 'Contact Support',
         onBack: () => context.pop(),
       ),
