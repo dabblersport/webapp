@@ -204,7 +204,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             tone: DabblerTextTone.secondary,
           ),
         ),
-        const SizedBox(height: DabblerSpacing.space4),
+        const DabblerGap.v(DabblerSpacing.space4),
         Padding(
           padding: const EdgeInsetsDirectional.symmetric(
             horizontal: DabblerSpacing.space5,
@@ -219,7 +219,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             onCleared: () => setState(() => _searchQuery = ''),
           ),
         ),
-        const SizedBox(height: DabblerSpacing.space4),
+        const DabblerGap.v(DabblerSpacing.space4),
         sportsAsync.when(
           data: (sports) {
             final filteredSports = _searchQuery.isEmpty
@@ -276,7 +276,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             ),
           ),
         ),
-        const SizedBox(height: DabblerSpacing.space5),
+        const DabblerGap.v(DabblerSpacing.space5),
       ],
     );
   }

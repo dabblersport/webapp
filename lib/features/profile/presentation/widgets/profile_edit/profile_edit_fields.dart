@@ -160,7 +160,7 @@ class ProfileEditDobField extends StatelessWidget {
           ),
         ),
         if (value != null) ...[
-          const SizedBox(width: DabblerSpacing.space2),
+          const DabblerGap.h(DabblerSpacing.space2),
           DabblerButton.icon(
             icon: 'close-circle',
             tone: DabblerButtonTone.text,

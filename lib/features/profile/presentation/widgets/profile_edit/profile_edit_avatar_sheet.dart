@@ -62,7 +62,7 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
             style: DabblerType.subheadline,
             tone: DabblerTextTone.secondary,
           ),
-          const SizedBox(height: DabblerSpacing.space7),
+          const DabblerGap.v(DabblerSpacing.space7),
           GridView.count(
             crossAxisCount: 4,
             shrinkWrap: true,
@@ -95,7 +95,7 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
                 ),
             ],
           ),
-          const SizedBox(height: DabblerSpacing.space5),
+          const DabblerGap.v(DabblerSpacing.space5),
           DabblerButton(
             label: 'Shuffle avatars',
             icon: 'refresh',
@@ -103,7 +103,7 @@ class _ProfileEditAvatarSheetState extends State<ProfileEditAvatarSheet> {
             fullWidth: true,
             onPressed: () => setState(() => _generation++),
           ),
-          const SizedBox(height: DabblerSpacing.space8),
+          const DabblerGap.v(DabblerSpacing.space8),
           DabblerSection(
             title: 'Upload options',
             children: [

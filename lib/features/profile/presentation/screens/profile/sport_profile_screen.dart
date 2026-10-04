@@ -425,7 +425,7 @@ class _SportPreferencesSectionState
             style: DabblerType.subheadline,
             weight: DabblerTextWeight.medium,
           ),
-          const SizedBox(height: DabblerSpacing.space2),
+          const DabblerGap.v(DabblerSpacing.space2),
           Wrap(
             spacing: DabblerSpacing.space2,
             runSpacing: DabblerSpacing.space2,
@@ -445,7 +445,7 @@ class _SportPreferencesSectionState
               style: DabblerType.subheadline,
               weight: DabblerTextWeight.medium,
             ),
-            const SizedBox(height: DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space2),
             Wrap(
               spacing: DabblerSpacing.space2,
               runSpacing: DabblerSpacing.space2,
