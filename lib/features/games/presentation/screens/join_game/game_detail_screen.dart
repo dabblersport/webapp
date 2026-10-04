@@ -329,7 +329,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         size: DabblerButtonSize.full,
         fullWidth: true,
         loading: state.isActing,
-        onPressed: () => _confirmJoin(game, ctrl),
+        onPressed: ctrl.joinGame,
       );
     }
     return DabblerActionBar(price: gameEntryLabel(game), primary: cta);
@@ -359,50 +359,6 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       pathParameters: {'gameId': gameId},
     );
     if (updated == true) await ctrl.refresh();
-  }
-
-  /// "Are you sure you want to join this game?" (`:191-205`): No / Yes, join.
-  Future<void> _confirmJoin(GameView game, GameViewController ctrl) async {
-    final when = _formatDateShort(game.startAt);
-    final confirmed = await showDabblerSheet<bool>(
-      context: context,
-      detent: DabblerSheetDetent.content,
-      title: 'Are you sure you want to join this game?',
-      headerActionBuilder: (ctx) => DabblerButton(
-        label: 'Cancel',
-        tone: DabblerButtonTone.neutral,
-        size: DabblerButtonSize.small,
-        onPressed: () => Navigator.pop(ctx, false),
-      ),
-      builder: (ctx) => DabblerText(
-        '${game.title} · $when · ${gameEntryLabel(game)}',
-        style: DabblerType.caption1,
-        tone: DabblerTextTone.secondary,
-      ),
-      footerBuilder: (ctx) => Row(
-        children: [
-          Expanded(
-            child: DabblerButton(
-              label: 'No',
-              tone: DabblerButtonTone.neutral,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              onPressed: () => Navigator.pop(ctx, false),
-            ),
-          ),
-          const DabblerGap.h(DabblerSpacing.space3),
-          Expanded(
-            child: DabblerButton(
-              label: 'Yes, join',
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              onPressed: () => Navigator.pop(ctx, true),
-            ),
-          ),
-        ],
-      ),
-    );
-    if (confirmed == true && mounted) ctrl.joinGame();
   }
 
   Future<void> _confirmLeave() async {
@@ -467,16 +423,5 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       case JoinActionResult.cancelledRequest:
         return 'Join request cancelled.';
     }
-  }
-
-  String _formatDateShort(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final day = DateTime(dt.year, dt.month, dt.day);
-    final diff = day.difference(today).inDays;
-    final time = DateFormat('h:mm a').format(dt);
-    if (diff == 0) return 'Today · $time';
-    if (diff == 1) return 'Tomorrow · $time';
-    return '${DateFormat('d MMM').format(dt)} · $time';
   }
 }
