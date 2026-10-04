@@ -170,7 +170,7 @@ void main() {
   ) async {
     await _pump(tester, const EmailInputScreen(), const Locale('en'));
     DabblerButton continueButton() => tester.widget<DabblerButton>(
-      find.widgetWithText(DabblerButton, 'Continue').first,
+      find.widgetWithText(DabblerButton, 'Send me a code').first,
     );
     expect(continueButton().onPressed, isNull);
     await tester.enterText(find.byType(EditableText).first, 'a@b.co');
@@ -200,6 +200,26 @@ void main() {
       () => const OtpVerificationScreen(
         identifier: 'marcus@dabbler.ae',
         identifierType: IdentifierType.email,
+      ),
+      (t) async {
+        await t.pump();
+      },
+    ),
+    'otp-invalid': (
+      () => const OtpVerificationScreen(
+        identifier: 'marcus@dabbler.ae',
+        identifierType: IdentifierType.email,
+        initialErrorMessage: 'Invalid token',
+      ),
+      (t) async {
+        await t.pump();
+      },
+    ),
+    'otp-expired': (
+      () => const OtpVerificationScreen(
+        identifier: 'marcus@dabbler.ae',
+        identifierType: IdentifierType.email,
+        initialErrorMessage: 'Token has expired',
       ),
       (t) async {
         await t.pump();

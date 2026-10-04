@@ -38,7 +38,7 @@ Widget authIdentify(String? identifier, Widget child) => identifier == null
 /// Opens the Terms of Service in a design-system sheet.
 Future<void> showAuthTermsSheet(BuildContext context) => _showLegal(
   context,
-  title: 'Terms of Service',
+  title: AppLocalizations.of(context).auth_legal_terms,
   intro: kTermsIntro,
   sections: kTermsOfServiceSections,
 );
@@ -46,7 +46,7 @@ Future<void> showAuthTermsSheet(BuildContext context) => _showLegal(
 /// Opens the Privacy Policy in a design-system sheet.
 Future<void> showAuthPrivacySheet(BuildContext context) => _showLegal(
   context,
-  title: 'Privacy Policy',
+  title: AppLocalizations.of(context).auth_legal_privacy,
   intro: kPrivacyIntro,
   sections: kPrivacyPolicySections,
 );
@@ -117,14 +117,14 @@ class AuthLegalNotice extends StatelessWidget {
     final AppLocalizations l10n = AppLocalizations.of(context);
     return DabblerText.rich(
       <DabblerTextSpan>[
-        DabblerTextSpan(l10n.email_input_terms_prefix),
+        DabblerTextSpan(l10n.auth_legal_prefix),
         DabblerTextSpan(
-          l10n.email_input_terms_link,
+          l10n.auth_legal_terms,
           onTap: () => showAuthTermsSheet(context),
         ),
-        DabblerTextSpan(l10n.email_input_terms_and),
+        DabblerTextSpan(l10n.auth_legal_and),
         DabblerTextSpan(
-          l10n.email_input_privacy_link,
+          l10n.auth_legal_privacy,
           onTap: () => showAuthPrivacySheet(context),
         ),
         const DabblerTextSpan('.'),
@@ -223,7 +223,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
   Future<void> _openLanguage() {
     return showDabblerSheet<void>(
       context: context,
-      title: AppLocalizations.of(context).auth_welcome_language_picker_title,
+      title: AppLocalizations.of(context).auth_sheet_language,
       detent: DabblerSheetDetent.content,
       footerBuilder: _done,
       builder: (BuildContext ctx) => Consumer(
@@ -253,7 +253,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
   Future<void> _openRegion() {
     return showDabblerSheet<void>(
       context: context,
-      title: AppLocalizations.of(context).auth_welcome_country_picker_title,
+      title: AppLocalizations.of(context).auth_sheet_region,
       detents: const <double>[0.6],
       footerBuilder: _done,
       builder: (BuildContext ctx) {

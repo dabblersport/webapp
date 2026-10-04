@@ -163,12 +163,12 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   DabblerText(
-                    l10n.auth_welcome_title,
+                    l10n.auth_entry_title,
                     style: DabblerType.largeTitle,
                   ),
                   const DabblerGap.v(DabblerSpacing.space3),
                   DabblerText(
-                    l10n.auth_welcome_subtitle,
+                    l10n.auth_entry_subtitle,
                     style: DabblerType.callout,
                     weight: DabblerTextWeight.regular,
                     tone: DabblerTextTone.secondary,
@@ -186,18 +186,18 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                         DabblerInputRow(
                           flat: true,
                           leading: const DabblerIconTile.named('verify'),
-                          title: l10n.auth_welcome_trust_verified,
+                          title: l10n.auth_entry_trust_verified,
                         ),
                         DabblerInputRow(
                           flat: true,
                           leading: const DabblerIconTile.named('activity'),
-                          title: l10n.auth_welcome_trust_personalised,
+                          title: l10n.auth_entry_trust_personalised,
                         ),
                         DabblerInputRow(
                           flat: true,
                           showDivider: false,
                           leading: const DabblerIconTile.named('lock'),
-                          title: l10n.auth_welcome_trust_privacy,
+                          title: l10n.auth_entry_trust_privacy,
                         ),
                       ],
                     ),
@@ -219,7 +219,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                 authIdentify(
                   'auth-welcome-continue-email',
                   DabblerButton(
-                    label: l10n.auth_welcome_btn_email,
+                    label: l10n.auth_entry_continue_email,
                     icon: 'sms',
                     size: DabblerButtonSize.full,
                     fullWidth: true,
@@ -231,7 +231,11 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                 authIdentify(
                   'auth-welcome-continue-google',
                   DabblerButton(
-                    label: l10n.auth_welcome_btn_google,
+                    label: l10n.auth_entry_continue_google,
+                    leadingWidget: const DabblerProviderMark.google(
+                      size: DabblerSizing.iconLg,
+                      excludeFromSemantics: true,
+                    ),
                     tone: DabblerButtonTone.outlined,
                     size: DabblerButtonSize.full,
                     fullWidth: true,
@@ -244,7 +248,11 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                   authIdentify(
                     'auth-welcome-continue-apple',
                     DabblerButton(
-                      label: l10n.auth_welcome_btn_apple,
+                      label: l10n.auth_entry_continue_apple,
+                      leadingWidget: const DabblerProviderMark.apple(
+                        size: DabblerSizing.iconLg,
+                        excludeFromSemantics: true,
+                      ),
                       tone: DabblerButtonTone.outlined,
                       size: DabblerButtonSize.full,
                       fullWidth: true,

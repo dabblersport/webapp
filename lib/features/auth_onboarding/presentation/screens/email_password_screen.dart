@@ -76,7 +76,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     if (_emailController.text.trim().isEmpty) {
       return l10n.email_password_validate_email_required;
     }
-    return _isEmailValid ? null : l10n.email_password_validate_email_invalid;
+    return _isEmailValid ? null : l10n.auth_email_invalid;
   }
 
   /// The wrong-credentials message, else the live "enter a password" one.
@@ -115,7 +115,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         setState(
           () => _passwordError = AppLocalizations.of(
             context,
-          ).email_password_error_invalid_creds,
+          ).auth_login_password_wrong,
         );
         return;
       }
@@ -164,7 +164,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         setState(
           () => _passwordError = AppLocalizations.of(
             context,
-          ).email_password_error_invalid_creds,
+          ).auth_login_password_wrong,
         );
       } else {
         _toastError(
@@ -334,8 +334,8 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     final List<Widget> body = <Widget>[
       DabblerTextField(
         controller: _emailController,
-        label: l10n.email_input_label,
-        placeholder: l10n.email_password_hint_email,
+        label: l10n.auth_email_label,
+        placeholder: l10n.auth_email_placeholder,
         errorText: _emailError(l10n),
         enabled: !_isLoading,
         keyboardType: TextInputType.emailAddress,
@@ -346,7 +346,8 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       DabblerTextField(
         variant: DabblerTextFieldVariant.password,
         controller: _passwordController,
-        label: l10n.email_password_hint_password,
+        label: l10n.auth_login_password_label,
+        placeholder: l10n.auth_login_password_placeholder,
         errorText: _passwordMessage(l10n),
         enabled: !_isLoading,
         autofillHints: const [AutofillHints.password],
@@ -365,11 +366,12 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       onBack: () =>
           context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
-      title: l10n.email_password_title,
+      title: l10n.auth_login_title,
       titleStyle: DabblerType.largeTitle,
-      subtitle: l10n.email_password_subtitle,
+      headerTopPadding: DabblerSpacing.space4,
+      subtitle: l10n.auth_login_subtitle,
       subtitleStyle: DabblerType.body,
-      primaryLabel: l10n.email_password_login_btn,
+      primaryLabel: l10n.auth_login_button,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
       secondary: Column(
@@ -377,7 +379,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         children: <Widget>[
           Center(
             child: DabblerTextLink(
-              label: l10n.email_password_send_otp,
+              label: l10n.auth_login_email_code,
               underline: false,
               onPressed: _isLoading || !_isEmailValid
                   ? null
@@ -387,7 +389,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           DabblerDivider(label: l10n.auth_or),
           const DabblerGap.v(DabblerSpacing.space4),
           DabblerButton(
-            label: l10n.email_password_btn_google,
+            label: l10n.auth_entry_continue_google,
             tone: DabblerButtonTone.outlined,
             size: DabblerButtonSize.full,
             fullWidth: true,
@@ -397,7 +399,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           if (showApple) ...<Widget>[
             const DabblerGap.v(DabblerSpacing.space4),
             DabblerButton(
-              label: l10n.email_password_btn_apple,
+              label: l10n.auth_entry_continue_apple,
               tone: DabblerButtonTone.outlined,
               size: DabblerButtonSize.full,
               fullWidth: true,

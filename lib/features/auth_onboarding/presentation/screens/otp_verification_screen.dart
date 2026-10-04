@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -17,12 +18,17 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   final IdentifierType? identifierType; // If null, will be auto-detected
   final bool? userExistsBeforeOtp;
 
+  /// Seeds the message under the code boxes (render tests for the frame's
+  /// not-right and expired states).
+  final String? initialErrorMessage;
+
   // Legacy support for phoneNumber parameter
   const OtpVerificationScreen({
     super.key,
     this.identifier,
     this.identifierType,
     this.userExistsBeforeOtp,
+    @visibleForTesting this.initialErrorMessage,
     @Deprecated('Use identifier instead') String? phoneNumber,
   }) : assert(
          identifier != null || phoneNumber != null,
@@ -52,6 +58,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   void initState() {
     super.initState();
 
+    _errorMessage = widget.initialErrorMessage;
     _identifier = widget.identifier ?? widget.phoneNumber ?? '';
     if (widget.identifierType != null) {
       _identifierType = widget.identifierType!;
@@ -247,18 +254,34 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final l10n = AppLocalizations.of(context);
 
     final isEmail = _identifierType == IdentifierType.email;
-    final title = isEmail
-        ? l10n.otp_verify_title_email
-        : l10n.otp_verify_title_phone;
+    final title = isEmail ? l10n.auth_otp_title : l10n.otp_verify_title_phone;
     final subtitle = isEmail
-        ? l10n.otp_verify_subtitle_email
+        ? l10n.auth_otp_subtitle
         : l10n.otp_verify_subtitle_phone;
     final changeLabel = isEmail
-        ? l10n.otp_verify_change_email
+        ? l10n.auth_otp_change
         : l10n.otp_verify_change_phone;
     final changeRoute = RoutePaths.emailInput;
 
     final isAllFilled = _getOtpCode().length == 6;
+
+    // The message under the boxes: the frame's "not right" and "expired"
+    // lines for the failures the server reports as such, else its own text.
+    String? message = _errorMessage;
+    String? messageIcon;
+    if (message != null) {
+      final String lower = message.toLowerCase();
+      if (lower.contains('expire')) {
+        message = l10n.auth_otp_expired;
+        messageIcon = 'clock';
+      } else if (lower.contains('invalid') ||
+          lower.contains('incorrect') ||
+          lower.contains('token') ||
+          lower.contains('digit') ||
+          lower.contains('code')) {
+        message = l10n.auth_otp_invalid;
+      }
+    }
 
     final List<Widget> body = <Widget>[
       DabblerSurface.card(
@@ -306,7 +329,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
           if (_errorMessage != null) ...<Widget>[
             const DabblerGap.v(DabblerSpacing.space4),
-            DabblerInlineMessage(_errorMessage!),
+            DabblerInlineMessage(message!, icon: messageIcon),
           ],
         ],
       ),
@@ -314,13 +337,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         alignment: AlignmentDirectional.centerStart,
         child: _resendCountdown > 0
             ? DabblerText(
-                l10n.otp_verify_resend_countdown(_resendCountdown),
+                l10n.auth_otp_resend_in(_resendCountdown),
                 tone: DabblerTextTone.tertiary,
               )
             : DabblerTextLink(
                 label: _isResending
                     ? l10n.otp_verify_sending
-                    : l10n.otp_verify_resend,
+                    : l10n.auth_otp_resend,
                 underline: false,
                 onPressed: _isResending ? null : _handleResend,
               ),
@@ -332,9 +355,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       backLabel: l10n.auth_back,
       title: title,
       titleStyle: DabblerType.largeTitle,
+      headerTopPadding: DabblerSpacing.space4,
       subtitle: subtitle,
       subtitleStyle: DabblerType.body,
-      primaryLabel: l10n.otp_verify_continue,
+      primaryLabel: l10n.auth_otp_continue,
       primaryLoading: _isLoading,
       onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,
       content: body,

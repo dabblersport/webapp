@@ -25,36 +25,34 @@ class _Vignette {
   final String want;
 }
 
-const List<_Vignette> _kVignettes = <_Vignette>[
+List<_Vignette> _vignettes(AppLocalizations l) => <_Vignette>[
   _Vignette(
     seed: 'Marcus Adeyemi',
     name: 'Marcus',
-    role: 'Organiser',
-    quote:
-        'Half the group chat’s flaky. The other half changes their mind by Friday.',
-    want:
-        'I just want one place to organise a 5-a-side and stop chasing replies.',
+    role: l.persona_organiser_name,
+    quote: l.landing_vignette_marcus_quote,
+    want: l.landing_vignette_marcus_want,
   ),
   _Vignette(
     seed: 'Aisha Khan',
     name: 'Aisha',
-    role: 'Player',
-    quote: 'New city, decent left foot, nobody to pass to.',
-    want: 'I want a game this week, not a group chat about a game.',
+    role: l.persona_player_name,
+    quote: l.landing_vignette_aisha_quote,
+    want: l.landing_vignette_aisha_want,
   ),
   _Vignette(
     seed: 'Priya Nair',
     name: 'Priya',
-    role: 'Socialiser',
-    quote: 'I follow more padel than I’ve ever actually played.',
-    want: 'Show me who’s playing near me and I’ll find my way in.',
+    role: l.persona_socialiser_name,
+    quote: l.landing_vignette_priya_quote,
+    want: l.landing_vignette_priya_want,
   ),
   _Vignette(
     seed: 'The Sevens Stadium',
     name: 'The Sevens',
-    role: 'Host',
-    quote: 'Three pitches free at 9pm and nobody knows about it.',
-    want: 'Put my courts in front of players already looking for one.',
+    role: l.persona_host_name,
+    quote: l.landing_vignette_sevens_quote,
+    want: l.landing_vignette_sevens_want,
   ),
 ];
 
@@ -68,6 +66,7 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
+  static const int _vignetteCount = 4;
   int _index = 0;
   Timer? _timer;
 
@@ -75,7 +74,7 @@ class _LandingPageState extends State<LandingPage> {
   void initState() {
     super.initState();
     _timer = Timer.periodic(DabblerMotion.autoAdvanceHero, (_) {
-      if (mounted) setState(() => _index = (_index + 1) % _kVignettes.length);
+      if (mounted) setState(() => _index = (_index + 1) % _vignetteCount);
     });
   }
 
@@ -88,7 +87,8 @@ class _LandingPageState extends State<LandingPage> {
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
-    final _Vignette v = _kVignettes[_index];
+    final List<_Vignette> vignettes = _vignettes(l10n);
+    final _Vignette v = vignettes[_index];
 
     return DabblerPage(
       maxContentWidth: DabblerPage.readableWidth,
@@ -105,7 +105,9 @@ class _LandingPageState extends State<LandingPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: <Widget>[
-                  DabblerWordmark(color: DabblerColors.of(context).brandPrimary),
+                  DabblerWordmark(
+                    color: DabblerColors.of(context).brandPrimary,
+                  ),
                   const DabblerGap.v(DabblerSpacing.space9),
                   Row(
                     children: <Widget>[
@@ -157,14 +159,14 @@ class _LandingPageState extends State<LandingPage> {
                 Align(
                   alignment: AlignmentDirectional.centerStart,
                   child: DabblerPageDots(
-                    count: _kVignettes.length,
+                    count: vignettes.length,
                     index: _index,
                     onSelected: (int i) => setState(() => _index = i),
                   ),
                 ),
                 const DabblerGap.v(DabblerSpacing.space5),
                 DabblerText(
-                  l10n.landing_tagline,
+                  l10n.landing_dc_tagline,
                   style: DabblerType.subheadline,
                   tone: DabblerTextTone.secondary,
                 ),
@@ -172,7 +174,7 @@ class _LandingPageState extends State<LandingPage> {
                 authIdentify(
                   'landing-continue',
                   DabblerButton(
-                    label: l10n.landing_continue,
+                    label: l10n.landing_dc_continue,
                     size: DabblerButtonSize.full,
                     fullWidth: true,
                     onPressed: () => context.go(RoutePaths.authWelcome),

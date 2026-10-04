@@ -195,6 +195,274 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_back => 'رجوع';
 
   @override
+  String get landing_dc_tagline =>
+      'دابلر يجمع اللاعبين والمنظّمين والملاعب، لتتوقف عن البحث وتبدأ باللعب.';
+
+  @override
+  String get landing_dc_continue => 'المتابعة';
+
+  @override
+  String get landing_vignette_marcus_quote =>
+      'نصف مجموعة الدردشة غير ملتزم، والنصف الآخر يغيّر رأيه بحلول الجمعة.';
+
+  @override
+  String get landing_vignette_marcus_want =>
+      'أريد فقط مكانًا واحدًا لتنظيم مباراة خماسية دون ملاحقة الردود.';
+
+  @override
+  String get landing_vignette_aisha_quote =>
+      'مدينة جديدة، قدم يسرى جيدة، ولا أحد أمرّر له.';
+
+  @override
+  String get landing_vignette_aisha_want =>
+      'أريد مباراة هذا الأسبوع، لا محادثة جماعية عن مباراة.';
+
+  @override
+  String get landing_vignette_priya_quote => 'أتابع بادل أكثر مما لعبته فعلًا.';
+
+  @override
+  String get landing_vignette_priya_want => 'أرني من يلعب قربي وسأجد طريقي.';
+
+  @override
+  String get landing_vignette_sevens_quote =>
+      'ثلاثة ملاعب فارغة عند التاسعة مساءً ولا أحد يعلم.';
+
+  @override
+  String get landing_vignette_sevens_want =>
+      'ضع ملاعبي أمام لاعبين يبحثون عن ملعب أصلًا.';
+
+  @override
+  String get auth_entry_title => 'هيّا نلعب';
+
+  @override
+  String get auth_entry_subtitle => 'حساب واحد للمباريات والفِرق والملاعب.';
+
+  @override
+  String get auth_entry_trust_verified =>
+      'لاعبون موثوقون، ملاعب موثّقة، مباريات مقيّمة';
+
+  @override
+  String get auth_entry_trust_personalised =>
+      'مباريات وأشخاص مختارون حسب رياضاتك';
+
+  @override
+  String get auth_entry_trust_privacy => 'لا نبيع بياناتك. الخصوصية أولًا';
+
+  @override
+  String get auth_entry_continue_email => 'المتابعة بالبريد الإلكتروني';
+
+  @override
+  String get auth_entry_continue_google => 'المتابعة عبر Google';
+
+  @override
+  String get auth_entry_continue_apple => 'المتابعة عبر Apple';
+
+  @override
+  String get auth_legal_prefix => 'بالمتابعة أنت توافق على ';
+
+  @override
+  String get auth_legal_terms => 'شروط الخدمة';
+
+  @override
+  String get auth_legal_and => ' و';
+
+  @override
+  String get auth_legal_privacy => 'سياسة الخصوصية';
+
+  @override
+  String get auth_sheet_language => 'اللغة';
+
+  @override
+  String get auth_sheet_region => 'المنطقة';
+
+  @override
+  String get auth_email_title => 'ما بريدك الإلكتروني؟';
+
+  @override
+  String get auth_email_subtitle =>
+      'سنرسل لك رمزًا. وإن سبق أن زرتنا، سنكمل من حيث توقفت.';
+
+  @override
+  String get auth_email_label => 'البريد الإلكتروني';
+
+  @override
+  String get auth_email_placeholder => 'you@email.com';
+
+  @override
+  String get auth_email_marketing =>
+      'أبقِني على اطلاع بالمباريات والمزايا القريبة مني';
+
+  @override
+  String get auth_email_send_code => 'أرسل لي رمزًا';
+
+  @override
+  String get auth_email_invalid => 'هذا لا يبدو كعنوان بريد إلكتروني.';
+
+  @override
+  String get auth_login_title => 'أهلًا بعودتك';
+
+  @override
+  String get auth_login_subtitle =>
+      'سجّل دخولك بالطريقة التي تناسبك — كلمة مرور، أو رمز لمرة واحدة، أو حساب مرتبط.';
+
+  @override
+  String get auth_login_password_label => 'كلمة المرور';
+
+  @override
+  String get auth_login_password_placeholder => 'كلمة مرورك';
+
+  @override
+  String get auth_login_button => 'تسجيل الدخول';
+
+  @override
+  String get auth_login_email_code => 'أرسل لي رمزًا بدلًا من ذلك';
+
+  @override
+  String get auth_login_password_wrong =>
+      'كلمة المرور غير مطابقة. حاول مجددًا، أو أرسل لنفسك رمزًا.';
+
+  @override
+  String get auth_otp_title => 'تحقق من بريدك';
+
+  @override
+  String get auth_otp_subtitle =>
+      'أرسلنا رمزًا من 6 أرقام إلى بريدك الإلكتروني.';
+
+  @override
+  String get auth_otp_change => 'تغيير';
+
+  @override
+  String get auth_otp_invalid =>
+      'هذا الرمز غير صحيح. تحقق من البريد وحاول مرة أخرى.';
+
+  @override
+  String get auth_otp_expired => 'انتهت صلاحية هذا الرمز. أرسل رمزًا جديدًا.';
+
+  @override
+  String get auth_otp_resend => 'أرسل رمزًا جديدًا';
+
+  @override
+  String auth_otp_resend_in(int seconds) {
+    return 'أرسل رمزًا جديدًا خلال $secondsث';
+  }
+
+  @override
+  String get auth_otp_continue => 'المتابعة';
+
+  @override
+  String auth_welcome_back_title(String name) {
+    return 'أهلًا بعودتك، $name';
+  }
+
+  @override
+  String get auth_welcome_continue => 'المتابعة';
+
+  @override
+  String get auth_welcome_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_player_name => 'اللاعب';
+
+  @override
+  String get persona_player_headline => 'أنت جاهز. هيّا نلعب.';
+
+  @override
+  String get persona_player_principle => 'احضر، العب بنزاهة، وابنِ سمعتك.';
+
+  @override
+  String get persona_player_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_player_item1 => 'أكّد فقط حين تعرف أنك تستطيع اللعب.';
+
+  @override
+  String get persona_player_item2 => 'احترم قواعد المنظّم وموعد البداية.';
+
+  @override
+  String get persona_player_item3 => 'الحضور هو ما يبني سمعتك.';
+
+  @override
+  String get persona_player_cta => 'ابحث عن مباراتي الأولى';
+
+  @override
+  String get persona_organiser_name => 'المنظّم';
+
+  @override
+  String get persona_organiser_headline => 'حان وقت جمع المباراة.';
+
+  @override
+  String get persona_organiser_principle => 'المباريات الجيدة تبدأ بتنظيم جيد.';
+
+  @override
+  String get persona_organiser_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_organiser_item1 =>
+      'تفاصيل دقيقة — الملعب والوقت والمستوى والسعر.';
+
+  @override
+  String get persona_organiser_item2 =>
+      'تغييرات تُشارَك مبكرًا لا عند الانطلاق.';
+
+  @override
+  String get persona_organiser_item3 => 'حضور يُدار بإنصاف في كل مرة.';
+
+  @override
+  String get persona_organiser_cta => 'أنشئ مباراتي الأولى';
+
+  @override
+  String get persona_host_name => 'المضيف';
+
+  @override
+  String get persona_host_headline => 'ملعبك على الخريطة.';
+
+  @override
+  String get persona_host_principle => 'الملاعب الرائعة تجعل اللعب سهلًا.';
+
+  @override
+  String get persona_host_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_host_item1 => 'توفّر يطابق الواقع.';
+
+  @override
+  String get persona_host_item2 => 'أسعار ومرافق محدّثة دائمًا.';
+
+  @override
+  String get persona_host_item3 => 'حجوزات يُوفى بها — وهذا ما يعيدهم.';
+
+  @override
+  String get persona_host_cta => 'جهّز ملعبي';
+
+  @override
+  String get persona_socialiser_name => 'الاجتماعي';
+
+  @override
+  String get persona_socialiser_headline => 'دائرتك الرياضية تبدأ من هنا.';
+
+  @override
+  String get persona_socialiser_principle =>
+      'تابع ما تحب، قابل ناسك، وانضم حين يناسبك.';
+
+  @override
+  String get persona_socialiser_list_title => 'كيف يعمل هذا';
+
+  @override
+  String get persona_socialiser_item1 =>
+      'تابع الرياضات والأشخاص الذين تهتم بهم فعلًا.';
+
+  @override
+  String get persona_socialiser_item2 =>
+      'شارك في الحوار قبل أن تشارك في المباراة.';
+
+  @override
+  String get persona_socialiser_item3 =>
+      'كن ودودًا — كل من هنا هو زميل فريق لشخص ما.';
+
+  @override
+  String get persona_socialiser_cta => 'ابدأ الاستكشاف';
+
+  @override
   String get auth_or => 'أو';
 
   @override

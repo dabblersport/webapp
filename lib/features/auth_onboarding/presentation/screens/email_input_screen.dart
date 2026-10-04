@@ -56,7 +56,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     if (_emailController.text.trim().isEmpty) {
       return l10n.email_input_validate_required;
     }
-    return _isEmailValid ? null : l10n.email_input_validate_invalid;
+    return _isEmailValid ? null : l10n.auth_email_invalid;
   }
 
   Future<void> _handleSubmit() async {
@@ -123,8 +123,8 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
     final List<Widget> body = <Widget>[
       DabblerTextField(
         controller: _emailController,
-        label: l10n.email_input_label,
-        placeholder: l10n.email_input_hint,
+        label: l10n.auth_email_label,
+        placeholder: l10n.auth_email_placeholder,
         errorText: _emailError(l10n),
         enabled: !_isLoading,
         keyboardType: TextInputType.emailAddress,
@@ -139,14 +139,14 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
         children: <Widget>[
           Expanded(
             child: DabblerText(
-              l10n.email_input_keep_in_loop,
+              l10n.auth_email_marketing,
               style: DabblerType.subheadline,
             ),
           ),
           const DabblerGap.h(DabblerSpacing.space4),
           DabblerToggle(
             checked: _getUpdates,
-            semanticLabel: l10n.email_input_keep_in_loop,
+            semanticLabel: l10n.auth_email_marketing,
             onChanged: _isLoading
                 ? null
                 : (v) {
@@ -162,11 +162,12 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       onBack: () =>
           context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
-      title: l10n.email_input_title,
+      title: l10n.auth_email_title,
       titleStyle: DabblerType.largeTitle,
-      subtitle: l10n.email_input_subtitle,
+      headerTopPadding: DabblerSpacing.space4,
+      subtitle: l10n.auth_email_subtitle,
       subtitleStyle: DabblerType.body,
-      primaryLabel: l10n.email_input_continue,
+      primaryLabel: l10n.auth_email_send_code,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleSubmit : null,
       secondary: Column(
@@ -175,7 +176,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           DabblerDivider(label: l10n.auth_or),
           const DabblerGap.v(DabblerSpacing.space4),
           DabblerButton(
-            label: l10n.email_input_btn_google,
+            label: l10n.auth_entry_continue_google,
             tone: DabblerButtonTone.outlined,
             size: DabblerButtonSize.full,
             fullWidth: true,
@@ -185,7 +186,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
           if (showApple) ...<Widget>[
             const DabblerGap.v(DabblerSpacing.space4),
             DabblerButton(
-              label: l10n.email_input_btn_apple,
+              label: l10n.auth_entry_continue_apple,
               tone: DabblerButtonTone.outlined,
               size: DabblerButtonSize.full,
               fullWidth: true,

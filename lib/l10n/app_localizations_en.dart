@@ -198,6 +198,280 @@ class AppLocalizationsEn extends AppLocalizations {
   String get auth_back => 'Back';
 
   @override
+  String get landing_dc_tagline =>
+      'Dabbler connects players, organisers and venues, so you can stop searching and start playing.';
+
+  @override
+  String get landing_dc_continue => 'Continue';
+
+  @override
+  String get landing_vignette_marcus_quote =>
+      'Half the group chat’s flaky. The other half changes their mind by Friday.';
+
+  @override
+  String get landing_vignette_marcus_want =>
+      'I just want one place to organise a 5-a-side and stop chasing replies.';
+
+  @override
+  String get landing_vignette_aisha_quote =>
+      'New city, decent left foot, nobody to pass to.';
+
+  @override
+  String get landing_vignette_aisha_want =>
+      'I want a game this week, not a group chat about a game.';
+
+  @override
+  String get landing_vignette_priya_quote =>
+      'I follow more padel than I’ve ever actually played.';
+
+  @override
+  String get landing_vignette_priya_want =>
+      'Show me who’s playing near me and I’ll find my way in.';
+
+  @override
+  String get landing_vignette_sevens_quote =>
+      'Three pitches free at 9pm and nobody knows about it.';
+
+  @override
+  String get landing_vignette_sevens_want =>
+      'Put my courts in front of players already looking for one.';
+
+  @override
+  String get auth_entry_title => 'Let\'s get you playing';
+
+  @override
+  String get auth_entry_subtitle => 'One account for games, squads and venues.';
+
+  @override
+  String get auth_entry_trust_verified =>
+      'Reviewed players, verified venues, rated games';
+
+  @override
+  String get auth_entry_trust_personalised =>
+      'Games and people picked around your sports';
+
+  @override
+  String get auth_entry_trust_privacy =>
+      'We don’t sell your data. Privacy-first by design';
+
+  @override
+  String get auth_entry_continue_email => 'Continue with email';
+
+  @override
+  String get auth_entry_continue_google => 'Continue with Google';
+
+  @override
+  String get auth_entry_continue_apple => 'Continue with Apple';
+
+  @override
+  String get auth_legal_prefix => 'By continuing you agree to our ';
+
+  @override
+  String get auth_legal_terms => 'Terms of Service';
+
+  @override
+  String get auth_legal_and => ' and ';
+
+  @override
+  String get auth_legal_privacy => 'Privacy Policy';
+
+  @override
+  String get auth_sheet_language => 'Language';
+
+  @override
+  String get auth_sheet_region => 'Region';
+
+  @override
+  String get auth_email_title => 'What\'s your email?';
+
+  @override
+  String get auth_email_subtitle =>
+      'We\'ll send a code. If you\'ve been here before, we\'ll pick up where you left off.';
+
+  @override
+  String get auth_email_label => 'Email';
+
+  @override
+  String get auth_email_placeholder => 'you@email.com';
+
+  @override
+  String get auth_email_marketing =>
+      'Keep me posted on games and features near me';
+
+  @override
+  String get auth_email_send_code => 'Send me a code';
+
+  @override
+  String get auth_email_invalid => 'That does not look like an email address.';
+
+  @override
+  String get auth_login_title => 'Welcome back';
+
+  @override
+  String get auth_login_subtitle =>
+      'Log in your way — password, a one-time code, or a connected account.';
+
+  @override
+  String get auth_login_password_label => 'Password';
+
+  @override
+  String get auth_login_password_placeholder => 'Your password';
+
+  @override
+  String get auth_login_button => 'Log in';
+
+  @override
+  String get auth_login_email_code => 'Email me a code instead';
+
+  @override
+  String get auth_login_password_wrong =>
+      'That password does not match. Try again, or email yourself a code.';
+
+  @override
+  String get auth_otp_title => 'Check your inbox';
+
+  @override
+  String get auth_otp_subtitle => 'We sent a 6-digit code to your email.';
+
+  @override
+  String get auth_otp_change => 'Change';
+
+  @override
+  String get auth_otp_invalid =>
+      'That code is not right. Check the email and try again.';
+
+  @override
+  String get auth_otp_expired => 'This code has expired. Send a new one.';
+
+  @override
+  String get auth_otp_resend => 'Send a new code';
+
+  @override
+  String auth_otp_resend_in(int seconds) {
+    return 'Send a new code in ${seconds}s';
+  }
+
+  @override
+  String get auth_otp_continue => 'Continue';
+
+  @override
+  String auth_welcome_back_title(String name) {
+    return 'Welcome back, $name';
+  }
+
+  @override
+  String get auth_welcome_continue => 'Continue';
+
+  @override
+  String get auth_welcome_list_title => 'Don’t forget';
+
+  @override
+  String get persona_player_name => 'Player';
+
+  @override
+  String get persona_player_headline => 'You’re in. Let’s play.';
+
+  @override
+  String get persona_player_principle => 'Show up, play fair, build your rep.';
+
+  @override
+  String get persona_player_list_title => 'Don’t forget';
+
+  @override
+  String get persona_player_item1 => 'Only confirm when you know you can play.';
+
+  @override
+  String get persona_player_item2 =>
+      'Respect the organiser’s rules and kickoff time.';
+
+  @override
+  String get persona_player_item3 =>
+      'Turning up is what builds your reputation.';
+
+  @override
+  String get persona_player_cta => 'Find my first game';
+
+  @override
+  String get persona_organiser_name => 'Organiser';
+
+  @override
+  String get persona_organiser_headline => 'Time to bring the game together.';
+
+  @override
+  String get persona_organiser_principle =>
+      'Good games start with good organisation.';
+
+  @override
+  String get persona_organiser_list_title => 'What players expect';
+
+  @override
+  String get persona_organiser_item1 =>
+      'Accurate details — venue, time, level, price.';
+
+  @override
+  String get persona_organiser_item2 => 'Changes shared early, not at kickoff.';
+
+  @override
+  String get persona_organiser_item3 =>
+      'Attendance managed fairly, every time.';
+
+  @override
+  String get persona_organiser_cta => 'Create my first game';
+
+  @override
+  String get persona_host_name => 'Host';
+
+  @override
+  String get persona_host_headline => 'Your venue’s on the map.';
+
+  @override
+  String get persona_host_principle => 'Great venues make playing easy.';
+
+  @override
+  String get persona_host_list_title => 'What players expect';
+
+  @override
+  String get persona_host_item1 => 'Availability that matches reality.';
+
+  @override
+  String get persona_host_item2 => 'Pricing and facilities kept current.';
+
+  @override
+  String get persona_host_item3 =>
+      'Bookings honoured — that’s what brings them back.';
+
+  @override
+  String get persona_host_cta => 'Set up my venue';
+
+  @override
+  String get persona_socialiser_name => 'Socialiser';
+
+  @override
+  String get persona_socialiser_headline => 'Your sports circle starts here.';
+
+  @override
+  String get persona_socialiser_principle =>
+      'Follow what you love, meet your people, join when it feels right.';
+
+  @override
+  String get persona_socialiser_list_title => 'How this works';
+
+  @override
+  String get persona_socialiser_item1 =>
+      'Follow the sports and people you actually care about.';
+
+  @override
+  String get persona_socialiser_item2 =>
+      'Join the conversation before you join the game.';
+
+  @override
+  String get persona_socialiser_item3 =>
+      'Keep it friendly — everyone here is someone’s teammate.';
+
+  @override
+  String get persona_socialiser_cta => 'Start exploring';
+
+  @override
   String get auth_or => 'or';
 
   @override

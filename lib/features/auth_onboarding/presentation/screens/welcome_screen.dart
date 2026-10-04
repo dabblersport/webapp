@@ -1,7 +1,6 @@
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -70,9 +69,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 size: DabblerAvatarSize.xl,
               ),
             ),
-            title: _title(l10n),
+            title: l10n.auth_welcome_back_title(name),
             titleStyle: DabblerType.largeTitle,
-            primaryLabel: l10n.welcome_screen_continue,
+            primaryLabel: l10n.auth_welcome_continue,
             onPrimary: _continue,
             footerBottomPadding: DabblerSpacing.space9,
           );
@@ -81,7 +80,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         return DabblerFlowPage(
           spreadChildren: true,
           footerBottomPadding: DabblerSpacing.space9,
-          primaryLabel: l10n.welcome_screen_continue,
+          primaryLabel: persona.cta,
           onPrimary: _continue,
           leading: Padding(
             padding: const EdgeInsetsDirectional.only(
@@ -107,7 +106,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                       ),
                       const DabblerGap.v(DabblerSpacing.space2),
                       DabblerBadge(
-                        label: persona.chipLabel,
+                        label: persona.name,
                         tone: DabblerBadgeTone.defaultTone,
                         icon: DabblerIcon(
                           persona.icon,
@@ -128,10 +127,10 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  DabblerText(_title(l10n), style: DabblerType.largeTitle),
+                  DabblerText(persona.headline, style: DabblerType.largeTitle),
                   const DabblerGap.v(DabblerSpacing.space4),
                   DabblerText(
-                    persona.philosophyStatement,
+                    persona.principle,
                     style: DabblerType.callout,
                     weight: DabblerTextWeight.semibold,
                   ),
@@ -145,12 +144,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
                   DabblerText(
-                    l10n.welcome_screen_dont_forget.toUpperCase(),
+                    persona.listTitle.toUpperCase(),
                     style: DabblerType.footnote,
                     weight: DabblerTextWeight.semibold,
                     tone: DabblerTextTone.secondary,
                   ),
-                  for (final String line in persona.reminderLines) ...<Widget>[
+                  for (final String line in persona.items) ...<Widget>[
                     const DabblerGap.v(DabblerSpacing.space4),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -180,47 +179,65 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  String _title(AppLocalizations l10n) {
-    if (widget.isConversion) {
-      return authStripEmoji(l10n.welcome_screen_title_conversion);
-    } else if (widget.isFirstTime) {
-      return authStripEmoji(l10n.welcome_screen_title_first_time);
-    } else {
-      return authStripEmoji(l10n.welcome_screen_title_returning);
-    }
-  }
-
   _PersonaContent _personaContent(String persona) {
-    final l10n = AppLocalizations.of(context);
+    final l = AppLocalizations.of(context);
     switch (persona.toLowerCase()) {
       case 'organiser':
         return _PersonaContent(
           icon: 'calendar',
-          chipLabel: l10n.welcome_screen_chip_organiser,
-          philosophyStatement: l10n.welcome_screen_organiser_philosophy,
-          reminderText: l10n.welcome_screen_organiser_reminder,
+          name: l.persona_organiser_name,
+          headline: l.persona_organiser_headline,
+          principle: l.persona_organiser_principle,
+          listTitle: l.persona_organiser_list_title,
+          items: [
+            l.persona_organiser_item1,
+            l.persona_organiser_item2,
+            l.persona_organiser_item3,
+          ],
+          cta: l.persona_organiser_cta,
         );
       case 'host':
         return _PersonaContent(
           icon: 'location',
-          chipLabel: l10n.welcome_screen_chip_host,
-          philosophyStatement: l10n.welcome_screen_host_philosophy,
-          reminderText: l10n.welcome_screen_host_reminder,
+          name: l.persona_host_name,
+          headline: l.persona_host_headline,
+          principle: l.persona_host_principle,
+          listTitle: l.persona_host_list_title,
+          items: [
+            l.persona_host_item1,
+            l.persona_host_item2,
+            l.persona_host_item3,
+          ],
+          cta: l.persona_host_cta,
         );
       case 'socialiser':
         return _PersonaContent(
           icon: 'people',
-          chipLabel: l10n.welcome_screen_chip_socialiser,
-          philosophyStatement: l10n.welcome_screen_socialiser_philosophy,
-          reminderText: l10n.welcome_screen_socialiser_reminder,
+          name: l.persona_socialiser_name,
+          headline: l.persona_socialiser_headline,
+          principle: l.persona_socialiser_principle,
+          listTitle: l.persona_socialiser_list_title,
+          items: [
+            l.persona_socialiser_item1,
+            l.persona_socialiser_item2,
+            l.persona_socialiser_item3,
+          ],
+          cta: l.persona_socialiser_cta,
         );
       case 'player':
       default:
         return _PersonaContent(
           icon: 'game',
-          chipLabel: l10n.welcome_screen_chip_player,
-          philosophyStatement: l10n.welcome_screen_player_philosophy,
-          reminderText: l10n.welcome_screen_player_reminder,
+          name: l.persona_player_name,
+          headline: l.persona_player_headline,
+          principle: l.persona_player_principle,
+          listTitle: l.persona_player_list_title,
+          items: [
+            l.persona_player_item1,
+            l.persona_player_item2,
+            l.persona_player_item3,
+          ],
+          cta: l.persona_player_cta,
         );
     }
   }
@@ -230,19 +247,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
 class _PersonaContent {
   const _PersonaContent({
     required this.icon,
-    required this.chipLabel,
-    required this.philosophyStatement,
-    required this.reminderText,
+    required this.name,
+    required this.headline,
+    required this.principle,
+    required this.listTitle,
+    required this.items,
+    required this.cta,
   });
 
   final String icon;
-  final String chipLabel;
-  final String philosophyStatement;
-  final String reminderText;
-
-  List<String> get reminderLines => reminderText
-      .split('\n')
-      .map((String l) => l.trim())
-      .where((String l) => l.isNotEmpty)
-      .toList();
+  final String name;
+  final String headline;
+  final String principle;
+  final String listTitle;
+  final List<String> items;
+  final String cta;
 }
