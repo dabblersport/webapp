@@ -77,13 +77,16 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 }
 
 
-const List<Vibe> _vibes = <Vibe>[
-  Vibe(id: '1', key: 'happy', labelEn: 'Happy', labelAr: 'سعيد', type: 'feeling'),
-  Vibe(id: '2', key: 'calm', labelEn: 'Calm', labelAr: 'هادئ', type: 'feeling'),
-  Vibe(id: '3', key: 'energetic', labelEn: 'Energetic', labelAr: 'نشيط', type: 'action'),
-  Vibe(id: '4', key: 'proud', labelEn: 'Proud', labelAr: 'فخور', type: 'feeling'),
-  Vibe(id: '5', key: 'focused', labelEn: 'Focused', labelAr: 'مركّز', type: 'action'),
-  Vibe(id: '6', key: 'grateful', labelEn: 'Grateful', labelAr: 'ممتن', type: 'feeling'),
+/// The full design vibe list (`DabblerVibe`), as the vibes table serves it.
+final List<Vibe> _vibes = <Vibe>[
+  for (final v in DabblerVibe.values)
+    Vibe(
+      id: v.key,
+      key: v.key,
+      labelEn: v.label,
+      labelAr: v.label,
+      type: v.type.name,
+    ),
 ];
 
 Future<void> _pump(
@@ -152,7 +155,7 @@ void main() {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.text(dir == 'rtl' ? 'سعيد' : 'Happy'), findsWidgets);
+      expect(find.text('Happy'), findsWidgets);
       await _shoot(tester, key, 'post-vibes-$dir');
     }, variant: desktop);
 

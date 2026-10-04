@@ -62,13 +62,17 @@ class SportSelectionSheet extends ConsumerWidget {
       ),
       error: (_, __) => Padding(
         padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-        child: ComposerCenteredState.message(AppLocalizations.of(context).composer_sports_failed),
+        child: ComposerCenteredState.message(
+          AppLocalizations.of(context).composer_sports_failed,
+        ),
       ),
       data: (sports) {
         if (sports.isEmpty) {
           return Padding(
             padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-            child: ComposerCenteredState.message(AppLocalizations.of(context).composer_sports_none),
+            child: ComposerCenteredState.message(
+              AppLocalizations.of(context).composer_sports_none,
+            ),
           );
         }
         final colors = DabblerColors.of(context);
@@ -77,7 +81,7 @@ class SportSelectionSheet extends ConsumerWidget {
           builder: (context, current, _) => Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              for (final sport in sports)
+              for (final sport in sports) ...[
                 DabblerInputRow(
                   title: sport.localizedName(context),
                   leading: DabblerSportIcon.fromKey(
@@ -100,6 +104,8 @@ class SportSelectionSheet extends ConsumerWidget {
                       : null,
                   onTap: () => pending.value = sport,
                 ),
+                const DabblerDivider(),
+              ],
             ],
           ),
         );

@@ -1,6 +1,10 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:go_router/go_router.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_feed_parts.dart'
+    show homeRelativeTime;
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/data/models/games/game_model.dart';
@@ -103,7 +107,7 @@ class SearchPersonCard extends StatelessWidget {
           ],
         ),
         DabblerButton(
-          label: 'Follow',
+          label: AppLocalizations.of(context).sfx_follow,
           size: DabblerButtonSize.small,
           fullWidth: true,
           onPressed: onTap,
@@ -139,9 +143,10 @@ class SearchPersonRow extends StatelessWidget {
       searchNeedle(query),
       DabblerColors.of(context),
     ),
+    titleSemibold: true,
     subtitle: '\u2066@${profile.username}\u2069',
     trailing: DabblerButton(
-      label: 'Follow',
+      label: AppLocalizations.of(context).sfx_follow,
       size: DabblerButtonSize.small,
       onPressed: onTap,
     ),
@@ -190,7 +195,7 @@ class SearchHashtagCard extends StatelessWidget {
               maxLines: 1,
             ),
             DabblerText(
-              '${hashtag.postCount} posts',
+              AppLocalizations.of(context).sfx_posts_count(hashtag.postCount),
               style: DabblerType.caption1,
               tone: DabblerTextTone.secondary,
             ),
@@ -199,6 +204,64 @@ class SearchHashtagCard extends StatelessWidget {
       ),
     );
   }
+}
+
+/// A hashtag as a grid card of `View_all_hashtags` (`Search.dc.html`): icon
+/// tile, the tag with the match highlighted, the post count. The frame's
+/// growth badge, "N today" and Follow have no data or feature in the app.
+class SearchHashtagGridCard extends StatelessWidget {
+  const SearchHashtagGridCard({
+    super.key,
+    required this.hashtag,
+    required this.query,
+  });
+
+  final HashtagSearchResult hashtag;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) => DabblerCard(
+    variant: DabblerCardVariant.white,
+    radius: DabblerRadius.lg,
+    padding: const EdgeInsetsDirectional.symmetric(
+      horizontal: DabblerSpacing.space4,
+      vertical: DabblerSpacing.space5,
+    ),
+    onTap: () => context.pushNamed(
+      RouteNames.hashtagFeed,
+      pathParameters: {'slug': hashtag.slug},
+      queryParameters: {'postCount': '${hashtag.postCount}'},
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      spacing: DabblerSpacing.space3,
+      children: [
+        const DabblerIconTile.named(
+          'hashtag',
+          weight: DabblerIconWeight.bold,
+          tone: DabblerIconTileTone.sunken,
+          size: DabblerSizing.iconXl,
+        ),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            DabblerHighlightedText(
+              text: '\u2066#${hashtag.slug}\u2069',
+              query: searchNeedle(query),
+              style: DabblerType.footnote,
+              fontWeight: DabblerHighlightedText.matchWeight,
+              maxLines: 1,
+            ),
+            DabblerText(
+              AppLocalizations.of(context).sfx_posts_count(hashtag.postCount),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+            ),
+          ],
+        ),
+      ],
+    ),
+  );
 }
 
 /// A leading tile + a title line + a meta line, with an optional trailing
@@ -231,7 +294,7 @@ class SearchTileCard extends StatelessWidget {
           icon,
           weight: DabblerIconWeight.bold,
           tone: DabblerIconTileTone.sunken,
-          size: DabblerSizing.tileSm,
+          size: DabblerSizing.resultTile,
         ),
         Expanded(
           child: Column(
@@ -274,7 +337,7 @@ class SearchGameCard extends StatelessWidget {
       meta: Row(
         spacing: DabblerSpacing.space2,
         children: [
-          DabblerBadge(label: game.sport),
+          DabblerBadge(label: game.sport, tone: DabblerBadgeTone.warning),
           Expanded(
             child: DabblerText(
               _formatWhen(game.scheduledDate),
@@ -295,8 +358,8 @@ class SearchGameCard extends StatelessWidget {
             tone: DabblerTextTone.brand,
             weight: DabblerTextWeight.bold,
           ),
-          const DabblerText(
-            'spots',
+          DabblerText(
+            AppLocalizations.of(context).sfx_spots,
             style: DabblerType.caption2,
             tone: DabblerTextTone.secondary,
           ),
@@ -351,7 +414,6 @@ class SearchMeetupCard extends StatelessWidget {
             style: DabblerType.caption1,
             tone: DabblerTextTone.secondary,
           ),
-    trailing: const DabblerBadge(label: 'RSVP'),
   );
 }
 
@@ -397,6 +459,82 @@ class SearchPostCard extends StatelessWidget {
   );
 }
 
+/// A post as a flat row of `View_all_posts` (`Search.dc.html`): avatar, author
+/// and age on one line, the body with the match highlighted, a hairline under.
+class SearchPostRow extends StatelessWidget {
+  const SearchPostRow({super.key, required this.post, required this.query});
+
+  final PostSearchResult post;
+  final String query;
+
+  @override
+  Widget build(BuildContext context) {
+    final created = post.createdAt;
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: () => context.push('${RoutePaths.socialPostDetail}/${post.id}'),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const SizedBox(height: DabblerSpacing.space5),
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: DabblerSpacing.space4,
+            children: [
+              DabblerAvatar(
+                seed: post.authorDisplayName ?? post.id,
+                size: DabblerAvatarSize.sm,
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: DabblerSpacing.space2,
+                  children: [
+                    Row(
+                      spacing: DabblerSpacing.space2,
+                      children: [
+                        Flexible(
+                          child: DabblerText(
+                            post.authorDisplayName ?? '',
+                            style: DabblerType.footnote,
+                            weight: DabblerTextWeight.semibold,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        if (created != null) ...[
+                          const DabblerText(
+                            '\u00b7',
+                            style: DabblerType.caption1,
+                            tone: DabblerTextTone.secondary,
+                          ),
+                          DabblerText(
+                            homeRelativeTime(created),
+                            style: DabblerType.caption1,
+                            tone: DabblerTextTone.secondary,
+                          ),
+                        ],
+                      ],
+                    ),
+                    DabblerHighlightedText(
+                      text: post.body,
+                      query: searchNeedle(query),
+                      style: DabblerType.subheadline,
+                      maxLines: 4,
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: DabblerSpacing.space5),
+          const DabblerDivider(),
+        ],
+      ),
+    );
+  }
+}
+
 class SearchCommentCard extends StatelessWidget {
   const SearchCommentCard({
     super.key,
@@ -428,7 +566,7 @@ class SearchCommentCard extends StatelessWidget {
               const DabblerIcon('message-text', size: DabblerSizing.iconXs),
               Expanded(
                 child: DabblerText(
-                  'on ${comment.postTitle}',
+                  AppLocalizations.of(context).sfx_on_post(comment.postTitle!),
                   style: DabblerType.caption1,
                   tone: DabblerTextTone.secondary,
                   maxLines: 1,
@@ -461,16 +599,18 @@ class SearchGameEventCard extends StatelessWidget {
     return DabblerCardEventResult(
       month: DateFormat('MMM').format(d),
       day: DateFormat('d').format(d),
-      kind: 'Game',
+      kind: AppLocalizations.of(context).sfx_kind_game,
       kindIcon: 'game',
       time: _formatWhen(d),
       title: game.title,
       query: searchNeedle(query),
       place: (game.venueName ?? '').isEmpty ? null : game.venueName,
       meta: game.maxPlayers > 0
-          ? '${game.currentPlayers}/${game.maxPlayers} spots'
+          ? AppLocalizations.of(
+              context,
+            ).sfx_spots_meta(game.currentPlayers, game.maxPlayers)
           : null,
-      actionLabel: 'Join',
+      actionLabel: AppLocalizations.of(context).sfx_join,
       onAction: open,
       onTap: open,
     );
@@ -495,7 +635,7 @@ class SearchMeetupEventCard extends StatelessWidget {
     return DabblerCardEventResult(
       month: d == null ? '' : DateFormat('MMM').format(d),
       day: d == null ? '' : DateFormat('d').format(d),
-      kind: 'Meet-up',
+      kind: AppLocalizations.of(context).sfx_kind_meetup,
       kindIcon: 'calendar',
       time: d == null ? '' : _formatWhen(d),
       title: meetup.title,

@@ -875,6 +875,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               end: DabblerSpacing.space2,
             ),
             child: DabblerAttachmentAddTile(
+              semanticLabel: AppLocalizations.of(context).post_detail_add,
               label: AppLocalizations.of(context).post_detail_add,
               onTap: _isUploading
                   ? null

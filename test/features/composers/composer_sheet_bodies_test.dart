@@ -1,0 +1,324 @@
+import 'dart:io';
+import 'dart:ui' as ui;
+
+import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/social/presentation/screens/post_composer_screen.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_game_link_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
+import 'package:dabbler/features/social/providers/post_composer_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_test/flutter_test.dart';
+
+import '../../support/render_mode.dart';
+import '../home/home_test_harness.dart';
+
+/// Renders the composer sheet bodies (media rail, location picker, link-a-game
+/// picker, format body, date and time bodies) in LTR and RTL. Writes PNGs only
+/// with `--dart-define=SHEET_SHOTS_DIR=<dir>`.
+const String _shotsDir = String.fromEnvironment('SHEET_SHOTS_DIR');
+
+Future<void> _shoot(WidgetTester tester, Key key, String name) async {
+  if (_shotsDir.isEmpty) return;
+  await tester.runAsync(() async {
+    final boundary =
+        tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 2);
+    final data = await image.toByteData(format: ui.ImageByteFormat.png);
+    Directory(_shotsDir).createSync(recursive: true);
+    File('$_shotsDir/$name.png').writeAsBytesSync(data!.buffer.asUint8List());
+  });
+}
+
+const List<Map<String, dynamic>> _venues = [
+  {'id': 'v1', 'name': 'Nad Al Sheba Sports Complex', 'city': 'Nad Al Sheba'},
+  {'id': 'v2', 'name': 'Al Warqa Practice Nets', 'city': 'Al Warqa'},
+];
+
+final List<Map<String, dynamic>> _games = [
+  {
+    'id': 'g1',
+    'title': 'Friday 5-a-side',
+    'sport': 'football',
+    'start_at': DateTime(2026, 8, 18, 20).toIso8601String(),
+  },
+  {
+    'id': 'g2',
+    'title': 'Padel doubles',
+    'sport': 'padel',
+    'start_at': DateTime(2026, 8, 19, 19).toIso8601String(),
+  },
+];
+
+const List<Map<String, dynamic>> _variants = [
+  {'id': 'f1', 'name_en': 'Futsal 5s', 'required_players': 10},
+  {'id': 'f2', 'name_en': 'Small-sided 7s', 'required_players': 14},
+  {'id': 'f3', 'name_en': 'Standard', 'required_players': 22},
+];
+
+Future<void> _host(
+  WidgetTester tester,
+  Locale locale,
+  Key key,
+  Widget Function(BuildContext, WidgetRef) home,
+) async {
+  tester.view.physicalSize = const Size(393, 852);
+  tester.view.devicePixelRatio = 1;
+  addTearDown(tester.view.reset);
+  await tester.pumpWidget(
+    ProviderScope(
+      overrides: [
+        venueSearchProvider.overrideWith((ref, q) async => _venues),
+        gameSearchProvider.overrideWith((ref, q) async => _games),
+      ],
+      child: MaterialApp(
+        debugShowCheckedModeBanner: false,
+        builder: (context, child) => DabblerToastProvider(
+          child: RepaintBoundary(key: key, child: child),
+        ),
+        locale: locale,
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: DabblerDesignSystemTheme.withFonts(
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
+          locale: locale,
+        ),
+        home: DabblerPage(
+          body: Consumer(builder: (context, ref, _) => home(context, ref)),
+        ),
+      ),
+    ),
+  );
+  await tester.pump(const Duration(milliseconds: 100));
+}
+
+Future<void> _settle(WidgetTester tester) async {
+  for (var i = 0; i < 8; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
+final _sportsProvider = Provider<AsyncValue<List<Sport>>>(
+  (ref) => const AsyncData([
+    Sport(id: 's1', nameEn: 'Football', sportKey: 'football'),
+    Sport(id: 's2', nameEn: 'Padel', sportKey: 'padel'),
+    Sport(id: 's3', nameEn: 'Gym', sportKey: 'gym'),
+    Sport(id: 's4', nameEn: 'Cricket', sportKey: 'cricket'),
+  ]),
+);
+
+Future<void> _loadFonts() => loadRenderFonts();
+
+void main() {
+  setUpAll(() async {
+    await initHomeTestSupabase();
+    await _loadFonts();
+  });
+
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final l = lookupAppLocalizations(locale);
+    const key = Key('shot');
+
+    testWidgets('media rail — $dir', (tester) async {
+      await _host(
+        tester,
+        locale,
+        key,
+        (_, __) => const Align(
+          alignment: Alignment.bottomCenter,
+          child: PostComposerScreen(),
+        ),
+      );
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(PostComposerScreen)),
+      );
+      final notifier = container.read(postComposerProvider.notifier);
+      notifier.addMediaUrl('https://example.invalid/a.jpg');
+      notifier.addMediaUrl('https://example.invalid/b.jpg');
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DabblerAttachmentAddTile), findsOneWidget);
+      expect(find.byType(DabblerAttachmentChip), findsNWidgets(2));
+      await _shoot(tester, key, 'sheet-media-rail-$dir');
+    });
+
+    testWidgets('location picker — $dir', (tester) async {
+      await _host(
+        tester,
+        locale,
+        key,
+        (context, ref) => Center(
+          child: DabblerButton(
+            label: 'open',
+            onPressed: () => showComposerPlaceSheet(context, ref),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await _settle(tester);
+      await tester.enterText(find.byType(EditableText), 'Nad');
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Nad Al Sheba Sports Complex'), findsOneWidget);
+      expect(find.text(l.composer_results), findsOneWidget);
+      await _shoot(tester, key, 'sheet-location-$dir');
+    });
+
+    testWidgets('link a game picker — $dir', (tester) async {
+      await _host(
+        tester,
+        locale,
+        key,
+        (context, ref) => Center(
+          child: DabblerButton(
+            label: 'open',
+            onPressed: () => showComposerGameLinkSheet(context, ref),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await _settle(tester);
+      await tester.enterText(find.byType(EditableText), 'Fri');
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.byType(DabblerGameLinkRow), findsNWidgets(2));
+      await tester.tap(find.byType(DabblerGameLinkRow).first);
+      await _settle(tester);
+      await _shoot(tester, key, 'sheet-link-game-$dir');
+    });
+
+    testWidgets('format body — $dir', (tester) async {
+      final pending = ValueNotifier<Map<String, dynamic>?>(_variants[1]);
+      await _host(
+        tester,
+        locale,
+        key,
+        (context, ref) => Center(
+          child: DabblerButton(
+            label: 'open',
+            onPressed: () => showComposerSheet<void>(
+              context,
+              title: l.composer_format_title('Football'),
+              confirm: ComposerSheetConfirm(
+                label: l.composer_confirm,
+                onTap: () {},
+              ),
+              builder: (_) =>
+                  ComposerVariantSheet(variants: _variants, pending: pending),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Small-sided 7s'), findsOneWidget);
+      await _shoot(tester, key, 'sheet-format-$dir');
+    });
+
+    testWidgets('date and time bodies — $dir', (tester) async {
+      await _host(
+        tester,
+        locale,
+        key,
+        (_, __) => const Align(
+          alignment: Alignment.bottomCenter,
+          child: GameComposerScreen(),
+        ),
+      );
+      await tester.tap(find.text(l.game_date));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text(l.composer_pick_date), findsOneWidget);
+      expect(find.text(l.composer_step_1), findsOneWidget);
+      expect(find.byType(DabblerCalendar), findsOneWidget);
+      await _shoot(tester, key, 'sheet-date-$dir');
+      await tester.tapAt(const Offset(10, 10));
+      await _settle(tester);
+      await tester.tap(find.text(l.game_time));
+      await _settle(tester);
+      expect(find.text(l.composer_pick_time), findsOneWidget);
+      expect(find.byType(DabblerTimePicker), findsOneWidget);
+      await _shoot(tester, key, 'sheet-time-$dir');
+    });
+
+    testWidgets('sport sheet — $dir', (tester) async {
+      await _host(
+        tester,
+        locale,
+        key,
+        (context, ref) => Center(
+          child: DabblerButton(
+            label: 'open',
+            onPressed: () => showComposerSportSheet(
+              context,
+              title: l.composer_which_sport,
+              sportsProvider: _sportsProvider,
+              selected: const Sport(id: 's2', nameEn: 'Padel'),
+              showClear: true,
+              onClear: () {},
+              onConfirm: (_) {},
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text('Football'), findsOneWidget);
+      await _shoot(tester, key, 'sheet-sport-$dir');
+    });
+
+    testWidgets('type and audience sheets — $dir', (tester) async {
+      await _host(
+        tester,
+        locale,
+        key,
+        (context, ref) => Center(
+          child: DabblerButton(
+            label: 'open',
+            onPressed: () => showComposerChoiceSheet<int>(
+              context,
+              title: l.composer_kind_of_post,
+              selected: 1,
+              onConfirm: (_) {},
+              choices: [
+                ComposerChoice(
+                  value: 0,
+                  icon: 'flash',
+                  title: l.composer_type_moment,
+                  subtitle: l.composer_type_moment_sub,
+                ),
+                ComposerChoice(
+                  value: 1,
+                  icon: 'like-1',
+                  title: l.composer_type_dab,
+                  subtitle: l.composer_type_dab_sub,
+                ),
+                ComposerChoice(
+                  value: 2,
+                  icon: 'people',
+                  title: l.composer_type_kickin,
+                  subtitle: l.composer_type_kickin_sub,
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text(l.composer_type_dab), findsOneWidget);
+      await _shoot(tester, key, 'sheet-type-$dir');
+    });
+  }
+}

@@ -1,5 +1,9 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
+import 'package:share_plus/share_plus.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -55,8 +59,50 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     context,
     item: widget.item,
     lang: lang,
+    count: _localCommentCount,
     onPosted: () => setState(() => _localCommentCount++),
   );
+
+  void _openShare(String title) {
+    final l10n = AppLocalizations.of(context);
+    final url = widget.item.sourceUrl;
+    showDabblerSheet<void>(
+      context: context,
+      title: l10n.sfx_share_article,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
+      builder: (sheetContext) => Column(
+        spacing: DabblerSpacing.space2,
+        children: [
+          if (url != null && url.isNotEmpty)
+            DabblerActionRow(
+              icon: 'link',
+              label: l10n.sfx_copy_link,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                Clipboard.setData(ClipboardData(text: url));
+                DabblerToastProvider.of(
+                  context,
+                ).show(DabblerToastSpec(message: l10n.sfx_link_copied));
+              },
+            ),
+          DabblerActionRow(
+            icon: 'share',
+            label: l10n.sfx_share_to,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              SharePlus.instance.share(
+                ShareParams(
+                  text: url == null || url.isEmpty ? title : '$title\n$url',
+                  subject: title,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -78,6 +124,13 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         title: title,
         scrollController: _scrollController,
         onBack: () => context.pop(),
+        actions: [
+          DabblerNavigationAction(
+            icon: 'share',
+            label: AppLocalizations.of(context).sfx_share,
+            onPressed: () => _openShare(title),
+          ),
+        ],
       ),
       bottomBar: Row(
         spacing: DabblerSpacing.space3,
@@ -88,7 +141,7 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             tone: mine.isNotEmpty
                 ? DabblerButtonTone.primary
                 : DabblerButtonTone.outlined,
-            semanticLabel: 'Like',
+            semanticLabel: AppLocalizations.of(context).sfx_like,
             onPressed: () => toggleHomeNewsReaction(ref, item.newsId, mine),
             // Long-press opens the reaction picker, as the original like bar
             // did.
@@ -99,11 +152,25 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             label: '$_localCommentCount',
             icon: 'message-text',
             tone: DabblerButtonTone.outlined,
-            semanticLabel: 'Comments',
+            semanticLabel: AppLocalizations.of(context).sfx_comments,
             onPressed: () => _openComments(lang),
           ),
+          Row(
+            spacing: DabblerSpacing.space2,
+            children: [
+              const DabblerIcon('eye', size: DabblerSizing.iconSm),
+              DabblerText(
+                '${item.viewCount}',
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              ),
+            ],
+          ),
           const Spacer(),
-          DabblerButton(label: 'Discuss', onPressed: () => _openComments(lang)),
+          DabblerButton(
+            label: AppLocalizations.of(context).sfx_discuss,
+            onPressed: () => _openComments(lang),
+          ),
         ],
       ),
       body: ListView(
@@ -150,11 +217,19 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
               if (item.coverImageUrl != null)
                 DabblerImage(
                   url: item.coverImageUrl,
-                  aspectRatio: 4 / 5,
+                  height: DabblerSizing.articleHeroHeight,
                   semanticLabel: title,
                   headers: _coverHeaders,
                 ),
               if (body.isNotEmpty) DabblerText(body, style: DabblerType.body),
+              if (item.tags.isNotEmpty)
+                Wrap(
+                  spacing: DabblerSpacing.space2,
+                  runSpacing: DabblerSpacing.space2,
+                  children: [
+                    for (final t in item.tags) DabblerChip(label: t, tag: true),
+                  ],
+                ),
             ],
           ),
         ],

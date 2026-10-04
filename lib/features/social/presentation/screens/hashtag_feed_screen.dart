@@ -1,5 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
@@ -149,7 +151,7 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
       return DabblerEmptyState.error(
         title: _error!,
         onRetry: _loadInitial,
-        retryLabel: 'Retry',
+        retryLabel: AppLocalizations.of(context).sfx_retry,
       );
     }
 
@@ -161,7 +163,9 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
           children: [
             DabblerEmptyState(
               icon: 'hashtag',
-              title: 'No posts found for #${widget.hashtagSlug}',
+              title: AppLocalizations.of(
+                context,
+              ).sfx_hashtag_empty(widget.hashtagSlug),
             ),
           ],
         ),
@@ -210,15 +214,9 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
                 weight: DabblerIconWeight.bold,
               ),
               Expanded(
-                child: Semantics(
-                  label: totalLabel,
-                  child: DabblerText.rich([
-                    DabblerTextSpan(
-                      '$count',
-                      weight: DabblerTextWeight.semibold,
-                    ),
-                    const DabblerTextSpan(' posts'),
-                  ], style: DabblerType.headline),
+                child: DabblerText(
+                  AppLocalizations.of(context).sfx_posts_count(count),
+                  style: DabblerType.headline,
                 ),
               ),
             ],

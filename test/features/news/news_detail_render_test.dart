@@ -9,6 +9,7 @@ import 'package:dabbler/features/news/presentation/screens/news_detail_screen.da
 import 'package:dabbler/features/news/providers/news_comments_provider.dart';
 import 'package:dabbler/features/social/presentation/widgets/public_activity_card.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -17,6 +18,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../home/home_test_harness.dart';
 import '../../support/render_mode.dart';
@@ -25,45 +27,7 @@ import '../../support/render_mode.dart';
 /// `--dart-define=SOCIAL_SHOTS_DIR=<dir>`.
 const String _shotsDir = String.fromEnvironment('SOCIAL_SHOTS_DIR');
 
-Future<void> _loadFonts() async {
-  final String dsFonts =
-      '${Directory.current.parent.path}/dabbler-design-system/fonts';
-  Future<void> family(String name, List<String> files) async {
-    final FontLoader loader = FontLoader(name);
-    for (final String f in files) {
-      final File file = File('$dsFonts/$f');
-      if (!file.existsSync()) return;
-      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
-    }
-    await loader.load();
-  }
-
-  const String pkg = 'packages/dabbler_design_system';
-  const List<String> glory = <String>[
-    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
-  ];
-  const List<String> meral = <String>[
-    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
-  ];
-  for (final String prefix in <String>['$pkg/', '']) {
-    await family('${prefix}Glory', glory);
-    await family('${prefix}Gloock', <String>['Gloock-Regular.ttf']);
-    await family('${prefix}Meral Sans', meral);
-    await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
-  }
-  final String home = Platform.environment['HOME'] ?? '';
-  final File iconsax = File(
-    '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
-  );
-  if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
-    await loader.load();
-  }
-}
+Future<void> _loadFonts() => loadRenderFonts();
 
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {
   if (_shotsDir.isEmpty) return;
@@ -77,6 +41,12 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
+}
+
+class _FixedLocale extends LocaleNotifier {
+  _FixedLocale(Locale l) {
+    state = l;
+  }
 }
 
 class _Comments extends StateNotifier<AsyncValue<List<NewsComment>>>
@@ -102,7 +72,8 @@ final FeedNewsItem _item = FeedNewsItem(
   likeCount: 4,
   commentCount: 1,
   viewCount: 120,
-  tags: const [],
+  tags: const ['Dubai', 'Padel'],
+  sourceUrl: 'https://example.invalid/story',
   isPinned: false,
   priorityScore: 0,
   createdAt: DateTime(2026, 9, 30),
@@ -120,9 +91,11 @@ Future<void> _pump(
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
+  SharedPreferences.setMockInitialValues({'mock_language': locale.languageCode});
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        localeProvider.overrideWith((ref) => _FixedLocale(locale)),
         myReactionsProvider.overrideWith((ref, id) async => <String>{}),
         homeNewsReactionCountsProvider.overrideWith(
           (ref, id) async => const {'x': 4},
@@ -187,13 +160,13 @@ void main() {
       expect(find.text('React'), findsNothing);
       final like = tester.widget<DabblerButton>(
         find.byWidgetPredicate(
-          (w) => w is DabblerButton && w.semanticLabel == 'Like',
+          (w) => w is DabblerButton && w.semanticLabel == lookupAppLocalizations(locale).sfx_like,
         ),
       );
       expect(like.onLongPress, isNotNull);
       expect(find.text('Dabbler Sports Desk'), findsOneWidget);
       await _shoot(tester, key, 'news-detail-article-$dir');
-      await tester.tap(find.text('Discuss'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).sfx_discuss));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -201,6 +174,21 @@ void main() {
       expect(find.text('Cannot wait for the final!'), findsOneWidget);
       expect(find.byType(DabblerTextField), findsOneWidget);
       await _shoot(tester, key, 'news-detail-comments-$dir');
+    }, variant: desktop);
+
+    testWidgets('news article share sheet — $dir', (tester) async {
+      const Key key = Key('shot');
+      await _pump(tester, NewsDetailScreen(item: _item), locale, key);
+      final l10n = lookupAppLocalizations(locale);
+      expect(find.text('Dubai'), findsOneWidget);
+      await tester.tap(find.bySemanticsLabel(l10n.sfx_share));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.takeException(), isNull);
+      expect(find.text(l10n.sfx_copy_link), findsOneWidget);
+      expect(find.text(l10n.sfx_share_to), findsOneWidget);
+      await _shoot(tester, key, 'news-detail-share-$dir');
     }, variant: desktop);
 
     testWidgets('public activity card row — $dir', (tester) async {

@@ -132,12 +132,6 @@ const List<GateAllow> allowList = [
     match: 'aspectRatio: 16 / 9',
   ),
   GateAllow(
-    'lib/features/news/presentation/screens/news_detail_screen.dart',
-    ['numeric named arg'],
-    _aspectReason,
-    match: 'aspectRatio: 4 / 5',
-  ),
-  GateAllow(
     'lib/features/social/presentation/screens/post_composer_screen.dart',
     ['numeric named arg'],
     _pickerReason,

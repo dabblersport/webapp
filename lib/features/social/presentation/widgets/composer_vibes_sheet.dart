@@ -25,7 +25,7 @@ Future<void> showComposerVibesSheet(
     context,
     title: "What's the vibe?",
     subtitle: vibes.isEmpty ? null : '${vibes.length} vibes',
-    onClear: selectedVibeId == null ? null : onClear,
+    onClear: onClear,
     tall: true,
     confirm: ComposerSheetConfirm(
       label: AppLocalizations.of(context).composer_confirm,
@@ -79,8 +79,9 @@ class _ComposerVibesSheetState extends ConsumerState<ComposerVibesSheet> {
         ),
         vibesAsync.when(
           loading: () => const ComposerCenteredState.loading(),
-          error: (_, __) =>
-              ComposerCenteredState.message(AppLocalizations.of(context).composer_vibe_failed),
+          error: (_, __) => ComposerCenteredState.message(
+            AppLocalizations.of(context).composer_vibe_failed,
+          ),
           data: (vibes) {
             final shown = vibes
                 .where(

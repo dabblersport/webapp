@@ -28,6 +28,31 @@ Future<void> settleImages(WidgetTester tester) async {
   }
 }
 
+/// The design-system `fonts/` folder: the sibling checkout when present, else
+/// the folder of the package the app is actually resolved against.
+String _dsFontsDir() {
+  final String sibling =
+      '${Directory.current.parent.path}/dabbler-design-system/fonts';
+  if (Directory(sibling).existsSync()) return sibling;
+  final File cfg = File('${Directory.current.path}/.dart_tool/package_config.json');
+  if (cfg.existsSync()) {
+    final Match? m = RegExp(
+      r'"name":\s*"dabbler_design_system",\s*"rootUri":\s*"([^"]+)"',
+    ).firstMatch(cfg.readAsStringSync());
+    if (m != null) {
+      final Uri root = Uri.parse(m.group(1)!);
+      final String base = root.isAbsolute
+          ? root.toFilePath()
+          : Directory.current.uri
+                .resolve('.dart_tool/')
+                .resolveUri(root)
+                .toFilePath();
+      return '${base.endsWith('/') ? base : '$base/'}fonts';
+    }
+  }
+  return sibling;
+}
+
 /// Loads the design-system fonts for a render test (call from `setUpAll`).
 ///
 /// Wingx, the Arabic display face, draws Arabic only — it has no Latin
@@ -36,8 +61,7 @@ Future<void> settleImages(WidgetTester tester) async {
 /// black blocks. This registers Gloock (the Latin display face) and Glory
 /// under the fallback family names the engine consults, so those glyphs draw.
 Future<void> loadRenderFonts() async {
-  final String dsFonts =
-      '${Directory.current.parent.path}/dabbler-design-system/fonts';
+  final String dsFonts = _dsFontsDir();
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
     for (final String f in files) {

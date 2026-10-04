@@ -4,6 +4,7 @@ import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/privacy_toggles.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings/delete_account_sheet_body.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
 import 'package:dabbler/features/profile/services/data_export_service.dart';
@@ -250,7 +251,7 @@ class _AccountManagementScreenState
     ctrl.updateSetting(key, value);
     final userId = ref.read(currentUserIdProvider);
     if (userId == null) return;
-    final saved = await ctrl.saveAllChanges(userId);
+    final saved = await savePrivacyOrRevert(ctrl, userId);
     if (!mounted || saved) return;
     _toast(_l10n.priv_save_failed, DabblerToastTone.error);
   }

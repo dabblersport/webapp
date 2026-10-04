@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -121,7 +123,7 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
         titleWidget: DabblerSearchField(
           controller: _searchController,
           focusNode: _searchFocus,
-          placeholder: 'Search people, games, posts…',
+          placeholder: AppLocalizations.of(context).sfx_search_placeholder,
           loading: searchState.isLoading,
           onChanged: _onSearchChanged,
           onSubmitted: _triggerSearch,
