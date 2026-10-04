@@ -167,7 +167,7 @@ void main() {
     testWidgets('help center renders — $dir', (tester) async {
       await _pump(tester, const HelpCenterScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text('This screen is under development'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).help_center_empty_text), findsOneWidget);
       await _shoot(tester, _key, 'help-center-default-$dir');
     });
   }

@@ -3268,4 +3268,449 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get game_prefs_referee_strict_sub =>
       'يجب أن تتبع المباريات القواعد الرسمية بدقة';
+
+  @override
+  String get help_center_title => 'مركز المساعدة';
+
+  @override
+  String get help_center_empty_title => 'مركز المساعدة';
+
+  @override
+  String get help_center_empty_text => 'هذه الشاشة قيد التطوير';
+
+  @override
+  String get contact_title => 'التواصل مع الدعم';
+
+  @override
+  String get contact_intro_title => 'كيف يمكننا مساعدتك؟';
+
+  @override
+  String get contact_intro_message =>
+      'أرسل لنا رسالة وسنرد عليك في أقرب وقت ممكن.';
+
+  @override
+  String get contact_section => 'بيانات التواصل';
+
+  @override
+  String get contact_email => 'بريدك الإلكتروني';
+
+  @override
+  String get contact_category => 'الفئة';
+
+  @override
+  String get contact_subject => 'الموضوع';
+
+  @override
+  String get contact_message => 'الرسالة';
+
+  @override
+  String get contact_send => 'إرسال الرسالة';
+
+  @override
+  String get contact_cat_general => 'عام';
+
+  @override
+  String get contact_cat_account => 'مشاكل الحساب';
+
+  @override
+  String get contact_cat_technical => 'مشكلة تقنية';
+
+  @override
+  String get contact_cat_billing => 'الدفع والفواتير';
+
+  @override
+  String get contact_cat_feature => 'طلب ميزة';
+
+  @override
+  String get contact_cat_abuse => 'الإبلاغ عن إساءة';
+
+  @override
+  String get contact_cat_privacy => 'مخاوف الخصوصية';
+
+  @override
+  String get contact_cat_other => 'أخرى';
+
+  @override
+  String get contact_err_email_required => 'يرجى إدخال بريدك الإلكتروني';
+
+  @override
+  String get contact_err_email_invalid => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get contact_err_subject_required => 'يرجى إدخال الموضوع';
+
+  @override
+  String get contact_err_message_required => 'يرجى إدخال رسالتك';
+
+  @override
+  String get contact_err_message_short => 'يجب ألا تقل الرسالة عن 10 أحرف';
+
+  @override
+  String get contact_sent => 'تم إرسال الرسالة. سنرد عليك قريبًا.';
+
+  @override
+  String contact_send_failed(String error) {
+    return 'تعذّر إرسال الرسالة: $error';
+  }
+
+  @override
+  String get bug_title => 'الإبلاغ عن خطأ';
+
+  @override
+  String get bug_intro_title => 'وجدت خطأ؟';
+
+  @override
+  String get bug_intro_message =>
+      'ساعدنا على التحسّن بالإبلاغ عن أي مشكلة تواجهها. كلما زادت التفاصيل أسرعنا في إصلاحها.';
+
+  @override
+  String get bug_details => 'تفاصيل الخطأ';
+
+  @override
+  String get bug_category => 'فئة الخطأ';
+
+  @override
+  String get bug_severity => 'مستوى الخطورة';
+
+  @override
+  String get bug_field_title => 'عنوان الخطأ';
+
+  @override
+  String get bug_field_title_hint => 'وصف موجز للمشكلة';
+
+  @override
+  String get bug_field_description => 'وصف تفصيلي';
+
+  @override
+  String get bug_field_description_hint => 'صف ما حدث وما كنت تتوقع حدوثه';
+
+  @override
+  String get bug_field_steps => 'خطوات إعادة الحدوث';
+
+  @override
+  String get bug_field_steps_hint =>
+      '1. اذهب إلى...\n2. اضغط على...\n3. شاهد الخطأ';
+
+  @override
+  String get bug_cat_general => 'خطأ عام';
+
+  @override
+  String get bug_cat_ui => 'مشكلة في الواجهة';
+
+  @override
+  String get bug_cat_performance => 'مشكلة في الأداء';
+
+  @override
+  String get bug_cat_crash => 'تعطّل / تجمّد';
+
+  @override
+  String get bug_cat_login => 'تسجيل الدخول / التوثيق';
+
+  @override
+  String get bug_cat_profile => 'الملف / الإعدادات';
+
+  @override
+  String get bug_cat_games => 'المباريات / الأنشطة';
+
+  @override
+  String get bug_cat_notifications => 'الإشعارات';
+
+  @override
+  String get bug_cat_social => 'الميزات الاجتماعية';
+
+  @override
+  String get bug_cat_other => 'أخرى';
+
+  @override
+  String get bug_sev_low => 'منخفضة';
+
+  @override
+  String get bug_sev_medium => 'متوسطة';
+
+  @override
+  String get bug_sev_high => 'عالية';
+
+  @override
+  String get bug_sev_critical => 'حرجة';
+
+  @override
+  String get bug_additional => 'معلومات إضافية';
+
+  @override
+  String get bug_include_device => 'تضمين معلومات الجهاز';
+
+  @override
+  String get bug_include_device_sub => 'إصدار النظام، طراز الجهاز، حجم الشاشة';
+
+  @override
+  String get bug_include_logs => 'تضمين سجلات التطبيق';
+
+  @override
+  String get bug_include_logs_sub => 'نشاط التطبيق الأخير وسجلات الأخطاء';
+
+  @override
+  String get bug_device_heading => 'معلومات الجهاز المضمّنة:';
+
+  @override
+  String bug_device_platform(String value) {
+    return 'المنصة: $value';
+  }
+
+  @override
+  String bug_device_app_version(String value) {
+    return 'إصدار التطبيق: $value';
+  }
+
+  @override
+  String bug_device_resolution(String value) {
+    return 'دقة الشاشة: $value';
+  }
+
+  @override
+  String get bug_platform_unknown => 'غير معروف';
+
+  @override
+  String get bug_platform_web => 'الويب';
+
+  @override
+  String get bug_err_email_required => 'يرجى إدخال بريدك الإلكتروني';
+
+  @override
+  String get bug_err_title_required => 'يرجى إدخال عنوان الخطأ';
+
+  @override
+  String get bug_err_description_required => 'يرجى وصف الخطأ';
+
+  @override
+  String get bug_err_description_short =>
+      'يرجى تقديم مزيد من التفاصيل (20 حرفًا على الأقل)';
+
+  @override
+  String get bug_err_steps_required => 'يرجى ذكر خطوات إعادة حدوث الخطأ';
+
+  @override
+  String get bug_submit => 'إرسال بلاغ الخطأ';
+
+  @override
+  String get bug_submitted => 'تم إرسال البلاغ. شكرًا لمساعدتك في تحسيننا.';
+
+  @override
+  String bug_submit_failed(String error) {
+    return 'تعذّر إرسال البلاغ: $error';
+  }
+
+  @override
+  String get sports_prefs_title => 'تفضيلات الرياضات';
+
+  @override
+  String get sports_prefs_save => 'حفظ';
+
+  @override
+  String get sports_prefs_create_game => 'إنشاء مباراة';
+
+  @override
+  String get sports_prefs_my_sports => 'رياضاتي';
+
+  @override
+  String get sports_prefs_my_sports_note =>
+      'فعّل الرياضات التي تريد ممارستها وحدد مستواك';
+
+  @override
+  String get sports_prefs_general => 'تفضيلات عامة';
+
+  @override
+  String get sports_prefs_auto_join => 'الانضمام التلقائي للمباريات المناسبة';
+
+  @override
+  String get sports_prefs_auto_join_sub =>
+      'انضم تلقائيًا إلى المباريات التي تطابق تفضيلاتك';
+
+  @override
+  String get sports_prefs_location => 'استخدام الموقع للتوصيات';
+
+  @override
+  String get sports_prefs_location_sub =>
+      'اعثر على مباريات قريبة من موقعك الحالي';
+
+  @override
+  String get sports_prefs_flexible => 'توقيت مرن';
+
+  @override
+  String get sports_prefs_flexible_sub =>
+      'أظهر المباريات ذات أوقات البدء المرنة';
+
+  @override
+  String get sports_prefs_disabled => 'معطّل';
+
+  @override
+  String get sports_prefs_skill_level => 'مستوى المهارة';
+
+  @override
+  String get sports_prefs_position => 'المركز المفضل';
+
+  @override
+  String get sports_prefs_level_beginner => 'مبتدئ';
+
+  @override
+  String get sports_prefs_level_intermediate => 'متوسط';
+
+  @override
+  String get sports_prefs_level_advanced => 'متقدم';
+
+  @override
+  String sports_prefs_load_failed(String error) {
+    return 'تعذّر تحميل تفضيلات الرياضات: $error';
+  }
+
+  @override
+  String get sports_prefs_saved => 'تم حفظ تفضيلات الرياضات';
+
+  @override
+  String sports_prefs_save_failed(String error) {
+    return 'تعذّر حفظ التفضيلات: $error';
+  }
+
+  @override
+  String sports_prefs_enable_failed(String error) {
+    return 'تعذّر تفعيل الرياضة: $error';
+  }
+
+  @override
+  String sports_prefs_remove_failed(String error) {
+    return 'تعذّرت إزالة الرياضة: $error';
+  }
+
+  @override
+  String get sports_prefs_need_one => 'يجب تفعيل رياضة واحدة على الأقل';
+
+  @override
+  String sports_prefs_remove_title(String sport) {
+    return 'إزالة $sport؟';
+  }
+
+  @override
+  String sports_prefs_remove_body(String sport) {
+    return 'هل تريد بالتأكيد إزالة $sport من ملفك؟';
+  }
+
+  @override
+  String get sports_prefs_cancel => 'إلغاء';
+
+  @override
+  String get sports_prefs_remove => 'إزالة';
+
+  @override
+  String get sports_pos_goalkeeper => 'حارس مرمى';
+
+  @override
+  String get sports_pos_defender => 'مدافع';
+
+  @override
+  String get sports_pos_midfielder => 'لاعب وسط';
+
+  @override
+  String get sports_pos_forward => 'مهاجم';
+
+  @override
+  String get sports_pos_point_guard => 'صانع ألعاب';
+
+  @override
+  String get sports_pos_shooting_guard => 'مدافع مسدد';
+
+  @override
+  String get sports_pos_small_forward => 'جناح';
+
+  @override
+  String get sports_pos_power_forward => 'جناح قوي';
+
+  @override
+  String get sports_pos_center => 'مركز';
+
+  @override
+  String get sports_pos_setter => 'ممرر';
+
+  @override
+  String get sports_pos_outside_hitter => 'مهاجم خارجي';
+
+  @override
+  String get sports_pos_middle_blocker => 'حاجز أوسط';
+
+  @override
+  String get sports_pos_opposite_hitter => 'مهاجم معاكس';
+
+  @override
+  String get sports_pos_libero => 'ليبرو';
+
+  @override
+  String get about_terms_intro =>
+      'يرجى قراءة هذه الشروط بعناية قبل استخدام خدمتنا.';
+
+  @override
+  String get about_privacy_intro =>
+      'خصوصيتك مهمة بالنسبة لنا. توضح هذه السياسة كيف نجمع معلوماتك ونستخدمها ونحميها.';
+
+  @override
+  String about_last_updated(String date) {
+    return 'آخر تحديث: $date';
+  }
+
+  @override
+  String get about_privacy_settings_tooltip => 'إعدادات الخصوصية';
+
+  @override
+  String get licenses_title => 'تراخيص المصادر المفتوحة';
+
+  @override
+  String get licenses_about_tooltip => 'حول التراخيص';
+
+  @override
+  String get licenses_intro =>
+      'بُني هذا التطبيق بمكتبات مفتوحة المصدر رائعة. نشكر جميع المساهمين على عملهم.';
+
+  @override
+  String licenses_count(String count) {
+    return '$count حزمة مفتوحة المصدر';
+  }
+
+  @override
+  String get licenses_search_hint => 'ابحث في التراخيص...';
+
+  @override
+  String get licenses_empty_title => 'لم يتم العثور على تراخيص';
+
+  @override
+  String get licenses_empty_text => 'جرّب تعديل عبارة البحث';
+
+  @override
+  String get licenses_info_title => 'حول تراخيص المصادر المفتوحة';
+
+  @override
+  String get licenses_info_body =>
+      'يستخدم هذا التطبيق مكتبات وحزمًا مفتوحة المصدر متعددة. يحدد كل ترخيص شروط استخدام الشيفرة وتعديلها وتوزيعها.\n\nنحن ممتنون لجميع المطورين والمساهمين الذين يتيحون أعمالهم بتراخيص مفتوحة المصدر.';
+
+  @override
+  String get licenses_got_it => 'حسنًا';
+
+  @override
+  String get licenses_detail_version => 'الإصدار';
+
+  @override
+  String get licenses_detail_license => 'الترخيص';
+
+  @override
+  String get licenses_detail_copyright => 'حقوق النشر';
+
+  @override
+  String get licenses_detail_url => 'الرابط';
+
+  @override
+  String get licenses_detail_description => 'الوصف';
+
+  @override
+  String get licenses_view_web => 'عرض على الويب';
+
+  @override
+  String licenses_opening(String url) {
+    return 'جارٍ فتح $url';
+  }
 }

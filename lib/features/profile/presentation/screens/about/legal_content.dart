@@ -1,5 +1,8 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:intl/intl.dart';
+
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// A single titled section of a legal document.
 class LegalSection {
@@ -8,8 +11,9 @@ class LegalSection {
   final String content;
 }
 
-const String kLegalLastUpdated = 'July 17, 2026';
+final DateTime kLegalLastUpdated = DateTime(2026, 7, 17);
 
+// Still read by the auth entry screens; the About screens use l10n.
 const String kTermsIntro =
     'Please read these terms carefully before using our service.';
 
@@ -221,6 +225,7 @@ class LegalDocContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
+    final l10n = AppLocalizations.of(context);
 
     return SingleChildScrollView(
       controller: controller,
@@ -244,7 +249,13 @@ class LegalDocContent extends StatelessWidget {
               const SizedBox(width: DabblerSpacing.space2),
               Expanded(
                 child: DabblerText(
-                  'Last updated: $kLegalLastUpdated',
+                  l10n.about_last_updated(
+                    DabblerType.toWesternDigits(
+                      DateFormat.yMMMMd(
+                        Localizations.localeOf(context).toString(),
+                      ).format(kLegalLastUpdated),
+                    ),
+                  ),
                   style: DabblerType.footnote,
                   tone: DabblerTextTone.tertiary,
                 ),
