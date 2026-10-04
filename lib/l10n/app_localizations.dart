@@ -7354,6 +7354,1740 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Games should follow official rules closely'**
   String get game_prefs_referee_strict_sub;
+
+  /// No description provided for @composer_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get composer_cancel;
+
+  /// No description provided for @composer_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get composer_confirm;
+
+  /// No description provided for @composer_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get composer_clear;
+
+  /// No description provided for @composer_none.
+  ///
+  /// In en, this message translates to:
+  /// **'None'**
+  String get composer_none;
+
+  /// No description provided for @composer_select.
+  ///
+  /// In en, this message translates to:
+  /// **'Select'**
+  String get composer_select;
+
+  /// No description provided for @composer_tap_to_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to change.'**
+  String get composer_tap_to_change;
+
+  /// No description provided for @composer_create_post.
+  ///
+  /// In en, this message translates to:
+  /// **'Create post'**
+  String get composer_create_post;
+
+  /// No description provided for @composer_post_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get composer_post_cta;
+
+  /// No description provided for @composer_you.
+  ///
+  /// In en, this message translates to:
+  /// **'You'**
+  String get composer_you;
+
+  /// No description provided for @composer_post_as.
+  ///
+  /// In en, this message translates to:
+  /// **'Post As'**
+  String get composer_post_as;
+
+  /// No description provided for @composer_switch_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to switch profile'**
+  String get composer_switch_failed;
+
+  /// No description provided for @composer_body_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s on your mind? Use #hashtags'**
+  String get composer_body_hint;
+
+  /// No description provided for @composer_add_media.
+  ///
+  /// In en, this message translates to:
+  /// **'Add media'**
+  String get composer_add_media;
+
+  /// No description provided for @composer_add_vibe.
+  ///
+  /// In en, this message translates to:
+  /// **'Add vibe'**
+  String get composer_add_vibe;
+
+  /// No description provided for @composer_add_sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sport'**
+  String get composer_add_sport;
+
+  /// No description provided for @composer_add_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get composer_add_location;
+
+  /// No description provided for @composer_link_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a game'**
+  String get composer_link_game;
+
+  /// No description provided for @composer_add_more_media.
+  ///
+  /// In en, this message translates to:
+  /// **'Add more media'**
+  String get composer_add_more_media;
+
+  /// No description provided for @composer_remove_media.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove media'**
+  String get composer_remove_media;
+
+  /// No description provided for @composer_allow_reposts.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow reposts'**
+  String get composer_allow_reposts;
+
+  /// No description provided for @composer_allow_reposts_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Others can share this post'**
+  String get composer_allow_reposts_sub;
+
+  /// No description provided for @composer_pin.
+  ///
+  /// In en, this message translates to:
+  /// **'Pin to profile'**
+  String get composer_pin;
+
+  /// No description provided for @composer_pin_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep at the top of your profile'**
+  String get composer_pin_sub;
+
+  /// No description provided for @composer_expiry.
+  ///
+  /// In en, this message translates to:
+  /// **'Set expiry'**
+  String get composer_expiry;
+
+  /// No description provided for @composer_expiry_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-hides after date'**
+  String get composer_expiry_sub;
+
+  /// No description provided for @composer_who_can_see.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see this?'**
+  String get composer_who_can_see;
+
+  /// No description provided for @composer_which_sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Which sport?'**
+  String get composer_which_sport;
+
+  /// No description provided for @composer_kind_of_post.
+  ///
+  /// In en, this message translates to:
+  /// **'What kind of post?'**
+  String get composer_kind_of_post;
+
+  /// No description provided for @composer_link_a_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Link a Game'**
+  String get composer_link_a_game;
+
+  /// No description provided for @composer_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get composer_location;
+
+  /// No description provided for @composer_add_media_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Add Media'**
+  String get composer_add_media_title;
+
+  /// No description provided for @composer_take_photo.
+  ///
+  /// In en, this message translates to:
+  /// **'Take Photo'**
+  String get composer_take_photo;
+
+  /// No description provided for @composer_choose_gallery.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose from Gallery'**
+  String get composer_choose_gallery;
+
+  /// No description provided for @composer_search_gifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIFs'**
+  String get composer_search_gifs;
+
+  /// No description provided for @composer_powered_giphy.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get composer_powered_giphy;
+
+  /// No description provided for @composer_vis_public.
+  ///
+  /// In en, this message translates to:
+  /// **'Public'**
+  String get composer_vis_public;
+
+  /// No description provided for @composer_vis_followers.
+  ///
+  /// In en, this message translates to:
+  /// **'Followers'**
+  String get composer_vis_followers;
+
+  /// No description provided for @composer_vis_circle.
+  ///
+  /// In en, this message translates to:
+  /// **'Circle'**
+  String get composer_vis_circle;
+
+  /// No description provided for @composer_vis_squad.
+  ///
+  /// In en, this message translates to:
+  /// **'Squad'**
+  String get composer_vis_squad;
+
+  /// No description provided for @composer_vis_private.
+  ///
+  /// In en, this message translates to:
+  /// **'Private'**
+  String get composer_vis_private;
+
+  /// No description provided for @composer_vis_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Link Only'**
+  String get composer_vis_link;
+
+  /// No description provided for @composer_vis_public_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Anyone can see this post'**
+  String get composer_vis_public_sub;
+
+  /// No description provided for @composer_vis_followers_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Only your followers can see this'**
+  String get composer_vis_followers_sub;
+
+  /// No description provided for @composer_vis_circle_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with a specific circle'**
+  String get composer_vis_circle_sub;
+
+  /// No description provided for @composer_vis_squad_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Shared with your squad'**
+  String get composer_vis_squad_sub;
+
+  /// No description provided for @composer_vis_private_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this'**
+  String get composer_vis_private_sub;
+
+  /// No description provided for @composer_vis_link_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Only people with the link can see this'**
+  String get composer_vis_link_sub;
+
+  /// No description provided for @composer_type_moment.
+  ///
+  /// In en, this message translates to:
+  /// **'Moment'**
+  String get composer_type_moment;
+
+  /// No description provided for @composer_type_dab.
+  ///
+  /// In en, this message translates to:
+  /// **'Dab'**
+  String get composer_type_dab;
+
+  /// No description provided for @composer_type_kickin.
+  ///
+  /// In en, this message translates to:
+  /// **'Kick-in'**
+  String get composer_type_kickin;
+
+  /// No description provided for @composer_type_moment_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'A quick snapshot of right now'**
+  String get composer_type_moment_sub;
+
+  /// No description provided for @composer_type_dab_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Share what you\'re vibing with'**
+  String get composer_type_dab_sub;
+
+  /// No description provided for @composer_type_kickin_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite others to join in'**
+  String get composer_type_kickin_sub;
+
+  /// No description provided for @composer_vibe_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search vibes'**
+  String get composer_vibe_search;
+
+  /// No description provided for @composer_vibe_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load vibes'**
+  String get composer_vibe_failed;
+
+  /// No description provided for @composer_vibe_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No vibes match that search'**
+  String get composer_vibe_none;
+
+  /// No description provided for @composer_sports_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load sports'**
+  String get composer_sports_failed;
+
+  /// No description provided for @composer_sports_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No sports available'**
+  String get composer_sports_none;
+
+  /// No description provided for @composer_venue_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search venues...'**
+  String get composer_venue_search;
+
+  /// No description provided for @composer_type_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Type a location'**
+  String get composer_type_location;
+
+  /// No description provided for @composer_use_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this location'**
+  String get composer_use_location;
+
+  /// No description provided for @composer_search_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Search failed'**
+  String get composer_search_failed;
+
+  /// No description provided for @composer_no_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues found'**
+  String get composer_no_venues;
+
+  /// No description provided for @composer_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue'**
+  String get composer_venue;
+
+  /// No description provided for @composer_venue_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a venue or type a location'**
+  String get composer_venue_hint;
+
+  /// No description provided for @composer_games_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search games by title...'**
+  String get composer_games_search;
+
+  /// No description provided for @composer_no_games.
+  ///
+  /// In en, this message translates to:
+  /// **'No games found'**
+  String get composer_no_games;
+
+  /// No description provided for @composer_untitled_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Untitled Game'**
+  String get composer_untitled_game;
+
+  /// No description provided for @composer_games_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a game to link to your post'**
+  String get composer_games_hint;
+
+  /// No description provided for @game_create.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game'**
+  String get game_create;
+
+  /// No description provided for @game_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit Game'**
+  String get game_edit;
+
+  /// No description provided for @game_save_changes.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get game_save_changes;
+
+  /// No description provided for @game_sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get game_sport;
+
+  /// No description provided for @game_format.
+  ///
+  /// In en, this message translates to:
+  /// **'Format'**
+  String get game_format;
+
+  /// No description provided for @game_format_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Game format'**
+  String get game_format_sub;
+
+  /// No description provided for @game_select_sport_first.
+  ///
+  /// In en, this message translates to:
+  /// **'Select sport first'**
+  String get game_select_sport_first;
+
+  /// No description provided for @game_select_format.
+  ///
+  /// In en, this message translates to:
+  /// **'Select format'**
+  String get game_select_format;
+
+  /// No description provided for @game_venue_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Where to play'**
+  String get game_venue_sub;
+
+  /// No description provided for @game_date_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Date & Time'**
+  String get game_date_time;
+
+  /// No description provided for @game_date_time_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When is the game'**
+  String get game_date_time_sub;
+
+  /// No description provided for @game_duration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get game_duration;
+
+  /// No description provided for @game_duration_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'How long it runs'**
+  String get game_duration_sub;
+
+  /// No description provided for @game_join_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'Join policy'**
+  String get game_join_policy;
+
+  /// No description provided for @game_join_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get game_join_open;
+
+  /// No description provided for @game_join_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Request'**
+  String get game_join_request;
+
+  /// No description provided for @game_join_invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get game_join_invite;
+
+  /// No description provided for @game_join_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Link'**
+  String get game_join_link;
+
+  /// No description provided for @game_visibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility'**
+  String get game_visibility;
+
+  /// No description provided for @game_skill_level.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill Level'**
+  String get game_skill_level;
+
+  /// No description provided for @game_skill_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Player experience'**
+  String get game_skill_sub;
+
+  /// No description provided for @game_any_level.
+  ///
+  /// In en, this message translates to:
+  /// **'Any level'**
+  String get game_any_level;
+
+  /// No description provided for @game_players.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get game_players;
+
+  /// No description provided for @game_players_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Min & max players'**
+  String get game_players_sub;
+
+  /// No description provided for @game_fewer_min.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer minimum players'**
+  String get game_fewer_min;
+
+  /// No description provided for @game_more_min.
+  ///
+  /// In en, this message translates to:
+  /// **'More minimum players'**
+  String get game_more_min;
+
+  /// No description provided for @game_fewer_max.
+  ///
+  /// In en, this message translates to:
+  /// **'Fewer maximum players'**
+  String get game_fewer_max;
+
+  /// No description provided for @game_more_max.
+  ///
+  /// In en, this message translates to:
+  /// **'More maximum players'**
+  String get game_more_max;
+
+  /// No description provided for @game_waitlist.
+  ///
+  /// In en, this message translates to:
+  /// **'Waitlist'**
+  String get game_waitlist;
+
+  /// No description provided for @game_waitlist_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Let players queue when full'**
+  String get game_waitlist_sub;
+
+  /// No description provided for @game_spectators.
+  ///
+  /// In en, this message translates to:
+  /// **'Spectators'**
+  String get game_spectators;
+
+  /// No description provided for @game_spectators_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow spectators to watch'**
+  String get game_spectators_sub;
+
+  /// No description provided for @game_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Details (optional)'**
+  String get game_details;
+
+  /// No description provided for @game_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Game title'**
+  String get game_title_hint;
+
+  /// No description provided for @game_note_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a note for players...'**
+  String get game_note_hint;
+
+  /// No description provided for @game_date.
+  ///
+  /// In en, this message translates to:
+  /// **'Date'**
+  String get game_date;
+
+  /// No description provided for @game_time.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get game_time;
+
+  /// No description provided for @game_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get game_today;
+
+  /// No description provided for @game_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'Tomorrow'**
+  String get game_tomorrow;
+
+  /// No description provided for @game_select_venue.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Venue'**
+  String get game_select_venue;
+
+  /// No description provided for @game_select_format_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Select Format'**
+  String get game_select_format_title;
+
+  /// No description provided for @game_no_formats.
+  ///
+  /// In en, this message translates to:
+  /// **'No formats available'**
+  String get game_no_formats;
+
+  /// No description provided for @game_no_matches.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get game_no_matches;
+
+  /// No description provided for @game_skill_beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get game_skill_beginner;
+
+  /// No description provided for @game_skill_intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get game_skill_intermediate;
+
+  /// No description provided for @game_skill_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get game_skill_advanced;
+
+  /// No description provided for @game_skill_pro.
+  ///
+  /// In en, this message translates to:
+  /// **'Pro'**
+  String get game_skill_pro;
+
+  /// No description provided for @game_skill_beginner_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Just getting started'**
+  String get game_skill_beginner_sub;
+
+  /// No description provided for @game_skill_intermediate_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays regularly'**
+  String get game_skill_intermediate_sub;
+
+  /// No description provided for @game_skill_advanced_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Competitive level'**
+  String get game_skill_advanced_sub;
+
+  /// No description provided for @game_skill_pro_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Elite / professional'**
+  String get game_skill_pro_sub;
+
+  /// No description provided for @post_detail_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Post'**
+  String get post_detail_title;
+
+  /// No description provided for @post_detail_more.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get post_detail_more;
+
+  /// No description provided for @post_detail_follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get post_detail_follow;
+
+  /// No description provided for @post_detail_following.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get post_detail_following;
+
+  /// No description provided for @post_detail_anonymous.
+  ///
+  /// In en, this message translates to:
+  /// **'Anonymous'**
+  String get post_detail_anonymous;
+
+  /// No description provided for @post_detail_no_replies.
+  ///
+  /// In en, this message translates to:
+  /// **'No replies yet'**
+  String get post_detail_no_replies;
+
+  /// No description provided for @post_detail_first_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Be the first to reply.'**
+  String get post_detail_first_reply;
+
+  /// No description provided for @post_detail_reply_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Post your reply…'**
+  String get post_detail_reply_hint;
+
+  /// No description provided for @post_detail_reply_to_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply…'**
+  String get post_detail_reply_to_hint;
+
+  /// No description provided for @post_detail_add_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Add image'**
+  String get post_detail_add_image;
+
+  /// No description provided for @post_detail_add_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Add location'**
+  String get post_detail_add_location;
+
+  /// No description provided for @post_detail_send_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Send reply'**
+  String get post_detail_send_reply;
+
+  /// No description provided for @post_detail_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get post_detail_reply;
+
+  /// No description provided for @post_detail_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add'**
+  String get post_detail_add;
+
+  /// No description provided for @post_detail_hide_replies.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide replies'**
+  String get post_detail_hide_replies;
+
+  /// No description provided for @post_detail_view_replies.
+  ///
+  /// In en, this message translates to:
+  /// **'View replies'**
+  String get post_detail_view_replies;
+
+  /// No description provided for @post_detail_copy_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get post_detail_copy_link;
+
+  /// No description provided for @post_detail_link_copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get post_detail_link_copied;
+
+  /// No description provided for @post_detail_delete_post.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete post'**
+  String get post_detail_delete_post;
+
+  /// No description provided for @post_detail_delete_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete reply'**
+  String get post_detail_delete_reply;
+
+  /// No description provided for @post_detail_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Report'**
+  String get post_detail_report;
+
+  /// No description provided for @post_detail_edited.
+  ///
+  /// In en, this message translates to:
+  /// **'Edited'**
+  String get post_detail_edited;
+
+  /// No description provided for @post_detail_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load post'**
+  String get post_detail_failed;
+
+  /// No description provided for @post_detail_replies_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load replies'**
+  String get post_detail_replies_failed;
+
+  /// No description provided for @post_detail_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get post_detail_retry;
+
+  /// No description provided for @post_detail_remove_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove image'**
+  String get post_detail_remove_image;
+
+  /// No description provided for @post_detail_remove_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove location'**
+  String get post_detail_remove_location;
+
+  /// No description provided for @post_detail_image.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get post_detail_image;
+
+  /// No description provided for @post_detail_org.
+  ///
+  /// In en, this message translates to:
+  /// **'Org'**
+  String get post_detail_org;
+
+  /// No description provided for @post_detail_player.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get post_detail_player;
+
+  /// No description provided for @post_detail_replies_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 reply} other{{count} replies}}'**
+  String post_detail_replies_count(int count);
+
+  /// No description provided for @post_detail_views.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} views'**
+  String post_detail_views(String count);
+
+  /// No description provided for @post_detail_replying_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Replying to'**
+  String get post_detail_replying_to;
+
+  /// No description provided for @post_detail_cancel_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel reply'**
+  String get post_detail_cancel_reply;
+
+  /// No description provided for @help_center_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Help center'**
+  String get help_center_title;
+
+  /// No description provided for @help_center_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Help center'**
+  String get help_center_empty_title;
+
+  /// No description provided for @help_center_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'This screen is under development'**
+  String get help_center_empty_text;
+
+  /// No description provided for @contact_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact support'**
+  String get contact_title;
+
+  /// No description provided for @contact_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How can we help?'**
+  String get contact_intro_title;
+
+  /// No description provided for @contact_intro_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Send us a message and we\'ll get back to you as soon as possible.'**
+  String get contact_intro_message;
+
+  /// No description provided for @contact_section.
+  ///
+  /// In en, this message translates to:
+  /// **'Contact information'**
+  String get contact_section;
+
+  /// No description provided for @contact_email.
+  ///
+  /// In en, this message translates to:
+  /// **'Your email'**
+  String get contact_email;
+
+  /// No description provided for @contact_category.
+  ///
+  /// In en, this message translates to:
+  /// **'Category'**
+  String get contact_category;
+
+  /// No description provided for @contact_subject.
+  ///
+  /// In en, this message translates to:
+  /// **'Subject'**
+  String get contact_subject;
+
+  /// No description provided for @contact_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get contact_message;
+
+  /// No description provided for @contact_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send message'**
+  String get contact_send;
+
+  /// No description provided for @contact_cat_general.
+  ///
+  /// In en, this message translates to:
+  /// **'General'**
+  String get contact_cat_general;
+
+  /// No description provided for @contact_cat_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Account issues'**
+  String get contact_cat_account;
+
+  /// No description provided for @contact_cat_technical.
+  ///
+  /// In en, this message translates to:
+  /// **'Technical problem'**
+  String get contact_cat_technical;
+
+  /// No description provided for @contact_cat_billing.
+  ///
+  /// In en, this message translates to:
+  /// **'Payment & billing'**
+  String get contact_cat_billing;
+
+  /// No description provided for @contact_cat_feature.
+  ///
+  /// In en, this message translates to:
+  /// **'Feature request'**
+  String get contact_cat_feature;
+
+  /// No description provided for @contact_cat_abuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Report abuse'**
+  String get contact_cat_abuse;
+
+  /// No description provided for @contact_cat_privacy.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy concern'**
+  String get contact_cat_privacy;
+
+  /// No description provided for @contact_cat_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get contact_cat_other;
+
+  /// No description provided for @contact_err_email_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email'**
+  String get contact_err_email_required;
+
+  /// No description provided for @contact_err_email_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a valid email'**
+  String get contact_err_email_invalid;
+
+  /// No description provided for @contact_err_subject_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a subject'**
+  String get contact_err_subject_required;
+
+  /// No description provided for @contact_err_message_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your message'**
+  String get contact_err_message_required;
+
+  /// No description provided for @contact_err_message_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Message must be at least 10 characters long'**
+  String get contact_err_message_short;
+
+  /// No description provided for @contact_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Message sent. We\'ll get back to you soon.'**
+  String get contact_sent;
+
+  /// No description provided for @contact_send_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to send message: {error}'**
+  String contact_send_failed(String error);
+
+  /// No description provided for @bug_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Report a bug'**
+  String get bug_title;
+
+  /// No description provided for @bug_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Found a bug?'**
+  String get bug_intro_title;
+
+  /// No description provided for @bug_intro_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it.'**
+  String get bug_intro_message;
+
+  /// No description provided for @bug_details.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug details'**
+  String get bug_details;
+
+  /// No description provided for @bug_category.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug category'**
+  String get bug_category;
+
+  /// No description provided for @bug_severity.
+  ///
+  /// In en, this message translates to:
+  /// **'Severity level'**
+  String get bug_severity;
+
+  /// No description provided for @bug_field_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug title'**
+  String get bug_field_title;
+
+  /// No description provided for @bug_field_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Brief description of the issue'**
+  String get bug_field_title_hint;
+
+  /// No description provided for @bug_field_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Detailed description'**
+  String get bug_field_description;
+
+  /// No description provided for @bug_field_description_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Describe what happened and what you expected to happen'**
+  String get bug_field_description_hint;
+
+  /// No description provided for @bug_field_steps.
+  ///
+  /// In en, this message translates to:
+  /// **'Steps to reproduce'**
+  String get bug_field_steps;
+
+  /// No description provided for @bug_field_steps_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'1. Go to...\n2. Tap on...\n3. See the error'**
+  String get bug_field_steps_hint;
+
+  /// No description provided for @bug_cat_general.
+  ///
+  /// In en, this message translates to:
+  /// **'General bug'**
+  String get bug_cat_general;
+
+  /// No description provided for @bug_cat_ui.
+  ///
+  /// In en, this message translates to:
+  /// **'UI / visual issue'**
+  String get bug_cat_ui;
+
+  /// No description provided for @bug_cat_performance.
+  ///
+  /// In en, this message translates to:
+  /// **'Performance issue'**
+  String get bug_cat_performance;
+
+  /// No description provided for @bug_cat_crash.
+  ///
+  /// In en, this message translates to:
+  /// **'Crash / freeze'**
+  String get bug_cat_crash;
+
+  /// No description provided for @bug_cat_login.
+  ///
+  /// In en, this message translates to:
+  /// **'Login / authentication'**
+  String get bug_cat_login;
+
+  /// No description provided for @bug_cat_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Profile / settings'**
+  String get bug_cat_profile;
+
+  /// No description provided for @bug_cat_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Games / activities'**
+  String get bug_cat_games;
+
+  /// No description provided for @bug_cat_notifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get bug_cat_notifications;
+
+  /// No description provided for @bug_cat_social.
+  ///
+  /// In en, this message translates to:
+  /// **'Social features'**
+  String get bug_cat_social;
+
+  /// No description provided for @bug_cat_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get bug_cat_other;
+
+  /// No description provided for @bug_sev_low.
+  ///
+  /// In en, this message translates to:
+  /// **'Low'**
+  String get bug_sev_low;
+
+  /// No description provided for @bug_sev_medium.
+  ///
+  /// In en, this message translates to:
+  /// **'Medium'**
+  String get bug_sev_medium;
+
+  /// No description provided for @bug_sev_high.
+  ///
+  /// In en, this message translates to:
+  /// **'High'**
+  String get bug_sev_high;
+
+  /// No description provided for @bug_sev_critical.
+  ///
+  /// In en, this message translates to:
+  /// **'Critical'**
+  String get bug_sev_critical;
+
+  /// No description provided for @bug_additional.
+  ///
+  /// In en, this message translates to:
+  /// **'Additional information'**
+  String get bug_additional;
+
+  /// No description provided for @bug_include_device.
+  ///
+  /// In en, this message translates to:
+  /// **'Include device information'**
+  String get bug_include_device;
+
+  /// No description provided for @bug_include_device_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'OS version, device model, screen size'**
+  String get bug_include_device_sub;
+
+  /// No description provided for @bug_include_logs.
+  ///
+  /// In en, this message translates to:
+  /// **'Include app logs'**
+  String get bug_include_logs;
+
+  /// No description provided for @bug_include_logs_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent app activity and error logs'**
+  String get bug_include_logs_sub;
+
+  /// No description provided for @bug_device_heading.
+  ///
+  /// In en, this message translates to:
+  /// **'Device information to include:'**
+  String get bug_device_heading;
+
+  /// No description provided for @bug_device_platform.
+  ///
+  /// In en, this message translates to:
+  /// **'Platform: {value}'**
+  String bug_device_platform(String value);
+
+  /// No description provided for @bug_device_app_version.
+  ///
+  /// In en, this message translates to:
+  /// **'App version: {value}'**
+  String bug_device_app_version(String value);
+
+  /// No description provided for @bug_device_resolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Screen resolution: {value}'**
+  String bug_device_resolution(String value);
+
+  /// No description provided for @bug_platform_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get bug_platform_unknown;
+
+  /// No description provided for @bug_platform_web.
+  ///
+  /// In en, this message translates to:
+  /// **'Web'**
+  String get bug_platform_web;
+
+  /// No description provided for @bug_err_email_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter your email'**
+  String get bug_err_email_required;
+
+  /// No description provided for @bug_err_title_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please enter a bug title'**
+  String get bug_err_title_required;
+
+  /// No description provided for @bug_err_description_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please describe the bug'**
+  String get bug_err_description_required;
+
+  /// No description provided for @bug_err_description_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide more details (at least 20 characters)'**
+  String get bug_err_description_short;
+
+  /// No description provided for @bug_err_steps_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Please provide steps to reproduce the bug'**
+  String get bug_err_steps_required;
+
+  /// No description provided for @bug_submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit bug report'**
+  String get bug_submit;
+
+  /// No description provided for @bug_submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Bug report submitted. Thank you for helping us improve.'**
+  String get bug_submitted;
+
+  /// No description provided for @bug_submit_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to submit bug report: {error}'**
+  String bug_submit_failed(String error);
+
+  /// No description provided for @sports_prefs_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports preferences'**
+  String get sports_prefs_title;
+
+  /// No description provided for @sports_prefs_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get sports_prefs_save;
+
+  /// No description provided for @sports_prefs_create_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game'**
+  String get sports_prefs_create_game;
+
+  /// No description provided for @sports_prefs_my_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'My sports'**
+  String get sports_prefs_my_sports;
+
+  /// No description provided for @sports_prefs_my_sports_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable sports you want to play and set your skill level'**
+  String get sports_prefs_my_sports_note;
+
+  /// No description provided for @sports_prefs_general.
+  ///
+  /// In en, this message translates to:
+  /// **'General preferences'**
+  String get sports_prefs_general;
+
+  /// No description provided for @sports_prefs_auto_join.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto-join compatible games'**
+  String get sports_prefs_auto_join;
+
+  /// No description provided for @sports_prefs_auto_join_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Automatically join games that match your preferences'**
+  String get sports_prefs_auto_join_sub;
+
+  /// No description provided for @sports_prefs_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Use location for recommendations'**
+  String get sports_prefs_location;
+
+  /// No description provided for @sports_prefs_location_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Find games near your current location'**
+  String get sports_prefs_location_sub;
+
+  /// No description provided for @sports_prefs_flexible.
+  ///
+  /// In en, this message translates to:
+  /// **'Flexible timing'**
+  String get sports_prefs_flexible;
+
+  /// No description provided for @sports_prefs_flexible_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Show games with flexible start times'**
+  String get sports_prefs_flexible_sub;
+
+  /// No description provided for @sports_prefs_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Disabled'**
+  String get sports_prefs_disabled;
+
+  /// No description provided for @sports_prefs_skill_level.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill level'**
+  String get sports_prefs_skill_level;
+
+  /// No description provided for @sports_prefs_position.
+  ///
+  /// In en, this message translates to:
+  /// **'Preferred position'**
+  String get sports_prefs_position;
+
+  /// No description provided for @sports_prefs_level_beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Beginner'**
+  String get sports_prefs_level_beginner;
+
+  /// No description provided for @sports_prefs_level_intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Intermediate'**
+  String get sports_prefs_level_intermediate;
+
+  /// No description provided for @sports_prefs_level_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced'**
+  String get sports_prefs_level_advanced;
+
+  /// No description provided for @sports_prefs_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load sports preferences: {error}'**
+  String sports_prefs_load_failed(String error);
+
+  /// No description provided for @sports_prefs_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports preferences saved'**
+  String get sports_prefs_saved;
+
+  /// No description provided for @sports_prefs_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save preferences: {error}'**
+  String sports_prefs_save_failed(String error);
+
+  /// No description provided for @sports_prefs_enable_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to enable sport: {error}'**
+  String sports_prefs_enable_failed(String error);
+
+  /// No description provided for @sports_prefs_remove_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to remove sport: {error}'**
+  String sports_prefs_remove_failed(String error);
+
+  /// No description provided for @sports_prefs_need_one.
+  ///
+  /// In en, this message translates to:
+  /// **'You must have at least one sport enabled'**
+  String get sports_prefs_need_one;
+
+  /// No description provided for @sports_prefs_remove_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {sport}?'**
+  String sports_prefs_remove_title(String sport);
+
+  /// No description provided for @sports_prefs_remove_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you sure you want to remove {sport} from your profile?'**
+  String sports_prefs_remove_body(String sport);
+
+  /// No description provided for @sports_prefs_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get sports_prefs_cancel;
+
+  /// No description provided for @sports_prefs_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get sports_prefs_remove;
+
+  /// No description provided for @sports_pos_goalkeeper.
+  ///
+  /// In en, this message translates to:
+  /// **'Goalkeeper'**
+  String get sports_pos_goalkeeper;
+
+  /// No description provided for @sports_pos_defender.
+  ///
+  /// In en, this message translates to:
+  /// **'Defender'**
+  String get sports_pos_defender;
+
+  /// No description provided for @sports_pos_midfielder.
+  ///
+  /// In en, this message translates to:
+  /// **'Midfielder'**
+  String get sports_pos_midfielder;
+
+  /// No description provided for @sports_pos_forward.
+  ///
+  /// In en, this message translates to:
+  /// **'Forward'**
+  String get sports_pos_forward;
+
+  /// No description provided for @sports_pos_point_guard.
+  ///
+  /// In en, this message translates to:
+  /// **'Point Guard'**
+  String get sports_pos_point_guard;
+
+  /// No description provided for @sports_pos_shooting_guard.
+  ///
+  /// In en, this message translates to:
+  /// **'Shooting Guard'**
+  String get sports_pos_shooting_guard;
+
+  /// No description provided for @sports_pos_small_forward.
+  ///
+  /// In en, this message translates to:
+  /// **'Small Forward'**
+  String get sports_pos_small_forward;
+
+  /// No description provided for @sports_pos_power_forward.
+  ///
+  /// In en, this message translates to:
+  /// **'Power Forward'**
+  String get sports_pos_power_forward;
+
+  /// No description provided for @sports_pos_center.
+  ///
+  /// In en, this message translates to:
+  /// **'Center'**
+  String get sports_pos_center;
+
+  /// No description provided for @sports_pos_setter.
+  ///
+  /// In en, this message translates to:
+  /// **'Setter'**
+  String get sports_pos_setter;
+
+  /// No description provided for @sports_pos_outside_hitter.
+  ///
+  /// In en, this message translates to:
+  /// **'Outside Hitter'**
+  String get sports_pos_outside_hitter;
+
+  /// No description provided for @sports_pos_middle_blocker.
+  ///
+  /// In en, this message translates to:
+  /// **'Middle Blocker'**
+  String get sports_pos_middle_blocker;
+
+  /// No description provided for @sports_pos_opposite_hitter.
+  ///
+  /// In en, this message translates to:
+  /// **'Opposite Hitter'**
+  String get sports_pos_opposite_hitter;
+
+  /// No description provided for @sports_pos_libero.
+  ///
+  /// In en, this message translates to:
+  /// **'Libero'**
+  String get sports_pos_libero;
+
+  /// No description provided for @about_terms_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Please read these terms carefully before using our service.'**
+  String get about_terms_intro;
+
+  /// No description provided for @about_privacy_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'Your privacy is important to us. This policy explains how we collect, use, and protect your information.'**
+  String get about_privacy_intro;
+
+  /// No description provided for @about_last_updated.
+  ///
+  /// In en, this message translates to:
+  /// **'Last updated: {date}'**
+  String about_last_updated(String date);
+
+  /// No description provided for @about_privacy_settings_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'Privacy settings'**
+  String get about_privacy_settings_tooltip;
+
+  /// No description provided for @licenses_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Open source licenses'**
+  String get licenses_title;
+
+  /// No description provided for @licenses_about_tooltip.
+  ///
+  /// In en, this message translates to:
+  /// **'About licenses'**
+  String get licenses_about_tooltip;
+
+  /// No description provided for @licenses_intro.
+  ///
+  /// In en, this message translates to:
+  /// **'This app is built with amazing open source libraries. We thank all contributors for their work.'**
+  String get licenses_intro;
+
+  /// No description provided for @licenses_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} open source packages'**
+  String licenses_count(String count);
+
+  /// No description provided for @licenses_search_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Search licenses...'**
+  String get licenses_search_hint;
+
+  /// No description provided for @licenses_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No licenses found'**
+  String get licenses_empty_title;
+
+  /// No description provided for @licenses_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try adjusting your search query'**
+  String get licenses_empty_text;
+
+  /// No description provided for @licenses_info_title.
+  ///
+  /// In en, this message translates to:
+  /// **'About open source licenses'**
+  String get licenses_info_title;
+
+  /// No description provided for @licenses_info_body.
+  ///
+  /// In en, this message translates to:
+  /// **'This app uses various open source libraries and packages. Each license defines the terms under which the code can be used, modified, and distributed.\n\nWe are grateful to all the developers and contributors who make their work available under open source licenses.'**
+  String get licenses_info_body;
+
+  /// No description provided for @licenses_got_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get licenses_got_it;
+
+  /// No description provided for @licenses_detail_version.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get licenses_detail_version;
+
+  /// No description provided for @licenses_detail_license.
+  ///
+  /// In en, this message translates to:
+  /// **'License'**
+  String get licenses_detail_license;
+
+  /// No description provided for @licenses_detail_copyright.
+  ///
+  /// In en, this message translates to:
+  /// **'Copyright'**
+  String get licenses_detail_copyright;
+
+  /// No description provided for @licenses_detail_url.
+  ///
+  /// In en, this message translates to:
+  /// **'URL'**
+  String get licenses_detail_url;
+
+  /// No description provided for @licenses_detail_description.
+  ///
+  /// In en, this message translates to:
+  /// **'Description'**
+  String get licenses_detail_description;
+
+  /// No description provided for @licenses_view_web.
+  ///
+  /// In en, this message translates to:
+  /// **'View on web'**
+  String get licenses_view_web;
+
+  /// No description provided for @licenses_opening.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening {url}'**
+  String licenses_opening(String url);
 }
 
 class _AppLocalizationsDelegate

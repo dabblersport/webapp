@@ -376,6 +376,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
       showDivider: false,
       title: title,
       subtitle: subtitle,
+      onTap: () => onChanged(!value),
       leading: DabblerIcon(
         icon,
         size: DabblerSizing.iconMd,

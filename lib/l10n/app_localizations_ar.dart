@@ -4001,4 +4001,925 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get game_prefs_referee_strict_sub =>
       'يجب أن تتبع المباريات القواعد الرسمية بدقة';
+
+  @override
+  String get composer_cancel => 'إلغاء';
+
+  @override
+  String get composer_confirm => 'تأكيد';
+
+  @override
+  String get composer_clear => 'مسح';
+
+  @override
+  String get composer_none => 'بدون';
+
+  @override
+  String get composer_select => 'اختيار';
+
+  @override
+  String get composer_tap_to_change => 'اضغط للتغيير.';
+
+  @override
+  String get composer_create_post => 'منشور جديد';
+
+  @override
+  String get composer_post_cta => 'نشر';
+
+  @override
+  String get composer_you => 'أنت';
+
+  @override
+  String get composer_post_as => 'النشر باسم';
+
+  @override
+  String get composer_switch_failed => 'تعذّر تبديل الملف الشخصي';
+
+  @override
+  String get composer_body_hint => 'ما الذي يدور في بالك؟ استخدم #الوسوم';
+
+  @override
+  String get composer_add_media => 'إضافة وسائط';
+
+  @override
+  String get composer_add_vibe => 'إضافة أجواء';
+
+  @override
+  String get composer_add_sport => 'إضافة رياضة';
+
+  @override
+  String get composer_add_location => 'إضافة موقع';
+
+  @override
+  String get composer_link_game => 'ربط مباراة';
+
+  @override
+  String get composer_add_more_media => 'إضافة المزيد من الوسائط';
+
+  @override
+  String get composer_remove_media => 'إزالة الوسائط';
+
+  @override
+  String get composer_allow_reposts => 'السماح بإعادة النشر';
+
+  @override
+  String get composer_allow_reposts_sub => 'يمكن للآخرين مشاركة هذا المنشور';
+
+  @override
+  String get composer_pin => 'تثبيت في الملف الشخصي';
+
+  @override
+  String get composer_pin_sub => 'يبقى في أعلى ملفك الشخصي';
+
+  @override
+  String get composer_expiry => 'تحديد الانتهاء';
+
+  @override
+  String get composer_expiry_sub => 'يُخفى تلقائيًا بعد التاريخ';
+
+  @override
+  String get composer_who_can_see => 'من يمكنه رؤية هذا؟';
+
+  @override
+  String get composer_which_sport => 'أي رياضة؟';
+
+  @override
+  String get composer_kind_of_post => 'أي نوع من المنشورات؟';
+
+  @override
+  String get composer_link_a_game => 'ربط مباراة';
+
+  @override
+  String get composer_location => 'الموقع';
+
+  @override
+  String get composer_add_media_title => 'إضافة وسائط';
+
+  @override
+  String get composer_take_photo => 'التقاط صورة';
+
+  @override
+  String get composer_choose_gallery => 'اختيار من المعرض';
+
+  @override
+  String get composer_search_gifs => 'البحث عن صور GIF';
+
+  @override
+  String get composer_powered_giphy => 'بدعم من GIPHY';
+
+  @override
+  String get composer_vis_public => 'عام';
+
+  @override
+  String get composer_vis_followers => 'المتابعون';
+
+  @override
+  String get composer_vis_circle => 'الدائرة';
+
+  @override
+  String get composer_vis_squad => 'الفريق';
+
+  @override
+  String get composer_vis_private => 'خاص';
+
+  @override
+  String get composer_vis_link => 'الرابط فقط';
+
+  @override
+  String get composer_vis_public_sub => 'يمكن للجميع رؤية هذا المنشور';
+
+  @override
+  String get composer_vis_followers_sub => 'متابعوك فقط يمكنهم رؤيته';
+
+  @override
+  String get composer_vis_circle_sub => 'مشارك مع دائرة محددة';
+
+  @override
+  String get composer_vis_squad_sub => 'مشارك مع فريقك';
+
+  @override
+  String get composer_vis_private_sub => 'أنت فقط يمكنك رؤيته';
+
+  @override
+  String get composer_vis_link_sub => 'فقط من لديه الرابط يمكنه رؤيته';
+
+  @override
+  String get composer_type_moment => 'لحظة';
+
+  @override
+  String get composer_type_dab => 'داب';
+
+  @override
+  String get composer_type_kickin => 'انضمام';
+
+  @override
+  String get composer_type_moment_sub => 'لقطة سريعة من اللحظة';
+
+  @override
+  String get composer_type_dab_sub => 'شارك ما يلهمك الآن';
+
+  @override
+  String get composer_type_kickin_sub => 'ادعُ الآخرين للانضمام';
+
+  @override
+  String get composer_vibe_search => 'البحث عن أجواء';
+
+  @override
+  String get composer_vibe_failed => 'تعذّر تحميل الأجواء';
+
+  @override
+  String get composer_vibe_none => 'لا توجد أجواء مطابقة';
+
+  @override
+  String get composer_sports_failed => 'تعذّر تحميل الرياضات';
+
+  @override
+  String get composer_sports_none => 'لا توجد رياضات متاحة';
+
+  @override
+  String get composer_venue_search => 'البحث عن ملاعب…';
+
+  @override
+  String get composer_type_location => 'اكتب موقعًا';
+
+  @override
+  String get composer_use_location => 'استخدام هذا الموقع';
+
+  @override
+  String get composer_search_failed => 'فشل البحث';
+
+  @override
+  String get composer_no_venues => 'لا توجد ملاعب';
+
+  @override
+  String get composer_venue => 'الملعب';
+
+  @override
+  String get composer_venue_hint => 'ابحث عن ملعب أو اكتب موقعًا';
+
+  @override
+  String get composer_games_search => 'البحث عن مباراة بالعنوان…';
+
+  @override
+  String get composer_no_games => 'لا توجد مباريات';
+
+  @override
+  String get composer_untitled_game => 'مباراة بلا عنوان';
+
+  @override
+  String get composer_games_hint => 'ابحث عن مباراة لربطها بمنشورك';
+
+  @override
+  String get game_create => 'مباراة جديدة';
+
+  @override
+  String get game_edit => 'تعديل المباراة';
+
+  @override
+  String get game_save_changes => 'حفظ التغييرات';
+
+  @override
+  String get game_sport => 'الرياضة';
+
+  @override
+  String get game_format => 'الصيغة';
+
+  @override
+  String get game_format_sub => 'صيغة المباراة';
+
+  @override
+  String get game_select_sport_first => 'اختر الرياضة أولًا';
+
+  @override
+  String get game_select_format => 'اختر الصيغة';
+
+  @override
+  String get game_venue_sub => 'أين ستُلعب';
+
+  @override
+  String get game_date_time => 'التاريخ والوقت';
+
+  @override
+  String get game_date_time_sub => 'متى المباراة';
+
+  @override
+  String get game_duration => 'المدة';
+
+  @override
+  String get game_duration_sub => 'كم تستغرق';
+
+  @override
+  String get game_join_policy => 'سياسة الانضمام';
+
+  @override
+  String get game_join_open => 'مفتوح';
+
+  @override
+  String get game_join_request => 'بطلب';
+
+  @override
+  String get game_join_invite => 'بدعوة';
+
+  @override
+  String get game_join_link => 'برابط';
+
+  @override
+  String get game_visibility => 'الظهور';
+
+  @override
+  String get game_skill_level => 'مستوى المهارة';
+
+  @override
+  String get game_skill_sub => 'خبرة اللاعبين';
+
+  @override
+  String get game_any_level => 'أي مستوى';
+
+  @override
+  String get game_players => 'اللاعبون';
+
+  @override
+  String get game_players_sub => 'الحد الأدنى والأقصى';
+
+  @override
+  String get game_fewer_min => 'تقليل الحد الأدنى';
+
+  @override
+  String get game_more_min => 'زيادة الحد الأدنى';
+
+  @override
+  String get game_fewer_max => 'تقليل الحد الأقصى';
+
+  @override
+  String get game_more_max => 'زيادة الحد الأقصى';
+
+  @override
+  String get game_waitlist => 'قائمة الانتظار';
+
+  @override
+  String get game_waitlist_sub => 'دع اللاعبين ينتظرون عند الامتلاء';
+
+  @override
+  String get game_spectators => 'المتفرجون';
+
+  @override
+  String get game_spectators_sub => 'السماح للمتفرجين بالمشاهدة';
+
+  @override
+  String get game_details => 'التفاصيل (اختياري)';
+
+  @override
+  String get game_title_hint => 'عنوان المباراة';
+
+  @override
+  String get game_note_hint => 'أضف ملاحظة للاعبين…';
+
+  @override
+  String get game_date => 'التاريخ';
+
+  @override
+  String get game_time => 'الوقت';
+
+  @override
+  String get game_today => 'اليوم';
+
+  @override
+  String get game_tomorrow => 'غدًا';
+
+  @override
+  String get game_select_venue => 'اختيار الملعب';
+
+  @override
+  String get game_select_format_title => 'اختيار الصيغة';
+
+  @override
+  String get game_no_formats => 'لا توجد صيغ متاحة';
+
+  @override
+  String get game_no_matches => 'لا توجد نتائج';
+
+  @override
+  String get game_skill_beginner => 'مبتدئ';
+
+  @override
+  String get game_skill_intermediate => 'متوسط';
+
+  @override
+  String get game_skill_advanced => 'متقدم';
+
+  @override
+  String get game_skill_pro => 'محترف';
+
+  @override
+  String get game_skill_beginner_sub => 'في البداية';
+
+  @override
+  String get game_skill_intermediate_sub => 'يلعب بانتظام';
+
+  @override
+  String get game_skill_advanced_sub => 'مستوى تنافسي';
+
+  @override
+  String get game_skill_pro_sub => 'نخبة / احترافي';
+
+  @override
+  String get post_detail_title => 'المنشور';
+
+  @override
+  String get post_detail_more => 'خيارات إضافية';
+
+  @override
+  String get post_detail_follow => 'متابعة';
+
+  @override
+  String get post_detail_following => 'تتابعه';
+
+  @override
+  String get post_detail_anonymous => 'مجهول';
+
+  @override
+  String get post_detail_no_replies => 'لا توجد ردود بعد';
+
+  @override
+  String get post_detail_first_reply => 'كن أول من يرد.';
+
+  @override
+  String get post_detail_reply_hint => 'اكتب ردك…';
+
+  @override
+  String get post_detail_reply_to_hint => 'رد…';
+
+  @override
+  String get post_detail_add_image => 'إضافة صورة';
+
+  @override
+  String get post_detail_add_location => 'إضافة موقع';
+
+  @override
+  String get post_detail_send_reply => 'إرسال الرد';
+
+  @override
+  String get post_detail_reply => 'رد';
+
+  @override
+  String get post_detail_add => 'إضافة';
+
+  @override
+  String get post_detail_hide_replies => 'إخفاء الردود';
+
+  @override
+  String get post_detail_view_replies => 'عرض الردود';
+
+  @override
+  String get post_detail_copy_link => 'نسخ الرابط';
+
+  @override
+  String get post_detail_link_copied => 'تم نسخ الرابط';
+
+  @override
+  String get post_detail_delete_post => 'حذف المنشور';
+
+  @override
+  String get post_detail_delete_reply => 'حذف الرد';
+
+  @override
+  String get post_detail_report => 'إبلاغ';
+
+  @override
+  String get post_detail_edited => 'معدّل';
+
+  @override
+  String get post_detail_failed => 'تعذّر تحميل المنشور';
+
+  @override
+  String get post_detail_replies_failed => 'تعذّر تحميل الردود';
+
+  @override
+  String get post_detail_retry => 'إعادة المحاولة';
+
+  @override
+  String get post_detail_remove_image => 'إزالة الصورة';
+
+  @override
+  String get post_detail_remove_location => 'إزالة الموقع';
+
+  @override
+  String get post_detail_image => 'صورة';
+
+  @override
+  String get post_detail_org => 'منظّم';
+
+  @override
+  String get post_detail_player => 'لاعب';
+
+  @override
+  String post_detail_replies_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count رد',
+      many: '$count ردًا',
+      few: '$count ردود',
+      two: 'ردان',
+      one: 'رد واحد',
+      zero: 'لا ردود',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String post_detail_views(String count) {
+    return '$count مشاهدة';
+  }
+
+  @override
+  String get post_detail_replying_to => 'الرد على';
+
+  @override
+  String get post_detail_cancel_reply => 'إلغاء الرد';
+
+  @override
+  String get help_center_title => 'مركز المساعدة';
+
+  @override
+  String get help_center_empty_title => 'مركز المساعدة';
+
+  @override
+  String get help_center_empty_text => 'هذه الشاشة قيد التطوير';
+
+  @override
+  String get contact_title => 'التواصل مع الدعم';
+
+  @override
+  String get contact_intro_title => 'كيف يمكننا مساعدتك؟';
+
+  @override
+  String get contact_intro_message =>
+      'أرسل لنا رسالة وسنرد عليك في أقرب وقت ممكن.';
+
+  @override
+  String get contact_section => 'بيانات التواصل';
+
+  @override
+  String get contact_email => 'بريدك الإلكتروني';
+
+  @override
+  String get contact_category => 'الفئة';
+
+  @override
+  String get contact_subject => 'الموضوع';
+
+  @override
+  String get contact_message => 'الرسالة';
+
+  @override
+  String get contact_send => 'إرسال الرسالة';
+
+  @override
+  String get contact_cat_general => 'عام';
+
+  @override
+  String get contact_cat_account => 'مشاكل الحساب';
+
+  @override
+  String get contact_cat_technical => 'مشكلة تقنية';
+
+  @override
+  String get contact_cat_billing => 'الدفع والفواتير';
+
+  @override
+  String get contact_cat_feature => 'طلب ميزة';
+
+  @override
+  String get contact_cat_abuse => 'الإبلاغ عن إساءة';
+
+  @override
+  String get contact_cat_privacy => 'مخاوف الخصوصية';
+
+  @override
+  String get contact_cat_other => 'أخرى';
+
+  @override
+  String get contact_err_email_required => 'يرجى إدخال بريدك الإلكتروني';
+
+  @override
+  String get contact_err_email_invalid => 'يرجى إدخال بريد إلكتروني صالح';
+
+  @override
+  String get contact_err_subject_required => 'يرجى إدخال الموضوع';
+
+  @override
+  String get contact_err_message_required => 'يرجى إدخال رسالتك';
+
+  @override
+  String get contact_err_message_short => 'يجب ألا تقل الرسالة عن 10 أحرف';
+
+  @override
+  String get contact_sent => 'تم إرسال الرسالة. سنرد عليك قريبًا.';
+
+  @override
+  String contact_send_failed(String error) {
+    return 'تعذّر إرسال الرسالة: $error';
+  }
+
+  @override
+  String get bug_title => 'الإبلاغ عن خطأ';
+
+  @override
+  String get bug_intro_title => 'وجدت خطأ؟';
+
+  @override
+  String get bug_intro_message =>
+      'ساعدنا على التحسّن بالإبلاغ عن أي مشكلة تواجهها. كلما زادت التفاصيل أسرعنا في إصلاحها.';
+
+  @override
+  String get bug_details => 'تفاصيل الخطأ';
+
+  @override
+  String get bug_category => 'فئة الخطأ';
+
+  @override
+  String get bug_severity => 'مستوى الخطورة';
+
+  @override
+  String get bug_field_title => 'عنوان الخطأ';
+
+  @override
+  String get bug_field_title_hint => 'وصف موجز للمشكلة';
+
+  @override
+  String get bug_field_description => 'وصف تفصيلي';
+
+  @override
+  String get bug_field_description_hint => 'صف ما حدث وما كنت تتوقع حدوثه';
+
+  @override
+  String get bug_field_steps => 'خطوات إعادة الحدوث';
+
+  @override
+  String get bug_field_steps_hint =>
+      '1. اذهب إلى...\n2. اضغط على...\n3. شاهد الخطأ';
+
+  @override
+  String get bug_cat_general => 'خطأ عام';
+
+  @override
+  String get bug_cat_ui => 'مشكلة في الواجهة';
+
+  @override
+  String get bug_cat_performance => 'مشكلة في الأداء';
+
+  @override
+  String get bug_cat_crash => 'تعطّل / تجمّد';
+
+  @override
+  String get bug_cat_login => 'تسجيل الدخول / التوثيق';
+
+  @override
+  String get bug_cat_profile => 'الملف / الإعدادات';
+
+  @override
+  String get bug_cat_games => 'المباريات / الأنشطة';
+
+  @override
+  String get bug_cat_notifications => 'الإشعارات';
+
+  @override
+  String get bug_cat_social => 'الميزات الاجتماعية';
+
+  @override
+  String get bug_cat_other => 'أخرى';
+
+  @override
+  String get bug_sev_low => 'منخفضة';
+
+  @override
+  String get bug_sev_medium => 'متوسطة';
+
+  @override
+  String get bug_sev_high => 'عالية';
+
+  @override
+  String get bug_sev_critical => 'حرجة';
+
+  @override
+  String get bug_additional => 'معلومات إضافية';
+
+  @override
+  String get bug_include_device => 'تضمين معلومات الجهاز';
+
+  @override
+  String get bug_include_device_sub => 'إصدار النظام، طراز الجهاز، حجم الشاشة';
+
+  @override
+  String get bug_include_logs => 'تضمين سجلات التطبيق';
+
+  @override
+  String get bug_include_logs_sub => 'نشاط التطبيق الأخير وسجلات الأخطاء';
+
+  @override
+  String get bug_device_heading => 'معلومات الجهاز المضمّنة:';
+
+  @override
+  String bug_device_platform(String value) {
+    return 'المنصة: $value';
+  }
+
+  @override
+  String bug_device_app_version(String value) {
+    return 'إصدار التطبيق: $value';
+  }
+
+  @override
+  String bug_device_resolution(String value) {
+    return 'دقة الشاشة: $value';
+  }
+
+  @override
+  String get bug_platform_unknown => 'غير معروف';
+
+  @override
+  String get bug_platform_web => 'الويب';
+
+  @override
+  String get bug_err_email_required => 'يرجى إدخال بريدك الإلكتروني';
+
+  @override
+  String get bug_err_title_required => 'يرجى إدخال عنوان الخطأ';
+
+  @override
+  String get bug_err_description_required => 'يرجى وصف الخطأ';
+
+  @override
+  String get bug_err_description_short =>
+      'يرجى تقديم مزيد من التفاصيل (20 حرفًا على الأقل)';
+
+  @override
+  String get bug_err_steps_required => 'يرجى ذكر خطوات إعادة حدوث الخطأ';
+
+  @override
+  String get bug_submit => 'إرسال بلاغ الخطأ';
+
+  @override
+  String get bug_submitted => 'تم إرسال البلاغ. شكرًا لمساعدتك في تحسيننا.';
+
+  @override
+  String bug_submit_failed(String error) {
+    return 'تعذّر إرسال البلاغ: $error';
+  }
+
+  @override
+  String get sports_prefs_title => 'تفضيلات الرياضات';
+
+  @override
+  String get sports_prefs_save => 'حفظ';
+
+  @override
+  String get sports_prefs_create_game => 'إنشاء مباراة';
+
+  @override
+  String get sports_prefs_my_sports => 'رياضاتي';
+
+  @override
+  String get sports_prefs_my_sports_note =>
+      'فعّل الرياضات التي تريد ممارستها وحدد مستواك';
+
+  @override
+  String get sports_prefs_general => 'تفضيلات عامة';
+
+  @override
+  String get sports_prefs_auto_join => 'الانضمام التلقائي للمباريات المناسبة';
+
+  @override
+  String get sports_prefs_auto_join_sub =>
+      'انضم تلقائيًا إلى المباريات التي تطابق تفضيلاتك';
+
+  @override
+  String get sports_prefs_location => 'استخدام الموقع للتوصيات';
+
+  @override
+  String get sports_prefs_location_sub =>
+      'اعثر على مباريات قريبة من موقعك الحالي';
+
+  @override
+  String get sports_prefs_flexible => 'توقيت مرن';
+
+  @override
+  String get sports_prefs_flexible_sub =>
+      'أظهر المباريات ذات أوقات البدء المرنة';
+
+  @override
+  String get sports_prefs_disabled => 'معطّل';
+
+  @override
+  String get sports_prefs_skill_level => 'مستوى المهارة';
+
+  @override
+  String get sports_prefs_position => 'المركز المفضل';
+
+  @override
+  String get sports_prefs_level_beginner => 'مبتدئ';
+
+  @override
+  String get sports_prefs_level_intermediate => 'متوسط';
+
+  @override
+  String get sports_prefs_level_advanced => 'متقدم';
+
+  @override
+  String sports_prefs_load_failed(String error) {
+    return 'تعذّر تحميل تفضيلات الرياضات: $error';
+  }
+
+  @override
+  String get sports_prefs_saved => 'تم حفظ تفضيلات الرياضات';
+
+  @override
+  String sports_prefs_save_failed(String error) {
+    return 'تعذّر حفظ التفضيلات: $error';
+  }
+
+  @override
+  String sports_prefs_enable_failed(String error) {
+    return 'تعذّر تفعيل الرياضة: $error';
+  }
+
+  @override
+  String sports_prefs_remove_failed(String error) {
+    return 'تعذّرت إزالة الرياضة: $error';
+  }
+
+  @override
+  String get sports_prefs_need_one => 'يجب تفعيل رياضة واحدة على الأقل';
+
+  @override
+  String sports_prefs_remove_title(String sport) {
+    return 'إزالة $sport؟';
+  }
+
+  @override
+  String sports_prefs_remove_body(String sport) {
+    return 'هل تريد بالتأكيد إزالة $sport من ملفك؟';
+  }
+
+  @override
+  String get sports_prefs_cancel => 'إلغاء';
+
+  @override
+  String get sports_prefs_remove => 'إزالة';
+
+  @override
+  String get sports_pos_goalkeeper => 'حارس مرمى';
+
+  @override
+  String get sports_pos_defender => 'مدافع';
+
+  @override
+  String get sports_pos_midfielder => 'لاعب وسط';
+
+  @override
+  String get sports_pos_forward => 'مهاجم';
+
+  @override
+  String get sports_pos_point_guard => 'صانع ألعاب';
+
+  @override
+  String get sports_pos_shooting_guard => 'مدافع مسدد';
+
+  @override
+  String get sports_pos_small_forward => 'جناح';
+
+  @override
+  String get sports_pos_power_forward => 'جناح قوي';
+
+  @override
+  String get sports_pos_center => 'مركز';
+
+  @override
+  String get sports_pos_setter => 'ممرر';
+
+  @override
+  String get sports_pos_outside_hitter => 'مهاجم خارجي';
+
+  @override
+  String get sports_pos_middle_blocker => 'حاجز أوسط';
+
+  @override
+  String get sports_pos_opposite_hitter => 'مهاجم معاكس';
+
+  @override
+  String get sports_pos_libero => 'ليبرو';
+
+  @override
+  String get about_terms_intro =>
+      'يرجى قراءة هذه الشروط بعناية قبل استخدام خدمتنا.';
+
+  @override
+  String get about_privacy_intro =>
+      'خصوصيتك مهمة بالنسبة لنا. توضح هذه السياسة كيف نجمع معلوماتك ونستخدمها ونحميها.';
+
+  @override
+  String about_last_updated(String date) {
+    return 'آخر تحديث: $date';
+  }
+
+  @override
+  String get about_privacy_settings_tooltip => 'إعدادات الخصوصية';
+
+  @override
+  String get licenses_title => 'تراخيص المصادر المفتوحة';
+
+  @override
+  String get licenses_about_tooltip => 'حول التراخيص';
+
+  @override
+  String get licenses_intro =>
+      'بُني هذا التطبيق بمكتبات مفتوحة المصدر رائعة. نشكر جميع المساهمين على عملهم.';
+
+  @override
+  String licenses_count(String count) {
+    return '$count حزمة مفتوحة المصدر';
+  }
+
+  @override
+  String get licenses_search_hint => 'ابحث في التراخيص...';
+
+  @override
+  String get licenses_empty_title => 'لم يتم العثور على تراخيص';
+
+  @override
+  String get licenses_empty_text => 'جرّب تعديل عبارة البحث';
+
+  @override
+  String get licenses_info_title => 'حول تراخيص المصادر المفتوحة';
+
+  @override
+  String get licenses_info_body =>
+      'يستخدم هذا التطبيق مكتبات وحزمًا مفتوحة المصدر متعددة. يحدد كل ترخيص شروط استخدام الشيفرة وتعديلها وتوزيعها.\n\nنحن ممتنون لجميع المطورين والمساهمين الذين يتيحون أعمالهم بتراخيص مفتوحة المصدر.';
+
+  @override
+  String get licenses_got_it => 'حسنًا';
+
+  @override
+  String get licenses_detail_version => 'الإصدار';
+
+  @override
+  String get licenses_detail_license => 'الترخيص';
+
+  @override
+  String get licenses_detail_copyright => 'حقوق النشر';
+
+  @override
+  String get licenses_detail_url => 'الرابط';
+
+  @override
+  String get licenses_detail_description => 'الوصف';
+
+  @override
+  String get licenses_view_web => 'عرض على الويب';
+
+  @override
+  String licenses_opening(String url) {
+    return 'جارٍ فتح $url';
+  }
 }

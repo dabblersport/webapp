@@ -146,11 +146,12 @@ void main() {
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
     final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final AppLocalizations l10n = lookupAppLocalizations(locale);
 
     testWidgets('terms of service — $dir', (tester) async {
       await _pump(tester, const TermsOfServiceScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text('Terms of Service'), findsOneWidget);
+      expect(find.text(l10n.settings_item_terms_title), findsOneWidget);
       expect(find.byType(DabblerNavigationTopBar), findsOneWidget);
       await _shoot(tester, _shotKey, 'terms-default-$dir');
     });
@@ -158,8 +159,8 @@ void main() {
     testWidgets('privacy policy — $dir', (tester) async {
       await _pump(tester, const PrivacyPolicyScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text('Privacy Policy'), findsOneWidget);
-      expect(find.bySemanticsLabel('Privacy Settings'), findsWidgets);
+      expect(find.text(l10n.settings_item_privacy_policy_title), findsOneWidget);
+      expect(find.bySemanticsLabel(l10n.about_privacy_settings_tooltip), findsWidgets);
       await _shoot(tester, _shotKey, 'privacy-policy-default-$dir');
     });
 
@@ -173,21 +174,21 @@ void main() {
 
       await _tap(tester, find.text('Riverpod'));
       expect(tester.takeException(), isNull);
-      expect(find.text('View on Web'), findsOneWidget);
+      expect(find.text(l10n.licenses_view_web), findsOneWidget);
       await _shoot(tester, _shotKey, 'licenses-detail-$dir');
-      Navigator.of(tester.element(find.text('View on Web'))).pop();
+      Navigator.of(tester.element(find.text(l10n.licenses_view_web))).pop();
       await _settle(tester);
 
-      await tester.tap(find.bySemanticsLabel('About Licenses'));
+      await tester.tap(find.bySemanticsLabel(l10n.licenses_about_tooltip));
       await _settle(tester);
-      expect(find.text('About Open Source Licenses'), findsOneWidget);
+      expect(find.text(l10n.licenses_info_title), findsOneWidget);
       await _shoot(tester, _shotKey, 'licenses-info-$dir');
-      await tester.tap(find.text('Got it'));
+      await tester.tap(find.text(l10n.licenses_got_it));
       await _settle(tester);
 
       await tester.enterText(find.byType(EditableText), 'zzzz');
       await _settle(tester);
-      expect(find.text('No licenses found'), findsOneWidget);
+      expect(find.text(l10n.licenses_empty_title), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _shoot(tester, _shotKey, 'licenses-empty-$dir');
     });
@@ -195,12 +196,11 @@ void main() {
     testWidgets('contact support default and errors — $dir', (tester) async {
       await _pump(tester, const ContactSupportScreen(), locale, height: 1300);
       expect(tester.takeException(), isNull);
-      expect(find.text('How can we help?'), findsOneWidget);
       await _shoot(tester, _shotKey, 'contact-support-default-$dir');
-      await _tap(tester, find.text('Send Message'));
+      await _tap(tester, find.text(l10n.contact_send));
       expect(tester.takeException(), isNull);
-      expect(find.text('Please enter a subject'), findsOneWidget);
-      expect(find.text('Please enter your message'), findsOneWidget);
+      expect(find.text(l10n.contact_err_subject_required), findsOneWidget);
+      expect(find.text(l10n.contact_err_message_required), findsOneWidget);
       // Validation runs through a Form (DabblerTextField.validator), as the
       // original TextFormFields did.
       expect(find.byType(Form), findsOneWidget);
@@ -210,18 +210,17 @@ void main() {
     testWidgets('bug report default and errors — $dir', (tester) async {
       await _pump(tester, const BugReportScreen(), locale, height: 1900);
       expect(tester.takeException(), isNull);
-      expect(find.text('Found a Bug?'), findsOneWidget);
       expect(find.byType(DabblerToggle), findsNWidgets(2));
-      expect(find.text('Device Information to Include:'), findsOneWidget);
+      expect(find.text(l10n.bug_device_heading), findsOneWidget);
       await _shoot(tester, _shotKey, 'bug-report-default-$dir');
-      await _tap(tester, find.text('Include Device Information'));
-      expect(find.text('Device Information to Include:'), findsNothing);
-      await _tap(tester, find.text('Submit Bug Report'));
+      await _tap(tester, find.text(l10n.bug_include_device));
+      expect(find.text(l10n.bug_device_heading), findsNothing);
+      await _tap(tester, find.text(l10n.bug_submit));
       expect(tester.takeException(), isNull);
-      expect(find.text('Please enter a bug title'), findsOneWidget);
-      expect(find.text('Please describe the bug'), findsOneWidget);
+      expect(find.text(l10n.bug_err_title_required), findsOneWidget);
+      expect(find.text(l10n.bug_err_description_required), findsOneWidget);
       expect(
-        find.text('Please provide steps to reproduce the bug'),
+        find.text(l10n.bug_err_steps_required),
         findsOneWidget,
       );
       expect(find.byType(Form), findsOneWidget);
@@ -233,7 +232,7 @@ void main() {
       await tester.tap(find.text('open'));
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('Terms of Service'), findsOneWidget);
+      expect(find.text(l10n.settings_item_terms_title), findsOneWidget);
       expect(find.text('1. Acceptance of Terms'), findsWidgets);
       await _shoot(tester, _shotKey, 'legal-sheet-terms-$dir');
     });

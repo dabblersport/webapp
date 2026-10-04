@@ -4065,4 +4065,926 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get game_prefs_referee_strict_sub =>
       'Games should follow official rules closely';
+
+  @override
+  String get composer_cancel => 'Cancel';
+
+  @override
+  String get composer_confirm => 'Confirm';
+
+  @override
+  String get composer_clear => 'Clear';
+
+  @override
+  String get composer_none => 'None';
+
+  @override
+  String get composer_select => 'Select';
+
+  @override
+  String get composer_tap_to_change => 'Tap to change.';
+
+  @override
+  String get composer_create_post => 'Create post';
+
+  @override
+  String get composer_post_cta => 'Post';
+
+  @override
+  String get composer_you => 'You';
+
+  @override
+  String get composer_post_as => 'Post As';
+
+  @override
+  String get composer_switch_failed => 'Failed to switch profile';
+
+  @override
+  String get composer_body_hint => 'What\'s on your mind? Use #hashtags';
+
+  @override
+  String get composer_add_media => 'Add media';
+
+  @override
+  String get composer_add_vibe => 'Add vibe';
+
+  @override
+  String get composer_add_sport => 'Add sport';
+
+  @override
+  String get composer_add_location => 'Add location';
+
+  @override
+  String get composer_link_game => 'Link a game';
+
+  @override
+  String get composer_add_more_media => 'Add more media';
+
+  @override
+  String get composer_remove_media => 'Remove media';
+
+  @override
+  String get composer_allow_reposts => 'Allow reposts';
+
+  @override
+  String get composer_allow_reposts_sub => 'Others can share this post';
+
+  @override
+  String get composer_pin => 'Pin to profile';
+
+  @override
+  String get composer_pin_sub => 'Keep at the top of your profile';
+
+  @override
+  String get composer_expiry => 'Set expiry';
+
+  @override
+  String get composer_expiry_sub => 'Auto-hides after date';
+
+  @override
+  String get composer_who_can_see => 'Who can see this?';
+
+  @override
+  String get composer_which_sport => 'Which sport?';
+
+  @override
+  String get composer_kind_of_post => 'What kind of post?';
+
+  @override
+  String get composer_link_a_game => 'Link a Game';
+
+  @override
+  String get composer_location => 'Location';
+
+  @override
+  String get composer_add_media_title => 'Add Media';
+
+  @override
+  String get composer_take_photo => 'Take Photo';
+
+  @override
+  String get composer_choose_gallery => 'Choose from Gallery';
+
+  @override
+  String get composer_search_gifs => 'Search GIFs';
+
+  @override
+  String get composer_powered_giphy => 'Powered by GIPHY';
+
+  @override
+  String get composer_vis_public => 'Public';
+
+  @override
+  String get composer_vis_followers => 'Followers';
+
+  @override
+  String get composer_vis_circle => 'Circle';
+
+  @override
+  String get composer_vis_squad => 'Squad';
+
+  @override
+  String get composer_vis_private => 'Private';
+
+  @override
+  String get composer_vis_link => 'Link Only';
+
+  @override
+  String get composer_vis_public_sub => 'Anyone can see this post';
+
+  @override
+  String get composer_vis_followers_sub => 'Only your followers can see this';
+
+  @override
+  String get composer_vis_circle_sub => 'Shared with a specific circle';
+
+  @override
+  String get composer_vis_squad_sub => 'Shared with your squad';
+
+  @override
+  String get composer_vis_private_sub => 'Only you can see this';
+
+  @override
+  String get composer_vis_link_sub => 'Only people with the link can see this';
+
+  @override
+  String get composer_type_moment => 'Moment';
+
+  @override
+  String get composer_type_dab => 'Dab';
+
+  @override
+  String get composer_type_kickin => 'Kick-in';
+
+  @override
+  String get composer_type_moment_sub => 'A quick snapshot of right now';
+
+  @override
+  String get composer_type_dab_sub => 'Share what you\'re vibing with';
+
+  @override
+  String get composer_type_kickin_sub => 'Invite others to join in';
+
+  @override
+  String get composer_vibe_search => 'Search vibes';
+
+  @override
+  String get composer_vibe_failed => 'Failed to load vibes';
+
+  @override
+  String get composer_vibe_none => 'No vibes match that search';
+
+  @override
+  String get composer_sports_failed => 'Failed to load sports';
+
+  @override
+  String get composer_sports_none => 'No sports available';
+
+  @override
+  String get composer_venue_search => 'Search venues...';
+
+  @override
+  String get composer_type_location => 'Type a location';
+
+  @override
+  String get composer_use_location => 'Use this location';
+
+  @override
+  String get composer_search_failed => 'Search failed';
+
+  @override
+  String get composer_no_venues => 'No venues found';
+
+  @override
+  String get composer_venue => 'Venue';
+
+  @override
+  String get composer_venue_hint => 'Search for a venue or type a location';
+
+  @override
+  String get composer_games_search => 'Search games by title...';
+
+  @override
+  String get composer_no_games => 'No games found';
+
+  @override
+  String get composer_untitled_game => 'Untitled Game';
+
+  @override
+  String get composer_games_hint => 'Search for a game to link to your post';
+
+  @override
+  String get game_create => 'Create game';
+
+  @override
+  String get game_edit => 'Edit Game';
+
+  @override
+  String get game_save_changes => 'Save changes';
+
+  @override
+  String get game_sport => 'Sport';
+
+  @override
+  String get game_format => 'Format';
+
+  @override
+  String get game_format_sub => 'Game format';
+
+  @override
+  String get game_select_sport_first => 'Select sport first';
+
+  @override
+  String get game_select_format => 'Select format';
+
+  @override
+  String get game_venue_sub => 'Where to play';
+
+  @override
+  String get game_date_time => 'Date & Time';
+
+  @override
+  String get game_date_time_sub => 'When is the game';
+
+  @override
+  String get game_duration => 'Duration';
+
+  @override
+  String get game_duration_sub => 'How long it runs';
+
+  @override
+  String get game_join_policy => 'Join policy';
+
+  @override
+  String get game_join_open => 'Open';
+
+  @override
+  String get game_join_request => 'Request';
+
+  @override
+  String get game_join_invite => 'Invite';
+
+  @override
+  String get game_join_link => 'Link';
+
+  @override
+  String get game_visibility => 'Visibility';
+
+  @override
+  String get game_skill_level => 'Skill Level';
+
+  @override
+  String get game_skill_sub => 'Player experience';
+
+  @override
+  String get game_any_level => 'Any level';
+
+  @override
+  String get game_players => 'Players';
+
+  @override
+  String get game_players_sub => 'Min & max players';
+
+  @override
+  String get game_fewer_min => 'Fewer minimum players';
+
+  @override
+  String get game_more_min => 'More minimum players';
+
+  @override
+  String get game_fewer_max => 'Fewer maximum players';
+
+  @override
+  String get game_more_max => 'More maximum players';
+
+  @override
+  String get game_waitlist => 'Waitlist';
+
+  @override
+  String get game_waitlist_sub => 'Let players queue when full';
+
+  @override
+  String get game_spectators => 'Spectators';
+
+  @override
+  String get game_spectators_sub => 'Allow spectators to watch';
+
+  @override
+  String get game_details => 'Details (optional)';
+
+  @override
+  String get game_title_hint => 'Game title';
+
+  @override
+  String get game_note_hint => 'Add a note for players...';
+
+  @override
+  String get game_date => 'Date';
+
+  @override
+  String get game_time => 'Time';
+
+  @override
+  String get game_today => 'Today';
+
+  @override
+  String get game_tomorrow => 'Tomorrow';
+
+  @override
+  String get game_select_venue => 'Select Venue';
+
+  @override
+  String get game_select_format_title => 'Select Format';
+
+  @override
+  String get game_no_formats => 'No formats available';
+
+  @override
+  String get game_no_matches => 'No matches';
+
+  @override
+  String get game_skill_beginner => 'Beginner';
+
+  @override
+  String get game_skill_intermediate => 'Intermediate';
+
+  @override
+  String get game_skill_advanced => 'Advanced';
+
+  @override
+  String get game_skill_pro => 'Pro';
+
+  @override
+  String get game_skill_beginner_sub => 'Just getting started';
+
+  @override
+  String get game_skill_intermediate_sub => 'Plays regularly';
+
+  @override
+  String get game_skill_advanced_sub => 'Competitive level';
+
+  @override
+  String get game_skill_pro_sub => 'Elite / professional';
+
+  @override
+  String get post_detail_title => 'Post';
+
+  @override
+  String get post_detail_more => 'More options';
+
+  @override
+  String get post_detail_follow => 'Follow';
+
+  @override
+  String get post_detail_following => 'Following';
+
+  @override
+  String get post_detail_anonymous => 'Anonymous';
+
+  @override
+  String get post_detail_no_replies => 'No replies yet';
+
+  @override
+  String get post_detail_first_reply => 'Be the first to reply.';
+
+  @override
+  String get post_detail_reply_hint => 'Post your reply…';
+
+  @override
+  String get post_detail_reply_to_hint => 'Reply…';
+
+  @override
+  String get post_detail_add_image => 'Add image';
+
+  @override
+  String get post_detail_add_location => 'Add location';
+
+  @override
+  String get post_detail_send_reply => 'Send reply';
+
+  @override
+  String get post_detail_reply => 'Reply';
+
+  @override
+  String get post_detail_add => 'Add';
+
+  @override
+  String get post_detail_hide_replies => 'Hide replies';
+
+  @override
+  String get post_detail_view_replies => 'View replies';
+
+  @override
+  String get post_detail_copy_link => 'Copy link';
+
+  @override
+  String get post_detail_link_copied => 'Link copied';
+
+  @override
+  String get post_detail_delete_post => 'Delete post';
+
+  @override
+  String get post_detail_delete_reply => 'Delete reply';
+
+  @override
+  String get post_detail_report => 'Report';
+
+  @override
+  String get post_detail_edited => 'Edited';
+
+  @override
+  String get post_detail_failed => 'Could not load post';
+
+  @override
+  String get post_detail_replies_failed => 'Could not load replies';
+
+  @override
+  String get post_detail_retry => 'Retry';
+
+  @override
+  String get post_detail_remove_image => 'Remove image';
+
+  @override
+  String get post_detail_remove_location => 'Remove location';
+
+  @override
+  String get post_detail_image => 'Image';
+
+  @override
+  String get post_detail_org => 'Org';
+
+  @override
+  String get post_detail_player => 'Player';
+
+  @override
+  String post_detail_replies_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count replies',
+      one: '1 reply',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String post_detail_views(String count) {
+    return '$count views';
+  }
+
+  @override
+  String get post_detail_replying_to => 'Replying to';
+
+  @override
+  String get post_detail_cancel_reply => 'Cancel reply';
+
+  @override
+  String get help_center_title => 'Help center';
+
+  @override
+  String get help_center_empty_title => 'Help center';
+
+  @override
+  String get help_center_empty_text => 'This screen is under development';
+
+  @override
+  String get contact_title => 'Contact support';
+
+  @override
+  String get contact_intro_title => 'How can we help?';
+
+  @override
+  String get contact_intro_message =>
+      'Send us a message and we\'ll get back to you as soon as possible.';
+
+  @override
+  String get contact_section => 'Contact information';
+
+  @override
+  String get contact_email => 'Your email';
+
+  @override
+  String get contact_category => 'Category';
+
+  @override
+  String get contact_subject => 'Subject';
+
+  @override
+  String get contact_message => 'Message';
+
+  @override
+  String get contact_send => 'Send message';
+
+  @override
+  String get contact_cat_general => 'General';
+
+  @override
+  String get contact_cat_account => 'Account issues';
+
+  @override
+  String get contact_cat_technical => 'Technical problem';
+
+  @override
+  String get contact_cat_billing => 'Payment & billing';
+
+  @override
+  String get contact_cat_feature => 'Feature request';
+
+  @override
+  String get contact_cat_abuse => 'Report abuse';
+
+  @override
+  String get contact_cat_privacy => 'Privacy concern';
+
+  @override
+  String get contact_cat_other => 'Other';
+
+  @override
+  String get contact_err_email_required => 'Please enter your email';
+
+  @override
+  String get contact_err_email_invalid => 'Please enter a valid email';
+
+  @override
+  String get contact_err_subject_required => 'Please enter a subject';
+
+  @override
+  String get contact_err_message_required => 'Please enter your message';
+
+  @override
+  String get contact_err_message_short =>
+      'Message must be at least 10 characters long';
+
+  @override
+  String get contact_sent => 'Message sent. We\'ll get back to you soon.';
+
+  @override
+  String contact_send_failed(String error) {
+    return 'Failed to send message: $error';
+  }
+
+  @override
+  String get bug_title => 'Report a bug';
+
+  @override
+  String get bug_intro_title => 'Found a bug?';
+
+  @override
+  String get bug_intro_message =>
+      'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it.';
+
+  @override
+  String get bug_details => 'Bug details';
+
+  @override
+  String get bug_category => 'Bug category';
+
+  @override
+  String get bug_severity => 'Severity level';
+
+  @override
+  String get bug_field_title => 'Bug title';
+
+  @override
+  String get bug_field_title_hint => 'Brief description of the issue';
+
+  @override
+  String get bug_field_description => 'Detailed description';
+
+  @override
+  String get bug_field_description_hint =>
+      'Describe what happened and what you expected to happen';
+
+  @override
+  String get bug_field_steps => 'Steps to reproduce';
+
+  @override
+  String get bug_field_steps_hint =>
+      '1. Go to...\n2. Tap on...\n3. See the error';
+
+  @override
+  String get bug_cat_general => 'General bug';
+
+  @override
+  String get bug_cat_ui => 'UI / visual issue';
+
+  @override
+  String get bug_cat_performance => 'Performance issue';
+
+  @override
+  String get bug_cat_crash => 'Crash / freeze';
+
+  @override
+  String get bug_cat_login => 'Login / authentication';
+
+  @override
+  String get bug_cat_profile => 'Profile / settings';
+
+  @override
+  String get bug_cat_games => 'Games / activities';
+
+  @override
+  String get bug_cat_notifications => 'Notifications';
+
+  @override
+  String get bug_cat_social => 'Social features';
+
+  @override
+  String get bug_cat_other => 'Other';
+
+  @override
+  String get bug_sev_low => 'Low';
+
+  @override
+  String get bug_sev_medium => 'Medium';
+
+  @override
+  String get bug_sev_high => 'High';
+
+  @override
+  String get bug_sev_critical => 'Critical';
+
+  @override
+  String get bug_additional => 'Additional information';
+
+  @override
+  String get bug_include_device => 'Include device information';
+
+  @override
+  String get bug_include_device_sub => 'OS version, device model, screen size';
+
+  @override
+  String get bug_include_logs => 'Include app logs';
+
+  @override
+  String get bug_include_logs_sub => 'Recent app activity and error logs';
+
+  @override
+  String get bug_device_heading => 'Device information to include:';
+
+  @override
+  String bug_device_platform(String value) {
+    return 'Platform: $value';
+  }
+
+  @override
+  String bug_device_app_version(String value) {
+    return 'App version: $value';
+  }
+
+  @override
+  String bug_device_resolution(String value) {
+    return 'Screen resolution: $value';
+  }
+
+  @override
+  String get bug_platform_unknown => 'Unknown';
+
+  @override
+  String get bug_platform_web => 'Web';
+
+  @override
+  String get bug_err_email_required => 'Please enter your email';
+
+  @override
+  String get bug_err_title_required => 'Please enter a bug title';
+
+  @override
+  String get bug_err_description_required => 'Please describe the bug';
+
+  @override
+  String get bug_err_description_short =>
+      'Please provide more details (at least 20 characters)';
+
+  @override
+  String get bug_err_steps_required =>
+      'Please provide steps to reproduce the bug';
+
+  @override
+  String get bug_submit => 'Submit bug report';
+
+  @override
+  String get bug_submitted =>
+      'Bug report submitted. Thank you for helping us improve.';
+
+  @override
+  String bug_submit_failed(String error) {
+    return 'Failed to submit bug report: $error';
+  }
+
+  @override
+  String get sports_prefs_title => 'Sports preferences';
+
+  @override
+  String get sports_prefs_save => 'Save';
+
+  @override
+  String get sports_prefs_create_game => 'Create game';
+
+  @override
+  String get sports_prefs_my_sports => 'My sports';
+
+  @override
+  String get sports_prefs_my_sports_note =>
+      'Enable sports you want to play and set your skill level';
+
+  @override
+  String get sports_prefs_general => 'General preferences';
+
+  @override
+  String get sports_prefs_auto_join => 'Auto-join compatible games';
+
+  @override
+  String get sports_prefs_auto_join_sub =>
+      'Automatically join games that match your preferences';
+
+  @override
+  String get sports_prefs_location => 'Use location for recommendations';
+
+  @override
+  String get sports_prefs_location_sub =>
+      'Find games near your current location';
+
+  @override
+  String get sports_prefs_flexible => 'Flexible timing';
+
+  @override
+  String get sports_prefs_flexible_sub =>
+      'Show games with flexible start times';
+
+  @override
+  String get sports_prefs_disabled => 'Disabled';
+
+  @override
+  String get sports_prefs_skill_level => 'Skill level';
+
+  @override
+  String get sports_prefs_position => 'Preferred position';
+
+  @override
+  String get sports_prefs_level_beginner => 'Beginner';
+
+  @override
+  String get sports_prefs_level_intermediate => 'Intermediate';
+
+  @override
+  String get sports_prefs_level_advanced => 'Advanced';
+
+  @override
+  String sports_prefs_load_failed(String error) {
+    return 'Failed to load sports preferences: $error';
+  }
+
+  @override
+  String get sports_prefs_saved => 'Sports preferences saved';
+
+  @override
+  String sports_prefs_save_failed(String error) {
+    return 'Failed to save preferences: $error';
+  }
+
+  @override
+  String sports_prefs_enable_failed(String error) {
+    return 'Failed to enable sport: $error';
+  }
+
+  @override
+  String sports_prefs_remove_failed(String error) {
+    return 'Failed to remove sport: $error';
+  }
+
+  @override
+  String get sports_prefs_need_one =>
+      'You must have at least one sport enabled';
+
+  @override
+  String sports_prefs_remove_title(String sport) {
+    return 'Remove $sport?';
+  }
+
+  @override
+  String sports_prefs_remove_body(String sport) {
+    return 'Are you sure you want to remove $sport from your profile?';
+  }
+
+  @override
+  String get sports_prefs_cancel => 'Cancel';
+
+  @override
+  String get sports_prefs_remove => 'Remove';
+
+  @override
+  String get sports_pos_goalkeeper => 'Goalkeeper';
+
+  @override
+  String get sports_pos_defender => 'Defender';
+
+  @override
+  String get sports_pos_midfielder => 'Midfielder';
+
+  @override
+  String get sports_pos_forward => 'Forward';
+
+  @override
+  String get sports_pos_point_guard => 'Point Guard';
+
+  @override
+  String get sports_pos_shooting_guard => 'Shooting Guard';
+
+  @override
+  String get sports_pos_small_forward => 'Small Forward';
+
+  @override
+  String get sports_pos_power_forward => 'Power Forward';
+
+  @override
+  String get sports_pos_center => 'Center';
+
+  @override
+  String get sports_pos_setter => 'Setter';
+
+  @override
+  String get sports_pos_outside_hitter => 'Outside Hitter';
+
+  @override
+  String get sports_pos_middle_blocker => 'Middle Blocker';
+
+  @override
+  String get sports_pos_opposite_hitter => 'Opposite Hitter';
+
+  @override
+  String get sports_pos_libero => 'Libero';
+
+  @override
+  String get about_terms_intro =>
+      'Please read these terms carefully before using our service.';
+
+  @override
+  String get about_privacy_intro =>
+      'Your privacy is important to us. This policy explains how we collect, use, and protect your information.';
+
+  @override
+  String about_last_updated(String date) {
+    return 'Last updated: $date';
+  }
+
+  @override
+  String get about_privacy_settings_tooltip => 'Privacy settings';
+
+  @override
+  String get licenses_title => 'Open source licenses';
+
+  @override
+  String get licenses_about_tooltip => 'About licenses';
+
+  @override
+  String get licenses_intro =>
+      'This app is built with amazing open source libraries. We thank all contributors for their work.';
+
+  @override
+  String licenses_count(String count) {
+    return '$count open source packages';
+  }
+
+  @override
+  String get licenses_search_hint => 'Search licenses...';
+
+  @override
+  String get licenses_empty_title => 'No licenses found';
+
+  @override
+  String get licenses_empty_text => 'Try adjusting your search query';
+
+  @override
+  String get licenses_info_title => 'About open source licenses';
+
+  @override
+  String get licenses_info_body =>
+      'This app uses various open source libraries and packages. Each license defines the terms under which the code can be used, modified, and distributed.\n\nWe are grateful to all the developers and contributors who make their work available under open source licenses.';
+
+  @override
+  String get licenses_got_it => 'Got it';
+
+  @override
+  String get licenses_detail_version => 'Version';
+
+  @override
+  String get licenses_detail_license => 'License';
+
+  @override
+  String get licenses_detail_copyright => 'Copyright';
+
+  @override
+  String get licenses_detail_url => 'URL';
+
+  @override
+  String get licenses_detail_description => 'Description';
+
+  @override
+  String get licenses_view_web => 'View on web';
+
+  @override
+  String licenses_opening(String url) {
+    return 'Opening $url';
+  }
 }

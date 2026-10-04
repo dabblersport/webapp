@@ -2,20 +2,21 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the Terms of Service in an in-app drawer.
 Future<void> showTermsSheet(BuildContext context) => showLegalDocSheet(
   context: context,
-  title: 'Terms of Service',
-  intro: kTermsIntro,
+  title: AppLocalizations.of(context).settings_item_terms_title,
+  intro: AppLocalizations.of(context).about_terms_intro,
   sections: kTermsOfServiceSections,
 );
 
 /// Opens the Privacy Policy in an in-app drawer.
 Future<void> showPrivacySheet(BuildContext context) => showLegalDocSheet(
   context: context,
-  title: 'Privacy Policy',
-  intro: kPrivacyIntro,
+  title: AppLocalizations.of(context).settings_item_privacy_policy_title,
+  intro: AppLocalizations.of(context).about_privacy_intro,
   sections: kPrivacyPolicySections,
 );
 

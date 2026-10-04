@@ -5,10 +5,28 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// Screen for reporting bugs and issues — a design-system page: an intro
-/// banner, a "Bug Details" section of fields, an "Additional Information"
-/// section of toggle rows, and the submit button. No design frame exists for
+import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+
+/// Screen for reporting bugs and issues — a design-system page: a bug-details
+/// section of fields, an additional-information section of toggle rows, and
+/// the submit button, under the Settings inner-page header. No design frame exists for
 /// this screen; it is a DS-default render.
+enum _Severity { low, medium, high, critical }
+
+enum _BugCategory {
+  general,
+  ui,
+  performance,
+  crash,
+  login,
+  profile,
+  games,
+  notifications,
+  social,
+  other,
+}
+
 class BugReportScreen extends ConsumerStatefulWidget {
   const BugReportScreen({super.key});
 
@@ -22,28 +40,33 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   final _stepsController = TextEditingController();
   final _emailController = TextEditingController();
 
-  String _selectedSeverity = 'Medium';
-  String _selectedCategory = 'General Bug';
+  _Severity _selectedSeverity = _Severity.medium;
+  _BugCategory _selectedCategory = _BugCategory.general;
   bool _isSubmitting = false;
   bool _includeDeviceInfo = true;
   bool _includeAppLogs = true;
 
   final _formKey = GlobalKey<FormState>();
 
-  final List<String> _severityLevels = ['Low', 'Medium', 'High', 'Critical'];
+  String _severityLabel(AppLocalizations l, _Severity v) => switch (v) {
+    _Severity.low => l.bug_sev_low,
+    _Severity.medium => l.bug_sev_medium,
+    _Severity.high => l.bug_sev_high,
+    _Severity.critical => l.bug_sev_critical,
+  };
 
-  final List<String> _categories = [
-    'General Bug',
-    'UI/Visual Issue',
-    'Performance Issue',
-    'Crash/Freeze',
-    'Login/Authentication',
-    'Profile/Settings',
-    'Games/Activities',
-    'Notifications',
-    'Social Features',
-    'Other',
-  ];
+  String _categoryLabel(AppLocalizations l, _BugCategory v) => switch (v) {
+    _BugCategory.general => l.bug_cat_general,
+    _BugCategory.ui => l.bug_cat_ui,
+    _BugCategory.performance => l.bug_cat_performance,
+    _BugCategory.crash => l.bug_cat_crash,
+    _BugCategory.login => l.bug_cat_login,
+    _BugCategory.profile => l.bug_cat_profile,
+    _BugCategory.games => l.bug_cat_games,
+    _BugCategory.notifications => l.bug_cat_notifications,
+    _BugCategory.social => l.bug_cat_social,
+    _BugCategory.other => l.bug_cat_other,
+  };
 
   @override
   void initState() {
@@ -66,12 +89,9 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        border: true,
-        title: 'Report a Bug',
-        onBack: () => context.pop(),
-      ),
+      topBar: settingsInnerTopBar(context, title: l10n.bug_title),
       // A non-lazy scroll view so every field stays mounted for
       // `Form.validate()`.
       body: SingleChildScrollView(
@@ -86,20 +106,12 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const DabblerBanner(
-                tone: DabblerBannerTone.warning,
-                icon: DabblerIcon('danger', size: DabblerSizing.iconRow),
-                title: 'Found a Bug?',
-                message:
-                    'Help us improve by reporting any issues you encounter. The more details you provide, the faster we can fix it!',
-              ),
-              const SizedBox(height: DabblerSpacing.space6),
               _buildBugReportForm(),
               const SizedBox(height: DabblerSpacing.space6),
               _buildDeviceInfoSection(context),
               const SizedBox(height: DabblerSpacing.space7),
               DabblerButton(
-                label: 'Submit Bug Report',
+                label: l10n.bug_submit,
                 size: DabblerButtonSize.full,
                 fullWidth: true,
                 loading: _isSubmitting,
@@ -113,53 +125,60 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   }
 
   Widget _buildBugReportForm() {
+    final l10n = AppLocalizations.of(context);
     const gap = SizedBox(height: DabblerSpacing.space4);
     return DabblerSection(
-      title: 'Bug Details',
+      title: l10n.bug_details,
       children: [
         DabblerTextField(
           controller: _emailController,
-          label: 'Your Email',
+          label: l10n.contact_email,
           keyboardType: TextInputType.emailAddress,
           prefixIcon: const DabblerIcon('sms', size: DabblerSizing.iconRow),
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please enter your email';
+              return l10n.bug_err_email_required;
             }
             if (!value.contains('@')) {
-              return 'Please enter a valid email';
+              return l10n.contact_err_email_invalid;
             }
             return null;
           },
         ),
         gap,
-        DabblerSelect<String>(
-          label: 'Bug Category',
+        DabblerSelect<_BugCategory>(
+          label: l10n.bug_category,
           value: _selectedCategory,
           options: [
-            for (final c in _categories)
-              DabblerSelectOption<String>(value: c, label: c),
+            for (final c in _BugCategory.values)
+              DabblerSelectOption<_BugCategory>(
+                value: c,
+                label: _categoryLabel(l10n, c),
+              ),
           ],
           onChanged: (value) => setState(() => _selectedCategory = value),
         ),
         gap,
-        DabblerSelect<String>(
-          label: 'Severity Level',
+        DabblerSelect<_Severity>(
+          label: l10n.bug_severity,
           value: _selectedSeverity,
           options: [
-            for (final s in _severityLevels)
-              DabblerSelectOption<String>(value: s, label: s),
+            for (final s in _Severity.values)
+              DabblerSelectOption<_Severity>(
+                value: s,
+                label: _severityLabel(l10n, s),
+              ),
           ],
           onChanged: (value) => setState(() => _selectedSeverity = value),
         ),
         gap,
         DabblerTextField(
           controller: _titleController,
-          label: 'Bug Title',
-          placeholder: 'Brief description of the issue',
+          label: l10n.bug_field_title,
+          placeholder: l10n.bug_field_title_hint,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please enter a bug title';
+              return l10n.bug_err_title_required;
             }
             return null;
           },
@@ -167,16 +186,16 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         gap,
         DabblerTextField(
           controller: _descriptionController,
-          label: 'Detailed Description',
-          placeholder: 'Describe what happened and what you expected to happen',
+          label: l10n.bug_field_description,
+          placeholder: l10n.bug_field_description_hint,
           variant: DabblerTextFieldVariant.multiline,
           rows: 4,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please describe the bug';
+              return l10n.bug_err_description_required;
             }
             if (value.length < 20) {
-              return 'Please provide more details (at least 20 characters)';
+              return l10n.bug_err_description_short;
             }
             return null;
           },
@@ -184,13 +203,13 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
         gap,
         DabblerTextField(
           controller: _stepsController,
-          label: 'Steps to Reproduce',
-          placeholder: '1. Go to...\n2. Click on...\n3. See error',
+          label: l10n.bug_field_steps,
+          placeholder: l10n.bug_field_steps_hint,
           variant: DabblerTextFieldVariant.multiline,
           rows: 4,
           validator: (value) {
             if (value == null || value.isEmpty) {
-              return 'Please provide steps to reproduce the bug';
+              return l10n.bug_err_steps_required;
             }
             return null;
           },
@@ -200,27 +219,28 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
   }
 
   Widget _buildDeviceInfoSection(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final size = MediaQuery.sizeOf(context);
     return DabblerSection(
-      title: 'Additional Information',
+      title: l10n.bug_additional,
       children: [
         DabblerInputRow(
-          title: 'Include Device Information',
-          subtitle: 'OS version, device model, screen size',
+          title: l10n.bug_include_device,
+          subtitle: l10n.bug_include_device_sub,
           onTap: () => setState(() => _includeDeviceInfo = !_includeDeviceInfo),
           trailing: DabblerToggle(
             checked: _includeDeviceInfo,
-            semanticLabel: 'Include Device Information',
+            semanticLabel: l10n.bug_include_device,
             onChanged: (value) => setState(() => _includeDeviceInfo = value),
           ),
         ),
         DabblerInputRow(
-          title: 'Include App Logs',
-          subtitle: 'Recent app activity and error logs',
+          title: l10n.bug_include_logs,
+          subtitle: l10n.bug_include_logs_sub,
           onTap: () => setState(() => _includeAppLogs = !_includeAppLogs),
           trailing: DabblerToggle(
             checked: _includeAppLogs,
-            semanticLabel: 'Include App Logs',
+            semanticLabel: l10n.bug_include_logs,
             onChanged: (value) => setState(() => _includeAppLogs = value),
           ),
         ),
@@ -235,28 +255,29 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 DabblerText(
-                  'Device Information to Include:',
+                  l10n.bug_device_heading,
                   style: DabblerType.subheadline,
                   weight: DabblerTextWeight.semibold,
                 ),
                 const SizedBox(height: DabblerSpacing.space2),
                 DabblerText(
-                  '• Platform: ${_getPlatformName()}',
-                  style: DabblerType.footnote,
-                  tone: DabblerTextTone.secondary,
-                ),
-                const DabblerText(
-                  '• App Version: 1.0.5',
-                  style: DabblerType.footnote,
-                  tone: DabblerTextTone.secondary,
-                ),
-                const DabblerText(
-                  '• Flutter Version: 3.x.x',
+                  l10n.bug_device_platform(_getPlatformName(l10n)),
                   style: DabblerType.footnote,
                   tone: DabblerTextTone.secondary,
                 ),
                 DabblerText(
-                  '• Screen Resolution: ${size.width.toInt()}x${size.height.toInt()}',
+                  l10n.bug_device_app_version(
+                    DabblerType.toWesternDigits(_appVersion),
+                  ),
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
+                ),
+                DabblerText(
+                  l10n.bug_device_resolution(
+                    DabblerType.toWesternDigits(
+                      '${size.width.toInt()}x${size.height.toInt()}',
+                    ),
+                  ),
                   style: DabblerType.footnote,
                   tone: DabblerTextTone.secondary,
                 ),
@@ -267,16 +288,18 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
     );
   }
 
-  String _getPlatformName() {
+  static const String _appVersion = '1.7.8';
+
+  String _getPlatformName(AppLocalizations l10n) {
     try {
       if (Platform.isAndroid) return 'Android';
       if (Platform.isIOS) return 'iOS';
       if (Platform.isWindows) return 'Windows';
       if (Platform.isMacOS) return 'macOS';
       if (Platform.isLinux) return 'Linux';
-      return 'Unknown';
+      return l10n.bug_platform_unknown;
     } catch (e) {
-      return 'Web';
+      return l10n.bug_platform_web;
     }
   }
 
@@ -294,9 +317,8 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
 
       if (mounted) {
         DabblerToastProvider.of(context).show(
-          const DabblerToastSpec(
-            message:
-                'Bug report submitted successfully! Thank you for helping us improve.',
+          DabblerToastSpec(
+            message: AppLocalizations.of(context).bug_submitted,
             tone: DabblerToastTone.success,
           ),
         );
@@ -306,7 +328,7 @@ class _BugReportScreenState extends ConsumerState<BugReportScreen> {
       if (mounted) {
         DabblerToastProvider.of(context).show(
           DabblerToastSpec(
-            message: 'Failed to submit bug report: $e',
+            message: AppLocalizations.of(context).bug_submit_failed('$e'),
             tone: DabblerToastTone.error,
           ),
         );

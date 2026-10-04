@@ -1,6 +1,8 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:dabbler/l10n/app_localizations.dart';
+
 /// Shared chrome for the two composers (post, game), built from the Dabbler
 /// design system only: the panel, header, footer button, rows, toggles, chips
 /// and fields are all `Dabbler*` components, coloured through
@@ -51,7 +53,7 @@ class ComposerDrawerShell extends StatelessWidget {
             children: [
               Expanded(child: DabblerText(title, style: DabblerType.title3)),
               DabblerButton(
-                label: 'Cancel',
+                label: AppLocalizations.of(context).composer_cancel,
                 tone: DabblerButtonTone.neutral,
                 size: DabblerButtonSize.small,
                 onPressed: () => Navigator.of(context).maybePop(),
@@ -311,7 +313,6 @@ Future<T?> showComposerSheet<T>(
   required String title,
   required WidgetBuilder builder,
   String? subtitle,
-  String clearLabel = 'Clear',
   VoidCallback? onClear,
   ComposerSheetConfirm? confirm,
   bool tall = false,
@@ -344,7 +345,7 @@ Future<T?> showComposerSheet<T>(
     children: [
       if (onClear != null)
         DabblerButton(
-          label: clearLabel,
+          label: AppLocalizations.of(ctx).composer_clear,
           tone: DabblerButtonTone.text,
           size: DabblerButtonSize.small,
           onPressed: () {
@@ -353,7 +354,7 @@ Future<T?> showComposerSheet<T>(
           },
         ),
       DabblerButton(
-        label: 'Cancel',
+        label: AppLocalizations.of(context).composer_cancel,
         tone: DabblerButtonTone.neutral,
         size: DabblerButtonSize.small,
         onPressed: () => Navigator.of(ctx).maybePop(),
@@ -394,14 +395,14 @@ Future<void> showComposerChoiceSheet<T>(
   required List<ComposerChoice<T>> choices,
   required T selected,
   required ValueChanged<T> onConfirm,
-  String confirmLabel = 'Confirm',
+  
 }) {
   final picked = ValueNotifier<T>(selected);
   return showComposerSheet<void>(
     context,
     title: title,
     confirm: ComposerSheetConfirm(
-      label: confirmLabel,
+      label: AppLocalizations.of(context).composer_confirm,
       onTap: () {
         onConfirm(picked.value);
         Navigator.of(context).maybePop();
@@ -545,7 +546,7 @@ class ComposerClearRow extends StatelessWidget {
     child: Align(
       alignment: AlignmentDirectional.centerEnd,
       child: DabblerButton(
-        label: 'Clear',
+        label: AppLocalizations.of(context).composer_clear,
         tone: DabblerButtonTone.text,
         size: DabblerButtonSize.small,
         onPressed: onClear,
