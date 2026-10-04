@@ -2653,6 +2653,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_full => 'ممتلئة';
 
   @override
+  String get listing_join_game => 'انضم للمباراة';
+
+  @override
+  String get listing_on_waitlist => 'في قائمة الانتظار';
+
+  @override
+  String get listing_request_sent => 'تم إرسال الطلب';
+
+  @override
   String listing_spots_left(int count) {
     return 'بقي $count أماكن';
   }
@@ -2884,6 +2893,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get home_location_add => 'إضافة موقع';
+
+  @override
+  String get home_location_cancel => 'إلغاء';
+
+  @override
+  String get home_location_search_venues => 'ابحث عن ملاعب ومناطق';
+
+  @override
+  String get home_location_recent => 'الأخيرة';
 
   @override
   String home_location_no_match(String query) {

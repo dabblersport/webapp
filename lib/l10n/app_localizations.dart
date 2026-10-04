@@ -4883,6 +4883,24 @@ abstract class AppLocalizations {
   /// **'Full'**
   String get listing_full;
 
+  /// No description provided for @listing_join_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Join game'**
+  String get listing_join_game;
+
+  /// No description provided for @listing_on_waitlist.
+  ///
+  /// In en, this message translates to:
+  /// **'On waitlist'**
+  String get listing_on_waitlist;
+
+  /// No description provided for @listing_request_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Request sent'**
+  String get listing_request_sent;
+
   /// No description provided for @listing_spots_left.
   ///
   /// In en, this message translates to:
@@ -5278,6 +5296,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add location'**
   String get home_location_add;
+
+  /// No description provided for @home_location_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get home_location_cancel;
+
+  /// No description provided for @home_location_search_venues.
+  ///
+  /// In en, this message translates to:
+  /// **'Search venues and areas'**
+  String get home_location_search_venues;
+
+  /// No description provided for @home_location_recent.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent'**
+  String get home_location_recent;
 
   /// No description provided for @home_location_no_match.
   ///

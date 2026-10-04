@@ -2701,6 +2701,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_full => 'Full';
 
   @override
+  String get listing_join_game => 'Join game';
+
+  @override
+  String get listing_on_waitlist => 'On waitlist';
+
+  @override
+  String get listing_request_sent => 'Request sent';
+
+  @override
   String listing_spots_left(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -2944,6 +2953,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get home_location_add => 'Add location';
+
+  @override
+  String get home_location_cancel => 'Cancel';
+
+  @override
+  String get home_location_search_venues => 'Search venues and areas';
+
+  @override
+  String get home_location_recent => 'Recent';
 
   @override
   String home_location_no_match(String query) {
