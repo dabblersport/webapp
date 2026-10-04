@@ -1952,4 +1952,254 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
+
+  @override
+  String get listing_set_location => 'حدد الموقع';
+
+  @override
+  String get listing_search => 'بحث';
+
+  @override
+  String get listing_filters => 'التصفية';
+
+  @override
+  String get listing_reset => 'إعادة ضبط';
+
+  @override
+  String get listing_clear_all => 'مسح الكل';
+
+  @override
+  String get listing_all_sports => 'كل الرياضات';
+
+  @override
+  String get listing_upcoming => 'القادمة';
+
+  @override
+  String get listing_open_spots => 'أماكن متاحة';
+
+  @override
+  String get listing_sort_nearest => 'الأقرب';
+
+  @override
+  String get listing_sort_soonest => 'الأقرب موعدًا';
+
+  @override
+  String get listing_group_distance => 'المسافة';
+
+  @override
+  String get listing_group_date => 'التاريخ';
+
+  @override
+  String get listing_group_skill => 'المستوى';
+
+  @override
+  String get listing_group_availability => 'التوفر';
+
+  @override
+  String get listing_group_sort => 'ترتيب حسب';
+
+  @override
+  String listing_within_km(int km) {
+    return 'ضمن $km كم';
+  }
+
+  @override
+  String get listing_any_distance => 'أي مسافة';
+
+  @override
+  String get listing_date_any => 'أي تاريخ';
+
+  @override
+  String get listing_today => 'اليوم';
+
+  @override
+  String get listing_tomorrow => 'غدًا';
+
+  @override
+  String get listing_this_week => 'هذا الأسبوع';
+
+  @override
+  String get listing_skill_beginner => 'مبتدئ';
+
+  @override
+  String get listing_skill_intermediate => 'متوسط';
+
+  @override
+  String get listing_skill_advanced => 'متقدم';
+
+  @override
+  String get listing_skill_pro => 'محترف';
+
+  @override
+  String get listing_load_sports_failed => 'تعذر تحميل الرياضات';
+
+  @override
+  String get listing_load_games_failed => 'تعذر تحميل المباريات';
+
+  @override
+  String get listing_load_venues_failed => 'تعذر تحميل الملاعب';
+
+  @override
+  String get listing_games_filtered_title => 'لا توجد مباريات تطابق التصفية';
+
+  @override
+  String get listing_games_filtered_text => 'عدّل التصفية أو امسحها.';
+
+  @override
+  String get listing_games_nearby_title => 'لا توجد مباريات قريبة.';
+
+  @override
+  String get listing_games_nearby_text => 'جرّب توسيع نطاق البحث في التصفية.';
+
+  @override
+  String get listing_games_none_title => 'لا توجد مباريات بعد';
+
+  @override
+  String get listing_games_none_text => 'كن أول من ينشئ مباراة في منطقتك!';
+
+  @override
+  String get listing_change_filters => 'غيّر التصفية';
+
+  @override
+  String get listing_created => 'أنشأتها';
+
+  @override
+  String get listing_joined => 'منضم';
+
+  @override
+  String get listing_full => 'ممتلئة';
+
+  @override
+  String listing_spots_left(int count) {
+    return 'بقي $count أماكن';
+  }
+
+  @override
+  String listing_players_in(int joined, int total) {
+    return '$joined من $total لاعبين';
+  }
+
+  @override
+  String listing_show_games(int count) {
+    return 'عرض $count مباراة';
+  }
+
+  @override
+  String get listing_show_games_plain => 'عرض المباريات';
+
+  @override
+  String get listing_show_venues => 'عرض الملاعب';
+
+  @override
+  String get listing_unit_day => 'يوم';
+
+  @override
+  String get listing_unit_days => 'أيام';
+
+  @override
+  String get listing_unit_hour => 'ساعة';
+
+  @override
+  String get listing_unit_hours => 'ساعات';
+
+  @override
+  String get listing_unit_min => 'د';
+
+  @override
+  String get listing_saved_venues => 'الملاعب المحفوظة';
+
+  @override
+  String get listing_add_venue => 'أضف ملعبًا';
+
+  @override
+  String get listing_venues_none_title => 'لا توجد ملاعب';
+
+  @override
+  String get listing_venues_none_text => 'جرّب رياضة أخرى.';
+
+  @override
+  String listing_venues_radius_text(int km) {
+    return 'لا توجد ملاعب ضمن $km كم — جرّب توسيع نطاق البحث.';
+  }
+
+  @override
+  String get listing_starting_from => 'يبدأ من';
+
+  @override
+  String get listing_view_venue => 'عرض الملعب';
+
+  @override
+  String get listing_save_venue => 'احفظ الملعب';
+
+  @override
+  String get listing_remove_saved => 'أزل من المحفوظ';
+
+  @override
+  String get listing_indoor => 'داخلي';
+
+  @override
+  String get listing_outdoor => 'خارجي';
+
+  @override
+  String listing_km_away(String distance) {
+    return 'على بعد $distance';
+  }
+
+  @override
+  String get listing_free => 'مجاني';
+
+  @override
+  String listing_price_per_hour(String amount) {
+    return '$amount د.إ / ساعة';
+  }
+
+  @override
+  String get location_change_title => 'تغيير الموقع';
+
+  @override
+  String get location_search_areas => 'ابحث عن المناطق…';
+
+  @override
+  String get location_use_current => 'استخدم الموقع الحالي';
+
+  @override
+  String get location_detecting => 'جارٍ التحديد…';
+
+  @override
+  String get location_saved => 'المحفوظة';
+
+  @override
+  String get location_add => 'إضافة موقع';
+
+  @override
+  String location_no_areas(String query) {
+    return 'لا توجد مناطق تطابق \"$query\"';
+  }
+
+  @override
+  String get location_access_required => 'الوصول إلى الموقع مطلوب';
+
+  @override
+  String get location_permission_denied_forever =>
+      'تم رفض إذن الموقع نهائيًا. افتح الإعدادات لتفعيله.';
+
+  @override
+  String get location_open_settings => 'فتح الإعدادات';
+
+  @override
+  String get location_enable_services => 'يرجى تفعيل خدمات الموقع';
+
+  @override
+  String get location_permission_denied => 'تم رفض إذن الموقع';
+
+  @override
+  String get location_timeout => 'تعذر تحديد الموقع — حاول مرة أخرى';
+
+  @override
+  String location_error(String message) {
+    return 'خطأ: $message';
+  }
+
+  @override
+  String get listing_skill_any => 'أي مستوى';
 }

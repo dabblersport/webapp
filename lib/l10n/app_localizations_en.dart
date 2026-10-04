@@ -1992,4 +1992,256 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_kind_achievement_earned => 'You unlocked a new achievement';
+
+  @override
+  String get listing_set_location => 'Set location';
+
+  @override
+  String get listing_search => 'Search';
+
+  @override
+  String get listing_filters => 'Filters';
+
+  @override
+  String get listing_reset => 'Reset';
+
+  @override
+  String get listing_clear_all => 'Clear all';
+
+  @override
+  String get listing_all_sports => 'All sports';
+
+  @override
+  String get listing_upcoming => 'Upcoming';
+
+  @override
+  String get listing_open_spots => 'Open spots';
+
+  @override
+  String get listing_sort_nearest => 'Nearest';
+
+  @override
+  String get listing_sort_soonest => 'Starting soonest';
+
+  @override
+  String get listing_group_distance => 'Distance';
+
+  @override
+  String get listing_group_date => 'Date';
+
+  @override
+  String get listing_group_skill => 'Skill level';
+
+  @override
+  String get listing_group_availability => 'Availability';
+
+  @override
+  String get listing_group_sort => 'Sort by';
+
+  @override
+  String listing_within_km(int km) {
+    return 'Within $km km';
+  }
+
+  @override
+  String get listing_any_distance => 'Any distance';
+
+  @override
+  String get listing_date_any => 'Any date';
+
+  @override
+  String get listing_today => 'Today';
+
+  @override
+  String get listing_tomorrow => 'Tomorrow';
+
+  @override
+  String get listing_this_week => 'This week';
+
+  @override
+  String get listing_skill_beginner => 'Beginner';
+
+  @override
+  String get listing_skill_intermediate => 'Intermediate';
+
+  @override
+  String get listing_skill_advanced => 'Advanced';
+
+  @override
+  String get listing_skill_pro => 'Pro';
+
+  @override
+  String get listing_load_sports_failed => 'Failed to load sports';
+
+  @override
+  String get listing_load_games_failed => 'Couldn\'t load games';
+
+  @override
+  String get listing_load_venues_failed => 'Couldn\'t load venues';
+
+  @override
+  String get listing_games_filtered_title => 'No games match your filters';
+
+  @override
+  String get listing_games_filtered_text => 'Adjust or clear the filters.';
+
+  @override
+  String get listing_games_nearby_title => 'No games found nearby.';
+
+  @override
+  String get listing_games_nearby_text =>
+      'Try widening your search radius in the filter.';
+
+  @override
+  String get listing_games_none_title => 'No games yet';
+
+  @override
+  String get listing_games_none_text =>
+      'Be the first to create a game in your area!';
+
+  @override
+  String get listing_change_filters => 'Change filters';
+
+  @override
+  String get listing_created => 'Created';
+
+  @override
+  String get listing_joined => 'Joined';
+
+  @override
+  String get listing_full => 'Full';
+
+  @override
+  String listing_spots_left(int count) {
+    return '$count spots left';
+  }
+
+  @override
+  String listing_players_in(int joined, int total) {
+    return '$joined of $total players in';
+  }
+
+  @override
+  String listing_show_games(int count) {
+    return 'Show $count games';
+  }
+
+  @override
+  String get listing_show_games_plain => 'Show games';
+
+  @override
+  String get listing_show_venues => 'Show venues';
+
+  @override
+  String get listing_unit_day => 'day';
+
+  @override
+  String get listing_unit_days => 'days';
+
+  @override
+  String get listing_unit_hour => 'hour';
+
+  @override
+  String get listing_unit_hours => 'hours';
+
+  @override
+  String get listing_unit_min => 'min';
+
+  @override
+  String get listing_saved_venues => 'Saved venues';
+
+  @override
+  String get listing_add_venue => 'Add venue';
+
+  @override
+  String get listing_venues_none_title => 'No venues found';
+
+  @override
+  String get listing_venues_none_text => 'Try selecting a different sport.';
+
+  @override
+  String listing_venues_radius_text(int km) {
+    return 'No venues within $km km — try widening your search radius.';
+  }
+
+  @override
+  String get listing_starting_from => 'Starting from';
+
+  @override
+  String get listing_view_venue => 'View venue';
+
+  @override
+  String get listing_save_venue => 'Save venue';
+
+  @override
+  String get listing_remove_saved => 'Remove from saved';
+
+  @override
+  String get listing_indoor => 'Indoor';
+
+  @override
+  String get listing_outdoor => 'Outdoor';
+
+  @override
+  String listing_km_away(String distance) {
+    return '$distance away';
+  }
+
+  @override
+  String get listing_free => 'Free';
+
+  @override
+  String listing_price_per_hour(String amount) {
+    return 'AED $amount / hour';
+  }
+
+  @override
+  String get location_change_title => 'Change location';
+
+  @override
+  String get location_search_areas => 'Search areas…';
+
+  @override
+  String get location_use_current => 'Use current location';
+
+  @override
+  String get location_detecting => 'Detecting…';
+
+  @override
+  String get location_saved => 'Saved';
+
+  @override
+  String get location_add => 'Add location';
+
+  @override
+  String location_no_areas(String query) {
+    return 'No areas match \"$query\"';
+  }
+
+  @override
+  String get location_access_required => 'Location access required';
+
+  @override
+  String get location_permission_denied_forever =>
+      'Location permission is permanently denied. Open Settings to enable it.';
+
+  @override
+  String get location_open_settings => 'Open Settings';
+
+  @override
+  String get location_enable_services => 'Please enable location services';
+
+  @override
+  String get location_permission_denied => 'Location permission denied';
+
+  @override
+  String get location_timeout => 'Could not get location — try again';
+
+  @override
+  String location_error(String message) {
+    return 'Error: $message';
+  }
+
+  @override
+  String get listing_skill_any => 'Any skill';
 }

@@ -78,7 +78,7 @@ class _SportsLibraryScreenState extends State<SportsLibraryScreen> {
               ],
             ),
           ),
-          const SizedBox(height: DabblerSpacing.space3),
+          const DabblerGap.v(DabblerSpacing.space3),
           Expanded(
             child: IndexedStack(
               index: _selectedIndex,
@@ -148,7 +148,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
             ],
           ),
         ),
-        const SizedBox(height: DabblerSpacing.space3),
+        const DabblerGap.v(DabblerSpacing.space3),
         Expanded(
           child: pastGamesAsync.when(
             loading: () => const Center(child: DabblerSpinner()),
@@ -182,7 +182,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                 padding: _gutter,
                 itemCount: filteredGames.length,
                 separatorBuilder: (_, __) =>
-                    const SizedBox(height: DabblerSpacing.space3),
+                    const DabblerGap.v(DabblerSpacing.space3),
                 itemBuilder: (context, index) {
                   final game = filteredGames[index];
                   return Column(
@@ -214,7 +214,7 @@ class _SportsHistoryTabState extends ConsumerState<_SportsHistoryTab> {
                               size: DabblerSizing.iconInline,
                               color: colors.brandPrimary,
                             ),
-                            const SizedBox(width: DabblerSpacing.space1),
+                            const DabblerGap.h(DabblerSpacing.space1),
                             DabblerText(
                               '${game.sport} · ${game.currentPlayers}/${game.maxPlayers} players',
                               style: DabblerType.caption1,
@@ -268,7 +268,7 @@ class _VenueBookmarksTab extends ConsumerWidget {
           padding: _gutter,
           itemCount: venues.length,
           separatorBuilder: (_, __) =>
-              const SizedBox(height: DabblerSpacing.space3),
+              const DabblerGap.v(DabblerSpacing.space3),
           itemBuilder: (context, index) {
             final venue = venues[index];
 

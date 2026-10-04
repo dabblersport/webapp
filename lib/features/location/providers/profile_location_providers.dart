@@ -13,8 +13,9 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 // REPOSITORY PROVIDER
 // =============================================================================
 
-final profileLocationRepositoryProvider =
-    Provider<ProfileLocationRepository>((ref) {
+final profileLocationRepositoryProvider = Provider<ProfileLocationRepository>((
+  ref,
+) {
   final svc = ref.watch(supabaseServiceProvider);
   return ProfileLocationRepositoryImpl(svc);
 });
@@ -23,8 +24,7 @@ final profileLocationRepositoryProvider =
 // NOTIFIER
 // =============================================================================
 
-class ProfileLocationNotifier
-    extends AsyncNotifier<List<ProfileLocation>> {
+class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
   ProfileLocationRepository get _repo =>
       ref.read(profileLocationRepositoryProvider);
 
@@ -69,10 +69,7 @@ class ProfileLocationNotifier
       final current = state.valueOrNull ?? [];
       // Demote previous primary in local state if this one is primary
       final updated = isPrimary
-          ? [
-              saved,
-              ...current.map((l) => l.copyWith(isPrimary: false)),
-            ]
+          ? [saved, ...current.map((l) => l.copyWith(isPrimary: false))]
           : [saved, ...current];
       state = AsyncData(updated);
     });
@@ -85,8 +82,7 @@ class ProfileLocationNotifier
     final target = current.where((l) => l.id == locationId).firstOrNull;
     if (target == null || target.lat == null || target.lng == null) return;
 
-    final profileId =
-        ref.read(profileControllerProvider).profile?.id;
+    final profileId = ref.read(profileControllerProvider).profile?.id;
     if (profileId == null) return;
 
     final result = await _repo.setPrimary(
@@ -175,21 +171,19 @@ class ProfileLocationNotifier
 
 final profileLocationNotifierProvider =
     AsyncNotifierProvider<ProfileLocationNotifier, List<ProfileLocation>>(
-  ProfileLocationNotifier.new,
-);
+      ProfileLocationNotifier.new,
+    );
 
 /// Resolves the nearest [Area] to the given coordinates using the areas table.
 ///
 /// Used by [SaveLocationSheet] and [SavedLocationsScreen] to display/filter
 /// the area name before saving.
-final resolvedNearestAreaProvider =
-    FutureProvider.autoDispose.family<Area?, ({double lat, double lng})>(
-  (ref, coords) async {
-    final repo = ref.watch(areaRepositoryProvider);
-    final result = await repo.getNearestArea(
-      lat: coords.lat,
-      lng: coords.lng,
-    );
-    return result.fold((_) => null, (area) => area);
-  },
-);
+final resolvedNearestAreaProvider = FutureProvider.autoDispose
+    .family<Area?, ({double lat, double lng})>((ref, coords) async {
+      final repo = ref.watch(areaRepositoryProvider);
+      final result = await repo.getNearestArea(
+        lat: coords.lat,
+        lng: coords.lng,
+      );
+      return result.fold((_) => null, (area) => area);
+    });
