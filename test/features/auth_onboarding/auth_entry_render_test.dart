@@ -226,7 +226,8 @@ void main() {
     'sheet-terms': (
       () => const EmailInputScreen(),
       (t) async {
-        await t.tap(find.text('Terms of Service'));
+        final int links = find.byType(DabblerTextLink).evaluate().length;
+        await t.tap(find.byType(DabblerTextLink).at(links - 2));
         for (var i = 0; i < 8; i++) {
           await t.pump(const Duration(milliseconds: 100));
         }
