@@ -4,6 +4,7 @@ import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_error_text.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_pickers.dart';
+import 'package:dabbler/features/meetups/presentation/widgets/meetup_when_row.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -11,7 +12,6 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart' hide TextDirection;
 
 /// Edit a meetup (host only): title, description, when, location, capacity.
 /// It is the create drawer's content, prefilled, and sends only what changed
@@ -107,18 +107,6 @@ class _MeetupEditScreenState extends ConsumerState<MeetupEditScreen> {
     );
   }
 
-  String _dateLabel(AppLocalizations l, DateTime? d) {
-    if (d == null) return l.game_date;
-    final now = DateTime.now();
-    if (d.year == now.year && d.month == now.month && d.day == now.day) {
-      return l.game_today;
-    }
-    return DateFormat('MMM d').format(d);
-  }
-
-  String _timeLabel(String empty, TimeOfDay? t) =>
-      t == null ? empty : DabblerTimeFormat.format(t);
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -171,36 +159,22 @@ class _MeetupEditScreenState extends ConsumerState<MeetupEditScreen> {
             ),
             Padding(
               padding: gutter,
-              child: ComposerSettingsRow(
-                icon: 'calendar',
-                title: l.meetups_when,
-                subtitle: l.meetups_when_sub,
-                trailing: Wrap(
-                  spacing: DabblerSpacing.space2,
-                  children: <Widget>[
-                    ComposerCompactSelectPill(
-                      value: _dateLabel(l, _date),
-                      onTap: () async {
-                        final d = await pickMeetupDate(context, _date);
-                        if (d != null && mounted) setState(() => _date = d);
-                      },
-                    ),
-                    ComposerCompactSelectPill(
-                      value: _timeLabel(l.game_time, _start),
-                      onTap: () async {
-                        final t = await pickMeetupTime(context, _start);
-                        if (t != null && mounted) setState(() => _start = t);
-                      },
-                    ),
-                    ComposerCompactSelectPill(
-                      value: _timeLabel(l.meetups_end, _end),
-                      onTap: () async {
-                        final t = await pickMeetupTime(context, _end);
-                        if (t != null && mounted) setState(() => _end = t);
-                      },
-                    ),
-                  ],
-                ),
+              child: MeetupWhenRow(
+                date: _date,
+                start: _start,
+                end: _end,
+                onDate: () async {
+                  final d = await pickMeetupDate(context, _date);
+                  if (d != null && mounted) setState(() => _date = d);
+                },
+                onStart: () async {
+                  final t = await pickMeetupTime(context, _start);
+                  if (t != null && mounted) setState(() => _start = t);
+                },
+                onEnd: () async {
+                  final t = await pickMeetupTime(context, _end);
+                  if (t != null && mounted) setState(() => _end = t);
+                },
               ),
             ),
             Padding(

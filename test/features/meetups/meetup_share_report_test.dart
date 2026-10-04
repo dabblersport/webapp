@@ -3,7 +3,6 @@ import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
-import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
