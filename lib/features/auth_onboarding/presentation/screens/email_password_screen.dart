@@ -25,23 +25,19 @@ class EnterPasswordScreen extends ConsumerStatefulWidget {
 }
 
 class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
-  final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _isLoading = false;
-  String? _errorMessage;
+  String? _passwordError;
   bool _isEmailValid = false;
+  bool _emailTouched = false;
+  bool _passwordTouched = false;
 
-  // Forgot Password is hidden on the login screen for now.
-  static const bool _showForgotPassword = false;
-
-  // Email regex shared by the localized validator and the context-free check.
+  // Email regex shared by the validity check and the OTP hand-off.
   static final RegExp _emailRegExp = RegExp(
     r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$',
   );
 
-  /// Format-only validity check that does NOT touch Localizations, so it is
-  /// safe to call from initState (before dependencies are available).
   bool _isEmailFormatValid(String? value) {
     final email = value?.trim() ?? '';
     return email.isNotEmpty && _emailRegExp.hasMatch(email);
@@ -61,29 +57,47 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     super.dispose();
   }
 
-  String? _validateEmail(String? value) {
-    final l10n = AppLocalizations.of(context);
-    final email = value?.trim() ?? '';
-    if (email.isEmpty) return l10n.email_password_validate_email_required;
-    if (!_emailRegExp.hasMatch(email)) {
-      return l10n.email_password_validate_email_invalid;
+  void _toastError(String message) {
+    DabblerToastProvider.of(
+      context,
+    ).show(DabblerToastSpec(message: message, tone: DabblerToastTone.error));
+  }
+
+  void _onEmailChanged(String value) {
+    setState(() {
+      _emailTouched = true;
+      _isEmailValid = _isEmailFormatValid(value);
+    });
+  }
+
+  /// Validation shown live under the email field once it has been edited.
+  String? _emailError(AppLocalizations l10n) {
+    if (!_emailTouched) return null;
+    if (_emailController.text.trim().isEmpty) {
+      return l10n.email_password_validate_email_required;
+    }
+    return _isEmailValid ? null : l10n.email_password_validate_email_invalid;
+  }
+
+  /// The wrong-credentials message, else the live "enter a password" one.
+  String? _passwordMessage(AppLocalizations l10n) {
+    if (_passwordError != null) return _passwordError;
+    if (_passwordTouched && _passwordController.text.isEmpty) {
+      return l10n.email_password_validate_password_required;
     }
     return null;
   }
 
-  void _onEmailChanged(String value) {
-    final isValid = _isEmailFormatValid(value);
-    if (isValid != _isEmailValid) {
-      setState(() => _isEmailValid = isValid);
-    }
-  }
-
   Future<void> _handleLogin() async {
-    if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!_isEmailValid) return;
+    if (_passwordController.text.isEmpty) {
+      setState(() => _passwordTouched = true);
+      return;
+    }
 
     setState(() {
       _isLoading = true;
-      _errorMessage = null;
+      _passwordError = null;
     });
 
     final email = _emailController.text.trim();
@@ -99,7 +113,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       if (result.user == null) {
         if (!mounted) return;
         setState(
-          () => _errorMessage = AppLocalizations.of(
+          () => _passwordError = AppLocalizations.of(
             context,
           ).email_password_error_invalid_creds,
         );
@@ -146,30 +160,31 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           errText.contains('invalid email or password') ||
           errText.contains('email not confirmed');
       if (!mounted) return;
-      setState(() {
-        _errorMessage = isInvalidCreds
-            ? AppLocalizations.of(context).email_password_error_invalid_creds
-            : AppLocalizations.of(context).email_password_error_login_failed;
-      });
+      if (isInvalidCreds) {
+        setState(
+          () => _passwordError = AppLocalizations.of(
+            context,
+          ).email_password_error_invalid_creds,
+        );
+      } else {
+        _toastError(
+          AppLocalizations.of(context).email_password_error_login_failed,
+        );
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleSendEmailOtp() async {
-    if (_validateEmail(_emailController.text) != null) {
-      setState(() {
-        _errorMessage = AppLocalizations.of(
-          context,
-        ).email_password_validate_email_hint;
-      });
+    if (!_isEmailValid) {
+      _toastError(
+        AppLocalizations.of(context).email_password_validate_email_hint,
+      );
       return;
     }
 
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     final email = _emailController.text.trim();
 
@@ -193,21 +208,14 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       );
     } catch (e) {
       if (!mounted) return;
-      setState(
-        () => _errorMessage = AppLocalizations.of(
-          context,
-        ).email_password_error_otp_failed,
-      );
+      _toastError(AppLocalizations.of(context).email_password_error_otp_failed);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleGoogleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authService = ref.read(authServiceProvider);
@@ -251,26 +259,20 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           _onEmailChanged(result.email);
           break;
         case GoogleSignInResultError():
-          setState(() => _errorMessage = result.message);
+          _toastError(result.message);
           break;
       }
     } catch (e) {
-      if (mounted)
-        setState(
-          () => _errorMessage = AppLocalizations.of(
-            context,
-          ).email_password_google_failed,
-        );
+      if (mounted) {
+        _toastError(AppLocalizations.of(context).email_password_google_failed);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
   }
 
   Future<void> _handleAppleSignIn() async {
-    setState(() {
-      _isLoading = true;
-      _errorMessage = null;
-    });
+    setState(() => _isLoading = true);
 
     try {
       final authService = ref.read(authServiceProvider);
@@ -314,13 +316,11 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
           _onEmailChanged(result.email);
           break;
         case GoogleSignInResultError():
-          setState(() => _errorMessage = result.message);
+          _toastError(result.message);
           break;
       }
     } catch (e) {
-      if (mounted) {
-        setState(() => _errorMessage = 'Apple sign-in failed: $e');
-      }
+      if (mounted) _toastError('Apple sign-in failed: $e');
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -329,175 +329,93 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    return DabblerPage(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
-                  child: IntrinsicHeight(
-                    child: Padding(
-                      padding: const EdgeInsetsDirectional.fromSTEB(
-                        DabblerSpacing.space8,
-                        DabblerSpacing.space10,
-                        DabblerSpacing.space8,
-                        DabblerSpacing.space8,
-                      ),
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            DabblerText(
-                              l10n.email_password_title,
-                              style: DabblerType.largeTitle,
-                            ),
-                            const SizedBox(height: DabblerSpacing.space3),
-                            DabblerText(
-                              l10n.email_password_subtitle,
-                              tone: DabblerTextTone.secondary,
-                            ),
-                            const SizedBox(height: DabblerSpacing.space8),
-                            _buildEmailField(context),
-                            const SizedBox(height: DabblerSpacing.space5),
-                            _buildPasswordField(context),
-                            if (_showForgotPassword) ...[
-                              const SizedBox(height: DabblerSpacing.space4),
-                              DabblerButton(
-                                label: l10n.email_password_forgot,
-                                tone: DabblerButtonTone.text,
-                                fullWidth: true,
-                                disabled: _isLoading,
-                                onPressed: _isLoading
-                                    ? null
-                                    : () => context.go(
-                                        RoutePaths.forgotPassword,
-                                        extra: {
-                                          'email': _emailController.text.trim(),
-                                        },
-                                      ),
-                              ),
-                            ],
-                            const SizedBox(height: DabblerSpacing.space6),
-                            DabblerButton(
-                              label: l10n.email_password_login_btn,
-                              size: DabblerButtonSize.full,
-                              fullWidth: true,
-                              loading: _isLoading,
-                              disabled: !(_isEmailValid && !_isLoading),
-                              onPressed: (_isEmailValid && !_isLoading)
-                                  ? _handleLogin
-                                  : null,
-                            ),
-                            const SizedBox(height: DabblerSpacing.space2),
-                            DabblerButton(
-                              label: l10n.email_password_send_otp,
-                              tone: DabblerButtonTone.text,
-                              fullWidth: true,
-                              disabled: _isLoading || !_isEmailValid,
-                              onPressed: _isLoading || !_isEmailValid
-                                  ? null
-                                  : _handleSendEmailOtp,
-                            ),
-                            if (_errorMessage != null) ...[
-                              const SizedBox(height: DabblerSpacing.space5),
-                              AuthInlineMessage(message: _errorMessage!),
-                            ],
-                            const Spacer(),
-                            const SizedBox(height: DabblerSpacing.space6),
-                            DabblerButton(
-                              label: l10n.email_password_btn_google,
-                              tone: DabblerButtonTone.outlined,
-                              size: DabblerButtonSize.full,
-                              fullWidth: true,
-                              disabled: _isLoading,
-                              onPressed: _isLoading
-                                  ? null
-                                  : _handleGoogleSignIn,
-                            ),
-                            if (!kIsWeb &&
-                                defaultTargetPlatform ==
-                                    TargetPlatform.iOS) ...[
-                              const SizedBox(height: DabblerSpacing.space4),
-                              DabblerButton(
-                                label: l10n.email_password_btn_apple,
-                                tone: DabblerButtonTone.outlined,
-                                size: DabblerButtonSize.full,
-                                fullWidth: true,
-                                disabled: _isLoading,
-                                onPressed: _isLoading
-                                    ? null
-                                    : _handleAppleSignIn,
-                              ),
-                            ],
-                            const SizedBox(height: DabblerSpacing.space4),
-                            _buildSignUpRedirect(context),
-                            const SizedBox(height: DabblerSpacing.space5),
-                            const AuthLegalNotice(),
-                          ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            },
-          ),
-        ),
+    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
+
+    final List<Widget> body = <Widget>[
+      DabblerTextField(
+        controller: _emailController,
+        label: l10n.email_input_label,
+        placeholder: l10n.email_password_hint_email,
+        errorText: _emailError(l10n),
+        enabled: !_isLoading,
+        keyboardType: TextInputType.emailAddress,
+        autofillHints: const [AutofillHints.email],
+        textInputAction: TextInputAction.next,
+        onChanged: _onEmailChanged,
       ),
-    );
-  }
+      DabblerTextField(
+        variant: DabblerTextFieldVariant.password,
+        controller: _passwordController,
+        label: l10n.email_password_hint_password,
+        errorText: _passwordMessage(l10n),
+        enabled: !_isLoading,
+        autofillHints: const [AutofillHints.password],
+        textInputAction: TextInputAction.done,
+        onChanged: (_) => setState(() {
+          _passwordTouched = true;
+          _passwordError = null;
+        }),
+        onSubmitted: (_) {
+          if (_isEmailValid && !_isLoading) _handleLogin();
+        },
+      ),
+    ];
 
-  Widget _buildEmailField(BuildContext context) {
-    return DabblerTextField(
-      controller: _emailController,
-      placeholder: AppLocalizations.of(context).email_password_hint_email,
-      keyboardType: TextInputType.emailAddress,
-      autofillHints: const [AutofillHints.email],
-      textInputAction: TextInputAction.next,
-      onChanged: _onEmailChanged,
-      validator: _validateEmail,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-    );
-  }
-
-  Widget _buildPasswordField(BuildContext context) {
-    return DabblerTextField(
-      variant: DabblerTextFieldVariant.password,
-      controller: _passwordController,
-      placeholder: AppLocalizations.of(context).email_password_hint_password,
-      autofillHints: const [AutofillHints.password],
-      textInputAction: TextInputAction.done,
-      onSubmitted: (_) {
-        if (!_isLoading) _handleLogin();
-      },
-      validator: (v) => v == null || v.isEmpty
-          ? AppLocalizations.of(
-              context,
-            ).email_password_validate_password_required
-          : null,
-      autovalidateMode: AutovalidateMode.onUserInteraction,
-    );
-  }
-
-  Widget _buildSignUpRedirect(BuildContext context) {
-    return Center(
-      child: DabblerText.rich(
-        [
-          const DabblerTextSpan('Not a user? '),
-          DabblerTextSpan(
-            'Sign up',
-            onTap: _isLoading ? null : () => context.go(RoutePaths.emailInput),
+    return DabblerFlowPage(
+      onBack: () =>
+          context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
+      backLabel: l10n.auth_back,
+      title: l10n.email_password_title,
+      titleStyle: DabblerType.largeTitle,
+      subtitle: l10n.email_password_subtitle,
+      subtitleStyle: DabblerType.body,
+      primaryLabel: l10n.email_password_login_btn,
+      primaryLoading: _isLoading,
+      onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
+      secondary: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Center(
+            child: DabblerTextLink(
+              label: l10n.email_password_send_otp,
+              underline: false,
+              onPressed: _isLoading || !_isEmailValid
+                  ? null
+                  : _handleSendEmailOtp,
+            ),
+          ),
+          DabblerDivider(label: l10n.auth_or),
+          const DabblerGap.v(DabblerSpacing.space4),
+          DabblerButton(
+            label: l10n.email_password_btn_google,
+            tone: DabblerButtonTone.outlined,
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            disabled: _isLoading,
+            onPressed: _isLoading ? null : _handleGoogleSignIn,
+          ),
+          if (showApple) ...<Widget>[
+            const DabblerGap.v(DabblerSpacing.space4),
+            DabblerButton(
+              label: l10n.email_password_btn_apple,
+              tone: DabblerButtonTone.outlined,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              disabled: _isLoading,
+              onPressed: _isLoading ? null : _handleAppleSignIn,
+            ),
+          ],
+          const DabblerGap.v(DabblerSpacing.space4),
+          AuthAccountLine(
+            prefix: l10n.auth_new_here,
+            action: l10n.auth_create_account,
+            onAction: _isLoading
+                ? null
+                : () => context.go(RoutePaths.emailInput),
           ),
         ],
-        style: DabblerType.subheadline,
-        tone: DabblerTextTone.secondary,
-        textAlign: TextAlign.center,
       ),
+      content: body,
     );
   }
 }

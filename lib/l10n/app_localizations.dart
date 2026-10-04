@@ -410,6 +410,54 @@ abstract class AppLocalizations {
   /// **'Choose language'**
   String get landing_choose_language;
 
+  /// No description provided for @auth_already_have_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Already have an account?'**
+  String get auth_already_have_account;
+
+  /// No description provided for @auth_log_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Log in'**
+  String get auth_log_in;
+
+  /// No description provided for @auth_new_here.
+  ///
+  /// In en, this message translates to:
+  /// **'New here?'**
+  String get auth_new_here;
+
+  /// No description provided for @auth_create_account.
+  ///
+  /// In en, this message translates to:
+  /// **'Create an account'**
+  String get auth_create_account;
+
+  /// No description provided for @auth_sheet_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get auth_sheet_done;
+
+  /// No description provided for @auth_sheet_got_it.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get auth_sheet_got_it;
+
+  /// No description provided for @auth_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get auth_back;
+
+  /// No description provided for @auth_or.
+  ///
+  /// In en, this message translates to:
+  /// **'or'**
+  String get auth_or;
+
   /// No description provided for @email_input_title.
   ///
   /// In en, this message translates to:

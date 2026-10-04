@@ -2,67 +2,80 @@ import 'dart:async';
 
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class _Testimonial {
-  final String name;
-  final String vibe;
-  final String quote;
-  final String highlightWord;
-
-  const _Testimonial({
+/// One person on the welcome carousel — a name, the role they play on Dabbler,
+/// and the two lines that say what they want from it.
+class _Vignette {
+  const _Vignette({
+    required this.seed,
     required this.name,
-    required this.vibe,
+    required this.role,
     required this.quote,
-    required this.highlightWord,
+    required this.want,
   });
+
+  final String seed;
+  final String name;
+  final String role;
+  final String quote;
+  final String want;
 }
 
-const _kTestimonials = [
-  _Testimonial(
-    name: 'Noor',
-    vibe: 'Determined',
-    quote:
-        "I promised myself I'd play at least twice a week.\n\nBetween work and life, finding a game feels harder than a 90-minute run.",
-    highlightWord: 'twice a week',
-  ),
-  _Testimonial(
+const List<_Vignette> _kVignettes = <_Vignette>[
+  _Vignette(
+    seed: 'Marcus Adeyemi',
     name: 'Marcus',
-    vibe: 'Captain',
+    role: 'Organiser',
     quote:
-        "Half the group chat's flaky. The other half changes their mind by Friday.\n\nI just want one place to organise a 5-a-side and stop chasing replies.",
-    highlightWord: 'one place to organise a 5-a-side',
+        'Half the group chat’s flaky. The other half changes their mind by Friday.',
+    want:
+        'I just want one place to organise a 5-a-side and stop chasing replies.',
   ),
-  _Testimonial(
+  _Vignette(
+    seed: 'Aisha Khan',
     name: 'Aisha',
-    vibe: 'Curious',
-    quote:
-        "I moved to a new city and didn't know a single soul here.\n\nFinding people who shared my vibe shouldn't be this hard.",
-    highlightWord: 'Finding people who shared my vibe',
+    role: 'Player',
+    quote: 'New city, decent left foot, nobody to pass to.',
+    want: 'I want a game this week, not a group chat about a game.',
+  ),
+  _Vignette(
+    seed: 'Priya Nair',
+    name: 'Priya',
+    role: 'Socialiser',
+    quote: 'I follow more padel than I’ve ever actually played.',
+    want: 'Show me who’s playing near me and I’ll find my way in.',
+  ),
+  _Vignette(
+    seed: 'The Sevens Stadium',
+    name: 'The Sevens',
+    role: 'Host',
+    quote: 'Three pitches free at 9pm and nobody knows about it.',
+    want: 'Put my courts in front of players already looking for one.',
   ),
 ];
 
-class LandingPage extends ConsumerStatefulWidget {
+/// The app welcome: a carousel of the people Dabbler is for, the one-line
+/// pitch, Continue, and the region and language chips.
+class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
 
   @override
-  ConsumerState<LandingPage> createState() => _LandingPageState();
+  State<LandingPage> createState() => _LandingPageState();
 }
 
-class _LandingPageState extends ConsumerState<LandingPage> {
-  int _idx = 0;
+class _LandingPageState extends State<LandingPage> {
+  int _index = 0;
   Timer? _timer;
 
   @override
   void initState() {
     super.initState();
     _timer = Timer.periodic(DabblerMotion.autoAdvanceHero, (_) {
-      if (mounted) setState(() => _idx = (_idx + 1) % _kTestimonials.length);
+      if (mounted) setState(() => _index = (_index + 1) % _kVignettes.length);
     });
   }
 
@@ -72,236 +85,104 @@ class _LandingPageState extends ConsumerState<LandingPage> {
     super.dispose();
   }
 
-  void _openLanguagePicker() {
-    showDabblerSheet<void>(
-      context: context,
-      detents: const <double>[0.4],
-      builder: (ctx) => _LandingLanguagePickerSheet(ref: ref),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
-    final locale = ref.watch(localeProvider);
-    final langLabel = locale.languageCode == 'ar' ? 'العربية' : 'English';
-    final t = _kTestimonials[_idx];
-    final colors = DabblerColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final _Vignette v = _kVignettes[_index];
 
     return DabblerPage(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsetsDirectional.only(
-                  start: DabblerSpacing.space8,
-                  top: DabblerSpacing.space4,
-                  end: DabblerSpacing.space8,
-                ),
-                child: DabblerWordmark(),
+      maxContentWidth: DabblerPage.readableWidth,
+      body: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          Expanded(
+            child: SingleChildScrollView(
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space8,
+                top: DabblerSpacing.space4,
+                end: DabblerSpacing.space8,
               ),
-              Expanded(
-                child: Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    start: DabblerSpacing.space8,
-                    top: DabblerSpacing.space9,
-                    end: DabblerSpacing.space8,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      AnimatedSwitcher(
-                        duration: DabblerMotion.durationOf(
-                          context,
-                          DabblerMotion.heroCrossfade,
-                        ),
-                        child: _UserIdentityRow(key: ValueKey(_idx), t: t),
-                      ),
-                      const SizedBox(height: DabblerSpacing.space8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: <Widget>[
+                  DabblerWordmark(color: DabblerColors.of(context).brandPrimary),
+                  const DabblerGap.v(DabblerSpacing.space9),
+                  Row(
+                    children: <Widget>[
+                      DabblerAvatar(seed: v.seed, size: DabblerAvatarSize.md),
+                      const DabblerGap.h(DabblerSpacing.space4),
                       Expanded(
-                        child: SingleChildScrollView(
-                          child: AnimatedSwitcher(
-                            duration: DabblerMotion.durationOf(
-                              context,
-                              DabblerMotion.heroCrossfade,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            DabblerText(
+                              v.name,
+                              style: DabblerType.body,
+                              weight: DabblerTextWeight.medium,
                             ),
-                            child: _QuoteText(key: ValueKey('q$_idx'), t: t),
-                          ),
+                            const DabblerGap.v(DabblerSpacing.space1),
+                            DabblerBadge(
+                              label: v.role.toUpperCase(),
+                              outlined: true,
+                              fill: DabblerColors.of(context).surfaceSunken,
+                            ),
+                          ],
                         ),
-                      ),
-                      const SizedBox(height: DabblerSpacing.space4),
-                      Row(
-                        children: List.generate(_kTestimonials.length, (i) {
-                          final active = i == _idx;
-                          return GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: () => setState(() => _idx = i),
-                            child: Padding(
-                              padding: const EdgeInsetsDirectional.only(
-                                end: DabblerSpacing.space2,
-                              ),
-                              child: AnimatedContainer(
-                                duration: DabblerMotion.durationOf(
-                                  context,
-                                  DabblerMotion.scrollTo,
-                                ),
-                                width: active
-                                    ? DabblerSpacing.space8
-                                    : DabblerSpacing.space2,
-                                height: DabblerSpacing.space2,
-                                decoration: BoxDecoration(
-                                  borderRadius: BorderRadius.circular(
-                                    DabblerRadius.pill,
-                                  ),
-                                  color: active
-                                      ? colors.brandPrimary
-                                      : colors.borderStrong,
-                                ),
-                              ),
-                            ),
-                          );
-                        }),
                       ),
                     ],
                   ),
-                ),
+                  const DabblerGap.v(DabblerSpacing.space8),
+                  DabblerText(v.quote, style: DabblerType.largeTitle),
+                  const DabblerGap.v(DabblerSpacing.space6),
+                  DabblerText(
+                    v.want,
+                    style: DabblerType.callout,
+                    weight: DabblerTextWeight.regular,
+                    tone: DabblerTextTone.secondary,
+                  ),
+                ],
               ),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space6,
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space8,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DabblerText(
-                      'Dabbler connects players, captains, and venues — so you can stop searching and start playing.',
-                      style: DabblerType.subheadline,
-                      tone: DabblerTextTone.secondary,
-                    ),
-                    const SizedBox(height: DabblerSpacing.space5),
-                    authIdentify(
-                      'landing-continue',
-                      DabblerButton(
-                        label: AppLocalizations.of(context).landing_continue,
-                        size: DabblerButtonSize.full,
-                        fullWidth: true,
-                        onPressed: () => context.go(RoutePaths.authWelcome),
-                      ),
-                    ),
-                    const SizedBox(height: DabblerSpacing.space4),
-                    Center(
-                      child: DabblerChip(
-                        label: langLabel,
-                        leadingIcon: const DabblerIcon('language-square'),
-                        onTap: _openLanguagePicker,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
-    );
-  }
-}
-
-class _UserIdentityRow extends StatelessWidget {
-  const _UserIdentityRow({super.key, required this.t});
-  final _Testimonial t;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        DabblerAvatar(seed: t.name, size: DabblerAvatarSize.lg),
-        const SizedBox(width: DabblerSpacing.space4),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DabblerBadge(label: t.vibe.toUpperCase()),
-              const SizedBox(height: DabblerSpacing.space2),
-              DabblerText(t.name, style: DabblerType.title2),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _QuoteText extends StatelessWidget {
-  const _QuoteText({super.key, required this.t});
-  final _Testimonial t;
-
-  @override
-  Widget build(BuildContext context) {
-    final parts = t.quote.split(t.highlightWord);
-    return DabblerText.rich([
-      if (parts.isNotEmpty) DabblerTextSpan(parts[0]),
-      DabblerTextSpan(t.highlightWord, tone: DabblerTextTone.brand),
-      if (parts.length > 1) DabblerTextSpan(parts[1]),
-    ], style: DabblerType.title1);
-  }
-}
-
-class _LandingLanguagePickerSheet extends StatelessWidget {
-  const _LandingLanguagePickerSheet({required this.ref});
-
-  final WidgetRef ref;
-
-  static const _languages = [
-    {'code': 'en', 'name': 'English'},
-    {'code': 'ar', 'name': 'العربية'},
-  ];
-
-  @override
-  Widget build(BuildContext context) {
-    final current = ref.watch(localeProvider);
-
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space4,
-        end: DabblerSpacing.space4,
-        bottom: DabblerSpacing.space6,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
           Padding(
             padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space4,
-              DabblerSpacing.space2,
-              DabblerSpacing.space4,
-              DabblerSpacing.space2,
+              DabblerSpacing.space8,
+              DabblerSpacing.space6,
+              DabblerSpacing.space8,
+              DabblerSpacing.space9,
             ),
-            child: DabblerText(
-              AppLocalizations.of(context).landing_choose_language,
-              style: DabblerType.title3,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                Align(
+                  alignment: AlignmentDirectional.centerStart,
+                  child: DabblerPageDots(
+                    count: _kVignettes.length,
+                    index: _index,
+                    onSelected: (int i) => setState(() => _index = i),
+                  ),
+                ),
+                const DabblerGap.v(DabblerSpacing.space5),
+                DabblerText(
+                  l10n.landing_tagline,
+                  style: DabblerType.subheadline,
+                  tone: DabblerTextTone.secondary,
+                ),
+                const DabblerGap.v(DabblerSpacing.space5),
+                authIdentify(
+                  'landing-continue',
+                  DabblerButton(
+                    label: l10n.landing_continue,
+                    size: DabblerButtonSize.full,
+                    fullWidth: true,
+                    onPressed: () => context.go(RoutePaths.authWelcome),
+                  ),
+                ),
+                const DabblerGap.v(DabblerSpacing.space5),
+                const AuthLocaleChips(),
+              ],
             ),
           ),
-          ..._languages.map((lang) {
-            final isSelected = current.languageCode == lang['code'];
-            return AuthPickerRow(
-              title: lang['name']!,
-              selected: isSelected,
-              onTap: () {
-                ref
-                    .read(localeProvider.notifier)
-                    .setLocale(Locale(lang['code']!));
-                Navigator.of(context).pop();
-              },
-            );
-          }),
         ],
       ),
     );

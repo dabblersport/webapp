@@ -53,12 +53,12 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               l10n.forgot_password_title,
               style: DabblerType.largeTitle,
             ),
-            const SizedBox(height: DabblerSpacing.space3),
+            const DabblerGap.v(DabblerSpacing.space3),
             DabblerText(
               l10n.forgot_password_subtitle,
               tone: DabblerTextTone.secondary,
             ),
-            const SizedBox(height: DabblerSpacing.space9),
+            const DabblerGap.v(DabblerSpacing.space9),
             DabblerTextField(
               controller: _emailController,
               placeholder: l10n.forgot_password_email_hint,
@@ -71,7 +71,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               textInputAction: TextInputAction.done,
               onSubmitted: (_) => _submit(context),
             ),
-            const SizedBox(height: DabblerSpacing.space8),
+            const DabblerGap.v(DabblerSpacing.space8),
             DabblerButton(
               label: l10n.forgot_password_send_btn,
               size: DabblerButtonSize.full,
@@ -79,13 +79,13 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
               loading: _isLoading,
               onPressed: () => _submit(context),
             ),
-            const SizedBox(height: DabblerSpacing.space5),
+            const DabblerGap.v(DabblerSpacing.space5),
             if (_sent)
               DabblerBanner(
                 tone: DabblerBannerTone.success,
                 message: l10n.forgot_password_sent_msg,
               ),
-            const SizedBox(height: DabblerSpacing.space8),
+            const DabblerGap.v(DabblerSpacing.space8),
             DabblerButton(
               label: l10n.forgot_password_back_to_signin,
               tone: DabblerButtonTone.text,

@@ -38,131 +38,139 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final personaContent = _getPersonaContent(widget.personaType);
-
-    return DabblerPage(
-      body: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 480),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  physics: const BouncingScrollPhysics(),
-                  padding: const EdgeInsetsDirectional.fromSTEB(
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space6,
-                    DabblerSpacing.space8,
-                    DabblerSpacing.space6,
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      _buildAvatarRow(context, personaContent),
-                      const SizedBox(height: DabblerSpacing.space8),
-                      DabblerText(
-                        _getWelcomeTitle(),
-                        style: DabblerType.largeTitle,
-                      ),
-                      const SizedBox(height: DabblerSpacing.space4),
-                      DabblerText(
-                        personaContent.guidanceText,
-                        tone: DabblerTextTone.secondary,
-                      ),
-                      const SizedBox(height: DabblerSpacing.space6),
-                      DabblerCard(
-                        variant: DabblerCardVariant.white,
-                        padding: const EdgeInsets.all(DabblerSpacing.space6),
-                        child: DabblerText(
-                          personaContent.philosophyStatement,
-                          style: DabblerType.title3,
-                        ),
-                      ),
-                      const SizedBox(height: DabblerSpacing.space4),
-                      DabblerCard(
-                        variant: DabblerCardVariant.white,
-                        padding: const EdgeInsets.all(DabblerSpacing.space6),
-                        child: _buildReminder(context, personaContent),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              Padding(
-                padding: const EdgeInsetsDirectional.fromSTEB(
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space4,
-                  DabblerSpacing.space8,
-                  DabblerSpacing.space8,
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    DabblerText(
-                      personaContent.finalEmphasis,
-                      style: DabblerType.callout,
-                      textAlign: TextAlign.center,
-                    ),
-                    const SizedBox(height: DabblerSpacing.space5),
-                    DabblerButton(
-                      label: AppLocalizations.of(
-                        context,
-                      ).welcome_screen_continue,
-                      size: DabblerButtonSize.full,
-                      fullWidth: true,
-                      onPressed: () {
-                        routerRefreshNotifier.clearPostLoginWelcome();
-                        context.go(RoutePaths.home);
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
+  void _continue() {
+    routerRefreshNotifier.clearPostLoginWelcome();
+    context.go(RoutePaths.home);
   }
 
-  Widget _buildAvatarRow(BuildContext context, _PersonaContent personaContent) {
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final persona = _personaContent(widget.personaType);
+    final returning = !widget.isFirstTime && !widget.isConversion;
+
     return FutureBuilder<Map<String, dynamic>?>(
       future: _profileFuture,
       builder: (context, snapshot) {
         final profile = snapshot.data;
         final avatarUrl = profile?['avatar_url'] as String?;
         final profileName = (profile?['display_name'] as String?)?.trim();
-        final resolvedName = (profileName != null && profileName.isNotEmpty)
+        final name = (profileName != null && profileName.isNotEmpty)
             ? profileName
             : widget.displayName;
 
-        return Row(
-          children: [
-            DabblerAvatar(
-              size: DabblerAvatarSize.lg,
-              seed: resolvedName,
-              imageUrl: avatarUrl,
+        if (returning) {
+          return DabblerFlowPage(
+            centered: true,
+            leading: Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DabblerAvatar(
+                seed: name,
+                imageUrl: avatarUrl,
+                size: DabblerAvatarSize.xl,
+              ),
             ),
-            const SizedBox(width: DabblerSpacing.space5),
-            Expanded(
+            title: _title(l10n),
+            titleStyle: DabblerType.largeTitle,
+            primaryLabel: l10n.welcome_screen_continue,
+            onPrimary: _continue,
+            footerBottomPadding: DabblerSpacing.space9,
+          );
+        }
+
+        return DabblerFlowPage(
+          spreadChildren: true,
+          footerBottomPadding: DabblerSpacing.space9,
+          primaryLabel: l10n.welcome_screen_continue,
+          onPrimary: _continue,
+          leading: Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space4,
+            ),
+            child: Row(
+              children: <Widget>[
+                DabblerAvatar(
+                  seed: name,
+                  imageUrl: avatarUrl,
+                  size: DabblerAvatarSize.lg,
+                ),
+                const DabblerGap.h(DabblerSpacing.space5),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      DabblerText(
+                        name,
+                        style: DabblerType.headline,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const DabblerGap.v(DabblerSpacing.space2),
+                      DabblerBadge(
+                        label: persona.chipLabel,
+                        tone: DabblerBadgeTone.defaultTone,
+                        icon: DabblerIcon(
+                          persona.icon,
+                          weight: DabblerIconWeight.bold,
+                          size: DabblerSizing.iconXs,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          content: <Widget>[
+            DabblerCard(
+              variant: DabblerCardVariant.white,
+              padding: DabblerInsets.card,
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  DabblerText(_title(l10n), style: DabblerType.largeTitle),
+                  const DabblerGap.v(DabblerSpacing.space4),
                   DabblerText(
-                    resolvedName,
-                    style: DabblerType.headline,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
+                    persona.philosophyStatement,
+                    style: DabblerType.callout,
+                    weight: DabblerTextWeight.semibold,
                   ),
-                  const SizedBox(height: DabblerSpacing.space2),
-                  Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: DabblerBadge(label: personaContent.chipLabel),
+                ],
+              ),
+            ),
+            DabblerCard(
+              variant: DabblerCardVariant.white,
+              padding: DabblerInsets.card,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: <Widget>[
+                  DabblerText(
+                    l10n.welcome_screen_dont_forget.toUpperCase(),
+                    style: DabblerType.footnote,
+                    weight: DabblerTextWeight.semibold,
+                    tone: DabblerTextTone.secondary,
                   ),
+                  for (final String line in persona.reminderLines) ...<Widget>[
+                    const DabblerGap.v(DabblerSpacing.space4),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        DabblerIcon(
+                          'tick-circle',
+                          weight: DabblerIconWeight.bold,
+                          size: DabblerSizing.iconSm,
+                          color: DabblerColors.of(context).brandPrimary,
+                        ),
+                        const DabblerGap.h(DabblerSpacing.space3),
+                        Expanded(
+                          child: DabblerText(
+                            line,
+                            style: DabblerType.subheadline,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -172,26 +180,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  Widget _buildReminder(BuildContext context, _PersonaContent personaContent) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        DabblerText(
-          AppLocalizations.of(context).welcome_screen_dont_forget,
-          style: DabblerType.headline,
-        ),
-        const SizedBox(height: DabblerSpacing.space2),
-        DabblerText(
-          personaContent.reminderText,
-          style: DabblerType.subheadline,
-          tone: DabblerTextTone.secondary,
-        ),
-      ],
-    );
-  }
-
-  String _getWelcomeTitle() {
-    final l10n = AppLocalizations.of(context);
+  String _title(AppLocalizations l10n) {
     if (widget.isConversion) {
       return authStripEmoji(l10n.welcome_screen_title_conversion);
     } else if (widget.isFirstTime) {
@@ -201,71 +190,59 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     }
   }
 
-  _PersonaContent _getPersonaContent(String persona) {
+  _PersonaContent _personaContent(String persona) {
     final l10n = AppLocalizations.of(context);
     switch (persona.toLowerCase()) {
-      case 'player':
-        return _PersonaContent(
-          chipLabel: l10n.welcome_screen_chip_player,
-          guidanceText: l10n.welcome_screen_player_guidance,
-          philosophyStatement: l10n.welcome_screen_player_philosophy,
-          reminderText: l10n.welcome_screen_player_reminder,
-          finalEmphasis: l10n.welcome_screen_player_emphasis,
-        );
-
       case 'organiser':
         return _PersonaContent(
+          icon: 'calendar',
           chipLabel: l10n.welcome_screen_chip_organiser,
-          guidanceText: l10n.welcome_screen_organiser_guidance,
           philosophyStatement: l10n.welcome_screen_organiser_philosophy,
           reminderText: l10n.welcome_screen_organiser_reminder,
-          finalEmphasis: l10n.welcome_screen_organiser_emphasis,
         );
-
       case 'host':
         return _PersonaContent(
+          icon: 'location',
           chipLabel: l10n.welcome_screen_chip_host,
-          guidanceText: l10n.welcome_screen_host_guidance,
           philosophyStatement: l10n.welcome_screen_host_philosophy,
           reminderText: l10n.welcome_screen_host_reminder,
-          finalEmphasis: l10n.welcome_screen_host_emphasis,
         );
-
       case 'socialiser':
         return _PersonaContent(
+          icon: 'people',
           chipLabel: l10n.welcome_screen_chip_socialiser,
-          guidanceText: l10n.welcome_screen_socialiser_guidance,
           philosophyStatement: l10n.welcome_screen_socialiser_philosophy,
           reminderText: l10n.welcome_screen_socialiser_reminder,
-          finalEmphasis: l10n.welcome_screen_socialiser_emphasis,
         );
-
+      case 'player':
       default:
-        // Fallback to player
         return _PersonaContent(
+          icon: 'game',
           chipLabel: l10n.welcome_screen_chip_player,
-          guidanceText: l10n.welcome_screen_player_guidance,
           philosophyStatement: l10n.welcome_screen_player_philosophy,
           reminderText: l10n.welcome_screen_player_reminder,
-          finalEmphasis: l10n.welcome_screen_player_emphasis,
         );
     }
   }
 }
 
-/// Helper class to hold persona-specific content
+/// The persona-specific words of the welcome frame.
 class _PersonaContent {
-  final String chipLabel;
-  final String guidanceText;
-  final String philosophyStatement;
-  final String reminderText;
-  final String finalEmphasis;
-
-  _PersonaContent({
+  const _PersonaContent({
+    required this.icon,
     required this.chipLabel,
-    required this.guidanceText,
     required this.philosophyStatement,
     required this.reminderText,
-    required this.finalEmphasis,
   });
+
+  final String icon;
+  final String chipLabel;
+  final String philosophyStatement;
+  final String reminderText;
+
+  List<String> get reminderLines => reminderText
+      .split('\n')
+      .map((String l) => l.trim())
+      .where((String l) => l.isNotEmpty)
+      .toList();
 }

@@ -244,7 +244,6 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
 
     final isEmail = _identifierType == IdentifierType.email;
@@ -261,123 +260,84 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
     final isAllFilled = _getOtpCode().length == 6;
 
-    return DabblerPage(
-      resizeForKeyboard: false,
-      topBar: DabblerNavigationTopBar.titled(onBack: () => context.pop()),
-      bottomBar: Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space8,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
-          DabblerSpacing.space8,
+    final List<Widget> body = <Widget>[
+      DabblerSurface.card(
+        radius: DabblerRadius.lg,
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space5,
+          vertical: DabblerSpacing.space4,
         ),
-        child: DabblerButton(
-          label: l10n.otp_verify_continue,
-          size: DabblerButtonSize.full,
-          fullWidth: true,
-          disabled: !isAllFilled,
-          loading: _isLoading,
-          onPressed: _handleSubmit,
-        ),
-      ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsetsDirectional.only(
-          start: DabblerSpacing.space8,
-          top: DabblerSpacing.space4,
-          end: DabblerSpacing.space8,
-        ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            DabblerText(title, style: DabblerType.largeTitle),
-            const SizedBox(height: DabblerSpacing.space3),
-            DabblerText(subtitle, tone: DabblerTextTone.secondary),
-            const SizedBox(height: DabblerSpacing.space6),
-            DabblerSurface.card(
-              radius: DabblerRadius.lg,
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space5,
-                vertical: DabblerSpacing.space4,
-              ),
-              child: Row(
-                children: [
-                  DabblerIcon(
-                    isEmail ? 'sms' : 'mobile',
-                    size: DabblerSizing.iconRow,
-                    color: colors.brandPrimary,
-                  ),
-                  const SizedBox(width: DabblerSpacing.space4),
-                  Expanded(
-                    child: Directionality(
-                      textDirection: TextDirection.ltr,
-                      child: DabblerText(
-                        _identifier,
-                        style: DabblerType.subheadline,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                  ),
-                  DabblerButton(
-                    label: changeLabel,
-                    tone: DabblerButtonTone.text,
-                    size: DabblerButtonSize.small,
-                    onPressed: () => context.go(changeRoute),
-                  ),
-                ],
-              ),
+        child: Row(
+          children: <Widget>[
+            DabblerIcon(
+              isEmail ? 'sms' : 'mobile',
+              size: DabblerSizing.iconRow,
+              color: DabblerColors.of(context).brandPrimary,
             ),
-            const SizedBox(height: DabblerSpacing.space6),
-            DabblerCodeInput(
-              value: _code,
-              error: _errorMessage != null,
-              enabled: !_isLoading,
-              onChanged: _onCodeChanged,
-              onCompleted: _onCodeCompleted,
-            ),
-            if (_errorMessage != null) ...[
-              const SizedBox(height: DabblerSpacing.space4),
-              DabblerBanner(
-                tone: DabblerBannerTone.error,
-                message: _errorMessage,
-              ),
-            ],
-            const SizedBox(height: DabblerSpacing.space6),
-            Wrap(
-              crossAxisAlignment: WrapCrossAlignment.center,
-              children: [
-                DabblerText(
-                  l10n.otp_verify_didnt_get,
+            const DabblerGap.h(DabblerSpacing.space4),
+            Expanded(
+              child: Directionality(
+                textDirection: TextDirection.ltr,
+                child: DabblerText(
+                  _identifier,
                   style: DabblerType.subheadline,
-                  tone: DabblerTextTone.secondary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
                 ),
-                if (_resendCountdown > 0)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      start: DabblerSpacing.space2,
-                    ),
-                    child: DabblerText(
-                      l10n.otp_verify_resend_countdown(_resendCountdown),
-                      style: DabblerType.subheadline,
-                      tone: DabblerTextTone.tertiary,
-                    ),
-                  )
-                else
-                  DabblerButton(
-                    label: _isResending
-                        ? l10n.otp_verify_sending
-                        : l10n.otp_verify_resend,
-                    tone: DabblerButtonTone.text,
-                    size: DabblerButtonSize.small,
-                    disabled: _isResending,
-                    onPressed: _handleResend,
-                  ),
-              ],
+              ),
             ),
-            const SizedBox(height: DabblerSpacing.space10),
+            DabblerTextLink(
+              label: changeLabel,
+              underline: false,
+              onPressed: () => context.go(changeRoute),
+            ),
           ],
         ),
       ),
+      Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          DabblerCodeInput(
+            value: _code,
+            error: _errorMessage != null,
+            enabled: !_isLoading,
+            onChanged: _onCodeChanged,
+            onCompleted: _onCodeCompleted,
+          ),
+          if (_errorMessage != null) ...<Widget>[
+            const DabblerGap.v(DabblerSpacing.space4),
+            DabblerInlineMessage(_errorMessage!),
+          ],
+        ],
+      ),
+      Align(
+        alignment: AlignmentDirectional.centerStart,
+        child: _resendCountdown > 0
+            ? DabblerText(
+                l10n.otp_verify_resend_countdown(_resendCountdown),
+                tone: DabblerTextTone.tertiary,
+              )
+            : DabblerTextLink(
+                label: _isResending
+                    ? l10n.otp_verify_sending
+                    : l10n.otp_verify_resend,
+                underline: false,
+                onPressed: _isResending ? null : _handleResend,
+              ),
+      ),
+    ];
+
+    return DabblerFlowPage(
+      onBack: () => context.pop(),
+      backLabel: l10n.auth_back,
+      title: title,
+      titleStyle: DabblerType.largeTitle,
+      subtitle: subtitle,
+      subtitleStyle: DabblerType.body,
+      primaryLabel: l10n.otp_verify_continue,
+      primaryLoading: _isLoading,
+      onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,
+      content: body,
     );
   }
 }

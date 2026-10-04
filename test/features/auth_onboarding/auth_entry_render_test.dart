@@ -6,6 +6,8 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/auth_welco
 import 'package:dabbler/features/auth_onboarding/presentation/screens/email_input_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/email_password_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/landing_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/otp_verification_screen.dart';
+import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -175,4 +177,80 @@ void main() {
     await tester.pump();
     expect(continueButton().onPressed, isNotNull);
   });
+
+  // States of the frames that need an interaction: a field in error, a code
+  // part-way typed, and the sheets the chips and the legal links open.
+  final Map<String, (Widget Function(), Future<void> Function(WidgetTester))>
+  states = <String, (Widget Function(), Future<void> Function(WidgetTester))>{
+    'email-invalid': (
+      () => const EmailInputScreen(),
+      (t) async {
+        await t.enterText(find.byType(EditableText).first, 'marcus@dabbler');
+        await t.pump();
+      },
+    ),
+    'password-filled': (
+      () => const EnterPasswordScreen(email: 'marcus@dabbler.ae'),
+      (t) async {
+        await t.enterText(find.byType(EditableText).at(1), 'secret');
+        await t.pump();
+      },
+    ),
+    'otp': (
+      () => const OtpVerificationScreen(
+        identifier: 'marcus@dabbler.ae',
+        identifierType: IdentifierType.email,
+      ),
+      (t) async {
+        await t.pump();
+      },
+    ),
+    'sheet-language': (
+      () => const AuthWelcomeScreen(),
+      (t) async {
+        await t.tap(find.text('English'));
+        for (var i = 0; i < 8; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+      },
+    ),
+    'sheet-region': (
+      () => const AuthWelcomeScreen(),
+      (t) async {
+        await t.tap(find.text('United Arab Emirates'));
+        for (var i = 0; i < 8; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+      },
+    ),
+    'sheet-terms': (
+      () => const EmailInputScreen(),
+      (t) async {
+        await t.tap(find.text('Terms of Service'));
+        for (var i = 0; i < 8; i++) {
+          await t.pump(const Duration(milliseconds: 100));
+        }
+      },
+    ),
+  };
+
+  for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
+    final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    for (final MapEntry<
+          String,
+          (Widget Function(), Future<void> Function(WidgetTester))
+        >
+        e
+        in states.entries) {
+      testWidgets('renders ${e.key} - $dir', (tester) async {
+        await _pump(tester, e.value.$1(), locale);
+        await e.value.$2(tester);
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(tester.takeException(), isNull);
+        await _shoot(tester, const Key('shot'), '${e.key}-$dir');
+        // Let the OTP resend countdown (a Future.delayed chain) finish.
+        await tester.pump(const Duration(seconds: 31));
+      }, variant: desktop);
+    }
+  }
 }

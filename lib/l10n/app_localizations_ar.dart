@@ -174,6 +174,30 @@ class AppLocalizationsAr extends AppLocalizations {
   String get landing_choose_language => 'اختار اللغة';
 
   @override
+  String get auth_already_have_account => 'عندك حساب بالفعل؟';
+
+  @override
+  String get auth_log_in => 'سجّل دخولك';
+
+  @override
+  String get auth_new_here => 'جديد هنا؟';
+
+  @override
+  String get auth_create_account => 'اعمل حساب';
+
+  @override
+  String get auth_sheet_done => 'تمام';
+
+  @override
+  String get auth_sheet_got_it => 'تمام';
+
+  @override
+  String get auth_back => 'رجوع';
+
+  @override
+  String get auth_or => 'أو';
+
+  @override
   String get email_input_title => 'تسجيل';
 
   @override

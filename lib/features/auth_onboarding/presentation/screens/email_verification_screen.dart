@@ -301,19 +301,19 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             DabblerText(l10n.email_verify_title, style: DabblerType.title1),
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
             DabblerText(
               email != null
                   ? l10n.email_verify_body_with_email(email)
                   : l10n.email_verify_body_no_email,
             ),
-            const SizedBox(height: DabblerSpacing.space8),
+            const DabblerGap.v(DabblerSpacing.space8),
             DabblerText(
               l10n.email_verify_instruction,
               style: DabblerType.footnote,
               tone: DabblerTextTone.secondary,
             ),
-            const SizedBox(height: DabblerSpacing.space10),
+            const DabblerGap.v(DabblerSpacing.space10),
             DabblerButton(
               label: l10n.email_verify_confirmed_btn,
               icon: 'tick-circle',
@@ -322,7 +322,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               loading: _isChecking,
               onPressed: _checkEmailConfirmed,
             ),
-            const SizedBox(height: DabblerSpacing.space4),
+            const DabblerGap.v(DabblerSpacing.space4),
             DabblerButton(
               label: l10n.email_verify_resend_btn,
               icon: 'sms',
@@ -332,7 +332,7 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
               loading: _isResending,
               onPressed: _resendEmail,
             ),
-            const SizedBox(height: DabblerSpacing.space8),
+            const DabblerGap.v(DabblerSpacing.space8),
             if (_errorMessage != null)
               DabblerBanner(
                 tone: DabblerBannerTone.error,

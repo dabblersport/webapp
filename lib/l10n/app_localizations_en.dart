@@ -177,6 +177,30 @@ class AppLocalizationsEn extends AppLocalizations {
   String get landing_choose_language => 'Choose language';
 
   @override
+  String get auth_already_have_account => 'Already have an account?';
+
+  @override
+  String get auth_log_in => 'Log in';
+
+  @override
+  String get auth_new_here => 'New here?';
+
+  @override
+  String get auth_create_account => 'Create an account';
+
+  @override
+  String get auth_sheet_done => 'Done';
+
+  @override
+  String get auth_sheet_got_it => 'Got it';
+
+  @override
+  String get auth_back => 'Back';
+
+  @override
+  String get auth_or => 'or';
+
+  @override
   String get email_input_title => 'Authenticate';
 
   @override
