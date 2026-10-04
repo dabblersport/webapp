@@ -126,7 +126,6 @@ class _PrimarySportSelectionScreenState
       subtitle: subtitle,
       titleStyle: DabblerType.displayStep,
       subtitleStyle: DabblerType.copy,
-      bodyGap: DabblerSpacing.space3,
       content: sportsAsync.when<List<Widget>>(
         loading: () => [const Center(child: DabblerSpinner())],
         error: (err, _) => [
@@ -163,12 +162,22 @@ class _PrimarySportSelectionScreenState
           }
 
           return [
-            for (final sport in sports) _row(sport),
+            // The rows are 9 apart; the link sits 18 under them (`:407-428`).
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (int i = 0; i < sports.length; i++) ...[
+                  if (i > 0) const DabblerGap.v(DabblerSpacing.space3),
+                  _row(sports[i]),
+                ],
+              ],
+            ),
             Align(
               alignment: AlignmentDirectional.centerStart,
               child: DabblerTextLink(
                 label: l10n.onb_primary_more,
                 style: authLinkStyle(context, DabblerType.small),
+                inline: true,
                 underline: false,
                 onPressed: () => context.pop(),
               ),

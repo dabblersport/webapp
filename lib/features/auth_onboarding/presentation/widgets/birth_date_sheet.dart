@@ -18,7 +18,8 @@ Future<DateTime?> showBirthDateSheet({
   return showDabblerSheet<DateTime>(
     context: context,
     title: AppLocalizations.of(context).onb_dob_label,
-    detents: const <double>[0.75],
+    detent: DabblerSheetDetent.content,
+    showCloseButton: false,
     builder: (_) => _BirthDateColumns(
       initial: initialDate,
       first: firstDate,

@@ -159,6 +159,7 @@ class _LandingPageState extends State<LandingPage> {
                   alignment: AlignmentDirectional.centerStart,
                   child: DabblerPageDots(
                     count: vignettes.length,
+                    compactHitArea: true,
                     index: _index,
                     onSelected: (int i) => setState(() => _index = i),
                   ),

@@ -9,6 +9,8 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/landing_sc
 import 'package:dabbler/features/auth_onboarding/presentation/screens/otp_verification_screen.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart'
+    show debugAuthCountries;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -138,6 +140,16 @@ void main() {
   });
 
   final desktop = TargetPlatformVariant.only(TargetPlatform.macOS);
+  // The frames are drawn for iOS: the entry screens show the Apple button there.
+  final ios = TargetPlatformVariant.only(TargetPlatform.iOS);
+  const Set<String> iosShots = <String>{
+    'auth-welcome',
+    'email',
+    'email-invalid',
+    'sheet-terms',
+    'password',
+    'password-filled',
+  };
 
   final Map<String, Widget Function()> screens = <String, Widget Function()>{
     'landing': () => const LandingPage(),
@@ -154,7 +166,7 @@ void main() {
     ),
     'auth-welcome': () => const AuthWelcomeScreen(),
     'email': () => const EmailInputScreen(),
-    'password': () => const EnterPasswordScreen(email: ''),
+    'password': () => const EnterPasswordScreen(email: 'marcus@dabbler.ae'),
   };
 
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
@@ -169,7 +181,7 @@ void main() {
           isTrue,
         );
         await _shoot(tester, const Key('shot'), '${e.key}-$dir');
-      }, variant: desktop);
+      }, variant: iosShots.contains(e.key) ? ios : desktop);
     }
   }
 
@@ -194,6 +206,8 @@ void main() {
       () => const EmailInputScreen(),
       (t) async {
         await t.enterText(find.byType(EditableText).first, 'marcus@dabbler');
+        // The frame shows the field at rest in error, not focused.
+        FocusManager.instance.primaryFocus?.unfocus();
         await t.pump();
       },
     ),
@@ -201,6 +215,7 @@ void main() {
       () => const EnterPasswordScreen(email: 'marcus@dabbler.ae'),
       (t) async {
         await t.enterText(find.byType(EditableText).at(1), 'secret');
+        FocusManager.instance.primaryFocus?.unfocus();
         await t.pump();
       },
     ),
@@ -220,6 +235,7 @@ void main() {
       ),
       (t) async {
         await t.enterText(find.byType(EditableText).first, '318');
+        FocusManager.instance.primaryFocus?.unfocus();
         await t.pump();
       },
     ),
@@ -228,6 +244,7 @@ void main() {
         identifier: 'marcus@dabbler.ae',
         identifierType: IdentifierType.email,
         initialErrorMessage: 'Invalid token',
+        initialCode: '000000',
       ),
       (t) async {
         await t.pump();
@@ -238,6 +255,7 @@ void main() {
         identifier: 'marcus@dabbler.ae',
         identifierType: IdentifierType.email,
         initialErrorMessage: 'Token has expired',
+        initialCode: '111111',
       ),
       (t) async {
         await t.pump();
@@ -253,7 +271,19 @@ void main() {
       },
     ),
     'sheet-region': (
-      () => const AuthWelcomeScreen(),
+      () {
+        debugAuthCountries = <Map<String, dynamic>>[
+          for (final String n in <String>[
+            'United Arab Emirates',
+            'Saudi Arabia',
+            'Qatar',
+            'Kuwait',
+            'United Kingdom',
+          ])
+            <String, dynamic>{'name_en': n, 'name_ar': n},
+        ];
+        return const AuthWelcomeScreen();
+      },
       (t) async {
         await t.tap(find.text('United Arab Emirates'));
         for (var i = 0; i < 8; i++) {
@@ -289,7 +319,7 @@ void main() {
         await _shoot(tester, const Key('shot'), '${e.key}-$dir');
         // Let the OTP resend countdown (a Future.delayed chain) finish.
         await tester.pump(const Duration(seconds: 31));
-      }, variant: desktop);
+      }, variant: iosShots.contains(e.key) ? ios : desktop);
     }
   }
 }

@@ -14,7 +14,14 @@ import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding
 enum _StepStatus { pending, running, done, error }
 
 class ProfileOnboardingWelcomeScreen extends ConsumerStatefulWidget {
-  const ProfileOnboardingWelcomeScreen({super.key});
+  const ProfileOnboardingWelcomeScreen({
+    super.key,
+    @visibleForTesting this.holdRunning = false,
+  });
+
+  /// Stops at the running stage, before the request (render tests: the
+  /// frame shows the stage in progress).
+  final bool holdRunning;
 
   @override
   ConsumerState<ProfileOnboardingWelcomeScreen> createState() =>
@@ -95,6 +102,7 @@ class _ProfileOnboardingWelcomeScreenState
     // transaction (T-037/KAN-48). There is no longer a separate persona or
     // sport step to run — one step either fully succeeds or fully fails.
     _setStep(_StepStatus.running);
+    if (widget.holdRunning) return;
     try {
       await authService.createProfileStep(
         displayName: data.displayName ?? '',

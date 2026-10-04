@@ -129,11 +129,6 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
           (o) => !_hiddenPersonas.contains(o.value),
         ))
           _card(l10n, opt),
-        DabblerText(
-          l10n.onb_persona_footnote,
-          style: DabblerType.footnote,
-          tone: DabblerTextTone.tertiary,
-        ),
       ],
       primaryLabel: l10n.onb_continue,
       primaryLoading: _isLoading,

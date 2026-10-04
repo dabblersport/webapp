@@ -164,6 +164,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       backLabel: l10n.auth_back,
       title: l10n.auth_email_title,
       titleStyle: DabblerType.displayScreen,
+      titleGap: DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: l10n.auth_email_subtitle,
       subtitleStyle: DabblerType.lead,

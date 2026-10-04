@@ -343,6 +343,7 @@ class _SetUsernameScreenState extends ConsumerState<SetUsernameScreen> {
       );
     }
     return DabblerChipRail(
+      gap: DabblerSpacing.space3,
       items: [
         for (final suggestion in _suggestions)
           DabblerChipRailItem(

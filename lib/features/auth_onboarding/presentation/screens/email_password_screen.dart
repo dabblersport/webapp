@@ -368,6 +368,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       backLabel: l10n.auth_back,
       title: l10n.auth_login_title,
       titleStyle: DabblerType.displayScreen,
+      titleGap: DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: l10n.auth_login_subtitle,
       subtitleStyle: DabblerType.lead,
@@ -381,12 +382,14 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
             child: DabblerTextLink(
               label: l10n.auth_login_email_code,
               style: authLinkStyle(context, DabblerType.copy),
+              inline: true,
               underline: false,
               onPressed: _isLoading || !_isEmailValid
                   ? null
                   : _handleSendEmailOtp,
             ),
           ),
+          const DabblerGap.v(DabblerSpacing.space4),
           DabblerDivider(label: l10n.auth_or),
           const DabblerGap.v(DabblerSpacing.space4),
           DabblerButton(

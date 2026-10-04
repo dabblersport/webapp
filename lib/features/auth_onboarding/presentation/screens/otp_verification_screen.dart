@@ -23,6 +23,9 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
   /// not-right and expired states).
   final String? initialErrorMessage;
 
+  /// Seeds the typed code (the frames show the digits that were rejected).
+  final String? initialCode;
+
   // Legacy support for phoneNumber parameter
   const OtpVerificationScreen({
     super.key,
@@ -30,6 +33,7 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
     this.identifierType,
     this.userExistsBeforeOtp,
     @visibleForTesting this.initialErrorMessage,
+    @visibleForTesting this.initialCode,
     @Deprecated('Use identifier instead') String? phoneNumber,
   }) : assert(
          identifier != null || phoneNumber != null,
@@ -60,6 +64,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     super.initState();
 
     _errorMessage = widget.initialErrorMessage;
+    _code = widget.initialCode ?? '';
     _identifier = widget.identifier ?? widget.phoneNumber ?? '';
     if (widget.identifierType != null) {
       _identifierType = widget.identifierType!;
@@ -269,12 +274,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     // The message under the boxes: the frame's "not right" and "expired"
     // lines for the failures the server reports as such, else its own text.
     String? message = _errorMessage;
-    String? messageIcon;
+    bool expired = false;
     if (message != null) {
       final String lower = message.toLowerCase();
       if (lower.contains('expire')) {
         message = l10n.auth_otp_expired;
-        messageIcon = 'clock';
+        expired = true;
       } else if (lower.contains('invalid') ||
           lower.contains('incorrect') ||
           lower.contains('token') ||
@@ -287,10 +292,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     final List<Widget> body = <Widget>[
       DabblerSurface.card(
         radius: DabblerRadius.lg,
-        // The "Change" link is itself a 45px target, so the card needs no
-        // vertical padding of its own (the frame's card is 12 + 21 + 12).
         padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space5,
+          // The frame's card pads 12 / 15 outside its 1px hairline.
+          horizontal: DabblerSpacing.space5 + DabblerSizing.borderDefault,
+          vertical: DabblerSpacing.space4 + DabblerSizing.borderDefault,
         ),
         child: Row(
           children: <Widget>[
@@ -311,9 +316,11 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                 ),
               ),
             ),
+            const DabblerGap.h(DabblerSpacing.space4),
             DabblerTextLink(
               label: changeLabel,
               style: authLinkStyle(context, DabblerType.small),
+              inline: true,
               underline: false,
               onPressed: () => context.go(changeRoute),
             ),
@@ -332,14 +339,14 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ),
           if (_errorMessage != null) ...<Widget>[
             const DabblerGap.v(DabblerSpacing.space4),
-            DabblerInlineMessage(message!, icon: messageIcon),
+            DabblerInlineMessage(message!),
           ],
         ],
       ),
       Align(
         alignment: AlignmentDirectional.centerStart,
         // An expired code offers a new one at once (the frame's rule).
-        child: _resendCountdown > 0 && messageIcon != 'clock'
+        child: _resendCountdown > 0 && !expired
             ? DabblerText(
                 l10n.auth_otp_resend_in(_resendCountdown),
                 style: DabblerType.copy,
@@ -350,6 +357,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
                     ? l10n.otp_verify_sending
                     : l10n.auth_otp_resend,
                 style: authLinkStyle(context, DabblerType.copy),
+                inline: true,
                 underline: false,
                 onPressed: _isResending ? null : _handleResend,
               ),
@@ -361,12 +369,16 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       backLabel: l10n.auth_back,
       title: title,
       titleStyle: DabblerType.displayScreen,
+      titleGap: DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
       subtitle: subtitle,
       subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_otp_continue,
       primaryLoading: _isLoading,
-      onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,
+      // The frame disables Continue while the code is flagged wrong.
+      onPrimary: isAllFilled && _errorMessage == null && !_isLoading
+          ? _handleSubmit
+          : null,
       content: body,
     );
   }

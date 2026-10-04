@@ -3,7 +3,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart'
     show
         LegalSection,
-        kLegalLastUpdated,
         kPrivacyIntro,
         kPrivacyPolicySections,
         kTermsIntro,
@@ -81,36 +80,29 @@ Future<void> _showLegal(
     context: context,
     title: title,
     detents: const <double>[0.5],
-    footerBuilder: _gotIt,
+    showCloseButton: false,
     builder: (BuildContext ctx) {
+      // The frame's legal sheet is plain paragraphs, 15/22 soft ink, 15 apart
+      // (`Auth and Onboarding.dc.html:551-555`).
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           DabblerText(
             intro,
-            style: DabblerType.copy,
+            style: DabblerType.copyRelaxed,
             tone: DabblerTextTone.secondary,
           ),
-          const DabblerGap.v(DabblerSpacing.space2),
-          DabblerText(
-            'Last updated: $kLegalLastUpdated',
-            style: DabblerType.footnote,
-            tone: DabblerTextTone.tertiary,
-          ),
           for (final LegalSection s in sections) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space6),
-            DabblerText(
-              s.title,
-              style: DabblerType.rowTitle,
-              weight: DabblerTextWeight.semibold,
-            ),
-            const DabblerGap.v(DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space5),
             DabblerText(
               s.content,
-              style: DabblerType.copy,
+              style: DabblerType.copyRelaxed,
               tone: DabblerTextTone.secondary,
             ),
           ],
+          // The frame's action is the sheet's last child, 12 under the text.
+          const DabblerGap.v(DabblerSpacing.space4),
+          _gotIt(ctx),
         ],
       );
     },
@@ -139,7 +131,7 @@ class AuthLegalNotice extends StatelessWidget {
         ),
         const DabblerTextSpan('.'),
       ],
-      style: DabblerType.caption1,
+      style: DabblerType.captionRelaxed,
       tone: DabblerTextTone.tertiary,
       textAlign: TextAlign.center,
     );
@@ -180,6 +172,10 @@ class AuthAccountLine extends StatelessWidget {
   }
 }
 
+/// Seeds the region sheet's countries (render tests have no network).
+@visibleForTesting
+List<Map<String, dynamic>>? debugAuthCountries;
+
 /// The region and language chips that close the welcome and entry frames, and
 /// the two sheets they open.
 class AuthLocaleChips extends ConsumerStatefulWidget {
@@ -200,6 +196,12 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
   }
 
   Future<void> _fetchCountries() async {
+    final List<Map<String, dynamic>>? seeded = debugAuthCountries;
+    if (seeded != null) {
+      _countries = seeded;
+      _countriesLoading = false;
+      return;
+    }
     try {
       final dynamic response = await Supabase.instance.client
           .from(SupabaseConfig.refCountriesTable)
@@ -235,7 +237,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
       context: context,
       title: AppLocalizations.of(context).auth_sheet_language,
       detent: DabblerSheetDetent.content,
-      footerBuilder: _done,
+      showCloseButton: false,
       builder: (BuildContext ctx) => Consumer(
         builder: (BuildContext ctx, WidgetRef ref, Widget? _) {
           final String current = ref.watch(localeProvider).languageCode;
@@ -253,6 +255,9 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
                   onTap: () =>
                       ref.read(localeProvider.notifier).setLocale(Locale(code)),
                 ),
+              // The frame's action is the sheet's last child (`:585`).
+              const DabblerGap.v(DabblerSpacing.space4),
+              _done(ctx),
             ],
           );
         },
@@ -264,8 +269,8 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
     return showDabblerSheet<void>(
       context: context,
       title: AppLocalizations.of(context).auth_sheet_region,
-      detents: const <double>[0.6],
-      footerBuilder: _done,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
       builder: (BuildContext ctx) {
         if (_countriesLoading) {
           return const Center(child: DabblerSpinner());
@@ -288,6 +293,8 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
                         .read(selectedCountryProvider.notifier)
                         .setCountry(c['name_en'] as String),
                   ),
+                const DabblerGap.v(DabblerSpacing.space4),
+                _done(ctx),
               ],
             );
           },
