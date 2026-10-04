@@ -460,7 +460,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
       flat: true,
       showDivider: false,
       title: displayName,
-      subtitle: username.isNotEmpty ? '@$username' : null,
+      subtitle: username.isNotEmpty ? '\u200E@$username' : null,
       leading: DabblerAvatar(seed: displayName, size: DabblerAvatarSize.md),
       trailing: DabblerRowAction(
         label: l10n.priv_unblock,
