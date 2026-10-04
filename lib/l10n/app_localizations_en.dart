@@ -3478,4 +3478,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sfx_send => 'Send';
+
+  @override
+  String get sfx_share => 'Share';
+
+  @override
+  String get sfx_share_article => 'Share article';
+
+  @override
+  String get sfx_copy_link => 'Copy link';
+
+  @override
+  String get sfx_share_to => 'Share to…';
+
+  @override
+  String get sfx_link_copied => 'Link copied';
 }

@@ -1225,5 +1225,10 @@
   "sfx_discuss": "ناقش",
   "sfx_be_first": "كن أول من يعلّق.",
   "sfx_like": "إعجاب",
-  "sfx_send": "إرسال"
+  "sfx_send": "إرسال",
+  "sfx_share": "مشاركة",
+  "sfx_share_article": "مشاركة المقال",
+  "sfx_copy_link": "نسخ الرابط",
+  "sfx_share_to": "مشاركة عبر…",
+  "sfx_link_copied": "تم نسخ الرابط"
 }

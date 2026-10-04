@@ -1283,5 +1283,10 @@
   "sfx_discuss": "Discuss",
   "sfx_be_first": "Be the first to comment.",
   "sfx_like": "Like",
-  "sfx_send": "Send"
+  "sfx_send": "Send",
+  "sfx_share": "Share",
+  "sfx_share_article": "Share article",
+  "sfx_copy_link": "Copy link",
+  "sfx_share_to": "Share to…",
+  "sfx_link_copied": "Link copied"
 }

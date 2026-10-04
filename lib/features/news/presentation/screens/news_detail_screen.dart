@@ -1,5 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart' show Clipboard, ClipboardData;
 import 'package:flutter/widgets.dart';
+import 'package:share_plus/share_plus.dart';
 
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -60,6 +62,46 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
     onPosted: () => setState(() => _localCommentCount++),
   );
 
+  void _openShare(String title) {
+    final l10n = AppLocalizations.of(context);
+    final url = widget.item.sourceUrl;
+    showDabblerSheet<void>(
+      context: context,
+      title: l10n.sfx_share_article,
+      detents: const [0.4],
+      builder: (sheetContext) => Column(
+        spacing: DabblerSpacing.space2,
+        children: [
+          if (url != null && url.isNotEmpty)
+            DabblerActionRow(
+              icon: 'link',
+              label: l10n.sfx_copy_link,
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                Clipboard.setData(ClipboardData(text: url));
+                DabblerToastProvider.of(context).show(
+                  DabblerToastSpec(message: l10n.sfx_link_copied),
+                );
+              },
+            ),
+          DabblerActionRow(
+            icon: 'share',
+            label: l10n.sfx_share_to,
+            onTap: () {
+              Navigator.of(sheetContext).pop();
+              SharePlus.instance.share(
+                ShareParams(
+                  text: url == null || url.isEmpty ? title : '$title\n$url',
+                  subject: title,
+                ),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final lang = ref.watch(localeProvider).languageCode;
@@ -80,6 +122,13 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
         title: title,
         scrollController: _scrollController,
         onBack: () => context.pop(),
+        actions: [
+          DabblerNavigationAction(
+            icon: 'share',
+            label: AppLocalizations.of(context).sfx_share,
+            onPressed: () => _openShare(title),
+          ),
+        ],
       ),
       bottomBar: Row(
         spacing: DabblerSpacing.space3,
@@ -103,6 +152,17 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
             tone: DabblerButtonTone.outlined,
             semanticLabel: AppLocalizations.of(context).sfx_comments,
             onPressed: () => _openComments(lang),
+          ),
+          Row(
+            spacing: DabblerSpacing.space2,
+            children: [
+              const DabblerIcon('eye', size: DabblerSizing.iconSm),
+              DabblerText(
+                '${item.viewCount}',
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              ),
+            ],
           ),
           const Spacer(),
           DabblerButton(
@@ -160,6 +220,12 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
                   headers: _coverHeaders,
                 ),
               if (body.isNotEmpty) DabblerText(body, style: DabblerType.body),
+              if (item.tags.isNotEmpty)
+                Wrap(
+                  spacing: DabblerSpacing.space2,
+                  runSpacing: DabblerSpacing.space2,
+                  children: [for (final t in item.tags) DabblerChip(label: t, dense: true)],
+                ),
             ],
           ),
         ],

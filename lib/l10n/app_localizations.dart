@@ -6274,6 +6274,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Send'**
   String get sfx_send;
+
+  /// No description provided for @sfx_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get sfx_share;
+
+  /// No description provided for @sfx_share_article.
+  ///
+  /// In en, this message translates to:
+  /// **'Share article'**
+  String get sfx_share_article;
+
+  /// No description provided for @sfx_copy_link.
+  ///
+  /// In en, this message translates to:
+  /// **'Copy link'**
+  String get sfx_copy_link;
+
+  /// No description provided for @sfx_share_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Share to…'**
+  String get sfx_share_to;
+
+  /// No description provided for @sfx_link_copied.
+  ///
+  /// In en, this message translates to:
+  /// **'Link copied'**
+  String get sfx_link_copied;
 }
 
 class _AppLocalizationsDelegate

@@ -19,7 +19,6 @@ class SearchDefaultView extends StatelessWidget {
   final ValueChanged<String> onRemoveRecent;
   final VoidCallback onClearRecent;
 
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -32,9 +31,21 @@ class SearchDefaultView extends StatelessWidget {
       (label: l10n.sfx_free_entry, icon: '', active: false),
     ];
     final shortcuts = [
-      (icon: 'people', title: l10n.sfx_people_nearby, sub: l10n.sfx_people_nearby_sub),
-      (icon: 'game', title: l10n.sfx_popular_games, sub: l10n.sfx_popular_games_sub),
-      (icon: 'activity', title: l10n.sfx_trending_posts, sub: l10n.sfx_trending_posts_sub),
+      (
+        icon: 'people',
+        title: l10n.sfx_people_nearby,
+        sub: l10n.sfx_people_nearby_sub,
+      ),
+      (
+        icon: 'game',
+        title: l10n.sfx_popular_games,
+        sub: l10n.sfx_popular_games_sub,
+      ),
+      (
+        icon: 'activity',
+        title: l10n.sfx_trending_posts,
+        sub: l10n.sfx_trending_posts_sub,
+      ),
     ];
     return ListView(
       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -77,6 +88,7 @@ class SearchDefaultView extends StatelessWidget {
                           onTap: () => onPickRecent(q),
                           onRemove: () => onRemoveRecent(q),
                           mutedRemove: true,
+                          dense: true,
                           removeSemanticLabel: l10n.sfx_remove_recent(q),
                         ),
                     ],
@@ -98,10 +110,7 @@ class SearchDefaultView extends StatelessWidget {
                         selected: f.active,
                         leadingIcon: f.icon.isEmpty
                             ? null
-                            : DabblerIcon(
-                                f.icon,
-                                size: DabblerSizing.iconXs,
-                              ),
+                            : DabblerIcon(f.icon, size: DabblerSizing.iconXs),
                       ),
                   ],
                 ),

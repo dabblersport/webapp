@@ -3419,4 +3419,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sfx_send => 'إرسال';
+
+  @override
+  String get sfx_share => 'مشاركة';
+
+  @override
+  String get sfx_share_article => 'مشاركة المقال';
+
+  @override
+  String get sfx_copy_link => 'نسخ الرابط';
+
+  @override
+  String get sfx_share_to => 'مشاركة عبر…';
+
+  @override
+  String get sfx_link_copied => 'تم نسخ الرابط';
 }

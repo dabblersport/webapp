@@ -88,6 +88,7 @@ final SearchResultBundle _bundle = SearchResultBundle(
       id: 'po1',
       body: 'Looking for two more for football tonight at Al Quoz. Bring water!',
       authorDisplayName: 'Omar',
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
     ),
   ],
 );
@@ -181,13 +182,14 @@ void main() {
       await tester.pump();
       expect(tester.takeException(), isNull);
       expect(find.text(lookupAppLocalizations(locale).sfx_list_header(2, lookupAppLocalizations(locale).sfx_people.toLowerCase(), '\u2066foot\u2069')), findsOneWidget);
+      expect(find.byType(SearchPersonRow), findsWidgets);
       await _shoot(tester, key, 'search-viewall-$dir');
     });
 
-    for (final (String, int, String) v in <(String, int, String)>[
-      ('hashtags', 1, 'search-viewall-hashtags'),
-      ('events', 2, 'search-viewall-events'),
-      ('posts', 3, 'search-viewall-posts'),
+    for (final (String, int, String, Type) v in <(String, int, String, Type)>[
+      ('hashtags', 1, 'search-viewall-hashtags', SearchHashtagGridCard),
+      ('events', 2, 'search-viewall-events', SearchGameEventCard),
+      ('posts', 3, 'search-viewall-posts', SearchPostRow),
     ]) {
       testWidgets('view all ${v.$1} — $dir', (tester) async {
         SharedPreferences.setMockInitialValues({});
@@ -195,6 +197,7 @@ void main() {
         await tester.tap(find.text(locale.languageCode == 'ar' ? 'عرض الكل' : 'View all').at(v.$2));
         await tester.pump();
         expect(tester.takeException(), isNull);
+        expect(find.byType(v.$4), findsWidgets);
         await _shoot(tester, key, '${v.$3}-$dir');
       });
     }

@@ -40,7 +40,9 @@ class SearchResultsView extends StatelessWidget {
       return Center(
         child: DabblerEmptyState(
           icon: 'search-normal',
-          title: AppLocalizations.of(context).sfx_no_results_for('\u2066${state.query}\u2069'),
+          title: AppLocalizations.of(
+            context,
+          ).sfx_no_results_for('\u2066${state.query}\u2069'),
           size: DabblerEmptyStateSize.page,
         ),
       );
@@ -276,13 +278,29 @@ class _FullList extends StatelessWidget {
           SearchPersonRow(profile: p, query: q, onTap: () => onProfileTap(p)),
       ],
       SearchMode.hashtags => [
-        Wrap(
-          spacing: DabblerSpacing.space3,
-          runSpacing: DabblerSpacing.space3,
-          children: [
-            for (final h in b.hashtags) SearchHashtagCard(hashtag: h, query: q),
-          ],
-        ),
+        for (var i = 0; i < b.hashtags.length; i += 2)
+          IntrinsicHeight(
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: DabblerSpacing.space3,
+              children: [
+                Expanded(
+                  child: SearchHashtagGridCard(
+                    hashtag: b.hashtags[i],
+                    query: q,
+                  ),
+                ),
+                Expanded(
+                  child: i + 1 < b.hashtags.length
+                      ? SearchHashtagGridCard(
+                          hashtag: b.hashtags[i + 1],
+                          query: q,
+                        )
+                      : const SizedBox.shrink(),
+                ),
+              ],
+            ),
+          ),
       ],
       SearchMode.games => [
         for (final g in b.games) SearchGameEventCard(game: g, query: q),
@@ -291,14 +309,13 @@ class _FullList extends StatelessWidget {
         for (final v in b.venues) SearchVenueCard(venue: v, query: q),
       ],
       SearchMode.posts => [
-        for (final p in b.posts) SearchPostCard(post: p, query: q),
+        for (final p in b.posts) SearchPostRow(post: p, query: q),
       ],
       SearchMode.comments => [
         for (final c in b.comments) SearchCommentCard(comment: c, query: q),
       ],
       SearchMode.meetups => [
-        for (final m in b.meetups)
-          SearchMeetupEventCard(meetup: m, query: q),
+        for (final m in b.meetups) SearchMeetupEventCard(meetup: m, query: q),
       ],
       SearchMode.all => const [],
     };
@@ -311,9 +328,7 @@ class _FullList extends StatelessWidget {
         ),
       );
     }
-    final count = rows.length == 1 && mode == SearchMode.hashtags
-        ? b.hashtags.length
-        : rows.length;
+    final count = mode == SearchMode.hashtags ? b.hashtags.length : rows.length;
     return ListView(
       padding: _gutter,
       children: [
@@ -323,11 +338,8 @@ class _FullList extends StatelessWidget {
           tone: DabblerTextTone.secondary,
         ),
         const SizedBox(height: DabblerSpacing.space5),
-        if (mode == SearchMode.profiles)
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: rows,
-          )
+        if (mode == SearchMode.profiles || mode == SearchMode.posts)
+          Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: rows)
         else
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
