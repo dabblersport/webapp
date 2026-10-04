@@ -669,8 +669,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   Widget _buildForm(BuildContext context) {
-    const gap = SizedBox(height: DabblerSpacing.space5);
-    const sectionGap = SizedBox(height: DabblerSpacing.sectionGap);
+    const gap = DabblerGap.v(DabblerSpacing.space5);
+    const sectionGap = DabblerGap.v(DabblerSpacing.sectionGap);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [

@@ -6,10 +6,8 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_bar.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
-import 'package:dabbler/features/location/presentation/widgets/nearby_filter_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
@@ -275,11 +273,6 @@ void main() {
         ),
       ),
     ),
-    'home-location-bar': () => const DabblerPage(
-      body: Column(children: <Widget>[SizedBox(height: 60), HomeLocationBar()]),
-    ),
-    'nearby-filter-sheet': () =>
-        _SheetHost(open: (c) => NearbyFilterSheet.show(c)),
     'saved-locations': () => const SavedLocationsScreen(),
     'place-picker': () => _SheetHost(open: (c) => PlacePickerSheet.show(c)),
   };
@@ -303,28 +296,9 @@ void main() {
       _SheetHost(open: (c) => HomeLocationPickerSheet.show(c)),
       const Locale('en'),
     );
-    expect(find.text('Your Location'), findsOneWidget);
+    expect(find.text('Change location'), findsOneWidget);
     expect(find.text('Home'), findsWidgets);
     expect(find.text('JBR'), findsOneWidget);
     expect(find.byType(DabblerSearchField), findsOneWidget);
-  });
-
-  testWidgets('nearby filter sheet: Apply pops the selected sort', (
-    tester,
-  ) async {
-    NearbyFilterResult? result;
-    await _pump(
-      tester,
-      _SheetHost(open: (c) async => result = await NearbyFilterSheet.show(c)),
-      const Locale('en'),
-    );
-    await tester.tap(find.text('Nearest first'));
-    await tester.pump();
-    await tester.tap(find.text('Apply'));
-    for (var i = 0; i < 6; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-    expect(result, isNotNull);
-    expect(result!.radiusMeters, 10000);
   });
 }

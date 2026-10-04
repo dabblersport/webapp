@@ -193,35 +193,11 @@ class _ResultsDropdown extends ConsumerWidget {
                   const DabblerDivider(inset: DabblerSpacing.space5),
               itemBuilder: (_, i) {
                 final place = places[i];
-                return GestureDetector(
-                  behavior: HitTestBehavior.opaque,
+                return DabblerInputRow(
+                  flat: true,
+                  title: place.name,
+                  subtitle: place.fullAddress,
                   onTap: () => onSelected(place),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: DabblerSpacing.space5,
-                      vertical: DabblerSpacing.space3,
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        DabblerText(
-                          place.name,
-                          style: DabblerType.headline,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: DabblerSpacing.space1),
-                        DabblerText(
-                          place.fullAddress,
-                          style: DabblerType.footnote,
-                          tone: DabblerTextTone.secondary,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ],
-                    ),
-                  ),
                 );
               },
             );

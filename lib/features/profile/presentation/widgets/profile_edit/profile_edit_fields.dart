@@ -61,8 +61,12 @@ class ProfileEditAvatar extends StatelessWidget {
     this.size = DabblerAvatarSize.xl,
     this.badge,
     this.ringColor,
+    this.onTap,
+    this.semanticLabel,
   });
 
+  final VoidCallback? onTap;
+  final String? semanticLabel;
   final String? reference;
   final String fallbackSeed;
   final DabblerAvatarSize size;
@@ -76,6 +80,8 @@ class ProfileEditAvatar extends StatelessWidget {
     return DabblerAvatar(
       seed: dsSeed ?? fallbackSeed,
       imageUrl: url,
+      onTap: onTap,
+      semanticLabel: semanticLabel,
       size: size,
       badge: badge,
       ringColor: ringColor,
@@ -103,22 +109,17 @@ class ProfileEditAvatarHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: Semantics(
-        button: true,
-        label: 'Change avatar',
-        child: GestureDetector(
-          onTap: uploading ? null : onTap,
-          child: ProfileEditAvatar(
-            reference: avatarUrl,
-            fallbackSeed: displayName,
-            badge: uploading
-                ? const DabblerSpinner(
-                    size: DabblerSpinnerSize.sm,
-                    tone: DabblerSpinnerTone.onBrand,
-                  )
-                : const DabblerIcon('camera'),
-          ),
-        ),
+      child: ProfileEditAvatar(
+        reference: avatarUrl,
+        fallbackSeed: displayName,
+        semanticLabel: 'Change avatar',
+        onTap: uploading ? null : onTap,
+        badge: uploading
+            ? const DabblerSpinner(
+                size: DabblerSpinnerSize.sm,
+                tone: DabblerSpinnerTone.onBrand,
+              )
+            : const DabblerIcon('camera'),
       ),
     );
   }
@@ -160,7 +161,7 @@ class ProfileEditDobField extends StatelessWidget {
           ),
         ),
         if (value != null) ...[
-          const SizedBox(width: DabblerSpacing.space2),
+          const DabblerGap.h(DabblerSpacing.space2),
           DabblerButton.icon(
             icon: 'close-circle',
             tone: DabblerButtonTone.text,

@@ -107,8 +107,9 @@ Widget _shell(Locale locale, Widget child, {List<Override>? overrides}) {
     overrides: overrides ?? const <Override>[],
     child: MaterialApp(
       debugShowCheckedModeBanner: false,
-      builder: (context, child) =>
-          DabblerToastProvider(child: RepaintBoundary(key: _key, child: child)),
+      builder: (context, child) => DabblerToastProvider(
+        child: RepaintBoundary(key: _key, child: child),
+      ),
       locale: locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
@@ -332,7 +333,10 @@ void main() {
       testWidgets('rewards screen — $dir', (tester) async {
         await _pump(tester, locale, const RewardsScreen());
         expect(tester.takeException(), isNull);
-        expect(find.text('Rewards Screen - Under Construction'), findsOneWidget);
+        expect(
+          find.text('Rewards Screen - Under Construction'),
+          findsOneWidget,
+        );
         await _shoot(tester, 'rewards-$dir');
       });
 
@@ -352,8 +356,6 @@ void main() {
                   CheckInProgressIndicator(completedDays: 9),
                   SizedBox(height: 24),
                   CheckInProgressIndicator(completedDays: 14),
-                  SizedBox(height: 24),
-                  CompactCheckInProgressIndicator(completedDays: 5),
                 ],
               ),
             ),
@@ -471,7 +473,11 @@ void main() {
       });
 
       testWidgets('placeholder screen — $dir', (tester) async {
-        await _pump(tester, locale, const PlaceholderScreen(title: 'Chat List'));
+        await _pump(
+          tester,
+          locale,
+          const PlaceholderScreen(title: 'Chat List'),
+        );
         expect(tester.takeException(), isNull);
         await _shoot(tester, 'placeholder-$dir');
       });

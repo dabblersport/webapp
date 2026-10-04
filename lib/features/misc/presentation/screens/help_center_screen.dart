@@ -13,13 +13,10 @@ class HelpCenterScreen extends StatelessWidget {
         onBack: () => Navigator.maybePop(context),
       ),
       body: const Center(
-        child: Padding(
-          padding: EdgeInsets.all(DabblerSpacing.space6),
-          child: DabblerEmptyState(
-            icon: 'message-question',
-            title: 'Help Center',
-            text: 'This screen is under development',
-          ),
+        child: DabblerEmptyState(
+          icon: 'message-question',
+          title: 'Help Center',
+          text: 'This screen is under development',
         ),
       ),
     );

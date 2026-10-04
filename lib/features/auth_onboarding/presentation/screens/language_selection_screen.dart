@@ -72,10 +72,10 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final l10n = AppLocalizations.of(context);
 
     return DabblerPage(
+      maxContentWidth: DabblerPage.readableWidth,
       topBar: DabblerNavigationTopBar.titled(
         border: true,
         title: l10n.language_select_title,
@@ -113,68 +113,22 @@ class _LanguageSelectionScreenState extends State<LanguageSelectionScreen> {
               style: DabblerType.title1,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: DabblerSpacing.space2),
+            const DabblerGap.v(DabblerSpacing.space2),
             DabblerText(
               'Select your preferred language for the app',
               tone: DabblerTextTone.secondary,
               textAlign: TextAlign.center,
             ),
-            const SizedBox(height: DabblerSpacing.space11),
-            ..._languages.map((language) {
-              final isSelected = _selectedLanguage == language['code'];
-              return Padding(
-                padding: const EdgeInsetsDirectional.only(
-                  bottom: DabblerSpacing.space3,
-                ),
-                child: Semantics(
-                  button: true,
-                  selected: isSelected,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: () => _selectLanguage(language['code']!),
-                    child: DabblerSurface(
-                      variant: isSelected
-                          ? DabblerSurfaceVariant.selected
-                          : DabblerSurfaceVariant.card,
-                      radius: DabblerRadius.lg,
-                      padding: const EdgeInsetsDirectional.symmetric(
-                        horizontal: DabblerSpacing.space4,
-                        vertical: DabblerSpacing.space4,
-                      ),
-                      child: Row(
-                        children: [
-                          DabblerIcon(
-                            'global',
-                            size: DabblerSizing.iconRow,
-                            color: isSelected
-                                ? colors.onBrand
-                                : colors.textSecondary,
-                          ),
-                          const SizedBox(width: DabblerSpacing.space4),
-                          Expanded(
-                            child: DabblerText(
-                              language['native']!,
-                              tone: isSelected
-                                  ? DabblerTextTone.onBrand
-                                  : DabblerTextTone.primary,
-                            ),
-                          ),
-                          if (isSelected)
-                            DabblerIcon(
-                              'tick-circle',
-                              weight: DabblerIconWeight.bold,
-                              size: DabblerSizing.iconRow,
-                              color: colors.onBrand,
-                            )
-                          else
-                            const SizedBox(width: DabblerSizing.iconRow),
-                        ],
-                      ),
-                    ),
-                  ),
-                ),
-              );
-            }),
+            const DabblerGap.v(DabblerSpacing.space11),
+            for (final language in _languages) ...[
+              DabblerInputRow(
+                leading: const DabblerIcon('global'),
+                title: language['native']!,
+                selected: _selectedLanguage == language['code'],
+                onTap: () => _selectLanguage(language['code']!),
+              ),
+              const DabblerGap.v(DabblerSpacing.space3),
+            ],
           ],
         ),
       ),

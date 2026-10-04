@@ -8,14 +8,15 @@ class RegistrationOnboardingData {
   final String? displayName;
   final int? age;
   final String? gender;
-  final String?
-  intention; // persona_type: player, organiser, host, socialiser
+  final String? intention; // persona_type: player, organiser, host, socialiser
   final String? preferredSport; // UUID from sports.id (= primary_sport)
   final List<String>? interests; // list of sport UUIDs
   final String? username;
   final String? country; // User's country from country picker
-  final bool getUpdates; // Email marketing opt-in (cached, written to user_preferences after account creation)
-  final String? preferredSportName; // Human-readable sport name for username suggestion engine
+  final bool
+  getUpdates; // Email marketing opt-in (cached, written to user_preferences after account creation)
+  final String?
+  preferredSportName; // Human-readable sport name for username suggestion engine
 
   RegistrationOnboardingData({
     this.email,
@@ -123,7 +124,8 @@ class RegistrationOnboardingData {
 }
 
 /// StateNotifier to manage onboarding data
-class OnboardingDataNotifier extends StateNotifier<RegistrationOnboardingData?> {
+class OnboardingDataNotifier
+    extends StateNotifier<RegistrationOnboardingData?> {
   OnboardingDataNotifier() : super(null);
 
   /// Initialize with email
@@ -137,11 +139,7 @@ class OnboardingDataNotifier extends StateNotifier<RegistrationOnboardingData?> 
   }
 
   /// Update user info (Screen 1)
-  void setUserInfo({
-    String? displayName,
-    required int age,
-    String? gender,
-  }) {
+  void setUserInfo({String? displayName, required int age, String? gender}) {
     if (state == null) return;
     state = state!.copyWith(
       displayName: displayName,

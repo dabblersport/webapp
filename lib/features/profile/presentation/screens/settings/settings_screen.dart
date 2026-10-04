@@ -55,6 +55,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         title: l10n.settings_section_account,
         items: [
           SettingsItem(
+            id: 'edit_profile',
+            title: l10n.profile_btn_edit,
+            subtitle: l10n.settings_item_edit_profile_subtitle,
+            icon: 'edit',
+            route: '/profile/edit',
+            searchTerms: ['profile', 'name', 'photo', 'avatar', 'bio', 'edit'],
+          ),
+          SettingsItem(
             id: 'account_management',
             title: l10n.settings_item_account_management_title,
             subtitle: l10n.settings_item_account_management_subtitle,
