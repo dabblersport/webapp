@@ -1,4 +1,5 @@
 import 'package:dabbler/data/models/profile/privacy_settings.dart';
+import 'package:dabbler/features/profile/presentation/controllers/privacy_controller.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// One privacy switch of `Settings.dc.html` (`PROFILE_ROWS`, `ACTIVITY_ROWS`,
@@ -199,3 +200,12 @@ final List<PrivacyToggle> privacyNotificationToggles = [
     (l) => l.priv_t_mail_sub,
   ),
 ];
+
+/// Saves the pending privacy change. A switch applies at once (there is no
+/// Save button), so when the save fails the screen must not keep showing the
+/// value that was never stored: reload the stored settings instead.
+Future<bool> savePrivacyOrRevert(PrivacyController ctrl, String userId) async {
+  final saved = await ctrl.saveAllChanges(userId);
+  if (!saved) await ctrl.loadPrivacySettings(userId);
+  return saved;
+}
