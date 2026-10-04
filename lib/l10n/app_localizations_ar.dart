@@ -767,6 +767,389 @@ class AppLocalizationsAr extends AppLocalizations {
   String get primary_sport_no_sports => 'مفيش رياضات متاخترة. ارجع للخلف.';
 
   @override
+  String get onb_back => 'رجوع';
+
+  @override
+  String get onb_continue => 'المتابعة';
+
+  @override
+  String onb_step_label(int current, int total) {
+    return 'الخطوة $current من $total';
+  }
+
+  @override
+  String get onb_dob_title => 'عرّفنا بنفسك قليلًا';
+
+  @override
+  String get onb_dob_subtitle =>
+      'عمرك يساعدنا على إبقاء المباريات والمجتمعات مناسبة للأعمار. ولا يظهر في ملفك الشخصي.';
+
+  @override
+  String get onb_dob_label => 'تاريخ الميلاد';
+
+  @override
+  String get onb_dob_placeholder => 'اختر تاريخ ميلادك';
+
+  @override
+  String get onb_dob_helper_min =>
+      'يجب أن يكون عمرك 16 عامًا أو أكثر لاستخدام دابلر.';
+
+  @override
+  String onb_dob_helper_ok(int age) {
+    return 'العمر $age. كل شيء جاهز.';
+  }
+
+  @override
+  String get onb_dob_error_min => 'يجب أن يكون عمرك 16 عامًا أو أكثر.';
+
+  @override
+  String onb_dob_error_max(int max) {
+    return 'يجب أن يكون العمر بين 16 و$max عامًا.';
+  }
+
+  @override
+  String get onb_gender_label => 'الجنس (اختياري)';
+
+  @override
+  String get onb_gender_male => 'ذكر';
+
+  @override
+  String get onb_gender_female => 'أنثى';
+
+  @override
+  String get onb_dob_sheet_confirm => 'تأكيد';
+
+  @override
+  String get onb_dob_sheet_cancel => 'إلغاء';
+
+  @override
+  String get onb_day => 'اليوم';
+
+  @override
+  String get onb_month => 'الشهر';
+
+  @override
+  String get onb_year => 'السنة';
+
+  @override
+  String get onb_month_1 => 'يناير';
+
+  @override
+  String get onb_month_2 => 'فبراير';
+
+  @override
+  String get onb_month_3 => 'مارس';
+
+  @override
+  String get onb_month_4 => 'أبريل';
+
+  @override
+  String get onb_month_5 => 'مايو';
+
+  @override
+  String get onb_month_6 => 'يونيو';
+
+  @override
+  String get onb_month_7 => 'يوليو';
+
+  @override
+  String get onb_month_8 => 'أغسطس';
+
+  @override
+  String get onb_month_9 => 'سبتمبر';
+
+  @override
+  String get onb_month_10 => 'أكتوبر';
+
+  @override
+  String get onb_month_11 => 'نوفمبر';
+
+  @override
+  String get onb_month_12 => 'ديسمبر';
+
+  @override
+  String get onb_persona_title => 'لماذا أنت هنا؟';
+
+  @override
+  String get onb_persona_subtitle =>
+      'اختر ما يناسبك اليوم. يمكنك إضافة غيره لاحقًا.';
+
+  @override
+  String get onb_persona_footnote =>
+      'يمكنك إضافة طريقة أخرى لاستخدام دابلر لاحقًا من الإعدادات.';
+
+  @override
+  String get onb_persona_socialiser_name => 'الاجتماعي';
+
+  @override
+  String get onb_persona_socialiser_hook => 'اعرف ناسك';
+
+  @override
+  String get onb_persona_socialiser_body =>
+      'تابع الرياضات، اكتشف المجتمعات، وابقَ على اطلاع.';
+
+  @override
+  String get onb_sports_title_socialiser => 'ما الذي يهمّك؟';
+
+  @override
+  String get onb_sports_subtitle_socialiser =>
+      'اختر الرياضات التي تريد رؤية المزيد منها.';
+
+  @override
+  String get onb_primary_title_socialiser => 'ما رياضتك المفضلة؟';
+
+  @override
+  String get onb_primary_subtitle_socialiser =>
+      'سنعرض لك المزيد من المجتمعات والأشخاص والنشاط حولها.';
+
+  @override
+  String get onb_persona_player_name => 'اللاعب';
+
+  @override
+  String get onb_persona_player_hook => 'انزل الملعب';
+
+  @override
+  String get onb_persona_player_body =>
+      'انضم للمباريات، ارفع مستواك، والعب أكثر.';
+
+  @override
+  String get onb_sports_title_player => 'ما الرياضات التي تلعبها؟';
+
+  @override
+  String get onb_sports_subtitle_player =>
+      'اختر الرياضات التي تهمّك. يمكنك تغييرها في أي وقت.';
+
+  @override
+  String get onb_primary_title_player => 'ما رياضتك المفضلة للعب؟';
+
+  @override
+  String get onb_primary_subtitle_player =>
+      'سنجعلها الافتراضية ونبني ملف رياضتك الأساسية حولها.';
+
+  @override
+  String get onb_persona_organiser_name => 'المنظّم';
+
+  @override
+  String get onb_persona_organiser_hook => 'اجمع المباراة';
+
+  @override
+  String get onb_persona_organiser_body =>
+      'أنشئ المباريات، أدر اللاعبين، ورتّب كل شيء.';
+
+  @override
+  String get onb_sports_title_organiser => 'ماذا تنظّم؟';
+
+  @override
+  String get onb_sports_subtitle_organiser =>
+      'اختر الرياضات التي تنشئ لها المباريات عادةً.';
+
+  @override
+  String get onb_primary_title_organiser => 'ما الذي تنظّمه أكثر؟';
+
+  @override
+  String get onb_primary_subtitle_organiser =>
+      'سنستخدمها افتراضيًا عند إنشاء المباريات والفعاليات.';
+
+  @override
+  String get onb_persona_host_name => 'المضيف';
+
+  @override
+  String get onb_persona_host_hook => 'املأ ملعبك';
+
+  @override
+  String get onb_persona_host_body =>
+      'اعرض مساحاتك، اوصل للاعبين، وأدر الحجوزات.';
+
+  @override
+  String get onb_sports_title_host => 'ماذا يمكن للناس أن يلعبوا في ملعبك؟';
+
+  @override
+  String get onb_sports_subtitle_host => 'اختر الرياضات التي تستضيفها مساحاتك.';
+
+  @override
+  String get onb_primary_title_host => 'بماذا يشتهر ملعبك؟';
+
+  @override
+  String get onb_primary_subtitle_host =>
+      'سنجعلها الرياضة الأساسية في ملف ملعبك.';
+
+  @override
+  String get onb_sports_search => 'ابحث عن رياضة';
+
+  @override
+  String get onb_sports_none => 'لا نتائج مطابقة. جرّب اسمًا آخر.';
+
+  @override
+  String get onb_sports_count_zero => 'اختر رياضة واحدة على الأقل للمتابعة.';
+
+  @override
+  String get onb_sports_count_one => 'تم اختيار رياضة واحدة';
+
+  @override
+  String onb_sports_count_many(int count) {
+    return 'تم اختيار $count رياضات';
+  }
+
+  @override
+  String get onb_primary_more => 'أضف المزيد من الرياضات';
+
+  @override
+  String get onb_identity_title => 'بماذا يناديك الناس؟';
+
+  @override
+  String get onb_identity_subtitle =>
+      'اضبط الاسم والمعرّف الذي سيظهر لك في دابلر.';
+
+  @override
+  String get onb_display_name_label => 'الاسم الظاهر';
+
+  @override
+  String get onb_display_name_helper =>
+      'هذا هو الاسم الذي يراه الناس في دابلر.';
+
+  @override
+  String get onb_suggestions => 'مقترحات';
+
+  @override
+  String get onb_username_label => 'المعرّف';
+
+  @override
+  String get onb_username_placeholder => '@اسمك';
+
+  @override
+  String get onb_username_helper => 'أحرف وأرقام وشرطة سفلية فقط.';
+
+  @override
+  String get onb_username_short => 'يحتاج المعرّف إلى 3 أحرف على الأقل.';
+
+  @override
+  String get onb_username_invalid => 'أحرف وأرقام وشرطة سفلية فقط.';
+
+  @override
+  String get onb_username_checking => 'جارٍ التحقق من التوفر…';
+
+  @override
+  String get onb_username_taken => 'هذا المعرّف مستخدم. جرّب غيره.';
+
+  @override
+  String get onb_username_available => 'متاح — هذا لك.';
+
+  @override
+  String get onb_username_check_error =>
+      'تعذّر التحقق من المعرّف. حاول مرة أخرى.';
+
+  @override
+  String get onb_create_account => 'إنشاء الحساب';
+
+  @override
+  String get onb_setup_title => 'جارٍ إعداد حسابك';
+
+  @override
+  String get onb_setup_subtitle => 'يستغرق هذا لحظة فقط.';
+
+  @override
+  String get onb_setup_stage_profile => 'إنشاء ملفك الشخصي';
+
+  @override
+  String get onb_setup_failed_title => 'لم يكتمل الإعداد';
+
+  @override
+  String get onb_welcome_list_title => 'لا تنسَ';
+
+  @override
+  String get onb_welcome_socialiser_headline => 'دائرتك الرياضية تبدأ من هنا.';
+
+  @override
+  String get onb_welcome_socialiser_principle =>
+      'تابع ما تحب، والتقِ بناسك، وانضم حين تشعر أنه الوقت.';
+
+  @override
+  String get onb_welcome_socialiser_list_title => 'كيف يعمل هذا';
+
+  @override
+  String get onb_welcome_socialiser_item1 =>
+      'تابع الرياضات والأشخاص الذين يهمّونك فعلًا.';
+
+  @override
+  String get onb_welcome_socialiser_item2 =>
+      'شارك في النقاش قبل أن تنضم إلى المباراة.';
+
+  @override
+  String get onb_welcome_socialiser_item3 =>
+      'ابقَ ودودًا — كل من هنا هو زميل فريق لشخص ما.';
+
+  @override
+  String get onb_welcome_socialiser_cta => 'ابدأ الاستكشاف';
+
+  @override
+  String get onb_welcome_player_headline => 'أنت معنا. هيّا نلعب.';
+
+  @override
+  String get onb_welcome_player_principle => 'احضر، العب بنزاهة، وابنِ سمعتك.';
+
+  @override
+  String get onb_welcome_player_list_title => 'لا تنسَ';
+
+  @override
+  String get onb_welcome_player_item1 =>
+      'أكّد فقط عندما تعرف أنك تستطيع اللعب.';
+
+  @override
+  String get onb_welcome_player_item2 => 'احترم قواعد المنظّم وموعد البداية.';
+
+  @override
+  String get onb_welcome_player_item3 => 'الالتزام بالحضور هو ما يبني سمعتك.';
+
+  @override
+  String get onb_welcome_player_cta => 'ابحث عن مباراتي الأولى';
+
+  @override
+  String get onb_welcome_organiser_headline => 'حان وقت جمع المباراة.';
+
+  @override
+  String get onb_welcome_organiser_principle =>
+      'المباريات الجيدة تبدأ بتنظيم جيد.';
+
+  @override
+  String get onb_welcome_organiser_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get onb_welcome_organiser_item1 =>
+      'تفاصيل دقيقة — الملعب والوقت والمستوى والسعر.';
+
+  @override
+  String get onb_welcome_organiser_item2 =>
+      'التغييرات تُشارَك مبكرًا لا عند البداية.';
+
+  @override
+  String get onb_welcome_organiser_item3 => 'إدارة الحضور بإنصاف في كل مرة.';
+
+  @override
+  String get onb_welcome_organiser_cta => 'أنشئ مباراتي الأولى';
+
+  @override
+  String get onb_welcome_host_headline => 'ملعبك الآن على الخريطة.';
+
+  @override
+  String get onb_welcome_host_principle => 'الملاعب الرائعة تجعل اللعب سهلًا.';
+
+  @override
+  String get onb_welcome_host_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get onb_welcome_host_item1 => 'توافر يطابق الواقع.';
+
+  @override
+  String get onb_welcome_host_item2 => 'أسعار ومرافق محدّثة دائمًا.';
+
+  @override
+  String get onb_welcome_host_item3 =>
+      'حجوزات يُوفى بها — وهذا ما يعيدهم إليك.';
+
+  @override
+  String get onb_welcome_host_cta => 'جهّز ملعبي';
+
+  @override
   String primary_sport_adding(String label) {
     return 'بيضاف بروفايل $label';
   }

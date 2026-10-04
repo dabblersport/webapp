@@ -120,12 +120,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 480',
   ),
   GateAllow(
-    'lib/features/auth_onboarding/presentation/screens/welcome_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 480',
-  ),
-  GateAllow(
     'lib/features/auth_onboarding/presentation/screens/email_input_screen.dart',
     ['numeric named arg'],
     _maxWidthReason,
@@ -133,12 +127,6 @@ const List<GateAllow> allowList = [
   ),
   GateAllow(
     'lib/features/auth_onboarding/presentation/screens/landing_screen.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxWidth: 480',
-  ),
-  GateAllow(
-    'lib/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart',
     ['numeric named arg'],
     _maxWidthReason,
     match: 'maxWidth: 480',
