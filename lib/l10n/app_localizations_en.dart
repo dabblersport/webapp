@@ -1892,13 +1892,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get nav_meetups => 'Meetups';
 
   @override
-  String get nav_create_post => 'Create Post';
+  String get nav_create_post => 'Create post';
 
   @override
-  String get nav_create_game => 'Create Game';
+  String get nav_create_game => 'Create game';
 
   @override
-  String get nav_create_meetup => 'Create Meetup';
+  String get nav_create_meetup => 'Create meetup';
 
   @override
   String get nav_meetups_coming_soon => 'Meetups coming soon!';
@@ -5513,6 +5513,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetups_create_failed => 'Failed to create meet-up';
+
+  @override
+  String get meetups_visibility => 'Who can see it';
+
+  @override
+  String get meetups_visibility_sub => 'Visibility settings';
+
+  @override
+  String get meetups_cost => 'Cost';
+
+  @override
+  String get meetups_cost_sub => 'Entry fee';
+
+  @override
+  String get meetups_err_location_required => 'Add a location for the meet-up.';
+
+  @override
+  String get meetups_sports_failed =>
+      'Sports could not be loaded. Try again later.';
 
   @override
   String get meetups_err_organiser_required =>

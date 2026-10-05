@@ -413,6 +413,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 id: _createMeetup,
                 icon: 'calendar',
                 label: l.nav_create_meetup,
+                // `--tile-accent-surface` (`[role="menu"] > button:nth-child(3)`
+                // in the frame's page CSS).
+                iconTone: DabblerNavigationIconTone.accent,
               ),
           ],
           onCreate: _onCreate,

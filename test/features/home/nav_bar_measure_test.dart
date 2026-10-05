@@ -523,7 +523,7 @@ void main() {
     final bool rtl = locale.languageCode == 'ar';
     final String dir = rtl ? 'RTL' : 'LTR';
     final String active = rtl ? 'الرئيسية' : 'Feeds';
-    final String caption = rtl ? 'منشور جديد' : 'Create Post';
+    final String caption = rtl ? 'منشور جديد' : 'Create post';
     final Map<String, List<double>> dClosed = rtl ? _dRtlClosed : _dLtrClosed;
     final Map<String, List<double>> dOpen = rtl ? _dRtlOpen : _dLtrOpen;
 
@@ -627,7 +627,6 @@ const String _kTwoColumns =
     'the component\'s repeat(min(n,4),1fr))';
 const String _kLineRounding =
     'Flutter rounds a text line to whole px (frame 15.625 -> 16): +0.375';
-const String _kCopy = 'copy: l10n "Create Post" vs the frame\'s "Create post"';
 
 void _closedFacts(WidgetTester t, String dir, bool rtl, String active) {
   final DabblerColors colors = DabblerColors.of(t.element(_bar));
@@ -866,7 +865,7 @@ Map<String, _Exception> _openExceptions(bool rtl) {
     'plate 1 (83x62)': _Exception(_kTwoColumns, _r(30, 731, 128.5, 62)),
     'label 1 (12.5/15.63 w500)': rtl
         ? _Exception(both, _r(65.24, 800, 58.01, 16))
-        : _Exception('$both; $_kCopy', _r(66.29, 800, 55.91, 16)),
+        : _Exception(both, _r(66.28, 800, 55.94, 16)),
     'menu item 2 Create game': _Exception(both, _r(166.5, 731, 128.5, 85)),
     'plate 2 (83x62)': _Exception(_kTwoColumns, _r(166.5, 731, 128.5, 62)),
   };

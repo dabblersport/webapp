@@ -195,10 +195,10 @@ void main() {
     await _pump(tester);
     await tester.tap(find.bySemanticsLabel('Create'));
     await tester.pumpAndSettle();
-    expect(find.text('Create Post'), findsOneWidget);
-    expect(find.text('Create Game'), findsOneWidget);
+    expect(find.text('Create post'), findsOneWidget);
+    expect(find.text('Create game'), findsOneWidget);
     expect(find.textContaining('eetup'), findsNothing);
-    await tester.tap(find.text('Create Game'));
+    await tester.tap(find.text('Create game'));
     await tester.pumpAndSettle();
     expect(find.text('create-game-route'), findsOneWidget);
     semantics.dispose();

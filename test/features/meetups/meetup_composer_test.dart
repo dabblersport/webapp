@@ -8,6 +8,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 import 'meetup_screens_harness.dart';
 
@@ -20,11 +21,15 @@ Future<FakeMeetupRepository> _open(
   final r = repo ?? FakeMeetupRepository();
   await pumpMeetups(
     tester,
-    MeetupComposerScreen(
-      onCreated: onCreated,
-      initialDate: DateTime(2030, 1, 15),
-      initialStart: const TimeOfDay(hour: 18, minute: 0),
-      initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+    // The drawer's body scrolls inside the DS sheet; standalone it needs a
+    // scroller of its own.
+    SingleChildScrollView(
+      child: MeetupComposerScreen(
+        onCreated: onCreated,
+        initialDate: DateTime(2030, 1, 15),
+        initialStart: const TimeOfDay(hour: 18, minute: 0),
+        initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+      ),
     ),
     r,
     locale: locale,
@@ -36,7 +41,8 @@ Future<FakeMeetupRepository> _open(
 }
 
 Future<void> _fill(WidgetTester tester) async {
-  await tester.tap(find.text('Running'));
+  // The first tile (Running; جري in Arabic, from `name_ar`).
+  await tester.tap(find.byType(DabblerEmojiTile).first);
   await tester.pump();
   await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
   await tester.pump();
@@ -45,17 +51,33 @@ Future<void> _fill(WidgetTester tester) async {
 void main() {
   for (final locale in const <Locale>[Locale('en'), Locale('ar')]) {
     final tag = locale.languageCode;
-    testWidgets('default state: CTA disabled until sport and title ($tag)', (
-      tester,
-    ) async {
+    testWidgets('default state: CTA live with a sport; empty title is named '
+        'in place ($tag)', (tester) async {
       final repo = await _open(tester, locale: locale);
       expect(
         find.text(tag == 'ar' ? 'لقاء جديد' : 'Create meet-up'),
         findsWidgets,
       );
-      await tester.tap(find.byType(DabblerButton).last);
+      // The frame's rule (`meetupCtaBg`): live once an activity is chosen,
+      // and the first sport is chosen on open.
+      expect(
+        tester
+            .widget<DabblerComposerSubmit>(find.byType(DabblerComposerSubmit))
+            .enabled,
+        isTrue,
+      );
+      await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+      await tester.tap(find.byType(DabblerComposerSubmit));
       await settle(tester);
       expect(repo.createCalls, isEmpty);
+      expect(
+        find.text(
+          tag == 'ar'
+              ? lookupAppLocalizations(locale).meetups_err_title_invalid
+              : 'The title must be 3 to 80 characters.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('filled form sends the RPC params ($tag)', (tester) async {
@@ -66,7 +88,8 @@ void main() {
         onCreated: (id) => created = id,
       );
       await _fill(tester);
-      await tester.tap(find.byType(DabblerButton).last);
+      await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+      await tester.tap(find.byType(DabblerComposerSubmit));
       await settle(tester);
       expect(repo.createCalls, hasLength(1));
       final c = repo.createCalls.single;
@@ -87,16 +110,19 @@ void main() {
     final repo = FakeMeetupRepository();
     await pumpMeetups(
       tester,
-      MeetupComposerScreen(
-        onCreated: (_) {},
-        initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+      SingleChildScrollView(
+        child: MeetupComposerScreen(
+          onCreated: (_) {},
+          initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+        ),
       ),
       repo,
     );
     tester.takeException();
     await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
     await tester.pump();
-    await tester.tap(find.byType(DabblerButton).last);
+    await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+    await tester.tap(find.byType(DabblerComposerSubmit));
     await settle(tester);
     final c = repo.createCalls.single;
     final now = DateTime.now();
@@ -147,7 +173,8 @@ void main() {
         ..createFailure = Failure(code: e.$1, message: e.$1);
       await _open(tester, repo: repo);
       await _fill(tester);
-      await tester.tap(find.byType(DabblerButton).last);
+      await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+      await tester.tap(find.byType(DabblerComposerSubmit));
       await settle(tester);
       expect(find.text(e.$2), findsOneWidget);
     });

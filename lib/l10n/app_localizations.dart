@@ -3455,19 +3455,19 @@ abstract class AppLocalizations {
   /// No description provided for @nav_create_post.
   ///
   /// In en, this message translates to:
-  /// **'Create Post'**
+  /// **'Create post'**
   String get nav_create_post;
 
   /// No description provided for @nav_create_game.
   ///
   /// In en, this message translates to:
-  /// **'Create Game'**
+  /// **'Create game'**
   String get nav_create_game;
 
   /// No description provided for @nav_create_meetup.
   ///
   /// In en, this message translates to:
-  /// **'Create Meetup'**
+  /// **'Create meetup'**
   String get nav_create_meetup;
 
   /// No description provided for @nav_meetups_coming_soon.
@@ -10000,6 +10000,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to create meet-up'**
   String get meetups_create_failed;
+
+  /// No description provided for @meetups_visibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Who can see it'**
+  String get meetups_visibility;
+
+  /// No description provided for @meetups_visibility_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Visibility settings'**
+  String get meetups_visibility_sub;
+
+  /// No description provided for @meetups_cost.
+  ///
+  /// In en, this message translates to:
+  /// **'Cost'**
+  String get meetups_cost;
+
+  /// No description provided for @meetups_cost_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry fee'**
+  String get meetups_cost_sub;
+
+  /// No description provided for @meetups_err_location_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a location for the meet-up.'**
+  String get meetups_err_location_required;
+
+  /// No description provided for @meetups_sports_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports could not be loaded. Try again later.'**
+  String get meetups_sports_failed;
 
   /// No description provided for @meetups_err_organiser_required.
   ///

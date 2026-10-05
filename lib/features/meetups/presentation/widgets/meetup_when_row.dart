@@ -76,3 +76,65 @@ class MeetupWhenRow extends StatelessWidget {
     );
   }
 }
+
+/// The Create meet-up drawer's When pills (`Home Feed.dc.html:1163-1165`):
+/// date, start and End, `gap:6px`, each `padding:7px 12px` 13/18 — the
+/// date filled in the brand while it is Today (`pillOpt`, `:2964`).
+class MeetupWhenPills extends StatelessWidget {
+  const MeetupWhenPills({
+    super.key,
+    required this.date,
+    required this.start,
+    required this.end,
+    required this.onDate,
+    required this.onStart,
+    required this.onEnd,
+  });
+
+  final DateTime? date;
+  final TimeOfDay? start;
+  final TimeOfDay? end;
+  final VoidCallback onDate;
+  final VoidCallback onStart;
+  final VoidCallback onEnd;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final now = DateTime.now();
+    final d = date;
+    final today =
+        d != null &&
+        d.year == now.year &&
+        d.month == now.month &&
+        d.day == now.day;
+    final String dateLabel = d == null
+        ? l.game_date
+        : today
+        ? l.game_today
+        : DateFormat.MMMd(Localizations.localeOf(context).toString()).format(d);
+    Widget pill(String label, VoidCallback onTap, {bool selected = false}) =>
+        DabblerChip(
+          label: label,
+          selected: selected,
+          metrics: DabblerFeedMetrics.drawn,
+          compactHitArea: true,
+          onTap: onTap,
+        );
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      spacing: DabblerSpacing.space2,
+      children: <Widget>[
+        pill(dateLabel, onDate, selected: today),
+        pill(
+          start == null ? l.game_time : DabblerTimeFormat.format(start!),
+          onStart,
+        ),
+        pill(
+          end == null ? l.meetups_end : DabblerTimeFormat.format(end!),
+          onEnd,
+        ),
+      ],
+    );
+  }
+}

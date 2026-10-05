@@ -15,15 +15,19 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Opens the Create meet-up drawer as a design-system bottom sheet, like the
-/// frame (`Home Feed.dc.html:1134`, content-sized up to 94%, on the page
-/// colour): the title row with Cancel, the scrolling form and the sticky
-/// Create button are the composer shell's. On success it closes and opens the new Details.
+/// frame (`Home Feed.dc.html:1132-1281`, `sheetP94`: content-sized up to 94%,
+/// on the page colour). The sheet's own header is the frame's sticky title row
+/// (`:1136-1139`: the title in 22/28 display, a small neutral Cancel, `gap:12`,
+/// `padding-bottom:12`); its body is the frame's scroller (`padding: 0 18px
+/// 18px`), and the Create button scrolls with the form as it does in the
+/// frame. On success it closes and opens the new Details.
 Future<void> showMeetupComposerSheet(
   BuildContext context, {
   ValueChanged<String>? onCreated,
   ComposerPlacePick? initialPlace,
 }) {
   final router = GoRouter.maybeOf(context);
+  final l = AppLocalizations.of(context);
   return showDabblerSheet<void>(
     context: context,
     // `max-height: 94%`, `height: auto` (`sheetP94`): as tall as the form,
@@ -32,10 +36,14 @@ Future<void> showMeetupComposerSheet(
     contentMaxFraction: DabblerSheet.contentMaxFractionFull,
     pageBackground: true,
     showCloseButton: false,
-    // The shell draws the title row (with Cancel) and the sticky footer; the
-    // sheet's own header carries only the grab handle and the route's name.
-    title: AppLocalizations.of(context).meetups_create_title,
-    titleWidget: const SizedBox.shrink(),
+    title: l.meetups_create_title,
+    titleWidget: DabblerText(l.meetups_create_title, style: DabblerType.title2),
+    headerActionBuilder: (sheetContext) => DabblerButton(
+      label: l.composer_cancel,
+      tone: DabblerButtonTone.neutral,
+      size: DabblerButtonSize.small,
+      onPressed: () => Navigator.of(sheetContext).maybePop(),
+    ),
     builder: (sheetContext) => MeetupComposerScreen(
       initialPlace: initialPlace,
       onCreated: (id) {
@@ -50,13 +58,21 @@ Future<void> showMeetupComposerSheet(
   );
 }
 
-/// The Create meet-up drawer, drawn from `Home Feed.dc.html:1132-1280`: sport
-/// tiles, title and description, When (date, start, End), Location, Capacity,
-/// and Advanced options (How people join, Skill range, Vibe).
+/// The Create meet-up drawer, drawn from `Home Feed.dc.html:1141-1279`:
+/// Sport tiles, title and description, When (date, start, End), Location,
+/// Capacity, the Advanced options toggle (open by default, `meetupMore: true`)
+/// over Who can see it, How people join, Skill range, Vibe and Cost, then the
+/// Create button.
 ///
-/// v1 is public and free: the frame's "Who can see it", "Members only" and
-/// "Cost" rows are not drawn (the RPC rejects any other value, see
-/// `visibility_not_supported` / `free_meetups_only`).
+/// v1 is public and free (the RPC rejects anything else, see
+/// `visibility_not_supported` / `free_meetups_only`): "Who can see it" and
+/// "Cost" show their only value, Public and Free, and open nothing. The
+/// frame's "Members only" toggle is not drawn: members-only meetups are
+/// deferred and a switch that cannot be turned on would claim otherwise.
+///
+/// The Create button is live once a sport is chosen, as the frame's
+/// `meetupCtaBg` is. A missing title or place is then named in place, above
+/// the button, rather than by a dead button.
 class MeetupComposerScreen extends ConsumerStatefulWidget {
   const MeetupComposerScreen({
     super.key,
@@ -92,7 +108,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   int? _minSkill;
   int? _maxSkill;
   DabblerVibe? _vibe;
-  bool _more = false;
+  bool _more = true; // the frame opens with Advanced options shown
   bool _busy = false;
   String? _error;
 
@@ -120,18 +136,27 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
     super.dispose();
   }
 
-  bool get _canSubmit =>
-      _sport != null &&
-      _title.text.trim().length >= 3 &&
-      _place != null &&
-      _date != null &&
-      _start != null;
+  /// The frame's rule: the button is live once an activity is chosen
+  /// (`meetupCtaBg`, `:3469`).
+  bool get _canSubmit => _sport != null && !_busy;
+
+  /// What still blocks the RPC, named in place; null when the form can go.
+  String? _missing(AppLocalizations l) {
+    if (_title.text.trim().length < 3) return l.meetups_err_title_invalid;
+    if (_place == null) return l.meetups_err_location_required;
+    return null;
+  }
 
   DateTime _at(DateTime d, TimeOfDay t) =>
       DateTime(d.year, d.month, d.day, t.hour, t.minute);
 
   Future<void> _submit() async {
     final l = AppLocalizations.of(context);
+    final missing = _missing(l);
+    if (missing != null) {
+      setState(() => _error = missing);
+      return;
+    }
     setState(() {
       _busy = true;
       _error = null;
@@ -279,94 +304,104 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
     if (p != null && mounted) setState(() => _place = p);
   }
 
+  Future<void> _pickPolicy() => showComposerSheet<void>(
+    context,
+    title: AppLocalizations.of(context).meetups_policy,
+    builder: (ctx) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (final e in _policies(AppLocalizations.of(context)))
+          ComposerPickerRow(
+            title: e.$2,
+            selected: _policy == e.$1,
+            onTap: () {
+              setState(() => _policy = e.$1);
+              Navigator.pop(ctx);
+            },
+          ),
+      ],
+    ),
+  );
+
+  /// RSVP modes v1 supports: open | request | closed.
+  static List<(String, String)> _policies(AppLocalizations l) =>
+      <(String, String)>[
+        ('open', l.game_join_open),
+        ('request', l.game_join_request),
+        ('closed', l.meetups_policy_closed),
+      ];
+
+  String _sportName(MeetupSport s) =>
+      Directionality.of(context) == TextDirection.rtl &&
+          (s.nameAr ?? '').isNotEmpty
+      ? s.nameAr!
+      : s.nameEn;
+
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final sports = ref.watch(meetupSportsProvider);
-    const gutter = EdgeInsetsDirectional.symmetric(
-      horizontal: DabblerSpacing.space8,
-    );
-    const block = EdgeInsetsDirectional.symmetric(
-      horizontal: DabblerSpacing.space8,
-      vertical: DabblerSpacing.space4,
-    );
-    final colors = DabblerColors.of(context);
-    return ComposerDrawerShell(
-      title: l.meetups_create_title,
-      ctaLabel: l.meetups_create_title,
-      canSubmit: _canSubmit,
-      isSubmitting: _busy,
-      onCtaTap: _submit,
-      errorMessage: _error,
+    final policyLabel = _policies(
+      l,
+    ).firstWhere((e) => e.$1 == _policy, orElse: () => _policies(l).first).$2;
+    // The frame's scroller: one column, `gap:12px`, under the sticky header
+    // and 12 below it (the sheet's body supplies the 18 gutters and the 18
+    // at the foot).
+    return DabblerSheetBody(
       children: <Widget>[
-        Padding(
-          padding: block,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DabblerSpacing.space3,
-            children: <Widget>[
-              ComposerSectionLabel(label: l.game_sport),
-              sports.when(
-                loading: () => const SizedBox(
-                  height: DabblerSizing.touchTargetMin,
-                  child: Center(
-                    child: DabblerSpinner(size: DabblerSpinnerSize.sm),
+        _SectionLabel(l.game_sport, first: true),
+        sports.when(
+          loading: () => const SizedBox(
+            height: DabblerEmojiTile.side,
+            child: Center(child: DabblerSpinner(size: DabblerSpinnerSize.sm)),
+          ),
+          error: (_, __) => DabblerBanner(
+            tone: DabblerBannerTone.error,
+            message: l.meetups_sports_failed,
+          ),
+          data: (list) {
+            _sport ??= list.isEmpty ? null : list.first;
+            if (list.isEmpty) {
+              return DabblerText(
+                l.composer_sports_none,
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              );
+            }
+            return Wrap(
+              spacing: DabblerSpacing.space3,
+              runSpacing: DabblerSpacing.space3,
+              children: <Widget>[
+                for (final s in list)
+                  DabblerEmojiTile(
+                    emoji: s.emoji ?? '',
+                    label: _sportName(s),
+                    selected: _sport?.id == s.id,
+                    onTap: () => setState(() => _sport = s),
                   ),
-                ),
-                error: (_, __) => DabblerText(
-                  l.composer_sports_none,
-                  style: DabblerType.footnote,
-                  tone: DabblerTextTone.secondary,
-                ),
-                data: (list) {
-                  _sport ??= list.isEmpty ? null : list.first;
-                  return DabblerTileGrid(
-                    columns: 4,
-                    children: <Widget>[
-                      for (final s in list)
-                        DabblerSelectableCard(
-                          layout: DabblerSelectableCardLayout.tile,
-                          title: s.nameEn,
-                          leading: DabblerSportIcon.fromKey(
-                            (s.sportKey ?? '').replaceAll('_', '-'),
-                            size: DabblerSizing.iconLg,
-                            color: colors.textPrimary,
-                          ),
-                          selected: _sport?.id == s.id,
-                          onChanged: (_) => setState(() => _sport = s),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
+              ],
+            );
+          },
         ),
-        const DabblerDivider(),
-        Padding(
-          padding: block,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            spacing: DabblerSpacing.space3,
-            children: <Widget>[
-              ComposerSectionLabel(label: l.meetups_create_name_section),
-              ComposerGlassInput(
-                controller: _title,
-                hint: l.meetups_create_title_hint,
-                onChanged: (_) => setState(() {}),
-              ),
-              ComposerGlassInput(
-                controller: _note,
-                hint: l.meetups_create_note_hint,
-                minLines: 3,
-                maxLines: 6,
-              ),
-            ],
-          ),
+        _SectionLabel(l.meetups_create_name_section),
+        DabblerComposerField(
+          controller: _title,
+          placeholder: l.meetups_create_title_hint,
+          onChanged: (_) => setState(() {
+            if (_error != null) _error = null;
+          }),
         ),
-        Padding(
-          padding: gutter,
-          child: MeetupWhenRow(
+        DabblerComposerField(
+          controller: _note,
+          placeholder: l.meetups_create_note_hint,
+          multiline: true,
+        ),
+        DabblerComposerRow(
+          icon: 'calendar',
+          title: l.meetups_when,
+          subtitle: l.meetups_when_sub,
+          trailing: MeetupWhenPills(
             date: _date,
             start: _start,
             end: _end,
@@ -375,106 +410,146 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             onEnd: () => _pickTime(end: true),
           ),
         ),
-        Padding(
-          padding: gutter,
-          child: ComposerSettingsRow(
-            icon: 'location',
-            title: l.meetups_location,
-            subtitle: _place?.name ?? l.meetups_location_sub,
-            trailing: DabblerButton.icon(
-              icon: 'map',
-              semanticLabel: l.meetups_location,
-              tone: DabblerButtonTone.text,
-              onPressed: _pickPlace,
-            ),
+        DabblerComposerRow(
+          icon: 'location',
+          title: l.meetups_location,
+          subtitle: _place?.name ?? l.meetups_location_sub,
+          trailing: DabblerButton.icon(
+            icon: 'map',
+            semanticLabel: l.meetups_location,
+            tone: DabblerButtonTone.text,
+            onPressed: _pickPlace,
           ),
         ),
-        Padding(
-          padding: gutter,
-          child: ComposerSettingsRow(
-            icon: 'people',
-            title: l.meetups_capacity,
-            subtitle: l.meetups_capacity_sub,
-            trailing: DabblerStepperPill(
-              value: _capacity,
-              min: 0,
-              decreaseLabel: l.game_fewer_max,
-              increaseLabel: l.game_more_max,
-              onChanged: (v) => setState(() => _capacity = v),
-            ),
+        DabblerComposerRow(
+          icon: 'people',
+          title: l.meetups_capacity,
+          subtitle: l.meetups_capacity_sub,
+          trailing: DabblerStepperPill(
+            value: _capacity,
+            min: 0,
+            // 0 is "no limit": the frame's `spotsLabel` draws it as ∞.
+            valueLabel: (v) => v > 0 ? '$v' : DabblerStepperPill.unlimited,
+            decreaseLabel: l.game_fewer_max,
+            increaseLabel: l.game_more_max,
+            onChanged: (v) => setState(() => _capacity = v),
           ),
         ),
-        // The frame's centred brand-ink link with a chevron-circle glyph
-        // (`Home Feed.dc.html:1198`).
-        Padding(
-          padding: block,
+        // The frame's centred brand link with a chevron-circle glyph
+        // (`:1198-1201`, 48 high: `padding:14px 0` round a 20 line).
+        SizedBox(
+          height: DabblerComposerSubmit.height,
           child: Center(
             child: DabblerTextLink(
               label: l.meetups_advanced,
               underline: false,
+              style: DabblerType.subheadline.resolveForDirection(
+                Directionality.of(context),
+              ),
               trailingIcon: _more ? 'arrow-circle-up' : 'arrow-circle-down',
               onPressed: () => setState(() => _more = !_more),
             ),
           ),
         ),
-        if (_more) ...<Widget>[
-          Padding(
-            padding: block,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              spacing: DabblerSpacing.space3,
-              children: <Widget>[
-                ComposerSectionLabel(label: l.meetups_policy),
-                Wrap(
-                  spacing: DabblerSpacing.space3,
-                  runSpacing: DabblerSpacing.space3,
-                  children: <Widget>[
-                    for (final e in <(String, String)>[
-                      ('open', l.game_join_open),
-                      ('request', l.game_join_request),
-                      ('closed', l.meetups_policy_closed),
-                    ])
-                      ComposerPolicyChip(
-                        label: e.$2,
-                        selected: _policy == e.$1,
-                        onTap: () => setState(() => _policy = e.$1),
-                      ),
-                  ],
+        if (_more)
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              DabblerComposerRow(
+                icon: 'eye',
+                title: l.meetups_visibility,
+                subtitle: l.meetups_visibility_sub,
+                // Public is v1's only visibility: shown, not offered.
+                trailing: DabblerSelectPill(
+                  label: l.composer_vis_public,
+                  brandInk: true,
+                  onTap: null,
                 ),
-              ],
-            ),
-          ),
-          Padding(
-            padding: gutter,
-            child: ComposerSettingsRow(
-              icon: 'medal-star',
-              title: l.meetups_skill,
-              subtitle: l.meetups_skill_sub,
-              trailing: ComposerSelectPill(
-                value: _minSkill == null
-                    ? l.meetups_skill_any
-                    : '$_minSkill–$_maxSkill',
-                caret: ComposerSelectCaret.down,
-                onTap: _pickSkill,
               ),
-            ),
-          ),
-          Padding(
-            padding: gutter,
-            child: ComposerSettingsRow(
-              icon: 'emoji-happy',
-              title: l.meetups_vibe,
-              subtitle: l.meetups_vibe_sub,
-              showDivider: false,
-              trailing: ComposerSelectPill(
-                value: _vibe?.label ?? l.meetups_vibe_choose,
-                caret: ComposerSelectCaret.down,
-                onTap: _pickVibe,
+              DabblerComposerRow(
+                icon: 'login',
+                title: l.meetups_policy,
+                subtitle: l.meetups_policy_sub,
+                trailing: DabblerSelectPill(
+                  label: policyLabel,
+                  brandInk: true,
+                  onTap: _pickPolicy,
+                ),
               ),
-            ),
+              DabblerComposerRow(
+                icon: 'medal-star',
+                title: l.meetups_skill,
+                subtitle: l.meetups_skill_sub,
+                trailing: DabblerSelectPill(
+                  label: _minSkill == null
+                      ? l.meetups_skill_any
+                      : '$_minSkill–$_maxSkill',
+                  brandInk: true,
+                  onTap: _pickSkill,
+                ),
+              ),
+              DabblerComposerRow(
+                icon: 'emoji-happy',
+                title: l.meetups_vibe,
+                subtitle: l.meetups_vibe_sub,
+                trailing: DabblerSelectPill(
+                  label: _vibe?.label ?? l.meetups_vibe_choose,
+                  brandInk: true,
+                  onTap: _pickVibe,
+                ),
+              ),
+              DabblerComposerRow(
+                icon: 'money',
+                title: l.meetups_cost,
+                subtitle: l.meetups_cost_sub,
+                divider: false,
+                // Free is v1's only cost: shown, not offered.
+                trailing: DabblerSelectPill(
+                  label: l.listing_free,
+                  brandInk: true,
+                  onTap: null,
+                ),
+              ),
+            ],
           ),
-        ],
+        if (_error != null)
+          DabblerBanner(tone: DabblerBannerTone.error, message: _error),
+        // `padding-block:12px 24px; border-top:1px solid var(--faint)`
+        // (`:1276`) — the button's own footer block.
+        DabblerComposerSubmit(
+          label: l.meetups_create_title,
+          enabled: _canSubmit,
+          loading: _busy,
+          footer: true,
+          onPressed: _submit,
+        ),
       ],
     );
   }
+}
+
+/// The frame's small section caption: 11/13 `--muted`, `padding-top:6px`.
+///
+/// The first one also carries the frame's 12 between the sticky header and
+/// the scroller (`gap:12px`), which the sheet's header row does not draw.
+class _SectionLabel extends StatelessWidget {
+  const _SectionLabel(this.label, {this.first = false});
+
+  final String label;
+  final bool first;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: EdgeInsetsDirectional.only(
+      top: first
+          ? DabblerSpacing.space4 + DabblerSpacing.space2
+          : DabblerSpacing.space2,
+    ),
+    child: DabblerText(
+      label,
+      style: DabblerType.caption2,
+      tone: DabblerTextTone.tertiary,
+    ),
+  );
 }

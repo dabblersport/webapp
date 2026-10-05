@@ -5562,6 +5562,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetups_create_failed => 'تعذّر إنشاء اللقاء';
 
   @override
+  String get meetups_visibility => 'من يمكنه رؤيته';
+
+  @override
+  String get meetups_visibility_sub => 'إعدادات الظهور';
+
+  @override
+  String get meetups_cost => 'التكلفة';
+
+  @override
+  String get meetups_cost_sub => 'رسوم الدخول';
+
+  @override
+  String get meetups_err_location_required => 'أضف موقعًا للقاء.';
+
+  @override
+  String get meetups_sports_failed =>
+      'تعذّر تحميل الرياضات. حاول مرة أخرى لاحقًا.';
+
+  @override
   String get meetups_err_organiser_required =>
       'يمكن للمنظّمين فقط إنشاء اللقاءات.';
 
