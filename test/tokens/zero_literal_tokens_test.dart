@@ -18,6 +18,12 @@ void main() {
       'mediaRailHeight': 128,
       'mediaRailAddWidth': 64,
       'mediaRailTileWidth': 104,
+      // Bottom bar, `NavigationBottomBar.jsx` / `Home Feed.dc.html:466-467`.
+      'navItem': 44,
+      'navBarHeight': 56,
+      'navGlyphLarge': 26,
+      'navCreateTile': 62,
+      'navFadeHeight': 80,
     };
     expect(sizingOffGridRulings.keys.toSet(), pinned.keys.toSet());
     for (final MapEntry<String, double> e in pinned.entries) {
