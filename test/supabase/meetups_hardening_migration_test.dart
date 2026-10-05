@@ -61,8 +61,9 @@ void main() {
             .where((n) => RegExp(r'^\d{14}_').hasMatch(n))
             .toList()
           ..sort();
-    // KAN-429 appends 20260915130000_meetups_card_fields.sql after it.
-    expect(names.last, '20260915130000_meetups_card_fields.sql');
+    // KAN-429 appends 20260915130000_meetups_card_fields.sql, KAN-431 appends
+    // 20260915150000_meetups_notifications.sql after it.
+    expect(names.last, '20260915150000_meetups_notifications.sql');
     expect(names, contains('20260915120000_meetups_hardening.sql'));
   });
 
