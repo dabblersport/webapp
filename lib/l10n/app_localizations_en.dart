@@ -3871,6 +3871,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Invites and players joining meetups';
 
   @override
+  String get notif_settings_kind_meetup_rsvps => 'Meetup RSVPs';
+
+  @override
+  String get notif_settings_kind_meetup_rsvps_sub =>
+      'When someone RSVPs to a meetup you host';
+
+  @override
+  String get notif_settings_kind_meetup_requests => 'Meetup join requests';
+
+  @override
+  String get notif_settings_kind_meetup_requests_sub =>
+      'When someone asks to join a meetup you host';
+
+  @override
+  String get notif_settings_kind_meetup_approved => 'Meetup request approved';
+
+  @override
+  String get notif_settings_kind_meetup_approved_sub =>
+      'When a host approves your request to join';
+
+  @override
+  String get notif_settings_kind_meetup_declined => 'Meetup request declined';
+
+  @override
+  String get notif_settings_kind_meetup_declined_sub =>
+      'When a host declines your request to join';
+
+  @override
+  String get notif_settings_kind_meetup_cancelled => 'Meetup cancelled';
+
+  @override
+  String get notif_settings_kind_meetup_cancelled_sub =>
+      'When a meetup you joined is cancelled';
+
+  @override
   String notif_settings_update_failed(String error) {
     return 'Could not update settings: $error';
   }

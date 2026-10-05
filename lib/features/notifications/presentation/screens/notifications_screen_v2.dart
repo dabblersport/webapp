@@ -7,6 +7,8 @@ import '../providers/notifications_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/notifications/meetup_notification_routes.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:intl/intl.dart';
@@ -501,6 +503,19 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
         return null;
       case 'reward.badge_awarded':
         return RoutePaths.profile;
+      case 'meetup.invited':
+      case 'meetup.player_joined':
+      case 'meetup.rsvp_received':
+      case 'meetup.request_received':
+      case 'meetup.request_approved':
+      case 'meetup.request_declined':
+      case 'meetup.cancelled':
+        return meetupNotificationRoute(
+          kindKey: kindKey,
+          meetupId:
+              _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'meetup_id'),
+          enabled: FeatureFlags.enableMeetups,
+        );
       default:
         return null;
     }

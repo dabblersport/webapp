@@ -6965,6 +6965,66 @@ abstract class AppLocalizations {
   /// **'Invites and players joining meetups'**
   String get notif_settings_kind_meetups_sub;
 
+  /// No description provided for @notif_settings_kind_meetup_rsvps.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup RSVPs'**
+  String get notif_settings_kind_meetup_rsvps;
+
+  /// No description provided for @notif_settings_kind_meetup_rsvps_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone RSVPs to a meetup you host'**
+  String get notif_settings_kind_meetup_rsvps_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup join requests'**
+  String get notif_settings_kind_meetup_requests;
+
+  /// No description provided for @notif_settings_kind_meetup_requests_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone asks to join a meetup you host'**
+  String get notif_settings_kind_meetup_requests_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_approved.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup request approved'**
+  String get notif_settings_kind_meetup_approved;
+
+  /// No description provided for @notif_settings_kind_meetup_approved_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a host approves your request to join'**
+  String get notif_settings_kind_meetup_approved_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_declined.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup request declined'**
+  String get notif_settings_kind_meetup_declined;
+
+  /// No description provided for @notif_settings_kind_meetup_declined_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a host declines your request to join'**
+  String get notif_settings_kind_meetup_declined_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup cancelled'**
+  String get notif_settings_kind_meetup_cancelled;
+
+  /// No description provided for @notif_settings_kind_meetup_cancelled_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a meetup you joined is cancelled'**
+  String get notif_settings_kind_meetup_cancelled_sub;
+
   /// No description provided for @notif_settings_update_failed.
   ///
   /// In en, this message translates to:
