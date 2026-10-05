@@ -395,12 +395,16 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             ),
           ),
         ),
+        // The frame's centred brand-ink link with a chevron-circle glyph
+        // (`Home Feed.dc.html:1198`).
         Padding(
-          padding: gutter,
-          child: ComposerSettingsRow(
-            icon: _more ? 'arrow-circle-up' : 'arrow-circle-down',
-            title: l.meetups_advanced,
-            onTap: () => setState(() => _more = !_more),
+          padding: block,
+          child: Center(
+            child: DabblerTextLink(
+              label: l.meetups_advanced,
+              trailingIcon: _more ? 'arrow-circle-up' : 'arrow-circle-down',
+              onPressed: () => setState(() => _more = !_more),
+            ),
           ),
         ),
         if (_more) ...<Widget>[
