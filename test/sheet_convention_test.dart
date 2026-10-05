@@ -36,8 +36,15 @@
 /// inset (`components/sheet.md`). It cannot see padding deeper than the root,
 /// nor a root it cannot resolve (a tear-off, a builder passed through); the
 /// design-system tests assert the single surface and single inset, and the
-/// call-site inventory records the rest by hand. A false positive is
-/// allow-listed with a reason like any other line.
+/// call-site inventory records the rest by hand.
+///
+/// Header band: a sheet with no `title` / `titleWidget` / `titleSpan` and no
+/// `headerActionBuilder` but the default close button draws an EMPTY band (the
+/// X alone under the handle). If the resolved content's first `DabblerText`
+/// uses a title-like style (`largeTitle`, `title1..3`, `headline`, `display*`)
+/// the title sits under that band: pass it as `title:` (or `titleWidget:`) so
+/// it lives in the header. A false positive is allow-listed with a reason like
+/// any other line.
 library;
 
 import 'dart:io';
@@ -377,13 +384,17 @@ List<SheetCall> scanSource(
     if (helper != 'DabblerSheet') {
       final String? builder = options['builder'];
       if (builder != null) {
-        final ({String? chain, String? offender}) r = resolveContent(
-          builder,
-          classes,
-        );
+        final ({String? chain, String? offender, String text}) r =
+            resolveContent(builder, classes);
         contentRoot = r.chain;
         if (r.offender != null) {
           violations.add('content root is ${r.offender} (${r.chain})');
+        }
+        if (hasEmptyHeaderBand(options) && startsWithTitle(r.text)) {
+          violations.add(
+            'title drawn in the content under an empty header band: pass '
+            '`title:` (or `titleWidget:`) so it lives in the sheet header',
+          );
         }
       }
     }
@@ -486,9 +497,39 @@ const Set<String> _containerPaint = <String>{
   return (name: m.group(1)!, args: code.substring(open + 1, close));
 }
 
+/// The sheet draws a header row when it has a title, a header action, or a
+/// close button (the default). With none of the three the row is absent; with
+/// only the close button it is an EMPTY band (handle, then an X on its own).
+bool hasEmptyHeaderBand(Map<String, String> options) {
+  final bool hasTitle =
+      options.containsKey('title') ||
+      options.containsKey('titleWidget') ||
+      options.containsKey('titleSpan');
+  final bool hasAction = options.containsKey('headerActionBuilder');
+  final bool close = options['showCloseButton'] != 'false';
+  return !hasTitle && !hasAction && close;
+}
+
+final RegExp _titleStyle = RegExp(
+  r'DabblerType\.(?:largeTitle|title[123]?|headline|display\w*)\b',
+);
+
+/// Heuristic: the first `DabblerText(` in the builder's resolved source uses a
+/// title-like style (`largeTitle`, `title1..3`, `headline`, `display*`). A
+/// heading that is not the first text, or drawn by another widget, is not
+/// seen.
+bool startsWithTitle(String source) {
+  final int at = source.indexOf('DabblerText(');
+  if (at < 0) return false;
+  final int open = source.indexOf('(', at);
+  final int close = _skipBalanced(source, open, '(', ')');
+  final String args = source.substring(open, close);
+  return _titleStyle.hasMatch(args);
+}
+
 /// Follows the builder's root through lib-defined widgets; `chain` is the
 /// path (`_Host > Padding`), `offender` the panel/padder root, if any.
-({String? chain, String? offender}) resolveContent(
+({String? chain, String? offender, String text}) resolveContent(
   String builder,
   Map<String, String> classes,
 ) {
@@ -496,23 +537,23 @@ const Set<String> _containerPaint = <String>{
   String text = builder;
   for (int depth = 0; depth < _maxDepth; depth++) {
     final ({String name, String args})? root = _rootOf(text);
-    if (root == null) return (chain: chain, offender: null);
+    if (root == null) return (chain: chain, offender: null, text: text);
     chain = chain == null ? root.name : '$chain > ${root.name}';
     final String n = root.name;
     final Map<String, String> named = parseNamedArgs('(${root.args})', 0);
     if (_panelRoots.contains(n) ||
         (n == 'Container' && named.keys.any(_containerPaint.contains)) ||
         (_scrollRoots.contains(n) && named.containsKey('padding'))) {
-      return (chain: chain, offender: n);
+      return (chain: chain, offender: n, text: text);
     }
     final String? body = classes[n];
-    if (body == null) return (chain: chain, offender: null);
+    if (body == null) return (chain: chain, offender: null, text: text);
     final String buildSrc = classes[r'$state:' + n] ?? body;
     final int at = buildSrc.indexOf(RegExp(r'Widget\s+build\s*\('));
-    if (at < 0) return (chain: chain, offender: null);
+    if (at < 0) return (chain: chain, offender: null, text: text);
     text = buildSrc.substring(at);
   }
-  return (chain: chain, offender: null);
+  return (chain: chain, offender: null, text: text);
 }
 
 List<SheetCall> scanLib(Directory lib) {
@@ -735,6 +776,74 @@ x() { showDabblerSheet<void>(
   builder: (ctx) => ListView(padding: DabblerInsets.screen, children: []),
 ); }''').single;
       expect(list.violations.single, contains('ListView'));
+    });
+
+    test('a title in the content under an empty header band is outside', () {
+      final Map<String, String> classes = classIndex(<String>[
+        '''
+class Drawer extends StatelessWidget {
+  Widget build(BuildContext context) => Column(children: [
+    DabblerIconTile.named('x'),
+    DabblerText('Stay', style: DabblerType.title2),
+  ]);
+}
+class Plain extends StatelessWidget {
+  Widget build(BuildContext context) => Column(children: [
+    DabblerText('Body', style: DabblerType.body),
+  ]);
+}''',
+      ]);
+      String call(String name, String extra) =>
+          'x() { showDabblerSheet<void>(context: c, '
+          'detent: DabblerSheetDetent.content, $extra builder: (_) => $name()); }';
+      final SheetCall bad = scanSource(
+        'lib/x.dart',
+        call('Drawer', ''),
+        classes,
+      ).single;
+      expect(bad.violations.single, contains('empty header band'));
+      for (final String ok in <String>[
+        call('Drawer', "title: 'Stay',"),
+        call('Drawer', 'showCloseButton: false,'),
+        call('Plain', ''),
+      ]) {
+        final SheetCall c = scanSource('lib/x.dart', ok, classes).single;
+        expect(c.conforms, isTrue, reason: '$ok ${c.violations}');
+      }
+    });
+
+    test('a title in the content under an empty header band is outside', () {
+      final Map<String, String> classes = classIndex(<String>[
+        '''
+class Drawer extends StatelessWidget {
+  Widget build(BuildContext context) => Column(children: [
+    DabblerIconTile.named('x'),
+    DabblerText('Stay', style: DabblerType.title2),
+  ]);
+}
+class Plain extends StatelessWidget {
+  Widget build(BuildContext context) => Column(children: [
+    DabblerText('Body', style: DabblerType.body),
+  ]);
+}''',
+      ]);
+      String call(String name, String extra) =>
+          'x() { showDabblerSheet<void>(context: c, '
+          'detent: DabblerSheetDetent.content, $extra builder: (_) => $name()); }';
+      final SheetCall bad = scanSource(
+        'lib/x.dart',
+        call('Drawer', ''),
+        classes,
+      ).single;
+      expect(bad.violations.single, contains('empty header band'));
+      for (final String ok in <String>[
+        call('Drawer', "title: 'Stay',"),
+        call('Drawer', 'showCloseButton: false,'),
+        call('Plain', ''),
+      ]) {
+        final SheetCall c = scanSource('lib/x.dart', ok, classes).single;
+        expect(c.conforms, isTrue, reason: '$ok ${c.violations}');
+      }
     });
 
     test('the content root is followed through widget classes', () {

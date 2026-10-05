@@ -6,8 +6,8 @@ import 'package:flutter/widgets.dart';
 /// 2. Remind me later - Close and ask again next time
 /// 3. No thanks - Close and never ask again
 ///
-/// Content only: the sheet surface, handle and scrim come from
-/// [showDabblerSheet].
+/// Content only: the sheet surface, handle, scrim and the "Stay Updated"
+/// title come from [showDabblerSheet] (`title:` at the call).
 class NotificationPermissionDrawer extends StatelessWidget {
   const NotificationPermissionDrawer({
     super.key,
@@ -51,18 +51,11 @@ class NotificationPermissionDrawer extends StatelessWidget {
       ),
       children: <Widget>[
         const DabblerIconTile.named('notification'),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: DabblerSpacing.space2,
-          children: <Widget>[
-            DabblerText('Stay Updated', style: DabblerType.title2),
-            DabblerText(
-              'Get notified about game invites, squad updates, and messages. '
-              'Never miss out on the action!',
-              style: DabblerType.body,
-              tone: DabblerTextTone.secondary,
-            ),
-          ],
+        DabblerText(
+          'Get notified about game invites, squad updates, and messages. '
+          'Never miss out on the action!',
+          style: DabblerType.body,
+          tone: DabblerTextTone.secondary,
         ),
       ],
     );

@@ -135,6 +135,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _showNotificationDrawer() async {
     final didTakeAction = await showDabblerSheet<bool>(
       context: context,
+      title: 'Stay Updated',
       detent: DabblerSheetDetent.content,
       builder: (context) {
         return NotificationPermissionDrawer(
@@ -417,6 +418,7 @@ class _ForYouTabBody extends ConsumerWidget {
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDabblerSheet<bool>(
       context: context,
+      title: AppLocalizations.of(context).news_hide_sheet_title,
       detent: DabblerSheetDetent.content,
       builder: (ctx) => _NewsUnsubscribeSheet(
         onConfirm: () => Navigator.pop(ctx, true),
@@ -523,8 +525,6 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
           color: colors.brandPrimary,
         ),
         const SizedBox(height: DabblerSpacing.space4),
-        DabblerText(l.news_hide_sheet_title, style: DabblerType.headline),
-        const SizedBox(height: DabblerSpacing.space2),
         DabblerText(
           l.news_hide_sheet_body,
           textAlign: TextAlign.center,

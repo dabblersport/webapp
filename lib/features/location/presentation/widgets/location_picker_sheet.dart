@@ -72,6 +72,13 @@ class LocationPickerResult {
       );
 }
 
+/// The header of [LocationPickerSheet]: a title and an optional back action.
+class LocationPickerHeader {
+  const LocationPickerHeader(this.title, {this.onBack});
+  final String title;
+  final VoidCallback? onBack;
+}
+
 enum LocationPickerType { currentLocation, venue, area, mapboxPlace }
 
 /// Bottom sheet for picking a location to attach to a post.
@@ -81,13 +88,44 @@ enum LocationPickerType { currentLocation, venue, area, mapboxPlace }
 /// 2. Tag a venue — searchable list from `venues` table
 /// 3. Pick an area — list of active areas
 class LocationPickerSheet extends ConsumerStatefulWidget {
-  const LocationPickerSheet({super.key});
+  const LocationPickerSheet({super.key, required this.header});
+
+  /// What the sheet's header shows: the mode's title and, off the menu, the
+  /// back action. The sheet owns the header row, so this state lives here and
+  /// the content only updates it.
+  final ValueNotifier<LocationPickerHeader> header;
 
   static Future<LocationPickerResult?> show(BuildContext context) {
+    final ValueNotifier<LocationPickerHeader> header =
+        ValueNotifier<LocationPickerHeader>(
+          const LocationPickerHeader('Add Location'),
+        );
     return showDabblerSheet<LocationPickerResult>(
       context: context,
+      title: 'Add Location',
       detent: DabblerSheetDetent.content,
-      builder: (_) => const LocationPickerSheet(),
+      titleWidget: ValueListenableBuilder<LocationPickerHeader>(
+        valueListenable: header,
+        builder: (BuildContext context, LocationPickerHeader h, Widget? _) =>
+            Row(
+              children: [
+                if (h.onBack != null) ...[
+                  DabblerButton.icon(
+                    tone: DabblerButtonTone.text,
+                    icon: 'arrow-left',
+                    mirrorInRtl: true,
+                    semanticLabel: 'Back',
+                    onPressed: h.onBack,
+                  ),
+                  const DabblerGap.h(DabblerSpacing.space2),
+                ],
+                Expanded(
+                  child: DabblerText(h.title, style: DabblerType.title3),
+                ),
+              ],
+            ),
+      ),
+      builder: (_) => LocationPickerSheet(header: header),
     );
   }
 
@@ -169,6 +207,15 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
     }
   }
 
+  /// Switches mode and updates the sheet's header (title, back action).
+  void _go(_PickerMode mode) {
+    setState(() => _mode = mode);
+    widget.header.value = LocationPickerHeader(
+      _title,
+      onBack: mode == _PickerMode.menu ? null : () => _go(_PickerMode.menu),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────
 
   @override
@@ -179,28 +226,6 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Title + back ── (handle and close come from DabblerSheet)
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            bottom: DabblerSpacing.space3,
-          ),
-          child: Row(
-            children: [
-              if (_mode != _PickerMode.menu) ...[
-                DabblerButton.icon(
-                  tone: DabblerButtonTone.text,
-                  icon: 'arrow-left',
-                  mirrorInRtl: true,
-                  semanticLabel: 'Back',
-                  onPressed: () => setState(() => _mode = _PickerMode.menu),
-                ),
-                const DabblerGap.h(DabblerSpacing.space2),
-              ],
-              Expanded(child: DabblerText(_title, style: DabblerType.headline)),
-            ],
-          ),
-        ),
-
         // ── Content ──
         switch (_mode) {
           _PickerMode.menu => _buildMenu(),
@@ -236,21 +261,21 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
           icon: 'building',
           label: 'Tag a venue',
           subtitle: 'Search for a sports venue',
-          onTap: () => setState(() => _mode = _PickerMode.venue),
+          onTap: () => _go(_PickerMode.venue),
         ),
         const DabblerGap.v(DabblerSpacing.space3),
         _MenuTile(
           icon: 'map',
           label: 'Pick an area',
           subtitle: 'Select a neighborhood or city',
-          onTap: () => setState(() => _mode = _PickerMode.area),
+          onTap: () => _go(_PickerMode.area),
         ),
         const DabblerGap.v(DabblerSpacing.space3),
         _MenuTile(
           icon: 'search-normal',
           label: 'Search a place',
           subtitle: 'Find an address or point of interest',
-          onTap: () => setState(() => _mode = _PickerMode.placeSearch),
+          onTap: () => _go(_PickerMode.placeSearch),
         ),
       ],
     );

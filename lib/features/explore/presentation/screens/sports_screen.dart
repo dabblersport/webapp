@@ -209,6 +209,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   void _showLocationDrawer() {
     showDabblerSheet<void>(
       context: context,
+      title: 'Enable Location',
       detent: DabblerSheetDetent.content,
       builder: (context) {
         return LocationPermissionDrawer(
@@ -759,6 +760,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       onPressed: () {
                         showDabblerSheet<void>(
                           context: context,
+                          title: 'Select Location',
                           detent: DabblerSheetDetent.content,
                           builder: (context) => const ManualLocationDrawer(),
                         );

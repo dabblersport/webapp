@@ -38,6 +38,7 @@ class _HostState extends State<_Host> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showDabblerSheet<bool>(
         context: context,
+        title: 'Stay Updated',
         detent: DabblerSheetDetent.content,
         builder: (BuildContext context) => NotificationPermissionDrawer(
           onEnableNotifications: () {},

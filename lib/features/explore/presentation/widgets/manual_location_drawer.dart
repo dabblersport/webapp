@@ -112,12 +112,6 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        DabblerText(
-          'Select Location',
-          style: DabblerType.headline,
-          textAlign: TextAlign.center,
-        ),
-        const DabblerGap.v(DabblerSpacing.space6),
         DabblerButton(
           label: 'Use Current Location',
           icon: 'gps',
