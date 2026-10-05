@@ -3802,39 +3802,41 @@ class AppLocalizationsAr extends AppLocalizations {
       'الدعوات وانضمام اللاعبين إلى اللقاءات';
 
   @override
-  String get notif_settings_kind_meetup_rsvps => 'Meetup RSVPs';
+  String get notif_settings_kind_meetup_rsvps => 'الردود على اللقاءات';
 
   @override
   String get notif_settings_kind_meetup_rsvps_sub =>
-      'When someone RSVPs to a meetup you host';
+      'عندما يرد أحدهم على لقاء تستضيفه';
 
   @override
-  String get notif_settings_kind_meetup_requests => 'Meetup join requests';
+  String get notif_settings_kind_meetup_requests =>
+      'طلبات الانضمام إلى اللقاءات';
 
   @override
   String get notif_settings_kind_meetup_requests_sub =>
-      'When someone asks to join a meetup you host';
+      'عندما يطلب أحدهم الانضمام إلى لقاء تستضيفه';
 
   @override
-  String get notif_settings_kind_meetup_approved => 'Meetup request approved';
+  String get notif_settings_kind_meetup_approved =>
+      'قبول طلب الانضمام إلى لقاء';
 
   @override
   String get notif_settings_kind_meetup_approved_sub =>
-      'When a host approves your request to join';
+      'عندما يقبل المضيف طلب انضمامك';
 
   @override
-  String get notif_settings_kind_meetup_declined => 'Meetup request declined';
+  String get notif_settings_kind_meetup_declined => 'رفض طلب الانضمام إلى لقاء';
 
   @override
   String get notif_settings_kind_meetup_declined_sub =>
-      'When a host declines your request to join';
+      'عندما يرفض المضيف طلب انضمامك';
 
   @override
-  String get notif_settings_kind_meetup_cancelled => 'Meetup cancelled';
+  String get notif_settings_kind_meetup_cancelled => 'إلغاء لقاء';
 
   @override
   String get notif_settings_kind_meetup_cancelled_sub =>
-      'When a meetup you joined is cancelled';
+      'عندما يُلغى لقاء انضممت إليه';
 
   @override
   String notif_settings_update_failed(String error) {
@@ -5254,29 +5256,38 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_sports_followed => 'الرياضات المتابَعة';
 
   @override
-  String get profile_stat_minutes_played => 'Minutes played';
+  String get profile_stat_minutes_played => 'دقائق اللعب';
 
   @override
   String get meetups_tab_all => 'الكل';
 
   @override
-  String get meetups_none_title => 'No meetups available.';
+  String get meetups_none_title => 'لا توجد لقاءات متاحة.';
 
   @override
-  String get meetups_explore_another => 'Explore another activity';
+  String get meetups_explore_another => 'استكشف نشاطًا آخر';
 
   @override
-  String get meetups_load_failed => 'Couldn\'t load meetups';
+  String get meetups_load_failed => 'تعذّر تحميل اللقاءات';
 
   @override
   String get meetups_join => 'انضم للقاء';
 
   @override
-  String get meetups_request => 'Request to join';
+  String get meetups_request => 'اطلب الانضمام';
 
   @override
   String meetups_going_count(int count) {
-    return '$count مشاركًا';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مشارك',
+      many: '$count مشاركًا',
+      few: '$count مشاركين',
+      two: 'مشاركان',
+      one: 'مشارك واحد',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5293,76 +5304,94 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get meetups_cta_going => 'Joining';
+  String get meetups_cta_going => 'مشارك';
 
   @override
-  String get meetups_cta_interested => 'Maybe going';
+  String get meetups_cta_interested => 'ربما أشارك';
 
   @override
-  String get meetups_cta_full => 'Full - you\'re interested';
+  String get meetups_cta_full => 'مكتمل - أنت مهتم';
 
   @override
-  String get meetups_cta_closed => 'Registration closed';
+  String get meetups_cta_closed => 'التسجيل مغلق';
 
   @override
-  String get meetups_cta_cancelled => 'Cancelled';
+  String get meetups_cta_cancelled => 'ملغى';
 
   @override
-  String get meetups_cta_started => 'Already started';
+  String get meetups_cta_started => 'بدأ بالفعل';
 
   @override
-  String get meetups_cta_unavailable => 'Not available';
+  String get meetups_cta_unavailable => 'غير متاح';
 
   @override
-  String get meetups_cta_not_allowed => 'Switch profile to join';
+  String get meetups_cta_not_allowed => 'بدّل الملف الشخصي للانضمام';
 
   @override
-  String get meetups_sheet_title => 'Are you going to this meetup?';
+  String get meetups_sheet_title => 'هل ستشارك في هذا اللقاء؟';
 
   @override
-  String get meetups_sheet_cancel => 'Cancel';
+  String get meetups_sheet_cancel => 'إلغاء';
 
   @override
-  String get meetups_sheet_yes => 'Yes, I am going';
+  String get meetups_sheet_yes => 'نعم، سأشارك';
 
   @override
-  String get meetups_sheet_maybe => 'Maybe';
+  String get meetups_sheet_maybe => 'ربما';
 
   @override
-  String get meetups_sheet_no => 'No, not this time';
+  String get meetups_sheet_no => 'لا، ليس هذه المرة';
 
   @override
-  String get meetups_sheet_confirm => 'Confirm';
+  String get meetups_sheet_confirm => 'تأكيد';
 
   @override
-  String get meetups_error_generic => 'Something went wrong. Try again.';
+  String get meetups_error_generic => 'حدث خطأ ما. حاول مرة أخرى.';
 
   @override
-  String get meetups_error_cancelled => 'This meetup was cancelled.';
+  String get meetups_error_cancelled => 'أُلغي هذا اللقاء.';
 
   @override
-  String get meetups_host_caption => 'Community host';
+  String get meetups_host_caption => 'مضيف مجتمعي';
 
   @override
-  String get meetups_tile_meeting_point => 'Meeting point';
+  String get meetups_tile_meeting_point => 'نقطة اللقاء';
 
   @override
-  String get meetups_tile_entry => 'Entry';
+  String get meetups_tile_entry => 'الدخول';
 
   @override
-  String get meetups_load_detail_failed => 'Couldn\'t load this meetup';
+  String get meetups_load_detail_failed => 'تعذّر تحميل هذا اللقاء';
 
   @override
-  String get meetups_back => 'Back';
+  String get meetups_back => 'رجوع';
 
   @override
   String meetups_names_and_others(String names, int count) {
-    return '$names and $count others';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '⁨$names⁩ و$count شخص آخر',
+      many: '⁨$names⁩ و$count شخصًا آخر',
+      few: '⁨$names⁩ و$count أشخاص آخرين',
+      two: '⁨$names⁩ وشخصان آخران',
+      one: '⁨$names⁩ وشخص آخر',
+    );
+    return '$_temp0';
   }
 
   @override
   String meetups_show_count(int count) {
-    return 'عرض $count لقاءات';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'عرض $count لقاء',
+      many: 'عرض $count لقاءً',
+      few: 'عرض $count لقاءات',
+      two: 'عرض لقاءين',
+      one: 'عرض لقاء واحد',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5371,185 +5400,182 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get meetups_create_title => 'Create meet-up';
+  String get meetups_create_title => 'لقاء جديد';
 
   @override
-  String get meetups_create_title_hint => 'Meet up title';
+  String get meetups_create_title_hint => 'عنوان اللقاء';
 
   @override
-  String get meetups_create_note_hint =>
-      'Add short description for participations...';
+  String get meetups_create_note_hint => 'أضف وصفًا موجزًا للمشاركين...';
 
   @override
-  String get meetups_create_name_section => 'CHOOSE NAME AND DESCRIPTION';
+  String get meetups_create_name_section => 'اختر الاسم والوصف';
 
   @override
-  String get meetups_when => 'When';
+  String get meetups_when => 'الموعد';
 
   @override
-  String get meetups_when_sub => 'Date and time';
+  String get meetups_when_sub => 'التاريخ والوقت';
 
   @override
-  String get meetups_end => 'End';
+  String get meetups_end => 'النهاية';
 
   @override
-  String get meetups_location => 'Location';
+  String get meetups_location => 'الموقع';
 
   @override
-  String get meetups_location_sub => 'Add a location or venue';
+  String get meetups_location_sub => 'أضف موقعًا أو ملعبًا';
 
   @override
-  String get meetups_capacity => 'Capacity';
+  String get meetups_capacity => 'السعة';
 
   @override
-  String get meetups_capacity_sub => 'Max participants';
+  String get meetups_capacity_sub => 'الحد الأقصى للمشاركين';
 
   @override
-  String get meetups_advanced => 'Advanced options';
+  String get meetups_advanced => 'خيارات متقدمة';
 
   @override
-  String get meetups_policy => 'How people join';
+  String get meetups_policy => 'طريقة الانضمام';
 
   @override
-  String get meetups_policy_sub => 'Join settings';
+  String get meetups_policy_sub => 'إعدادات الانضمام';
 
   @override
-  String get meetups_policy_closed => 'Closed';
+  String get meetups_policy_closed => 'مغلق';
 
   @override
-  String get meetups_skill => 'Skill range';
+  String get meetups_skill => 'نطاق المهارة';
 
   @override
-  String get meetups_skill_sub => 'Experience level';
+  String get meetups_skill_sub => 'مستوى الخبرة';
 
   @override
-  String get meetups_skill_any => 'Any';
+  String get meetups_skill_any => 'أي مستوى';
 
   @override
-  String get meetups_vibe => 'Vibe';
+  String get meetups_vibe => 'الأجواء';
 
   @override
-  String get meetups_vibe_sub => 'Set the mood';
+  String get meetups_vibe_sub => 'حدّد الأجواء';
 
   @override
-  String get meetups_vibe_choose => 'Choose';
+  String get meetups_vibe_choose => 'اختر';
 
   @override
-  String get meetups_create_failed => 'Failed to create meet-up';
+  String get meetups_create_failed => 'تعذّر إنشاء اللقاء';
 
   @override
   String get meetups_err_organiser_required =>
-      'Only organisers can create meet-ups.';
+      'يمكن للمنظّمين فقط إنشاء اللقاءات.';
 
   @override
   String get meetups_err_title_invalid =>
-      'The title must be 3 to 80 characters.';
+      'يجب أن يتراوح العنوان بين 3 و80 حرفًا.';
 
   @override
   String get meetups_err_invalid_time_range =>
-      'The end time must be after the start time.';
+      'يجب أن يكون وقت النهاية بعد وقت البداية.';
 
   @override
-  String get meetups_err_invalid_capacity => 'The capacity must be at least 1.';
+  String get meetups_err_invalid_capacity => 'يجب ألا تقل السعة عن 1.';
 
   @override
-  String get meetups_err_auth_required => 'Sign in to continue.';
+  String get meetups_err_auth_required => 'سجّل الدخول للمتابعة.';
 
   @override
-  String get meetups_err_unsupported => 'This option is not available yet.';
+  String get meetups_err_unsupported => 'هذا الخيار غير متاح بعد.';
 
   @override
-  String get meetups_manage => 'Manage meetup';
+  String get meetups_manage => 'إدارة اللقاء';
 
   @override
-  String get meetups_manage_title => 'Manage meet-up';
+  String get meetups_manage_title => 'إدارة اللقاء';
 
   @override
-  String get meetups_section_going => 'Going';
+  String get meetups_section_going => 'المشاركون';
 
   @override
-  String get meetups_section_interested => 'Interested';
+  String get meetups_section_interested => 'المهتمون';
 
   @override
-  String get meetups_section_pending => 'Requests';
+  String get meetups_section_pending => 'الطلبات';
 
   @override
-  String get meetups_manage_empty => 'Nobody has responded yet.';
+  String get meetups_manage_empty => 'لم يرد أحد بعد.';
 
   @override
-  String get meetups_approve => 'Approve';
+  String get meetups_approve => 'قبول';
 
   @override
-  String get meetups_decline => 'Decline';
+  String get meetups_decline => 'رفض';
 
   @override
-  String get meetups_remove => 'Remove';
+  String get meetups_remove => 'إزالة';
 
   @override
   String meetups_remove_title(String name) {
-    return 'Remove $name?';
+    return 'إزالة ⁨$name⁩؟';
   }
 
   @override
-  String get meetups_remove_body =>
-      'They will lose their spot and be notified.';
+  String get meetups_remove_body => 'سيفقد مكانه وسيتلقى إشعارًا بذلك.';
 
   @override
-  String get meetups_edit => 'Edit meet-up';
+  String get meetups_edit => 'تعديل اللقاء';
 
   @override
-  String get meetups_save => 'Save changes';
+  String get meetups_save => 'حفظ التغييرات';
 
   @override
-  String get meetups_cancel_meetup => 'Cancel meetup';
+  String get meetups_cancel_meetup => 'إلغاء اللقاء';
 
   @override
-  String get meetups_cancel_title => 'Cancel this meet-up?';
+  String get meetups_cancel_title => 'هل تريد إلغاء هذا اللقاء؟';
 
   @override
   String get meetups_cancel_body =>
-      'Everyone who responded will be told. This cannot be undone.';
+      'سيُبلَّغ جميع من ردّوا. لا يمكن التراجع عن هذا الإجراء.';
 
   @override
-  String get meetups_cancel_confirm => 'Cancel meet-up';
+  String get meetups_cancel_confirm => 'إلغاء اللقاء';
 
   @override
-  String get meetups_keep => 'Keep it';
+  String get meetups_keep => 'إبقاء اللقاء';
 
   @override
   String get meetups_err_capacity_below_going =>
-      'The capacity is lower than the number already going.';
+      'السعة أقل من عدد المشاركين الحاليين.';
 
   @override
-  String get meetups_err_not_host => 'Only the host can do this.';
+  String get meetups_err_not_host => 'هذا الإجراء للمضيف فقط.';
 
   @override
-  String get meetups_err_attendee_not_found =>
-      'That person is no longer on this meet-up.';
+  String get meetups_err_attendee_not_found => 'هذا الشخص لم يعد ضمن اللقاء.';
 
   @override
-  String get meetups_err_no_pending => 'That request is no longer pending.';
+  String get meetups_err_no_pending => 'لم يعد هذا الطلب قيد الانتظار.';
 
   @override
-  String get meetups_save_failed => 'Couldn\'t save the changes';
+  String get meetups_save_failed => 'تعذّر حفظ التغييرات';
 
   @override
-  String get meetups_action_failed => 'That didn\'t work. Try again.';
+  String get meetups_action_failed => 'لم تكتمل العملية. حاول مرة أخرى.';
 
   @override
-  String get meetups_share => 'Share';
+  String get meetups_share => 'مشاركة';
 
   @override
   String meetups_share_headline(String title) {
-    return 'Join me for $title on Dabbler!';
+    return 'انضم إليّ في ⁨$title⁩ على Dabbler!';
   }
 
   @override
-  String get meetups_more => 'More';
+  String get meetups_more => 'المزيد';
 
   @override
-  String get meetups_report => 'Report meetup';
+  String get meetups_report => 'الإبلاغ عن اللقاء';
 
   @override
-  String get meetups_report_note => 'Tell us what is wrong with this meet-up';
+  String get meetups_report_note => 'أخبرنا ما المشكلة في هذا اللقاء';
 }
