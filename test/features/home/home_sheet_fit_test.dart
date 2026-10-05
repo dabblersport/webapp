@@ -12,7 +12,10 @@
 ///
 /// The shell bar is asserted against the frame's wrapper (`padding: 0 18px
 /// 24px`, a 56 row) on the 393x852 frame, and on a wide window it keeps the
-/// frame's phone column instead of spanning the window.
+/// frame's phone column instead of spanning the window. Inside that row the
+/// pill hugs its content (`_assertPillHugs`): the active chip is exactly its
+/// padding, glyph, gap and label, the pill ends 9 after its last item, and the
+/// free width sits between the pill and the action.
 ///
 /// Optional defines: `HOME_SHEET_SHOTS_DIR=<dir>` writes the renders (2x);
 /// `HOME_SHEET_TABLE=<file>` writes the measured table.
@@ -173,6 +176,98 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+Rect _rectOf(WidgetTester tester, Element e) =>
+    tester.getRect(find.byElementPredicate((Element x) => x == e));
+
+/// The bar's pill, as the frame draws it: `display: flex`, no `flex-grow`.
+///
+/// * the active chip (the first item, Feeds) is `width: auto`: 18 + glyph +
+///   8 + label + 18, never the leftover width;
+/// * every inactive item is a 44 square, 6 apart;
+/// * the pill ends 9 after its last item, and the action stands clear of it
+///   by at least the row's `gap: 12`, the rest of the row being free space.
+///
+/// [narrow]: a column too narrow for the natural pill (320 wide), where the
+/// label ellipsizes rather than the inactive squares dropping under 44.
+///
+/// Returns the pill, the chip, the action and the chip's content width.
+({Rect pill, Rect active, Rect action, double content}) _assertPillHugs(
+  WidgetTester tester,
+  String dir,
+  String label, {
+  bool narrow = false,
+}) {
+  final Finder bar = find.byType(DabblerNavigationBottomBar);
+  final DabblerColors colors = DabblerColors.of(tester.element(bar));
+  final Rect pill = tester
+      .elementList(
+        find.descendant(
+          of: bar,
+          matching: find.byWidgetPredicate(
+            (Widget w) =>
+                w is Container &&
+                w.decoration is BoxDecoration &&
+                (w.decoration! as BoxDecoration).color == colors.brandPrimary,
+          ),
+        ),
+      )
+      .map((Element e) => _rectOf(tester, e))
+      .firstWhere((Rect r) => r.width > DabblerSizing.navBarHeight);
+  final List<Rect> hits = tester
+      .elementList(
+        find.descendant(
+          of: bar,
+          matching: find.byWidgetPredicate(
+            (Widget w) =>
+                w is GestureDetector && w.behavior == HitTestBehavior.opaque,
+          ),
+        ),
+      )
+      .map((Element e) => _rectOf(tester, e))
+      .toList();
+  final Rect active = hits.first;
+  final Rect action = hits.last;
+  final List<Rect> inactive = hits.sublist(1, hits.length - 1);
+
+  final RenderParagraph text = tester.renderObject<RenderParagraph>(
+    find.descendant(of: bar, matching: find.text(label)),
+  );
+  final double content =
+      DabblerSpacing.space6 * 2 +
+      DabblerSizing.iconMd +
+      DabblerNavigationBottomBar.activeGap +
+      text.getMaxIntrinsicWidth(double.infinity);
+
+  if (narrow) {
+    // A column too narrow for the natural pill: the label ellipsizes first
+    // (the inactive squares keep the 44 touch floor), and the chip is still
+    // never wider than its content.
+    expect(active.width, lessThanOrEqualTo(content + _tol), reason: dir);
+  } else {
+    expect(
+      (active.width - content).abs(),
+      lessThanOrEqualTo(_tol),
+      reason: '$dir: the active chip hugs its content',
+    );
+  }
+  expect(active.left - pill.left, DabblerSpacing.space3, reason: dir);
+  for (final Rect r in inactive) {
+    expect(r.size, const Size.square(DabblerSizing.navItem), reason: dir);
+  }
+  expect(
+    (pill.right - (inactive.last.right + DabblerSpacing.space3)).abs(),
+    lessThanOrEqualTo(_tol),
+    reason: '$dir: the pill ends after its last item',
+  );
+  expect(
+    action.left - pill.right,
+    greaterThanOrEqualTo(DabblerSpacing.space4 - _tol),
+    reason: '$dir: the action stands clear of the pill',
+  );
+  expect(action.size, const Size.square(DabblerSizing.navBarHeight));
+  return (pill: pill, active: active, action: action, content: content);
+}
+
 BuildContext _home(WidgetTester tester) =>
     tester.element(find.byType(HomeScreen));
 
@@ -231,6 +326,22 @@ void main() {
       expect((bar.top - design.top).abs(), lessThanOrEqualTo(_tol));
       expect((bar.width - design.width).abs(), lessThanOrEqualTo(_tol));
       expect((bar.height - design.height).abs(), lessThanOrEqualTo(_tol));
+      // The row spans the frame; the pill inside it hugs, at the physical
+      // left in both directions (`mirrorInRtl: false`), the action at the
+      // physical right.
+      final m = _assertPillHugs(
+        tester,
+        dir,
+        lookupAppLocalizations(locale).nav_feeds,
+      );
+      expect(m.pill.left, design.left);
+      expect(m.pill.height, DabblerSizing.navBarHeight);
+      expect(m.action.right, design.right);
+      _table.add(
+        '| bar pill (393 frame) | $dir | hugs | ${m.pill} active '
+        '${m.active.width.toStringAsFixed(1)} gap to action '
+        '${(m.action.left - m.pill.right).toStringAsFixed(1)} | - |',
+      );
       await _shoot(tester, 'app-$dir-home');
     }, variant: desktop);
 
@@ -249,7 +360,50 @@ void main() {
         ),
       );
       expect((bar.center.dx - 640).abs(), lessThanOrEqualTo(_tol));
+      final m = _assertPillHugs(
+        tester,
+        dir,
+        lookupAppLocalizations(locale).nav_feeds,
+      );
+      expect(m.pill.left, bar.left);
+      expect(m.action.right, bar.right);
       await _shoot(tester, 'app-$dir-home-wide');
+    }, variant: desktop);
+
+    testWidgets('bar: a narrow 320 phone keeps the shape - $dir', (
+      tester,
+    ) async {
+      await pump(tester);
+      tester.view.physicalSize = const Size(320, 852);
+      await _settle(tester);
+      expect(tester.takeException(), isNull, reason: 'no overflow');
+      final m = _assertPillHugs(
+        tester,
+        dir,
+        lookupAppLocalizations(locale).nav_feeds,
+        narrow: true,
+      );
+      _table.add(
+        '| bar pill (320 phone) | $dir | content ${m.content.toStringAsFixed(1)}'
+        ' | ${m.pill} active ${m.active.width.toStringAsFixed(1)} | - |',
+      );
+      await _shoot(tester, 'app-$dir-home-320');
+    }, variant: desktop);
+
+    testWidgets('bar: the create menu replaces the pill - $dir', (
+      tester,
+    ) async {
+      await pump(tester);
+      // The app passes no `actionLabel`, so the action is the DS default.
+      await tester.tap(find.bySemanticsLabel('Create'));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(
+        find.text(lookupAppLocalizations(locale).nav_feeds),
+        findsNothing,
+        reason: 'pill replaced',
+      );
+      await _shoot(tester, 'app-$dir-home-menu');
     }, variant: desktop);
 
     testWidgets('city sheet - $dir', (tester) async {
