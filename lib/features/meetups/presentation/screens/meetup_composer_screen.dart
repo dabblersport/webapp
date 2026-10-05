@@ -402,6 +402,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
           child: Center(
             child: DabblerTextLink(
               label: l.meetups_advanced,
+              underline: false,
               trailingIcon: _more ? 'arrow-circle-up' : 'arrow-circle-down',
               onPressed: () => setState(() => _more = !_more),
             ),
