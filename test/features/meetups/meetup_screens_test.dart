@@ -293,6 +293,33 @@ void main() {
       expect(find.text('Retry'), findsOneWidget);
     });
 
+    for (final locale in _locales) {
+      testWidgets(
+        'no backend tables yet: every read fails, error state and no exception '
+        '(${locale.languageCode})',
+        (tester) async {
+          final repo = FakeMeetupRepository()
+            ..listError = 'relation "meetups" does not exist'
+            ..sportsFailure = const Failure(message: 'sports unavailable');
+          await pumpMeetups(
+            tester,
+            const MeetupsScreen(),
+            repo,
+            locale: locale,
+          );
+          expect(tester.takeException(), isNull);
+          expect(
+            find.text(
+              locale.languageCode == 'ar'
+                  ? 'تعذّر تحميل اللقاءات'
+                  : "Couldn't load meetups",
+            ),
+            findsOneWidget,
+          );
+        },
+      );
+    }
+
     testWidgets('Join meetup on a card calls going', (tester) async {
       final repo = FakeMeetupRepository()..list = [meetupRow('a')];
       await pumpMeetups(tester, const MeetupsScreen(), repo);

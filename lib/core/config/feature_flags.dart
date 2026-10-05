@@ -9,10 +9,12 @@ class FeatureFlags {
   // LIVE FEATURE GATES
   // ============================================================================
 
-  /// Meetups (KAN-428). Pilot, default OFF: the data layer ships first and
-  /// every Meetups surface (nav item, create entry, listings tab, details
-  /// route) must be gated on this flag. Free, public, organiser-created only.
-  static const bool enableMeetups = false;
+  /// Meetups (KAN-428). ON for the Alpha test build (CEO decision 2026-10-05);
+  /// the live DB migrations are still pending, so the screens rely on their
+  /// error/empty states. MUST be turned off again before any merge to
+  /// Canary/main. Every Meetups surface (nav item, create entry, listings tab,
+  /// details route) is gated on this flag. Free, public, organiser-created only.
+  static const bool enableMeetups = true;
 
   /// Games & Matches
   static const bool enableGameBrowsing = true;

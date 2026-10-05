@@ -110,24 +110,24 @@ void main() {
       );
     });
 
-    test('GoRoute count is 85', () {
+    test('GoRoute count is 89', () {
       final goRoutes =
           inventory.where((e) => e.type == 'GoRoute').length;
-      expect(goRoutes, 85);
+      expect(goRoutes, 89);
     });
 
-    test('exactly one StatefulShellRoute.indexedStack, with 4 branches', () {
+    test('exactly one StatefulShellRoute.indexedStack, with 5 branches', () {
       final shells = AppRouter.router.configuration.routes
           .whereType<StatefulShellRoute>()
           .toList();
       expect(shells, hasLength(1),
           reason: 'expected exactly one StatefulShellRoute at the top level');
-      expect(shells.single.branches, hasLength(4));
+      expect(shells.single.branches, hasLength(5));
 
       final branchEntries = inventory
           .where((e) => e.type.contains('StatefulShellBranch'))
           .length;
-      expect(branchEntries, 4);
+      expect(branchEntries, 5);
     });
   });
 }

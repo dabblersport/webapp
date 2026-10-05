@@ -27,7 +27,12 @@
 /sports/venues	venues-tab	GoRoute
 -	-	StatefulShellBranch
 /sports/games	games-tab	GoRoute
+-	-	StatefulShellBranch
+/meetups	meetups	GoRoute
 /sports/games/:gameId	game-detail	GoRoute
+/meetups/:meetupId	meetup-detail	GoRoute
+/meetups/:meetupId/manage	meetup-manage	GoRoute
+/meetups/:meetupId/edit	meetup-edit	GoRoute
 /news/:newsId	news-detail	GoRoute
 /sports/venues/:venueId	venue-detail	GoRoute
 /game/:gameId	-	GoRoute

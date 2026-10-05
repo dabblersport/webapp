@@ -36,6 +36,7 @@ class FakeMeetupRepository implements MeetupRepository {
   ];
   List<NearbyMeetup> nearbyList = <NearbyMeetup>[];
   Failure? rsvpFailure;
+  Failure? sportsFailure;
   Failure? createFailure;
   bool canCreateResult = true;
   final List<CreateMeetupInput> createCalls = <CreateMeetupInput>[];
@@ -91,7 +92,8 @@ class FakeMeetupRepository implements MeetupRepository {
       Ok(canCreateResult);
 
   @override
-  Future<Result<List<MeetupSport>, Failure>> soloSports() async => Ok(sports);
+  Future<Result<List<MeetupSport>, Failure>> soloSports() async =>
+      sportsFailure != null ? Err(sportsFailure!) : Ok(sports);
 
   @override
   Future<Result<List<MeetupSportVariant>, Failure>> sportVariants(

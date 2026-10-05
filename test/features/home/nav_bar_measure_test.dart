@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -154,6 +155,9 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         initializeProfileDataProvider.overrideWith((ref) async => false),
+        // No profile in the shell harness: the Create menu offers no meet-up
+        // tile, and the provider chain never reaches the live Supabase client.
+        meetupActorProfileIdProvider.overrideWithValue(null),
         feedNotifierProvider.overrideWith(
           (ref) => FakeFeed(const FeedLoading()),
         ),
@@ -458,10 +462,10 @@ Map<String, Rect?> _appClosed(WidgetTester t, {required String active}) {
     'glyph Venues (linear 24)': icons[1],
     'item Games': hits[2],
     'glyph Games (linear 24)': icons[2],
-    'item Meetups': null,
-    'glyph Meetups (linear 24)': null,
-    'create button': hits[3],
-    'create glyph (bold 26)': icons[3],
+    'item Meetups': hits[3],
+    'glyph Meetups (linear 24)': icons[3],
+    'create button': hits[4],
+    'create glyph (bold 26)': icons[4],
   };
 }
 
@@ -536,8 +540,6 @@ void main() {
         _appClosed(tester, active: active),
       );
       final Map<String, _Exception> ex = <String, _Exception>{
-        'item Meetups': _noMeetups,
-        'glyph Meetups (linear 24)': _noMeetups,
         ..._pillExceptions(rtl),
       };
       _record('closed $dir', rows, ex);
@@ -618,8 +620,6 @@ void main() {
   }
 }
 
-const String _kNoMeetups =
-    'no feature: no Meetups destination (Canary has none) -> pill 50 narrower';
 const String _kArabicType =
     'DS Arabic type rule (Latin size minus 0.9, cxo ruling): label 14.1 vs frame 15';
 const String _kTwoColumns =
@@ -654,9 +654,12 @@ void _closedFacts(WidgetTester t, String dir, bool rtl, String active) {
   expect(icons[0].color, colors.brandPrimary);
   expect(icons[1].weight, DabblerIconWeight.linear);
   expect(icons[1].color, colors.borderDefault);
-  expect(icons[3].weight, DabblerIconWeight.bold);
-  expect(icons[3].name, 'add');
-  expect(icons[3].color, colors.onBrand);
+  expect(icons[3].name, 'calendar');
+  expect(icons[3].weight, DabblerIconWeight.linear);
+  expect(icons[3].color, colors.borderDefault);
+  expect(icons[4].weight, DabblerIconWeight.bold);
+  expect(icons[4].name, 'add');
+  expect(icons[4].color, colors.onBrand);
   _fact(
     'closed $dir',
     'active glyph',
@@ -675,7 +678,7 @@ void _closedFacts(WidgetTester t, String dir, bool rtl, String active) {
     'closed $dir',
     'create glyph',
     'add bold 26 on-brand',
-    '${icons[3].name} ${icons[3].weight.name} ${icons[3].size} onBrand',
+    '${icons[4].name} ${icons[4].weight.name} ${icons[4].size} onBrand',
     'DabblerSizing.navGlyphLarge',
   );
   final BoxDecoration fab = t
@@ -816,8 +819,8 @@ void _openFacts(WidgetTester t, String dir, bool rtl, String caption) {
 Map<String, _Exception> _pillExceptions(bool rtl) => rtl
     ? <String, _Exception>{
         'pill': _Exception(
-          '$_kNoMeetups; $_kArabicType',
-          _r(18, 772, 230.16, 56),
+          _kArabicType,
+          _r(18, 772, 280.16, 56),
         ),
         'item Feeds (active)': _Exception(
           _kArabicType,
@@ -843,10 +846,16 @@ Map<String, _Exception> _pillExceptions(bool rtl) => rtl
           '$_kArabicType (shifts the items after it)',
           _r(205.16, 788, 24, 24),
         ),
+        'item Meetups': _Exception(
+          '$_kArabicType (shifts the items after it)',
+          _r(245.16, 778, 44, 44),
+        ),
+        'glyph Meetups (linear 24)': _Exception(
+          '$_kArabicType (shifts the items after it)',
+          _r(255.16, 788, 24, 24),
+        ),
       }
-    : <String, _Exception>{
-        'pill': _Exception(_kNoMeetups, _r(18, 772, 219.09, 56)),
-      };
+    : <String, _Exception>{};
 
 Map<String, _Exception> _openExceptions(bool rtl) {
   const String both = '$_kTwoColumns; $_kLineRounding';

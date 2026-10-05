@@ -188,7 +188,11 @@ Rect _rectOf(WidgetTester tester, Element e) =>
 ///   by at least the row's `gap: 12`, the rest of the row being free space.
 ///
 /// [narrow]: a column too narrow for the natural pill (320 wide), where the
-/// label ellipsizes rather than the inactive squares dropping under 44.
+/// label ellipsizes, and with the four-item Alpha bar the inactive squares
+/// compress slightly under 44 rather than overflowing.
+///
+/// The bar holds four items (Feeds, Venues, Games, Meetups) while
+/// `FeatureFlags.enableMeetups` is on, so three inactive squares follow the chip.
 ///
 /// Returns the pill, the chip, the action and the chip's content width.
 ({Rect pill, Rect active, Rect action, double content}) _assertPillHugs(
@@ -251,8 +255,25 @@ Rect _rectOf(WidgetTester tester, Element e) =>
     );
   }
   expect(active.left - pill.left, DabblerSpacing.space3, reason: dir);
-  for (final Rect r in inactive) {
-    expect(r.size, const Size.square(DabblerSizing.navItem), reason: dir);
+  if (narrow) {
+    // Four items plus the action do not fit a 320 column at the 44 floor:
+    // the DS row compresses the inactive squares evenly (measured 37.3 wide)
+    // instead of overflowing. They stay full height, equal to one another and
+    // within a fifth of the floor.
+    for (final Rect r in inactive) {
+      expect(r.height, DabblerSizing.navItem, reason: dir);
+      expect(r.width, lessThanOrEqualTo(DabblerSizing.navItem), reason: dir);
+      expect(
+        r.width,
+        greaterThanOrEqualTo(DabblerSizing.navItem * 0.8),
+        reason: '$dir: compressed squares stay near the touch floor',
+      );
+      expect(r.width, closeTo(inactive.first.width, _tol), reason: dir);
+    }
+  } else {
+    for (final Rect r in inactive) {
+      expect(r.size, const Size.square(DabblerSizing.navItem), reason: dir);
+    }
   }
   expect(
     (pill.right - (inactive.last.right + DabblerSpacing.space3)).abs(),

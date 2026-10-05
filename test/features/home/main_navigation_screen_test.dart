@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -19,7 +20,7 @@ import 'home_test_harness.dart' show FakeFeed;
 import '../../support/render_mode.dart';
 
 /// The app shell: a [DabblerPage] holding the active branch and a
-/// [DabblerNavigationBottomBar] (Home, Venues, Games; create = post + game).
+/// [DabblerNavigationBottomBar] (Feeds, Venues, Games, Meetups; create = post + game).
 Future<GoRouter> _pump(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
@@ -49,6 +50,9 @@ Future<GoRouter> _pump(
           StatefulShellBranch(routes: [
             GoRoute(path: '/games', builder: (_, __) => branch('games-branch')),
           ]),
+          StatefulShellBranch(routes: [
+            GoRoute(path: RoutePaths.meetups, builder: (_, __) => branch('meetups-branch')),
+          ]),
         ],
       ),
       GoRoute(
@@ -66,6 +70,9 @@ Future<GoRouter> _pump(
     ProviderScope(
       overrides: [
         initializeProfileDataProvider.overrideWith((ref) async => false),
+        // No profile in the shell harness: no meet-up Create tile, and the
+        // provider chain never reaches the live Supabase client.
+        meetupActorProfileIdProvider.overrideWithValue(null),
         feedNotifierProvider.overrideWith((ref) => FakeFeed(const FeedLoading())),
       ],
       child: MaterialApp.router(
@@ -145,7 +152,7 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 void main() {
   setUpAll(_loadFonts);
 
-  testWidgets('a DabblerPage with the DS bottom bar: Feeds, Venues, Games', (
+  testWidgets('a DabblerPage with the DS bottom bar: Feeds, Venues, Games, Meetups', (
     tester,
   ) async {
     final semantics = tester.ensureSemantics();
@@ -157,6 +164,7 @@ void main() {
     expect(find.text('Feeds'), findsOneWidget);
     expect(find.bySemanticsLabel('Venues'), findsOneWidget);
     expect(find.bySemanticsLabel('Games'), findsOneWidget);
+    expect(find.bySemanticsLabel('Meetups'), findsOneWidget);
     expect(find.text('home-branch'), findsOneWidget);
     semantics.dispose();
     expect(tester.takeException(), isNull);
@@ -171,6 +179,13 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Venues'));
     await tester.pumpAndSettle();
     expect(router.routeInformationProvider.value.uri.toString(), '/venues');
+    await tester.tap(find.bySemanticsLabel('Meetups'));
+    await tester.pumpAndSettle();
+    expect(
+      router.routeInformationProvider.value.uri.toString(),
+      RoutePaths.meetups,
+    );
+    expect(find.text('meetups-branch'), findsOneWidget);
     semantics.dispose();
   });
 
