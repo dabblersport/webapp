@@ -15,9 +15,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// Opens the Create meet-up drawer as a design-system bottom sheet, like the
-/// frame (`Home Feed.dc.html:1134`, a 94% sheet on the page colour): the title
-/// row with Cancel, the scrolling form and the sticky Create button are the
-/// composer shell's. On success it closes and opens the new Details.
+/// frame (`Home Feed.dc.html:1134`, content-sized up to 94%, on the page
+/// colour): the title row with Cancel, the scrolling form and the sticky
+/// Create button are the composer shell's. On success it closes and opens the new Details.
 Future<void> showMeetupComposerSheet(
   BuildContext context, {
   ValueChanged<String>? onCreated,
@@ -26,8 +26,10 @@ Future<void> showMeetupComposerSheet(
   final router = GoRouter.maybeOf(context);
   return showDabblerSheet<void>(
     context: context,
-    detent: DabblerSheetDetent.fractions,
-    detents: const <double>[0.94],
+    // `max-height: 94%`, `height: auto` (`sheetP94`): as tall as the form,
+    // up to the frame's cap.
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionFull,
     pageBackground: true,
     showCloseButton: false,
     // The shell draws the title row (with Cancel) and the sticky footer; the
@@ -237,10 +239,17 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
     ),
   );
 
-  Future<void> _pickVibe() => showComposerSheet<void>(
-    context,
+  // Content-sized, capped at the frame's vibes 82% (`Home Feed.dc.html:650`,
+  // `sheetP82`).
+  Future<void> _pickVibe() => showDabblerSheet<void>(
+    context: context,
     title: AppLocalizations.of(context).meetups_vibe,
-    tall: true,
+    titleWidget: composerSheetTitle(AppLocalizations.of(context).meetups_vibe),
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionTall,
+    pageBackground: true,
+    showCloseButton: false,
+    headerActionBuilder: (ctx) => composerSheetHeaderActions(context, ctx),
     builder: (ctx) => Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,

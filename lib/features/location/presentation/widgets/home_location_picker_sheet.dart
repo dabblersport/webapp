@@ -57,7 +57,7 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
     return showDabblerSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
-      contentMaxFraction: 0.66,
+      contentMaxFraction: DabblerSheet.contentMaxFractionCompact,
       pageBackground: true,
       showCloseButton: false,
       headerDivider: true,

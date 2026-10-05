@@ -340,7 +340,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final canCreateMeetup = ref.watch(canOfferCreateMeetupProvider);
 
     // One layout at every width: the design has no desktop shell. The page
-    // holds the active branch and the bottom bar.
+    // holds the active branch and the bottom bar, and on a window wider than
+    // a phone it keeps the frame's phone column (bar included, `0 18px 24px`
+    // inside it) centred rather than stretching the bar across the window.
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -348,6 +350,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         _handleSystemBack();
       },
       child: DabblerPage(
+        maxContentWidth: DabblerPage.readableWidth,
         // The page raises the body's bottom padding by the floating bar's
         // height, so branch pages scroll their last item clear of it. The
         // fade behind the bar washes the content out to the page colour.

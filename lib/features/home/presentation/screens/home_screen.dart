@@ -1182,9 +1182,12 @@ class _HomeHeader extends ConsumerWidget {
   }
 
   void _openLocationPicker(BuildContext context) {
+    // `max-height: 66%`, `height: auto` (`Home Feed.dc.html:763`, `sheetP66`):
+    // as tall as the list, up to the frame's cap.
     showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.66],
+      detent: DabblerSheetDetent.content,
+      contentMaxFraction: DabblerSheet.contentMaxFractionCompact,
       pageBackground: true,
       hairlineOutside: true,
       showCloseButton: false,

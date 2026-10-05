@@ -9,7 +9,8 @@ import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens "What's the vibe?" (`Home Feed.dc.html:650-690`): a searchable wrap
 /// of vibe chips, a Clear action when something is chosen and a `Confirm`
-/// footer that hands the pending vibe to [onConfirm].
+/// footer that hands the pending vibe to [onConfirm]. As tall as its chips,
+/// up to the frame's `max-height: 82%`.
 Future<void> showComposerVibesSheet(
   BuildContext context,
   WidgetRef ref, {
@@ -21,20 +22,30 @@ Future<void> showComposerVibesSheet(
   final pending = ValueNotifier<Vibe?>(
     vibes.where((v) => v.id == selectedVibeId).firstOrNull,
   );
-  return showComposerSheet<void>(
-    context,
-    title: "What's the vibe?",
-    subtitle: vibes.isEmpty ? null : '${vibes.length} vibes',
-    onClear: onClear,
-    tall: true,
-    confirm: ComposerSheetConfirm(
-      label: AppLocalizations.of(context).composer_confirm,
-      onTap: () {
-        final vibe = pending.value;
-        if (vibe != null) onConfirm(vibe);
-        Navigator.of(context).maybePop();
-      },
+  final confirm = ComposerSheetConfirm(
+    label: AppLocalizations.of(context).composer_confirm,
+    onTap: () {
+      final vibe = pending.value;
+      if (vibe != null) onConfirm(vibe);
+      Navigator.of(context).maybePop();
+    },
+  );
+  const title = "What's the vibe?";
+  // Content-sized, capped at the frame's 82% (`sheetP82`).
+  return showDabblerSheet<void>(
+    context: context,
+    title: title,
+    titleWidget: composerSheetTitle(
+      title,
+      subtitle: vibes.isEmpty ? null : '${vibes.length} vibes',
     ),
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionTall,
+    pageBackground: true,
+    showCloseButton: false,
+    headerActionBuilder: (ctx) =>
+        composerSheetHeaderActions(context, ctx, onClear: onClear),
+    footerBuilder: (_) => composerSheetFooter(confirm),
     builder: (_) => ComposerVibesSheet(pending: pending),
   );
 }

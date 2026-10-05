@@ -253,7 +253,10 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
 
 /// Adaptive modal route.
 ///
-/// On compact screens it behaves like a bottom drawer sheet.
+/// On compact screens it behaves like a bottom drawer sheet: as tall as its
+/// content, capped at [mobileHeightFactor] of the screen — by default the
+/// frames' create-drawer cap, `max-height: 94%`, `height: auto`
+/// (`Home Feed.dc.html` `sheetP94`, `DabblerSheet.contentMaxFractionFull`).
 /// On wide screens it renders as a centered modal dialog.
 class AdaptiveModalPage extends CustomTransitionPage<void> {
   AdaptiveModalPage({
@@ -262,7 +265,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
     Duration duration = DabblerMotion.pageTransition,
     this.maxDialogWidth = 720,
     this.maxDialogHeightFraction = 0.88,
-    this.mobileHeightFactor = DabblerSheet.maxHeightFraction,
+    this.mobileHeightFactor = DabblerSheet.contentMaxFractionFull,
     Color? barrierColorValue,
     this.transparentSurface = false,
   }) : super(

@@ -308,12 +308,17 @@ class ComposerSheetConfirm {
   final ValueListenable<bool>? enabledWhen;
 }
 
-/// Opens [builder] as a design-system sheet that sizes to its content (capped
-/// by the design system's content max fraction). All composer pickers go
-/// through here so they share one sheet chrome: the page-coloured panel, a
-/// title with an optional [subtitle], an optional text [onClear] and a
-/// neutral Cancel at the header's end, and an optional [confirm] footer
-/// (`Home Feed.dc.html:578-690`).
+/// Opens [builder] as a design-system sheet that sizes to its content, capped
+/// at the design system's default content cap (`Home Feed.dc.html`
+/// `sheetP80`: `max-height: 80%`, `height: auto`). All composer pickers share
+/// one sheet chrome: the page-coloured panel, a title with an optional
+/// [subtitle], an optional text [onClear] and a neutral Cancel at the header's
+/// end, and an optional [confirm] footer (`Home Feed.dc.html:578-690`).
+///
+/// A picker the frame caps elsewhere (vibes at 82%, places at 74%) opens
+/// `showDabblerSheet` itself with the same chrome — [composerSheetTitle],
+/// [composerSheetHeaderActions] and [composerSheetFooter] — and its own
+/// `contentMaxFraction`.
 Future<T?> showComposerSheet<T>(
   BuildContext context, {
   required String title,
@@ -321,66 +326,81 @@ Future<T?> showComposerSheet<T>(
   String? subtitle,
   VoidCallback? onClear,
   ComposerSheetConfirm? confirm,
-  bool tall = false,
 }) => showDabblerSheet<T>(
   context: context,
   title: title,
-  titleWidget: Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      DabblerText(
-        title,
-        style: DabblerType.headline,
-        weight: DabblerTextWeight.semibold,
-      ),
-      if (subtitle != null)
-        DabblerText(
-          subtitle,
-          style: DabblerType.caption1,
-          tone: DabblerTextTone.secondary,
-        ),
-    ],
-  ),
-  detent: tall ? DabblerSheetDetent.fractions : DabblerSheetDetent.content,
-  detents: tall ? const [0.82] : const [0.5],
+  titleWidget: composerSheetTitle(title, subtitle: subtitle),
+  detent: DabblerSheetDetent.content,
   pageBackground: true,
   showCloseButton: false,
-  headerActionBuilder: (ctx) => Row(
-    mainAxisSize: MainAxisSize.min,
-    children: [
-      if (onClear != null)
-        DabblerButton(
-          label: AppLocalizations.of(ctx).composer_clear,
-          tone: DabblerButtonTone.text,
-          size: DabblerButtonSize.small,
-          onPressed: () {
-            onClear();
-            Navigator.of(ctx).maybePop();
-          },
-        ),
-      DabblerButton(
-        label: AppLocalizations.of(context).composer_cancel,
-        tone: DabblerButtonTone.neutral,
-        size: DabblerButtonSize.small,
-        onPressed: () => Navigator.of(ctx).maybePop(),
-      ),
-    ],
-  ),
-  footerBuilder: confirm == null
-      ? null
-      : (ctx) => ValueListenableBuilder<bool>(
-          valueListenable:
-              confirm.enabledWhen ?? ValueNotifier<bool>(confirm.enabled),
-          builder: (_, on, __) => DabblerButton(
-            label: confirm.label,
-            fullWidth: true,
-            disabled: !on,
-            onPressed: on ? confirm.onTap : null,
-          ),
-        ),
+  headerActionBuilder: (ctx) =>
+      composerSheetHeaderActions(context, ctx, onClear: onClear),
+  footerBuilder: confirm == null ? null : (ctx) => composerSheetFooter(confirm),
   builder: builder,
 );
+
+/// The title block of a composer sheet: the title in headline semibold and an
+/// optional caption [subtitle] under it.
+Widget composerSheetTitle(String title, {String? subtitle}) => Column(
+  crossAxisAlignment: CrossAxisAlignment.start,
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    DabblerText(
+      title,
+      style: DabblerType.headline,
+      weight: DabblerTextWeight.semibold,
+    ),
+    if (subtitle != null)
+      DabblerText(
+        subtitle,
+        style: DabblerType.caption1,
+        tone: DabblerTextTone.secondary,
+      ),
+  ],
+);
+
+/// The header end of a composer sheet: an optional text Clear (runs [onClear]
+/// and closes) and a neutral Cancel. [opener] is the context the sheet was
+/// opened from (its language), [sheet] the sheet's own.
+Widget composerSheetHeaderActions(
+  BuildContext opener,
+  BuildContext sheet, {
+  VoidCallback? onClear,
+}) => Row(
+  mainAxisSize: MainAxisSize.min,
+  children: [
+    if (onClear != null)
+      DabblerButton(
+        label: AppLocalizations.of(sheet).composer_clear,
+        tone: DabblerButtonTone.text,
+        size: DabblerButtonSize.small,
+        onPressed: () {
+          onClear();
+          Navigator.of(sheet).maybePop();
+        },
+      ),
+    DabblerButton(
+      label: AppLocalizations.of(opener).composer_cancel,
+      tone: DabblerButtonTone.neutral,
+      size: DabblerButtonSize.small,
+      onPressed: () => Navigator.of(sheet).maybePop(),
+    ),
+  ],
+);
+
+/// The pinned footer of a composer sheet: the full-width [confirm] button,
+/// live-enabled through [ComposerSheetConfirm.enabledWhen] when set.
+Widget composerSheetFooter(ComposerSheetConfirm confirm) =>
+    ValueListenableBuilder<bool>(
+      valueListenable:
+          confirm.enabledWhen ?? ValueNotifier<bool>(confirm.enabled),
+      builder: (_, on, __) => DabblerButton(
+        label: confirm.label,
+        fullWidth: true,
+        disabled: !on,
+        onPressed: on ? confirm.onTap : null,
+      ),
+    );
 
 /// One option of a [showComposerChoiceSheet].
 class ComposerChoice<T> {

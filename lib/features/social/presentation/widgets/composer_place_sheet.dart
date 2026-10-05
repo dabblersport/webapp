@@ -39,29 +39,41 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
           ),
   );
   final l = AppLocalizations.of(context);
-  return showComposerSheet<void>(
-    context,
-    title: l.composer_add_location,
-    onClear: notifier.clearLocation,
-    confirm: ComposerSheetConfirm(
-      label: l.composer_confirm,
-      onTap: () {
-        final pick = pending.value;
-        if (pick != null) {
-          if (pick.venueId != null) {
-            notifier.setVenue(
-              id: pick.venueId!,
-              name: pick.name,
-              lat: pick.lat,
-              lng: pick.lng,
-            );
-          } else {
-            notifier.setRawLocation(name: pick.name);
-          }
+  final confirm = ComposerSheetConfirm(
+    label: l.composer_confirm,
+    onTap: () {
+      final pick = pending.value;
+      if (pick != null) {
+        if (pick.venueId != null) {
+          notifier.setVenue(
+            id: pick.venueId!,
+            name: pick.name,
+            lat: pick.lat,
+            lng: pick.lng,
+          );
+        } else {
+          notifier.setRawLocation(name: pick.name);
         }
-        Navigator.of(context).maybePop();
-      },
+      }
+      Navigator.of(context).maybePop();
+    },
+  );
+  // Content-sized, capped at the frame's 74% (`Home Feed.dc.html:818`,
+  // `sheetP74`).
+  return showDabblerSheet<void>(
+    context: context,
+    title: l.composer_add_location,
+    titleWidget: composerSheetTitle(l.composer_add_location),
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionMedium,
+    pageBackground: true,
+    showCloseButton: false,
+    headerActionBuilder: (ctx) => composerSheetHeaderActions(
+      context,
+      ctx,
+      onClear: notifier.clearLocation,
     ),
+    footerBuilder: (_) => composerSheetFooter(confirm),
     builder: (_) => ComposerPlaceSheet(pending: pending),
   );
 }
