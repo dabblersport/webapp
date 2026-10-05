@@ -9,40 +9,40 @@ class AppLocalizationsAr extends AppLocalizations {
   AppLocalizationsAr([String locale = 'ar']) : super(locale);
 
   @override
-  String get games_browse_empty_title => 'لا توجد مباريات عامة حالياً';
+  String get games_browse_empty_title => 'لا توجد مباريات عامة حاليًا';
 
   @override
-  String get games_browse_empty_desc => 'اتحقق تاني بعدين.';
+  String get games_browse_empty_desc => 'عاود الزيارة لاحقًا.';
 
   @override
-  String get games_browse_error => 'مقدرناش نحمل المباريات العامة.';
+  String get games_browse_error => 'تعذّر تحميل المباريات العامة.';
 
   @override
-  String get my_games_empty_title => 'لسه ما انضمتش لأي مباراة';
+  String get my_games_empty_title => 'لم تنضم إلى أي مباراة بعد';
 
   @override
-  String get my_games_empty_desc => 'انضم لمباراة عامة وهتظهر هنا.';
+  String get my_games_empty_desc => 'انضم إلى مباراة عامة لتظهر هنا.';
 
   @override
-  String get error_generic => 'حصل حاجة غلط';
+  String get error_generic => 'حدث خطأ ما';
 
   @override
-  String get game_full => 'المباراة اتملت';
+  String get game_full => 'اكتمل عدد اللاعبين';
 
   @override
-  String get game_waitlisted => 'اتضفت على قايمة الانتظار';
+  String get game_waitlisted => 'أنت في قائمة الانتظار';
 
   @override
   String get pull_to_refresh => 'اسحب للتحديث';
 
   @override
-  String get rating_thanks => 'شكراً على تقييمك!';
+  String get rating_thanks => 'شكرًا على تقييمك!';
 
   @override
-  String get rating_submit_error => 'مقدرناش نبعت التقييم.';
+  String get rating_submit_error => 'تعذّر إرسال التقييم.';
 
   @override
-  String get venues_search_disabled_mvp => 'البحث مش متاح في الإصدار ده';
+  String get venues_search_disabled_mvp => 'البحث غير متاح في هذا الإصدار';
 
   @override
   String get tab_most_recent => 'لك';
@@ -60,136 +60,136 @@ class AppLocalizationsAr extends AppLocalizations {
   String get tab_news => 'أخبار';
 
   @override
-  String get feed_empty_no_posts => 'مفيش بوستات لسه';
+  String get feed_empty_no_posts => 'لا توجد منشورات بعد';
 
   @override
   String get feed_empty_no_posts_hint => 'شارك لحظاتك ومبارياتك مع مجتمعك.';
 
   @override
-  String get feed_could_not_load => 'مقدرناش نحمل الفيد';
+  String get feed_could_not_load => 'تعذّر تحميل الخلاصة';
 
   @override
-  String get feed_retry => 'حاول تاني';
+  String get feed_retry => 'أعد المحاولة';
 
   @override
-  String get news_empty_title => 'مفيش أخبار دلوقتي.';
+  String get news_empty_title => 'لا توجد أخبار حاليًا.';
 
   @override
-  String get news_empty_hint => 'اتابع بعدين لأحدث تحديثات تيم دابلر.';
+  String get news_empty_hint => 'عاود الزيارة لاحقًا لأحدث مستجدات فريق دابلر.';
 
   @override
-  String get news_hide_sheet_title => 'تخبي الأخبار من الفيد؟';
+  String get news_hide_sheet_title => 'إخفاء الأخبار من الخلاصة؟';
 
   @override
   String get news_hide_sheet_body =>
-      'كروت الأخبار مش هتبان في لك. تقدر تقراهم كلهم في تبويب الأخبار.';
+      'لن تظهر بطاقات الأخبار في «لك». يمكنك قراءة كل الأخبار في تبويب الأخبار.';
 
   @override
-  String get news_hide_confirm => 'خبّي الأخبار';
+  String get news_hide_confirm => 'أخفِ الأخبار';
 
   @override
   String get news_hide_cancel => 'إلغاء';
 
   @override
-  String get news_hidden_snack => 'الأخبار اتخبت من لك';
+  String get news_hidden_snack => 'تم إخفاء الأخبار من «لك»';
 
   @override
-  String get news_resubscribed_snack => 'الأخبار هتبان تاني في لك';
+  String get news_resubscribed_snack => 'ستظهر الأخبار من جديد في «لك»';
 
   @override
-  String get news_resubscribe_banner => 'الأخبار متخبية من لك.';
+  String get news_resubscribe_banner => 'الأخبار مخفية من «لك».';
 
   @override
-  String get news_resubscribe_action => 'وريهم تاني';
+  String get news_resubscribe_action => 'أظهرها من جديد';
 
   @override
-  String get auth_welcome_title => 'أهلاً بيك!';
+  String get auth_welcome_title => 'أهلًا بك!';
 
   @override
   String get auth_welcome_subtitle =>
-      'يسعدنا انضمامك لينا. أنشئ حساب وابدأ تلعب رياضة مع مجتمعك.';
+      'يسعدنا انضمامك إلينا. أنشئ حسابًا وابدأ اللعب مع مجتمعك الرياضي.';
 
   @override
   String get auth_welcome_trust_heading => 'مبني على الثقة';
 
   @override
   String get auth_welcome_trust_verified =>
-      'لاعبين موثوقين، عضويات معتمدة، وملاعب متقيَّمة';
+      'لاعبون موثوقون، وعضويات معتمدة، وملاعب مقيَّمة';
 
   @override
   String get auth_welcome_trust_personalised =>
-      'توصيات وتواصل مخصص لرياضاتك المفضلة';
+      'توصيات وتواصل مخصّصان لرياضاتك المفضلة';
 
   @override
   String get auth_welcome_trust_privacy =>
-      'مش بنبيع بياناتك — الخصوصية أولوية عندنا';
+      'لا نبيع بياناتك — الخصوصية أولًا في تصميمنا';
 
   @override
-  String get auth_welcome_get_started => 'يلا نبدأ';
+  String get auth_welcome_get_started => 'لنبدأ';
 
   @override
   String get auth_welcome_get_started_subtitle => 'أنشئ حساب أو سجّل دخولك';
 
   @override
-  String get auth_welcome_btn_google => 'متابعه عبر Google';
+  String get auth_welcome_btn_google => 'المتابعة عبر Google';
 
   @override
-  String get auth_welcome_btn_apple => 'متابعه عبر Apple';
+  String get auth_welcome_btn_apple => 'المتابعة عبر Apple';
 
   @override
-  String get auth_welcome_btn_email => 'متابعه عبر الإيميل';
+  String get auth_welcome_btn_email => 'المتابعة بالبريد الإلكتروني';
 
   @override
-  String get auth_welcome_btn_login => 'عندك حساب بالفعل؟ سجّل دخولك';
+  String get auth_welcome_btn_login => 'لديك حساب بالفعل؟ سجّل دخولك';
 
   @override
-  String get auth_welcome_apple_soon => 'تسجيل الدخول بـ Apple جاي قريباً.';
+  String get auth_welcome_apple_soon => 'تسجيل الدخول عبر Apple قادم قريبًا.';
 
   @override
   String auth_welcome_google_error(String error) {
-    return 'مقدرناش ندخل بـ Google: $error';
+    return 'تعذّر تسجيل الدخول عبر Google: $error';
   }
 
   @override
-  String get auth_welcome_country_picker_title => 'اختار بلدك';
+  String get auth_welcome_country_picker_title => 'اختر بلدك';
 
   @override
-  String get auth_welcome_language_picker_title => 'اختار اللغة';
+  String get auth_welcome_language_picker_title => 'اختر اللغة';
 
   @override
-  String get landing_quote1 => 'وعدت نفسي إني ألعب مرتين في الأسبوع على الأقل.';
+  String get landing_quote1 => 'وعدت نفسي أن ألعب مرتين في الأسبوع على الأقل.';
 
   @override
   String get landing_quote2 =>
-      'بين الشغل والحياة، لقاء مباراة بقت أصعب من ماراثون.';
+      'بين العمل والحياة، إيجاد مباراة أصعب من جري تسعين دقيقة.';
 
   @override
   String get landing_tagline =>
-      'دابلر بيربط اللاعبين والكابتنية والملاعب — وقّف تدور وابدأ تلعب';
+      'يربط دابلر اللاعبين والكباتن والملاعب، فتتوقف عن البحث وتبدأ اللعب';
 
   @override
-  String get landing_continue => 'متابعه';
+  String get landing_continue => 'المتابعة';
 
   @override
-  String get landing_choose_language => 'اختار اللغة';
+  String get landing_choose_language => 'اختر اللغة';
 
   @override
-  String get auth_already_have_account => 'عندك حساب بالفعل؟';
+  String get auth_already_have_account => 'لديك حساب بالفعل؟';
 
   @override
   String get auth_log_in => 'سجّل دخولك';
 
   @override
-  String get auth_new_here => 'جديد هنا؟';
+  String get auth_new_here => 'مستخدم جديد؟';
 
   @override
-  String get auth_create_account => 'اعمل حساب';
+  String get auth_create_account => 'إنشاء حساب';
 
   @override
   String get auth_sheet_done => 'تمام';
 
   @override
-  String get auth_sheet_got_it => 'تمام';
+  String get auth_sheet_got_it => 'فهمت';
 
   @override
   String get auth_back => 'رجوع';
@@ -258,7 +258,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_entry_continue_apple => 'المتابعة عبر Apple';
 
   @override
-  String get auth_legal_prefix => 'بالمتابعة أنت توافق على ';
+  String get auth_legal_prefix => 'بالمتابعة، فإنك توافق على ';
 
   @override
   String get auth_legal_terms => 'شروط الخدمة';
@@ -322,7 +322,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'كلمة المرور غير مطابقة. حاول مجددًا، أو أرسل لنفسك رمزًا.';
 
   @override
-  String get auth_otp_title => 'تحقق من بريدك';
+  String get auth_otp_title => 'تحقق من بريدك الإلكتروني';
 
   @override
   String get auth_otp_subtitle =>
@@ -391,7 +391,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get persona_organiser_headline => 'حان وقت جمع المباراة.';
 
   @override
-  String get persona_organiser_principle => 'المباريات الجيدة تبدأ بتنظيم جيد.';
+  String get persona_organiser_principle => 'تبدأ المباريات الجيدة بتنظيم جيد.';
 
   @override
   String get persona_organiser_list_title => 'ما يتوقعه اللاعبون';
@@ -442,7 +442,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get persona_socialiser_principle =>
-      'تابع ما تحب، قابل ناسك، وانضم حين يناسبك.';
+      'تابع ما تحب، وتعرّف على رفاقك، وانضم حين يناسبك.';
 
   @override
   String get persona_socialiser_list_title => 'كيف يعمل هذا';
@@ -457,7 +457,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get persona_socialiser_item3 =>
-      'كن ودودًا — كل من هنا هو زميل فريق لشخص ما.';
+      'كن ودودًا، فكل من هنا هو زميل فريق لشخص ما.';
 
   @override
   String get persona_socialiser_cta => 'ابدأ الاستكشاف';
@@ -466,34 +466,36 @@ class AppLocalizationsAr extends AppLocalizations {
   String get auth_or => 'أو';
 
   @override
-  String get email_input_title => 'تسجيل';
+  String get email_input_title => 'المصادقة';
 
   @override
-  String get email_input_subtitle => 'أدخل إيميلك عشان نبدأ';
+  String get email_input_subtitle => 'أدخل بريدك الإلكتروني للبدء';
 
   @override
-  String get email_input_label => 'الإيميل';
+  String get email_input_label => 'البريد الإلكتروني';
 
   @override
   String get email_input_hint => 'email@domain.com';
 
   @override
-  String get email_input_continue => 'متابعه';
+  String get email_input_continue => 'المتابعة';
 
   @override
-  String get email_input_keep_in_loop => 'خليني على اطلاع بتحديثات وأخبار';
+  String get email_input_keep_in_loop =>
+      'أبقِني على اطلاع بالتحديثات والمزيد عبر البريد';
 
   @override
-  String get email_input_already_account => 'عندك حساب بالفعل؟ سجّل دخولك';
+  String get email_input_already_account => 'لديك حساب بالفعل؟ سجّل الدخول';
 
   @override
-  String get email_input_btn_google => 'متابعه عبر Google';
+  String get email_input_btn_google => 'المتابعة عبر Google';
 
   @override
-  String get email_input_btn_apple => 'متابعه عبر Apple';
+  String get email_input_btn_apple => 'المتابعة عبر Apple';
 
   @override
-  String get email_input_terms_prefix => 'بالضغط على متابعه، إنت بتوافق على ';
+  String get email_input_terms_prefix =>
+      'بالنقر على «المتابعة»، فإنك تقرّ بأنك قرأت ووافقت على ';
 
   @override
   String get email_input_terms_link => 'شروط الخدمة';
@@ -505,180 +507,186 @@ class AppLocalizationsAr extends AppLocalizations {
   String get email_input_privacy_link => 'سياسة الخصوصية';
 
   @override
-  String get email_input_validate_required => 'الإيميل مطلوب';
+  String get email_input_validate_required => 'البريد الإلكتروني مطلوب';
 
   @override
-  String get email_input_validate_invalid => 'أدخل إيميل صح';
+  String get email_input_validate_invalid => 'أدخل بريدًا إلكترونيًا صالحًا';
 
   @override
-  String get email_input_error_generic => 'حصل خطأ. جرب تاني.';
+  String get email_input_error_generic => 'حدث خطأ. يرجى المحاولة مرة أخرى.';
 
   @override
   String get email_input_google_failed =>
-      'تسجيل الدخول بـ Google فشل. جرب تاني.';
+      'فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.';
 
   @override
   String get email_password_title => 'تسجيل الدخول';
 
   @override
   String get email_password_subtitle =>
-      'أدخل إيميلك وكلمة سرك\nأو سجّل دخولك بـ OTP';
+      'أدخل بريدك الإلكتروني وكلمة المرور\nأو سجّل الدخول برمز التحقق';
 
   @override
-  String get email_password_forgot => 'نسيت كلمة السر؟';
+  String get email_password_forgot => 'نسيت كلمة المرور؟';
 
   @override
-  String get email_password_send_otp => 'ابعتلي OTP على الإيميل';
+  String get email_password_send_otp => 'أرسل رمز التحقق إلى بريدي';
 
   @override
   String get email_password_login_btn => 'دخول';
 
   @override
-  String get email_password_btn_google => 'متابعه عبر Google';
+  String get email_password_btn_google => 'المتابعة عبر Google';
 
   @override
-  String get email_password_btn_apple => 'متابعه عبر Apple';
+  String get email_password_btn_apple => 'المتابعة عبر Apple';
 
   @override
   String get email_password_hint_email => 'email@domain.com';
 
   @override
-  String get email_password_hint_password => 'كلمة السر';
+  String get email_password_hint_password => 'كلمة المرور';
 
   @override
-  String get email_password_show_password => 'وري كلمة السر';
+  String get email_password_show_password => 'إظهار كلمة المرور';
 
   @override
-  String get email_password_hide_password => 'خبّي كلمة السر';
+  String get email_password_hide_password => 'إخفاء كلمة المرور';
 
   @override
-  String get email_password_validate_email_required => 'الإيميل مطلوب';
+  String get email_password_validate_email_required =>
+      'البريد الإلكتروني مطلوب';
 
   @override
-  String get email_password_validate_email_invalid => 'أدخل إيميل صح';
+  String get email_password_validate_email_invalid =>
+      'أدخل بريدًا إلكترونيًا صالحًا';
 
   @override
-  String get email_password_validate_password_required => 'أدخل كلمة السر';
+  String get email_password_validate_password_required => 'أدخل كلمة المرور';
 
   @override
-  String get email_password_error_invalid_creds => 'الإيميل أو كلمة السر غلط';
+  String get email_password_error_invalid_creds =>
+      'البريد الإلكتروني أو كلمة المرور غير صحيحة';
 
   @override
   String get email_password_error_login_failed => 'فشل تسجيل الدخول.';
 
   @override
   String get email_password_error_otp_failed =>
-      'مقدرناش نبعت الـ OTP. جرب تاني.';
+      'تعذّر إرسال رمز التحقق. يرجى المحاولة مرة أخرى.';
 
   @override
-  String get email_password_apple_soon => 'تسجيل الدخول بـ Apple جاي قريباً.';
+  String get email_password_apple_soon => 'تسجيل الدخول عبر Apple قادم قريبًا.';
 
   @override
-  String get email_password_google_failed => 'تسجيل الدخول بـ Google فشل.';
+  String get email_password_google_failed => 'فشل تسجيل الدخول عبر Google.';
 
   @override
-  String get email_password_validate_email_hint => 'أدخل إيميل صح.';
+  String get email_password_validate_email_hint =>
+      'أدخل بريدًا إلكترونيًا صالحًا.';
 
   @override
-  String get email_verify_appbar => 'تأكيد الإيميل';
+  String get email_verify_appbar => 'تأكيد البريد الإلكتروني';
 
   @override
-  String get email_verify_title => 'اتحقق من صندوق الوارد';
+  String get email_verify_title => 'تحقق من صندوق الوارد';
 
   @override
   String email_verify_body_with_email(String email) {
-    return 'بعتنالك لينك تأكيد على $email.\n\nأكّد إيميلك عشان تكمّل إنشاء حسابك.';
+    return 'أرسلنا رابط تأكيد إلى $email.\n\nيرجى تأكيد بريدك الإلكتروني لإكمال إنشاء حسابك.';
   }
 
   @override
   String get email_verify_body_no_email =>
-      'بعتنالك لينك تأكيد على إيميلك.\n\nأكّد إيميلك عشان تكمّل إنشاء حسابك.';
+      'أرسلنا رابط تأكيد إلى بريدك الإلكتروني.\n\nيرجى تأكيد بريدك الإلكتروني لإكمال إنشاء حسابك.';
 
   @override
   String get email_verify_instruction =>
-      'بعد ما تأكد إيميلك، ارجع للتطبيق واضغط \"أكّدت إيميلي\" عشان تكمّل.';
+      'بعد تأكيد بريدك الإلكتروني، عد إلى التطبيق واضغط «أكّدت بريدي الإلكتروني» للمتابعة.';
 
   @override
-  String get email_verify_confirmed_btn => 'أكّدت إيميلي';
+  String get email_verify_confirmed_btn => 'أكّدت بريدي الإلكتروني';
 
   @override
-  String get email_verify_resend_btn => 'ابعت إيميل تأكيد تاني';
+  String get email_verify_resend_btn => 'أعد إرسال رسالة التأكيد';
 
   @override
-  String get email_verify_different_account => 'استخدم حساب تاني';
+  String get email_verify_different_account => 'استخدم حسابًا آخر';
 
   @override
-  String get email_verify_no_email_error => 'مفيش إيميل للمستخدم الحالي.';
+  String get email_verify_no_email_error =>
+      'لا يوجد بريد إلكتروني للمستخدم الحالي.';
 
   @override
   String get email_verify_spam_note =>
-      'لو ما لقيتش الإيميل، اتحقق من الـ Spam أو اطلب لينك جديد من شاشة الدخول.';
+      'إن لم تجد الرسالة، تحقق من مجلد البريد المزعج أو اطلب رابطًا جديدًا من شاشة تسجيل الدخول.';
 
   @override
-  String get forgot_password_title => 'إعادة تعيين كلمة السر';
+  String get forgot_password_title => 'إعادة تعيين كلمة المرور';
 
   @override
   String get forgot_password_subtitle =>
-      'أدخل إيميلك وهنبعتلك لينك تغيير كلمة السر.';
+      'أدخل بريدك الإلكتروني وسنرسل إليك رابطًا لإعادة تعيين كلمة المرور.';
 
   @override
-  String get forgot_password_email_hint => 'الإيميل';
+  String get forgot_password_email_hint => 'البريد الإلكتروني';
 
   @override
-  String get forgot_password_send_btn => 'ابعت لينك الإعادة';
+  String get forgot_password_send_btn => 'أرسل رابط إعادة التعيين';
 
   @override
   String get forgot_password_sent_msg =>
-      'اتبعت اللينك! اتحقق من صندوق الوارد والـ Spam عندك.';
+      'تم إرسال الرابط! تحقق من صندوق الوارد ومجلد البريد المزعج لمعرفة خطوات إعادة تعيين كلمة المرور.';
 
   @override
-  String get forgot_password_back_to_signin => 'ارجع لتسجيل الدخول';
+  String get forgot_password_back_to_signin => 'العودة إلى تسجيل الدخول';
 
   @override
-  String get forgot_password_validate_email => 'أدخل إيميل صح';
+  String get forgot_password_validate_email => 'أدخل بريدًا إلكترونيًا صالحًا';
 
   @override
-  String get otp_verify_title_email => 'تأكيد الإيميل';
+  String get otp_verify_title_email => 'تأكيد البريد الإلكتروني';
 
   @override
-  String get otp_verify_title_phone => 'تأكيد الموبايل';
+  String get otp_verify_title_phone => 'تأكيد رقم الهاتف';
 
   @override
   String get otp_verify_subtitle_email =>
-      'أدخل الـ 6 أرقام اللي بعتناهالك على إيميلك';
+      'أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى بريدك الإلكتروني';
 
   @override
   String get otp_verify_subtitle_phone =>
-      'أدخل الـ 6 أرقام اللي بعتناهالك على موبايلك';
+      'أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى هاتفك';
 
   @override
-  String get otp_verify_change_email => 'غيّر الإيميل';
+  String get otp_verify_change_email => 'تغيير البريد الإلكتروني';
 
   @override
-  String get otp_verify_change_phone => 'غيّر الموبايل';
+  String get otp_verify_change_phone => 'تغيير رقم الهاتف';
 
   @override
-  String get otp_verify_continue => 'متابعه';
+  String get otp_verify_continue => 'المتابعة';
 
   @override
-  String get otp_verify_didnt_get => 'ما وصلكش الكود؟ ';
+  String get otp_verify_didnt_get => 'لم يصلك الرمز؟ ';
 
   @override
   String otp_verify_resend_countdown(int seconds) {
-    return 'ابعت كود تاني ($secondsث)';
+    return 'أعد إرسال الرمز ($secondsث)';
   }
 
   @override
-  String get otp_verify_resend => 'ابعت كود تاني';
+  String get otp_verify_resend => 'أعد إرسال الرمز';
 
   @override
-  String get otp_verify_sending => 'بيتبعت...';
+  String get otp_verify_sending => 'جارٍ الإرسال...';
 
   @override
-  String get otp_verify_sent_email => 'اتبعت الـ OTP على إيميلك بنجاح';
+  String get otp_verify_sent_email =>
+      'تم إرسال رمز التحقق إلى بريدك الإلكتروني بنجاح';
 
   @override
-  String get otp_verify_sent_phone => 'اتبعت الـ OTP على موبايلك بنجاح';
+  String get otp_verify_sent_phone => 'تم إرسال رمز التحقق إلى هاتفك بنجاح';
 
   @override
   String otp_verify_error_prefix(String error) {
@@ -686,67 +694,67 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get reset_password_title => 'تغيير كلمة السر';
+  String get reset_password_title => 'تغيير كلمة المرور';
 
   @override
-  String get reset_password_subtitle => 'أنشئ كلمة سر جديدة لحسابك';
+  String get reset_password_subtitle => 'أنشئ كلمة مرور جديدة لحسابك';
 
   @override
-  String get reset_password_new_label => 'كلمة السر الجديدة';
+  String get reset_password_new_label => 'كلمة المرور الجديدة';
 
   @override
-  String get reset_password_confirm_label => 'تأكيد كلمة السر';
+  String get reset_password_confirm_label => 'تأكيد كلمة المرور';
 
   @override
-  String get reset_password_update_btn => 'حدّث كلمة السر';
+  String get reset_password_update_btn => 'تحديث كلمة المرور';
 
   @override
-  String get reset_password_validate_enter => 'أدخل كلمة سر';
+  String get reset_password_validate_enter => 'أدخل كلمة مرور';
 
   @override
-  String get reset_password_validate_min => 'استخدم 8 حروف على الأقل';
+  String get reset_password_validate_min => 'استخدم 8 أحرف على الأقل';
 
   @override
-  String get reset_password_validate_confirm => 'أكّد كلمة السر';
+  String get reset_password_validate_confirm => 'أعد إدخال كلمة المرور';
 
   @override
-  String get reset_password_validate_match => 'كلمتا السر مش متطابقتين';
+  String get reset_password_validate_match => 'كلمتا المرور غير متطابقتين';
 
   @override
   String get set_password_title => 'أنشئ حسابك';
 
   @override
   String set_password_email_prefix(String email) {
-    return 'الإيميل: $email';
+    return 'البريد الإلكتروني: $email';
   }
 
   @override
   String get set_password_username_label => 'اسم المستخدم';
 
   @override
-  String get set_password_username_hint => 'اختار اسم مستخدم مميز';
+  String get set_password_username_hint => 'اختر اسم مستخدم فريدًا';
 
   @override
-  String get set_password_password_label => 'كلمة السر';
+  String get set_password_password_label => 'كلمة المرور';
 
   @override
-  String get set_password_password_hint => 'أدخل كلمة سر قوية';
+  String get set_password_password_hint => 'أدخل كلمة مرور قوية';
 
   @override
-  String get set_password_confirm_label => 'تأكيد كلمة السر';
+  String get set_password_confirm_label => 'تأكيد كلمة المرور';
 
   @override
-  String get set_password_confirm_hint => 'أعد إدخال كلمة السر';
+  String get set_password_confirm_hint => 'أعد إدخال كلمة المرور';
 
   @override
-  String get set_password_create_btn => 'أنشئ الحساب';
+  String get set_password_create_btn => 'إنشاء الحساب';
 
   @override
-  String get set_password_creating_btn => 'بيتنشأ الحساب...';
+  String get set_password_creating_btn => 'جارٍ إنشاء الحساب...';
 
   @override
   String set_password_wait_btn(int seconds) {
-    return 'استنّى $seconds ث';
+    return 'انتظر $seconds ث';
   }
 
   @override
@@ -754,45 +762,48 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get set_password_validate_username_min =>
-      'اسم المستخدم لازم يكون 3 حروف على الأقل';
+      'يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل';
 
   @override
   String get set_password_validate_username_max =>
-      'اسم المستخدم لازم يكون 20 حرف أو أقل';
+      'يجب ألا يزيد اسم المستخدم على 20 حرفًا';
 
   @override
-  String get set_password_validate_username_chars => 'حروف وأرقام وـ بس';
+  String get set_password_validate_username_chars =>
+      'يُسمح بالحروف والأرقام والشرطة السفلية فقط';
 
   @override
-  String get set_password_validate_username_taken => 'اسم المستخدم مش متاح';
+  String get set_password_validate_username_taken =>
+      'اسم المستخدم مستخدم بالفعل';
 
   @override
   String get set_password_validate_username_checking =>
       'خطأ في التحقق من اسم المستخدم';
 
   @override
-  String get set_password_validate_password_required => 'كلمة السر مطلوبة';
+  String get set_password_validate_password_required => 'كلمة المرور مطلوبة';
 
   @override
   String get set_password_validate_password_min =>
-      'كلمة السر لازم تكون 6 حروف على الأقل';
+      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
 
   @override
-  String get set_password_validate_confirm_required => 'أكّد كلمة السر';
+  String get set_password_validate_confirm_required => 'يرجى تأكيد كلمة المرور';
 
   @override
-  String get set_password_validate_confirm_match => 'كلمتا السر مش متطابقتين';
+  String get set_password_validate_confirm_match =>
+      'كلمتا المرور غير متطابقتين';
 
   @override
   String get set_password_wait_validation =>
-      'استنّى حتى ينتهي التحقق من اسم المستخدم';
+      'انتظر حتى ينتهي التحقق من اسم المستخدم';
 
   @override
   String get set_password_account_exists =>
-      'الحساب موجود بالفعل. سجّل دخولك بكلمة سرك.';
+      'الحساب موجود بالفعل. سجّل الدخول بكلمة المرور.';
 
   @override
-  String get set_password_rate_limit => 'استنّى شوية وحاول تاني.';
+  String get set_password_rate_limit => 'انتظر بضع ثوانٍ ثم حاول مرة أخرى.';
 
   @override
   String set_password_error_prefix(String error) {
@@ -800,50 +811,51 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get create_info_title => 'قولنا عن نفسك شوية';
+  String get create_info_title => 'أخبرنا قليلًا عن نفسك';
 
   @override
   String get create_info_subtitle =>
-      'أكّد سنك، لازم تكون عندك 16 سنة أو أكتر عشان تستخدم دابلر';
+      'أكّد عمرك؛ يجب أن يكون عمرك 16 عامًا أو أكثر لاستخدام دابلر';
 
   @override
   String get create_info_birth_date => 'تاريخ الميلاد';
 
   @override
-  String get create_info_birth_date_placeholder => 'اختار تاريخ ميلادك';
+  String get create_info_birth_date_placeholder => 'اختر تاريخ ميلادك';
 
   @override
   String create_info_age_display(int age) {
-    return 'عندك $age سنة';
+    return 'عمرك $age سنة';
   }
 
   @override
   String get create_info_gender => 'الجنس (اختياري)';
 
   @override
-  String get create_info_continue => 'متابعه';
+  String get create_info_continue => 'المتابعة';
 
   @override
-  String get create_info_error_fill_required => 'إملا كل الحقول المطلوبة صح';
+  String get create_info_error_fill_required =>
+      'يرجى تعبئة جميع الحقول المطلوبة بشكل صحيح';
 
   @override
-  String get create_info_error_select_birth => 'اختار تاريخ ميلادك';
+  String get create_info_error_select_birth => 'يرجى اختيار تاريخ ميلادك';
 
   @override
   String get create_info_error_min_age =>
-      'لازم تكون عندك 16 سنة على الأقل عشان تسجّل';
+      'يجب أن يكون عمرك 16 عامًا على الأقل للتسجيل';
 
   @override
   String create_info_error_max_age(int max) {
-    return 'السن لازم تكون بين 16 و$max سنة';
+    return 'يجب أن يكون العمر بين 16 و$max عامًا';
   }
 
   @override
-  String get create_info_error_select_gender => 'اختار جنسك';
+  String get create_info_error_select_gender => 'يرجى اختيار الجنس';
 
   @override
   String create_info_error_occurred(String error) {
-    return 'حصل خطأ: $error';
+    return 'حدث خطأ: $error';
   }
 
   @override
@@ -853,15 +865,15 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_username_title_conversion => 'أكمل التحويل';
 
   @override
-  String get set_username_title_new_profile => 'أكمل البروفايل الجديد';
+  String get set_username_title_new_profile => 'أكمل ملفك الشخصي الجديد';
 
   @override
   String get set_username_subtitle_onboarding =>
-      'اختار إزاي الناس تناديك وحدد اسم مستخدمك';
+      'اختر كيف يناديك الآخرون وحدّد اسم مستخدمك';
 
   @override
   String set_username_subtitle_persona(String persona) {
-    return 'اختار اسم عرض واسم مستخدم لبروفايل الـ $persona بتاعك';
+    return 'اختر اسم عرض واسم مستخدم لملفك بصفة $persona';
   }
 
   @override
@@ -874,31 +886,31 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_username_username_label => 'اسم المستخدم';
 
   @override
-  String get set_username_username_hint => 'اختار اسم مستخدم مميز';
+  String get set_username_username_hint => 'اختر اسم مستخدم فريدًا';
 
   @override
   String get set_username_suggestions => 'اقتراحات';
 
   @override
-  String get set_username_btn_complete => 'خلصنا';
+  String get set_username_btn_complete => 'إتمام';
 
   @override
-  String get set_username_btn_create_profile => 'أنشئ البروفايل';
+  String get set_username_btn_create_profile => 'إنشاء الملف الشخصي';
 
   @override
   String get set_username_btn_complete_conversion => 'أكمل التحويل';
 
   @override
-  String get set_username_back => 'ارجع';
+  String get set_username_back => 'رجوع';
 
   @override
   String set_username_converting_to(String persona) {
-    return 'بيتحول لـ $persona';
+    return 'جارٍ التحويل إلى $persona';
   }
 
   @override
   String set_username_adding_profile(String persona) {
-    return 'بيضاف بروفايل $persona';
+    return 'جارٍ إضافة ملف $persona';
   }
 
   @override
@@ -906,59 +918,62 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get set_username_validate_display_min =>
-      'الاسم المعروض لازم يكون حرفين على الأقل';
+      'يجب أن يتكون الاسم المعروض من حرفين على الأقل';
 
   @override
   String get set_username_validate_username_required => 'اسم المستخدم مطلوب';
 
   @override
   String get set_username_validate_username_min =>
-      'اسم المستخدم لازم يكون 3 حروف على الأقل';
+      'يجب أن يتكون اسم المستخدم من 3 أحرف على الأقل';
 
   @override
-  String get set_username_validate_username_chars => 'حروف وأرقام وـ بس';
+  String get set_username_validate_username_chars =>
+      'الحروف والأرقام والشرطة السفلية فقط';
 
   @override
-  String get set_username_unavailable => 'اسم المستخدم مش متاح';
+  String get set_username_unavailable => 'اسم المستخدم غير متاح';
 
   @override
   String get set_username_check_error => 'خطأ في التحقق من اسم المستخدم';
 
   @override
   String get set_username_missing_onboarding =>
-      'بيانات التسجيل ناقصة. ابدأ من الأول.';
+      'بيانات التسجيل ناقصة. ابدأ من جديد.';
 
   @override
-  String get set_username_missing_steps => 'معلومات ناقصة. أكمل كل الخطوات.';
+  String get set_username_missing_steps =>
+      'معلومات مطلوبة ناقصة. يرجى إكمال جميع الخطوات.';
 
   @override
   String get set_username_session_expired =>
-      'جلستك انتهت. أكّد رقم موبايلك تاني.';
+      'انتهت جلستك. يرجى تأكيد رقم هاتفك مرة أخرى.';
 
   @override
-  String get set_username_missing_persona_data =>
-      'بيانات ناقصة. ابدأ من الأول.';
+  String get set_username_missing_persona_data => 'بيانات ناقصة. ابدأ من جديد.';
 
   @override
-  String get intent_title => 'إيه اللي جابك هنا؟';
+  String get intent_title => 'ما الذي أتى بك إلى هنا؟';
 
   @override
-  String get intent_subtitle => 'قولنا عشان نخلي دابلر مناسب ليك';
+  String get intent_subtitle => 'ساعدنا في تخصيص دابلر لك';
 
   @override
   String get intent_compete_title => 'تنافس';
 
   @override
-  String get intent_compete_desc => 'انضم لمباريات، تابع مستواك، العب بانتظام';
+  String get intent_compete_desc =>
+      'انضم إلى المباريات، وتابع مستواك، والعب بانتظام';
 
   @override
   String get intent_organise_title => 'نظّم';
 
   @override
-  String get intent_organise_desc => 'أنشئ مباريات، حدد قواعد، أدر اللاعبين';
+  String get intent_organise_desc =>
+      'أنشئ المباريات، وحدّد القواعد، وأدر اللاعبين';
 
   @override
-  String get intent_host_title => 'استضيف';
+  String get intent_host_title => 'استضف';
 
   @override
   String get intent_host_desc => 'أدر الملاعب والتوافر والحجوزات';
@@ -967,96 +982,96 @@ class AppLocalizationsAr extends AppLocalizations {
   String get intent_socialise_title => 'تواصل';
 
   @override
-  String get intent_socialise_desc => 'تابع رياضات وناس ومجتمعات';
+  String get intent_socialise_desc => 'تابع الرياضات والأشخاص والمجتمعات';
 
   @override
-  String get intent_continue => 'متابعه';
+  String get intent_continue => 'المتابعة';
 
   @override
-  String get intent_back => 'ارجع';
+  String get intent_back => 'رجوع';
 
   @override
-  String get intent_select_role => 'اختار دورك';
+  String get intent_select_role => 'يرجى اختيار دورك';
 
   @override
-  String get interests_title_player => 'إيه الرياضات اللي بتمارسها؟';
+  String get interests_title_player => 'ما الرياضات التي تمارسها بانتظام؟';
 
   @override
-  String get interests_title_organiser => 'إيه الرياضات اللي بتنظمها؟';
+  String get interests_title_organiser => 'ما الرياضات التي تنوي تنظيمها؟';
 
   @override
-  String get interests_title_host => 'إيه الرياضات اللي بتاستضيفها؟';
+  String get interests_title_host => 'ما الرياضات التي تستضيفها؟';
 
   @override
-  String get interests_title_socialiser => 'إيه الرياضات اللي بتحبها؟';
+  String get interests_title_socialiser => 'ما الرياضات التي تهمّك؟';
 
   @override
-  String get interests_title_default => 'إيه الرياضات اللي بتمارسها؟';
+  String get interests_title_default => 'ما الرياضات التي تمارسها بانتظام؟';
 
   @override
-  String get interests_subtitle => 'تقدر تغيّر وتضيف رياضات تانية بعدين';
+  String get interests_subtitle => 'يمكنك تغيير الرياضات وإضافة المزيد لاحقًا';
 
   @override
   String get interests_available_sports => 'الرياضات المتاحة';
 
   @override
   String interests_selected_count_one(int count) {
-    return 'رياضة واحدة اتختارت ($count)';
+    return 'تم اختيار رياضة واحدة ($count)';
   }
 
   @override
   String interests_selected_count_many(int count) {
-    return '$count رياضات اتختارت';
+    return 'تم اختيار $count رياضات';
   }
 
   @override
-  String get interests_continue => 'متابعه';
+  String get interests_continue => 'المتابعة';
 
   @override
-  String get interests_back => 'ارجع';
+  String get interests_back => 'رجوع';
 
   @override
   String get interests_cancel => 'إلغاء';
 
   @override
-  String get interests_select_one => 'اختار رياضة واحدة على الأقل';
+  String get interests_select_one => 'يرجى اختيار رياضة واحدة على الأقل';
 
   @override
-  String get interests_failed_load => 'فشل تحميل الرياضات';
+  String get interests_failed_load => 'تعذّر تحميل الرياضات';
 
   @override
-  String get interests_retry => 'حاول تاني';
+  String get interests_retry => 'أعد المحاولة';
 
   @override
-  String get primary_sport_title => 'اختار رياضتك الأساسية';
+  String get primary_sport_title => 'اختر رياضتك الأساسية';
 
   @override
   String get primary_sport_subtitle =>
-      'الرياضة دي هتبان على بروفايلك وهتتستخدم افتراضياً.';
+      'ستظهر هذه الرياضة في ملفك الشخصي وتُستخدم افتراضيًا.';
 
   @override
-  String get primary_sport_helper => 'تقدر تغيّرها بعدين.';
+  String get primary_sport_helper => 'يمكنك تغييرها لاحقًا.';
 
   @override
   String get primary_sport_badge => 'أساسية';
 
   @override
-  String get primary_sport_continue => 'متابعه';
+  String get primary_sport_continue => 'المتابعة';
 
   @override
-  String get primary_sport_back => 'ارجع';
+  String get primary_sport_back => 'رجوع';
 
   @override
   String get primary_sport_cancel => 'إلغاء';
 
   @override
-  String get primary_sport_select_error => 'اختار رياضتك الأساسية';
+  String get primary_sport_select_error => 'يرجى اختيار رياضتك الأساسية';
 
   @override
-  String get primary_sport_failed_load => 'فشل تحميل الرياضات';
+  String get primary_sport_failed_load => 'تعذّر تحميل الرياضات';
 
   @override
-  String get primary_sport_no_sports => 'مفيش رياضات متاخترة. ارجع للخلف.';
+  String get primary_sport_no_sports => 'لم تُختر أي رياضة. يرجى الرجوع.';
 
   @override
   String get onb_back => 'رجوع';
@@ -1174,7 +1189,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_persona_socialiser_name => 'الاجتماعي';
 
   @override
-  String get onb_persona_socialiser_hook => 'اعرف ناسك';
+  String get onb_persona_socialiser_hook => 'اعثر على رفاقك';
 
   @override
   String get onb_persona_socialiser_body =>
@@ -1198,7 +1213,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_persona_player_name => 'اللاعب';
 
   @override
-  String get onb_persona_player_hook => 'انزل الملعب';
+  String get onb_persona_player_hook => 'انطلق إلى الملعب';
 
   @override
   String get onb_persona_player_body =>
@@ -1250,7 +1265,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onb_persona_host_body =>
-      'اعرض مساحاتك، اوصل للاعبين، وأدر الحجوزات.';
+      'اعرض مساحاتك، وصِل إلى اللاعبين، وأدر الحجوزات.';
 
   @override
   String get onb_sports_title_host => 'ماذا يمكن للناس أن يلعبوا في ملعبك؟';
@@ -1347,32 +1362,32 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String primary_sport_adding(String label) {
-    return 'بيضاف بروفايل $label';
+    return 'جارٍ إضافة ملف $label';
   }
 
   @override
   String get identity_verify_title => 'التحقق من الهوية';
 
   @override
-  String get identity_verify_email_label => 'الإيميل';
+  String get identity_verify_email_label => 'البريد الإلكتروني';
 
   @override
-  String get identity_verify_email_hint => 'أدخل إيميلك';
+  String get identity_verify_email_hint => 'أدخل بريدك الإلكتروني';
 
   @override
-  String get identity_verify_continue_sending => 'بيتبعت...';
+  String get identity_verify_continue_sending => 'جارٍ الإرسال...';
 
   @override
-  String get identity_verify_continue => 'متابعه';
+  String get identity_verify_continue => 'المتابعة';
 
   @override
   String get identity_verify_or => 'أو';
 
   @override
-  String get identity_verify_google_btn => 'متابعه عبر Google';
+  String get identity_verify_google_btn => 'المتابعة عبر Google';
 
   @override
-  String get identity_verify_terms_prefix => 'بالكمال، إنت بتوافق على ';
+  String get identity_verify_terms_prefix => 'بالمتابعة، فإنك توافق على ';
 
   @override
   String get identity_verify_terms_link => 'شروط الخدمة';
@@ -1385,15 +1400,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get identity_verify_otp_sent_email =>
-      'اتبعت الـ OTP! اتحقق من إيميلك.';
+      'تم إرسال رمز التحقق! تحقق من بريدك الإلكتروني.';
 
   @override
   String get identity_verify_otp_sent_phone =>
-      'اتبعت الـ OTP! اتحقق من موبايلك.';
+      'تم إرسال رمز التحقق! تحقق من هاتفك.';
 
   @override
   String get identity_verify_phone_disabled =>
-      'التحقق بالموبايل مش متاح لسه. استخدم الإيميل عشان تكمّل.';
+      'التحقق عبر الهاتف غير متاح بعد. استخدم البريد الإلكتروني للمتابعة.';
 
   @override
   String identity_verify_service_error(String error) {
@@ -1401,7 +1416,8 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get identity_verify_error_generic => 'مقدرناش نبعت الـ OTP. جرب تاني.';
+  String get identity_verify_error_generic =>
+      'تعذّر إرسال رمز التحقق. يرجى المحاولة مرة أخرى.';
 
   @override
   String identity_verify_nav_failed(String error) {
@@ -1409,29 +1425,30 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get identity_verify_use_email => 'استخدم إيميلك';
+  String get identity_verify_use_email => 'يرجى استخدام بريدك الإلكتروني';
 
   @override
-  String get identity_verify_required => 'الإيميل أو رقم الموبايل مطلوب';
+  String get identity_verify_required =>
+      'البريد الإلكتروني أو رقم الهاتف مطلوب';
 
   @override
   String get identity_verify_google_failed =>
-      'تسجيل الدخول بـ Google فشل. جرب تاني.';
+      'فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.';
 
   @override
-  String get welcome_screen_title_first_time => 'أهلاً بيك في دابلر 😉';
+  String get welcome_screen_title_first_time => 'أهلًا بك في دابلر 😉';
 
   @override
-  String get welcome_screen_title_returning => 'أهلاً بيك تاني! 👋';
+  String get welcome_screen_title_returning => 'أهلًا بعودتك! 👋';
 
   @override
-  String get welcome_screen_title_conversion => 'التحويل اكتمل! 🎉';
+  String get welcome_screen_title_conversion => 'اكتمل التحويل! 🎉';
 
   @override
-  String get welcome_screen_dont_forget => 'متنساش';
+  String get welcome_screen_dont_forget => 'لا تنسَ';
 
   @override
-  String get welcome_screen_continue => 'متابعه';
+  String get welcome_screen_continue => 'المتابعة';
 
   @override
   String get welcome_screen_chip_player => 'لاعب رياضي';
@@ -1447,17 +1464,18 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get welcome_screen_player_guidance =>
-      'انضم لمباريات بمستواك، احترم قواعد المنظّم، وأكّد مشاركتك بس لما تكون متأكد إنك هتيجي.';
+      'انضم إلى مباريات تناسب مستواك، واحترم قواعد المنظّم، ولا تؤكد مشاركتك إلا حين تكون جاهزًا للعب.';
 
   @override
-  String get welcome_screen_player_philosophy => 'التزامك ببني سمعتك.';
+  String get welcome_screen_player_philosophy => 'التزامك يبني سمعتك.';
 
   @override
   String get welcome_screen_player_reminder =>
-      'أكّد بس لما تكون متأكد إنك تقدر تيجي.\nاحترم القواعد والمواعيد واللاعبين التانيين.';
+      'لا تؤكد إلا إذا كنت متأكدًا من قدرتك على اللعب.\nاحترم القواعد والمواعيد واللاعبين الآخرين.';
 
   @override
-  String get welcome_screen_player_emphasis => 'أكّد بس لما تكون جاهز تلعب';
+  String get welcome_screen_player_emphasis =>
+      'لا تؤكد إلا حين تكون جاهزًا للعب';
 
   @override
   String get welcome_screen_organiser_guidance =>
@@ -1465,169 +1483,170 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get welcome_screen_organiser_philosophy =>
-      'إنت بتحدد الأجواء — المباريات العظيمة بتبدأ بتنظيم عظيم.';
+      'أنت من يحدّد الأجواء — فالمباريات العظيمة تبدأ بتنظيم عظيم.';
 
   @override
   String get welcome_screen_organiser_reminder =>
-      'حدد قواعد واضحة ومواعيد معقولة.\nبلّغ عن أي تغييرات بدري وبوضوح.';
+      'حدّد قواعد واضحة ومواعيد معقولة.\nأبلِغ عن أي تغيير مبكرًا وبوضوح.';
 
   @override
-  String get welcome_screen_organiser_emphasis => 'كمّل بس لما تكون جاهز!';
+  String get welcome_screen_organiser_emphasis => 'تابع حين تكون جاهزًا فقط!';
 
   @override
   String get welcome_screen_host_guidance =>
-      'خلّي اللاعبين يحسوا بالترحيب بإنك تخلّي المعلومات دقيقة والمساحات جاهزة.';
+      'اجعل اللاعبين يشعرون بالترحيب بإبقاء المعلومات دقيقة والمساحات جاهزة.';
 
   @override
   String get welcome_screen_host_philosophy =>
-      'الوضوح في التوافر والتنسيم السلس بيحسّن تجربة الكل.';
+      'وضوح التوفّر وسلاسة التنسيق يحسّنان تجربة الجميع.';
 
   @override
   String get welcome_screen_host_reminder =>
-      'خلّي التوافر والتفاصيل دايماً محدّثة.\nحدّث المعلومات فور ما أي حاجة تتغير.';
+      'أبقِ التوفّر والتفاصيل دقيقة.\nحدّث المعلومات فور حدوث أي تغيير.';
 
   @override
-  String get welcome_screen_host_emphasis => 'كمّل بس لما تكون جاهز!';
+  String get welcome_screen_host_emphasis => 'تابع حين تكون جاهزًا فقط!';
 
   @override
   String get welcome_screen_socialiser_guidance =>
-      'تواصل مع اللاعبين، ابدأ محادثات، وخلّي المباريات أكتر إنسانية.';
+      'تواصل مع اللاعبين، وابدأ الحوارات، واجعل المباريات أكثر إنسانية.';
 
   @override
   String get welcome_screen_socialiser_philosophy =>
-      'وجودك بيشكّل المجتمع — ودود وشامل ومحترم.';
+      'حضورك يشكّل المجتمع — ودود وشامل ومحترم.';
 
   @override
   String get welcome_screen_socialiser_reminder =>
-      'كون محترم وشامل.\nضيف قيمة من غير ما تعطّل المباراة.';
+      'كن محترمًا وشاملًا.\nأضف قيمة دون تعطيل المباراة.';
 
   @override
-  String get welcome_screen_socialiser_emphasis => 'كمّل بس لما تكون جاهز!';
+  String get welcome_screen_socialiser_emphasis => 'تابع حين تكون جاهزًا فقط!';
 
   @override
-  String get onboarding_welcome_title => 'بيتضبط حسابك';
+  String get onboarding_welcome_title => 'جارٍ إعداد حسابك';
 
   @override
-  String get onboarding_welcome_subtitle => 'ده هياخد لحظة بس...';
+  String get onboarding_welcome_subtitle => 'يستغرق هذا لحظة فقط…';
 
   @override
-  String get onboarding_welcome_step_profile => 'بيتنشأ بروفايلك';
+  String get onboarding_welcome_step_profile => 'جارٍ إنشاء ملفك الشخصي';
 
   @override
-  String get social_onboarding_welcome_title => 'أهلاً في السوشيال';
+  String get social_onboarding_welcome_title => 'أهلًا بك في المجتمع';
 
   @override
   String get social_onboarding_welcome_subtitle =>
-      'تواصل مع لاعبين زيك، شارك تجارب مبارياتك، وابني مجتمعك الرياضي.';
+      'تواصل مع لاعبين مثلك، وشارك تجارب مبارياتك، وابنِ مجتمعك الرياضي.';
 
   @override
   String get social_onboarding_welcome_skip => 'تخطّي';
 
   @override
-  String get social_onboarding_welcome_get_started => 'يلا نبدأ';
+  String get social_onboarding_welcome_get_started => 'لنبدأ';
 
   @override
-  String get social_onboarding_welcome_find_friends_title => 'لاقي أصحابك';
+  String get social_onboarding_welcome_find_friends_title => 'ابحث عن أصدقائك';
 
   @override
   String get social_onboarding_welcome_find_friends_desc =>
       'تواصل مع لاعبين في منطقتك';
 
   @override
-  String get social_onboarding_welcome_chat_title => 'شات وشارك';
+  String get social_onboarding_welcome_chat_title => 'تحدّث وشارك';
 
   @override
   String get social_onboarding_welcome_chat_desc =>
-      'راسل أصحابك وشارك لحظاتك في المباريات';
+      'راسل أصدقاءك وشارك لحظات المباريات';
 
   @override
-  String get social_onboarding_welcome_game_title => 'العب مع بعض';
+  String get social_onboarding_welcome_game_title => 'العبوا معًا';
 
   @override
   String get social_onboarding_welcome_game_desc =>
-      'اكتشف وانضم لمباريات مع شبكتك';
+      'اكتشف المباريات وانضم إليها مع شبكتك';
 
   @override
-  String get social_onboarding_friends_appbar => 'لاقي أصحابك';
+  String get social_onboarding_friends_appbar => 'ابحث عن أصدقائك';
 
   @override
-  String get social_onboarding_friends_title => 'لاقي مجتمعك الرياضي';
+  String get social_onboarding_friends_title => 'ابحث عن مجتمعك الرياضي';
 
   @override
   String get social_onboarding_friends_subtitle =>
-      'تواصل مع أصحابك عشان تشارك تجارب المباريات وتكتشف فرص جديدة.';
+      'تواصل مع أصدقائك لمشاركة تجارب المباريات واكتشاف فرص جديدة.';
 
   @override
-  String get social_onboarding_friends_sync_btn => 'زامن جهات الاتصال';
+  String get social_onboarding_friends_sync_btn => 'مزامنة جهات الاتصال';
 
   @override
-  String get social_onboarding_friends_syncing => 'بيتزامن...';
+  String get social_onboarding_friends_syncing => 'جارٍ المزامنة...';
 
   @override
   String get social_onboarding_friends_or => 'أو';
 
   @override
-  String get social_onboarding_friends_suggested => 'مقترح ليك';
+  String get social_onboarding_friends_suggested => 'مقترح لك';
 
   @override
   String social_onboarding_friends_selected(int count) {
-    return '$count اتختارت';
+    return 'تم اختيار $count';
   }
 
   @override
   String social_onboarding_friends_mutual_one(int count) {
-    return 'صاحب مشترك ($count)';
+    return 'صديق مشترك ($count)';
   }
 
   @override
   String social_onboarding_friends_mutual_many(int count) {
-    return '$count أصحاب مشتركين';
+    return '$count أصدقاء مشتركين';
   }
 
   @override
   String get social_onboarding_friends_add_btn => 'أضف';
 
   @override
-  String get social_onboarding_friends_added => 'اتضاف';
+  String get social_onboarding_friends_added => 'تمت الإضافة';
 
   @override
   String get social_onboarding_friends_skip => 'تخطّي';
 
   @override
-  String get social_onboarding_friends_continue => 'متابعه';
+  String get social_onboarding_friends_continue => 'المتابعة';
 
   @override
   String social_onboarding_friends_send_requests(int count) {
-    return 'ابعت $count طلبات وكمّل';
+    return 'أرسل $count طلبات وتابع';
   }
 
   @override
-  String get social_onboarding_friends_send_request => 'ابعت الطلب وكمّل';
+  String get social_onboarding_friends_send_request => 'أرسل الطلب وتابع';
 
   @override
-  String get social_onboarding_friends_synced => 'اتزامنت جهات الاتصال بنجاح!';
+  String get social_onboarding_friends_synced =>
+      'تمت مزامنة جهات الاتصال بنجاح!';
 
   @override
   String get social_onboarding_friends_sync_error =>
-      'خطأ في الوصول لجهات الاتصال. جرب تاني.';
+      'تعذّر الوصول إلى جهات الاتصال. يرجى المحاولة مرة أخرى.';
 
   @override
   String social_onboarding_friends_sent(int count) {
-    return 'اتبعتت طلبات صداقة لـ $count ناس!';
+    return 'تم إرسال طلبات صداقة إلى $count أشخاص!';
   }
 
   @override
   String get social_onboarding_notif_appbar => 'الإشعارات';
 
   @override
-  String get social_onboarding_notif_title => 'الإشعارات متوقفة دلوقتي';
+  String get social_onboarding_notif_title => 'الإشعارات متوقفة مؤقتًا';
 
   @override
   String get social_onboarding_notif_body =>
-      'بنبني إعدادات الإشعارات من الأول. تقدر تكمّل التسجيل دلوقتي وهنضيف خيارات الضبط في تحديث جاي.';
+      'نعيد بناء تفضيلات الإشعارات. يمكنك إنهاء الإعداد الآن وسنضيف خيارات الضبط في تحديث قادم.';
 
   @override
-  String get social_onboarding_notif_finish => 'خلّصنا';
+  String get social_onboarding_notif_finish => 'إنهاء';
 
   @override
   String get social_onboarding_privacy_appbar => 'إعدادات الخصوصية';
@@ -1637,25 +1656,26 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get social_onboarding_privacy_subtitle =>
-      'تحكّم في مين يشوف بروفايلك ويتفاعل معاك. تقدر تغيّر الإعدادات دي بعدين.';
+      'تحكّم في من يرى ملفك الشخصي ويتفاعل معك. يمكنك تغيير هذه الإعدادات لاحقًا في أي وقت.';
 
   @override
   String get social_onboarding_privacy_step => '3 من 4';
 
   @override
   String get social_onboarding_privacy_profile_visible_title =>
-      'البروفايل واضح للأصحاب';
+      'الملف الشخصي ظاهر للأصدقاء';
 
   @override
   String get social_onboarding_privacy_profile_visible_subtitle =>
-      'بروفايلك واضح لأصحابك';
+      'ملفك الشخصي ظاهر لأصدقائك';
 
   @override
-  String get social_onboarding_privacy_posts_public_title => 'البوستات عامة';
+  String get social_onboarding_privacy_posts_public_title =>
+      'المنشورات ظاهرة للعامة';
 
   @override
   String get social_onboarding_privacy_posts_public_subtitle =>
-      'أي حد يقدر يشوف بوستاتك';
+      'يمكن لأي شخص رؤية منشوراتك';
 
   @override
   String get social_onboarding_privacy_allow_requests_title =>
@@ -1663,15 +1683,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get social_onboarding_privacy_allow_requests_subtitle =>
-      'الناس تقدر تبعتلك طلبات صداقة';
+      'يمكن للآخرين إرسال طلبات صداقة إليك';
 
   @override
   String get social_onboarding_privacy_allow_messages_title =>
-      'السماح بطلبات الرسايل';
+      'السماح بطلبات المراسلة';
 
   @override
   String get social_onboarding_privacy_allow_messages_subtitle =>
-      'غير الأصحاب يقدروا يبعتولك رسايل';
+      'يمكن لغير الأصدقاء مراسلتك';
 
   @override
   String get social_onboarding_privacy_online_status_title =>
@@ -1679,62 +1699,62 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get social_onboarding_privacy_online_status_subtitle =>
-      'أصحابك يشوفوا لما تكون أونلاين';
+      'يستطيع أصدقاؤك رؤية متى تكون متصلًا';
 
   @override
-  String get social_onboarding_privacy_back => 'ارجع';
+  String get social_onboarding_privacy_back => 'رجوع';
 
   @override
-  String get social_onboarding_privacy_continue => 'متابعه';
+  String get social_onboarding_privacy_continue => 'المتابعة';
 
   @override
-  String get social_onboarding_complete_title => 'أهلاً بيك في السوشيال!';
+  String get social_onboarding_complete_title => 'أهلًا بك في المجتمع!';
 
   @override
   String get social_onboarding_complete_subtitle =>
-      'خلّصنا! ابدأ تتواصل مع أصحابك، شارك تجارب مبارياتك، واكتشف لاعبين جدد في منطقتك.';
+      'أصبح كل شيء جاهزًا! ابدأ التواصل مع أصدقائك، وشارك تجارب مبارياتك، واكتشف لاعبين جددًا في منطقتك.';
 
   @override
   String get social_onboarding_complete_connect_title => 'تواصل مع اللاعبين';
 
   @override
   String get social_onboarding_complete_connect_desc =>
-      'لاقي وأضف أصحاب بيحبوا نفس الرياضات';
+      'ابحث عن أصدقاء يحبون الرياضات نفسها وأضفهم';
 
   @override
   String get social_onboarding_complete_share_title => 'شارك رحلتك';
 
   @override
   String get social_onboarding_complete_share_desc =>
-      'انشر تحديثات وصور واحتفل بإنجازاتك';
+      'انشر التحديثات والصور واحتفل بإنجازاتك';
 
   @override
-  String get social_onboarding_complete_discover_title => 'اكتشف مباريات';
+  String get social_onboarding_complete_discover_title => 'اكتشف المباريات';
 
   @override
   String get social_onboarding_complete_discover_desc =>
-      'شوف إيه المباريات اللي أصحابك بيلعبوها';
+      'شاهد المباريات التي يلعبها أصدقاؤك';
 
   @override
-  String get social_onboarding_complete_explore_btn => 'استكشف السوشيال';
+  String get social_onboarding_complete_explore_btn => 'استكشف المجتمع';
 
   @override
-  String get social_onboarding_complete_home_btn => 'روح الهوم';
+  String get social_onboarding_complete_home_btn => 'اذهب إلى الرئيسية';
 
   @override
-  String get social_onboarding_complete_later => 'هستكشف بعدين';
+  String get social_onboarding_complete_later => 'سأستكشف لاحقًا';
 
   @override
-  String get language_select_title => 'اختار لغتك';
+  String get language_select_title => 'اختر لغتك';
 
   @override
-  String get language_select_saving => 'بيتحفظ...';
+  String get language_select_saving => 'جارٍ الحفظ...';
 
   @override
   String get register_title => 'إنشاء حساب';
 
   @override
-  String get register_btn => 'سجّل';
+  String get register_btn => 'تسجيل';
 
   @override
   String get post_card_author_anonymous => 'مجهول';
@@ -1749,10 +1769,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get post_card_persona_player => 'لاعب';
 
   @override
-  String get post_card_near_you => 'قريّب منك';
+  String get post_card_near_you => 'قريب منك';
 
   @override
-  String get post_card_edited => 'اتعدّل';
+  String get post_card_edited => 'معدَّل';
 
   @override
   String get post_card_menu_repost => 'إعادة نشر';
@@ -1770,7 +1790,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get post_card_kind_kick_in => 'Kick-in';
 
   @override
-  String get post_card_kind_game => 'ماتش';
+  String get post_card_kind_game => 'مباراة';
 
   @override
   String get post_card_kind_achievement => 'إنجاز';
@@ -1788,28 +1808,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get post_card_kind_repost => 'إعادة نشر';
 
   @override
-  String get post_card_expired => 'خلص';
+  String get post_card_expired => 'انتهى';
 
   @override
   String post_card_expires_in_days(int n) {
-    return 'بيخلص بعد $nي';
+    return 'ينتهي بعد $nي';
   }
 
   @override
   String post_card_expires_in_hours(int n) {
-    return 'بيخلص بعد $nس';
+    return 'ينتهي بعد $nس';
   }
 
   @override
   String post_card_expires_in_minutes(int n) {
-    return 'بيخلص بعد $nد';
+    return 'ينتهي بعد $nد';
   }
 
   @override
-  String get post_card_expiring_soon => 'قرّب يخلص';
+  String get post_card_expiring_soon => 'على وشك الانتهاء';
 
   @override
-  String get repost_card_unavailable => 'البوست الأصلي مش متاح.';
+  String get repost_card_unavailable => 'المنشور الأصلي لم يعد متاحًا.';
 
   @override
   String get post_type_original => 'أصلي';
@@ -1833,13 +1853,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get post_type_feature => 'مميز';
 
   @override
-  String get post_card_my_story => 'ستوري';
+  String get post_card_my_story => 'قصتي';
 
   @override
   String get post_card_kick_in_label => 'Kick-In';
 
   @override
-  String get post_card_allocated => 'متحجز';
+  String get post_card_allocated => 'محجوز';
 
   @override
   String get nav_feeds => 'الرئيسية';
@@ -1854,7 +1874,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nav_games => 'مباريات';
 
   @override
-  String get nav_meetups => 'اللمّات';
+  String get nav_meetups => 'اللقاءات';
 
   @override
   String get nav_create_post => 'منشور جديد';
@@ -1863,49 +1883,49 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nav_create_game => 'مباراة جديدة';
 
   @override
-  String get nav_create_meetup => 'لمّة جديدة';
+  String get nav_create_meetup => 'لقاء جديد';
 
   @override
-  String get nav_meetups_coming_soon => 'اللمّات جايّة قريب!';
+  String get nav_meetups_coming_soon => 'اللقاءات قادمة قريبًا!';
 
   @override
-  String get nav_exit_app_title => 'تخرج من التطبيق؟';
+  String get nav_exit_app_title => 'الخروج من التطبيق؟';
 
   @override
-  String get nav_exit_app_body => 'متأكد إنك عايز تخرج من دابلر؟';
+  String get nav_exit_app_body => 'هل تريد الخروج من دابلر؟';
 
   @override
   String get nav_exit_app_cancel => 'إلغاء';
 
   @override
-  String get nav_exit_app_confirm => 'اخرج';
+  String get nav_exit_app_confirm => 'خروج';
 
   @override
-  String get nav_press_back_to_exit => 'اضغط رجوع تاني عشان تخرج';
+  String get nav_press_back_to_exit => 'اضغط رجوع مرة أخرى للخروج';
 
   @override
-  String get nav_search_hint => 'دوّر في دابلر';
+  String get nav_search_hint => 'ابحث في دابلر';
 
   @override
-  String get nav_whats_happening => 'اللي بيحصل دلوقتي';
+  String get nav_whats_happening => 'ما الجديد الآن';
 
   @override
   String get nav_trend_sports_category => 'رياضة';
 
   @override
-  String get nav_trend_sports_title => 'ماتشات جديدة قريّب منك';
+  String get nav_trend_sports_title => 'مباريات جديدة بالقرب منك';
 
   @override
-  String get nav_trend_sports_subtitle => 'شوف أحدث الماتشات في منطقتك';
+  String get nav_trend_sports_subtitle => 'اطّلع على أحدث المباريات في منطقتك';
 
   @override
   String get nav_trend_community_category => 'مجتمع';
 
   @override
-  String get nav_trend_community_title => 'Squads بتكبر';
+  String get nav_trend_community_title => 'فِرق تنمو';
 
   @override
-  String get nav_trend_community_subtitle => 'انضم لـ Squad وكمّل لعب';
+  String get nav_trend_community_subtitle => 'انضم إلى فريق لتلعب بانتظام';
 
   @override
   String get nav_trend_dabbler_category => 'دابلر';
@@ -1914,13 +1934,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get nav_trend_dabbler_title => 'شارك لحظاتك';
 
   @override
-  String get nav_trend_dabbler_subtitle => 'انشر تحديثاتك واتواصل مع اللاعبين';
+  String get nav_trend_dabbler_subtitle => 'انشر تحديثاتك وتواصل مع اللاعبين';
 
   @override
   String get nav_quick_actions => 'اختصارات';
 
   @override
-  String get nav_find_friends => 'لاقي أصحابك';
+  String get nav_find_friends => 'ابحث عن أصدقائك';
 
   @override
   String get nav_settings => 'الإعدادات';
@@ -1932,17 +1952,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_header_help_tooltip => 'مركز المساعدة';
 
   @override
-  String get settings_hero_eyebrow => 'خصص تجربتك';
+  String get settings_hero_eyebrow => 'خصّص تجربتك';
 
   @override
-  String get settings_hero_title => 'اضبط Dabbler على طريقة لعبك';
+  String get settings_hero_title => 'اضبط دابلر ليناسب طريقة لعبك';
 
   @override
   String get settings_hero_subtitle =>
-      'تحكم في حسابك وتفضيلاتك وإشعاراتك من مكان واحد.';
+      'أدر حسابك وتفضيلاتك وإشعاراتك في مكان واحد.';
 
   @override
-  String get settings_search_hint => 'دور في الإعدادات';
+  String get settings_search_hint => 'ابحث في الإعدادات';
 
   @override
   String get settings_section_account => 'الحساب';
@@ -1954,28 +1974,28 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_section_about => 'عن التطبيق';
 
   @override
-  String get settings_section_profiles => 'البروفايلات';
+  String get settings_section_profiles => 'الملفات الشخصية';
 
   @override
   String get settings_item_account_management_title => 'إدارة الحساب';
 
   @override
   String get settings_item_account_management_subtitle =>
-      'الإيميل وكلمة السر والأمان';
+      'البريد الإلكتروني وكلمة المرور والأمان';
 
   @override
   String get settings_item_privacy_settings_title => 'إعدادات الخصوصية';
 
   @override
   String get settings_item_privacy_settings_subtitle =>
-      'تحكم في إعدادات الخصوصية والمستخدمين المحظورين';
+      'أدر إعدادات الخصوصية والمستخدمين المحظورين';
 
   @override
   String get settings_item_theme_title => 'المظهر';
 
   @override
   String get settings_item_theme_subtitle =>
-      'فاتح أو غامق أو حسب إعدادات الجهاز';
+      'فاتح أو داكن أو حسب إعدادات الجهاز';
 
   @override
   String get settings_item_language_title => 'اللغة';
@@ -1989,19 +2009,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settings_country_picker_helper =>
-      'بتحدد الرياضات والأماكن اللي هتشوفها';
+      'يحدّد الرياضات والملاعب التي تراها';
 
   @override
   String get settings_item_terms_title => 'شروط الخدمة';
 
   @override
-  String get settings_item_terms_subtitle => 'اقرأ الشروط والأحكام بتاعتنا';
+  String get settings_item_terms_subtitle => 'اقرأ الشروط والأحكام';
 
   @override
   String get settings_item_privacy_policy_title => 'سياسة الخصوصية';
 
   @override
-  String get settings_item_privacy_policy_subtitle => 'إزاي بنتعامل مع بياناتك';
+  String get settings_item_privacy_policy_subtitle => 'كيف نتعامل مع بياناتك';
 
   @override
   String get settings_item_licenses_title => 'التراخيص';
@@ -2013,36 +2033,35 @@ class AppLocalizationsAr extends AppLocalizations {
   String get settings_sign_out_title => 'تسجيل الخروج';
 
   @override
-  String get settings_sign_out_subtitle => 'هتسيب حسابك على الجهاز ده';
+  String get settings_sign_out_subtitle => 'اخرج من حسابك على هذا الجهاز';
 
   @override
   String get settings_sign_out_dialog_title => 'تسجيل الخروج';
 
   @override
-  String get settings_sign_out_dialog_body =>
-      'متأكد إنك عايز تسجل خروج من حسابك؟';
+  String get settings_sign_out_dialog_body => 'هل تريد تسجيل الخروج من حسابك؟';
 
   @override
   String get settings_sign_out_dialog_cancel => 'إلغاء';
 
   @override
   String settings_sign_out_error(String error) {
-    return 'حصل خطأ أثناء تسجيل الخروج: $error';
+    return 'حدث خطأ أثناء تسجيل الخروج: $error';
   }
 
   @override
   String get account_delete_dialog_warning =>
-      'الخطوة دي مفيش رجوع فيها. بنمسح بياناتك الشخصية وملفك الشخصي. سجلات الدفع والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.';
+      'لا يمكن التراجع عن هذا الإجراء. سيُحذف ملفك الشخصي وبياناتك الشخصية. أما سجلات الدفع والحجز فتُحفظ لأغراض محاسبية، ولم تُحدَّد مدة الاحتفاظ بها بعد.';
 
   @override
   String get account_delete_success_snack => 'تم حذف حسابك وبياناتك الشخصية.';
 
   @override
   String get danger_zone_delete_confirmation_message =>
-      'الخطوة دي هتمسح حسابك وبياناتك الشخصية ومفيش رجوع فيها. سجلات الدفع والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.';
+      'سيؤدي هذا إلى حذف حسابك وبياناتك الشخصية ولا يمكن التراجع عنه. أما سجلات الدفع والحجز فتُحفظ لأغراض محاسبية، ولم تُحدَّد مدة الاحتفاظ بها بعد.';
 
   @override
-  String get settings_version_app_name => 'Dabbler';
+  String get settings_version_app_name => 'دابلر';
 
   @override
   String settings_version_label(String version) {
@@ -2079,17 +2098,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String settings_persona_become_title(String persona) {
-    return 'بقى $persona';
+    return 'كن $persona';
   }
 
   @override
   String settings_persona_convert_title(String persona) {
-    return 'تحوّل لـ $persona';
+    return 'التحويل إلى $persona';
   }
 
   @override
   String settings_persona_convert_subtitle(String persona) {
-    return 'هيستبدل بروفايل $persona بتاعك';
+    return 'استبدل ملف $persona الخاص بك';
   }
 
   @override
@@ -2097,7 +2116,7 @@ class AppLocalizationsAr extends AppLocalizations {
     String fromPersona,
     String toPersona,
   ) {
-    return 'هيتعطل بروفايل $fromPersona بتاعك وهيتعمل بروفايل $toPersona جديد.\n\nبيانات حسابك (السن والنوع) هتفضل زي ما هي.';
+    return 'سيؤدي هذا إلى تعطيل ملفك بصفة $fromPersona وإنشاء ملف جديد بصفة $toPersona.\n\nستبقى بيانات حسابك (العمر والجنس) كما هي.';
   }
 
   @override
@@ -2107,73 +2126,74 @@ class AppLocalizationsAr extends AppLocalizations {
   String get persona_label_socialiser => 'متواصل';
 
   @override
-  String get profile_header_fallback => 'البروفايل';
+  String get profile_header_fallback => 'الملف الشخصي';
 
   @override
   String get profile_section_sports => 'الرياضات';
 
   @override
-  String get profile_complete_your_profile => 'كمّل بروفايلك';
+  String get profile_complete_your_profile => 'أكمل ملفك الشخصي';
 
   @override
   String get profile_bio_placeholder =>
-      'اكتب نبذة قصيرة عشان الناس تعرف تتوقع منك إيه.';
+      'أضف نبذة قصيرة ليعرف زملاؤك ما يتوقعونه منك.';
 
   @override
   String get settings_item_edit_profile_subtitle =>
       'الاسم والصورة والنبذة والرياضات';
 
   @override
-  String get profile_btn_edit => 'تعديل البروفايل';
+  String get profile_btn_edit => 'تعديل الملف الشخصي';
 
   @override
-  String get profile_btn_share => 'شارك البروفايل';
+  String get profile_btn_share => 'مشاركة الملف الشخصي';
 
   @override
-  String get profile_btn_manage_profiles_tooltip => 'إدارة البروفايلات';
+  String get profile_btn_manage_profiles_tooltip => 'إدارة الملفات الشخصية';
 
   @override
-  String get profile_manage_profiles_title => 'إدارة البروفايلات';
+  String get profile_manage_profiles_title => 'تبديل الملف الشخصي';
 
   @override
-  String get profile_add_profile => 'إضافة بروفايل';
+  String get profile_add_profile => 'إضافة ملف شخصي';
 
   @override
-  String get profile_no_profiles_found => 'مفيش بروفايلات';
+  String get profile_no_profiles_found => 'لا توجد ملفات شخصية';
 
   @override
-  String get profile_error_loading_profiles => 'حصل خطأ في تحميل البروفايلات';
+  String get profile_error_loading_profiles =>
+      'حدث خطأ أثناء تحميل الملفات الشخصية';
 
   @override
-  String get profile_error_switch_profile_failed => 'مقدرناش نبدّل البروفايل';
+  String get profile_error_switch_profile_failed => 'تعذّر تبديل الملف الشخصي';
 
   @override
   String get profile_btn_cancel => 'إلغاء';
 
   @override
-  String get profile_btn_continue => 'متابعه';
+  String get profile_btn_continue => 'المتابعة';
 
   @override
   String get profile_persona_convert_badge => 'تحويل';
 
   @override
   String profile_convert_to(String persona) {
-    return 'تحوّل لـ $persona؟';
+    return 'التحويل إلى $persona؟';
   }
 
   @override
   String profile_convert_confirm_body(String fromPersona, String toPersona) {
-    return 'هتتحوّل من $fromPersona لـ $toPersona. بروفايلك الحالي هيتغيّر.';
+    return 'أنت على وشك التحويل من $fromPersona إلى $toPersona. سيُستبدل ملفك الشخصي الحالي.';
   }
 
   @override
-  String get profile_tab_posts => 'البوستات';
+  String get profile_tab_posts => 'المنشورات';
 
   @override
   String get profile_tab_replies => 'الردود';
 
   @override
-  String get profile_tab_liked => 'اللي عجبني';
+  String get profile_tab_liked => 'الإعجابات';
 
   @override
   String get profile_tab_reposts => 'إعادات النشر';
@@ -2182,33 +2202,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_tab_activity => 'النشاط';
 
   @override
-  String get profile_empty_no_activity => 'مفيش نشاط لسه';
+  String get profile_empty_no_activity => 'لا يوجد نشاط بعد';
 
   @override
-  String get profile_empty_no_posts => 'مفيش بوستات لسه';
+  String get profile_empty_no_posts => 'لا توجد منشورات بعد';
 
   @override
-  String get profile_empty_no_replies => 'مفيش ردود لسه';
+  String get profile_empty_no_replies => 'لا توجد ردود بعد';
 
   @override
-  String get profile_empty_no_liked => 'مفيش بوستات عجبتك لسه';
+  String get profile_empty_no_liked => 'لا توجد منشورات مُعجَب بها بعد';
 
   @override
-  String get profile_empty_no_reposts => 'مفيش إعادات نشر لسه';
+  String get profile_empty_no_reposts => 'لا توجد إعادات نشر بعد';
 
   @override
-  String get profile_empty_no_sports => 'ما اضفتش رياضات لسه';
+  String get profile_empty_no_sports => 'لم تُضف رياضات بعد';
 
   @override
-  String get profile_error_failed_load_posts => 'مقدرناش نحمل البوستات.';
+  String get profile_error_failed_load_posts => 'تعذّر تحميل المنشورات.';
 
   @override
   String profile_post_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'بوستات',
-      one: 'بوست',
+      other: 'منشور',
+      many: 'منشورًا',
+      few: 'منشورات',
+      two: 'منشوران',
+      one: 'منشور',
+      zero: 'منشور',
     );
     return '$_temp0';
   }
@@ -2218,33 +2242,37 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'متابعين',
+      other: 'متابِع',
+      many: 'متابِعًا',
+      few: 'متابِعين',
+      two: 'متابِعان',
       one: 'متابِع',
+      zero: 'متابِع',
     );
     return '$_temp0';
   }
 
   @override
-  String get profile_following_label => 'بيتابع';
+  String get profile_following_label => 'يتابع';
 
   @override
-  String get profile_takedown_title => 'المحتوى اتشال';
+  String get profile_takedown_title => 'تمت إزالة المحتوى';
 
   @override
   String get profile_takedown_body =>
-      'المحتوى ده اتشال لأنه بيخالف قواعد المجتمع عندنا.';
+      'أُزيل هذا المحتوى لمخالفته إرشادات المجتمع.';
 
   @override
-  String get user_profile_error_not_found_title => 'البروفايل مش موجود';
+  String get user_profile_error_not_found_title => 'الملف الشخصي غير موجود';
 
   @override
-  String get user_profile_error_unable_to_load => 'مقدرناش نحمل البروفايل';
+  String get user_profile_error_unable_to_load => 'تعذّر تحميل الملف الشخصي';
 
   @override
-  String get user_profile_btn_go_back => 'ارجع';
+  String get user_profile_btn_go_back => 'رجوع';
 
   @override
-  String get user_profile_btn_loading => 'بيتحمّل';
+  String get user_profile_btn_loading => 'جارٍ التحميل';
 
   @override
   String get user_profile_btn_unblock => 'فك الحظر';
@@ -2253,13 +2281,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get user_profile_btn_follow => 'تابع';
 
   @override
-  String get user_profile_btn_following => 'بتتابعه';
+  String get user_profile_btn_following => 'تتابعه';
 
   @override
   String get user_profile_age_suffix => 'سنة';
 
   @override
-  String get user_profile_stat_games => 'ماتشات';
+  String get user_profile_stat_games => 'المباريات';
 
   @override
   String get user_profile_stat_win_rate => 'نسبة الفوز';
@@ -2274,14 +2302,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get user_profile_stat_activity => 'النشاط';
 
   @override
-  String get user_profile_stat_last_play => 'آخر ماتش';
+  String get user_profile_stat_last_play => 'آخر مباراة';
 
   @override
   String get user_profile_block_dialog_title => 'حظر المستخدم';
 
   @override
   String get user_profile_block_dialog_body =>
-      'متأكد إنك عايز تحظر المستخدم ده؟ مش هيقدر يشوف بروفايلك أو يكلّمك.';
+      'هل تريد حظر هذا المستخدم؟ لن يتمكن من رؤية ملفك الشخصي أو التواصل معك.';
 
   @override
   String get user_profile_block_btn_block => 'احظر';
@@ -2302,10 +2330,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get user_profile_menu_report_user => 'بلّغ عن المستخدم';
 
   @override
-  String get user_profile_cannot_message_blocked => 'مقدرش تراسل مستخدم محظور';
+  String get user_profile_cannot_message_blocked =>
+      'لا يمكنك مراسلة مستخدم محظور';
 
   @override
-  String get notif_signin_required => 'سجّل دخولك عشان تشوف الإشعارات';
+  String get notif_signin_required => 'سجّل الدخول لعرض الإشعارات';
 
   @override
   String get notif_title_notifications => 'الإشعارات';
@@ -2317,19 +2346,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_chip_all => 'الكل';
 
   @override
-  String get notif_chip_games => 'ماتشات';
+  String get notif_chip_games => 'المباريات';
 
   @override
-  String get notif_chip_bookings => 'حجوزات';
+  String get notif_chip_bookings => 'الحجوزات';
 
   @override
-  String get notif_chip_social => 'سوشيال';
+  String get notif_chip_social => 'الاجتماعي';
 
   @override
   String get notif_chip_achievements => 'إنجازات';
 
   @override
-  String get notif_chip_you => 'إنت';
+  String get notif_chip_you => 'أنت';
 
   @override
   String get notif_chip_rewards => 'مكافآت';
@@ -2338,40 +2367,40 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_chip_security => 'الأمان';
 
   @override
-  String get notif_section_today => 'النهارده';
+  String get notif_section_today => 'اليوم';
 
   @override
-  String get notif_section_yesterday => 'إمبارح';
+  String get notif_section_yesterday => 'أمس';
 
   @override
-  String get notif_section_earlier => 'قبل كده';
+  String get notif_section_earlier => 'سابقًا';
 
   @override
-  String get notif_mark_all_read => 'علّم الكل كمقروء';
+  String get notif_mark_all_read => 'تحديد الكل كمقروء';
 
   @override
   String get notif_action_respond => 'رد';
 
   @override
-  String get notif_action_follow_back => 'تابعه أنت كمان';
+  String get notif_action_follow_back => 'تابِعه أيضًا';
 
   @override
   String get notif_action_view => 'اعرض';
 
   @override
-  String get notif_action_see_circle => 'شوف الـ Circle';
+  String get notif_action_see_circle => 'عرض الدائرة';
 
   @override
-  String get notif_load_older => 'حمّل أقدم';
+  String get notif_load_older => 'تحميل الأقدم';
 
   @override
-  String get notif_empty_no_notifications => 'مفيش إشعارات لسه';
+  String get notif_empty_no_notifications => 'لا توجد إشعارات بعد';
 
   @override
-  String get notif_empty_subtitle => 'هنبلّغك لما يحصل أي حاجة';
+  String get notif_empty_subtitle => 'سنخبرك عندما يحدث شيء';
 
   @override
-  String get notif_btn_retry => 'حاول تاني';
+  String get notif_btn_retry => 'أعد المحاولة';
 
   @override
   String notif_error_prefix(String message) {
@@ -2379,16 +2408,16 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get activity_last_7_days => 'آخر ٧ أيام';
+  String get activity_last_7_days => 'آخر 7 أيام';
 
   @override
-  String get activity_search_hint => 'دوّر في النشاط…';
+  String get activity_search_hint => 'ابحث في النشاط…';
 
   @override
-  String get activity_pill_upcoming => 'قريّب';
+  String get activity_pill_upcoming => 'قادم';
 
   @override
-  String get activity_pill_live => 'لايڤ';
+  String get activity_pill_live => 'مباشر';
 
   @override
   String get activity_subject_reward => 'مكافأة';
@@ -2401,16 +2430,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get activity_all_normal_body =>
-      'مفيش تسجيلات دخول غريبة أو تغييرات في الأجهزة في آخر ٣٠ يوم. ';
+      'لا توجد عمليات تسجيل دخول غير معتادة أو تغييرات في الأجهزة خلال آخر 30 يومًا. ';
 
   @override
   String get activity_manage_devices => 'إدارة الأجهزة ←';
 
   @override
-  String get activity_empty_no_activity => 'مفيش نشاط لسه';
+  String get activity_empty_no_activity => 'لا يوجد نشاط بعد';
 
   @override
-  String get activity_empty_subtitle => 'نشاطك هيظهر هنا';
+  String get activity_empty_subtitle => 'سيظهر نشاطك هنا';
 
   @override
   String get activity_day_streak => 'يوم متواصل';
@@ -2421,38 +2450,38 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get time_just_now => 'دلوقتي';
+  String get time_just_now => 'الآن';
 
   @override
   String time_minutes_ago(int n) {
-    return 'من $nد';
+    return 'منذ $nد';
   }
 
   @override
   String time_hours_ago(int n) {
-    return 'من $nس';
+    return 'منذ $nس';
   }
 
   @override
   String time_days_ago(int n) {
-    return 'من $nي';
+    return 'منذ $nي';
   }
 
   @override
   String notif_kind_friend_requested(String actor) {
-    return '$actor بعتلك طلب صداقة';
+    return '$actor أرسل إليك طلب صداقة';
   }
 
   @override
-  String get notif_kind_friend_requested_anon => 'عندك طلب صداقة جديد';
+  String get notif_kind_friend_requested_anon => 'لديك طلب صداقة جديد';
 
   @override
   String notif_kind_friend_accepted(String actor) {
-    return '$actor قبل طلب الصداقة';
+    return '$actor قبل طلب صداقتك';
   }
 
   @override
-  String get notif_kind_friend_accepted_anon => 'طلب الصداقة بتاعك اتقبل';
+  String get notif_kind_friend_accepted_anon => 'تم قبول طلب صداقتك';
 
   @override
   String notif_kind_social_followed(String actor) {
@@ -2460,81 +2489,83 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get notif_kind_social_followed_anon => 'عندك متابع جديد';
+  String get notif_kind_social_followed_anon => 'لديك متابع جديد';
 
   @override
   String notif_kind_social_circle_joined(String actor) {
-    return '$actor انضم لـ Circle بتاعك';
+    return '$actor انضم إلى دائرتك';
   }
 
   @override
-  String get notif_kind_social_circle_joined_anon => 'حد انضم لـ Circle بتاعك';
+  String get notif_kind_social_circle_joined_anon => 'انضم أحدهم إلى دائرتك';
 
   @override
   String notif_kind_social_post_liked(String actor) {
-    return '$actor عجبه بوستك';
+    return 'أعجب $actor بمنشورك';
   }
 
   @override
-  String get notif_kind_social_post_liked_anon => 'حد عجبه بوستك';
+  String get notif_kind_social_post_liked_anon => 'أُعجب أحدهم بمنشورك';
 
   @override
   String notif_kind_social_post_commented(String actor) {
-    return '$actor علّق على بوستك';
+    return 'علّق $actor على منشورك';
   }
 
   @override
-  String get notif_kind_social_post_commented_anon => 'تعليق جديد على بوستك';
+  String get notif_kind_social_post_commented_anon => 'تعليق جديد على منشورك';
 
   @override
   String notif_kind_social_comment_liked(String actor) {
-    return '$actor عجبه تعليقك';
+    return 'أعجب $actor بتعليقك';
   }
 
   @override
-  String get notif_kind_social_comment_liked_anon => 'حد عجبه تعليقك';
+  String get notif_kind_social_comment_liked_anon => 'أُعجب أحدهم بتعليقك';
 
   @override
   String notif_kind_social_mentioned(String actor) {
-    return '$actor منشن عليك';
+    return '$actor أشار إليك';
   }
 
   @override
-  String get notif_kind_social_mentioned_anon => 'اتعمل منشن عليك';
+  String get notif_kind_social_mentioned_anon => 'تمت الإشارة إليك';
 
   @override
   String notif_kind_game_invited(String actor) {
-    return '$actor دعاك لماتش';
+    return '$actor دعاك إلى مباراة';
   }
 
   @override
-  String get notif_kind_game_invited_anon => 'عندك دعوة ماتش جديدة';
+  String get notif_kind_game_invited_anon => 'لديك دعوة جديدة إلى مباراة';
 
   @override
-  String get notif_kind_game_updated => 'تفاصيل الماتش اتغيرت';
+  String get notif_kind_game_updated => 'تم تغيير تفاصيل المباراة';
 
   @override
   String notif_kind_game_join_request(String actor) {
-    return '$actor طلب ينضم لماتشك';
+    return '$actor طلب الانضمام إلى مباراتك';
   }
 
   @override
-  String get notif_kind_game_join_request_anon => 'حد طلب ينضم لماتشك';
+  String get notif_kind_game_join_request_anon =>
+      'طلب أحدهم الانضمام إلى مباراتك';
 
   @override
-  String get notif_kind_game_waitlist_promoted => 'أنت داخل! اتفتح مكان';
+  String get notif_kind_game_waitlist_promoted =>
+      'أصبحت ضمن اللاعبين! توفّر مكان';
 
   @override
-  String get notif_kind_game_reminder => 'تذكير بالماتش';
+  String get notif_kind_game_reminder => 'تذكير بالمباراة';
 
   @override
-  String get notif_kind_arena_payment_required => 'محتاج تدفع لحجزك';
+  String get notif_kind_arena_payment_required => 'الدفع مطلوب لإتمام حجزك';
 
   @override
-  String get notif_kind_reward_badge_awarded => 'حصلت على بادج جديد';
+  String get notif_kind_reward_badge_awarded => 'حصلت على وسام جديد';
 
   @override
-  String get notif_kind_achievement_earned => 'فتحت إنجاز جديد';
+  String get notif_kind_achievement_earned => 'حققت إنجازًا جديدًا';
 
   @override
   String get settings_identity_subtitle => 'الحساب وكلمة المرور والأمان';
@@ -2597,7 +2628,9 @@ class AppLocalizationsAr extends AppLocalizations {
       count,
       locale: localeName,
       other: '$count نتيجة',
+      many: '$count نتيجة',
       few: '$count نتائج',
+      zero: '$count نتيجة',
       two: 'نتيجتان',
       one: 'نتيجة واحدة',
     );
@@ -2634,8 +2667,10 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count عنصرًا',
+      other: '$count عنصر',
+      many: '$count عنصرًا',
       few: '$count عناصر',
+      zero: '$count عنصر',
       two: 'عنصران',
       one: 'عنصر واحد',
     );
@@ -2736,7 +2771,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get acct_cancel => 'إلغاء';
 
   @override
-  String get acct_delete_type_error => 'اكتب \"DELETE\" للتأكيد';
+  String get acct_delete_type_error => 'اكتب «DELETE» للتأكيد';
 
   @override
   String acct_delete_failed(String error) {
@@ -3251,10 +3286,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get region_country_updated => 'تم تحديث الدولة';
 
   @override
-  String get region_lang_en => 'English · English';
+  String get region_lang_en => 'الإنجليزية · English';
 
   @override
-  String get region_lang_ar => 'Arabic · العربية';
+  String get region_lang_ar => 'العربية · العربية';
 
   @override
   String get region_country_Egypt => 'مصر';
@@ -3400,17 +3435,37 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String listing_spots_left(int count) {
-    return 'بقي $count أماكن';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بقي $count مكان',
+      many: 'بقي $count مكانًا',
+      few: 'بقيت $count أماكن',
+      zero: 'لا أماكن متبقية',
+      two: 'بقي مكانان',
+      one: 'بقي مكان واحد',
+    );
+    return '$_temp0';
   }
 
   @override
   String listing_spots_almost_full(int count) {
-    return 'بقي $count · شبه ممتلئ';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'بقي $count مكان · اقتربت من الامتلاء',
+      many: 'بقي $count مكانًا · اقتربت من الامتلاء',
+      few: 'بقيت $count أماكن · اقتربت من الامتلاء',
+      zero: 'لا أماكن متبقية · ممتلئة تقريبًا',
+      two: 'بقي مكانان · اقتربت من الامتلاء',
+      one: 'بقي مكان واحد · اقتربت من الامتلاء',
+    );
+    return '$_temp0';
   }
 
   @override
   String listing_players_in(int joined, int total) {
-    return '$joined من $total لاعبين';
+    return 'اللاعبون: $joined من $total';
   }
 
   @override
@@ -3563,7 +3618,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String home_upcoming_see_all(int count) {
-    return 'عرض كل $count القادمة';
+    return 'عرض كل القادمة ($count)';
   }
 
   @override
@@ -4860,7 +4915,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sports_pos_power_forward => 'جناح قوي';
 
   @override
-  String get sports_pos_center => 'مركز';
+  String get sports_pos_center => 'ارتكاز';
 
   @override
   String get sports_pos_setter => 'ممرر';
@@ -4951,7 +5006,7 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get sfx_search_placeholder => 'ابحث عن أشخاص وألعاب ومنشورات…';
+  String get sfx_search_placeholder => 'ابحث عن أشخاص ومباريات ومنشورات…';
 
   @override
   String get sfx_recent => 'الأخيرة';
@@ -4992,7 +5047,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sfx_people_nearby_sub => 'اعثر على لاعبين قريبين منك';
 
   @override
-  String get sfx_popular_games => 'الألعاب الشائعة';
+  String get sfx_popular_games => 'المباريات الشائعة';
 
   @override
   String get sfx_popular_games_sub => 'أماكن متاحة اليوم';
@@ -5016,7 +5071,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sfx_hashtags => 'الوسوم';
 
   @override
-  String get sfx_games => 'الألعاب';
+  String get sfx_games => 'المباريات';
 
   @override
   String get sfx_venues => 'الملاعب';
@@ -5037,7 +5092,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sfx_join => 'انضم';
 
   @override
-  String get sfx_kind_game => 'لعبة';
+  String get sfx_kind_game => 'مباراة';
 
   @override
   String get sfx_kind_meetup => 'لقاء';
@@ -5117,51 +5172,61 @@ class AppLocalizationsAr extends AppLocalizations {
   String get sfx_link_copied => 'تم نسخ الرابط';
 
   @override
-  String get sfx_events => 'الألعاب واللقاءات';
+  String get sfx_events => 'المباريات واللقاءات';
 
   @override
-  String get composer_place_search => 'Search venues and areas';
+  String get composer_place_search => 'ابحث عن ملاعب ومناطق';
 
   @override
-  String get composer_results => 'Results';
+  String get composer_results => 'النتائج';
 
   @override
-  String get composer_places_none => 'No places match that search';
+  String get composer_places_none => 'لا توجد أماكن تطابق هذا البحث';
 
   @override
-  String get composer_pick_date => 'Pick a date';
+  String get composer_pick_date => 'اختر تاريخًا';
 
   @override
-  String get composer_pick_time => 'Pick a time';
+  String get composer_pick_time => 'اختر وقتًا';
 
   @override
-  String get composer_step_1 => 'Step 1 of 2';
+  String get composer_step_1 => 'الخطوة 1 من 2';
 
   @override
-  String get composer_step_2 => 'Step 2 of 2';
+  String get composer_step_2 => 'الخطوة 2 من 2';
 
   @override
-  String get composer_kickoff_time => 'Kickoff time';
+  String get composer_kickoff_time => 'موعد البداية';
 
   @override
-  String get composer_continue_time => 'Continue to time';
+  String get composer_continue_time => 'المتابعة إلى الوقت';
 
   @override
-  String get composer_done => 'Done';
+  String get composer_done => 'تم';
 
   @override
   String composer_use_typed(String query) {
-    return 'Use “$query”';
+    return 'استخدام «$query»';
   }
 
   @override
   String composer_format_title(String sport) {
-    return '$sport format';
+    return 'صيغة $sport';
   }
 
   @override
   String composer_players_count(int count) {
-    return '$count players';
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لاعب',
+      many: '$count لاعبًا',
+      few: '$count لاعبين',
+      zero: '$count لاعب',
+      two: 'لاعبان',
+      one: 'لاعب واحد',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -5169,8 +5234,12 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count comments',
-      one: '1 comment',
+      other: '$count تعليق',
+      many: '$count تعليقًا',
+      few: '$count تعليقات',
+      two: 'تعليقان',
+      one: 'تعليق واحد',
+      zero: 'لا تعليقات',
     );
     return '$_temp0';
   }
@@ -5219,5 +5288,5 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_sports_followed => 'الرياضات المتابَعة';
 
   @override
-  String get profile_stat_minutes_played => 'Minutes played';
+  String get profile_stat_minutes_played => 'دقائق اللعب';
 }
