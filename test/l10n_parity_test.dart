@@ -13,11 +13,7 @@ const Map<String, String> _identicalAllowed = {
   'post_card_kind_dab': 'brand term "Dab"',
   'post_card_kind_kick_in': 'brand term "Kick-in"',
   'post_card_kick_in_label': 'brand term "Kick-in"',
-  'settings_version_app_name': 'brand name "Dabbler"',
   'notif_quiet_hours_range': 'time range placeholders only',
-  'region_lang_en': 'language endonym is shown in its own script',
-  'region_lang_ar': 'language endonym is shown in its own script',
-  'refine': 'provisional: identical until the content review decides',
 };
 
 const _validCategories = {'zero', 'one', 'two', 'few', 'many', 'other'};
