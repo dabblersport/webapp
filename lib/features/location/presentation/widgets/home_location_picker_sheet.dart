@@ -32,7 +32,14 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
     super.key,
     required this.scrollController,
     this.showHeader = true,
+    this.frameHeader = false,
   });
+
+  /// Draws the header the Home Feed frame draws (`Home Feed.dc.html` city
+  /// sheet): the title in the 17/22 headline step beside a "Done" pill, with no
+  /// hairline under it. Default false keeps the Listings frame's header, which
+  /// the Games and Venues screens open.
+  final bool frameHeader;
 
   /// Kept for existing callers (home screen, app top bar). The DabblerSheet
   /// body is its own scroll view, so the picker no longer attaches it.
@@ -42,12 +49,15 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
   /// because the sheet route draws the same header.
   final bool showHeader;
 
-  /// Opens the picker in a [DabblerSheet] at 0.66 of the viewport.
+  /// Opens the picker in a [DabblerSheet], content-sized and capped at the
+  /// frame's 66% (`Home Feed.dc.html` `sheetP66`: `max-height: 66%`,
+  /// `height: auto`, page background, Cancel/Done pill, no close button).
   static Future<void> show(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
     return showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.66],
+      detent: DabblerSheetDetent.content,
+      contentMaxFraction: 0.66,
       pageBackground: true,
       showCloseButton: false,
       headerDivider: true,
@@ -85,10 +95,8 @@ class _PickerHostState extends State<_PickerHost> {
   }
 
   @override
-  Widget build(BuildContext context) => HomeLocationPickerSheet(
-    scrollController: _controller,
-    showHeader: false,
-  );
+  Widget build(BuildContext context) =>
+      HomeLocationPickerSheet(scrollController: _controller, showHeader: false);
 }
 
 class _HomeLocationPickerSheetState
@@ -113,69 +121,102 @@ class _HomeLocationPickerSheetState
     final currentState = ref.watch(activeLocationProvider).valueOrNull;
 
     // The DabblerSheet body already scrolls, so this shrink-wraps.
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space9),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (widget.showHeader) ...[
-            Row(
-              children: [
-                Expanded(
-                  child: DabblerText(
-                    l10n.home_location_title,
-                    style: DabblerType.title3,
-                  ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (widget.showHeader && widget.frameHeader) ...[
+          Row(
+            children: [
+              Expanded(
+                child: DabblerText(
+                  l10n.home_location_title,
+                  style: DabblerType.headline,
                 ),
-                DabblerButton(
-                  label: l10n.home_location_cancel,
-                  tone: DabblerButtonTone.neutral,
-                  size: DabblerButtonSize.small,
-                  onPressed: () => Navigator.of(context).pop(),
+              ),
+              DabblerButton(
+                label: l10n.home_location_done,
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
+          ),
+          // 12 of header padding and 12 of gap before the search field.
+          const SizedBox(height: DabblerSpacing.space8),
+        ] else if (widget.showHeader) ...[
+          Row(
+            children: [
+              Expanded(
+                child: DabblerText(
+                  l10n.home_location_title,
+                  style: DabblerType.title3,
                 ),
-              ],
-            ),
-            const SizedBox(height: DabblerSpacing.space4),
-            const DabblerDivider(),
-            const SizedBox(height: DabblerSpacing.space4),
-          ] else
-            const SizedBox(height: DabblerSpacing.space4),
-          DabblerSearchField(
-            controller: _searchController,
-            placeholder: l10n.home_location_search_venues,
-            onChanged: (v) => setState(() => _query = v.trim()),
-            onCleared: () => setState(() => _query = ''),
+              ),
+              DabblerButton(
+                label: l10n.home_location_cancel,
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                onPressed: () => Navigator.of(context).pop(),
+              ),
+            ],
           ),
-          const SizedBox(height: DabblerSpacing.space3),
-          DabblerListRow(
-            flat: true,
-            brand: true,
-            leading: DabblerIcon(
-              'gps',
-              size: DabblerSizing.iconRow,
-              weight: DabblerIconWeight.bold,
-              color: DabblerColors.of(context).brandPrimary,
-            ),
-            title: l10n.home_location_use_current,
-            trailing: _gpsLoading
-                ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
-                : null,
-            onTap: _gpsLoading ? null : _useGps,
+          const SizedBox(height: DabblerSpacing.space4),
+          const DabblerDivider(),
+          const SizedBox(height: DabblerSpacing.space4),
+        ] else
+          const SizedBox(height: DabblerSpacing.space4),
+        DabblerSearchField(
+          controller: _searchController,
+          metrics: widget.frameHeader
+              ? DabblerFeedMetrics.drawn
+              : DabblerFeedMetrics.touch,
+          placeholder: widget.frameHeader
+              ? l10n.home_location_search
+              : l10n.home_location_search_venues,
+          onChanged: (v) => setState(() => _query = v.trim()),
+          onCleared: () => setState(() => _query = ''),
+        ),
+        SizedBox(
+          height: widget.frameHeader
+              ? DabblerSpacing.space4
+              : DabblerSpacing.space3,
+        ),
+        DabblerListRow(
+          flat: true,
+          brand: true,
+          metrics: widget.frameHeader
+              ? DabblerFeedMetrics.drawn
+              : DabblerFeedMetrics.touch,
+          leading: DabblerIcon(
+            'gps',
+            size: widget.frameHeader
+                ? DabblerHomeFrame.listRowGlyph
+                : DabblerSizing.iconRow,
+            weight: DabblerIconWeight.bold,
+            color: DabblerColors.of(context).brandPrimary,
           ),
-          HomeLocationPlaces(
-            areas: _areas,
-            saved: saved ?? const <ProfileLocation>[],
-            query: _query,
-            currentState: currentState,
-            onSaved: _useSaved,
-            onArea: _useManual,
-            onAdd: () => Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => const SavedLocationsScreen()),
-            ),
+          title: l10n.home_location_use_current,
+          trailing: _gpsLoading
+              ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
+              : null,
+          onTap: _gpsLoading ? null : _useGps,
+        ),
+        HomeLocationPlaces(
+          frame: widget.frameHeader,
+          areas: _areas,
+          saved: saved ?? const <ProfileLocation>[],
+          query: _query,
+          currentState: currentState,
+          onSaved: _useSaved,
+          onArea: _useManual,
+          onAdd: () => Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => const SavedLocationsScreen()),
           ),
-        ],
-      ),
+        ),
+        // The end-of-list room the root padding gave, as a trailing gap.
+        const SizedBox(height: DabblerSpacing.space9),
+      ],
     );
   }
 
@@ -198,16 +239,16 @@ class _HomeLocationPickerSheetState
           context: context,
           builder: (ctx) => DabblerDialog(
             onClose: () => Navigator.pop(ctx),
-            title: 'Location access required',
+            title: AppLocalizations.of(context).location_access_required,
             description:
                 'Location permission is permanently denied. '
                 'Open Settings to enable it.',
             secondaryAction: DabblerDialogAction(
-              label: 'Cancel',
+              label: AppLocalizations.of(context).home_location_cancel,
               onPressed: () => Navigator.pop(ctx),
             ),
             primaryAction: DabblerDialogAction(
-              label: 'Open Settings',
+              label: AppLocalizations.of(context).location_open_settings,
               onPressed: () {
                 Navigator.pop(ctx);
                 Geolocator.openAppSettings();

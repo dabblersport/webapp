@@ -886,21 +886,18 @@ class _ExpiryPickerSheetState extends State<_ExpiryPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
-      child: DabblerCalendar(
-        month: _month,
-        selected: <DateTime>{_selected},
-        minimum: widget.first,
-        maximum: widget.last,
-        onSelect: (d) => setState(() => _selected = d),
-        onMonthChanged: (m) => setState(() => _month = m),
-        onConfirm: () {
-          widget.onPicked(_selected);
-          Navigator.pop(context);
-        },
-        onCancel: () => Navigator.pop(context),
-      ),
+    return DabblerCalendar(
+      month: _month,
+      selected: <DateTime>{_selected},
+      minimum: widget.first,
+      maximum: widget.last,
+      onSelect: (d) => setState(() => _selected = d),
+      onMonthChanged: (m) => setState(() => _month = m),
+      onConfirm: () {
+        widget.onPicked(_selected);
+        Navigator.pop(context);
+      },
+      onCancel: () => Navigator.pop(context),
     );
   }
 }

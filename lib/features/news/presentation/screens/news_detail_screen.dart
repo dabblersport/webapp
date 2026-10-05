@@ -70,7 +70,6 @@ class _NewsDetailScreenState extends ConsumerState<NewsDetailScreen> {
       context: context,
       title: l10n.sfx_share_article,
       detent: DabblerSheetDetent.content,
-      showCloseButton: false,
       builder: (sheetContext) => Column(
         spacing: DabblerSpacing.space2,
         children: [

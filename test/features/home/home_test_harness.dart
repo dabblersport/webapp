@@ -1,6 +1,9 @@
 /// Shared harness for the Home presentation tests: every data source faked.
 library;
 
+import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/data/models/active_location.dart';
+import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
@@ -90,6 +93,14 @@ class _News extends StateNotifier<NewsTabState> implements NewsTabNotifier {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+/// The app's language provider pinned to the pumped locale, so localized data
+/// (news titles) follows the screen's language as it does in the app.
+class _FixedLocale extends StateNotifier<Locale> implements LocaleNotifier {
+  _FixedLocale(super.state);
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _Profile extends StateNotifier<ProfileState>
     implements ProfileController {
   _Profile([super.state = const ProfileState()]);
@@ -100,6 +111,30 @@ class _Profile extends StateNotifier<ProfileState>
 class _Location extends ActiveLocationNotifier {
   @override
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
+}
+
+/// A resolved location, so the header shows an area name rather than the
+/// "Set location" fallback.
+class _ReadyLocation extends ActiveLocationNotifier {
+  _ReadyLocation(this.areaName);
+  final String areaName;
+  @override
+  Future<ActiveLocationState> build() async => ActiveLocationReady(
+    ActiveLocation(
+      lat: 25.2,
+      lng: 55.3,
+      area: Area(
+        id: 'a1',
+        name: areaName,
+        district: 'Dubai',
+        city: 'Dubai',
+        country: 'AE',
+        centerLat: 25.2,
+        centerLng: 55.3,
+      ),
+      source: ActiveLocationSource.manual,
+    ),
+  );
 }
 
 /// Initialises Supabase once so [HomeScreen]'s AuthService field can be built.
@@ -129,9 +164,13 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
   TabFeedState followingState = const TabFeedLoading(),
   TabFeedState nearbyState = const TabFeedLoading(),
   NewsTabState newsState = const NewsTabState(isLoading: true),
+  String? locationName,
+  double topInset = 0,
+  List<Override> overrides = const <Override>[],
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
+  tester.view.padding = FakeViewPadding(top: topInset);
   addTearDown(tester.view.reset);
   final feed = FakeFeed(feedState);
   final pushed = <String>[];
@@ -186,7 +225,11 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
         newsTabFeedProvider.overrideWith((ref) => _News(newsState)),
         profileControllerProvider.overrideWith((ref) => _Profile(profileState)),
         unreadNotificationCountProvider.overrideWithValue(3),
-        activeLocationProvider.overrideWith(_Location.new),
+        activeLocationProvider.overrideWith(
+          locationName == null
+              ? _Location.new
+              : () => _ReadyLocation(locationName),
+        ),
         hasLikedProvider.overrideWith((ref, id) async => false),
         hasRepostedProvider.overrideWith((ref, id) async => false),
         myReactionsProvider.overrideWith((ref, id) async => <String>{}),
@@ -194,6 +237,8 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
         sportsProvider.overrideWith((ref) async => []),
         vibesProvider.overrideWith((ref) async => []),
         latestCommentProvider.overrideWith((ref, id) async => null),
+        localeProvider.overrideWith((ref) => _FixedLocale(locale)),
+        ...overrides,
       ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,

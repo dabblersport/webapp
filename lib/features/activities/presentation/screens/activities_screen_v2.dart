@@ -9,6 +9,7 @@ import 'package:dabbler/features/activities/presentation/controllers/activity_fe
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/presentation/widgets/activity_event_card.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// **Activities Screen** - RPC-based Activity Feed
 ///
@@ -330,7 +331,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
   Widget _buildEmptyState(BuildContext context, String period) {
     return DabblerEmptyState(
       icon: 'calendar-remove',
-      title: 'No activity yet',
+      title: AppLocalizations.of(context).activity_empty_no_activity,
       text: 'Create a game to see your activity here.',
       size: DabblerEmptyStateSize.page,
       action: period == 'all'
@@ -354,7 +355,7 @@ class _ActivitiesScreenV2State extends ConsumerState<ActivitiesScreenV2> {
 
   Widget _buildErrorState(BuildContext context, String error) {
     return DabblerEmptyState.error(
-      title: 'Something went wrong',
+      title: AppLocalizations.of(context).error_generic,
       text: 'We couldn\'t load your activities. Please try again.',
       retryLabel: 'Retry',
       onRetry: () {

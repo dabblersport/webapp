@@ -87,11 +87,13 @@ class _SportProfileScreenState extends ConsumerState<SportProfileScreen> {
                     labelFit: DabblerTabsLabelFit.fit,
                     value: _tab,
                     onChanged: (id) => setState(() => _tab = id),
-                    items: const [
-                      DabblerTabItem(id: _tabTracker, label: 'Tracker'),
+                    items: [
+                      const DabblerTabItem(id: _tabTracker, label: 'Tracker'),
                       DabblerTabItem(
                         id: _tabAchievements,
-                        label: 'Achievements',
+                        label: AppLocalizations.of(
+                          context,
+                        ).notif_chip_achievements,
                       ),
                       DabblerTabItem(id: _tabHistory, label: 'History'),
                     ],
@@ -472,7 +474,7 @@ class _SportPreferencesSectionState
           Align(
             alignment: AlignmentDirectional.centerEnd,
             child: DabblerButton(
-              label: 'Save',
+              label: AppLocalizations.of(context).game_prefs_save,
               loading: _isSaving,
               onPressed: _isSaving ? null : _save,
             ),

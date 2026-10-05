@@ -6,8 +6,8 @@ import 'package:flutter/widgets.dart';
 /// 2. Remind me later - Close and ask again next time
 /// 3. No thanks - Close and never ask again
 ///
-/// Content only: the sheet surface, handle and scrim come from
-/// [showDabblerSheet].
+/// Content only: the sheet surface, handle, scrim and the "Stay Updated"
+/// title come from [showDabblerSheet] (`title:` at the call).
 class NotificationPermissionDrawer extends StatelessWidget {
   const NotificationPermissionDrawer({
     super.key,
@@ -22,34 +22,18 @@ class NotificationPermissionDrawer extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space8,
-        end: DabblerSpacing.space8,
-        bottom: DabblerSpacing.space8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
+    // Widgets only: the sheet owns the surface and the content padding
+    // (the sheet convention, `components/sheet.md`).
+    return DabblerSheetBody(
+      spacing: DabblerSpacing.space7,
+      actions: DabblerSheetActions(
         children: <Widget>[
-          const DabblerIconTile.named('notification'),
-          const SizedBox(height: DabblerSpacing.space7),
-          DabblerText('Stay Updated', style: DabblerType.title2),
-          const SizedBox(height: DabblerSpacing.space2),
-          DabblerText(
-            'Get notified about game invites, squad updates, and messages. '
-            'Never miss out on the action!',
-            style: DabblerType.body,
-            tone: DabblerTextTone.secondary,
-          ),
-          const SizedBox(height: DabblerSpacing.space10),
           DabblerButton(
             label: 'Enable Notifications',
             icon: 'notification-bing',
             fullWidth: true,
             onPressed: onEnableNotifications,
           ),
-          const SizedBox(height: DabblerSpacing.space4),
           DabblerButton(
             label: 'Remind Me Later',
             icon: 'clock',
@@ -57,7 +41,6 @@ class NotificationPermissionDrawer extends StatelessWidget {
             fullWidth: true,
             onPressed: onRemindLater,
           ),
-          const SizedBox(height: DabblerSpacing.space3),
           DabblerButton(
             label: 'No Thanks',
             tone: DabblerButtonTone.neutral,
@@ -66,6 +49,15 @@ class NotificationPermissionDrawer extends StatelessWidget {
           ),
         ],
       ),
+      children: <Widget>[
+        const DabblerIconTile.named('notification'),
+        DabblerText(
+          'Get notified about game invites, squad updates, and messages. '
+          'Never miss out on the action!',
+          style: DabblerType.body,
+          tone: DabblerTextTone.secondary,
+        ),
+      ],
     );
   }
 }

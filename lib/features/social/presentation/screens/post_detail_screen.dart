@@ -271,22 +271,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     showDabblerSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
-      builder: (ctx) => Padding(
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerSpacing.space6,
-          DabblerSpacing.space2,
-          DabblerSpacing.space6,
-          DabblerSpacing.space8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            for (final (i, b) in buttons(ctx).indexed) ...[
-              if (i > 0) const SizedBox(height: DabblerSpacing.space3),
-              b,
-            ],
-          ],
-        ),
+      builder: (ctx) => DabblerSheetBody(
+        spacing: DabblerSpacing.space3,
+        children: buttons(ctx),
       ),
     );
   }
@@ -314,7 +301,12 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final isOwner = myProfileId != null && post.authorProfileId == myProfileId;
     _showActionSheet(
       (ctx) => [
-        _sheetButton(ctx, AppLocalizations.of(context).post_detail_copy_link, 'copy', () => _copyLink(post)),
+        _sheetButton(
+          ctx,
+          AppLocalizations.of(context).post_detail_copy_link,
+          'copy',
+          () => _copyLink(post),
+        ),
         if (isOwner)
           _sheetButton(
             ctx,
@@ -427,7 +419,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   String? _visibilityLabel(PostVisibility v) => switch (v) {
     PostVisibility.public => null,
-    PostVisibility.followers => AppLocalizations.of(context).composer_vis_followers,
+    PostVisibility.followers => AppLocalizations.of(
+      context,
+    ).composer_vis_followers,
     PostVisibility.circle => AppLocalizations.of(context).composer_vis_circle,
     PostVisibility.squad => AppLocalizations.of(context).composer_vis_squad,
     PostVisibility.private => AppLocalizations.of(context).composer_vis_private,
@@ -525,7 +519,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           child: Align(
             alignment: AlignmentDirectional.centerStart,
             child: DabblerText(
-              AppLocalizations.of(context).post_detail_replies_count(post.commentCount),
+              AppLocalizations.of(
+                context,
+              ).post_detail_replies_count(post.commentCount),
               style: DabblerType.footnote,
               weight: DabblerTextWeight.semibold,
             ),
@@ -542,7 +538,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     final myReactions =
         ref.watch(myReactionsProvider(post.id)).valueOrNull ?? <String>{};
     final name = (post.authorDisplayName ?? '').trim();
-    final label = name.isEmpty ? AppLocalizations.of(context).post_detail_anonymous : name;
+    final label = name.isEmpty
+        ? AppLocalizations.of(context).post_detail_anonymous
+        : name;
     final actions = ref.read(postActionsProvider.notifier);
     final hasMedia = PostMediaCarousel.imageUrls(post.media).isNotEmpty;
     final canFollow = !isAuthor && myProfileId != null;
@@ -568,10 +566,14 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       name: label,
       seed: label,
       imageUrl: post.authorAvatarUrl,
-      badgeLabel: post.postType == PostType.dab ? AppLocalizations.of(context).composer_type_dab : null,
+      badgeLabel: post.postType == PostType.dab
+          ? AppLocalizations.of(context).composer_type_dab
+          : null,
       roleLabel: post.personaTypeSnapshot == null
           ? null
-          : (post.personaTypeSnapshot == 'organiser' ? AppLocalizations.of(context).post_detail_org : AppLocalizations.of(context).post_detail_player),
+          : (post.personaTypeSnapshot == 'organiser'
+                ? AppLocalizations.of(context).post_detail_org
+                : AppLocalizations.of(context).post_detail_player),
       handle: (post.authorUsername ?? '').isEmpty
           ? null
           : '@${post.authorUsername}',
@@ -581,7 +583,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
               authorUserId: post.authorUserId,
               authorProfileId: post.authorProfileId,
             ),
-      followLabel: canFollow ? (following ? AppLocalizations.of(context).post_detail_following : AppLocalizations.of(context).post_detail_follow) : null,
+      followLabel: canFollow
+          ? (following
+                ? AppLocalizations.of(context).post_detail_following
+                : AppLocalizations.of(context).post_detail_follow)
+          : null,
       following: following,
       onFollow: canFollow
           ? () => _toggleFollow(post.authorProfileId, myProfileId, following)
@@ -602,7 +608,11 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       timeLabel: DateFormat.jm().format(post.createdAt),
       dateLabel: DateFormat.yMMMd().format(post.createdAt),
       viewsLabel: post.viewCount > 0
-          ? AppLocalizations.of(context).post_detail_views(NumberFormat.decimalPattern(Localizations.localeOf(context).toString()).format(post.viewCount))
+          ? AppLocalizations.of(context).post_detail_views(
+              NumberFormat.decimalPattern(
+                Localizations.localeOf(context).toString(),
+              ).format(post.viewCount),
+            )
           : null,
       audienceIcon: visLabel == null
           ? 'global'
@@ -628,7 +638,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   /// The full timestamp line under the post row, for a post or a repost.
   DabblerPostDetail _postDetail(Post post) => DabblerPostDetail(
     timestamp: _fullTimestamp(post.createdAt),
-    editedLabel: post.isEdited ? AppLocalizations.of(context).post_detail_edited : null,
+    editedLabel: post.isEdited
+        ? AppLocalizations.of(context).post_detail_edited
+        : null,
     visibilityLabel: _visibilityLabel(post.visibility),
     visibilityIcon: _visibilityIcon(post.visibility),
   );
@@ -689,7 +701,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           reply: reply,
           repliesLabel: kids == 0
               ? null
-              : (_collapsed.contains(c.id) ? AppLocalizations.of(context).post_detail_view_replies : AppLocalizations.of(context).post_detail_hide_replies),
+              : (_collapsed.contains(c.id)
+                    ? AppLocalizations.of(context).post_detail_view_replies
+                    : AppLocalizations.of(context).post_detail_hide_replies),
           onToggleReplies: () => setState(() {
             if (!_collapsed.remove(c.id)) _collapsed.add(c.id);
           }),
@@ -714,7 +728,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                       bottom: DabblerSpacing.space1,
                     ),
                     child: DabblerText(
-                      AppLocalizations.of(context).post_detail_replies_count(replyCount),
+                      AppLocalizations.of(
+                        context,
+                      ).post_detail_replies_count(replyCount),
                       style: DabblerType.footnote,
                       weight: DabblerTextWeight.semibold,
                     ),
@@ -759,7 +775,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     VoidCallback? onToggleReplies,
   }) {
     final name = (c.authorDisplayName ?? '').trim();
-    final displayName = name.isEmpty ? AppLocalizations.of(context).post_detail_anonymous : name;
+    final displayName = name.isEmpty
+        ? AppLocalizations.of(context).post_detail_anonymous
+        : name;
     final colors = DabblerColors.of(context);
 
     Widget media(String url, {bool gif = false}) => DabblerImage(
@@ -833,10 +851,14 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     return DabblerReplyComposer(
       controller: _commentController,
       focusNode: _commentFocusNode,
-      placeholder: _replyingTo != null ? AppLocalizations.of(context).post_detail_reply_to_hint : AppLocalizations.of(context).post_detail_reply_hint,
+      placeholder: _replyingTo != null
+          ? AppLocalizations.of(context).post_detail_reply_to_hint
+          : AppLocalizations.of(context).post_detail_reply_hint,
       replyingTo: _replyingTo == null
           ? null
-          : (replyName.isEmpty ? AppLocalizations.of(context).post_detail_anonymous : replyName),
+          : (replyName.isEmpty
+                ? AppLocalizations.of(context).post_detail_anonymous
+                : replyName),
       onCancelReply: () => setState(() => _replyingTo = null),
       sending: _isSending,
       // Text or an attached image/GIF makes a reply sendable, as before.
@@ -898,7 +920,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
                 thumbnailSize: 60,
                 borderRadius: DabblerRadius.mdAll,
                 semanticLabel: AppLocalizations.of(context).post_detail_image,
-                removeLabel: AppLocalizations.of(context).post_detail_remove_image,
+                removeLabel: AppLocalizations.of(
+                  context,
+                ).post_detail_remove_image,
                 onRemove: () => setState(() {
                   _attachedImageUrl = null;
                   _onTextChanged();
@@ -929,7 +953,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
             DabblerAttachmentChip(
               icon: 'location',
               label: _attachedPlace!.name,
-              removeLabel: AppLocalizations.of(context).post_detail_remove_location,
+              removeLabel: AppLocalizations.of(
+                context,
+              ).post_detail_remove_location,
               onRemove: () => setState(() => _attachedPlace = null),
             ),
         ],

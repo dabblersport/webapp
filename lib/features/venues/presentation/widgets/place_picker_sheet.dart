@@ -6,6 +6,7 @@ import 'package:dabbler/features/venues/presentation/providers/place_providers.d
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// A bottom sheet that lets the user search for and select a place (POI,
 /// address, or city) via Mapbox Search — similar to Instagram/Threads
@@ -24,7 +25,8 @@ class PlacePickerSheet extends ConsumerStatefulWidget {
     // Was showAdaptiveSheet + DraggableScrollableSheet (0.75, 0.5-0.95).
     return showDabblerSheet<Place>(
       context: context,
-      detents: const <double>[0.75, 0.95],
+      detent: DabblerSheetDetent.content,
+      title: AppLocalizations.of(context).location_add,
       builder: (_) => const PlacePickerSheet(),
     );
   }
@@ -115,22 +117,9 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Title ── (handle and close come from DabblerSheet)
+        // ── Search field ── (title, handle and close come from DabblerSheet)
         Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space5,
-            end: DabblerSpacing.space5,
-            bottom: DabblerSpacing.space3,
-          ),
-          child: DabblerText('Add Location', style: DabblerType.headline),
-        ),
-
-        // ── Search field ──
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: DabblerSpacing.space5,
-            vertical: DabblerSpacing.space3,
-          ),
+          padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space3),
           child: DabblerSearchField(
             controller: _controller,
             autofocus: true,
@@ -160,23 +149,18 @@ class _PlacePickerSheetState extends ConsumerState<PlacePickerSheet> {
             child: DabblerEmptyState(icon: 'location', text: 'No places found'),
           )
         else
-          Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: DabblerSpacing.space5,
-            ),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                for (final place in _results)
-                  PickerRow(
-                    leading: const DabblerIconTile.named('location'),
-                    title: place.name,
-                    subtitle: place.fullAddress,
-                    onTap: () => _onPlaceSelected(place),
-                  ),
-              ],
-            ),
+          Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final place in _results)
+                PickerRow(
+                  leading: const DabblerIconTile.named('location'),
+                  title: place.name,
+                  subtitle: place.fullAddress,
+                  onTap: () => _onPlaceSelected(place),
+                ),
+            ],
           ),
       ],
     );

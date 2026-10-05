@@ -1,5 +1,6 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Simple rewards screen for navigation tab
 /// This serves as the main entry point for the rewards system
@@ -13,15 +14,15 @@ class RewardsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: 'Rewards',
+        title: AppLocalizations.of(context).notif_chip_rewards,
         onBack: Navigator.of(context).canPop()
             ? () => Navigator.of(context).pop()
             : null,
       ),
-      body: const Center(
+      body: Center(
         child: DabblerEmptyState(
           icon: 'medal-star',
-          title: 'Rewards',
+          title: AppLocalizations.of(context).notif_chip_rewards,
           text: 'Rewards Screen - Under Construction',
           size: DabblerEmptyStateSize.page,
         ),

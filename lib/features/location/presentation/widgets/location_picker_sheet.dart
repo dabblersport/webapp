@@ -11,6 +11,7 @@ import 'package:dabbler/features/location/presentation/widgets/location_picker_r
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Sealed result type for the location picker.
 class LocationPickerResult {
@@ -72,6 +73,13 @@ class LocationPickerResult {
       );
 }
 
+/// The header of [LocationPickerSheet]: a title and an optional back action.
+class LocationPickerHeader {
+  const LocationPickerHeader(this.title, {this.onBack});
+  final String title;
+  final VoidCallback? onBack;
+}
+
 enum LocationPickerType { currentLocation, venue, area, mapboxPlace }
 
 /// Bottom sheet for picking a location to attach to a post.
@@ -81,15 +89,44 @@ enum LocationPickerType { currentLocation, venue, area, mapboxPlace }
 /// 2. Tag a venue — searchable list from `venues` table
 /// 3. Pick an area — list of active areas
 class LocationPickerSheet extends ConsumerStatefulWidget {
-  const LocationPickerSheet({super.key});
+  const LocationPickerSheet({super.key, required this.header});
+
+  /// What the sheet's header shows: the mode's title and, off the menu, the
+  /// back action. The sheet owns the header row, so this state lives here and
+  /// the content only updates it.
+  final ValueNotifier<LocationPickerHeader> header;
 
   static Future<LocationPickerResult?> show(BuildContext context) {
-    // Was showAdaptiveSheet + a DraggableScrollableSheet (0.6, 0.4-0.9);
-    // the DabblerSheet snaps between the same 0.6 and 0.9 heights.
+    final ValueNotifier<LocationPickerHeader> header =
+        ValueNotifier<LocationPickerHeader>(
+          LocationPickerHeader(AppLocalizations.of(context).location_add),
+        );
     return showDabblerSheet<LocationPickerResult>(
       context: context,
-      detents: const <double>[0.6, 0.9],
-      builder: (_) => const LocationPickerSheet(),
+      title: AppLocalizations.of(context).location_add,
+      detent: DabblerSheetDetent.content,
+      titleWidget: ValueListenableBuilder<LocationPickerHeader>(
+        valueListenable: header,
+        builder: (BuildContext context, LocationPickerHeader h, Widget? _) =>
+            Row(
+              children: [
+                if (h.onBack != null) ...[
+                  DabblerButton.icon(
+                    tone: DabblerButtonTone.text,
+                    icon: 'arrow-left',
+                    mirrorInRtl: true,
+                    semanticLabel: AppLocalizations.of(context).auth_back,
+                    onPressed: h.onBack,
+                  ),
+                  const DabblerGap.h(DabblerSpacing.space2),
+                ],
+                Expanded(
+                  child: DabblerText(h.title, style: DabblerType.title3),
+                ),
+              ],
+            ),
+      ),
+      builder: (_) => LocationPickerSheet(header: header),
     );
   }
 
@@ -127,9 +164,11 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         if (!mounted) return;
-        DabblerToastProvider.of(
-          context,
-        ).show(const DabblerToastSpec(message: 'Location permission denied'));
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: AppLocalizations.of(context).location_permission_denied,
+          ),
+        );
         setState(() => _loadingGps = false);
         return;
       }
@@ -171,6 +210,15 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
     }
   }
 
+  /// Switches mode and updates the sheet's header (title, back action).
+  void _go(_PickerMode mode) {
+    setState(() => _mode = mode);
+    widget.header.value = LocationPickerHeader(
+      _title,
+      onBack: mode == _PickerMode.menu ? null : () => _go(_PickerMode.menu),
+    );
+  }
+
   // ── Build ──────────────────────────────────────────────────────────
 
   @override
@@ -181,48 +229,19 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // ── Title + back ── (handle and close come from DabblerSheet)
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space5,
-            end: DabblerSpacing.space5,
-            bottom: DabblerSpacing.space3,
-          ),
-          child: Row(
-            children: [
-              if (_mode != _PickerMode.menu) ...[
-                DabblerButton.icon(
-                  tone: DabblerButtonTone.text,
-                  icon: 'arrow-left',
-                  mirrorInRtl: true,
-                  semanticLabel: 'Back',
-                  onPressed: () => setState(() => _mode = _PickerMode.menu),
-                ),
-                const DabblerGap.h(DabblerSpacing.space2),
-              ],
-              Expanded(child: DabblerText(_title, style: DabblerType.headline)),
-            ],
-          ),
-        ),
-
         // ── Content ──
-        Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: DabblerSpacing.space5,
-          ),
-          child: switch (_mode) {
-            _PickerMode.menu => _buildMenu(),
-            _PickerMode.venue => _buildVenueSearch(),
-            _PickerMode.area => _buildAreaList(),
-            _PickerMode.placeSearch => _buildPlaceSearch(),
-          },
-        ),
+        switch (_mode) {
+          _PickerMode.menu => _buildMenu(),
+          _PickerMode.venue => _buildVenueSearch(),
+          _PickerMode.area => _buildAreaList(),
+          _PickerMode.placeSearch => _buildPlaceSearch(),
+        },
       ],
     );
   }
 
   String get _title => switch (_mode) {
-    _PickerMode.menu => 'Add Location',
+    _PickerMode.menu => AppLocalizations.of(context).location_add,
     _PickerMode.venue => 'Tag a Venue',
     _PickerMode.area => 'Pick an Area',
     _PickerMode.placeSearch => 'Search a Place',
@@ -245,21 +264,21 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
           icon: 'building',
           label: 'Tag a venue',
           subtitle: 'Search for a sports venue',
-          onTap: () => setState(() => _mode = _PickerMode.venue),
+          onTap: () => _go(_PickerMode.venue),
         ),
         const DabblerGap.v(DabblerSpacing.space3),
         _MenuTile(
           icon: 'map',
           label: 'Pick an area',
           subtitle: 'Select a neighborhood or city',
-          onTap: () => setState(() => _mode = _PickerMode.area),
+          onTap: () => _go(_PickerMode.area),
         ),
         const DabblerGap.v(DabblerSpacing.space3),
         _MenuTile(
           icon: 'search-normal',
           label: 'Search a place',
           subtitle: 'Find an address or point of interest',
-          onTap: () => setState(() => _mode = _PickerMode.placeSearch),
+          onTap: () => _go(_PickerMode.placeSearch),
         ),
       ],
     );
@@ -296,10 +315,10 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
         venuesAsync.when(
           data: (venues) {
             if (venues.isEmpty && query.length >= 2) {
-              return const _Pad(
+              return _Pad(
                 child: DabblerEmptyState(
                   icon: 'building',
-                  text: 'No venues found',
+                  text: AppLocalizations.of(context).listing_venues_none_title,
                 ),
               );
             }

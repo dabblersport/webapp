@@ -135,7 +135,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _showNotificationDrawer() async {
     final didTakeAction = await showDabblerSheet<bool>(
       context: context,
-      detents: const <double>[0.6],
+      title: 'Stay Updated',
+      detent: DabblerSheetDetent.content,
       builder: (context) {
         return NotificationPermissionDrawer(
           onEnableNotifications: () async {
@@ -335,64 +336,65 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
             ),
           Expanded(
-            // The DS rows and tabs carry no screen gutter of their own.
-            child: Padding(
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space6,
-              ),
-              child: DabblerTabPager(
-                scrollable: true,
-                onChanged: _onTabChanged,
-                items: <DabblerTabItem>[
-                  for (final tab in _tabs)
-                    DabblerTabItem(id: tab.name, label: tab.label(l)),
-                ],
-                pages: [
-                  _ForYouTabBody(
-                    state: forYouState,
-                    scrollController: _scrollControllers[0],
-                    onRefresh: _handleRefresh,
-                    onRetry: () =>
-                        ref.read(feedNotifierProvider.notifier).load(),
-                    onClearBadge: () => ref
-                        .read(feedNotifierProvider.notifier)
-                        .clearNewPostsBadge(),
-                  ),
-                  _FollowingFeedTabBody(
-                    scrollController: _scrollControllers[1],
-                    onRefresh: _handleRefresh,
-                    onRetry: () {
-                      ref.read(followingFeedProvider.notifier).load();
-                      ref.read(followingActivitiesProvider.notifier).load();
-                    },
-                  ),
-                  _NearbyFeedTabBody(
-                    state: ref.watch(nearbyFeedProvider),
-                    scrollController: _scrollControllers[2],
-                    onRefresh: _handleRefresh,
-                    onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
-                  ),
-                  _ActiveFeedTabBody(
-                    state: ref.watch(activeFeedProvider),
-                    scrollController: _scrollControllers[3],
-                    onRefresh: _handleRefresh,
-                    onRetry: () => ref.read(activeFeedProvider.notifier).load(),
-                  ),
-                  _NewsFeedTabBody(
-                    state: ref.watch(newsTabFeedProvider),
-                    scrollController: _scrollControllers[4],
-                    onRefresh: _handleRefresh,
-                    onRetry: () =>
-                        ref.read(newsTabFeedProvider.notifier).load(),
-                  ),
-                ],
-              ),
+            // The rows carry no gutter of their own; the tab rail keeps its
+            // hairline edge to edge and starts its tabs at the gutter.
+            child: DabblerTabPager(
+              variant: DabblerTabsVariant.feed,
+              scrollable: true,
+              tabsPadding: DabblerInsets.feedScreen,
+              onChanged: _onTabChanged,
+              items: <DabblerTabItem>[
+                for (final tab in _tabs)
+                  DabblerTabItem(id: tab.name, label: tab.label(l)),
+              ],
+              pages: <Widget>[
+                _ForYouTabBody(
+                  state: forYouState,
+                  scrollController: _scrollControllers[0],
+                  onRefresh: _handleRefresh,
+                  onRetry: () => ref.read(feedNotifierProvider.notifier).load(),
+                  onClearBadge: () => ref
+                      .read(feedNotifierProvider.notifier)
+                      .clearNewPostsBadge(),
+                ),
+                _FollowingFeedTabBody(
+                  scrollController: _scrollControllers[1],
+                  onRefresh: _handleRefresh,
+                  onRetry: () {
+                    ref.read(followingFeedProvider.notifier).load();
+                    ref.read(followingActivitiesProvider.notifier).load();
+                  },
+                ),
+                _NearbyFeedTabBody(
+                  state: ref.watch(nearbyFeedProvider),
+                  scrollController: _scrollControllers[2],
+                  onRefresh: _handleRefresh,
+                  onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
+                ),
+                _ActiveFeedTabBody(
+                  state: ref.watch(activeFeedProvider),
+                  scrollController: _scrollControllers[3],
+                  onRefresh: _handleRefresh,
+                  onRetry: () => ref.read(activeFeedProvider.notifier).load(),
+                ),
+                _NewsFeedTabBody(
+                  state: ref.watch(newsTabFeedProvider),
+                  scrollController: _scrollControllers[4],
+                  onRefresh: _handleRefresh,
+                  onRetry: () => ref.read(newsTabFeedProvider.notifier).load(),
+                ),
+              ].map(_gutter).toList(),
             ),
           ),
         ],
       ),
     );
   }
+
+  /// The feed pages carry the Home gutter; the tab rail above keeps its hairline
+  /// edge to edge.
+  static Widget _gutter(Widget page) =>
+      Padding(padding: DabblerInsets.feedScreen, child: page);
 } // end _HomeScreenState
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -416,7 +418,8 @@ class _ForYouTabBody extends ConsumerWidget {
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
     final confirmed = await showDabblerSheet<bool>(
       context: context,
-      detents: const <double>[0.45],
+      title: AppLocalizations.of(context).news_hide_sheet_title,
+      detent: DabblerSheetDetent.content,
       builder: (ctx) => _NewsUnsubscribeSheet(
         onConfirm: () => Navigator.pop(ctx, true),
         onCancel: () => Navigator.pop(ctx, false),
@@ -466,7 +469,7 @@ class _ForYouTabBody extends ConsumerWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.listBottom,
+        padding: DabblerInsets.feedBottom,
         itemCount: itemCount,
         separatorBuilder: (_, index) => const DabblerDivider(),
         itemBuilder: (_, index) {
@@ -477,7 +480,12 @@ class _ForYouTabBody extends ConsumerWidget {
             );
           }
           final item = feedItems[index];
-          if (item is FeedPostItem) return HomePostRow.resolve(item.post);
+          if (item is FeedPostItem) {
+            return HomePostRow.resolve(
+              item.post,
+              metrics: DabblerFeedMetrics.drawn,
+            );
+          }
           if (item is FeedNewsItem) {
             return HomeNewsCard(
               item: item,
@@ -507,53 +515,44 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     final l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space8,
-        DabblerSpacing.space5,
-        DabblerSpacing.space8,
-        DabblerSpacing.space4,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          DabblerIcon(
-            'notification-status',
-            size: DabblerSizing.iconXl,
-            color: colors.brandPrimary,
-          ),
-          const SizedBox(height: DabblerSpacing.space4),
-          DabblerText(l.news_hide_sheet_title, style: DabblerType.headline),
-          const SizedBox(height: DabblerSpacing.space2),
-          DabblerText(
-            l.news_hide_sheet_body,
-            textAlign: TextAlign.center,
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
-          const SizedBox(height: DabblerSpacing.space8),
-          Row(
-            children: [
-              Expanded(
-                child: DabblerButton(
-                  label: l.news_hide_cancel,
-                  tone: DabblerButtonTone.secondary,
-                  fullWidth: true,
-                  onPressed: onCancel,
-                ),
+    // Widgets only: the sheet owns the surface and the content padding.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        DabblerIcon(
+          'notification-status',
+          size: DabblerSizing.iconXl,
+          color: colors.brandPrimary,
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        DabblerText(
+          l.news_hide_sheet_body,
+          textAlign: TextAlign.center,
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
+        ),
+        const SizedBox(height: DabblerSpacing.space8),
+        Row(
+          children: [
+            Expanded(
+              child: DabblerButton(
+                label: l.news_hide_cancel,
+                tone: DabblerButtonTone.secondary,
+                fullWidth: true,
+                onPressed: onCancel,
               ),
-              const SizedBox(width: DabblerSpacing.space4),
-              Expanded(
-                child: DabblerButton(
-                  label: l.news_hide_confirm,
-                  fullWidth: true,
-                  onPressed: onConfirm,
-                ),
+            ),
+            const SizedBox(width: DabblerSpacing.space4),
+            Expanded(
+              child: DabblerButton(
+                label: l.news_hide_confirm,
+                fullWidth: true,
+                onPressed: onConfirm,
               ),
-            ],
-          ),
-        ],
-      ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }
@@ -604,7 +603,7 @@ class _FollowingFeedTabBody extends ConsumerWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.listBottom,
+        padding: DabblerInsets.feedBottom,
         itemCount: itemCount,
         separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
@@ -619,7 +618,10 @@ class _FollowingFeedTabBody extends ConsumerWidget {
             _ActivityEntry(:final activity) => HomeActivityRow(
               activity: activity,
             ),
-            _PostEntry(:final post) => HomePostRow.resolve(post),
+            _PostEntry(:final post) => HomePostRow.resolve(
+              post,
+              metrics: DabblerFeedMetrics.drawn,
+            ),
           };
         },
       ),
@@ -690,13 +692,13 @@ class _ActiveFeedTabBody extends StatelessWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.rowVertical,
+        padding: DabblerInsets.feedBottom,
         itemCount: itemCount,
         separatorBuilder: (_, index) {
           if (index < events.length && events[index] is PostCreatedEvent) {
             return const DabblerDivider();
           }
-          return const SizedBox(height: DabblerSpacing.space2);
+          return const SizedBox.shrink();
         },
         itemBuilder: (_, index) {
           if (index == events.length) {
@@ -754,7 +756,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
       child: ListView.separated(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.listBottom,
+        padding: DabblerInsets.feedBottom,
         itemCount: itemCount,
         separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
@@ -767,6 +769,7 @@ class _NearbyFeedTabBody extends StatelessWidget {
           return HomePostRow.resolve(
             posts[index],
             showNearbyChipInHeader: true,
+            metrics: DabblerFeedMetrics.drawn,
           );
         },
       ),
@@ -914,7 +917,7 @@ class _NewsFeedTabBody extends ConsumerWidget {
       child: ListView.builder(
         controller: scrollController,
         physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.listBottom,
+        padding: DabblerInsets.feedBottom,
         itemCount: itemCount + headerCount,
         itemBuilder: (_, index) {
           if (index == 0) return _NewsFilterChips(state: state);
@@ -1012,6 +1015,7 @@ class _NewsFilterChips extends ConsumerWidget {
     }) => Padding(
       padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
       child: DabblerChip(
+        metrics: DabblerFeedMetrics.drawn,
         label: label,
         selected: selected,
         onTap: onTap,
@@ -1021,54 +1025,67 @@ class _NewsFilterChips extends ConsumerWidget {
 
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      padding: const EdgeInsetsDirectional.only(
-        top: DabblerSpacing.space3,
-        bottom: DabblerSpacing.space2,
+      // The frame's rail row: `padding:12px 18px` (the 18 is the page's).
+      padding: const EdgeInsetsDirectional.symmetric(
+        vertical: DabblerSpacing.space4,
       ),
-      child: Row(
-        children: [
-          // ── All chip ────────────────────────────────────────────────
-          if (interestSports.isNotEmpty)
-            chip(
-              'All',
-              state.selectedSportId == null,
-              () => notifier.setFilterSport(null),
-            ),
-
-          // ── One chip per interest sport ──────────────────────────────
-          ...interestSports.map((sport) {
-            final selected = state.selectedSportId == sport.id;
-            final key = sport.sportKey;
-            return chip(
-              sport.localizedName(context),
-              selected,
-              () => notifier.setFilterSport(selected ? null : sport.id),
-              leading: key == null
-                  ? null
-                  : DabblerSportIcon.fromKey(key, size: DabblerSizing.iconXs),
-            );
-          }),
-
-          // ── Divider before region chips ──────────────────────────────
-          if (interestSports.isNotEmpty && regions.isNotEmpty)
-            const Padding(
-              padding: EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-              child: SizedBox(
-                height: DabblerSpacing.space8,
-                child: DabblerDivider.vertical(),
+      // The chips lay out at the frame's 34; each keeps a 45 target, and the
+      // band lets that reach above and below the row.
+      child: DabblerExpandedHitArea(
+        minimum: const Size(0, DabblerSizing.touchTargetMin),
+        child: Row(
+          children: [
+            // ── All chip ────────────────────────────────────────────────
+            if (interestSports.isNotEmpty)
+              chip(
+                'All',
+                state.selectedSportId == null,
+                () => notifier.setFilterSport(null),
               ),
-            ),
 
-          // ── Region chips ─────────────────────────────────────────────
-          ...regions.map((region) {
-            final selected = state.selectedRegion == region;
-            return chip(
-              region,
-              selected,
-              () => notifier.setFilterRegion(selected ? null : region),
-            );
-          }),
-        ],
+            // ── One chip per interest sport ──────────────────────────────
+            ...interestSports.map((sport) {
+              final selected = state.selectedSportId == sport.id;
+              final key = sport.sportKey;
+              return chip(
+                sport.localizedName(context),
+                selected,
+                () => notifier.setFilterSport(selected ? null : sport.id),
+                leading: key == null
+                    ? null
+                    : DabblerSportIcon.fromKey(
+                        key,
+                        size: DabblerHomeFrame.subChipGlyph,
+                      ),
+              );
+            }),
+
+            // ── Divider before region chips ──────────────────────────────
+            if (interestSports.isNotEmpty && regions.isNotEmpty)
+              const Padding(
+                padding: EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
+                child: SizedBox(
+                  height: DabblerSpacing.space8,
+                  child: DabblerDivider.vertical(),
+                ),
+              ),
+
+            // ── Region chips ─────────────────────────────────────────────
+            ...regions.map((region) {
+              final selected = state.selectedRegion == region;
+              return chip(
+                region,
+                selected,
+                () => notifier.setFilterRegion(selected ? null : region),
+                leading: const DabblerIcon(
+                  'location',
+                  size: DabblerHomeFrame.subChipGlyph,
+                  weight: DabblerIconWeight.bold,
+                ),
+              );
+            }),
+          ],
+        ),
       ),
     );
   }
@@ -1101,8 +1118,11 @@ class _HomeHeader extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
       children: [
-        DabblerWordmark(color: colors.brandPrimary),
-        const SizedBox(height: DabblerSpacing.space1),
+        DabblerWordmark(
+          color: colors.brandPrimary,
+          size: DabblerHomeFrame.logoSize,
+        ),
+        const SizedBox(height: DabblerHomeFrame.logoToLocation),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
           onTap: () => _openLocationPicker(context),
@@ -1112,10 +1132,10 @@ class _HomeHeader extends ConsumerWidget {
               DabblerIcon(
                 'location',
                 weight: DabblerIconWeight.bold,
-                size: DabblerSizing.iconXs,
+                size: DabblerHomeFrame.locationGlyph,
                 color: colors.brandPrimary,
               ),
-              const SizedBox(width: DabblerSpacing.space1),
+              const SizedBox(width: DabblerHomeFrame.locationGap),
               Flexible(
                 child: DabblerText(
                   locationName,
@@ -1125,7 +1145,7 @@ class _HomeHeader extends ConsumerWidget {
                   tone: DabblerTextTone.secondary,
                 ),
               ),
-              const SizedBox(width: DabblerSpacing.space1),
+              const SizedBox(width: DabblerHomeFrame.locationGap),
               DabblerIcon(
                 'arrow-circle-down',
                 size: DabblerSizing.iconXs,
@@ -1138,16 +1158,17 @@ class _HomeHeader extends ConsumerWidget {
     );
 
     return DabblerNavigationTopBar(
+      metrics: DabblerFeedMetrics.drawn,
       leading: leading,
       actions: [
         DabblerNavigationAction(
           icon: 'search-normal',
-          label: 'Search',
+          label: AppLocalizations.of(context).listing_search,
           onPressed: () => context.push(RoutePaths.socialSearch),
         ),
         DabblerNavigationAction(
           icon: 'notification-bing',
-          label: 'Notifications',
+          label: AppLocalizations.of(context).notif_title_notifications,
           unread: unread > 0,
           unreadLabel: unread > 0 ? '$unread unread' : null,
           onPressed: () => context.push(RoutePaths.notifications),
@@ -1165,6 +1186,7 @@ class _HomeHeader extends ConsumerWidget {
       context: context,
       detents: const <double>[0.66],
       pageBackground: true,
+      hairlineOutside: true,
       showCloseButton: false,
       builder: (_) => const _LocationPickerHost(),
     );
@@ -1190,5 +1212,5 @@ class _LocationPickerHostState extends State<_LocationPickerHost> {
 
   @override
   Widget build(BuildContext context) =>
-      HomeLocationPickerSheet(scrollController: _controller);
+      HomeLocationPickerSheet(scrollController: _controller, frameHeader: true);
 }

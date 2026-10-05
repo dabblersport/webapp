@@ -67,11 +67,15 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
     final int count = games.length;
     final AppLocalizations l = AppLocalizations.of(context);
     return Padding(
-      padding: const EdgeInsetsDirectional.only(
+      // The frame's block: `padding: 0 18px 12px`.
+      padding: EdgeInsetsDirectional.only(
         start: DabblerSpacing.space6,
         end: DabblerSpacing.space6,
+        // Folded, the strip has `margin:0 18px 9px` instead.
+        bottom: _collapsed ? DabblerSpacing.space3 : DabblerSpacing.space4,
       ),
       child: DabblerUpcomingReminder(
+        metrics: DabblerFeedMetrics.drawn,
         items: <DabblerUpcomingItem>[
           for (final g in games) _item(g, locale, l),
         ],

@@ -12,6 +12,7 @@ import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show myReactionsProvider, postActionsProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 void _openNews(BuildContext context, FeedNewsItem item) => context.pushNamed(
   RouteNames.newsDetail,
@@ -47,6 +48,7 @@ class HomeNewsCard extends ConsumerWidget {
     final url = item.coverImageUrl;
 
     final Widget card = DabblerNewsCard(
+      metrics: DabblerFeedMetrics.drawn,
       media: url == null
           ? null
           : DabblerImage(url: url, radius: BorderRadius.zero),
@@ -71,7 +73,7 @@ class HomeNewsCard extends ConsumerWidget {
     return DabblerSwipeAction(
       actions: [
         DabblerSwipeActionItem(
-          label: 'Hide',
+          label: AppLocalizations.of(context).home_upcoming_hide,
           icon: 'eye-slash',
           onPressed: hide,
         ),
@@ -132,39 +134,31 @@ Future<void> showHomeNewsReactionPicker(
   return showDabblerSheet<void>(
     context: context,
     title: 'React',
-    detents: const <double>[0.4],
-    builder: (ctx) => Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space2,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
-      ),
-      child: Wrap(
-        spacing: DabblerSpacing.space2,
-        runSpacing: DabblerSpacing.space2,
-        children: [
-          for (final r in _newsReactions)
-            DabblerChip(
-              label: r.label,
-              selected: mine.contains(r.id),
-              onTap: () async {
-                Navigator.of(ctx).pop();
-                final actions = ref.read(postActionsProvider.notifier);
-                if (mine.contains(r.id)) {
-                  await actions.removeReaction(newsId, r.id);
-                } else {
-                  for (final id in mine) {
-                    await actions.removeReaction(newsId, id);
-                  }
-                  await actions.reactToPost(newsId, r.id);
+    detent: DabblerSheetDetent.content,
+    builder: (ctx) => Wrap(
+      spacing: DabblerSpacing.space2,
+      runSpacing: DabblerSpacing.space2,
+      children: [
+        for (final r in _newsReactions)
+          DabblerChip(
+            label: r.label,
+            selected: mine.contains(r.id),
+            onTap: () async {
+              Navigator.of(ctx).pop();
+              final actions = ref.read(postActionsProvider.notifier);
+              if (mine.contains(r.id)) {
+                await actions.removeReaction(newsId, r.id);
+              } else {
+                for (final id in mine) {
+                  await actions.removeReaction(newsId, id);
                 }
-                ref.invalidate(homeNewsReactionCountsProvider(newsId));
-                ref.invalidate(myReactionsProvider(newsId));
-              },
-            ),
-        ],
-      ),
+                await actions.reactToPost(newsId, r.id);
+              }
+              ref.invalidate(homeNewsReactionCountsProvider(newsId));
+              ref.invalidate(myReactionsProvider(newsId));
+            },
+          ),
+      ],
     ),
   );
 }
@@ -207,6 +201,7 @@ class HomeActivityRow extends StatelessWidget {
     final newsTitle = activity.localizedTargetTitle(locale);
 
     return DabblerActivityRow(
+      metrics: DabblerFeedMetrics.drawn,
       leading: DabblerAvatar(
         seed: activity.actorUsername,
         imageUrl: activity.actorAvatarUrl,

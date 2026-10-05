@@ -9,6 +9,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
 import 'package:dabbler/features/venues/providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Venue details (D03), drawn from `Details.dc.html` "Venue details".
 ///
@@ -99,7 +100,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     onSurface: true,
     icon: 'arrow-circle-left',
     mirrorInRtl: true,
-    semanticLabel: 'Back',
+    semanticLabel: AppLocalizations.of(context).auth_back,
     onPressed: () => Navigator.of(context).maybePop(),
   );
 
@@ -129,7 +130,12 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
               onTap: () => _callVenue(venue.phone!),
             ),
           if (venue.email?.isNotEmpty ?? false)
-            (icon: 'sms', label: 'Email', value: venue.email!, onTap: null),
+            (
+              icon: 'sms',
+              label: AppLocalizations.of(context).auth_email_label,
+              value: venue.email!,
+              onTap: null,
+            ),
           if (venue.website?.isNotEmpty ?? false)
             (
               icon: 'global',
@@ -360,7 +366,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
         if (venue.description.isNotEmpty)
           DabblerSection(
             style: DabblerSectionStyle.label,
-            title: 'About',
+            title: AppLocalizations.of(context).settings_section_about,
             children: [
               DabblerText(
                 venue.description,

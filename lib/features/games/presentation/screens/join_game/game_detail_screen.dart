@@ -160,13 +160,13 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         leading: DabblerOnColorIconButton(
           icon: 'arrow-circle-left',
           mirrorInRtl: true,
-          semanticLabel: 'Back',
+          semanticLabel: AppLocalizations.of(context).auth_back,
           onPressed: () => context.pop(),
         ),
         actions: [
           DabblerOnColorIconButton(
             icon: 'share',
-            semanticLabel: 'Share',
+            semanticLabel: AppLocalizations.of(context).sfx_share,
             onPressed: () => _shareGame(game),
           ),
         ],
@@ -286,7 +286,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     final DabblerButton cta;
     if (isHost && !isCancelled && !isEnded) {
       cta = DabblerButton(
-        label: 'Edit game',
+        label: AppLocalizations.of(context).game_edit,
         icon: 'edit',
         tone: DabblerButtonTone.outlined,
         size: DabblerButtonSize.full,
@@ -313,8 +313,8 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         onPressed: _confirmLeave,
       );
     } else if (ctrl.isOnWaitlist) {
-      cta = const DabblerButton(
-        label: 'On waitlist',
+      cta = DabblerButton(
+        label: AppLocalizations.of(context).listing_on_waitlist,
         icon: 'clock',
         tone: DabblerButtonTone.neutral,
         size: DabblerButtonSize.full,
@@ -381,7 +381,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         destructive: true,
         onClose: () => Navigator.pop(ctx, false),
         secondaryAction: DabblerDialogAction(
-          label: 'Cancel',
+          label: AppLocalizations.of(context).composer_cancel,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         primaryAction: DabblerDialogAction(
@@ -409,16 +409,15 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         destructive: true,
         onClose: () => Navigator.pop(ctx, false),
         secondaryAction: DabblerDialogAction(
-          label: 'Cancel',
+          label: AppLocalizations.of(context).composer_cancel,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         primaryAction: DabblerDialogAction(
-          label: 'Remove',
+          label: AppLocalizations.of(context).sports_prefs_remove,
           onPressed: () => Navigator.pop(ctx, true),
         ),
       ),
     );
     if (confirmed == true) await ctrl.removePlayer(player.profileId);
   }
-
 }

@@ -364,7 +364,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           const DabblerGap.h(DabblerSpacing.space3),
           DabblerButton.icon(
             icon: 'sms',
-            semanticLabel: 'Message',
+            semanticLabel: AppLocalizations.of(context).contact_message,
             tone: DabblerButtonTone.outlined,
             onPressed: () => _sendMessage(context),
           ),
@@ -640,51 +640,42 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       detent: DabblerSheetDetent.content,
       builder: (sheetContext) {
         final l10n = AppLocalizations.of(sheetContext);
-        return Padding(
-          padding: const EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            DabblerSpacing.space2,
-            DabblerSpacing.space6,
-            DabblerSpacing.space8,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              if (blocked)
-                DabblerButton(
-                  label: l10n.user_profile_menu_unblock_user,
-                  icon: 'close-circle',
-                  tone: DabblerButtonTone.neutral,
-                  fullWidth: true,
-                  onPressed: () async {
-                    Navigator.pop(sheetContext);
-                    await _unblockUser(this.context);
-                  },
-                )
-              else
-                DabblerButton(
-                  label: l10n.user_profile_menu_block_user,
-                  icon: 'close-circle',
-                  tone: DabblerButtonTone.neutral,
-                  fullWidth: true,
-                  onPressed: () async {
-                    Navigator.pop(sheetContext);
-                    await _blockUser(this.context);
-                  },
-                ),
-              const DabblerGap.v(DabblerSpacing.space3),
+        return DabblerSheetBody(
+          spacing: DabblerSpacing.space3,
+          children: [
+            if (blocked)
               DabblerButton(
-                label: l10n.user_profile_menu_report_user,
-                icon: 'warning-2',
+                label: l10n.user_profile_menu_unblock_user,
+                icon: 'close-circle',
                 tone: DabblerButtonTone.neutral,
                 fullWidth: true,
-                onPressed: () {
+                onPressed: () async {
                   Navigator.pop(sheetContext);
-                  _reportUser(this.context);
+                  await _unblockUser(this.context);
+                },
+              )
+            else
+              DabblerButton(
+                label: l10n.user_profile_menu_block_user,
+                icon: 'close-circle',
+                tone: DabblerButtonTone.neutral,
+                fullWidth: true,
+                onPressed: () async {
+                  Navigator.pop(sheetContext);
+                  await _blockUser(this.context);
                 },
               ),
-            ],
-          ),
+            DabblerButton(
+              label: l10n.user_profile_menu_report_user,
+              icon: 'warning-2',
+              tone: DabblerButtonTone.neutral,
+              fullWidth: true,
+              onPressed: () {
+                Navigator.pop(sheetContext);
+                _reportUser(this.context);
+              },
+            ),
+          ],
         );
       },
     );

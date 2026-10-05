@@ -11,6 +11,7 @@ import 'package:dabbler/features/games/presentation/screens/join_game/game_detai
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/venues/providers.dart' as venues_providers;
 import 'package:dabbler/utils/helpers/date_formatter.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// "My Sports" library (History / Bookmarks). Reached from the Explore header
 /// and the venues screen. No design frame: design-system defaults in the same
@@ -44,7 +45,7 @@ class _SportsLibraryScreenState extends State<SportsLibraryScreen> {
     // is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: 'My Sports',
+        title: AppLocalizations.of(context).sports_prefs_my_sports,
         onBack: () => Navigator.of(context).maybePop(),
       ),
       body: Column(

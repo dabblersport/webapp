@@ -310,7 +310,7 @@ void main() {
           overrides: _feedOverrides(feed),
         );
         expect(tester.takeException(), isNull);
-        expect(find.text('No activity yet'), findsOneWidget);
+        expect(find.text(lookupAppLocalizations(locale).activity_empty_no_activity), findsOneWidget);
         expect(find.text('Find Sports Games'), findsOneWidget);
         await _shoot(tester, 'activities-empty-$dir');
       });
@@ -325,7 +325,7 @@ void main() {
           overrides: _feedOverrides(feed),
         );
         expect(tester.takeException(), isNull);
-        expect(find.text('Something went wrong'), findsOneWidget);
+        expect(find.text(lookupAppLocalizations(locale).error_generic), findsOneWidget);
         expect(find.text('Retry'), findsOneWidget);
         await _shoot(tester, 'activities-error-$dir');
       });

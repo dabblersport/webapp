@@ -436,7 +436,7 @@ void main() {
       expect(find.byType(DabblerStatTile), findsNWidgets(4));
       await _shoot(tester, 'sport-profile-$dir');
 
-      await tester.tap(find.text('Achievements'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).notif_chip_achievements));
       await _settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.text('5-win streak'), findsOneWidget);
@@ -455,7 +455,7 @@ void main() {
       expect(find.text('No scoreboard data yet.'), findsOneWidget);
       await _shoot(tester, 'sport-profile-empty-$dir');
 
-      await tester.tap(find.text('Achievements'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).notif_chip_achievements));
       await _settle(tester);
       expect(find.text('No sport achievements yet.'), findsOneWidget);
 

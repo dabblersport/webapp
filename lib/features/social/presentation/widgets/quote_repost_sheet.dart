@@ -4,13 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the quote-repost composer as a design-system sheet; resolves true
 /// when the repost was sent.
 Future<bool?> showQuoteRepostSheet(BuildContext context, Post originalPost) =>
     showDabblerSheet<bool>(
       context: context,
-      title: 'Quote Repost',
+      title: AppLocalizations.of(context).post_card_menu_quote_repost,
       detent: DabblerSheetDetent.content,
       builder: (_) => QuoteRepostSheet(originalPost: originalPost),
     );
@@ -56,63 +57,56 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
         ? 'Anonymous'
         : original.authorDisplayName!.trim();
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space2,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerTextField(
-            variant: DabblerTextFieldVariant.multiline,
-            controller: _controller,
-            placeholder: 'Add your thoughts…',
-            rows: 3,
-            onChanged: (_) => setState(() {}),
-          ),
-          const SizedBox(height: DabblerSpacing.space4),
-          DabblerSurface.card(
-            padding: const EdgeInsets.all(DabblerSpacing.space4),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
+    // Widgets only: the sheet owns the surface and the content padding.
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerTextField(
+          variant: DabblerTextFieldVariant.multiline,
+          controller: _controller,
+          placeholder: 'Add your thoughts…',
+          rows: 3,
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: DabblerSpacing.space4),
+        DabblerSurface.card(
+          padding: const EdgeInsets.all(DabblerSpacing.space4),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              DabblerText(
+                authorLabel,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: DabblerType.subheadline,
+                weight: DabblerTextWeight.semibold,
+              ),
+              if (original.body != null &&
+                  original.body!.trim().isNotEmpty) ...[
+                const SizedBox(height: DabblerSpacing.space1),
                 DabblerText(
-                  authorLabel,
-                  maxLines: 1,
+                  original.body!,
+                  maxLines: 3,
                   overflow: TextOverflow.ellipsis,
-                  style: DabblerType.subheadline,
-                  weight: DabblerTextWeight.semibold,
+                  style: DabblerType.footnote,
+                  tone: DabblerTextTone.secondary,
                 ),
-                if (original.body != null &&
-                    original.body!.trim().isNotEmpty) ...[
-                  const SizedBox(height: DabblerSpacing.space1),
-                  DabblerText(
-                    original.body!,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
-                    style: DabblerType.footnote,
-                    tone: DabblerTextTone.secondary,
-                  ),
-                ],
               ],
-            ),
+            ],
           ),
-          const SizedBox(height: DabblerSpacing.space6),
-          DabblerButton(
-            label: 'Post',
-            fullWidth: true,
-            loading: _isSending,
-            onPressed: _controller.text.trim().isEmpty || _isSending
-                ? null
-                : _submit,
-          ),
-        ],
-      ),
+        ),
+        const SizedBox(height: DabblerSpacing.space6),
+        DabblerButton(
+          label: AppLocalizations.of(context).composer_post_cta,
+          fullWidth: true,
+          loading: _isSending,
+          onPressed: _controller.text.trim().isEmpty || _isSending
+              ? null
+              : _submit,
+        ),
+      ],
     );
   }
 }

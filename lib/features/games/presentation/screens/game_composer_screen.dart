@@ -1165,11 +1165,8 @@ class ComposerVariantSheet extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (variants.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space8),
-        child: ComposerCenteredState.message(
-          AppLocalizations.of(context).game_no_formats,
-        ),
+      return ComposerCenteredState.message(
+        AppLocalizations.of(context).game_no_formats,
       );
     }
     return ValueListenableBuilder<Map<String, dynamic>?>(

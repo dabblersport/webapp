@@ -18,6 +18,7 @@ import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profi
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_fields.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_models.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_sports.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Screen for editing user profile information
 class ProfileEditScreen extends StatefulWidget {
@@ -590,7 +591,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
 
   Widget _buildLanguageSelect(BuildContext context) {
     return DabblerSelect<String>(
-      label: 'Language',
+      label: AppLocalizations.of(context).region_language,
       placeholder: 'Select language',
       value: _selectedLanguage,
       options: [
@@ -651,7 +652,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     // One layout at every width (a wide-screen shell is not a DS component).
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: 'Edit Profile',
+        title: AppLocalizations.of(context).profile_btn_edit,
         onBack: () => context.pop(),
       ),
       body: _isLoading
@@ -682,14 +683,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
         sectionGap,
         ProfileEditTextField(
-          label: 'Display Name',
+          label: AppLocalizations.of(context).set_username_display_name_label,
           controller: _displayNameController,
           hintText: 'Choose a name',
           validator: AppValidators.validateName,
         ),
         gap,
         ProfileEditTextField(
-          label: 'Username',
+          label: AppLocalizations.of(context).set_username_username_label,
           controller: _usernameController,
           hintText: 'Your username',
           readOnly: true,
@@ -697,7 +698,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
         gap,
         ProfileEditTextField(
-          label: 'Bio',
+          label: AppLocalizations.of(context).priv_t_bio,
           controller: _bioController,
           hintText: 'Tell us about yourself',
           maxLines: 3,
@@ -712,7 +713,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
         gap,
         ProfileEditTextField(
-          label: 'Age',
+          label: AppLocalizations.of(context).priv_t_age,
           controller: _ageController,
           hintText: 'Your age',
           keyboardType: TextInputType.number,
@@ -791,7 +792,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
         sectionGap,
         DabblerButton(
-          label: 'Save changes',
+          label: AppLocalizations.of(context).game_save_changes,
           size: DabblerButtonSize.full,
           fullWidth: true,
           disabled: _isLoading,

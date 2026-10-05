@@ -213,10 +213,10 @@ class _ModerationQueueScreenState extends ConsumerState<ModerationQueueScreen> {
     showDabblerSheet<void>(
       context: context,
       title: 'Report Details',
-      detents: const <double>[0.7, 0.95],
+      detent: DabblerSheetDetent.content,
       builder: (context) {
-        return ListView(
-          padding: DabblerInsets.screen,
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _detailRow('Target Type', report.targetType.toPostgresString()),
             _detailRow('Target ID', report.targetId),

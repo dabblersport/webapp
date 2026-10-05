@@ -20,7 +20,7 @@ Future<void> showHomeReactionSheet(
   return showDabblerSheet<void>(
     context: context,
     title: title ?? AppLocalizations.of(context).home_vibe_title,
-    detents: const <double>[0.5],
+    detent: DabblerSheetDetent.content,
     builder: (_) => HomeReactionSheet(postId: postId, myReactions: myReactions),
   );
 }
@@ -42,47 +42,36 @@ class HomeReactionSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final vibesAsync = ref.watch(vibesProvider);
 
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space2,
-        DabblerSpacing.space6,
-        DabblerSpacing.space8,
-      ),
-      child: vibesAsync.when(
-        data: (vibes) {
-          if (vibes.isEmpty) {
-            return DabblerText(
-              'No vibes available',
-              style: DabblerType.body,
-              tone: DabblerTextTone.secondary,
-            );
-          }
-          return Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
-            children: [
-              for (final vibe in vibes)
-                DabblerChip(
-                  label: _label(vibe),
-                  vibe: DabblerVibe.fromKey(vibe.key.replaceAll('_', '-')),
-                  selected: myReactions.contains(vibe.id),
-                  onTap: () => _toggle(
-                    context,
-                    ref,
-                    vibe,
-                    myReactions.contains(vibe.id),
-                  ),
-                ),
-            ],
+    // Widgets only: the sheet owns the surface and the content padding.
+    return vibesAsync.when(
+      data: (vibes) {
+        if (vibes.isEmpty) {
+          return DabblerText(
+            'No vibes available',
+            style: DabblerType.body,
+            tone: DabblerTextTone.secondary,
           );
-        },
-        loading: () => const Center(child: DabblerSpinner()),
-        error: (e, _) => DabblerText(
-          'Failed to load vibes: $e',
-          style: DabblerType.body,
-          tone: DabblerTextTone.secondary,
-        ),
+        }
+        return Wrap(
+          spacing: DabblerSpacing.space2,
+          runSpacing: DabblerSpacing.space2,
+          children: [
+            for (final vibe in vibes)
+              DabblerChip(
+                label: _label(vibe),
+                vibe: DabblerVibe.fromKey(vibe.key.replaceAll('_', '-')),
+                selected: myReactions.contains(vibe.id),
+                onTap: () =>
+                    _toggle(context, ref, vibe, myReactions.contains(vibe.id)),
+              ),
+          ],
+        );
+      },
+      loading: () => const Center(child: DabblerSpinner()),
+      error: (e, _) => DabblerText(
+        'Failed to load vibes: $e',
+        style: DabblerType.body,
+        tone: DabblerTextTone.secondary,
       ),
     );
   }

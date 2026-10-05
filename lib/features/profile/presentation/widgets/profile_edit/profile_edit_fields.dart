@@ -1,6 +1,7 @@
 import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// A [DabblerTextField] that takes part in the screen's [Form]: the
 /// [validator] runs on [Form.validate] against the controller's text and its
@@ -151,7 +152,7 @@ class ProfileEditDobField extends StatelessWidget {
         Expanded(
           child: DabblerDateField(
             key: ValueKey<DateTime?>(value),
-            label: 'Date of Birth',
+            label: AppLocalizations.of(context).onb_dob_label,
             placeholder: 'Select your date of birth',
             value: value,
             minimum: minimum,

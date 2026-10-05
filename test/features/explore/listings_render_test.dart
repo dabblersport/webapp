@@ -79,9 +79,9 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader =
-        FontLoader('packages/iconsax_flutter/FlutterIconsax')
-          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader(
+      'packages/iconsax_flutter/FlutterIconsax',
+    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -100,9 +100,19 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 }
 
 const List<Sport> _sports = <Sport>[
-  Sport(id: 's1', nameEn: 'Football', nameAr: 'كرة القدم', sportKey: 'football'),
+  Sport(
+    id: 's1',
+    nameEn: 'Football',
+    nameAr: 'كرة القدم',
+    sportKey: 'football',
+  ),
   Sport(id: 's2', nameEn: 'Padel', nameAr: 'بادل', sportKey: 'padel'),
-  Sport(id: 's3', nameEn: 'Basketball', nameAr: 'كرة السلة', sportKey: 'basketball'),
+  Sport(
+    id: 's3',
+    nameEn: 'Basketball',
+    nameAr: 'كرة السلة',
+    sportKey: 'basketball',
+  ),
   Sport(id: 's4', nameEn: 'Cricket', nameAr: 'كريكيت', sportKey: 'cricket'),
 ];
 
@@ -210,14 +220,17 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         activeLocationProvider.overrideWith(_Location.new),
-        activeChallengeSportsByProfileCountryProvider
-            .overrideWith((ref) async => _sports),
-        activeSportsByProfileCountryProvider
-            .overrideWith((ref) async => _sports),
+        activeChallengeSportsByProfileCountryProvider.overrideWith(
+          (ref) async => _sports,
+        ),
+        activeSportsByProfileCountryProvider.overrideWith(
+          (ref) async => _sports,
+        ),
         nearbyGamesProvider.overrideWith((ref, params) => games()),
         myPinnedGamesProvider.overrideWith(
-          (ref, sportId) async =>
-              mode == _Mode.content ? [_games().first] : const <NearbyGameModel>[],
+          (ref, sportId) async => mode == _Mode.content
+              ? [_games().first]
+              : const <NearbyGameModel>[],
         ),
         venuesBySportWithFiltersProvider.overrideWith((ref, f) => venues()),
         ...extra,
@@ -246,9 +259,12 @@ Future<void> _pump(
 
 /// Opens [builder] in the app's DS-backed adaptive sheet, as sports_screen does.
 class _SheetHost extends StatefulWidget {
-  const _SheetHost({required this.builder});
+  const _SheetHost({required this.builder, this.title});
 
   final WidgetBuilder builder;
+
+  /// The sheet's header title, as the call sites in sports_screen pass it.
+  final String? title;
 
   @override
   State<_SheetHost> createState() => _SheetHostState();
@@ -261,6 +277,7 @@ class _SheetHostState extends State<_SheetHost> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       showDabblerSheet<void>(
         context: context,
+        title: widget.title,
         detent: DabblerSheetDetent.content,
         builder: widget.builder,
       );
@@ -309,9 +326,12 @@ void main() {
         const GamesScreen(),
         locale,
         extra: [
-          gamesDateFilterProvider.overrideWith((ref) => GamesDateFilter.thisWeek),
-          gamesSkillFilterProvider
-              .overrideWith((ref) => GamesSkillFilter.intermediate),
+          gamesDateFilterProvider.overrideWith(
+            (ref) => GamesDateFilter.thisWeek,
+          ),
+          gamesSkillFilterProvider.overrideWith(
+            (ref) => GamesSkillFilter.intermediate,
+          ),
         ],
       );
       // The applied rail shows under the header.
@@ -323,7 +343,10 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(l.listing_group_skill), findsOneWidget);
       expect(find.text(l.listing_group_distance), findsOneWidget);
-      expect(find.textContaining(l.listing_show_games(0).substring(0, 2)), findsOneWidget);
+      expect(
+        find.textContaining(l.listing_show_games(0).substring(0, 2)),
+        findsOneWidget,
+      );
       expect(find.text(l.listing_open_spots), findsWidgets);
       // "Filters" and Reset sit in the sheet header, Reset once.
       expect(find.text(l.listing_filters), findsOneWidget);
@@ -366,7 +389,10 @@ void main() {
       expect(find.text(l.listing_within_km(5)), findsWidgets);
       expect(find.text(l.listing_reset), findsOneWidget);
       // The frame's header is the title and Reset only: no close button.
-      expect(find.bySemanticsLabel(DabblerSheet.defaultCloseLabel), findsNothing);
+      expect(
+        find.bySemanticsLabel(DabblerSheet.defaultCloseLabel),
+        findsNothing,
+      );
       await _shoot(tester, key, 'venues-filter-sheet-$dir');
     }, variant: desktop);
 
@@ -387,6 +413,7 @@ void main() {
       await _pump(
         tester,
         _SheetHost(
+          title: 'Enable Location',
           builder: (ctx) => LocationPermissionDrawer(
             onAllowLocation: () {},
             onRemindLater: () {},
@@ -403,7 +430,10 @@ void main() {
     testWidgets('manual location drawer - $dir', (tester) async {
       await _pump(
         tester,
-        _SheetHost(builder: (ctx) => const ManualLocationDrawer()),
+        _SheetHost(
+          title: 'Select Location',
+          builder: (ctx) => const ManualLocationDrawer(),
+        ),
         locale,
       );
       expect(tester.takeException(), isNull);
@@ -464,8 +494,9 @@ void main() {
     }, variant: desktop);
   }
 
-  testWidgets('sport filter chip reports a pick once, never a de-select',
-      (tester) async {
+  testWidgets('sport filter chip reports a pick once, never a de-select', (
+    tester,
+  ) async {
     final List<String> changes = <String>[];
     await _pump(
       tester,

@@ -261,7 +261,8 @@ void main() {
     'save-location': () => _SheetHost(
       open: (c) => showDabblerSheet<void>(
         context: c,
-        detents: const <double>[0.85],
+        detent: DabblerSheetDetent.content,
+        title: 'Save this location',
         builder: (_) => SaveLocationSheet(
           lat: 25.08,
           lng: 55.14,
@@ -287,6 +288,28 @@ void main() {
       }, variant: desktop);
     }
   }
+
+  testWidgets('add-location title lives in the header and follows the mode', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      _SheetHost(open: (c) => LocationPickerSheet.show(c)),
+      const Locale('en'),
+    );
+    // One title, in the sheet header (the sheet's titleWidget), no back action.
+    expect(find.text('Add location'), findsOneWidget);
+    expect(find.bySemanticsLabel('Back'), findsNothing);
+    await tester.tap(find.text('Pick an area'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Pick an Area'), findsOneWidget);
+    expect(find.text('Add location'), findsNothing);
+    expect(find.bySemanticsLabel('Back'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Back'));
+    await tester.pump(const Duration(milliseconds: 100));
+    expect(find.text('Add location'), findsOneWidget);
+    expect(find.bySemanticsLabel('Back'), findsNothing);
+  }, variant: desktop);
 
   testWidgets('home picker lists saved locations and grouped areas', (
     tester,

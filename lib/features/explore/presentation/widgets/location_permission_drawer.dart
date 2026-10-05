@@ -31,8 +31,6 @@ class LocationPermissionDrawer extends StatelessWidget {
           size: DabblerSizing.illustrationSm,
         ),
         const DabblerGap.v(DabblerSpacing.space6),
-        DabblerText('Enable Location', style: DabblerType.headline),
-        const DabblerGap.v(DabblerSpacing.space2),
         DabblerText(
           'Find sports venues and games near you. We\'ll show you activities happening in your area.',
           style: DabblerType.body,

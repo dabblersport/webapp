@@ -14,15 +14,33 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 /// Updates both the profile `interests` array and the corresponding
 /// `sport_profiles` / `organiser` records in the database.
 class ManageSportsSheet extends ConsumerStatefulWidget {
-  const ManageSportsSheet({super.key});
+  const ManageSportsSheet({super.key, required this.saving});
 
-  /// Presents the sheet. Was `showAdaptiveSheet` + a DraggableScrollableSheet
-  /// (0.6, 0.35-0.85); the DabblerSheet snaps between 0.6 and 0.85.
+  /// True while a change is being saved: the sheet's header shows a spinner
+  /// beside the title, so the state lives here and the content updates it.
+  final ValueNotifier<bool> saving;
+
+  /// Presents the sheet, content-sized.
   static Future<void> show(BuildContext context) {
+    final ValueNotifier<bool> saving = ValueNotifier<bool>(false);
     return showDabblerSheet<void>(
       context: context,
-      detents: const <double>[0.6, 0.85],
-      builder: (_) => const ManageSportsSheet(),
+      title: 'Manage Sports',
+      detent: DabblerSheetDetent.content,
+      titleWidget: Row(
+        children: [
+          const Expanded(
+            child: DabblerText('Manage Sports', style: DabblerType.title3),
+          ),
+          ValueListenableBuilder<bool>(
+            valueListenable: saving,
+            builder: (BuildContext context, bool on, Widget? _) => on
+                ? const DabblerSpinner(size: DabblerSpinnerSize.sm)
+                : const SizedBox.shrink(),
+          ),
+        ],
+      ),
+      builder: (_) => ManageSportsSheet(saving: saving),
     );
   }
 
@@ -81,6 +99,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     }
 
     setState(() => _isSaving = true);
+    widget.saving.value = true;
 
     try {
       if (isAdding) {
@@ -157,6 +176,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         _toast('Failed to update sport: $e');
       }
     } finally {
+      widget.saving.value = false;
       if (mounted) setState(() => _isSaving = false);
     }
   }
@@ -178,46 +198,20 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        // Title row (handle and close come from DabblerSheet).
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space5,
-            end: DabblerSpacing.space5,
-            bottom: DabblerSpacing.space2,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: DabblerText('Manage Sports', style: DabblerType.title3),
-              ),
-              if (_isSaving) const DabblerSpinner(size: DabblerSpinnerSize.sm),
-            ],
-          ),
-        ),
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space5,
-          ),
-          child: DabblerText(
-            'Tap a sport to add or remove it from your profile.',
-            style: DabblerType.subheadline,
-            tone: DabblerTextTone.secondary,
-          ),
+        DabblerText(
+          'Tap a sport to add or remove it from your profile.',
+          style: DabblerType.subheadline,
+          tone: DabblerTextTone.secondary,
         ),
         const DabblerGap.v(DabblerSpacing.space4),
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space5,
-          ),
-          child: DabblerSearchField(
-            controller: _searchController,
-            enabled: !_isSaving,
-            placeholder: 'Search sports',
-            onChanged: (value) {
-              setState(() => _searchQuery = value.trim().toLowerCase());
-            },
-            onCleared: () => setState(() => _searchQuery = ''),
-          ),
+        DabblerSearchField(
+          controller: _searchController,
+          enabled: !_isSaving,
+          placeholder: 'Search sports',
+          onChanged: (value) {
+            setState(() => _searchQuery = value.trim().toLowerCase());
+          },
+          onCleared: () => setState(() => _searchQuery = ''),
         ),
         const DabblerGap.v(DabblerSpacing.space4),
         sportsAsync.when(
@@ -244,22 +238,17 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
               );
             }
 
-            return Padding(
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space5,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  for (final sport in filteredSports)
-                    Padding(
-                      padding: const EdgeInsetsDirectional.only(
-                        bottom: DabblerSpacing.space2,
-                      ),
-                      child: _sportRow(sport, colors),
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final sport in filteredSports)
+                  Padding(
+                    padding: const EdgeInsetsDirectional.only(
+                      bottom: DabblerSpacing.space2,
                     ),
-                ],
-              ),
+                    child: _sportRow(sport, colors),
+                  ),
+              ],
             );
           },
           loading: () => const Padding(

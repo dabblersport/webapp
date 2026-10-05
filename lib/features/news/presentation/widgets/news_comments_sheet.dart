@@ -23,7 +23,6 @@ Future<void> showNewsCommentsSheet(
     context: context,
     title: AppLocalizations.of(context).sfx_comments_count(count),
     detent: DabblerSheetDetent.content,
-    showCloseButton: false,
     builder: (_) => _CommentsList(newsId: item.newsId, lang: lang),
     footerBuilder: (_) => _CommentComposer(item: item, onPosted: onPosted),
   );

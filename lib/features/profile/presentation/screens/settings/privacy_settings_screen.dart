@@ -402,7 +402,6 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
         context: context,
         title: title,
         detent: DabblerSheetDetent.content,
-        showCloseButton: false,
         builder: (sheetContext) => Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,

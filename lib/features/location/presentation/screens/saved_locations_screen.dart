@@ -8,6 +8,7 @@ import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Saved locations. No design frame: DS defaults (DabblerPage, titled top
 /// bar, DabblerSwipeAction rows, a full-width add button in the page's bottom
@@ -27,7 +28,7 @@ class SavedLocationsScreen extends ConsumerWidget {
         onBack: canPop ? () => Navigator.of(context).maybePop() : null,
       ),
       bottomOverlay: DabblerButton(
-        label: 'Add location',
+        label: AppLocalizations.of(context).location_add,
         icon: 'location-add',
         fullWidth: true,
         onPressed: () => _addLocation(context, ref),
@@ -193,8 +194,10 @@ class _LocationTile extends ConsumerWidget {
                         const DabblerGap.h(DabblerSpacing.space2),
                         // The old badge text carried a star emoji; the star
                         // is now a DabblerIcon (CEO rule: no emoji).
-                        const DabblerBadge(
-                          label: 'Primary',
+                        DabblerBadge(
+                          label: AppLocalizations.of(
+                            context,
+                          ).primary_sport_badge,
                           icon: DabblerIcon('star'),
                         ),
                       ],
@@ -236,7 +239,7 @@ class _LocationTile extends ConsumerWidget {
             'Remove "${location.effectiveLabel}" from your saved locations?',
         destructive: true,
         secondaryAction: DabblerDialogAction(
-          label: 'Cancel',
+          label: AppLocalizations.of(context).home_location_cancel,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         primaryAction: DabblerDialogAction(
@@ -275,11 +278,11 @@ class _LocationTile extends ConsumerWidget {
           onClose: () => Navigator.pop(ctx, false),
           title: 'Rename location',
           secondaryAction: DabblerDialogAction(
-            label: 'Cancel',
+            label: AppLocalizations.of(context).home_location_cancel,
             onPressed: () => Navigator.pop(ctx, false),
           ),
           primaryAction: DabblerDialogAction(
-            label: 'Save',
+            label: AppLocalizations.of(context).game_prefs_save,
             onPressed: () => Navigator.pop(ctx, true),
           ),
           child: Column(
