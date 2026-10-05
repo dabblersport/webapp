@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -62,7 +63,7 @@ class _MeetupManageScreenState extends ConsumerState<MeetupManageScreen> {
     final ok = await showDabblerDialog<bool>(
       context: context,
       builder: (ctx) => DabblerDialog(
-        title: l.meetups_remove_title(name),
+        title: l.meetups_remove_title(context.isolate(name)),
         description: l.meetups_remove_body,
         destructive: true,
         onClose: () => Navigator.pop(ctx, false),

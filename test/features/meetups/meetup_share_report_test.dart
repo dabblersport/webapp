@@ -59,6 +59,12 @@ void main() {
       expect(shared, hasLength(1));
       expect(shared.single.$1, 'https://app.dabbler.pro/meetups/m1');
       expect(shared.single.$2, contains('Sunrise run'));
+      // Isolates only in RTL: Latin title and brand token, '!' outside both.
+      final rtl = locale.languageCode == 'ar';
+      expect(shared.single.$2.contains('\u2068Sunrise run\u2069'), rtl);
+      expect(shared.single.$2.contains('\u2068Dabbler\u2069!'), rtl);
+      if (!rtl)
+        expect(shared.single.$2, isNot(matches(RegExp('[\u2068\u2069]'))));
     });
   }
 

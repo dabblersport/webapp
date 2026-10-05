@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
     show gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
@@ -147,7 +148,8 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
 
   /// The first two names, then how many others — `Lina, Yousef and 22 others`.
   String _names(AppLocalizations l, List<MeetupAvatar> going, int total) {
-    String first(MeetupAvatar a) => (a.displayName ?? '').split(' ').first;
+    String first(MeetupAvatar a) =>
+        context.isolate((a.displayName ?? '').split(' ').first);
     final named = going.take(2).map(first).where((n) => n.isNotEmpty).toList();
     final others = total - named.length;
     if (others <= 0) return named.join(', ');
@@ -156,9 +158,12 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
 
   Future<void> _share(MeetupCard c) {
     final l = AppLocalizations.of(context);
+    final headline = l.meetups_share_headline(context.isolate(c.title ?? ''));
     return ref.read(meetupShareProvider)(
       RoutePaths.meetupLink(c.id),
-      l.meetups_share_headline(c.title ?? ''),
+      // The brand token is Latin inside an Arabic sentence: isolate it so the
+      // trailing '!' resolves to the RTL run. LTR output is untouched.
+      context.isolateTrailing(headline, 'Dabbler'),
     );
   }
 
