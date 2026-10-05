@@ -73,10 +73,61 @@ void main() {
       expect(c.locationName, 'Kite Beach');
       expect(c.startAt, DateTime(2030, 1, 15, 18));
       expect(c.rsvpPolicy, 'open');
-      expect(c.capacity, isNull);
+      expect(c.capacity, 8);
       expect(created, 'new1');
     });
   }
+
+  testWidgets('prefilled: Today 6:00 AM or tomorrow, first sport, Open', (
+    tester,
+  ) async {
+    final repo = FakeMeetupRepository();
+    await pumpMeetups(
+      tester,
+      MeetupComposerScreen(
+        onCreated: (_) {},
+        initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+      ),
+      repo,
+    );
+    tester.takeException();
+    await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
+    await tester.pump();
+    await tester.tap(find.byType(DabblerButton).last);
+    await settle(tester);
+    final c = repo.createCalls.single;
+    final now = DateTime.now();
+    final todaySix = DateTime(now.year, now.month, now.day, 6);
+    expect(
+      c.startAt,
+      todaySix.isAfter(now)
+          ? todaySix
+          : DateTime(now.year, now.month, now.day + 1, 6),
+    );
+    expect(c.sportId, 's1');
+    expect(c.rsvpPolicy, 'open');
+    expect(c.capacity, 8);
+  });
+
+  testWidgets('opens as a design-system bottom sheet', (tester) async {
+    final repo = FakeMeetupRepository();
+    await pumpMeetups(
+      tester,
+      Builder(
+        builder: (context) => DabblerButton(
+          label: 'open',
+          onPressed: () => showMeetupComposerSheet(context),
+        ),
+      ),
+      repo,
+    );
+    await tester.tap(find.text('open'));
+    await settle(tester);
+    tester.takeException();
+    expect(find.byType(DabblerSheet), findsOneWidget);
+    expect(find.text('Create meet-up'), findsWidgets);
+    expect(find.byType(MeetupComposerScreen), findsOneWidget);
+  });
 
   for (final e in <(String, String)>[
     ('organiser_required', 'Only organisers can create meet-ups.'),

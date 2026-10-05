@@ -39,41 +39,40 @@ class MeetupWhenRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        ComposerSettingsRow(
-          icon: 'calendar',
-          title: l.meetups_when,
-          subtitle: l.meetups_when_sub,
-          showDivider: false,
-        ),
-        Padding(
-          padding: const EdgeInsetsDirectional.only(
-            bottom: DabblerSpacing.space3,
+    final now = DateTime.now();
+    final today =
+        date != null &&
+        date!.year == now.year &&
+        date!.month == now.month &&
+        date!.day == now.day;
+    return ComposerSettingsRow(
+      icon: 'calendar',
+      title: l.meetups_when,
+      subtitle: l.meetups_when_sub,
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: DabblerSpacing.space2,
+        children: <Widget>[
+          DabblerChip(
+            label: _date(l),
+            dense: true,
+            selected: today,
+            onTap: onDate,
           ),
-          child: Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
-            children: <Widget>[
-              ComposerCompactSelectPill(value: _date(l), onTap: onDate),
-              ComposerCompactSelectPill(
-                value: start == null
-                    ? l.game_time
-                    : DabblerTimeFormat.format(start!),
-                onTap: onStart,
-              ),
-              ComposerCompactSelectPill(
-                value: end == null
-                    ? l.meetups_end
-                    : DabblerTimeFormat.format(end!),
-                onTap: onEnd,
-              ),
-            ],
+          DabblerChip(
+            label: start == null
+                ? l.game_time
+                : DabblerTimeFormat.format(start!),
+            dense: true,
+            onTap: onStart,
           ),
-        ),
-        const DabblerDivider(),
-      ],
+          DabblerChip(
+            label: end == null ? l.meetups_end : DabblerTimeFormat.format(end!),
+            dense: true,
+            onTap: onEnd,
+          ),
+        ],
+      ),
     );
   }
 }

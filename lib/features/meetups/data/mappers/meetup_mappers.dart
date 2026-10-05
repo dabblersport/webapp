@@ -10,7 +10,8 @@ class MeetupMappers {
   static NearbyMeetup nearby(Map<String, dynamic> row) =>
       NearbyMeetup.fromJson(row);
 
-  static MeetupCard card(Map<String, dynamic> json) => MeetupCard.fromJson(json);
+  static MeetupCard card(Map<String, dynamic> json) =>
+      MeetupCard.fromJson(json);
 
   static MeetupAttendee attendee(Map<String, dynamic> row) =>
       MeetupAttendee.fromJson(row);

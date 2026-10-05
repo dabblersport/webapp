@@ -99,7 +99,9 @@ class SupabaseMeetupDataSource implements MeetupDataSource {
       _rows(
         await _client
             .from(SupabaseConfig.sportVariantsTable)
-            .select('id, sport_id, variant_key, name_en, name_ar, required_players')
+            .select(
+              'id, sport_id, variant_key, name_en, name_ar, required_players',
+            )
             .eq('sport_id', sportId)
             .eq('is_active', true)
             .order('name_en'),

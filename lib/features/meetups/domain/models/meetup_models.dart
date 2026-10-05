@@ -19,7 +19,9 @@ abstract class MeetupListItem with _$MeetupListItem {
     @JsonKey(name: 'end_at') DateTime? endAt,
     int? capacity,
     @JsonKey(name: 'members_only') @Default(false) bool membersOnly,
-    @JsonKey(name: 'listing_visibility') @Default('public') String listingVisibility,
+    @JsonKey(name: 'listing_visibility')
+    @Default('public')
+    String listingVisibility,
     @JsonKey(name: 'rsvp_policy', unknownEnumValue: RsvpPolicy.closed)
     @Default(RsvpPolicy.closed)
     RsvpPolicy rsvpPolicy,
@@ -65,7 +67,9 @@ abstract class MeetupListItem with _$MeetupListItem {
 
   MeetupLifecycle lifecycle(DateTime now) => isCancelled
       ? MeetupLifecycle.cancelled
-      : (startAt.isAfter(now) ? MeetupLifecycle.upcoming : MeetupLifecycle.started);
+      : (startAt.isAfter(now)
+            ? MeetupLifecycle.upcoming
+            : MeetupLifecycle.started);
 }
 
 /// One row of `getnearbymeetups(p_lat, p_lng, p_radius)`.

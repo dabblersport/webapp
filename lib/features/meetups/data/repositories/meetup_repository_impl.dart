@@ -108,9 +108,8 @@ class MeetupRepositoryImpl implements MeetupRepository {
       _guard(() => _ds.cancel(meetupId));
 
   @override
-  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) => _guard(
-    () async => MeetupMappers.card(await _ds.update(input)),
-  );
+  Future<Result<MeetupCard, Failure>> update(UpdateMeetupInput input) =>
+      _guard(() async => MeetupMappers.card(await _ds.update(input)));
 
   @override
   Future<Result<RsvpStatus, Failure>> decideRequest(

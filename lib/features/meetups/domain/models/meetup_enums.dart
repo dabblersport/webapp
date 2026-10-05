@@ -39,8 +39,7 @@ enum RsvpStatus {
 
   String get dbValue => name;
 
-  static RsvpStatus? fromDbOrNull(Object? v) =>
-      v == null ? null : fromDb(v);
+  static RsvpStatus? fromDbOrNull(Object? v) => v == null ? null : fromDb(v);
 
   static RsvpStatus fromDb(Object? v) {
     final raw = v?.toString();

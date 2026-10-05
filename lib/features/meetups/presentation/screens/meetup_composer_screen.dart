@@ -14,6 +14,40 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+/// Opens the Create meet-up drawer as a design-system bottom sheet, like the
+/// frame (`Home Feed.dc.html:1134`, a 94% sheet on the page colour): the title
+/// row with Cancel, the scrolling form and the sticky Create button are the
+/// composer shell's. On success it closes and opens the new Details.
+Future<void> showMeetupComposerSheet(
+  BuildContext context, {
+  ValueChanged<String>? onCreated,
+  ComposerPlacePick? initialPlace,
+}) {
+  final router = GoRouter.maybeOf(context);
+  return showDabblerSheet<void>(
+    context: context,
+    detent: DabblerSheetDetent.fractions,
+    detents: const <double>[0.94],
+    pageBackground: true,
+    showCloseButton: false,
+    // The shell draws the title row (with Cancel) and the sticky footer; the
+    // sheet's own header carries only the grab handle and the route's name.
+    title: AppLocalizations.of(context).meetups_create_title,
+    titleWidget: const SizedBox.shrink(),
+    builder: (sheetContext) => MeetupComposerScreen(
+      initialPlace: initialPlace,
+      onCreated: (id) {
+        Navigator.of(sheetContext).maybePop();
+        if (onCreated != null) {
+          onCreated(id);
+        } else {
+          router?.push(RoutePaths.meetupDetail(id));
+        }
+      },
+    ),
+  );
+}
+
 /// The Create meet-up drawer, drawn from `Home Feed.dc.html:1132-1280`: sport
 /// tiles, title and description, When (date, start, End), Location, Capacity,
 /// and Advanced options (How people join, Skill range, Vibe).
@@ -51,7 +85,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   TimeOfDay? _start;
   TimeOfDay? _end;
   ComposerPlacePick? _place;
-  int _capacity = 0; // 0 = no limit
+  int _capacity = 8; // the frame's default; 0 = no limit (sent as null)
   String _policy = 'open';
   int? _minSkill;
   int? _maxSkill;
@@ -63,8 +97,17 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   @override
   void initState() {
     super.initState();
-    _date = widget.initialDate;
-    _start = widget.initialStart;
+    // The frame opens on Today at 6:00 AM; when that moment has passed, the
+    // next sensible start is tomorrow at 6:00 AM.
+    final now = DateTime.now();
+    const sixAm = TimeOfDay(hour: 6, minute: 0);
+    final todaySix = DateTime(now.year, now.month, now.day, 6);
+    _date =
+        widget.initialDate ??
+        (todaySix.isAfter(now)
+            ? DateTime(now.year, now.month, now.day)
+            : DateTime(now.year, now.month, now.day + 1));
+    _start = widget.initialStart ?? sixAm;
     _place = widget.initialPlace;
   }
 
@@ -266,23 +309,26 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
                   style: DabblerType.footnote,
                   tone: DabblerTextTone.secondary,
                 ),
-                data: (list) => DabblerTileGrid(
-                  columns: 4,
-                  children: <Widget>[
-                    for (final s in list)
-                      DabblerSelectableCard(
-                        layout: DabblerSelectableCardLayout.tile,
-                        title: s.nameEn,
-                        leading: DabblerSportIcon.fromKey(
-                          (s.sportKey ?? '').replaceAll('_', '-'),
-                          size: DabblerSizing.iconLg,
-                          color: colors.textPrimary,
+                data: (list) {
+                  _sport ??= list.isEmpty ? null : list.first;
+                  return DabblerTileGrid(
+                    columns: 4,
+                    children: <Widget>[
+                      for (final s in list)
+                        DabblerSelectableCard(
+                          layout: DabblerSelectableCardLayout.tile,
+                          title: s.nameEn,
+                          leading: DabblerSportIcon.fromKey(
+                            (s.sportKey ?? '').replaceAll('_', '-'),
+                            size: DabblerSizing.iconLg,
+                            color: colors.textPrimary,
+                          ),
+                          selected: _sport?.id == s.id,
+                          onChanged: (_) => setState(() => _sport = s),
                         ),
-                        selected: _sport?.id == s.id,
-                        onChanged: (_) => setState(() => _sport = s),
-                      ),
-                  ],
-                ),
+                    ],
+                  );
+                },
               ),
             ],
           ),
@@ -325,11 +371,12 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
           child: ComposerSettingsRow(
             icon: 'location',
             title: l.meetups_location,
-            subtitle: l.meetups_location_sub,
-            trailing: ComposerSelectPill(
-              value: _place?.name ?? l.composer_select,
-              caret: ComposerSelectCaret.right,
-              onTap: _pickPlace,
+            subtitle: _place?.name ?? l.meetups_location_sub,
+            trailing: DabblerButton.icon(
+              icon: 'map',
+              semanticLabel: l.meetups_location,
+              tone: DabblerButtonTone.text,
+              onPressed: _pickPlace,
             ),
           ),
         ),

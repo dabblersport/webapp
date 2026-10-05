@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
+import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -250,7 +251,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       case _createGame:
         router.push(RoutePaths.createGame);
       case _createMeetup:
-        router.push(RoutePaths.createMeetup);
+        showMeetupComposerSheet(context);
     }
   }
 

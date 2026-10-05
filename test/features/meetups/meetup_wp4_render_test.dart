@@ -59,9 +59,10 @@ Future<void> _shoot(
   Locale locale,
   String name, {
   Future<void> Function()? before,
+  double height = 852,
 }) async {
   final key = GlobalKey();
-  tester.view.physicalSize = const Size(393, 852);
+  tester.view.physicalSize = Size(393, height);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
@@ -165,66 +166,80 @@ void main() {
   for (final l in const <Locale>[Locale('en'), Locale('ar')]) {
     final t = l.languageCode;
 
-    testWidgets('create default $t', (tester) async {
-      await _shoot(
-        tester,
-        const MeetupComposerScreen(),
-        FakeMeetupRepository(),
-        l,
-        'meetups-create-default-$t',
-      );
-    });
-
-    testWidgets('create filled $t', (tester) async {
-      await _shoot(
-        tester,
-        MeetupComposerScreen(
-          initialDate: DateTime.now(),
-          initialStart: const TimeOfDay(hour: 6, minute: 0),
-          initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+    Future<void> create(
+      WidgetTester tester,
+      String name, {
+      FakeMeetupRepository? repo,
+      bool filled = false,
+      bool advanced = false,
+      bool submit = false,
+    }) => _shoot(
+      tester,
+      Builder(
+        builder: (context) => DabblerButton(
+          label: 'open',
+          onPressed: () => showMeetupComposerSheet(
+            context,
+            initialPlace: filled
+                ? const ComposerPlacePick(name: 'Kite Beach')
+                : null,
+          ),
         ),
-        FakeMeetupRepository(),
-        l,
-        'meetups-create-filled-$t',
-        before: () async {
-          await tester.tap(find.text('Running'));
+      ),
+      repo ?? FakeMeetupRepository(),
+      l,
+      name,
+      height: advanced ? 1250 : 852,
+      before: () async {
+        await tester.tap(find.text('open'));
+        await settle(tester);
+        tester.takeException();
+        if (filled) {
           await tester.enterText(
             find.byType(EditableText).first,
             t == 'ar' ? 'جري الشروق' : 'Sunrise run',
           );
           await tester.pump();
+        }
+        if (advanced) {
           await tester.tap(find.text('Advanced options'));
           await settle(tester);
-        },
+        }
+        if (submit) {
+          await tester.tap(find.byType(DabblerButton).last);
+          await settle(tester);
+        }
+      },
+    );
+
+    testWidgets('create default $t', (tester) async {
+      await create(tester, 'meetups-create-default-$t');
+    });
+
+    testWidgets('create filled $t', (tester) async {
+      await create(tester, 'meetups-create-filled-$t', filled: true);
+    });
+
+    testWidgets('create advanced $t', (tester) async {
+      await create(
+        tester,
+        'meetups-create-advanced-$t',
+        filled: true,
+        advanced: true,
       );
     });
 
     testWidgets('create error $t', (tester) async {
-      final repo = FakeMeetupRepository()
-        ..createFailure = const Failure(
-          code: 'organiser_required',
-          message: 'organiser_required',
-        );
-      await _shoot(
+      await create(
         tester,
-        MeetupComposerScreen(
-          initialDate: DateTime.now(),
-          initialStart: const TimeOfDay(hour: 6, minute: 0),
-          initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
-        ),
-        repo,
-        l,
         'meetups-create-error-$t',
-        before: () async {
-          await tester.tap(find.text('Running'));
-          await tester.enterText(
-            find.byType(EditableText).first,
-            'Sunrise run',
-          );
-          await tester.pump();
-          await tester.tap(find.byType(DabblerButton).last);
-          await settle(tester);
-        },
+        repo: FakeMeetupRepository()
+          ..createFailure = const Failure(
+            code: 'organiser_required',
+            message: 'organiser_required',
+          ),
+        filled: true,
+        submit: true,
       );
     });
 
