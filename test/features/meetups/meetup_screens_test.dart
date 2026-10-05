@@ -231,8 +231,18 @@ void main() {
         // The test font (Ahem) is wider than the real one, so the long
         // button label overflows here; the assertion is on the content.
         tester.takeException();
-        expect(find.text('No meetups available.'), findsOneWidget);
-        expect(find.text('Explore another activity'), findsOneWidget);
+        expect(
+          find.text(
+            tag == 'ar' ? 'لا توجد لقاءات متاحة.' : 'No meetups available.',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.text(
+            tag == 'ar' ? 'استكشف نشاطًا آخر' : 'Explore another activity',
+          ),
+          findsOneWidget,
+        );
       });
 
       testWidgets('one upcoming is a CardUpcoming ($tag)', (tester) async {

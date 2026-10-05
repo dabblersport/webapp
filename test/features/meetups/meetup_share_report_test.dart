@@ -52,7 +52,9 @@ void main() {
       tester,
     ) async {
       final shared = await _pump(tester, locale: locale);
-      await tester.tap(find.bySemanticsLabel('Share'));
+      await tester.tap(
+        find.bySemanticsLabel(locale.languageCode == 'ar' ? 'مشاركة' : 'Share'),
+      );
       await settle(tester);
       expect(shared, hasLength(1));
       expect(shared.single.$1, 'https://app.dabbler.pro/meetups/m1');

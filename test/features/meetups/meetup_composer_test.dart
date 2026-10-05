@@ -49,7 +49,10 @@ void main() {
       tester,
     ) async {
       final repo = await _open(tester, locale: locale);
-      expect(find.text('Create meet-up'), findsWidgets);
+      expect(
+        find.text(tag == 'ar' ? 'لقاء جديد' : 'Create meet-up'),
+        findsWidgets,
+      );
       await tester.tap(find.byType(DabblerButton).last);
       await settle(tester);
       expect(repo.createCalls, isEmpty);

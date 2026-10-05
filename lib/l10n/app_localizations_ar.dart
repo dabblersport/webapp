@@ -5371,11 +5371,11 @@ class AppLocalizationsAr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '⁨$names⁩ و$count شخص آخر',
-      many: '⁨$names⁩ و$count شخصًا آخر',
-      few: '⁨$names⁩ و$count أشخاص آخرين',
-      two: '⁨$names⁩ وشخصان آخران',
-      one: '⁨$names⁩ وشخص آخر',
+      other: '$names و$count شخص آخر',
+      many: '$names و$count شخصًا آخر',
+      few: '$names و$count أشخاص آخرين',
+      two: '$names وشخصان آخران',
+      one: '$names وشخص آخر',
     );
     return '$_temp0';
   }
@@ -5515,7 +5515,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String meetups_remove_title(String name) {
-    return 'إزالة ⁨$name⁩؟';
+    return 'إزالة $name؟';
   }
 
   @override
@@ -5567,7 +5567,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String meetups_share_headline(String title) {
-    return 'انضم إليّ في ⁨$title⁩ على Dabbler!';
+    return 'انضم إليّ في $title على Dabbler!';
   }
 
   @override

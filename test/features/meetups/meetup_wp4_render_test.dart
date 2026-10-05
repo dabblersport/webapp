@@ -202,7 +202,9 @@ void main() {
           await tester.pump();
         }
         if (advanced) {
-          await tester.tap(find.text('Advanced options'));
+          await tester.tap(
+            find.text(t == 'ar' ? 'خيارات متقدمة' : 'Advanced options'),
+          );
           await settle(tester);
         }
         if (submit) {
@@ -279,7 +281,9 @@ void main() {
         before: () async {
           await tester.drag(find.byType(ListView), const Offset(0, -600));
           await tester.pump();
-          await tester.tap(find.text('Cancel meetup'));
+          await tester.tap(
+            find.text(t == 'ar' ? 'إلغاء اللقاء' : 'Cancel meetup'),
+          );
           await settle(tester);
         },
       );
@@ -330,7 +334,9 @@ void main() {
         l,
         'meetups-report-menu-$t',
         before: () async {
-          await tester.tap(find.bySemanticsLabel('More'));
+          await tester.tap(
+            find.bySemanticsLabel(t == 'ar' ? 'المزيد' : 'More'),
+          );
           await settle(tester);
         },
       );
@@ -349,9 +355,13 @@ void main() {
         l,
         'meetups-report-dialog-$t',
         before: () async {
-          await tester.tap(find.bySemanticsLabel('More'));
+          await tester.tap(
+            find.bySemanticsLabel(t == 'ar' ? 'المزيد' : 'More'),
+          );
           await settle(tester);
-          await tester.tap(find.text('Report meetup'));
+          await tester.tap(
+            find.text(t == 'ar' ? 'الإبلاغ عن اللقاء' : 'Report meetup'),
+          );
           await settle(tester);
           await settle(tester);
         },

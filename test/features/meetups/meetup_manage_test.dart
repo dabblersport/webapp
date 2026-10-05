@@ -66,10 +66,11 @@ void main() {
       expect(find.text('Lina Haddad'), findsOneWidget);
       expect(find.text('Yousef Amer'), findsOneWidget);
       expect(find.text('Nadia Saleh'), findsOneWidget);
-      expect(find.text('Requests'), findsOneWidget);
-      expect(find.text('Approve'), findsOneWidget);
-      expect(find.text('Decline'), findsOneWidget);
-      expect(find.text('Remove'), findsNWidgets(2));
+      final ar = locale.languageCode == 'ar';
+      expect(find.text(ar ? 'الطلبات' : 'Requests'), findsOneWidget);
+      expect(find.text(ar ? 'قبول' : 'Approve'), findsOneWidget);
+      expect(find.text(ar ? 'رفض' : 'Decline'), findsOneWidget);
+      expect(find.text(ar ? 'إزالة' : 'Remove'), findsNWidgets(2));
     });
   }
 
