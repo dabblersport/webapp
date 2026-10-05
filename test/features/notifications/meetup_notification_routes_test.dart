@@ -68,6 +68,25 @@ void main() {
       expect(meetupPushRoute(data, enabled: true), RoutePaths.meetups);
     });
 
+    test('host kind routes to manage; meetup.cancelled to the details', () {
+      expect(
+        meetupPushRoute({
+          'kind_key': 'meetup.rsvp_received',
+          'action_route': '',
+          'meetup_id': id,
+        }, enabled: true),
+        RoutePaths.meetupManage(id),
+      );
+      expect(
+        meetupPushRoute({
+          'kind_key': 'meetup.cancelled',
+          'action_route': '',
+          'meetup_id': id,
+        }, enabled: true),
+        RoutePaths.meetupDetail(id),
+      );
+    });
+
     test('flag off gives none', () {
       final data = {
         'kind_key': 'meetup.cancelled',
