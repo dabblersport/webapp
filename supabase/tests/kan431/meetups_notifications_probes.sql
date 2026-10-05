@@ -216,6 +216,88 @@ begin
 end $$;
 rollback;
 
+-- C3b [WRITE-IN-TRANSACTION-ROLLBACK] approve while FULL (pending -> interested): exactly ONE
+--     meetup.request_approved to the attendee titled 'Your request was approved, but the
+--     meet-up is full' (the migration's exact string), NONE to the host.
+begin;
+do $$
+declare
+  host_u uuid; u1 uuid; u2 uuid; sp uuid; var uuid; req int; mid uuid; n int; t text;
+begin
+  select p.user_id into host_u from public.profiles p
+   where p.persona_type='organiser' and p.is_active and public.can_create_meetup(p.id) limit 1;
+  select x.user_id into u1 from public.profiles x where x.is_active and x.persona_type='player' and x.user_id <> host_u order by x.created_at limit 1;
+  select x.user_id into u2 from public.profiles x where x.is_active and x.persona_type='player' and x.user_id not in (host_u,u1) order by x.created_at limit 1;
+  if host_u is null or u1 is null or u2 is null then raise exception 'FIXTURE: need organiser + 2 players'; end if;
+  select s.id, v.id, v.required_players into sp, var, req
+    from public.sports s join public.sport_variants v on v.sport_id=s.id
+   where s.is_active and v.is_active order by v.required_players limit 1;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', host_u, 'role','authenticated')::text, true);
+  set local role authenticated;
+  mid := public.rpc_create_meetup('organiser', sp, var, 'Probe notif full', null, null, 'Probe loc', null, null,
+          now()+interval '7 days', now()+interval '8 days', greatest(req,2), 'public', 'request', false, null, null, null, null);
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role','authenticated')::text, true);
+  set local role authenticated; perform public.rpc_meetup_rsvp(mid,'request',null,null); reset role;
+
+  -- fill capacity: set it to the current going count (host only = 1) as the host
+  perform set_config('request.jwt.claims', json_build_object('sub', host_u, 'role','authenticated')::text, true);
+  set local role authenticated;
+  perform public.rpc_meetup_update(mid, p_capacity => 1);
+  if public.rpc_meetup_decide_request(mid, u1, 'approve') <> 'interested' then
+    raise exception 'C3b FAIL: approve on a full meetup did not give interested'; end if;
+  reset role;
+
+  select count(*), min(title) into n, t from public.notifications
+   where to_user_id = u1 and kind_key = 'meetup.request_approved' and context->>'entity_id' = mid::text;
+  if n <> 1 then raise exception 'C3b FAIL: attendee got % request_approved (expected 1)', n; end if;
+  if t <> 'Your request was approved, but the meet-up is full' then raise exception 'C3b FAIL: title was %', t; end if;
+  select count(*) into n from public.notifications
+   where to_user_id = host_u and kind_key = 'meetup.request_approved';
+  if n <> 0 then raise exception 'C3b FAIL: host notified of own decision'; end if;
+  raise notice 'C3b PASS';
+end $$;
+rollback;
+
+-- C3c [WRITE-IN-TRANSACTION-ROLLBACK] host removes a PENDING attendee via
+--     rpc_meetup_remove_attendee: exactly ONE meetup.request_declined to them, none to the host.
+begin;
+do $$
+declare
+  host_u uuid; u1 uuid; sp uuid; var uuid; req int; mid uuid; n int;
+begin
+  select p.user_id into host_u from public.profiles p
+   where p.persona_type='organiser' and p.is_active and public.can_create_meetup(p.id) limit 1;
+  select x.user_id into u1 from public.profiles x where x.is_active and x.persona_type='player' and x.user_id <> host_u order by x.created_at limit 1;
+  if host_u is null or u1 is null then raise exception 'FIXTURE: need organiser + player'; end if;
+  select s.id, v.id, v.required_players into sp, var, req
+    from public.sports s join public.sport_variants v on v.sport_id=s.id
+   where s.is_active and v.is_active order by v.required_players limit 1;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', host_u, 'role','authenticated')::text, true);
+  set local role authenticated;
+  mid := public.rpc_create_meetup('organiser', sp, var, 'Probe notif remove', null, null, 'Probe loc', null, null,
+          now()+interval '7 days', now()+interval '8 days', greatest(req,6), 'public', 'request', false, null, null, null, null);
+  reset role;
+  perform set_config('request.jwt.claims', json_build_object('sub', u1, 'role','authenticated')::text, true);
+  set local role authenticated; perform public.rpc_meetup_rsvp(mid,'request',null,null); reset role;
+
+  perform set_config('request.jwt.claims', json_build_object('sub', host_u, 'role','authenticated')::text, true);
+  set local role authenticated;
+  perform public.rpc_meetup_remove_attendee(mid, u1);
+  reset role;
+
+  select count(*) into n from public.notifications
+   where to_user_id = u1 and kind_key = 'meetup.request_declined' and context->>'entity_id' = mid::text;
+  if n <> 1 then raise exception 'C3c FAIL: removed pending attendee got % request_declined (expected 1)', n; end if;
+  select count(*) into n from public.notifications
+   where to_user_id = host_u and kind_key = 'meetup.request_declined';
+  if n <> 0 then raise exception 'C3c FAIL: host notified'; end if;
+  raise notice 'C3c PASS';
+end $$;
+rollback;
+
 -- C4 cancel: going / interested / pending attendees are told once each; the host
 --    (actor) is not; cancelled-already attendees are not.
 begin;

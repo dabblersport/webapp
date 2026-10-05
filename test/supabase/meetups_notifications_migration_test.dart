@@ -194,6 +194,9 @@ void main() {
         'host-self',
         'self-cancel',
         'actor',
+        '-- C3b [WRITE-IN-TRANSACTION-ROLLBACK]',
+        '-- C3c [WRITE-IN-TRANSACTION-ROLLBACK]',
+        'Your request was approved, but the meet-up is full',
       ]) {
         expect(probes, contains(needle), reason: needle);
       }
