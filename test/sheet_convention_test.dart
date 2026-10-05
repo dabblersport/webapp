@@ -56,6 +56,8 @@ import 'package:flutter_test/flutter_test.dart';
 const String _allowList = '''
 lib/core/widgets/composer_drawer_kit.dart#1 | tall composer keeps its fixed 0.82 fraction: Home Feed.dc.html:650 draws the vibes sheet at hint-size 100%,82%; every other composer sheet is content-sized
 lib/features/home/presentation/screens/home_screen.dart#3 | city sheet keeps its fixed 0.66 fraction: Home Feed frame city sheet is 0.66 of the viewport (KAN-433 measure, panel 393x562.31 matches); content padding is HomeLocationPickerSheet's (location seat)
+lib/features/meetups/presentation/screens/meetup_composer_screen.dart#1 | create drawer keeps its fixed 0.94 fraction: Home Feed.dc.html:1134 draws the meetup create sheet at hint-size 100%,94% (same as :472/:927)
+lib/features/meetups/presentation/screens/meetup_composer_screen.dart#3 | vibe picker keeps tall:true 0.82: Home Feed.dc.html:650 draws the vibes sheet at 100%,82%
 lib/features/social/presentation/widgets/composer_vibes_sheet.dart#1 | `tall: true` keeps the 0.82 fraction: Home Feed.dc.html:650 vibes sheet is drawn at 100%,82%
 ''';
 
