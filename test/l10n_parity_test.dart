@@ -131,6 +131,45 @@ List<String> checkParity(
   return out;
 }
 
+/// Dialect markers that must not appear in the (Modern Standard) AR copy.
+/// Explicit list only; ambiguous words (خلاص، قوي، فيه) are deliberately out.
+const List<String> _dialectMarkers = [
+  'يلا', 'مش', 'عشان', 'علشان', 'دلوقتي', 'دلوقت', 'إيه', 'ايه', 'ده', 'دي',
+  'دا', 'كده', 'كدا', 'وين', 'شنو', 'شلون', 'لسه', 'لسا', 'بقى', 'اللي',
+  'ليه', 'إزاي', 'ازاي', 'فين', 'برضه', 'برضو', 'شوية', 'حاجة', 'عايز',
+  'عايزة', 'مفيش',
+  'لمّة', // shadda optional, handled below
+];
+
+/// Substring matching is WRONG here: 'يلا' is a dialect word, but it is also
+/// a substring of many legitimate MSA words, e.g. 'الميلاد' (ا-ل-م-ي-ل-ا-د)
+/// contains 'يلا', as do 'تسجيلات' and 'التحليلات'. A marker only counts when
+/// it is a standalone word: not preceded or followed by an Arabic letter.
+RegExp _markerRe(String m) {
+  final body = m
+      .replaceAll('\u0651', '')
+      .replaceAll('ّ', '')
+      .split('')
+      .map(RegExp.escape)
+      .join('[\u064B-\u0652]*');
+  return RegExp('(?<![ء-ي])$body(?![ء-ي])');
+}
+
+/// marker -> keys whose AR value contains it as a standalone word.
+Map<String, List<String>> scanDialect(Map<String, dynamic> ar) {
+  final hits = <String, List<String>>{};
+  for (final e in ar.entries) {
+    final v = e.value;
+    if (e.key.startsWith('@') || v is! String) continue;
+    for (final m in _dialectMarkers) {
+      if (_markerRe(m).hasMatch(v)) {
+        (hits[m.replaceAll('ّ', '')] ??= []).add(e.key);
+      }
+    }
+  }
+  return hits;
+}
+
 void main() {
   Map<String, dynamic> load(String p) =>
       json.decode(File(p).readAsStringSync()) as Map<String, dynamic>;
@@ -141,6 +180,28 @@ void main() {
       load('lib/l10n/app_ar.arb'),
     );
     expect(problems, isEmpty, reason: problems.join('\n'));
+  });
+
+  test('real AR ARB: no dialect marker as a standalone word', () {
+    final hits = scanDialect(load('lib/l10n/app_ar.arb'));
+    expect(
+      hits,
+      isEmpty,
+      reason: hits.entries.map((e) => '${e.key}: ${e.value}').join('\n'),
+    );
+  });
+
+  group('dialect guard self-test', () {
+    test('standalone dialect word FAILS', () {
+      expect(scanDialect({'k': 'يلا اختر تاريخ ميلادك'}), isNotEmpty);
+      expect(scanDialect({'k': 'لمّة الأصحاب'}), isNotEmpty);
+      expect(scanDialect({'k': 'لمة الأصحاب'}), isNotEmpty);
+    });
+    test('MSA words containing a marker substring PASS', () {
+      expect(scanDialect({'k': 'تاريخ الميلاد'}), isEmpty);
+      expect(scanDialect({'k': 'تسجيلات الحضور'}), isEmpty);
+      expect(scanDialect({'k': 'التحليلات والتفضيلات'}), isEmpty);
+    });
   });
 
   group('self-test (synthetic maps)', () {
