@@ -3,6 +3,7 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -24,7 +25,13 @@ class _KindToggle {
 /// Screen for managing notification preferences, backed by
 /// `public.notification_settings`.
 class NotificationSettingsScreen extends ConsumerWidget {
-  const NotificationSettingsScreen({super.key});
+  const NotificationSettingsScreen({
+    super.key,
+    this.meetupsEnabled = FeatureFlags.enableMeetups,
+  });
+
+  /// Shows the meetup host and guest kinds; follows FeatureFlags.enableMeetups.
+  final bool meetupsEnabled;
 
   static List<_KindToggle> _gameToggles(AppLocalizations l) => [
     _KindToggle(
@@ -84,7 +91,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
     ),
   ];
 
-  static List<_KindToggle> _connectionToggles(AppLocalizations l) => [
+  static List<_KindToggle> _connectionToggles(
+    AppLocalizations l, {
+    bool meetups = false,
+  }) => [
     _KindToggle(
       l.notif_settings_kind_friends,
       l.notif_settings_kind_friends_sub,
@@ -103,6 +113,38 @@ class NotificationSettingsScreen extends ConsumerWidget {
       'people',
       const ['meetup.invited', 'meetup.player_joined'],
     ),
+    if (meetups) ...[
+      _KindToggle(
+        l.notif_settings_kind_meetup_rsvps,
+        l.notif_settings_kind_meetup_rsvps_sub,
+        'people',
+        const ['meetup.rsvp_received'],
+      ),
+      _KindToggle(
+        l.notif_settings_kind_meetup_requests,
+        l.notif_settings_kind_meetup_requests_sub,
+        'profile-add',
+        const ['meetup.request_received'],
+      ),
+      _KindToggle(
+        l.notif_settings_kind_meetup_approved,
+        l.notif_settings_kind_meetup_approved_sub,
+        'refresh-circle',
+        const ['meetup.request_approved'],
+      ),
+      _KindToggle(
+        l.notif_settings_kind_meetup_declined,
+        l.notif_settings_kind_meetup_declined_sub,
+        'refresh-circle',
+        const ['meetup.request_declined'],
+      ),
+      _KindToggle(
+        l.notif_settings_kind_meetup_cancelled,
+        l.notif_settings_kind_meetup_cancelled_sub,
+        'alarm',
+        const ['meetup.cancelled'],
+      ),
+    ],
   ];
 
   @override
@@ -193,7 +235,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
               _buildKindSection(
                 context,
                 AppLocalizations.of(context).notif_settings_group_connections,
-                _connectionToggles(AppLocalizations.of(context)),
+                _connectionToggles(
+                  AppLocalizations.of(context),
+                  meetups: meetupsEnabled,
+                ),
                 settings,
                 controller,
               ),

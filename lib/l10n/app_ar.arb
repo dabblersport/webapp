@@ -31,7 +31,6 @@
   "news_resubscribed_snack": "ستظهر الأخبار من جديد في «لك»",
   "news_resubscribe_banner": "الأخبار مخفية من «لك».",
   "news_resubscribe_action": "أظهرها من جديد",
-
   "auth_welcome_title": "أهلًا بك!",
   "auth_welcome_subtitle": "يسعدنا انضمامك إلينا. أنشئ حسابًا وابدأ اللعب مع مجتمعك الرياضي.",
   "auth_welcome_trust_heading": "مبني على الثقة",
@@ -48,12 +47,13 @@
   "auth_welcome_google_error": "تعذّر تسجيل الدخول عبر Google: {error}",
   "@auth_welcome_google_error": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "auth_welcome_country_picker_title": "اختر بلدك",
   "auth_welcome_language_picker_title": "اختر اللغة",
-
   "landing_quote1": "وعدت نفسي أن ألعب مرتين في الأسبوع على الأقل.",
   "landing_quote2": "بين العمل والحياة، إيجاد مباراة أصعب من جري تسعين دقيقة.",
   "landing_tagline": "يربط دابلر اللاعبين والكباتن والملاعب، فتتوقف عن البحث وتبدأ اللعب",
@@ -148,7 +148,6 @@
   "persona_socialiser_item3": "كن ودودًا، فكل من هنا هو زميل فريق لشخص ما.",
   "persona_socialiser_cta": "ابدأ الاستكشاف",
   "auth_or": "أو",
-
   "email_input_title": "المصادقة",
   "email_input_subtitle": "أدخل بريدك الإلكتروني للبدء",
   "email_input_label": "البريد الإلكتروني",
@@ -166,7 +165,6 @@
   "email_input_validate_invalid": "أدخل بريدًا إلكترونيًا صالحًا",
   "email_input_error_generic": "حدث خطأ. يرجى المحاولة مرة أخرى.",
   "email_input_google_failed": "فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.",
-
   "email_password_title": "تسجيل الدخول",
   "email_password_subtitle": "أدخل بريدك الإلكتروني وكلمة المرور\nأو سجّل الدخول برمز التحقق",
   "email_password_forgot": "نسيت كلمة المرور؟",
@@ -187,13 +185,14 @@
   "email_password_apple_soon": "تسجيل الدخول عبر Apple قادم قريبًا.",
   "email_password_google_failed": "فشل تسجيل الدخول عبر Google.",
   "email_password_validate_email_hint": "أدخل بريدًا إلكترونيًا صالحًا.",
-
   "email_verify_appbar": "تأكيد البريد الإلكتروني",
   "email_verify_title": "تحقق من صندوق الوارد",
   "email_verify_body_with_email": "أرسلنا رابط تأكيد إلى {email}.\n\nيرجى تأكيد بريدك الإلكتروني لإكمال إنشاء حسابك.",
   "@email_verify_body_with_email": {
     "placeholders": {
-      "email": { "type": "String" }
+      "email": {
+        "type": "String"
+      }
     }
   },
   "email_verify_body_no_email": "أرسلنا رابط تأكيد إلى بريدك الإلكتروني.\n\nيرجى تأكيد بريدك الإلكتروني لإكمال إنشاء حسابك.",
@@ -203,7 +202,6 @@
   "email_verify_different_account": "استخدم حسابًا آخر",
   "email_verify_no_email_error": "لا يوجد بريد إلكتروني للمستخدم الحالي.",
   "email_verify_spam_note": "إن لم تجد الرسالة، تحقق من مجلد البريد المزعج أو اطلب رابطًا جديدًا من شاشة تسجيل الدخول.",
-
   "forgot_password_title": "إعادة تعيين كلمة المرور",
   "forgot_password_subtitle": "أدخل بريدك الإلكتروني وسنرسل إليك رابطًا لإعادة تعيين كلمة المرور.",
   "forgot_password_email_hint": "البريد الإلكتروني",
@@ -211,7 +209,6 @@
   "forgot_password_sent_msg": "تم إرسال الرابط! تحقق من صندوق الوارد ومجلد البريد المزعج لمعرفة خطوات إعادة تعيين كلمة المرور.",
   "forgot_password_back_to_signin": "العودة إلى تسجيل الدخول",
   "forgot_password_validate_email": "أدخل بريدًا إلكترونيًا صالحًا",
-
   "otp_verify_title_email": "تأكيد البريد الإلكتروني",
   "otp_verify_title_phone": "تأكيد رقم الهاتف",
   "otp_verify_subtitle_email": "أدخل الرمز المكوّن من 6 أرقام الذي أرسلناه إلى بريدك الإلكتروني",
@@ -223,7 +220,9 @@
   "otp_verify_resend_countdown": "أعد إرسال الرمز ({seconds}ث)",
   "@otp_verify_resend_countdown": {
     "placeholders": {
-      "seconds": { "type": "int" }
+      "seconds": {
+        "type": "int"
+      }
     }
   },
   "otp_verify_resend": "أعد إرسال الرمز",
@@ -233,10 +232,11 @@
   "otp_verify_error_prefix": "خطأ: {error}",
   "@otp_verify_error_prefix": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "reset_password_title": "إعادة تعيين كلمة المرور",
   "reset_password_subtitle": "أنشئ كلمة مرور جديدة لحسابك",
   "reset_password_new_label": "كلمة المرور الجديدة",
@@ -246,12 +246,13 @@
   "reset_password_validate_min": "استخدم 8 أحرف على الأقل",
   "reset_password_validate_confirm": "أعد إدخال كلمة المرور",
   "reset_password_validate_match": "كلمتا المرور غير متطابقتين",
-
   "set_password_title": "أنشئ حسابك",
   "set_password_email_prefix": "البريد الإلكتروني: {email}",
   "@set_password_email_prefix": {
     "placeholders": {
-      "email": { "type": "String" }
+      "email": {
+        "type": "String"
+      }
     }
   },
   "set_password_username_label": "المعرّف",
@@ -265,7 +266,9 @@
   "set_password_wait_btn": "انتظر {seconds} ث",
   "@set_password_wait_btn": {
     "placeholders": {
-      "seconds": { "type": "int" }
+      "seconds": {
+        "type": "int"
+      }
     }
   },
   "set_password_validate_username_required": "المعرّف مطلوب",
@@ -284,10 +287,11 @@
   "set_password_error_prefix": "خطأ: {error}",
   "@set_password_error_prefix": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "create_info_title": "أخبرنا قليلًا عن نفسك",
   "create_info_subtitle": "أكّد عمرك؛ يجب أن يكون عمرك 16 عامًا أو أكثر لاستخدام دابلر",
   "create_info_birth_date": "تاريخ الميلاد",
@@ -295,7 +299,9 @@
   "create_info_age_display": "عمرك {age} سنة",
   "@create_info_age_display": {
     "placeholders": {
-      "age": { "type": "int" }
+      "age": {
+        "type": "int"
+      }
     }
   },
   "create_info_gender": "الجنس (اختياري)",
@@ -306,17 +312,20 @@
   "create_info_error_max_age": "يجب أن يكون العمر بين 16 و{max} عامًا",
   "@create_info_error_max_age": {
     "placeholders": {
-      "max": { "type": "int" }
+      "max": {
+        "type": "int"
+      }
     }
   },
   "create_info_error_select_gender": "يرجى اختيار الجنس",
   "create_info_error_occurred": "حدث خطأ: {error}",
   "@create_info_error_occurred": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
-
   "set_username_title_onboarding": "عرّف بنفسك",
   "set_username_title_conversion": "أكمل التحويل",
   "set_username_title_new_profile": "أكمل ملفك الشخصي الجديد",
@@ -324,7 +333,9 @@
   "set_username_subtitle_persona": "اختر اسمًا ظاهرًا ومعرّفًا لملفك بصفة {persona}",
   "@set_username_subtitle_persona": {
     "placeholders": {
-      "persona": { "type": "String" }
+      "persona": {
+        "type": "String"
+      }
     }
   },
   "set_username_display_name_label": "الاسم الظاهر",
@@ -339,13 +350,17 @@
   "set_username_converting_to": "جارٍ التحويل إلى {persona}",
   "@set_username_converting_to": {
     "placeholders": {
-      "persona": { "type": "String" }
+      "persona": {
+        "type": "String"
+      }
     }
   },
   "set_username_adding_profile": "جارٍ إضافة ملف {persona}",
   "@set_username_adding_profile": {
     "placeholders": {
-      "persona": { "type": "String" }
+      "persona": {
+        "type": "String"
+      }
     }
   },
   "set_username_validate_display_required": "الاسم الظاهر مطلوب",
@@ -359,7 +374,6 @@
   "set_username_missing_steps": "معلومات مطلوبة ناقصة. يرجى إكمال جميع الخطوات.",
   "set_username_session_expired": "انتهت جلستك. يرجى تأكيد رقم هاتفك مرة أخرى.",
   "set_username_missing_persona_data": "بيانات ناقصة. ابدأ من جديد.",
-
   "intent_title": "ما الذي أتى بك إلى هنا؟",
   "intent_subtitle": "ساعدنا في تخصيص دابلر لك",
   "intent_compete_title": "تنافس",
@@ -373,7 +387,6 @@
   "intent_continue": "المتابعة",
   "intent_back": "رجوع",
   "intent_select_role": "يرجى اختيار دورك",
-
   "interests_title_player": "ما الرياضات التي تمارسها بانتظام؟",
   "interests_title_organiser": "ما الرياضات التي تنوي تنظيمها؟",
   "interests_title_host": "ما الرياضات التي تستضيفها؟",
@@ -384,13 +397,17 @@
   "interests_selected_count_one": "تم اختيار رياضة واحدة ({count})",
   "@interests_selected_count_one": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "interests_selected_count_many": "الرياضات المختارة: {count}",
   "@interests_selected_count_many": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "interests_continue": "المتابعة",
@@ -399,7 +416,6 @@
   "interests_select_one": "يرجى اختيار رياضة واحدة على الأقل",
   "interests_failed_load": "تعذّر تحميل الرياضات",
   "interests_retry": "أعد المحاولة",
-
   "primary_sport_title": "اختر رياضتك الأساسية",
   "primary_sport_subtitle": "ستظهر هذه الرياضة في ملفك الشخصي وتُستخدم افتراضيًا.",
   "primary_sport_helper": "يمكنك تغييرها لاحقًا.",
@@ -500,10 +516,11 @@
   "primary_sport_adding": "جارٍ إضافة ملف {label}",
   "@primary_sport_adding": {
     "placeholders": {
-      "label": { "type": "String" }
+      "label": {
+        "type": "String"
+      }
     }
   },
-
   "identity_verify_title": "التحقق من الهوية",
   "identity_verify_email_label": "البريد الإلكتروني",
   "identity_verify_email_hint": "أدخل بريدك الإلكتروني",
@@ -521,20 +538,23 @@
   "identity_verify_service_error": "خطأ في الخدمة: {error}",
   "@identity_verify_service_error": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "identity_verify_error_generic": "تعذّر إرسال رمز التحقق. يرجى المحاولة مرة أخرى.",
   "identity_verify_nav_failed": "فشل الانتقال: {error}",
   "@identity_verify_nav_failed": {
     "placeholders": {
-      "error": { "type": "String" }
+      "error": {
+        "type": "String"
+      }
     }
   },
   "identity_verify_use_email": "يرجى استخدام بريدك الإلكتروني",
   "identity_verify_required": "البريد الإلكتروني أو رقم الهاتف مطلوب",
   "identity_verify_google_failed": "فشل تسجيل الدخول عبر Google. يرجى المحاولة مرة أخرى.",
-
   "welcome_screen_title_first_time": "أهلًا بك في دابلر 😉",
   "welcome_screen_title_returning": "أهلًا بعودتك! 👋",
   "welcome_screen_title_conversion": "اكتمل التحويل! 🎉",
@@ -560,11 +580,9 @@
   "welcome_screen_socialiser_philosophy": "حضورك يشكّل المجتمع — ودود وشامل ومحترم.",
   "welcome_screen_socialiser_reminder": "كن محترمًا وشاملًا.\nأضف قيمة دون تعطيل المباراة.",
   "welcome_screen_socialiser_emphasis": "تابع حين تكون جاهزًا فقط!",
-
   "onboarding_welcome_title": "جارٍ إعداد حسابك",
   "onboarding_welcome_subtitle": "يستغرق هذا لحظة فقط…",
   "onboarding_welcome_step_profile": "جارٍ إنشاء ملفك الشخصي",
-
   "social_onboarding_welcome_title": "أهلًا بك في المجتمع",
   "social_onboarding_welcome_subtitle": "تواصل مع لاعبين مثلك، وشارك تجارب مبارياتك، وابنِ مجتمعك الرياضي.",
   "social_onboarding_welcome_skip": "تخطّي",
@@ -575,7 +593,6 @@
   "social_onboarding_welcome_chat_desc": "راسل أصدقاءك وشارك لحظات المباريات",
   "social_onboarding_welcome_game_title": "العب معًا",
   "social_onboarding_welcome_game_desc": "اكتشف المباريات وانضم إليها مع شبكتك",
-
   "social_onboarding_friends_appbar": "ابحث عن أصدقائك",
   "social_onboarding_friends_title": "ابحث عن مجتمعك الرياضي",
   "social_onboarding_friends_subtitle": "تواصل مع أصدقائك لمشاركة تجارب المباريات واكتشاف فرص جديدة.",
@@ -586,19 +603,25 @@
   "social_onboarding_friends_selected": "تم اختيار {count}",
   "@social_onboarding_friends_selected": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "social_onboarding_friends_mutual_one": "صديق مشترك ({count})",
   "@social_onboarding_friends_mutual_one": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "social_onboarding_friends_mutual_many": "الأصدقاء المشتركون: {count}",
   "@social_onboarding_friends_mutual_many": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "social_onboarding_friends_add_btn": "أضف",
@@ -608,7 +631,9 @@
   "social_onboarding_friends_send_requests": "أرسل الطلبات ({count}) وتابع",
   "@social_onboarding_friends_send_requests": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
   "social_onboarding_friends_send_request": "أرسل الطلب وتابع",
@@ -617,15 +642,15 @@
   "social_onboarding_friends_sent": "تم إرسال طلبات صداقة إلى {count} من الأشخاص!",
   "@social_onboarding_friends_sent": {
     "placeholders": {
-      "count": { "type": "int" }
+      "count": {
+        "type": "int"
+      }
     }
   },
-
   "social_onboarding_notif_appbar": "الإشعارات",
   "social_onboarding_notif_title": "الإشعارات متوقفة مؤقتًا",
   "social_onboarding_notif_body": "نعيد بناء تفضيلات الإشعارات. يمكنك إنهاء الإعداد الآن وسنضيف خيارات الضبط في تحديث قادم.",
   "social_onboarding_notif_finish": "إنهاء",
-
   "social_onboarding_privacy_appbar": "إعدادات الخصوصية",
   "social_onboarding_privacy_title": "الخصوصية والأمان",
   "social_onboarding_privacy_subtitle": "تحكّم في من يرى ملفك الشخصي ويتفاعل معك. يمكنك تغيير هذه الإعدادات لاحقًا في أي وقت.",
@@ -642,7 +667,6 @@
   "social_onboarding_privacy_online_status_subtitle": "يستطيع أصدقاؤك رؤية متى تكون متصلًا",
   "social_onboarding_privacy_back": "رجوع",
   "social_onboarding_privacy_continue": "المتابعة",
-
   "social_onboarding_complete_title": "أهلًا بك في المجتمع!",
   "social_onboarding_complete_subtitle": "أصبح كل شيء جاهزًا! ابدأ التواصل مع أصدقائك، وشارك تجارب مبارياتك، واكتشف لاعبين جددًا في منطقتك.",
   "social_onboarding_complete_connect_title": "تواصل مع اللاعبين",
@@ -654,7 +678,6 @@
   "social_onboarding_complete_explore_btn": "استكشف المجتمع",
   "social_onboarding_complete_home_btn": "اذهب إلى الرئيسية",
   "social_onboarding_complete_later": "سأستكشف لاحقًا",
-
   "language_select_title": "اختر لغتك",
   "language_select_saving": "جارٍ الحفظ...",
   "register_title": "إنشاء حساب",
@@ -667,7 +690,6 @@
   "post_card_edited": "معدَّل",
   "post_card_menu_repost": "إعادة نشر",
   "post_card_menu_quote_repost": "اقتباس وإعادة نشر",
-
   "post_card_kind_moment": "لحظة",
   "post_card_kind_dab": "Dab",
   "post_card_kind_kick_in": "Kick-in",
@@ -677,16 +699,32 @@
   "post_card_kind_admin": "إدارة",
   "post_card_kind_system": "النظام",
   "post_card_kind_repost": "إعادة نشر",
-
   "post_card_expired": "انتهى",
   "post_card_expires_in_days": "ينتهي بعد {n}ي",
-  "@post_card_expires_in_days": { "placeholders": { "n": { "type": "int" } } },
+  "@post_card_expires_in_days": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "post_card_expires_in_hours": "ينتهي بعد {n}س",
-  "@post_card_expires_in_hours": { "placeholders": { "n": { "type": "int" } } },
+  "@post_card_expires_in_hours": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "post_card_expires_in_minutes": "ينتهي بعد {n}د",
-  "@post_card_expires_in_minutes": { "placeholders": { "n": { "type": "int" } } },
+  "@post_card_expires_in_minutes": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "post_card_expiring_soon": "على وشك الانتهاء",
-
   "repost_card_unavailable": "المنشور الأصلي لم يعد متاحًا.",
   "post_type_original": "أصلي",
   "post_type_news": "أخبار",
@@ -698,7 +736,6 @@
   "post_card_my_story": "قصتي",
   "post_card_kick_in_label": "Kick-In",
   "post_card_allocated": "محجوز",
-
   "nav_feeds": "الرئيسية",
   "nav_community": "المجتمع",
   "nav_venues": "ملاعب",
@@ -727,7 +764,6 @@
   "nav_quick_actions": "اختصارات",
   "nav_find_friends": "ابحث عن أصدقائك",
   "nav_settings": "الإعدادات",
-
   "settings_header_title": "الإعدادات",
   "settings_header_help_tooltip": "مركز المساعدة",
   "settings_hero_eyebrow": "خصّص تجربتك",
@@ -760,15 +796,25 @@
   "settings_sign_out_dialog_body": "هل تريد تسجيل الخروج من حسابك؟",
   "settings_sign_out_dialog_cancel": "إلغاء",
   "settings_sign_out_error": "حدث خطأ أثناء تسجيل الخروج: {error}",
-  "@settings_sign_out_error": { "placeholders": { "error": { "type": "String" } } },
-
+  "@settings_sign_out_error": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
   "account_delete_dialog_warning": "لا يمكن التراجع عن هذا الإجراء. سيُحذف ملفك الشخصي وبياناتك الشخصية. أما سجلات الدفع والحجز فتُحفظ لأغراض محاسبية، ولم تُحدَّد مدة الاحتفاظ بها بعد.",
   "account_delete_success_snack": "تم حذف حسابك وبياناتك الشخصية.",
   "danger_zone_delete_confirmation_message": "سيؤدي هذا إلى حذف حسابك وبياناتك الشخصية ولا يمكن التراجع عنه. أما سجلات الدفع والحجز فتُحفظ لأغراض محاسبية، ولم تُحدَّد مدة الاحتفاظ بها بعد.",
-
   "settings_version_app_name": "دابلر",
   "settings_version_label": "الإصدار {version}",
-  "@settings_version_label": { "placeholders": { "version": { "type": "String" } } },
+  "@settings_version_label": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
   "settings_tile_privacy": "الخصوصية",
   "settings_tile_profile_shown": "ظاهر في ملفك",
   "settings_tile_notifications": "الإشعارات",
@@ -779,19 +825,40 @@
   "settings_tile_privacy_label": "إعدادات الخصوصية",
   "settings_version_copyright": "© 2026 دابلر. جميع الحقوق محفوظة.",
   "settings_persona_become_title": "ابدأ بصفة {persona}",
-  "@settings_persona_become_title": { "placeholders": { "persona": { "type": "String" } } },
+  "@settings_persona_become_title": {
+    "placeholders": {
+      "persona": {
+        "type": "String"
+      }
+    }
+  },
   "settings_persona_convert_title": "التحويل إلى {persona}",
-  "@settings_persona_convert_title": { "placeholders": { "persona": { "type": "String" } } },
+  "@settings_persona_convert_title": {
+    "placeholders": {
+      "persona": {
+        "type": "String"
+      }
+    }
+  },
   "settings_persona_convert_subtitle": "استبدل ملف {persona} الخاص بك",
-  "@settings_persona_convert_subtitle": { "placeholders": { "persona": { "type": "String" } } },
+  "@settings_persona_convert_subtitle": {
+    "placeholders": {
+      "persona": {
+        "type": "String"
+      }
+    }
+  },
   "settings_persona_convert_confirm_body": "سيؤدي هذا إلى تعطيل ملفك بصفة {fromPersona} وإنشاء ملف جديد بصفة {toPersona}.\n\nستبقى بيانات حسابك (العمر والجنس) كما هي.",
   "@settings_persona_convert_confirm_body": {
     "placeholders": {
-      "fromPersona": { "type": "String" },
-      "toPersona": { "type": "String" }
+      "fromPersona": {
+        "type": "String"
+      },
+      "toPersona": {
+        "type": "String"
+      }
     }
   },
-
   "persona_label_host": "مضيف",
   "persona_label_socialiser": "اجتماعي",
   "profile_header_fallback": "الملف الشخصي",
@@ -811,21 +878,29 @@
   "profile_btn_continue": "المتابعة",
   "profile_persona_convert_badge": "تحويل",
   "profile_convert_to": "التحويل إلى {persona}؟",
-  "@profile_convert_to": { "placeholders": { "persona": { "type": "String" } } },
+  "@profile_convert_to": {
+    "placeholders": {
+      "persona": {
+        "type": "String"
+      }
+    }
+  },
   "profile_convert_confirm_body": "أنت على وشك التحويل من {fromPersona} إلى {toPersona}. سيُستبدل ملفك الشخصي الحالي.",
   "@profile_convert_confirm_body": {
     "placeholders": {
-      "fromPersona": { "type": "String" },
-      "toPersona": { "type": "String" }
+      "fromPersona": {
+        "type": "String"
+      },
+      "toPersona": {
+        "type": "String"
+      }
     }
   },
-
   "profile_tab_posts": "المنشورات",
   "profile_tab_replies": "الردود",
   "profile_tab_liked": "الإعجابات",
   "profile_tab_reposts": "إعادات النشر",
   "profile_tab_activity": "النشاط",
-
   "profile_empty_no_activity": "لا يوجد نشاط بعد",
   "profile_empty_no_posts": "لا توجد منشورات بعد",
   "profile_empty_no_replies": "لا توجد ردود بعد",
@@ -833,16 +908,25 @@
   "profile_empty_no_reposts": "لا توجد إعادات نشر بعد",
   "profile_empty_no_sports": "لم تُضف رياضات بعد",
   "profile_error_failed_load_posts": "تعذّر تحميل المنشورات.",
-
   "profile_post_count": "{count, plural, zero{منشور} one{منشور} two{منشوران} few{منشورات} many{منشورًا} other{منشور}}",
-  "@profile_post_count": { "placeholders": { "count": { "type": "int" } } },
+  "@profile_post_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "profile_follower_count": "{count, plural, zero{متابِع} one{متابِع} two{متابِعان} few{متابِعين} many{متابِعًا} other{متابِع}}",
-  "@profile_follower_count": { "placeholders": { "count": { "type": "int" } } },
+  "@profile_follower_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "profile_following_label": "يتابع",
-
   "profile_takedown_title": "تمت إزالة المحتوى",
   "profile_takedown_body": "أُزيل هذا المحتوى لمخالفته إرشادات المجتمع.",
-
   "user_profile_error_not_found_title": "الملف الشخصي غير موجود",
   "user_profile_error_unable_to_load": "تعذّر تحميل الملف الشخصي",
   "user_profile_btn_go_back": "رجوع",
@@ -851,14 +935,12 @@
   "user_profile_btn_follow": "تابع",
   "user_profile_btn_following": "تتابعه",
   "user_profile_age_suffix": "سنة",
-
   "user_profile_stat_games": "المباريات",
   "user_profile_stat_win_rate": "نسبة الفوز",
   "user_profile_stat_sports": "الرياضات",
   "user_profile_stat_reliability": "الالتزام",
   "user_profile_stat_activity": "النشاط",
   "user_profile_stat_last_play": "آخر مباراة",
-
   "user_profile_block_dialog_title": "حظر المستخدم",
   "user_profile_block_dialog_body": "هل تريد حظر هذا المستخدم؟ لن يتمكن من رؤية ملفك الشخصي أو التواصل معك.",
   "user_profile_block_btn_block": "احظر",
@@ -868,7 +950,6 @@
   "user_profile_menu_block_user": "احظر المستخدم",
   "user_profile_menu_report_user": "بلّغ عن المستخدم",
   "user_profile_cannot_message_blocked": "لا يمكنك مراسلة مستخدم محظور",
-
   "notif_signin_required": "سجّل الدخول لعرض الإشعارات",
   "notif_title_notifications": "الإشعارات",
   "notif_title_activity_log": "سجل النشاط",
@@ -893,8 +974,13 @@
   "notif_empty_subtitle": "سنخبرك عندما يحدث شيء",
   "notif_btn_retry": "أعد المحاولة",
   "notif_error_prefix": "خطأ: {message}",
-  "@notif_error_prefix": { "placeholders": { "message": { "type": "String" } } },
-
+  "@notif_error_prefix": {
+    "placeholders": {
+      "message": {
+        "type": "String"
+      }
+    }
+  },
   "activity_last_7_days": "آخر 7 أيام",
   "activity_search_hint": "ابحث في النشاط…",
   "activity_pill_upcoming": "القادمة",
@@ -908,46 +994,128 @@
   "activity_empty_subtitle": "سيظهر نشاطك هنا",
   "activity_day_streak": "يوم متواصل",
   "activity_participants_count": "{count, plural, =1{مشارك واحد} =2{مشاركان} few{{count} مشاركين} many{{count} مشاركًا} other{{count} مشارك}}",
-  "@activity_participants_count": { "placeholders": { "count": { "type": "int" } } },
-
+  "@activity_participants_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "time_just_now": "الآن",
   "time_minutes_ago": "منذ {n}د",
-  "@time_minutes_ago": { "placeholders": { "n": { "type": "int" } } },
+  "@time_minutes_ago": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "time_hours_ago": "منذ {n}س",
-  "@time_hours_ago": { "placeholders": { "n": { "type": "int" } } },
+  "@time_hours_ago": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "time_days_ago": "منذ {n}ي",
-  "@time_days_ago": { "placeholders": { "n": { "type": "int" } } },
-
+  "@time_days_ago": {
+    "placeholders": {
+      "n": {
+        "type": "int"
+      }
+    }
+  },
   "notif_kind_friend_requested": "{actor} أرسل إليك طلب صداقة",
-  "@notif_kind_friend_requested": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_friend_requested": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_friend_requested_anon": "لديك طلب صداقة جديد",
   "notif_kind_friend_accepted": "{actor} قبل طلب صداقتك",
-  "@notif_kind_friend_accepted": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_friend_accepted": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_friend_accepted_anon": "تم قبول طلب صداقتك",
   "notif_kind_social_followed": "{actor} بدأ يتابعك",
-  "@notif_kind_social_followed": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_social_followed": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_social_followed_anon": "لديك متابع جديد",
   "notif_kind_social_circle_joined": "{actor} انضم إلى دائرتك",
-  "@notif_kind_social_circle_joined": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_social_circle_joined": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_social_circle_joined_anon": "انضم أحدهم إلى دائرتك",
   "notif_kind_social_post_liked": "أعجب {actor} بمنشورك",
-  "@notif_kind_social_post_liked": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_social_post_liked": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_social_post_liked_anon": "أُعجب أحدهم بمنشورك",
   "notif_kind_social_post_commented": "علّق {actor} على منشورك",
-  "@notif_kind_social_post_commented": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_social_post_commented": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_social_post_commented_anon": "تعليق جديد على منشورك",
   "notif_kind_social_comment_liked": "أعجب {actor} بتعليقك",
-  "@notif_kind_social_comment_liked": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_social_comment_liked": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_social_comment_liked_anon": "أُعجب أحدهم بتعليقك",
   "notif_kind_social_mentioned": "{actor} أشار إليك",
-  "@notif_kind_social_mentioned": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_social_mentioned": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_social_mentioned_anon": "تمت الإشارة إليك",
   "notif_kind_game_invited": "{actor} دعاك إلى مباراة",
-  "@notif_kind_game_invited": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_game_invited": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_game_invited_anon": "لديك دعوة جديدة إلى مباراة",
   "notif_kind_game_updated": "تم تغيير تفاصيل المباراة",
   "notif_kind_game_join_request": "{actor} طلب الانضمام إلى مباراتك",
-  "@notif_kind_game_join_request": { "placeholders": { "actor": { "type": "String" } } },
+  "@notif_kind_game_join_request": {
+    "placeholders": {
+      "actor": {
+        "type": "String"
+      }
+    }
+  },
   "notif_kind_game_join_request_anon": "طلب أحدهم الانضمام إلى مباراتك",
   "notif_kind_game_waitlist_promoted": "أصبحت ضمن اللاعبين! توفّر مكان",
   "notif_kind_game_reminder": "تذكير بالمباراة",
@@ -973,7 +1141,13 @@
   "settings_about_title": "حول دابلر",
   "settings_about_subtitle": "الشروط، سياسة الخصوصية، التراخيص",
   "settings_search_results": "{count, plural, =1{نتيجة واحدة} =2{نتيجتان} zero{{count} نتيجة} few{{count} نتائج} many{{count} نتيجة} other{{count} نتيجة}}",
-  "@settings_search_results": {"placeholders": {"count": {"type": "int"}}},
+  "@settings_search_results": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "settings_search_no_match": "لا إعدادات تطابق ذلك",
   "settings_path_account": "الحساب والأمان",
   "settings_path_privacy": "الخصوصية",
@@ -983,7 +1157,13 @@
   "settings_path_root": "الإعدادات",
   "settings_sign_out_confirm_body": "سيتم تسجيل خروجك على هذا الجهاز. تبقى مبارياتك وملفك في حسابك.",
   "notif_group_count": "{count, plural, =1{عنصر واحد} =2{عنصران} zero{{count} عنصر} few{{count} عناصر} many{{count} عنصرًا} other{{count} عنصر}}",
-  "@notif_group_count": {"placeholders": {"count": {"type": "int"}}},
+  "@notif_group_count": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "notif_prefs_title": "ما يصلك",
   "notif_prefs_done": "تم",
   "notif_pref_invites_title": "دعوات المباريات",
@@ -998,7 +1178,16 @@
   "notif_quiet_hours_sub": "لا اهتزازات بين هذين الوقتين",
   "notif_quiet_hours_off": "متوقف",
   "notif_quiet_hours_range": "{start} – {end}",
-  "@notif_quiet_hours_range": {"placeholders": {"start": {"type": "String"}, "end": {"type": "String"}}},
+  "@notif_quiet_hours_range": {
+    "placeholders": {
+      "start": {
+        "type": "String"
+      },
+      "end": {
+        "type": "String"
+      }
+    }
+  },
   "acct_title": "الحساب",
   "acct_group_signin": "تسجيل الدخول",
   "acct_row_email": "البريد الإلكتروني",
@@ -1733,7 +1922,7 @@
   "sfx_kind_meetup": "لقاء",
   "sfx_spots": "أماكن",
   "sfx_spots_meta": "{joined}/{max} أماكن",
-  "sfx_posts_count": "{count, plural, =1{\u200fمنشور واحد} =2{\u200fمنشوران} few{\u200f{count} منشورات} many{\u200f{count} منشورًا} other{\u200f{count} منشور}}",
+  "sfx_posts_count": "{count, plural, =1{‏منشور واحد} =2{‏منشوران} few{‏{count} منشورات} many{‏{count} منشورًا} other{‏{count} منشور}}",
   "sfx_on_post": "على {title}",
   "sfx_no_results_for": "لا نتائج لـ \"{query}\"",
   "sfx_none_found": "لم يتم العثور على {label}",
@@ -1762,12 +1951,33 @@
   "profile_stat_rated": "تقييم اللاعبين",
   "profile_stat_primary_sports": "الرياضات الأساسية",
   "profile_stat_sport_matches": "مباريات {sport}",
-  "@profile_stat_sport_matches": {"placeholders": {"sport": {"type": "String"}}},
+  "@profile_stat_sport_matches": {
+    "placeholders": {
+      "sport": {
+        "type": "String"
+      }
+    }
+  },
   "profile_create_another_profile": "إنشاء ملف شخصي آخر",
   "profile_create_persona_profile": "إنشاء ملف {persona}",
-  "@profile_create_persona_profile": {"placeholders": {"persona": {"type": "String"}}},
+  "@profile_create_persona_profile": {
+    "placeholders": {
+      "persona": {
+        "type": "String"
+      }
+    }
+  },
   "sport_profile_overall_level": "{sport} · المستوى العام {level}",
-  "@sport_profile_overall_level": {"placeholders": {"sport": {"type": "String"}, "level": {"type": "String"}}},
+  "@sport_profile_overall_level": {
+    "placeholders": {
+      "sport": {
+        "type": "String"
+      },
+      "level": {
+        "type": "String"
+      }
+    }
+  },
   "profile_sports_followed_note": "الرياضات المتابَعة — للأخبار والنتائج فقط",
   "profile_stat_sports_followed": "الرياضات المتابَعة",
   "composer_place_search": "ابحث عن ملاعب ومناطق",
@@ -1784,5 +1994,106 @@
   "composer_format_title": "صيغة {sport}",
   "composer_players_count": "{count, plural, =1{لاعب واحد} =2{لاعبان} zero{{count} لاعب} few{{count} لاعبين} many{{count} لاعبًا} other{{count} لاعب}}",
   "sfx_comments_count": "{count, plural, =0{لا تعليقات} =1{تعليق واحد} =2{تعليقان} few{{count} تعليقات} many{{count} تعليقًا} other{{count} تعليق}}",
-  "profile_stat_minutes_played": "دقائق اللعب"
+  "profile_stat_minutes_played": "دقائق اللعب",
+  "meetups_tab_all": "الكل",
+  "meetups_join": "انضم للقاء",
+  "meetups_going_count": "{count, plural, one{مشارك واحد} two{مشاركان} few{{count} مشاركين} many{{count} مشاركًا} other{{count} مشارك}}",
+  "meetups_max": "حتى {count}",
+  "meetups_free_note": "بدون رسوم",
+  "meetups_distance_km": "{km} كم",
+  "meetups_show_count": "{count, plural, one{عرض لقاء واحد} two{عرض لقاءين} few{عرض {count} لقاءات} many{عرض {count} لقاءً} other{عرض {count} لقاء}}",
+  "meetups_km_away": "على بعد {km} كم",
+  "notif_settings_kind_meetup_rsvps": "الردود على اللقاءات",
+  "notif_settings_kind_meetup_rsvps_sub": "عندما يرد أحدهم على لقاء تستضيفه",
+  "notif_settings_kind_meetup_requests": "طلبات الانضمام إلى اللقاءات",
+  "notif_settings_kind_meetup_requests_sub": "عندما يطلب أحدهم الانضمام إلى لقاء تستضيفه",
+  "notif_settings_kind_meetup_approved": "قبول طلب الانضمام إلى لقاء",
+  "notif_settings_kind_meetup_approved_sub": "عندما يقبل المضيف طلب انضمامك",
+  "notif_settings_kind_meetup_declined": "رفض طلب الانضمام إلى لقاء",
+  "notif_settings_kind_meetup_declined_sub": "عندما يرفض المضيف طلب انضمامك",
+  "notif_settings_kind_meetup_cancelled": "إلغاء لقاء",
+  "notif_settings_kind_meetup_cancelled_sub": "عندما يُلغى لقاء انضممت إليه",
+  "meetups_none_title": "لا توجد لقاءات متاحة.",
+  "meetups_explore_another": "استكشف نشاطًا آخر",
+  "meetups_load_failed": "تعذّر تحميل اللقاءات",
+  "meetups_request": "اطلب الانضمام",
+  "meetups_cta_going": "مشارك",
+  "meetups_cta_interested": "ربما أشارك",
+  "meetups_cta_full": "مكتمل - أنت مهتم",
+  "meetups_cta_closed": "التسجيل مغلق",
+  "meetups_cta_cancelled": "ملغى",
+  "meetups_cta_started": "بدأ بالفعل",
+  "meetups_cta_unavailable": "غير متاح",
+  "meetups_cta_not_allowed": "بدّل الملف الشخصي للانضمام",
+  "meetups_sheet_title": "هل ستشارك في هذا اللقاء؟",
+  "meetups_sheet_cancel": "إلغاء",
+  "meetups_sheet_yes": "نعم، سأشارك",
+  "meetups_sheet_maybe": "ربما",
+  "meetups_sheet_no": "لا، ليس هذه المرة",
+  "meetups_sheet_confirm": "تأكيد",
+  "meetups_error_generic": "حدث خطأ ما. حاول مرة أخرى.",
+  "meetups_error_cancelled": "أُلغي هذا اللقاء.",
+  "meetups_host_caption": "مضيف مجتمعي",
+  "meetups_tile_meeting_point": "نقطة اللقاء",
+  "meetups_tile_entry": "الدخول",
+  "meetups_load_detail_failed": "تعذّر تحميل هذا اللقاء",
+  "meetups_back": "رجوع",
+  "meetups_names_and_others": "{count, plural, one{{names} وشخص آخر} two{{names} وشخصان آخران} few{{names} و{count} أشخاص آخرين} many{{names} و{count} شخصًا آخر} other{{names} و{count} شخص آخر}}",
+  "meetups_create_title": "لقاء جديد",
+  "meetups_create_title_hint": "عنوان اللقاء",
+  "meetups_create_note_hint": "أضف وصفًا موجزًا للمشاركين...",
+  "meetups_create_name_section": "اختر الاسم والوصف",
+  "meetups_when": "الموعد",
+  "meetups_when_sub": "التاريخ والوقت",
+  "meetups_end": "النهاية",
+  "meetups_location": "الموقع",
+  "meetups_location_sub": "أضف موقعًا أو ملعبًا",
+  "meetups_capacity": "السعة",
+  "meetups_capacity_sub": "الحد الأقصى للمشاركين",
+  "meetups_advanced": "خيارات متقدمة",
+  "meetups_policy": "طريقة الانضمام",
+  "meetups_policy_sub": "إعدادات الانضمام",
+  "meetups_policy_closed": "مغلق",
+  "meetups_skill": "نطاق المهارة",
+  "meetups_skill_sub": "مستوى الخبرة",
+  "meetups_skill_any": "أي مستوى",
+  "meetups_vibe": "الأجواء",
+  "meetups_vibe_sub": "حدّد الأجواء",
+  "meetups_vibe_choose": "اختر",
+  "meetups_create_failed": "تعذّر إنشاء اللقاء",
+  "meetups_err_organiser_required": "يمكن للمنظّمين فقط إنشاء اللقاءات.",
+  "meetups_err_title_invalid": "يجب أن يتراوح العنوان بين 3 و80 حرفًا.",
+  "meetups_err_invalid_time_range": "يجب أن يكون وقت النهاية بعد وقت البداية.",
+  "meetups_err_invalid_capacity": "يجب ألا تقل السعة عن 1.",
+  "meetups_err_auth_required": "سجّل الدخول للمتابعة.",
+  "meetups_err_unsupported": "هذا الخيار غير متاح بعد.",
+  "meetups_manage": "إدارة اللقاء",
+  "meetups_manage_title": "إدارة اللقاء",
+  "meetups_section_going": "المشاركون",
+  "meetups_section_interested": "المهتمون",
+  "meetups_section_pending": "الطلبات",
+  "meetups_manage_empty": "لم يرد أحد بعد.",
+  "meetups_approve": "قبول",
+  "meetups_decline": "رفض",
+  "meetups_remove": "إزالة",
+  "meetups_remove_title": "إزالة {name}؟",
+  "meetups_remove_body": "سيفقد مكانه وسيتلقى إشعارًا بذلك.",
+  "meetups_edit": "تعديل اللقاء",
+  "meetups_save": "حفظ التغييرات",
+  "meetups_cancel_meetup": "إلغاء اللقاء",
+  "meetups_cancel_title": "هل تريد إلغاء هذا اللقاء؟",
+  "meetups_cancel_body": "سيُبلَّغ جميع من ردّوا. لا يمكن التراجع عن هذا الإجراء.",
+  "meetups_cancel_confirm": "إلغاء اللقاء",
+  "meetups_keep": "إبقاء اللقاء",
+  "meetups_err_capacity_below_going": "السعة أقل من عدد المشاركين الحاليين.",
+  "meetups_err_not_host": "هذا الإجراء للمضيف فقط.",
+  "meetups_err_attendee_not_found": "هذا الشخص لم يعد ضمن اللقاء.",
+  "meetups_err_no_pending": "لم يعد هذا الطلب قيد الانتظار.",
+  "meetups_save_failed": "تعذّر حفظ التغييرات",
+  "meetups_action_failed": "لم تكتمل العملية. حاول مرة أخرى.",
+  "meetups_share": "مشاركة",
+  "meetups_share_headline": "انضم إليّ في {title} على Dabbler!",
+  "meetups_more": "المزيد",
+  "meetups_report": "الإبلاغ عن اللقاء",
+  "meetups_report_note": "أخبرنا ما المشكلة في هذا اللقاء"
 }

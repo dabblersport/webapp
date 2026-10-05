@@ -17,6 +17,7 @@ enum ModTarget {
   squad,
   venue,
   message,
+  meetup,
   other;
 
   String toPostgresString() {

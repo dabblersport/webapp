@@ -3871,6 +3871,41 @@ class AppLocalizationsEn extends AppLocalizations {
       'Invites and players joining meetups';
 
   @override
+  String get notif_settings_kind_meetup_rsvps => 'Meetup RSVPs';
+
+  @override
+  String get notif_settings_kind_meetup_rsvps_sub =>
+      'When someone RSVPs to a meetup you host';
+
+  @override
+  String get notif_settings_kind_meetup_requests => 'Meetup join requests';
+
+  @override
+  String get notif_settings_kind_meetup_requests_sub =>
+      'When someone asks to join a meetup you host';
+
+  @override
+  String get notif_settings_kind_meetup_approved => 'Meetup request approved';
+
+  @override
+  String get notif_settings_kind_meetup_approved_sub =>
+      'When a host approves your request to join';
+
+  @override
+  String get notif_settings_kind_meetup_declined => 'Meetup request declined';
+
+  @override
+  String get notif_settings_kind_meetup_declined_sub =>
+      'When a host declines your request to join';
+
+  @override
+  String get notif_settings_kind_meetup_cancelled => 'Meetup cancelled';
+
+  @override
+  String get notif_settings_kind_meetup_cancelled_sub =>
+      'When a meetup you joined is cancelled';
+
+  @override
   String notif_settings_update_failed(String error) {
     return 'Could not update settings: $error';
   }
@@ -5297,4 +5332,301 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_stat_minutes_played => 'Minutes played';
+
+  @override
+  String get meetups_tab_all => 'All';
+
+  @override
+  String get meetups_none_title => 'No meetups available.';
+
+  @override
+  String get meetups_explore_another => 'Explore another activity';
+
+  @override
+  String get meetups_load_failed => 'Couldn\'t load meetups';
+
+  @override
+  String get meetups_join => 'Join meetup';
+
+  @override
+  String get meetups_request => 'Request to join';
+
+  @override
+  String meetups_going_count(int count) {
+    return '$count going';
+  }
+
+  @override
+  String meetups_max(int count) {
+    return 'Max $count';
+  }
+
+  @override
+  String get meetups_free_note => 'no charge';
+
+  @override
+  String meetups_distance_km(String km) {
+    return '$km km';
+  }
+
+  @override
+  String get meetups_cta_going => 'Joining';
+
+  @override
+  String get meetups_cta_interested => 'Maybe going';
+
+  @override
+  String get meetups_cta_full => 'Full - you\'re interested';
+
+  @override
+  String get meetups_cta_closed => 'Registration closed';
+
+  @override
+  String get meetups_cta_cancelled => 'Cancelled';
+
+  @override
+  String get meetups_cta_started => 'Already started';
+
+  @override
+  String get meetups_cta_unavailable => 'Not available';
+
+  @override
+  String get meetups_cta_not_allowed => 'Switch profile to join';
+
+  @override
+  String get meetups_sheet_title => 'Are you going to this meetup?';
+
+  @override
+  String get meetups_sheet_cancel => 'Cancel';
+
+  @override
+  String get meetups_sheet_yes => 'Yes, I am going';
+
+  @override
+  String get meetups_sheet_maybe => 'Maybe';
+
+  @override
+  String get meetups_sheet_no => 'No, not this time';
+
+  @override
+  String get meetups_sheet_confirm => 'Confirm';
+
+  @override
+  String get meetups_error_generic => 'Something went wrong. Try again.';
+
+  @override
+  String get meetups_error_cancelled => 'This meetup was cancelled.';
+
+  @override
+  String get meetups_host_caption => 'Community host';
+
+  @override
+  String get meetups_tile_meeting_point => 'Meeting point';
+
+  @override
+  String get meetups_tile_entry => 'Entry';
+
+  @override
+  String get meetups_load_detail_failed => 'Couldn\'t load this meetup';
+
+  @override
+  String get meetups_back => 'Back';
+
+  @override
+  String meetups_names_and_others(String names, int count) {
+    return '$names and $count others';
+  }
+
+  @override
+  String meetups_show_count(int count) {
+    return 'Show $count meetups';
+  }
+
+  @override
+  String meetups_km_away(String km) {
+    return '$km km away';
+  }
+
+  @override
+  String get meetups_create_title => 'Create meet-up';
+
+  @override
+  String get meetups_create_title_hint => 'Meet up title';
+
+  @override
+  String get meetups_create_note_hint =>
+      'Add short description for participations...';
+
+  @override
+  String get meetups_create_name_section => 'CHOOSE NAME AND DESCRIPTION';
+
+  @override
+  String get meetups_when => 'When';
+
+  @override
+  String get meetups_when_sub => 'Date and time';
+
+  @override
+  String get meetups_end => 'End';
+
+  @override
+  String get meetups_location => 'Location';
+
+  @override
+  String get meetups_location_sub => 'Add a location or venue';
+
+  @override
+  String get meetups_capacity => 'Capacity';
+
+  @override
+  String get meetups_capacity_sub => 'Max participants';
+
+  @override
+  String get meetups_advanced => 'Advanced options';
+
+  @override
+  String get meetups_policy => 'How people join';
+
+  @override
+  String get meetups_policy_sub => 'Join settings';
+
+  @override
+  String get meetups_policy_closed => 'Closed';
+
+  @override
+  String get meetups_skill => 'Skill range';
+
+  @override
+  String get meetups_skill_sub => 'Experience level';
+
+  @override
+  String get meetups_skill_any => 'Any';
+
+  @override
+  String get meetups_vibe => 'Vibe';
+
+  @override
+  String get meetups_vibe_sub => 'Set the mood';
+
+  @override
+  String get meetups_vibe_choose => 'Choose';
+
+  @override
+  String get meetups_create_failed => 'Failed to create meet-up';
+
+  @override
+  String get meetups_err_organiser_required =>
+      'Only organisers can create meet-ups.';
+
+  @override
+  String get meetups_err_title_invalid =>
+      'The title must be 3 to 80 characters.';
+
+  @override
+  String get meetups_err_invalid_time_range =>
+      'The end time must be after the start time.';
+
+  @override
+  String get meetups_err_invalid_capacity => 'The capacity must be at least 1.';
+
+  @override
+  String get meetups_err_auth_required => 'Sign in to continue.';
+
+  @override
+  String get meetups_err_unsupported => 'This option is not available yet.';
+
+  @override
+  String get meetups_manage => 'Manage meetup';
+
+  @override
+  String get meetups_manage_title => 'Manage meet-up';
+
+  @override
+  String get meetups_section_going => 'Going';
+
+  @override
+  String get meetups_section_interested => 'Interested';
+
+  @override
+  String get meetups_section_pending => 'Requests';
+
+  @override
+  String get meetups_manage_empty => 'Nobody has responded yet.';
+
+  @override
+  String get meetups_approve => 'Approve';
+
+  @override
+  String get meetups_decline => 'Decline';
+
+  @override
+  String get meetups_remove => 'Remove';
+
+  @override
+  String meetups_remove_title(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get meetups_remove_body =>
+      'They will lose their spot and be notified.';
+
+  @override
+  String get meetups_edit => 'Edit meet-up';
+
+  @override
+  String get meetups_save => 'Save changes';
+
+  @override
+  String get meetups_cancel_meetup => 'Cancel meetup';
+
+  @override
+  String get meetups_cancel_title => 'Cancel this meet-up?';
+
+  @override
+  String get meetups_cancel_body =>
+      'Everyone who responded will be told. This cannot be undone.';
+
+  @override
+  String get meetups_cancel_confirm => 'Cancel meet-up';
+
+  @override
+  String get meetups_keep => 'Keep it';
+
+  @override
+  String get meetups_err_capacity_below_going =>
+      'The capacity is lower than the number already going.';
+
+  @override
+  String get meetups_err_not_host => 'Only the host can do this.';
+
+  @override
+  String get meetups_err_attendee_not_found =>
+      'That person is no longer on this meet-up.';
+
+  @override
+  String get meetups_err_no_pending => 'That request is no longer pending.';
+
+  @override
+  String get meetups_save_failed => 'Couldn\'t save the changes';
+
+  @override
+  String get meetups_action_failed => 'That didn\'t work. Try again.';
+
+  @override
+  String get meetups_share => 'Share';
+
+  @override
+  String meetups_share_headline(String title) {
+    return 'Join me for $title on Dabbler!';
+  }
+
+  @override
+  String get meetups_more => 'More';
+
+  @override
+  String get meetups_report => 'Report meetup';
+
+  @override
+  String get meetups_report_note => 'Tell us what is wrong with this meet-up';
 }

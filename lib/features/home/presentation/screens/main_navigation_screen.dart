@@ -6,6 +6,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
+import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -25,7 +27,8 @@ enum NavigationBranch {
   home,
   community,
   venues,
-  games;
+  games,
+  meetups;
 
   int get shellIndex => index;
 }
@@ -196,9 +199,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   static const String _idCommunity = 'community';
   static const String _idVenues = 'venues';
   static const String _idGames = 'games';
+  static const String _idMeetups = 'meetups';
 
   static const String _createPost = 'post';
   static const String _createGame = 'game';
+  static const String _createMeetup = 'meetup';
 
   String get _activeId {
     switch (NavigationBranch.values[_currentIndex]) {
@@ -210,6 +215,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         return _idVenues;
       case NavigationBranch.games:
         return _idGames;
+      case NavigationBranch.meetups:
+        return _idMeetups;
     }
   }
 
@@ -223,6 +230,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         _goBranch(NavigationBranch.venues);
       case _idGames:
         _goBranch(NavigationBranch.games);
+      case _idMeetups:
+        _goBranch(NavigationBranch.meetups);
     }
   }
 
@@ -241,6 +250,8 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         }
       case _createGame:
         router.push(RoutePaths.createGame);
+      case _createMeetup:
+        showMeetupComposerSheet(context);
     }
   }
 
@@ -326,6 +337,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     ref.watch(initializeProfileDataProvider);
 
     final l = AppLocalizations.of(context);
+    final canCreateMeetup = ref.watch(canOfferCreateMeetupProvider);
 
     // One layout at every width: the design has no desktop shell. The page
     // holds the active branch and the bottom bar.
@@ -363,6 +375,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               icon: 'game',
               label: l.nav_games,
             ),
+            if (FeatureFlags.enableMeetups)
+              DabblerNavigationItem(
+                id: _idMeetups,
+                icon: 'calendar',
+                label: l.nav_meetups,
+              ),
           ],
           active: _activeId,
           onSelect: _onSelect,
@@ -387,6 +405,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               label: l.nav_create_game,
               iconTone: DabblerNavigationIconTone.success,
             ),
+            if (canCreateMeetup)
+              DabblerNavigationCreateItem(
+                id: _createMeetup,
+                icon: 'calendar',
+                label: l.nav_create_meetup,
+              ),
           ],
           onCreate: _onCreate,
         ),

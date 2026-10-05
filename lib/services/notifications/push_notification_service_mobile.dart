@@ -1,5 +1,7 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/features/notifications/meetup_notification_routes.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -137,7 +139,10 @@ class PushNotificationService {
     if (raw == null || raw.isEmpty) return;
     try {
       final data = jsonDecode(raw) as Map<String, dynamic>;
-      final route = data['action_route'] as String?;
+      var route = data['action_route'] as String?;
+      if (route == null || route.isEmpty) {
+        route = meetupPushRoute(data, enabled: FeatureFlags.enableMeetups);
+      }
       if (route != null && route.isNotEmpty) {
         onNotificationTap?.call(route);
       }
@@ -244,8 +249,14 @@ class PushNotificationService {
   /// Extract action_route from the remote message data and invoke the tap callback.
   void _handleRemoteMessageTap(RemoteMessage message) {
     debugPrint('Push tap received — data: ${message.data}');
-    final route = message.data['action_route'] as String?;
+    var route = message.data['action_route'] as String?;
     debugPrint('Push tap action_route: $route');
+    if (route == null || route.isEmpty) {
+      route = meetupPushRoute(
+        message.data,
+        enabled: FeatureFlags.enableMeetups,
+      );
+    }
     if (route != null && route.isNotEmpty) {
       onNotificationTap?.call(route);
     } else {

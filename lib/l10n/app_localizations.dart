@@ -6965,6 +6965,66 @@ abstract class AppLocalizations {
   /// **'Invites and players joining meetups'**
   String get notif_settings_kind_meetups_sub;
 
+  /// No description provided for @notif_settings_kind_meetup_rsvps.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup RSVPs'**
+  String get notif_settings_kind_meetup_rsvps;
+
+  /// No description provided for @notif_settings_kind_meetup_rsvps_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone RSVPs to a meetup you host'**
+  String get notif_settings_kind_meetup_rsvps_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_requests.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup join requests'**
+  String get notif_settings_kind_meetup_requests;
+
+  /// No description provided for @notif_settings_kind_meetup_requests_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone asks to join a meetup you host'**
+  String get notif_settings_kind_meetup_requests_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_approved.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup request approved'**
+  String get notif_settings_kind_meetup_approved;
+
+  /// No description provided for @notif_settings_kind_meetup_approved_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a host approves your request to join'**
+  String get notif_settings_kind_meetup_approved_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_declined.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup request declined'**
+  String get notif_settings_kind_meetup_declined;
+
+  /// No description provided for @notif_settings_kind_meetup_declined_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a host declines your request to join'**
+  String get notif_settings_kind_meetup_declined_sub;
+
+  /// No description provided for @notif_settings_kind_meetup_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup cancelled'**
+  String get notif_settings_kind_meetup_cancelled;
+
+  /// No description provided for @notif_settings_kind_meetup_cancelled_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'When a meetup you joined is cancelled'**
+  String get notif_settings_kind_meetup_cancelled_sub;
+
   /// No description provided for @notif_settings_update_failed.
   ///
   /// In en, this message translates to:
@@ -9604,6 +9664,552 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Minutes played'**
   String get profile_stat_minutes_played;
+
+  /// No description provided for @meetups_tab_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get meetups_tab_all;
+
+  /// No description provided for @meetups_none_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetups available.'**
+  String get meetups_none_title;
+
+  /// No description provided for @meetups_explore_another.
+  ///
+  /// In en, this message translates to:
+  /// **'Explore another activity'**
+  String get meetups_explore_another;
+
+  /// No description provided for @meetups_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load meetups'**
+  String get meetups_load_failed;
+
+  /// No description provided for @meetups_join.
+  ///
+  /// In en, this message translates to:
+  /// **'Join meetup'**
+  String get meetups_join;
+
+  /// No description provided for @meetups_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Request to join'**
+  String get meetups_request;
+
+  /// No description provided for @meetups_going_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} going'**
+  String meetups_going_count(int count);
+
+  /// No description provided for @meetups_max.
+  ///
+  /// In en, this message translates to:
+  /// **'Max {count}'**
+  String meetups_max(int count);
+
+  /// No description provided for @meetups_free_note.
+  ///
+  /// In en, this message translates to:
+  /// **'no charge'**
+  String get meetups_free_note;
+
+  /// No description provided for @meetups_distance_km.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km'**
+  String meetups_distance_km(String km);
+
+  /// No description provided for @meetups_cta_going.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining'**
+  String get meetups_cta_going;
+
+  /// No description provided for @meetups_cta_interested.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe going'**
+  String get meetups_cta_interested;
+
+  /// No description provided for @meetups_cta_full.
+  ///
+  /// In en, this message translates to:
+  /// **'Full - you\'re interested'**
+  String get meetups_cta_full;
+
+  /// No description provided for @meetups_cta_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Registration closed'**
+  String get meetups_cta_closed;
+
+  /// No description provided for @meetups_cta_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancelled'**
+  String get meetups_cta_cancelled;
+
+  /// No description provided for @meetups_cta_started.
+  ///
+  /// In en, this message translates to:
+  /// **'Already started'**
+  String get meetups_cta_started;
+
+  /// No description provided for @meetups_cta_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available'**
+  String get meetups_cta_unavailable;
+
+  /// No description provided for @meetups_cta_not_allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch profile to join'**
+  String get meetups_cta_not_allowed;
+
+  /// No description provided for @meetups_sheet_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Are you going to this meetup?'**
+  String get meetups_sheet_title;
+
+  /// No description provided for @meetups_sheet_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get meetups_sheet_cancel;
+
+  /// No description provided for @meetups_sheet_yes.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, I am going'**
+  String get meetups_sheet_yes;
+
+  /// No description provided for @meetups_sheet_maybe.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe'**
+  String get meetups_sheet_maybe;
+
+  /// No description provided for @meetups_sheet_no.
+  ///
+  /// In en, this message translates to:
+  /// **'No, not this time'**
+  String get meetups_sheet_no;
+
+  /// No description provided for @meetups_sheet_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm'**
+  String get meetups_sheet_confirm;
+
+  /// No description provided for @meetups_error_generic.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get meetups_error_generic;
+
+  /// No description provided for @meetups_error_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'This meetup was cancelled.'**
+  String get meetups_error_cancelled;
+
+  /// No description provided for @meetups_host_caption.
+  ///
+  /// In en, this message translates to:
+  /// **'Community host'**
+  String get meetups_host_caption;
+
+  /// No description provided for @meetups_tile_meeting_point.
+  ///
+  /// In en, this message translates to:
+  /// **'Meeting point'**
+  String get meetups_tile_meeting_point;
+
+  /// No description provided for @meetups_tile_entry.
+  ///
+  /// In en, this message translates to:
+  /// **'Entry'**
+  String get meetups_tile_entry;
+
+  /// No description provided for @meetups_load_detail_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this meetup'**
+  String get meetups_load_detail_failed;
+
+  /// No description provided for @meetups_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get meetups_back;
+
+  /// No description provided for @meetups_names_and_others.
+  ///
+  /// In en, this message translates to:
+  /// **'{names} and {count} others'**
+  String meetups_names_and_others(String names, int count);
+
+  /// No description provided for @meetups_show_count.
+  ///
+  /// In en, this message translates to:
+  /// **'Show {count} meetups'**
+  String meetups_show_count(int count);
+
+  /// No description provided for @meetups_km_away.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km away'**
+  String meetups_km_away(String km);
+
+  /// No description provided for @meetups_create_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Create meet-up'**
+  String get meetups_create_title;
+
+  /// No description provided for @meetups_create_title_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet up title'**
+  String get meetups_create_title_hint;
+
+  /// No description provided for @meetups_create_note_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Add short description for participations...'**
+  String get meetups_create_note_hint;
+
+  /// No description provided for @meetups_create_name_section.
+  ///
+  /// In en, this message translates to:
+  /// **'CHOOSE NAME AND DESCRIPTION'**
+  String get meetups_create_name_section;
+
+  /// No description provided for @meetups_when.
+  ///
+  /// In en, this message translates to:
+  /// **'When'**
+  String get meetups_when;
+
+  /// No description provided for @meetups_when_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Date and time'**
+  String get meetups_when_sub;
+
+  /// No description provided for @meetups_end.
+  ///
+  /// In en, this message translates to:
+  /// **'End'**
+  String get meetups_end;
+
+  /// No description provided for @meetups_location.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get meetups_location;
+
+  /// No description provided for @meetups_location_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a location or venue'**
+  String get meetups_location_sub;
+
+  /// No description provided for @meetups_capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'Capacity'**
+  String get meetups_capacity;
+
+  /// No description provided for @meetups_capacity_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Max participants'**
+  String get meetups_capacity_sub;
+
+  /// No description provided for @meetups_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Advanced options'**
+  String get meetups_advanced;
+
+  /// No description provided for @meetups_policy.
+  ///
+  /// In en, this message translates to:
+  /// **'How people join'**
+  String get meetups_policy;
+
+  /// No description provided for @meetups_policy_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Join settings'**
+  String get meetups_policy_sub;
+
+  /// No description provided for @meetups_policy_closed.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get meetups_policy_closed;
+
+  /// No description provided for @meetups_skill.
+  ///
+  /// In en, this message translates to:
+  /// **'Skill range'**
+  String get meetups_skill;
+
+  /// No description provided for @meetups_skill_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Experience level'**
+  String get meetups_skill_sub;
+
+  /// No description provided for @meetups_skill_any.
+  ///
+  /// In en, this message translates to:
+  /// **'Any'**
+  String get meetups_skill_any;
+
+  /// No description provided for @meetups_vibe.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe'**
+  String get meetups_vibe;
+
+  /// No description provided for @meetups_vibe_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Set the mood'**
+  String get meetups_vibe_sub;
+
+  /// No description provided for @meetups_vibe_choose.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get meetups_vibe_choose;
+
+  /// No description provided for @meetups_create_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create meet-up'**
+  String get meetups_create_failed;
+
+  /// No description provided for @meetups_err_organiser_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Only organisers can create meet-ups.'**
+  String get meetups_err_organiser_required;
+
+  /// No description provided for @meetups_err_title_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'The title must be 3 to 80 characters.'**
+  String get meetups_err_title_invalid;
+
+  /// No description provided for @meetups_err_invalid_time_range.
+  ///
+  /// In en, this message translates to:
+  /// **'The end time must be after the start time.'**
+  String get meetups_err_invalid_time_range;
+
+  /// No description provided for @meetups_err_invalid_capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'The capacity must be at least 1.'**
+  String get meetups_err_invalid_capacity;
+
+  /// No description provided for @meetups_err_auth_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to continue.'**
+  String get meetups_err_auth_required;
+
+  /// No description provided for @meetups_err_unsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'This option is not available yet.'**
+  String get meetups_err_unsupported;
+
+  /// No description provided for @meetups_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage meetup'**
+  String get meetups_manage;
+
+  /// No description provided for @meetups_manage_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage meet-up'**
+  String get meetups_manage_title;
+
+  /// No description provided for @meetups_section_going.
+  ///
+  /// In en, this message translates to:
+  /// **'Going'**
+  String get meetups_section_going;
+
+  /// No description provided for @meetups_section_interested.
+  ///
+  /// In en, this message translates to:
+  /// **'Interested'**
+  String get meetups_section_interested;
+
+  /// No description provided for @meetups_section_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'Requests'**
+  String get meetups_section_pending;
+
+  /// No description provided for @meetups_manage_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody has responded yet.'**
+  String get meetups_manage_empty;
+
+  /// No description provided for @meetups_approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get meetups_approve;
+
+  /// No description provided for @meetups_decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get meetups_decline;
+
+  /// No description provided for @meetups_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get meetups_remove;
+
+  /// No description provided for @meetups_remove_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String meetups_remove_title(String name);
+
+  /// No description provided for @meetups_remove_body.
+  ///
+  /// In en, this message translates to:
+  /// **'They will lose their spot and be notified.'**
+  String get meetups_remove_body;
+
+  /// No description provided for @meetups_edit.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit meet-up'**
+  String get meetups_edit;
+
+  /// No description provided for @meetups_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get meetups_save;
+
+  /// No description provided for @meetups_cancel_meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel meetup'**
+  String get meetups_cancel_meetup;
+
+  /// No description provided for @meetups_cancel_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this meet-up?'**
+  String get meetups_cancel_title;
+
+  /// No description provided for @meetups_cancel_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone who responded will be told. This cannot be undone.'**
+  String get meetups_cancel_body;
+
+  /// No description provided for @meetups_cancel_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel meet-up'**
+  String get meetups_cancel_confirm;
+
+  /// No description provided for @meetups_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it'**
+  String get meetups_keep;
+
+  /// No description provided for @meetups_err_capacity_below_going.
+  ///
+  /// In en, this message translates to:
+  /// **'The capacity is lower than the number already going.'**
+  String get meetups_err_capacity_below_going;
+
+  /// No description provided for @meetups_err_not_host.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host can do this.'**
+  String get meetups_err_not_host;
+
+  /// No description provided for @meetups_err_attendee_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'That person is no longer on this meet-up.'**
+  String get meetups_err_attendee_not_found;
+
+  /// No description provided for @meetups_err_no_pending.
+  ///
+  /// In en, this message translates to:
+  /// **'That request is no longer pending.'**
+  String get meetups_err_no_pending;
+
+  /// No description provided for @meetups_save_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save the changes'**
+  String get meetups_save_failed;
+
+  /// No description provided for @meetups_action_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'That didn\'t work. Try again.'**
+  String get meetups_action_failed;
+
+  /// No description provided for @meetups_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get meetups_share;
+
+  /// No description provided for @meetups_share_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Join me for {title} on Dabbler!'**
+  String meetups_share_headline(String title);
+
+  /// No description provided for @meetups_more.
+  ///
+  /// In en, this message translates to:
+  /// **'More'**
+  String get meetups_more;
+
+  /// No description provided for @meetups_report.
+  ///
+  /// In en, this message translates to:
+  /// **'Report meetup'**
+  String get meetups_report;
+
+  /// No description provided for @meetups_report_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Tell us what is wrong with this meet-up'**
+  String get meetups_report_note;
 }
 
 class _AppLocalizationsDelegate

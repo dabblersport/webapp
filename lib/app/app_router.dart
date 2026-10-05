@@ -18,6 +18,8 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 
 import 'routes/home_shell_route.dart';
 import 'routes/identity_routes.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'routes/meetups_routes.dart';
 import 'routes/notification_routes.dart';
 import 'routes/platform_routes.dart';
 import 'routes/play_places_routes.dart';
@@ -161,6 +163,8 @@ class AppRouter {
       if (gateBlocked) {
         String? deepLinkTarget;
         if (loc.startsWith('/sports/games/')) {
+          deepLinkTarget = loc;
+        } else if (loc.startsWith('/meetups/')) {
           deepLinkTarget = loc;
         } else if (loc.startsWith('/game/')) {
           final id = loc.substring('/game/'.length);
@@ -379,6 +383,9 @@ class AppRouter {
     onboardingPrimarySportRoute,
     homeShellRoute,
     sportsGamesGameIdRoute,
+    if (FeatureFlags.enableMeetups) meetupDetailRoute,
+    if (FeatureFlags.enableMeetups) meetupManageRoute,
+    if (FeatureFlags.enableMeetups) meetupEditRoute,
     newsNewsIdRoute,
     sportsVenuesVenueIdRoute,
     gameGameIdRoute,

@@ -11,6 +11,10 @@ class RoutePaths {
   static const String webLinkBase = 'https://app.dabbler.pro';
   static String gameLink(String gameId) => '$webLinkBase/game/$gameId';
 
+  /// The public link to a meetup; the same host serves /meetups/:id, which the
+  /// router opens (behind FeatureFlags.enableMeetups).
+  static String meetupLink(String meetupId) => '$webLinkBase/meetups/$meetupId';
+
   /// Store listings for the "get the app" banner on mobile web.
   /// Empty until the apps are published — the banner hides install buttons
   /// when these are empty.
@@ -77,6 +81,11 @@ class RoutePaths {
 
   // Game & Venue detail paths (root-level, no shell)
   static String gameDetail(String gameId) => '/sports/games/$gameId';
+  static const String meetups = '/meetups';
+  static const String createMeetup = '/create-meetup';
+  static String meetupDetail(String meetupId) => '/meetups/$meetupId';
+  static String meetupManage(String meetupId) => '/meetups/$meetupId/manage';
+  static String meetupEdit(String meetupId) => '/meetups/$meetupId/edit';
   static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
   // News detail (root-level, no shell)
@@ -150,6 +159,11 @@ class RouteNames {
 
   // Games Routes
   static const String gameDetail = 'game-detail';
+  static const String meetups = 'meetups';
+  static const String createMeetup = 'create-meetup';
+  static const String meetupDetail = 'meetup-detail';
+  static const String meetupManage = 'meetup-manage';
+  static const String meetupEdit = 'meetup-edit';
 
   // Game Creation Routes
   static const String createGame = 'create-game';

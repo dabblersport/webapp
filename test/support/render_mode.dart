@@ -87,7 +87,7 @@ Future<void> loadRenderFonts() async {
     await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
   }
   // Latin fallback for Wingx: the engine looks these up by name.
-  for (final String fallback in <String>['Roboto', 'Noto Sans', 'Arial']) {
+  for (final String fallback in <String>['Roboto', 'Noto Sans', 'Arial', 'Georgia', 'Times New Roman']) {
     await family(fallback, <String>['Gloock-Regular.ttf']);
   }
   final String home = Platform.environment['HOME'] ?? '';
