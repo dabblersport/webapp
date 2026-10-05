@@ -286,6 +286,22 @@ void main() {
       );
     });
 
+    testWidgets('manage entry $t', (tester) async {
+      await _shoot(
+        tester,
+        MeetupDetailScreen(meetupId: 'm1', onBack: () {}),
+        FakeMeetupRepository()
+          ..card = _card(host: true)
+          ..list = [meetupRow('m1', vibeKey: 'supportive')]
+          ..eligibility = const RsvpEligibility(
+            allowed: true,
+            cta: RsvpCta.already,
+          ),
+        l,
+        'meetups-manage-entry-$t',
+      );
+    });
+
     testWidgets('report menu $t', (tester) async {
       await _shoot(
         tester,
