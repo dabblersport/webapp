@@ -239,16 +239,16 @@ class _HomeLocationPickerSheetState
           context: context,
           builder: (ctx) => DabblerDialog(
             onClose: () => Navigator.pop(ctx),
-            title: 'Location access required',
+            title: AppLocalizations.of(context).location_access_required,
             description:
                 'Location permission is permanently denied. '
                 'Open Settings to enable it.',
             secondaryAction: DabblerDialogAction(
-              label: 'Cancel',
+              label: AppLocalizations.of(context).home_location_cancel,
               onPressed: () => Navigator.pop(ctx),
             ),
             primaryAction: DabblerDialogAction(
-              label: 'Open Settings',
+              label: AppLocalizations.of(context).location_open_settings,
               onPressed: () {
                 Navigator.pop(ctx);
                 Geolocator.openAppSettings();

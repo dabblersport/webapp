@@ -10,6 +10,7 @@ import 'package:dabbler/features/games/presentation/screens/join_game/game_detai
 import 'package:dabbler/features/games/providers/game_history_providers.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/widgets/sport_profile_section_widgets.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// "Game History" card for the sport profile screen: the games the user
 /// joined or hosted for this sport, split into Upcoming and Past.
@@ -32,7 +33,7 @@ class SportGameHistorySection extends ConsumerWidget {
     );
 
     return SportSectionCard(
-      title: 'Game History',
+      title: AppLocalizations.of(context).priv_t_history,
       child: historyAsync.when(
         data: (history) => _buildContent(context, history),
         loading: () => const SportSectionLoading(),

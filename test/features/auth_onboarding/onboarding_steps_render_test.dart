@@ -279,7 +279,7 @@ void main() {
     testWidgets('step 2 persona — $dir', (tester) async {
       await _pump(tester, const IntentSelectionScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text(ar ? 'انزل الملعب' : 'Get in the game'));
+      await tester.tap(find.text(lookupAppLocalizations(locale).onb_persona_player_hook));
       await _settle(tester);
       expect(find.byType(DabblerSelectableCard), findsNWidgets(2));
       await _shoot(tester, key, 'step2-$dir');

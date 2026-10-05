@@ -215,7 +215,7 @@ void main() {
       await _pump(tester, const ProfileEditScreen(), locale, key);
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('Edit Profile'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).profile_btn_edit), findsOneWidget);
       await _shoot(tester, key, 'profile-edit-top-$dir');
     });
 

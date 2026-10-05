@@ -12,6 +12,7 @@ import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show myReactionsProvider, postActionsProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 void _openNews(BuildContext context, FeedNewsItem item) => context.pushNamed(
   RouteNames.newsDetail,
@@ -72,7 +73,7 @@ class HomeNewsCard extends ConsumerWidget {
     return DabblerSwipeAction(
       actions: [
         DabblerSwipeActionItem(
-          label: 'Hide',
+          label: AppLocalizations.of(context).home_upcoming_hide,
           icon: 'eye-slash',
           onPressed: hide,
         ),

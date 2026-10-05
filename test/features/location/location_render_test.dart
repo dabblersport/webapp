@@ -298,16 +298,16 @@ void main() {
       const Locale('en'),
     );
     // One title, in the sheet header (the sheet's titleWidget), no back action.
-    expect(find.text('Add Location'), findsOneWidget);
+    expect(find.text('Add location'), findsOneWidget);
     expect(find.bySemanticsLabel('Back'), findsNothing);
     await tester.tap(find.text('Pick an area'));
     await tester.pump(const Duration(milliseconds: 100));
     expect(find.text('Pick an Area'), findsOneWidget);
-    expect(find.text('Add Location'), findsNothing);
+    expect(find.text('Add location'), findsNothing);
     expect(find.bySemanticsLabel('Back'), findsOneWidget);
     await tester.tap(find.bySemanticsLabel('Back'));
     await tester.pump(const Duration(milliseconds: 100));
-    expect(find.text('Add Location'), findsOneWidget);
+    expect(find.text('Add location'), findsOneWidget);
     expect(find.bySemanticsLabel('Back'), findsNothing);
   }, variant: desktop);
 

@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Community screen with Following, Followers, and People (discover) tabs.
 /// Social data uses profile_follows; blocking via user_blocks (see block_providers.dart).
@@ -82,7 +83,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: 'Community',
+        title: AppLocalizations.of(context).nav_community,
         onBack: canPop ? () => Navigator.of(context).maybePop() : null,
       ),
       body: CustomScrollView(
@@ -103,7 +104,7 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
                 ],
                 value: '$_tab',
                 fullWidth: true,
-                label: 'Community',
+                label: AppLocalizations.of(context).nav_community,
                 onChanged: (id) {
                   final i = int.parse(id);
                   if (_tab != i) setState(() => _tab = i);
@@ -416,7 +417,7 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
             onPressed: () => _toggleFollow(true),
           )
         : DabblerButton(
-            label: 'Follow',
+            label: AppLocalizations.of(context).user_profile_btn_follow,
             size: DabblerButtonSize.small,
             onPressed: () => _toggleFollow(false),
           );

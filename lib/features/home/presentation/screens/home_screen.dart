@@ -1163,12 +1163,12 @@ class _HomeHeader extends ConsumerWidget {
       actions: [
         DabblerNavigationAction(
           icon: 'search-normal',
-          label: 'Search',
+          label: AppLocalizations.of(context).listing_search,
           onPressed: () => context.push(RoutePaths.socialSearch),
         ),
         DabblerNavigationAction(
           icon: 'notification-bing',
-          label: 'Notifications',
+          label: AppLocalizations.of(context).notif_title_notifications,
           unread: unread > 0,
           unreadLabel: unread > 0 ? '$unread unread' : null,
           onPressed: () => context.push(RoutePaths.notifications),

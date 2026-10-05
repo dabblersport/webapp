@@ -364,7 +364,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           const DabblerGap.h(DabblerSpacing.space3),
           DabblerButton.icon(
             icon: 'sms',
-            semanticLabel: 'Message',
+            semanticLabel: AppLocalizations.of(context).contact_message,
             tone: DabblerButtonTone.outlined,
             onPressed: () => _sendMessage(context),
           ),

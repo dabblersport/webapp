@@ -4,13 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the quote-repost composer as a design-system sheet; resolves true
 /// when the repost was sent.
 Future<bool?> showQuoteRepostSheet(BuildContext context, Post originalPost) =>
     showDabblerSheet<bool>(
       context: context,
-      title: 'Quote Repost',
+      title: AppLocalizations.of(context).post_card_menu_quote_repost,
       detent: DabblerSheetDetent.content,
       builder: (_) => QuoteRepostSheet(originalPost: originalPost),
     );
@@ -98,7 +99,7 @@ class _QuoteRepostSheetState extends ConsumerState<QuoteRepostSheet> {
         ),
         const SizedBox(height: DabblerSpacing.space6),
         DabblerButton(
-          label: 'Post',
+          label: AppLocalizations.of(context).composer_post_cta,
           fullWidth: true,
           loading: _isSending,
           onPressed: _controller.text.trim().isEmpty || _isSending

@@ -2,6 +2,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
 import 'profile_edit_models.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// "Weekly Availability": the slots, each removable, and an Add action that
 /// opens [ProfileEditAddAvailabilitySheet]. No design frame (PLAN §2c).
@@ -23,7 +24,7 @@ class ProfileEditAvailabilitySection extends StatelessWidget {
       title: 'Weekly Availability',
       subtitle: 'Set your available times for games and activities.',
       action: DabblerButton(
-        label: 'Add',
+        label: AppLocalizations.of(context).post_detail_add,
         icon: 'add',
         tone: DabblerButtonTone.text,
         size: DabblerButtonSize.small,

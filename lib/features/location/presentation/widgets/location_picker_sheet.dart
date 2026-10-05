@@ -11,6 +11,7 @@ import 'package:dabbler/features/location/presentation/widgets/location_picker_r
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Sealed result type for the location picker.
 class LocationPickerResult {
@@ -98,11 +99,11 @@ class LocationPickerSheet extends ConsumerStatefulWidget {
   static Future<LocationPickerResult?> show(BuildContext context) {
     final ValueNotifier<LocationPickerHeader> header =
         ValueNotifier<LocationPickerHeader>(
-          const LocationPickerHeader('Add Location'),
+          LocationPickerHeader(AppLocalizations.of(context).location_add),
         );
     return showDabblerSheet<LocationPickerResult>(
       context: context,
-      title: 'Add Location',
+      title: AppLocalizations.of(context).location_add,
       detent: DabblerSheetDetent.content,
       titleWidget: ValueListenableBuilder<LocationPickerHeader>(
         valueListenable: header,
@@ -114,7 +115,7 @@ class LocationPickerSheet extends ConsumerStatefulWidget {
                     tone: DabblerButtonTone.text,
                     icon: 'arrow-left',
                     mirrorInRtl: true,
-                    semanticLabel: 'Back',
+                    semanticLabel: AppLocalizations.of(context).auth_back,
                     onPressed: h.onBack,
                   ),
                   const DabblerGap.h(DabblerSpacing.space2),
@@ -163,9 +164,11 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       if (permission == LocationPermission.denied ||
           permission == LocationPermission.deniedForever) {
         if (!mounted) return;
-        DabblerToastProvider.of(
-          context,
-        ).show(const DabblerToastSpec(message: 'Location permission denied'));
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: AppLocalizations.of(context).location_permission_denied,
+          ),
+        );
         setState(() => _loadingGps = false);
         return;
       }
@@ -238,7 +241,7 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
   }
 
   String get _title => switch (_mode) {
-    _PickerMode.menu => 'Add Location',
+    _PickerMode.menu => AppLocalizations.of(context).location_add,
     _PickerMode.venue => 'Tag a Venue',
     _PickerMode.area => 'Pick an Area',
     _PickerMode.placeSearch => 'Search a Place',
@@ -312,10 +315,10 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
         venuesAsync.when(
           data: (venues) {
             if (venues.isEmpty && query.length >= 2) {
-              return const _Pad(
+              return _Pad(
                 child: DabblerEmptyState(
                   icon: 'building',
-                  text: 'No venues found',
+                  text: AppLocalizations.of(context).listing_venues_none_title,
                 ),
               );
             }

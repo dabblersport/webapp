@@ -106,7 +106,7 @@ Widget gameFactTiles(BuildContext context, GameView game) {
           value: tier == null
               ? '${game.minSkill}–${game.maxSkill}'
               : gamesSkillTierLabel(l, tier),
-          label: 'Skill level',
+          label: AppLocalizations.of(context).listing_group_skill,
           fitValue: true,
         ),
     ],
@@ -166,12 +166,15 @@ Widget _playerRow(
             children: [
               if (isMe)
                 DabblerBadge(
-                  label: 'You',
+                  label: AppLocalizations.of(context).notif_chip_you,
                   status: DabblerColors.of(context).success,
                 ),
               if (isMe && (isHost || tag != null))
                 const DabblerGap.h(DabblerSpacing.space2),
-              if (isHost) const DabblerBadge(label: 'Host'),
+              if (isHost)
+                DabblerBadge(
+                  label: AppLocalizations.of(context).persona_label_host,
+                ),
               if (!isHost && tag != null)
                 DabblerBadge(label: tag, tone: DabblerBadgeTone.withIcon),
               if (onRemove != null) ...[
@@ -269,7 +272,7 @@ List<Widget> gameSquadSections(
       key: sectionKey,
       child: DabblerSection(
         style: DabblerSectionStyle.label,
-        title: 'Squad',
+        title: AppLocalizations.of(context).composer_vis_squad,
         children: [
           if (roster.isEmpty && waitlist.isEmpty && game.spotsLeft == 0)
             const DabblerEmptyState(
@@ -309,7 +312,7 @@ List<Widget> gameSquadSections(
     if (waitlist.isNotEmpty)
       DabblerSection(
         style: DabblerSectionStyle.label,
-        title: 'Waitlist',
+        title: AppLocalizations.of(context).game_waitlist,
         children: [
           DabblerListGroup(
             children: [

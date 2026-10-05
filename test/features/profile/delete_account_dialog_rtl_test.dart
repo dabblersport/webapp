@@ -25,12 +25,16 @@ const _enWarning =
     'This action cannot be undone. Your profile and personal data are deleted. '
     'Payment and booking records are retained for accounting purposes, for a '
     'period that is still being finalized.';
-const _arWarning =
-    'الخطوة دي مفيش رجوع فيها. بنمسح بياناتك الشخصية وملفك الشخصي. سجلات الدفع '
-    'والحجز بنحتفظ بيها لأغراض محاسبية، ومدة الاحتفاظ لسه بتتحدد.';
+// Arabic copy is owned by the content review (KAN-435: one MSA register), so
+// the expectation follows the shipped string instead of pinning a draft.
+final _arWarning = lookupAppLocalizations(
+  const Locale('ar'),
+).account_delete_dialog_warning;
 
 const _enSuccessSnack = 'Your account and personal data have been deleted.';
-const _arSuccessSnack = 'تم حذف حسابك وبياناتك الشخصية.';
+final _arSuccessSnack = lookupAppLocalizations(
+  const Locale('ar'),
+).account_delete_success_snack;
 
 Widget _harness({required Locale locale, required TextEditingController c}) {
   return MaterialApp(

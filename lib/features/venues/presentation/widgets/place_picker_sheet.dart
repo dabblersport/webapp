@@ -6,6 +6,7 @@ import 'package:dabbler/features/venues/presentation/providers/place_providers.d
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// A bottom sheet that lets the user search for and select a place (POI,
 /// address, or city) via Mapbox Search — similar to Instagram/Threads
@@ -25,7 +26,7 @@ class PlacePickerSheet extends ConsumerStatefulWidget {
     return showDabblerSheet<Place>(
       context: context,
       detent: DabblerSheetDetent.content,
-      title: 'Add Location',
+      title: AppLocalizations.of(context).location_add,
       builder: (_) => const PlacePickerSheet(),
     );
   }

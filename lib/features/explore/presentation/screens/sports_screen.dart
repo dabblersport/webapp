@@ -27,6 +27,7 @@ import 'package:dabbler/features/venues/presentation/providers/venues_with_sport
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// No design frame exists for this screen (route `/sports-explore`): it is
 /// rebuilt with design-system defaults in the same structure.
@@ -441,7 +442,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
               children: [
                 Expanded(
                   child: DabblerButton(
-                    label: 'Clear All',
+                    label: AppLocalizations.of(context).listing_clear_all,
                     tone: DabblerButtonTone.text,
                     fullWidth: true,
                     onPressed: () {
@@ -659,7 +660,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
             // the game detail to join.
             action: _shouldShowJoinButton()
                 ? DabblerCardEventListing.joinButton(
-                    label: 'Join',
+                    label: AppLocalizations.of(context).sfx_join,
                     onPressed: () => _openGame(game.id as String),
                   )
                 : null,
@@ -754,7 +755,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     const DabblerGap.h(DabblerSpacing.space1),
                     DabblerButton.icon(
                       icon: 'refresh',
-                      semanticLabel: 'Change location',
+                      semanticLabel: AppLocalizations.of(context).location_change_title,
                       tone: DabblerButtonTone.text,
                       size: DabblerButtonSize.small,
                       onPressed: () {
@@ -775,7 +776,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           if (isOrganiser && isVenuesTab) ...[
             DabblerButton.icon(
               icon: 'add',
-              semanticLabel: 'Add venue',
+              semanticLabel: AppLocalizations.of(context).listing_add_venue,
               onPressed: () => context.push(RoutePaths.createVenueSubmission),
             ),
             const DabblerGap.h(DabblerSpacing.space2),
@@ -815,7 +816,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           const DabblerGap.h(DabblerSpacing.space2),
           DabblerButton.icon(
             icon: 'setting-4',
-            semanticLabel: 'Filters',
+            semanticLabel: AppLocalizations.of(context).listing_filters,
             onPressed: _showFilterModal,
           ),
           DabblerButton.icon(
@@ -1104,7 +1105,7 @@ class _VenuesTabContentState extends ConsumerState<_VenuesTabContent> {
         title: 'No ${widget.selectedSport} venues found around you',
         text: 'Try a nearby location or add a new venue',
         action: DabblerButton(
-          label: 'Add Venue',
+          label: AppLocalizations.of(context).listing_add_venue,
           icon: 'add-circle',
           onPressed: () {
             // TODO: Navigate to add venue screen

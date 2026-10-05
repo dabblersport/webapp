@@ -136,7 +136,7 @@ void main() {
       expect(find.byType(DabblerSearchField), findsOneWidget);
       expect(find.byType(DabblerInputRow), findsNWidgets(3));
       expect(find.text('Unfollow'), findsOneWidget);
-      expect(find.text('Follow'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).user_profile_btn_follow), findsOneWidget);
       await _shoot(tester, key, 'friends-followers-$dir');
     }, variant: desktop);
 

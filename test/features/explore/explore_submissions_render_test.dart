@@ -318,7 +318,7 @@ void main() {
 
     testWidgets('explore filter sheet — $dir', (tester) async {
       await _pump(tester, locale, key, const ExploreScreen());
-      await tester.tap(find.bySemanticsLabel('Filters'));
+      await tester.tap(find.bySemanticsLabel(lookupAppLocalizations(locale).listing_filters));
       for (var i = 0; i < 6; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -331,7 +331,7 @@ void main() {
     testWidgets('sports library — $dir', (tester) async {
       await _pump(tester, locale, key, const SportsLibraryScreen());
       expect(tester.takeException(), isNull);
-      expect(find.text('My Sports'), findsOneWidget);
+      expect(find.text(lookupAppLocalizations(locale).sports_prefs_my_sports), findsOneWidget);
       expect(find.text('Friday five-a-side'), findsOneWidget);
       await _shoot(tester, key, 'sports-library-$dir');
       _restoreOnError();

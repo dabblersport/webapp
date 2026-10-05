@@ -2,6 +2,7 @@ import 'package:dabbler/core/constants/uae_locations.dart';
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The manual location picker: use the current location, or search and pick
 /// from the UAE list. Hosted in a design-system sheet, which owns the surface,
@@ -113,7 +114,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         DabblerButton(
-          label: 'Use Current Location',
+          label: AppLocalizations.of(context).location_use_current,
           icon: 'gps',
           tone: DabblerButtonTone.outlined,
           fullWidth: true,

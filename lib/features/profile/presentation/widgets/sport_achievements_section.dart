@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profile_view_provider.dart';
 import 'package:dabbler/features/profile/presentation/widgets/sport_profile_section_widgets.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// "Achievements" card: badges + recent sport profile events, loaded
 /// independently of the rest of the sport profile screen.
@@ -18,7 +19,7 @@ class SportAchievementsSection extends ConsumerWidget {
     final achievementsAsync = ref.watch(sportAchievementsProvider(args));
 
     return SportSectionCard(
-      title: 'Achievements',
+      title: AppLocalizations.of(context).notif_chip_achievements,
       child: achievementsAsync.when(
         data: (data) => _buildContent(context, data),
         loading: () => const SportSectionLoading(),

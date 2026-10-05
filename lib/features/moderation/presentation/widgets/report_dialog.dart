@@ -2,6 +2,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/services/moderation_service.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Target types for the shared report dialog.
 /// Maps to [ModTarget] under the hood.
@@ -127,7 +128,7 @@ class _ReportDialogState extends ConsumerState<ReportDialog> {
       description: 'Why are you reporting this $label?',
       onClose: () => Navigator.pop(context),
       secondaryAction: DabblerDialogAction(
-        label: 'Cancel',
+        label: AppLocalizations.of(context).profile_btn_cancel,
         onPressed: () => Navigator.pop(context),
       ),
       primaryAction: DabblerDialogAction(

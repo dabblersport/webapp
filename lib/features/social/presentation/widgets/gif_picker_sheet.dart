@@ -7,6 +7,7 @@ import 'package:http/http.dart' as http;
 
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the GIPHY picker as a design-system sheet. [onSelected] receives the
 /// chosen GIF's URL; the sheet closes itself.
@@ -15,7 +16,7 @@ Future<void> showGifPickerSheet(
   required ValueChanged<String> onSelected,
 }) => showDabblerSheet<void>(
   context: context,
-  title: 'Search GIFs',
+  title: AppLocalizations.of(context).composer_search_gifs,
   detent: DabblerSheetDetent.content,
   builder: (ctx) => GifPickerSheet(
     onSelected: (url) {
