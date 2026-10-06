@@ -10037,11 +10037,11 @@ abstract class AppLocalizations {
   /// **'Sports could not be loaded. Try again later.'**
   String get meetups_sports_failed;
 
-  /// No description provided for @meetups_err_organiser_required.
+  /// No description provided for @meetups_err_create_refused.
   ///
   /// In en, this message translates to:
-  /// **'Only organisers can create meet-ups.'**
-  String get meetups_err_organiser_required;
+  /// **'You can\'t create this meet-up right now. Try again later.'**
+  String get meetups_err_create_refused;
 
   /// No description provided for @meetups_err_title_invalid.
   ///

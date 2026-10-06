@@ -388,11 +388,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           active: _activeId,
           onSelect: _onSelect,
           menuOpen: _createMenuOpen,
-          // The Home Feed frame keeps the "+" upright while the menu is open
-          // (its `fabIcon: close-circle` never reaches the component), and
-          // draws the Arabic bar unmirrored: pill on the physical left, action
-          // on the right (`Home_feed_—_Arabic.png`).
+          // The Home Feed frame swaps the action's "+" for `close-circle`
+          // while the menu is open (`fabIcon: createMenuOpen ? 'close-circle'
+          // : 'add'`; the CEO's `ceo-design-menu.png`: a light disc carrying a
+          // brand x), upright rather than turned, and draws the Arabic bar
+          // unmirrored: pill on the physical left, action on the right
+          // (`Home_feed_—_Arabic.png`).
           rotateActionOnOpen: false,
+          actionOpenIcon: 'close-circle',
           mirrorInRtl: false,
           onAction: (open) => setState(() => _createMenuOpen = open),
           createItems: <DabblerNavigationCreateItem>[
@@ -411,7 +414,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             if (canCreateMeetup)
               DabblerNavigationCreateItem(
                 id: _createMeetup,
-                icon: 'calendar',
+                // The frame's dot-grid calendar. In iconsax_flutter that glyph
+                // is `calendar-1`; plain `calendar` draws a day number (the
+                // DS icon audit, `foundations/icons.md`).
+                icon: 'calendar-1',
                 label: l.nav_create_meetup,
                 // `--tile-accent-surface` (`[role="menu"] > button:nth-child(3)`
                 // in the frame's page CSS).

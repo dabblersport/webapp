@@ -480,9 +480,9 @@ Map<String, Rect?> _appOpen(WidgetTester t, {required String caption}) {
     'label 1 (12.5/15.63 w500)': _rect(t, find.text(caption)),
     'menu item 2 Create game': hits[1],
     'plate 2 (83x62)': plates[1],
-    'menu item 3 Create meetup': null,
-    'plate 3 (83x62)': null,
-    'create button (open)': hits[2],
+    'menu item 3 Create meetup': hits[2],
+    'plate 3 (83x62)': plates[2],
+    'create button (open)': hits[3],
   };
 }
 
@@ -490,11 +490,6 @@ List<_Row> _rows(Map<String, List<double>> design, Map<String, Rect?> app) =>
     <_Row>[for (final String k in design.keys) _Row(k, _d(design, k), app[k])];
 
 // ---------------------------------------------------------------- exceptions
-
-const _Exception _noMeetups = _Exception(
-  'no feature: the app has no Meetups destination (Canary has none)',
-  Rect.zero,
-);
 
 void main() {
   setUpAll(_loadFonts);
@@ -606,8 +601,9 @@ void main() {
 
       final List<_Row> rows = _rows(dOpen, _appOpen(tester, caption: caption));
       final Map<String, _Exception> ex = <String, _Exception>{
-        'menu item 3 Create meetup': _noMeetups,
-        'plate 3 (83x62)': _noMeetups,
+        // The meet-up tile is offered whenever the flag is on (Alpha test
+        // build, CEO 2026-10-06), so the third tile is measured like the
+        // other two: no exception.
         ..._openExceptions(rtl),
       };
       _record('open $dir', rows, ex);
@@ -622,9 +618,6 @@ void main() {
 
 const String _kArabicType =
     'DS Arabic type rule (Latin size minus 0.9, cxo ruling): label 14.1 vs frame 15';
-const String _kTwoColumns =
-    'no feature: no Create-meetup tile -> the 2 tiles share the grid (128.5 each, '
-    'the component\'s repeat(min(n,4),1fr))';
 const String _kLineRounding =
     'Flutter rounds a text line to whole px (frame 15.625 -> 16): +0.375';
 
@@ -750,8 +743,20 @@ void _openFacts(WidgetTester t, String dir, bool rtl, String caption) {
         find.descendant(of: _bar, matching: find.byType(DabblerIcon)),
       )
       .toList();
-  expect(icons.last.name, 'add');
+  // The CEO's `ceo-design-menu.png`: while open the action shows the
+  // close-circle (a light disc carrying a brand x), upright, on-brand.
+  expect(icons.last.name, 'close-circle');
   expect(icons.last.weight, DabblerIconWeight.bold);
+  expect(icons.last.size, DabblerSizing.navGlyphLarge);
+  expect(icons.last.color, colors.onBrand);
+  expect(
+    t
+        .widget<AnimatedRotation>(
+          find.descendant(of: _bar, matching: find.byType(AnimatedRotation)),
+        )
+        .turns,
+    0,
+  );
   for (final DabblerIcon tile in icons.sublist(0, 2)) {
     expect(tile.size, DabblerSizing.navGlyphLarge);
     expect(tile.weight, DabblerIconWeight.linear);
@@ -759,9 +764,9 @@ void _openFacts(WidgetTester t, String dir, bool rtl, String caption) {
   _fact(
     'open $dir',
     'create button glyph',
-    '+ (add bold 26), never an x',
+    'close-circle bold 26 on-brand, upright (ceo-design-menu.png)',
     '${icons.last.name} ${icons.last.weight.name} ${icons.last.size}',
-    'token: 0 (rotateActionOnOpen: false)',
+    'actionOpenIcon: close-circle, rotateActionOnOpen: false',
   );
   _fact(
     'open $dir',
@@ -857,16 +862,23 @@ Map<String, _Exception> _pillExceptions(bool rtl) => rtl
     : <String, _Exception>{};
 
 Map<String, _Exception> _openExceptions(bool rtl) {
-  const String both = '$_kTwoColumns; $_kLineRounding';
+  // Three tiles, as the frame draws them: the meet-up tile is offered
+  // whenever the flag is on (Alpha test build, CEO 2026-10-06), so the
+  // two-column pins this map carried are gone.
   return <String, _Exception>{
     'fade wrapper (open)': _Exception(_kLineRounding, _r(0, 719, 393, 133)),
     'create menu card': _Exception(_kLineRounding, _r(18, 719, 289, 109)),
-    'menu item 1 Create post': _Exception(both, _r(30, 731, 128.5, 85)),
-    'plate 1 (83x62)': _Exception(_kTwoColumns, _r(30, 731, 128.5, 62)),
+    'menu item 1 Create post': _Exception(_kLineRounding, _r(30, 731, 83, 85)),
+    'menu item 2 Create game': _Exception(_kLineRounding, _r(121, 731, 83, 85)),
+    'menu item 3 Create meetup': _Exception(
+      _kLineRounding,
+      _r(212, 731, 83, 85),
+    ),
+    'plate 1 (83x62)': _Exception(_kLineRounding, _r(30, 731, 83, 62)),
+    'plate 2 (83x62)': _Exception(_kLineRounding, _r(121, 731, 83, 62)),
+    'plate 3 (83x62)': _Exception(_kLineRounding, _r(212, 731, 83, 62)),
     'label 1 (12.5/15.63 w500)': rtl
-        ? _Exception(both, _r(65.24, 800, 58.01, 16))
-        : _Exception(both, _r(66.28, 800, 55.94, 16)),
-    'menu item 2 Create game': _Exception(both, _r(166.5, 731, 128.5, 85)),
-    'plate 2 (83x62)': _Exception(_kTwoColumns, _r(166.5, 731, 128.5, 62)),
+        ? _Exception(_kLineRounding, _r(42.49, 800, 58.01, 16))
+        : _Exception(_kLineRounding, _r(43.53, 800, 55.94, 16)),
   };
 }

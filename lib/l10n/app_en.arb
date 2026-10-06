@@ -1957,7 +1957,7 @@
   "meetups_cost_sub": "Entry fee",
   "meetups_err_location_required": "Add a location for the meet-up.",
   "meetups_sports_failed": "Sports could not be loaded. Try again later.",
-  "meetups_err_organiser_required": "Only organisers can create meet-ups.",
+  "meetups_err_create_refused": "You can't create this meet-up right now. Try again later.",
   "meetups_err_title_invalid": "The title must be 3 to 80 characters.",
   "meetups_err_invalid_time_range": "The end time must be after the start time.",
   "meetups_err_invalid_capacity": "The capacity must be at least 1.",

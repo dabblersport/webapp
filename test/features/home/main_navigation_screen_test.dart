@@ -70,8 +70,9 @@ Future<GoRouter> _pump(
     ProviderScope(
       overrides: [
         initializeProfileDataProvider.overrideWith((ref) async => false),
-        // No profile in the shell harness: no meet-up Create tile, and the
-        // provider chain never reaches the live Supabase client.
+        // No profile in the shell harness, so the provider chain never
+        // reaches the live Supabase client. The meet-up tile still shows: it
+        // follows the flag only (Alpha test build).
         meetupActorProfileIdProvider.overrideWithValue(null),
         feedNotifierProvider.overrideWith((ref) => FakeFeed(const FeedLoading())),
       ],
@@ -189,7 +190,9 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('create menu offers post and game only (no meetup) and routes',
+  // Alpha test build (CEO, 2026-10-06; revisit before Canary/main): the
+  // meet-up tile follows the flag only, so it shows with no profile loaded.
+  testWidgets('create menu offers post, game and meetup and routes',
       (tester) async {
     final semantics = tester.ensureSemantics();
     await _pump(tester);
@@ -197,12 +200,42 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Create post'), findsOneWidget);
     expect(find.text('Create game'), findsOneWidget);
-    expect(find.textContaining('eetup'), findsNothing);
+    expect(find.text('Create meetup'), findsOneWidget);
     await tester.tap(find.text('Create game'));
     await tester.pumpAndSettle();
     expect(find.text('create-game-route'), findsOneWidget);
     semantics.dispose();
   });
+
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    testWidgets('action: add closed, close-circle open, add again — $dir',
+        (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pump(tester, locale: locale);
+      Iterable<String> glyph() => tester
+          .widgetList<DabblerIcon>(
+            find.descendant(
+              of: find.byType(AnimatedRotation),
+              matching: find.byType(DabblerIcon),
+            ),
+          )
+          .map((i) => i.name);
+      double turns() =>
+          tester.widget<AnimatedRotation>(find.byType(AnimatedRotation)).turns;
+      expect(glyph(), <String>['add']);
+      await tester.tap(find.bySemanticsLabel('Create'));
+      await tester.pumpAndSettle();
+      expect(glyph(), <String>['close-circle']);
+      expect(turns(), 0);
+      await tester.tap(find.bySemanticsLabel('Close menu'));
+      await tester.pumpAndSettle();
+      expect(glyph(), <String>['add']);
+      expect(turns(), 0);
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+  }
 
   testWidgets('RTL renders without error', (tester) async {
     await _pump(tester, locale: const Locale('ar'));

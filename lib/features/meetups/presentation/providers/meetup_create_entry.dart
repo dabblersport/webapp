@@ -1,5 +1,4 @@
 import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -15,20 +14,16 @@ final meetupActorProfileIdProvider = Provider<String?>(
 
 /// Whether the Create menu offers "Create meetup".
 ///
-/// Shown while the flag is on and a signed-in profile exists. The server check
-/// (`can_create_meetup`) can only *hide* it: an explicit `false` from a working
-/// server hides the tile; while the check is loading, or when it fails (the
-/// Alpha test build runs before the meetup migrations are applied to the live
-/// project, so the RPC errors), the tile is offered. That is fail-open for the
-/// UI only, by CEO decision for the Alpha build (2026-10-06): nothing is
-/// authorised by it. The server stays the authority — `rpc_create_meetup`
-/// refuses a non-organiser with `organiser_required`, and the drawer shows
-/// that refusal in place.
-final canOfferCreateMeetupProvider = Provider<bool>((ref) {
-  if (!ref.watch(meetupsEnabledProvider)) return false;
-  final id = ref.watch(meetupActorProfileIdProvider);
-  if (id == null) return false;
-  return ref
-      .watch(canCreateMeetupProvider(id))
-      .maybeWhen(data: (bool allowed) => allowed, orElse: () => true);
-});
+/// Product rule (CEO, 2026-10-06): any signed-in user may create a meet-up,
+/// so the tile is offered whenever [meetupsEnabledProvider] is on — whatever
+/// the profile state and whatever `can_create_meetup` answers (also before
+/// the profile has loaded, and when the check is loading, failing or `false`).
+/// The UI carries no role notion. Set for the Alpha test build; revisit
+/// before Canary or `main`.
+///
+/// This authorises nothing; the server stays the authority. If
+/// `rpc_create_meetup` refuses, the drawer shows a generic in-sheet message
+/// (`meetups_err_create_refused`, via `meetupErrorText`) and stays open.
+final canOfferCreateMeetupProvider = Provider<bool>(
+  (ref) => ref.watch(meetupsEnabledProvider),
+);

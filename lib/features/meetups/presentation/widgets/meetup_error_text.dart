@@ -6,7 +6,9 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// code without its own copy.
 String meetupErrorText(AppLocalizations l, Failure failure, String fallback) =>
     switch (failure.code) {
-      'organiser_required' => l.meetups_err_organiser_required,
+      // A server refusal to create. The UI names no role: anyone signed in
+      // may create a meet-up (CEO, 2026-10-06), so the copy is generic.
+      'organiser_required' => l.meetups_err_create_refused,
       'not_host' || 'cannot_remove_host' => l.meetups_err_not_host,
       'title_invalid' => l.meetups_err_title_invalid,
       'invalid_time_range' => l.meetups_err_invalid_time_range,

@@ -159,7 +159,10 @@ void main() {
   });
 
   for (final e in <(String, String)>[
-    ('organiser_required', 'Only organisers can create meet-ups.'),
+    (
+      'organiser_required',
+      "You can't create this meet-up right now. Try again later.",
+    ),
     ('title_invalid', 'The title must be 3 to 80 characters.'),
     ('invalid_time_range', 'The end time must be after the start time.'),
     ('invalid_capacity', 'The capacity must be at least 1.'),
@@ -180,12 +183,16 @@ void main() {
     });
   }
 
-  group('create entry is organiser-only', () {
+  // Alpha test build (CEO, 2026-10-06; revisit before Canary/main): the
+  // entry follows the flag only. Organiser-only is enforced by
+  // the server (a refusal is shown inline above). Anyone signed in may create.
+  group('create entry follows the flag only (Alpha)', () {
     for (final c in <(String, bool, String?, bool, bool)>[
       ('flag off', false, 'p1', true, false),
-      ('no profile', true, null, true, false),
-      ('non-organiser (server says no)', true, 'p1', false, false),
-      ('organiser', true, 'p1', true, true),
+      ('flag off, server says yes', false, 'p1', true, false),
+      ('no profile', true, null, true, true),
+      ('server says no', true, 'p1', false, true),
+      ('server says yes', true, 'p1', true, true),
     ]) {
       test(c.$1, () async {
         final repo = FakeMeetupRepository()..canCreateResult = c.$4;

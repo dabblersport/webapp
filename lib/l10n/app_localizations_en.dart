@@ -5534,8 +5534,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sports could not be loaded. Try again later.';
 
   @override
-  String get meetups_err_organiser_required =>
-      'Only organisers can create meet-ups.';
+  String get meetups_err_create_refused =>
+      'You can\'t create this meet-up right now. Try again later.';
 
   @override
   String get meetups_err_title_invalid =>

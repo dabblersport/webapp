@@ -2,12 +2,13 @@
 /// `Home Feed.dc.html` (the create menu at `:3357-3361`, the drawer at
 /// `:1132-1281`, the Arabic frame at `:2379`).
 ///
-/// * The menu offers the meet-up tile whenever the flag is on and a profile
-///   exists, unless a working server says no (`can_create_meetup` false). A
-///   loading or failing check offers it (fail-open for the UI only; the RPC's
-///   `organiser_required` stays the authority).
+/// * The menu offers the meet-up tile whenever the flag is on, whatever the
+///   profile or `can_create_meetup` says (Alpha test build decision, CEO
+///   2026-10-06: anyone signed in may create; set for the Alpha test build,
+///   to revisit before Canary/main). A server refusal shows in the sheet.
 /// * The tiles follow the frame: post / game / meetup, glyphs edit / game /
-///   calendar, plates info / success / accent.
+///   calendar-1 (the dot-grid calendar), plates info / success / accent; the
+///   action shows close-circle while the menu is open.
 /// * Tapping the tile opens the drawer from Home; its header and CTA sit where
 ///   the frame measures them, in LTR and RTL.
 ///
@@ -142,12 +143,15 @@ void main() {
     TargetPlatform.macOS,
   );
 
-  group('Create meet-up entry: fail-open on the server check', () {
+  // Alpha test build (CEO, 2026-10-06; revisit before Canary/main): the tile
+  // follows the flag only; anyone signed in may create. The server decides.
+  group('Create meet-up entry: the flag alone decides (Alpha)', () {
     // (case, flag, profile, server answer, offered)
     for (final c in <(String, bool, String?, Future<bool> Function(), bool)>[
       ('flag off', false, 'p1', () async => true, false),
-      ('no profile', true, null, () async => true, false),
-      ('server says no', true, 'p1', () async => false, false),
+      ('flag off, server says no', false, 'p1', () async => false, false),
+      ('no profile (not loaded yet)', true, null, () async => true, true),
+      ('server says no', true, 'p1', () async => false, true),
       ('server says yes', true, 'p1', () async => true, true),
       ('check loading', true, 'p1', () => Completer<bool>().future, true),
       (
@@ -178,11 +182,41 @@ void main() {
     final String dir = rtl ? 'rtl' : 'ltr';
 
     testWidgets('menu: post, game, meetup as the frame - $dir', (tester) async {
+      // The test binding paints box shadows hard-edged
+      // (`debugDisableShadows`); the render shows the real soft ones. Reset
+      // right after the shot: the binding checks it at the end of the test.
+      if (_shotsDir.isNotEmpty) debugDisableShadows = false;
       await _pumpShell(tester, locale: locale);
       await _openMenu(tester);
+      await _shoot(tester, 'app-$dir-menu-open');
+      debugDisableShadows = true;
       final List<DabblerNavigationCreateItem> items = _items(tester);
       expect(items.map((i) => i.id), <String>['post', 'game', 'meetup']);
-      expect(items.map((i) => i.icon), <String>['edit', 'game', 'calendar']);
+      expect(items.map((i) => i.icon), <String>['edit', 'game', 'calendar-1']);
+      // `calendar-1` is the frame's dot-grid calendar (plain `calendar` draws
+      // a day number in iconsax_flutter), and it resolves to a real glyph.
+      expect(
+        DabblerIconRegistry.resolve('calendar-1').resolvedKey,
+        'calendar_1_copy',
+      );
+      // The action shows the frame's open glyph: close-circle, upright.
+      final DabblerNavigationBottomBar bar = tester
+          .widget<DabblerNavigationBottomBar>(
+            find.byType(DabblerNavigationBottomBar),
+          );
+      expect(bar.actionOpenIcon, 'close-circle');
+      expect(bar.rotateActionOnOpen, isFalse);
+      expect(
+        tester
+            .widgetList<DabblerIcon>(
+              find.descendant(
+                of: find.byType(AnimatedRotation),
+                matching: find.byType(DabblerIcon),
+              ),
+            )
+            .map((i) => i.name),
+        <String>['close-circle'],
+      );
       expect(items.map((i) => i.iconTone), <DabblerNavigationIconTone>[
         DabblerNavigationIconTone.info,
         DabblerNavigationIconTone.success,
@@ -203,7 +237,6 @@ void main() {
       expect(labels[0].center.dx, lessThan(labels[1].center.dx));
       expect(labels[1].center.dx, lessThan(labels[2].center.dx));
       expect(tester.takeException(), isNull);
-      await _shoot(tester, 'app-$dir-menu-open');
     }, variant: desktop);
 
     testWidgets('menu shows the tile while the check is loading - $dir', (
@@ -218,12 +251,58 @@ void main() {
       expect(_items(tester).map((i) => i.id), contains('meetup'));
     }, variant: desktop);
 
-    testWidgets('menu hides the tile when the server says no - $dir', (
+    testWidgets('menu shows the tile when the server says no - $dir', (
       tester,
     ) async {
       await _pumpShell(tester, locale: locale, canCreate: () async => false);
       await _openMenu(tester);
-      expect(_items(tester).map((i) => i.id), isNot(contains('meetup')));
+      expect(_items(tester).map((i) => i.id), contains('meetup'));
+      expect(find.text(_items(tester).last.label), findsOneWidget);
+    }, variant: desktop);
+
+    testWidgets('a server refusal shows the in-sheet message - $dir', (
+      tester,
+    ) async {
+      final FakeMeetupRepository repo = FakeMeetupRepository()
+        ..createFailure = const Failure(
+          code: 'organiser_required',
+          message: 'organiser_required',
+        );
+      await _pumpShell(
+        tester,
+        locale: locale,
+        repo: repo,
+        canCreate: () async => false,
+      );
+      await _openMenu(tester);
+      await tester.tap(find.text(_items(tester).last.label));
+      await _settle(tester);
+      expect(find.byType(MeetupComposerScreen), findsOneWidget);
+      // The place picker is not driven here; give the open drawer a place
+      // the way the Home entry would, then submit.
+      Navigator.of(tester.element(find.byType(MeetupComposerScreen))).pop();
+      await _settle(tester);
+      showMeetupComposerSheet(
+        tester.element(find.byType(HomeScreen)),
+        initialPlace: const ComposerPlacePick(name: 'Kite Beach'),
+      );
+      await _settle(tester);
+      await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
+      await tester.pump();
+      await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+      await tester.tap(find.byType(DabblerComposerSubmit));
+      await _settle(tester);
+      expect(repo.createCalls, hasLength(1));
+      expect(find.byType(MeetupComposerScreen), findsOneWidget);
+      expect(
+        find.text(
+          rtl
+              ? 'لا يمكنك إنشاء هذا اللقاء الآن. حاول مرة أخرى لاحقًا.'
+              : "You can't create this meet-up right now. Try again later.",
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
     }, variant: desktop);
 
     testWidgets('tile opens the drawer from Home, frame geometry - $dir', (
