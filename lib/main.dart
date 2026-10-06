@@ -7,6 +7,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
+import 'package:dabbler/core/feedback/toast_presenter.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
@@ -282,7 +283,9 @@ class MyApp extends ConsumerWidget {
               child: Builder(
                 builder: (context) => ColoredBox(
                   color: DabblerColors.of(context).bgPrimary,
-                  child: DabblerToastProvider(child: child),
+                  child: DabblerToastProvider(
+                    child: FeedbackToastPresenter(child: child),
+                  ),
                 ),
               ),
             );

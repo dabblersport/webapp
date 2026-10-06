@@ -38,3 +38,8 @@ export 'features/meetups/presentation/providers/meetup_providers.dart';
 export 'features/news/providers/news_providers.dart';
 export 'features/news/providers/news_actions_provider.dart';
 export 'features/news/providers/news_comments_provider.dart';
+
+// Feedback (Action Area semantic layer)
+export 'core/feedback/feedback_center.dart';
+export 'core/feedback/feedback_intent.dart';
+export 'core/feedback/presentation_context.dart';
