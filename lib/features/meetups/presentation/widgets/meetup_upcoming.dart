@@ -1,3 +1,4 @@
+import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -65,17 +66,33 @@ class MeetupUpcoming extends StatelessWidget {
         );
       }
     }
+    // The title and a single tile sit in the gutter; a rail scrolls edge to
+    // edge (`Listings.dc.html:423-453`, `margin: 0 -18px; padding: 0 18px`).
+    const EdgeInsetsDirectional gutter = EdgeInsetsDirectional.symmetric(
+      horizontal: ListingLayout.gutter,
+    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
-        DabblerText(l.listing_upcoming, style: DabblerType.displayLabel),
-        const DabblerGap.v(DabblerSpacing.space3),
+        Padding(
+          padding: gutter,
+          child: DabblerText(
+            l.listing_upcoming,
+            style: DabblerType.displayLabel,
+          ),
+        ),
+        const DabblerGap.v(ListingLayout.upcomingGap),
         if (tiles.length == 1)
-          tiles.first
+          Padding(padding: gutter, child: tiles.first)
         else
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
-            child: Row(spacing: DabblerSpacing.space3, children: tiles),
+            padding: gutter,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: DabblerSpacing.space3,
+              children: tiles,
+            ),
           ),
       ],
     );

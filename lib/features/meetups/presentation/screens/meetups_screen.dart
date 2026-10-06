@@ -109,34 +109,21 @@ class _MeetupsTabs extends ConsumerWidget {
           ),
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space6,
-        ),
-        child: DabblerTabPager(
-          scrollable: true,
-          items: <DabblerTabItem>[
-            DabblerTabItem(id: 'all', label: l.meetups_tab_all),
-            for (final s in sports)
-              DabblerTabItem(id: s.id, label: meetupSportName(context, s)),
-          ],
-          pages: <Widget>[
-            for (final id in <String?>[null, for (final s in sports) s.id])
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: <Widget>[
-                  DabblerFilterRail(
-                    items: active,
-                    clearAllLabel: l.listing_clear_all,
-                    onClearAll: reset,
-                  ),
-                  Expanded(
-                    child: _MeetupsBody(sportId: id, onOpen: onOpen),
-                  ),
-                ],
-              ),
-          ],
-        ),
+      body: ListingTabs(
+        items: <DabblerTabItem>[
+          DabblerTabItem(id: 'all', label: l.meetups_tab_all),
+          for (final s in sports)
+            DabblerTabItem(id: s.id, label: meetupSportName(context, s)),
+        ],
+        pages: <Widget>[
+          for (final id in <String?>[null, for (final s in sports) s.id])
+            ListingPage(
+              filters: active,
+              clearAllLabel: l.listing_clear_all,
+              onClearAll: reset,
+              body: _MeetupsBody(sportId: id, onOpen: onOpen),
+            ),
+        ],
       ),
     );
   }
@@ -159,23 +146,19 @@ class _MeetupsBody extends ConsumerWidget {
     final sort = ref.watch(meetupSortProvider);
     final distances = ref.watch(meetupDistancesProvider);
     return list.when(
-      loading: () => ListView(
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
-        children: const <Widget>[
-          DabblerSkeleton.card(),
-          DabblerGap.v(DabblerSpacing.space4),
-          DabblerSkeleton.card(),
-          DabblerGap.v(DabblerSpacing.space4),
-          DabblerSkeleton.card(),
-        ],
-      ),
-      error: (_, __) => Center(
-        child: DabblerEmptyState.error(
-          title: l.meetups_load_failed,
-          size: DabblerEmptyStateSize.inline,
-          retryLabel: l.feed_retry,
-          onRetry: () => ref.invalidate(meetupListProvider),
+      loading: () =>
+          const ListingSkeletons(kind: DabblerListingSkeletonKind.meetup),
+      error: (_, __) => Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: ListingLayout.gutter,
+        ),
+        child: Center(
+          child: DabblerEmptyState.error(
+            title: l.meetups_load_failed,
+            size: DabblerEmptyStateSize.inline,
+            retryLabel: l.feed_retry,
+            onRetry: () => ref.invalidate(meetupListProvider),
+          ),
         ),
       ),
       data: (all) {
@@ -200,14 +183,14 @@ class _MeetupsBody extends ConsumerWidget {
           sort: sort,
         );
         if (mine.isEmpty && others.isEmpty) {
-          return Center(
-            child: DabblerEmptyState(
-              icon: 'people',
-              title: l.meetups_none_title,
-              action: DabblerButton(
-                label: l.meetups_explore_another,
-                onPressed: () => ref.invalidate(meetupListProvider),
-              ),
+          // The frame's copy under the title names other activities'
+          // sessions; the list carries no such data, so it draws none.
+          return ListingEmpty(
+            icon: 'people',
+            title: l.meetups_none_title,
+            action: DabblerButton(
+              label: l.meetups_explore_another,
+              onPressed: () => ref.invalidate(meetupListProvider),
             ),
           );
         }
@@ -215,9 +198,11 @@ class _MeetupsBody extends ConsumerWidget {
           onRefresh: () async => ref.invalidate(meetupListProvider),
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
+            // The Upcoming rail bleeds to the screen edge, so the gutter is
+            // per row (`Listings.dc.html:453`).
             padding: const EdgeInsetsDirectional.only(
-              top: DabblerSpacing.space4,
-              bottom: DabblerSpacing.space8,
+              top: ListingLayout.listTop,
+              bottom: ListingLayout.listBottom,
             ),
             children: <Widget>[
               if (mine.isNotEmpty) ...<Widget>[
@@ -225,15 +210,20 @@ class _MeetupsBody extends ConsumerWidget {
                   meetups: mine,
                   onOpen: (m) => _open(context, m.id),
                 ),
-                const DabblerGap.v(DabblerSpacing.space4),
+                const DabblerGap.v(ListingLayout.cardGap),
               ],
-              for (final m in others) ...<Widget>[
-                MeetupListingCard(
-                  meetup: m,
-                  distanceMeters: distances[m.id],
-                  onOpen: () => _open(context, m.id),
+              for (var i = 0; i < others.length; i++) ...<Widget>[
+                if (i > 0) const DabblerGap.v(ListingLayout.cardGap),
+                Padding(
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: ListingLayout.gutter,
+                  ),
+                  child: MeetupListingCard(
+                    meetup: others[i],
+                    distanceMeters: distances[others[i].id],
+                    onOpen: () => _open(context, others[i].id),
+                  ),
                 ),
-                const DabblerGap.v(DabblerSpacing.space4),
               ],
             ],
           ),

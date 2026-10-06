@@ -57,7 +57,6 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
     final locale = Localizations.localeOf(context).toString();
     final m = widget.meetup;
     final now = widget.now ?? DateTime.now();
-    final colors = DabblerColors.of(context);
     final state = rsvpStateFromListItem(m, now);
     final action = rsvpActionFor(state);
     final place = m.venueName ?? m.locationName ?? m.areaName;
@@ -65,24 +64,25 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
     final skill = gamesSkillTierFor(m.minSkill, m.maxSkill);
     return DabblerCardGame(
       title: m.title,
+      // `Listings.dc.html:526`: activity in info, then the skill in its tone
+      // (the meetup has no setting or requirement fields to tag).
       tags: <Widget>[
         if (m.sportNameEn != null)
-          DabblerBadge(
+          DabblerListingTag(
             label:
                 Localizations.localeOf(context).languageCode == 'ar' &&
                     (m.sportNameAr?.trim().isNotEmpty ?? false)
                 ? m.sportNameAr!
                 : m.sportNameEn!,
-            status: colors.status(DabblerStatusTone.info),
           ),
         if (skill != null)
-          DabblerBadge(
+          DabblerListingTag(
             label: gamesSkillTierLabel(l, skill),
-            status: colors.status(switch (skill) {
-              GamesSkillFilter.beginner => DabblerStatusTone.success,
-              GamesSkillFilter.intermediate => DabblerStatusTone.warning,
-              _ => DabblerStatusTone.error,
-            }),
+            tone: switch (skill) {
+              GamesSkillFilter.beginner => DabblerListingTagTone.success,
+              GamesSkillFilter.intermediate => DabblerListingTagTone.warning,
+              _ => DabblerListingTagTone.error,
+            },
           ),
       ],
       dayLabel: meetupDayLabel(l, m.startAt, now, locale),
