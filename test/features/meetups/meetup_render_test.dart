@@ -20,6 +20,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/geometry_dump.dart';
 import '../../support/render_mode.dart';
 import 'meetup_screens_harness.dart';
 
@@ -94,6 +95,7 @@ Future<void> _shoot(
   );
   await settle(tester);
   await before?.call();
+  dumpGeometry(tester, name);
   if (_shotsDir.isEmpty) return;
   await tester.runAsync(() async {
     final boundary =

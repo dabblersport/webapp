@@ -25,6 +25,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/geometry_dump.dart';
 import '../../support/render_mode.dart';
 
 /// Renders the Games and Venues listings (content, loading, empty, filter
@@ -87,6 +88,7 @@ Future<void> _loadFonts() async {
 }
 
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {
+  dumpGeometry(tester, name);
   await tester.runAsync(() async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
