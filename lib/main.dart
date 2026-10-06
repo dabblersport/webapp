@@ -23,6 +23,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
+import 'package:dabbler/features/app_boot/startup_splash.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
@@ -135,100 +136,9 @@ Future<void> main() async {
         debugProfileBuildsEnabled = false;
       }
 
-      try {
-        await Environment.load();
-
-        // Initialize Firebase before any FirebaseMessaging usage — without
-        // this every FirebaseMessaging.instance access throws [core/no-app].
-        // On web there is no native init, so Dart must do it.
-        await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform,
-        );
-        if (!kIsWeb) {
-          FirebaseMessaging.onBackgroundMessage(
-            _firebaseMessagingBackgroundHandler,
-          );
-        }
-
-        // Initialize theme service before running the app
-        // Location service is now initialized on-demand in sports screen
-        await ThemeService().init();
-
-        // Always use the JWT anon key for Supabase initialisation.
-        // The publishable-key format (sb_publishable_*) is not a JWT and
-        // is incompatible with the current supabase_flutter SDK, causing
-        // every authenticated request to fail silently.
-        final anonKey = Environment.supabaseAnonKey;
-
-        // Initialize Supabase with deep-link detection enabled for auth flows
-        // This is required so that OAuth providers (e.g. Google) can return
-        // to the app and have the session detected from the redirect URL.
-        await Supabase.initialize(
-          url: Environment.supabaseUrl,
-          anonKey: anonKey,
-          authOptions: FlutterAuthClientOptions(
-            authFlowType: AuthFlowType.pkce,
-            // Must be true for Google sign-in to work correctly (PKCE flow).
-            // Referral deep links can still be controlled separately via feature flags.
-            detectSessionInUri: true,
-            autoRefreshToken: true,
-          ),
-        );
-
-        ThemeService().attachAccountSyncListener();
-        await ThemeService().hydrateFromAccount();
-
-        // Push notification service — initialize on mobile to set up
-        // foreground handling, token refresh, and notification tap listeners.
-        // Wire the tap callback BEFORE init so getInitialMessage can use it.
-        if (!kIsWeb) {
-          push_mobile.PushNotificationService.instance.onNotificationTap =
-              _pushNotificationRoute;
-          // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
-          unawaited(push_mobile.PushNotificationService.instance.init());
-        } else {
-          // Web push: wires token save + refresh if permission is already
-          // granted; the permission prompt itself comes from the Home drawer
-          // or onboarding. Taps deep-link via the service worker (URL).
-          unawaited(push_facade.PushNotificationService.instance.init());
-        }
-
-        // Log the Supabase authorization token (JWT) after initialization and sign-in
-        final authService = Supabase.instance.client.auth;
-        final session = authService.currentSession;
-        final accessToken = session?.accessToken;
-        if (accessToken != null) {
-          // Use debugPrint for logging in development
-        } else {}
-
-        // Log feature flags snapshot once per session
-        _logFlagsOnce();
-
-        // Initialize app lifecycle manager
-        AppLifecycleManager().init();
-
-        // Proactively refresh session on resume to avoid "JWT expired" loops.
-        // This is best-effort; failures will be handled by per-request retry.
-        AppLifecycleManager().onResume(() {
-          unawaited(AuthService().refreshSession());
-        });
-
-        // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
-
-        runApp(const ProviderScope(child: MyApp()));
-      } catch (e, st) {
-        // Always log bootstrap errors so production web isn't a black box.
-        // ignore: avoid_print
-        print('App bootstrap failed: $e');
-        // ignore: avoid_print
-        print(st);
-
-        // KAN-196: always render a real, visible error screen instead of a
-        // debug-mode rethrow (silent on web/iOS, see BootstrapErrorApp's own
-        // doc comment) or a release "best-effort" runApp(MyApp()) that threw
-        // again deeper with nothing on screen either way.
-        runApp(BootstrapErrorApp(error: e, stackTrace: st));
-      }
+      // The launch video plays while bootstrap runs; the app replaces it
+      // once both are done (see StartupSplash). Not a route.
+      runApp(StartupSplash(bootstrap: _bootstrap()));
     },
     (Object error, StackTrace stack) {
       // ignore: avoid_print
@@ -237,6 +147,105 @@ Future<void> main() async {
       print(stack);
     },
   );
+}
+
+/// Everything the app needs before its first real frame. Resolves to the app
+/// to show; never fails (a failure resolves to [BootstrapErrorApp]).
+Future<Widget> _bootstrap() async {
+  try {
+    await Environment.load();
+
+    // Initialize Firebase before any FirebaseMessaging usage — without
+    // this every FirebaseMessaging.instance access throws [core/no-app].
+    // On web there is no native init, so Dart must do it.
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    if (!kIsWeb) {
+      FirebaseMessaging.onBackgroundMessage(
+        _firebaseMessagingBackgroundHandler,
+      );
+    }
+
+    // Initialize theme service before running the app
+    // Location service is now initialized on-demand in sports screen
+    await ThemeService().init();
+
+    // Always use the JWT anon key for Supabase initialisation.
+    // The publishable-key format (sb_publishable_*) is not a JWT and
+    // is incompatible with the current supabase_flutter SDK, causing
+    // every authenticated request to fail silently.
+    final anonKey = Environment.supabaseAnonKey;
+
+    // Initialize Supabase with deep-link detection enabled for auth flows
+    // This is required so that OAuth providers (e.g. Google) can return
+    // to the app and have the session detected from the redirect URL.
+    await Supabase.initialize(
+      url: Environment.supabaseUrl,
+      anonKey: anonKey,
+      authOptions: FlutterAuthClientOptions(
+        authFlowType: AuthFlowType.pkce,
+        // Must be true for Google sign-in to work correctly (PKCE flow).
+        // Referral deep links can still be controlled separately via feature flags.
+        detectSessionInUri: true,
+        autoRefreshToken: true,
+      ),
+    );
+
+    ThemeService().attachAccountSyncListener();
+    await ThemeService().hydrateFromAccount();
+
+    // Push notification service — initialize on mobile to set up
+    // foreground handling, token refresh, and notification tap listeners.
+    // Wire the tap callback BEFORE init so getInitialMessage can use it.
+    if (!kIsWeb) {
+      push_mobile.PushNotificationService.instance.onNotificationTap =
+          _pushNotificationRoute;
+      // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
+      unawaited(push_mobile.PushNotificationService.instance.init());
+    } else {
+      // Web push: wires token save + refresh if permission is already
+      // granted; the permission prompt itself comes from the Home drawer
+      // or onboarding. Taps deep-link via the service worker (URL).
+      unawaited(push_facade.PushNotificationService.instance.init());
+    }
+
+    // Log the Supabase authorization token (JWT) after initialization and sign-in
+    final authService = Supabase.instance.client.auth;
+    final session = authService.currentSession;
+    final accessToken = session?.accessToken;
+    if (accessToken != null) {
+      // Use debugPrint for logging in development
+    } else {}
+
+    // Log feature flags snapshot once per session
+    _logFlagsOnce();
+
+    // Initialize app lifecycle manager
+    AppLifecycleManager().init();
+
+    // Proactively refresh session on resume to avoid "JWT expired" loops.
+    // This is best-effort; failures will be handled by per-request retry.
+    AppLifecycleManager().onResume(() {
+      unawaited(AuthService().refreshSession());
+    });
+
+    // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
+
+    return const ProviderScope(child: MyApp());
+  } catch (e, st) {
+    // Always log bootstrap errors so production web isn't a black box.
+    // ignore: avoid_print
+    print('App bootstrap failed: $e');
+    // ignore: avoid_print
+    print(st);
+
+    // KAN-196: always render a real, visible error screen instead of a
+    // debug-mode rethrow (silent on web/iOS, see BootstrapErrorApp's own
+    // doc comment) or a release "best-effort" runApp(MyApp()) that threw
+    // again deeper with nothing on screen either way.
+    return BootstrapErrorApp(error: e, stackTrace: st);
+  }
 }
 
 class MyApp extends ConsumerWidget {
