@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/rendering.dart';
-import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 /// Folder a render test writes a geometry dump to
