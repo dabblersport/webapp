@@ -150,41 +150,27 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
       ),
       body: sports.isEmpty
           ? const SizedBox.shrink()
-          : Padding(
-              // The DS cards and tabs carry no screen gutter of their own.
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space6,
-              ),
-              child: DabblerTabPager(
-                scrollable: true,
-                items: <DabblerTabItem>[
-                  for (final sport in sports)
-                    DabblerTabItem(
-                      id: sport.id,
-                      label: sport.localizedName(context),
+          : ListingTabs(
+              items: <DabblerTabItem>[
+                for (final sport in sports)
+                  DabblerTabItem(
+                    id: sport.id,
+                    label: sport.localizedName(context),
+                  ),
+              ],
+              pages: [
+                for (final sport in sports)
+                  // The applied-filters rail sits under the tabs.
+                  ListingPage(
+                    filters: active,
+                    clearAllLabel: l.listing_clear_all,
+                    onClearAll: _resetFilters,
+                    body: _AllVenuesList(
+                      sport: sport,
+                      onChangeFilters: _openFilters,
                     ),
-                ],
-                pages: [
-                  for (final sport in sports)
-                    // The applied-filters rail sits under the tabs.
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        DabblerFilterRail(
-                          items: active,
-                          clearAllLabel: l.listing_clear_all,
-                          onClearAll: _resetFilters,
-                        ),
-                        Expanded(
-                          child: _AllVenuesList(
-                            sport: sport,
-                            onChangeFilters: _openFilters,
-                          ),
-                        ),
-                      ],
-                    ),
-                ],
-              ),
+                  ),
+              ],
             ),
     );
   }
@@ -307,7 +293,7 @@ class _AllVenuesList extends ConsumerWidget {
                       area: v.area,
                       pricePerHour: v.pricePerHour,
                       isIndoor: v.isIndoor,
-                      sports: [sport.nameEn],
+                      sports: [sport.localizedName(context)],
                       amenities: v.amenities,
                     ),
                   )
@@ -316,17 +302,8 @@ class _AllVenuesList extends ConsumerWidget {
     );
   }
 
-  Widget _loading() => ListView(
-    physics: const NeverScrollableScrollPhysics(),
-    padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
-    children: const [
-      DabblerSkeleton.card(),
-      DabblerGap.v(DabblerSpacing.space4),
-      DabblerSkeleton.card(),
-      DabblerGap.v(DabblerSpacing.space4),
-      DabblerSkeleton.card(),
-    ],
-  );
+  Widget _loading() =>
+      const ListingSkeletons(kind: DabblerListingSkeletonKind.venue);
 
   Widget _error(BuildContext context, WidgetRef ref) => Center(
     child: DabblerEmptyState.error(
@@ -340,15 +317,14 @@ class _AllVenuesList extends ConsumerWidget {
     ),
   );
 
-  Widget _empty(BuildContext context, {String? hint}) => Center(
-    child: DabblerEmptyState(
-      icon: 'building-3',
-      title: AppLocalizations.of(context).listing_venues_none_title,
-      text: hint ?? AppLocalizations.of(context).listing_venues_none_text,
-      action: DabblerButton(
-        label: AppLocalizations.of(context).listing_change_filters,
-        onPressed: onChangeFilters,
-      ),
+  Widget _empty(BuildContext context, {String? hint}) => ListingEmpty(
+    // `Listings.dc.html:740` — the bold location glyph.
+    icon: 'location',
+    title: AppLocalizations.of(context).listing_venues_none_title,
+    text: hint ?? AppLocalizations.of(context).listing_venues_none_text,
+    action: DabblerButton(
+      label: AppLocalizations.of(context).listing_change_filters,
+      onPressed: onChangeFilters,
     ),
   );
 
@@ -360,14 +336,14 @@ class _AllVenuesList extends ConsumerWidget {
       },
       child: ListView(
         padding: const EdgeInsetsDirectional.only(
-          top: DabblerSpacing.space4,
-          bottom: DabblerSpacing.space8,
+          top: ListingLayout.listTop,
+          bottom: ListingLayout.listBottom,
         ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
-          for (final v in venues) ...[
-            _VenueCard(venue: v),
-            const DabblerGap.v(DabblerSpacing.space4),
+          for (var i = 0; i < venues.length; i++) ...[
+            if (i > 0) const DabblerGap.v(ListingLayout.venueCardGap),
+            _VenueCard(venue: venues[i]),
           ],
         ],
       ),
@@ -413,8 +389,10 @@ class _VenueCardData {
 }
 
 /// A venue on the design system's venue card (`Listings.dc.html:750-820`).
-/// The app has no venue photo, rating or badges, so the card draws no cover
-/// and no rating; the favourite heart toggles `venue_favorites`.
+/// The app has no venue photo, rating, review count or status badges ("Top
+/// rated", "Instant booking"), so the card draws no cover, no rating and no
+/// badges — the frame's photo-less card (`v.hasPhoto` false); the favourite
+/// heart toggles `venue_favorites`.
 class _VenueCard extends ConsumerStatefulWidget {
   const _VenueCard({required this.venue});
 
@@ -503,23 +481,18 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
       area: locationLine,
       tags: [
         if (venue.distanceLabel != null)
-          DabblerBadge(
+          DabblerCardVenue.distanceTag(
             label: l.listing_km_away(venue.distanceLabel!),
-            tone: DabblerBadgeTone.pill,
-            icon: const DabblerIcon(
-              'location',
-              weight: DabblerIconWeight.bold,
-              size: DabblerSizing.iconXs,
-            ),
           ),
+        // The setting, as the meetup card tags it (`Listings.dc.html:1866`).
         if (venue.isIndoor != null)
-          DabblerBadge(
+          DabblerListingTag(
             label: venue.isIndoor! ? l.listing_indoor : l.listing_outdoor,
-            tone: DabblerBadgeTone.warning,
+            tone: DabblerListingTagTone.brandTint,
           ),
       ],
       sports: [
-        for (final s in venue.sports) DabblerBadge(label: s, outlined: true),
+        for (final s in venue.sports) DabblerListingTag.outlined(label: s),
       ],
       facilities: [
         for (final a in venue.amenities)
