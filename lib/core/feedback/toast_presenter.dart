@@ -1,5 +1,6 @@
 import 'package:dabbler/core/feedback/feedback_center.dart';
 import 'package:dabbler/core/feedback/feedback_intent.dart';
+import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -62,7 +63,14 @@ class FeedbackToastPresenter extends ConsumerWidget {
       final center = ref.read(feedbackCenterProvider.notifier);
       for (final entry in [...next.outbox]) {
         final spec = toastSpecFor(entry);
-        if (spec != null) toasts?.show(spec);
+        if (spec != null) {
+          // Already routed to the toast: never re-route it to the shell.
+          if (toasts is ShellAwareToastController) {
+            toasts.showStandard(spec);
+          } else {
+            toasts?.show(spec);
+          }
+        }
         center.delivered(entry.id);
       }
     });

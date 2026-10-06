@@ -7,13 +7,13 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
-import 'package:dabbler/core/feedback/toast_presenter.dart';
+import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerColors, DabblerMotion, DabblerToastProvider;
+    show DabblerColors, DabblerMotion;
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart'
     as push_facade;
@@ -283,9 +283,9 @@ class MyApp extends ConsumerWidget {
               child: Builder(
                 builder: (context) => ColoredBox(
                   color: DabblerColors.of(context).bgPrimary,
-                  child: DabblerToastProvider(
-                    child: FeedbackToastPresenter(child: child),
-                  ),
+                  // Shell-aware: on the main shell a toast is presented by
+                  // the Action Area; elsewhere it is the standard toast.
+                  child: ShellAwareToastProvider(child: child),
                 ),
               ),
             );

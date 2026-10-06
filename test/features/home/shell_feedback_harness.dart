@@ -2,7 +2,7 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dabbler/core/feedback/feedback_center.dart';
-import 'package:dabbler/core/feedback/toast_presenter.dart';
+import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
@@ -28,8 +28,9 @@ const Key kShotKey = Key('shell-shot');
 /// The shell under a real GoRouter, the app's toast provider and the
 /// feedback toast presenter, as `main.dart` mounts them.
 class ShellHarness {
-  ShellHarness(this.router, this.tester);
+  ShellHarness(this.router, this.tester, this.root);
   final GoRouter router;
+  final GlobalKey<NavigatorState> root;
   final WidgetTester tester;
 
   ProviderContainer get container => ProviderScope.containerOf(
@@ -46,6 +47,9 @@ class ShellHarness {
 
   DabblerActionAreaPhase get phase =>
       tester.widget<DabblerActionArea>(find.byType(DabblerActionArea)).phase;
+
+  /// The root navigator's context (dialogs, sheets, routes over the shell).
+  BuildContext get rootContext => root.currentContext!;
 
   /// Pumps [ms] in 50ms steps (spinners never settle).
   Future<void> advance(int ms) async {
@@ -115,10 +119,8 @@ Future<ShellHarness> pumpShell(
           final mq = MediaQuery.of(context);
           return MediaQuery(
             data: mq.copyWith(disableAnimations: reduceMotion),
-            child: DabblerToastProvider(
-              child: FeedbackToastPresenter(
-                child: RepaintBoundary(key: kShotKey, child: child),
-              ),
+            child: ShellAwareToastProvider(
+              child: RepaintBoundary(key: kShotKey, child: child),
             ),
           );
         },
@@ -133,7 +135,7 @@ Future<ShellHarness> pumpShell(
   );
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
-  return ShellHarness(router, tester);
+  return ShellHarness(router, tester, root);
 }
 
 /// Writes the shell as a PNG when [kShellShots] is on.
