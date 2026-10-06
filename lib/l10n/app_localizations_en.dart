@@ -5652,4 +5652,55 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetups_report_note => 'Tell us what is wrong with this meet-up';
+
+  @override
+  String get venue_amenity_outdoor => 'Outdoor';
+
+  @override
+  String get venue_amenity_indoor => 'Indoor';
+
+  @override
+  String get venue_amenity_parking => 'Parking';
+
+  @override
+  String get venue_amenity_washrooms => 'Washrooms';
+
+  @override
+  String get venue_amenity_changing_rooms => 'Changing rooms';
+
+  @override
+  String get venue_amenity_showers => 'Showers';
+
+  @override
+  String get venue_amenity_lighting => 'Lighting';
+
+  @override
+  String get venue_amenity_cafeteria => 'Cafeteria';
+
+  @override
+  String get venue_amenity_wifi => 'Wifi';
+
+  @override
+  String get venue_amenity_first_aid => 'First aid';
+
+  @override
+  String get venue_amenity_accessibility => 'Accessibility';
+
+  @override
+  String get venue_amenity_gym => 'Gym';
+
+  @override
+  String get venue_amenity_locker_room => 'Locker room';
+
+  @override
+  String get venue_amenity_equipment_rental => 'Equipment rental';
+
+  @override
+  String get venue_amenity_air_conditioning => 'Air conditioning';
+
+  @override
+  String get venue_amenity_spectator_seating => 'Spectator seating';
+
+  @override
+  String get venue_amenity_vending => 'Vending machines';
 }

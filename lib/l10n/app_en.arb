@@ -1994,5 +1994,22 @@
   "@meetups_share_headline": {"placeholders": {"title": {"type": "String"}}},
   "meetups_more": "More",
   "meetups_report": "Report meetup",
-  "meetups_report_note": "Tell us what is wrong with this meet-up"
+  "meetups_report_note": "Tell us what is wrong with this meet-up",
+  "venue_amenity_outdoor": "Outdoor",
+  "venue_amenity_indoor": "Indoor",
+  "venue_amenity_parking": "Parking",
+  "venue_amenity_washrooms": "Washrooms",
+  "venue_amenity_changing_rooms": "Changing rooms",
+  "venue_amenity_showers": "Showers",
+  "venue_amenity_lighting": "Lighting",
+  "venue_amenity_cafeteria": "Cafeteria",
+  "venue_amenity_wifi": "Wifi",
+  "venue_amenity_first_aid": "First aid",
+  "venue_amenity_accessibility": "Accessibility",
+  "venue_amenity_gym": "Gym",
+  "venue_amenity_locker_room": "Locker room",
+  "venue_amenity_equipment_rental": "Equipment rental",
+  "venue_amenity_air_conditioning": "Air conditioning",
+  "venue_amenity_spectator_seating": "Spectator seating",
+  "venue_amenity_vending": "Vending machines"
 }

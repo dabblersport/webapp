@@ -2102,5 +2102,22 @@
   "meetups_share_headline": "انضم إليّ في {title} على Dabbler!",
   "meetups_more": "المزيد",
   "meetups_report": "الإبلاغ عن اللقاء",
-  "meetups_report_note": "أخبرنا ما المشكلة في هذا اللقاء"
+  "meetups_report_note": "أخبرنا ما المشكلة في هذا اللقاء",
+  "venue_amenity_outdoor": "ملعب مكشوف",
+  "venue_amenity_indoor": "ملعب مغطى",
+  "venue_amenity_parking": "مواقف سيارات",
+  "venue_amenity_washrooms": "دورات مياه",
+  "venue_amenity_changing_rooms": "غرف تبديل الملابس",
+  "venue_amenity_showers": "أماكن الاستحمام",
+  "venue_amenity_lighting": "الإضاءة",
+  "venue_amenity_cafeteria": "كافتيريا",
+  "venue_amenity_wifi": "واي فاي",
+  "venue_amenity_first_aid": "الإسعافات الأولية",
+  "venue_amenity_accessibility": "تسهيلات لذوي الإعاقة",
+  "venue_amenity_gym": "صالة رياضية",
+  "venue_amenity_locker_room": "غرفة الخزائن",
+  "venue_amenity_equipment_rental": "تأجير المعدات",
+  "venue_amenity_air_conditioning": "تكييف الهواء",
+  "venue_amenity_spectator_seating": "مقاعد المشاهدين",
+  "venue_amenity_vending": "آلات البيع"
 }

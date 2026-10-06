@@ -9,6 +9,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
 import 'package:dabbler/features/venues/providers.dart';
+import 'package:dabbler/features/venues/presentation/widgets/venue_amenity_chips.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Venue details (D03), drawn from `Details.dc.html` "Venue details".
@@ -39,33 +40,6 @@ String _labelFor(String sport) =>
 String _sportKey(String sport) {
   final key = sport.trim().toLowerCase();
   return key == 'soccer' ? 'football' : key;
-}
-
-String _amenityIcon(String a) {
-  switch (a.trim().toLowerCase()) {
-    case 'parking':
-    case 'free parking':
-      return 'car';
-    case 'wifi':
-      return 'wifi-square';
-    case 'lighting':
-      return 'lamp-on';
-    case 'gym':
-      return 'activity';
-    case 'restaurant':
-    case 'cafe':
-    case 'cafeteria':
-    case 'snack bar':
-      return 'coffee';
-    case 'locker rooms':
-    case 'changing rooms':
-    case 'changing':
-      return 'lock';
-    case 'showers':
-      return 'drop';
-    default:
-      return 'tick-circle';
-  }
 }
 
 class VenueDetailScreen extends ConsumerStatefulWidget {
@@ -290,20 +264,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
           DabblerSection(
             style: DabblerSectionStyle.label,
             title: 'Facilities',
-            children: [
-              Wrap(
-                spacing: DabblerSpacing.space3,
-                runSpacing: DabblerSpacing.space3,
-                children: [
-                  for (final a in venue.amenities)
-                    DabblerChip(
-                      label: a,
-                      compact: true,
-                      leadingIcon: DabblerIcon(_amenityIcon(a)),
-                    ),
-                ],
-              ),
-            ],
+            children: [VenueAmenityChips(amenities: venue.amenities)],
           ),
         DabblerSection(
           style: DabblerSectionStyle.label,

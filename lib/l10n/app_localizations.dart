@@ -10252,6 +10252,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tell us what is wrong with this meet-up'**
   String get meetups_report_note;
+
+  /// No description provided for @venue_amenity_outdoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Outdoor'**
+  String get venue_amenity_outdoor;
+
+  /// No description provided for @venue_amenity_indoor.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor'**
+  String get venue_amenity_indoor;
+
+  /// No description provided for @venue_amenity_parking.
+  ///
+  /// In en, this message translates to:
+  /// **'Parking'**
+  String get venue_amenity_parking;
+
+  /// No description provided for @venue_amenity_washrooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Washrooms'**
+  String get venue_amenity_washrooms;
+
+  /// No description provided for @venue_amenity_changing_rooms.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing rooms'**
+  String get venue_amenity_changing_rooms;
+
+  /// No description provided for @venue_amenity_showers.
+  ///
+  /// In en, this message translates to:
+  /// **'Showers'**
+  String get venue_amenity_showers;
+
+  /// No description provided for @venue_amenity_lighting.
+  ///
+  /// In en, this message translates to:
+  /// **'Lighting'**
+  String get venue_amenity_lighting;
+
+  /// No description provided for @venue_amenity_cafeteria.
+  ///
+  /// In en, this message translates to:
+  /// **'Cafeteria'**
+  String get venue_amenity_cafeteria;
+
+  /// No description provided for @venue_amenity_wifi.
+  ///
+  /// In en, this message translates to:
+  /// **'Wifi'**
+  String get venue_amenity_wifi;
+
+  /// No description provided for @venue_amenity_first_aid.
+  ///
+  /// In en, this message translates to:
+  /// **'First aid'**
+  String get venue_amenity_first_aid;
+
+  /// No description provided for @venue_amenity_accessibility.
+  ///
+  /// In en, this message translates to:
+  /// **'Accessibility'**
+  String get venue_amenity_accessibility;
+
+  /// No description provided for @venue_amenity_gym.
+  ///
+  /// In en, this message translates to:
+  /// **'Gym'**
+  String get venue_amenity_gym;
+
+  /// No description provided for @venue_amenity_locker_room.
+  ///
+  /// In en, this message translates to:
+  /// **'Locker room'**
+  String get venue_amenity_locker_room;
+
+  /// No description provided for @venue_amenity_equipment_rental.
+  ///
+  /// In en, this message translates to:
+  /// **'Equipment rental'**
+  String get venue_amenity_equipment_rental;
+
+  /// No description provided for @venue_amenity_air_conditioning.
+  ///
+  /// In en, this message translates to:
+  /// **'Air conditioning'**
+  String get venue_amenity_air_conditioning;
+
+  /// No description provided for @venue_amenity_spectator_seating.
+  ///
+  /// In en, this message translates to:
+  /// **'Spectator seating'**
+  String get venue_amenity_spectator_seating;
+
+  /// No description provided for @venue_amenity_vending.
+  ///
+  /// In en, this message translates to:
+  /// **'Vending machines'**
+  String get venue_amenity_vending;
 }
 
 class _AppLocalizationsDelegate

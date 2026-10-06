@@ -5697,4 +5697,55 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get meetups_report_note => 'أخبرنا ما المشكلة في هذا اللقاء';
+
+  @override
+  String get venue_amenity_outdoor => 'ملعب مكشوف';
+
+  @override
+  String get venue_amenity_indoor => 'ملعب مغطى';
+
+  @override
+  String get venue_amenity_parking => 'مواقف سيارات';
+
+  @override
+  String get venue_amenity_washrooms => 'دورات مياه';
+
+  @override
+  String get venue_amenity_changing_rooms => 'غرف تبديل الملابس';
+
+  @override
+  String get venue_amenity_showers => 'أماكن الاستحمام';
+
+  @override
+  String get venue_amenity_lighting => 'الإضاءة';
+
+  @override
+  String get venue_amenity_cafeteria => 'كافتيريا';
+
+  @override
+  String get venue_amenity_wifi => 'واي فاي';
+
+  @override
+  String get venue_amenity_first_aid => 'الإسعافات الأولية';
+
+  @override
+  String get venue_amenity_accessibility => 'تسهيلات لذوي الإعاقة';
+
+  @override
+  String get venue_amenity_gym => 'صالة رياضية';
+
+  @override
+  String get venue_amenity_locker_room => 'غرفة الخزائن';
+
+  @override
+  String get venue_amenity_equipment_rental => 'تأجير المعدات';
+
+  @override
+  String get venue_amenity_air_conditioning => 'تكييف الهواء';
+
+  @override
+  String get venue_amenity_spectator_seating => 'مقاعد المشاهدين';
+
+  @override
+  String get venue_amenity_vending => 'آلات البيع';
 }
