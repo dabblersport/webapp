@@ -400,6 +400,20 @@ void main() {
         await _pump(tester, const GamesScreen(), locale: locale, dark: true);
         expect(tester.takeException(), isNull);
         _expectDarkContrast(tester, find.byType(DabblerCardGame).first);
+        // The upcoming tile's pastel fill takes the light inks.
+        final Finder tile = find.byType(DabblerCardUpcoming);
+        final DabblerCardUpcoming u = tester.widget<DabblerCardUpcoming>(tile);
+        final Color fill = DabblerCardUpcoming.fillOf(
+          DabblerColors.of(tester.element(tile)),
+          u.tone,
+        );
+        expect(
+          _contrast(
+            tester.widget<Text>(find.text(u.title)).style!.color!,
+            fill,
+          ),
+          greaterThanOrEqualTo(4.5),
+        );
       }, variant: desktop);
 
       testWidgets('loading: three game skeletons', (tester) async {
