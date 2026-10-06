@@ -2,6 +2,7 @@ import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/pending_auth_email_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -46,8 +47,12 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   @override
   void initState() {
     super.initState();
-    _emailController.text = widget.email;
-    _isEmailValid = _isEmailFormatValid(widget.email);
+    // The route's email wins; otherwise the one typed on /email_input.
+    final initial = widget.email.isNotEmpty
+        ? widget.email
+        : ref.read(pendingAuthEmailProvider);
+    _emailController.text = initial;
+    _isEmailValid = _isEmailFormatValid(initial);
   }
 
   @override
@@ -64,6 +69,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   }
 
   void _onEmailChanged(String value) {
+    ref.read(pendingAuthEmailProvider.notifier).set(value);
     setState(() {
       _emailTouched = true;
       _isEmailValid = _isEmailFormatValid(value);

@@ -2,6 +2,7 @@ import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/pending_auth_email_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -28,6 +29,17 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   bool _getUpdates = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Coming back from /enter-password: show the email typed earlier.
+    final pending = ref.read(pendingAuthEmailProvider);
+    if (pending.isNotEmpty) {
+      _emailController.text = pending;
+      _isEmailValid = _emailRegExp.hasMatch(pending);
+    }
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     super.dispose();
@@ -44,6 +56,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   void _onEmailChanged(String value) {
+    ref.read(pendingAuthEmailProvider.notifier).set(value);
     setState(() {
       _emailTouched = true;
       _isEmailValid = _emailRegExp.hasMatch(value.trim());
@@ -349,6 +362,9 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   }
 
   void _goToLogin() {
-    context.go(RoutePaths.enterPassword);
+    context.go(
+      RoutePaths.enterPassword,
+      extra: {'email': _emailController.text.trim()},
+    );
   }
 }
