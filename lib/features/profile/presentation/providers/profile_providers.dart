@@ -31,6 +31,7 @@ import 'package:dabbler/data/models/profile/privacy_settings.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 
 // Controller imports
+import '../../domain/models/persona_rules.dart';
 import '../controllers/profile_controller.dart';
 import '../controllers/profile_edit_controller.dart';
 import '../controllers/settings_controller.dart';
@@ -426,6 +427,19 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
 /// This is a simple state holder. It must NOT watch other providers,
 /// otherwise manual state changes get reset when dependencies rebuild.
 final activeProfileTypeProvider = StateProvider<String?>((ref) => null);
+
+/// The ACTIVE profile's persona, or `null` while it is not known.
+///
+/// Read from [activeProfileTypeProvider] (seeded from the loaded profile and
+/// switched by the persona switcher), falling back to the loaded profile's own
+/// persona. Parsed strictly: a name that is not one of the four personas is
+/// `null`, never guessed. Feed it to `canCreateGameOrMeetup`.
+final activePersonaProvider = Provider<PersonaType?>((ref) {
+  final active = personaTypeOrNull(ref.watch(activeProfileTypeProvider));
+  if (active != null) return active;
+  final profile = ref.watch(profileControllerProvider).profile;
+  return personaTypeOrNull(profile?.personaType ?? profile?.profileType);
+});
 
 /// SharedPreferences key for the last-used profile type.
 const _kLastActiveProfileType = 'last_active_profile_type';

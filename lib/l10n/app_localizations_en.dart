@@ -5534,6 +5534,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Sports could not be loaded. Try again later.';
 
   @override
+  String get game_err_create_refused =>
+      'You can\'t create a game right now. Try again later.';
+
+  @override
   String get meetups_err_create_refused =>
       'You can\'t create this meet-up right now. Try again later.';
 

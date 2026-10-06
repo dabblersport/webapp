@@ -2067,6 +2067,7 @@
   "meetups_cost_sub": "رسوم الدخول",
   "meetups_err_location_required": "أضف موقعًا للقاء.",
   "meetups_sports_failed": "تعذّر تحميل الرياضات. حاول مرة أخرى لاحقًا.",
+  "game_err_create_refused": "لا يمكنك إنشاء مباراة الآن. حاول مرة أخرى لاحقًا.",
   "meetups_err_create_refused": "لا يمكنك إنشاء هذا اللقاء الآن. حاول مرة أخرى لاحقًا.",
   "meetups_err_title_invalid": "يجب أن يتراوح العنوان بين 3 و80 حرفًا.",
   "meetups_err_invalid_time_range": "يجب أن يكون وقت النهاية بعد وقت البداية.",

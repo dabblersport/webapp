@@ -1,4 +1,5 @@
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -12,18 +13,21 @@ final meetupActorProfileIdProvider = Provider<String?>(
   (ref) => ref.watch(profileControllerProvider).profile?.id,
 );
 
-/// Whether the Create menu offers "Create meetup".
+/// Whether the Create menu offers "Create meetup": the meetups flag is on
+/// AND the active profile's persona may create (`canCreateGameOrMeetup`:
+/// player and organiser; not socialiser, not host).
 ///
-/// Product rule (CEO, 2026-10-06): any signed-in user may create a meet-up,
-/// so the tile is offered whenever [meetupsEnabledProvider] is on — whatever
-/// the profile state and whatever `can_create_meetup` answers (also before
-/// the profile has loaded, and when the check is loading, failing or `false`).
-/// The UI carries no role notion. Set for the Alpha test build; revisit
-/// before Canary or `main`.
+/// Product rule (CEO, 2026-10-06, superseding "everyone"): the persona rule
+/// is the only role notion in the UI; `can_create_meetup` is not consulted.
+/// An unknown persona (profile not loaded yet) hides the tile, so a
+/// socialiser or host never sees it flash.
 ///
 /// This authorises nothing; the server stays the authority. If
-/// `rpc_create_meetup` refuses, the drawer shows a generic in-sheet message
+/// `rpc_create_meetup` refuses (`persona_not_allowed` or `organiser_required`),
+/// the drawer shows a generic in-sheet message
 /// (`meetups_err_create_refused`, via `meetupErrorText`) and stays open.
 final canOfferCreateMeetupProvider = Provider<bool>(
-  (ref) => ref.watch(meetupsEnabledProvider),
+  (ref) =>
+      ref.watch(meetupsEnabledProvider) &&
+      canCreateGameOrMeetup(ref.watch(activePersonaProvider)),
 );

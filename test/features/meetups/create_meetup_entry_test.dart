@@ -2,10 +2,10 @@
 /// `Home Feed.dc.html` (the create menu at `:3357-3361`, the drawer at
 /// `:1132-1281`, the Arabic frame at `:2379`).
 ///
-/// * The menu offers the meet-up tile whenever the flag is on, whatever the
-///   profile or `can_create_meetup` says (Alpha test build decision, CEO
-///   2026-10-06: anyone signed in may create; set for the Alpha test build,
-///   to revisit before Canary/main). A server refusal shows in the sheet.
+/// * The menu offers the meet-up tile when the flag is on AND the active
+///   persona may create (CEO ruling 2026-10-06: player and organiser, not
+///   socialiser or host; unknown persona hides it). `can_create_meetup` is not
+///   consulted. A server refusal shows in the sheet.
 /// * The tiles follow the frame: post / game / meetup, glyphs edit / game /
 ///   calendar-1 (the dot-grid calendar), plates info / success / accent; the
 ///   action shows close-circle while the menu is open.
@@ -27,6 +27,8 @@ import 'package:dabbler/features/meetups/presentation/providers/meetup_create_en
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -143,34 +145,47 @@ void main() {
     TargetPlatform.macOS,
   );
 
-  // Alpha test build (CEO, 2026-10-06; revisit before Canary/main): the tile
-  // follows the flag only; anyone signed in may create. The server decides.
-  group('Create meet-up entry: the flag alone decides (Alpha)', () {
-    // (case, flag, profile, server answer, offered)
-    for (final c in <(String, bool, String?, Future<bool> Function(), bool)>[
-      ('flag off', false, 'p1', () async => true, false),
-      ('flag off, server says no', false, 'p1', () async => false, false),
-      ('no profile (not loaded yet)', true, null, () async => true, true),
-      ('server says no', true, 'p1', () async => false, true),
-      ('server says yes', true, 'p1', () async => true, true),
-      ('check loading', true, 'p1', () => Completer<bool>().future, true),
-      (
-        'check erroring (tables not applied)',
-        true,
-        'p1',
-        () async => throw Failure(code: 'PGRST202', message: 'not found'),
-        true,
-      ),
-    ]) {
+  // CEO ruling 2026-10-06: the tile needs the flag AND a persona that may
+  // create (player, organiser). The server's `can_create_meetup` is not asked.
+  group('Create meet-up entry: flag and persona rule', () {
+    // (case, flag, persona, server answer, offered)
+    for (final c
+        in <(String, bool, PersonaType?, Future<bool> Function(), bool)>[
+          (
+            'flag off, player',
+            false,
+            PersonaType.player,
+            () async => true,
+            false,
+          ),
+          ('player', true, PersonaType.player, () async => true, true),
+          ('organiser', true, PersonaType.organiser, () async => true, true),
+          ('socialiser', true, PersonaType.socialiser, () async => true, false),
+          ('host', true, PersonaType.host, () async => true, false),
+          ('persona not known yet', true, null, () async => true, false),
+          (
+            'player, server says no',
+            true,
+            PersonaType.player,
+            () async => false,
+            true,
+          ),
+          (
+            'player, check erroring',
+            true,
+            PersonaType.player,
+            () async => throw Failure(code: 'PGRST202', message: 'not found'),
+            true,
+          ),
+        ]) {
       test(c.$1, () async {
         final ProviderContainer container =
             makeContainer(FakeMeetupRepository(), <Override>[
               meetupsEnabledProvider.overrideWithValue(c.$2),
-              meetupActorProfileIdProvider.overrideWithValue(c.$3),
+              activePersonaProvider.overrideWithValue(c.$3),
               canCreateMeetupProvider.overrideWith((ref, id) => c.$4()),
             ]);
         container.listen(canOfferCreateMeetupProvider, (_, __) {});
-        await Future<void>.delayed(Duration.zero);
         await Future<void>.delayed(Duration.zero);
         expect(container.read(canOfferCreateMeetupProvider), c.$5);
       });
@@ -239,26 +254,30 @@ void main() {
       expect(tester.takeException(), isNull);
     }, variant: desktop);
 
-    testWidgets('menu shows the tile while the check is loading - $dir', (
-      tester,
-    ) async {
-      await _pumpShell(
-        tester,
-        locale: locale,
-        canCreate: () => Completer<bool>().future,
-      );
-      await _openMenu(tester);
-      expect(_items(tester).map((i) => i.id), contains('meetup'));
-    }, variant: desktop);
+    testWidgets(
+      'menu shows the tile for a player while the check is loading - $dir',
+      (tester) async {
+        await _pumpShell(
+          tester,
+          locale: locale,
+          canCreate: () => Completer<bool>().future,
+        );
+        await _openMenu(tester);
+        expect(_items(tester).map((i) => i.id), contains('meetup'));
+      },
+      variant: desktop,
+    );
 
-    testWidgets('menu shows the tile when the server says no - $dir', (
-      tester,
-    ) async {
-      await _pumpShell(tester, locale: locale, canCreate: () async => false);
-      await _openMenu(tester);
-      expect(_items(tester).map((i) => i.id), contains('meetup'));
-      expect(find.text(_items(tester).last.label), findsOneWidget);
-    }, variant: desktop);
+    testWidgets(
+      'menu shows the tile for a player when the server says no - $dir',
+      (tester) async {
+        await _pumpShell(tester, locale: locale, canCreate: () async => false);
+        await _openMenu(tester);
+        expect(_items(tester).map((i) => i.id), contains('meetup'));
+        expect(find.text(_items(tester).last.label), findsOneWidget);
+      },
+      variant: desktop,
+    );
 
     testWidgets('a server refusal shows the in-sheet message - $dir', (
       tester,

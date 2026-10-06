@@ -13,6 +13,7 @@ import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
 import 'package:dabbler/features/activities/presentation/screens/activities_screen_v2.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/features/venue_submissions/presentation/screens/create_venue_submission_screen.dart';
@@ -193,7 +194,7 @@ RouteBase get createGameRoute =>
       // composer's glass surface blur the screen behind it.
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        child: const GameComposerScreen(),
+        child: const GameCreateGate(child: GameComposerScreen()),
       ),
     );
 
@@ -218,7 +219,7 @@ RouteBase get createGameBasicInfoRoute =>
       },
       pageBuilder: (context, state) => AdaptiveModalPage(
         key: state.pageKey,
-        child: const GameComposerScreen(),
+        child: const GameCreateGate(child: GameComposerScreen()),
       ),
     );
 

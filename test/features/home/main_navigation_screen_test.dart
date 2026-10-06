@@ -5,6 +5,7 @@ import 'package:dabbler/features/home/presentation/screens/main_navigation_scree
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -25,6 +26,8 @@ Future<GoRouter> _pump(
   WidgetTester tester, {
   Locale locale = const Locale('en'),
   Key? boundaryKey,
+  PersonaType? persona = PersonaType.player,
+  bool meetupsOn = true,
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
@@ -74,6 +77,9 @@ Future<GoRouter> _pump(
         // reaches the live Supabase client. The meet-up tile still shows: it
         // follows the flag only (Alpha test build).
         meetupActorProfileIdProvider.overrideWithValue(null),
+        // The active persona decides the Create game / meet-up tiles.
+        activePersonaProvider.overrideWithValue(persona),
+        meetupsEnabledProvider.overrideWithValue(meetupsOn),
         feedNotifierProvider.overrideWith((ref) => FakeFeed(const FeedLoading())),
       ],
       child: MaterialApp.router(
@@ -190,8 +196,6 @@ void main() {
     semantics.dispose();
   });
 
-  // Alpha test build (CEO, 2026-10-06; revisit before Canary/main): the
-  // meet-up tile follows the flag only, so it shows with no profile loaded.
   testWidgets('create menu offers post, game and meetup and routes',
       (tester) async {
     final semantics = tester.ensureSemantics();
@@ -206,6 +210,57 @@ void main() {
     expect(find.text('create-game-route'), findsOneWidget);
     semantics.dispose();
   });
+
+  // CEO ruling 2026-10-06: Create game and Create meetup are for the player
+  // and the organiser; Create post is for everyone. Unknown persona: hidden.
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    final rtl = locale.languageCode == 'ar';
+    final dir = rtl ? 'rtl' : 'ltr';
+    final post = rtl ? 'منشور جديد' : 'Create post';
+    final game = rtl ? 'مباراة جديدة' : 'Create game';
+    final meetup = rtl ? 'لقاء جديد' : 'Create meetup';
+    for (final c in <(String, PersonaType?, bool, List<String>)>[
+      ('player', PersonaType.player, true, [post, game, meetup]),
+      ('organiser', PersonaType.organiser, true, [post, game, meetup]),
+      ('socialiser', PersonaType.socialiser, true, [post]),
+      ('host', PersonaType.host, true, [post]),
+      ('persona not known yet', null, true, [post]),
+      ('player, meetups flag off', PersonaType.player, false, [post, game]),
+      ('organiser, meetups flag off', PersonaType.organiser, false, [post, game]),
+      ('socialiser, meetups flag off', PersonaType.socialiser, false, [post]),
+    ]) {
+      testWidgets('create menu for ${c.$1} - $dir', (tester) async {
+        final semantics = tester.ensureSemantics();
+        await _pump(
+          tester,
+          locale: locale,
+          persona: c.$2,
+          meetupsOn: c.$3,
+        );
+        await tester.tap(find.bySemanticsLabel('Create'));
+        await tester.pumpAndSettle();
+        final items = tester
+            .widget<DabblerNavigationBottomBar>(
+              find.byType(DabblerNavigationBottomBar),
+            )
+            .createItems;
+        expect(items.map((i) => i.label), c.$4);
+        for (final label in <String>[post, game, meetup]) {
+          expect(
+            find.text(label),
+            c.$4.contains(label) ? findsOneWidget : findsNothing,
+          );
+        }
+        // Tiles sit left to right in both directions (the bar is unmirrored).
+        final dx = [for (final l in c.$4) tester.getCenter(find.text(l)).dx];
+        for (var i = 1; i < dx.length; i++) {
+          expect(dx[i], greaterThan(dx[i - 1]));
+        }
+        expect(tester.takeException(), isNull);
+        semantics.dispose();
+      });
+    }
+  }
 
   for (final locale in const [Locale('en'), Locale('ar')]) {
     final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
@@ -235,6 +290,30 @@ void main() {
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });
+  }
+
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    for (final c in <(String, PersonaType)>[
+      ('1tile', PersonaType.socialiser),
+      ('3tiles', PersonaType.organiser),
+    ]) {
+      testWidgets('renders the create menu with ${c.$1} - $dir', (
+        tester,
+      ) async {
+        final semantics = tester.ensureSemantics();
+        const key = Key('shot');
+        await _pump(tester, locale: locale, boundaryKey: key, persona: c.$2);
+        await tester.tap(find.bySemanticsLabel('Create'));
+        await tester.pump();
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(tester.takeException(), isNull);
+        await _shoot(tester, key, 'create-menu-${c.$1}-$dir-light');
+        semantics.dispose();
+      });
+    }
   }
 
   testWidgets('RTL renders without error', (tester) async {

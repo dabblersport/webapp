@@ -15,6 +15,7 @@ import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_sc
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_edit_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_manage_screen.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -69,6 +70,7 @@ Future<void> _shoot(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
+        activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(_Ready.new),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         isFollowingProvider.overrideWith((ref, p) async => false),

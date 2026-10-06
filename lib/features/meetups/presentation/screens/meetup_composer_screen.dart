@@ -2,6 +2,8 @@ import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_error_text.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_pickers.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_when_row.dart';
@@ -28,6 +30,22 @@ Future<void> showMeetupComposerSheet(
 }) {
   final router = GoRouter.maybeOf(context);
   final l = AppLocalizations.of(context);
+  // Reached directly (a deep link, a stale button): a persona that may not
+  // create is refused with the generic message and the form never opens. The
+  // Create menu already hides the tile; the server is still the authority.
+  final persona = ProviderScope.containerOf(
+    context,
+    listen: false,
+  ).read(activePersonaProvider);
+  if (!canCreateGameOrMeetup(persona)) {
+    DabblerToastProvider.maybeOf(context)?.show(
+      DabblerToastSpec(
+        message: l.meetups_err_create_refused,
+        tone: DabblerToastTone.error,
+      ),
+    );
+    return Future<void>.value();
+  }
   return showDabblerSheet<void>(
     context: context,
     // `max-height: 94%`, `height: auto` (`sheetP94`): as tall as the form,

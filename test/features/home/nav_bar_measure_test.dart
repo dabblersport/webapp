@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -155,9 +156,10 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         initializeProfileDataProvider.overrideWith((ref) async => false),
-        // No profile in the shell harness: the Create menu offers no meet-up
-        // tile, and the provider chain never reaches the live Supabase client.
+        // No profile in the shell harness, so the provider chain never reaches the live Supabase client.
         meetupActorProfileIdProvider.overrideWithValue(null),
+        // The measured menu is the three-tile one: a persona that may create.
+        activePersonaProvider.overrideWithValue(PersonaType.player),
         feedNotifierProvider.overrideWith(
           (ref) => FakeFeed(const FeedLoading()),
         ),
@@ -646,7 +648,9 @@ void _closedFacts(WidgetTester t, String dir, bool rtl, String active) {
   expect(icons[0].color, colors.brandPrimary);
   expect(icons[1].weight, DabblerIconWeight.linear);
   expect(icons[1].color, colors.borderDefault);
-  expect(icons[3].name, 'calendar');
+  // The Meetups destination draws the design's dot-grid calendar, which is
+  // `calendar-1` in iconsax_flutter (plain `calendar` draws an "8").
+  expect(icons[3].name, 'calendar-1');
   expect(icons[3].weight, DabblerIconWeight.linear);
   expect(icons[3].color, colors.borderDefault);
   expect(icons[4].weight, DabblerIconWeight.bold);

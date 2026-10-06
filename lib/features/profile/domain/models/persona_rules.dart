@@ -284,3 +284,27 @@ class PersonaRules {
     ).where((a) => a.actionType == PersonaActionType.add).toList();
   }
 }
+
+/// Parses a persona name exactly: `null` for anything that is not one of the
+/// four `persona_type` values (unlike [PersonaType.fromString], which falls
+/// back to player). A persona that is not known must not be guessed.
+PersonaType? personaTypeOrNull(String? value) {
+  if (value == null) return null;
+  final name = value.toLowerCase();
+  for (final persona in PersonaType.values) {
+    if (persona.name == name) return persona;
+  }
+  return null;
+}
+
+/// The single source of truth for who may create a game or a meet-up
+/// (CEO product ruling, 2026-10-06): the player and the organiser may; the
+/// socialiser and the host may not. Create post is not governed by this.
+///
+/// An unknown persona (`null`: the active profile has not loaded, or its
+/// persona is not one we know) is **not allowed**. The Create menu hides the
+/// two tiles until the persona is known, so a socialiser or host never sees a
+/// flash of them. The server stays the authority and refuses a disallowed
+/// persona itself (`persona_not_allowed`).
+bool canCreateGameOrMeetup(PersonaType? persona) =>
+    persona == PersonaType.player || persona == PersonaType.organiser;

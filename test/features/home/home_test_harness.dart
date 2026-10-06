@@ -11,6 +11,7 @@ import 'package:dabbler/features/home/presentation/screens/main_navigation_scree
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
@@ -224,6 +225,9 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
         activeFeedProvider.overrideWith((ref) => _Active(activeState)),
         newsTabFeedProvider.overrideWith((ref) => _News(newsState)),
         profileControllerProvider.overrideWith((ref) => _Profile(profileState)),
+        // Create game / meetup need a persona that may create (the shell's
+        // menu); tests of the persona rule override this.
+        activePersonaProvider.overrideWithValue(PersonaType.player),
         unreadNotificationCountProvider.overrideWithValue(3),
         activeLocationProvider.overrideWith(
           locationName == null

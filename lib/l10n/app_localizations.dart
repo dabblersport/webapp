@@ -10037,6 +10037,12 @@ abstract class AppLocalizations {
   /// **'Sports could not be loaded. Try again later.'**
   String get meetups_sports_failed;
 
+  /// No description provided for @game_err_create_refused.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t create a game right now. Try again later.'**
+  String get game_err_create_refused;
+
   /// No description provided for @meetups_err_create_refused.
   ///
   /// In en, this message translates to:

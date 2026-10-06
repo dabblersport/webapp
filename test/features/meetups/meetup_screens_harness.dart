@@ -6,6 +6,7 @@ import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
@@ -236,6 +237,7 @@ Future<void> pumpMeetups(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
+        activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(
           locationReady ? _ReadyLocation.new : _DeniedLocation.new,
         ),
@@ -278,6 +280,7 @@ ProviderContainer makeContainer(
   final c = ProviderContainer(
     overrides: <Override>[
       meetupRepositoryProvider.overrideWithValue(repo),
+      activePersonaProvider.overrideWithValue(PersonaType.player),
       ...overrides,
     ],
   );

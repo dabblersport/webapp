@@ -5581,6 +5581,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّر تحميل الرياضات. حاول مرة أخرى لاحقًا.';
 
   @override
+  String get game_err_create_refused =>
+      'لا يمكنك إنشاء مباراة الآن. حاول مرة أخرى لاحقًا.';
+
+  @override
   String get meetups_err_create_refused =>
       'لا يمكنك إنشاء هذا اللقاء الآن. حاول مرة أخرى لاحقًا.';
 

@@ -1,8 +1,9 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
-import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
@@ -183,29 +184,99 @@ void main() {
     });
   }
 
-  // Alpha test build (CEO, 2026-10-06; revisit before Canary/main): the
-  // entry follows the flag only. Organiser-only is enforced by
-  // the server (a refusal is shown inline above). Anyone signed in may create.
-  group('create entry follows the flag only (Alpha)', () {
-    for (final c in <(String, bool, String?, bool, bool)>[
-      ('flag off', false, 'p1', true, false),
-      ('flag off, server says yes', false, 'p1', true, false),
-      ('no profile', true, null, true, true),
-      ('server says no', true, 'p1', false, true),
-      ('server says yes', true, 'p1', true, true),
+  // CEO ruling 2026-10-06: Create meet-up is for the player and the
+  // organiser, not the socialiser or host. Server refusals show inline above.
+  group('create entry follows the flag AND the persona rule', () {
+    for (final c in <(String, bool, PersonaType?, bool, bool)>[
+      ('flag off, player', false, PersonaType.player, true, false),
+      ('flag off, organiser', false, PersonaType.organiser, true, false),
+      ('flag on, player', true, PersonaType.player, true, true),
+      ('flag on, organiser', true, PersonaType.organiser, true, true),
+      ('flag on, socialiser', true, PersonaType.socialiser, true, false),
+      ('flag on, host', true, PersonaType.host, true, false),
+      ('flag on, persona not known yet', true, null, true, false),
+      (
+        'server says no is not consulted',
+        true,
+        PersonaType.player,
+        false,
+        true,
+      ),
     ]) {
       test(c.$1, () async {
         final repo = FakeMeetupRepository()..canCreateResult = c.$4;
         final container = makeContainer(repo, <Override>[
           meetupsEnabledProvider.overrideWithValue(c.$2),
-          meetupActorProfileIdProvider.overrideWithValue(c.$3),
+          activePersonaProvider.overrideWithValue(c.$3),
         ]);
         container.listen(canOfferCreateMeetupProvider, (_, __) {});
-        if (c.$3 != null) {
-          await container.read(canCreateMeetupProvider(c.$3!).future);
-        }
         expect(container.read(canOfferCreateMeetupProvider), c.$5);
       });
     }
   });
+
+  for (final e in <(String, Locale, String)>[
+    (
+      'persona_not_allowed',
+      const Locale('en'),
+      "You can't create this meet-up right now. Try again later.",
+    ),
+    (
+      'persona_not_allowed',
+      const Locale('ar'),
+      'لا يمكنك إنشاء هذا اللقاء الآن. حاول مرة أخرى لاحقًا.',
+    ),
+  ]) {
+    testWidgets('server ${e.$1} is the generic refusal - ${e.$2}', (
+      tester,
+    ) async {
+      final repo = FakeMeetupRepository()
+        ..createFailure = Failure(code: e.$1, message: e.$1);
+      await _open(tester, repo: repo, locale: e.$2);
+      await _fill(tester);
+      await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+      await tester.tap(find.byType(DabblerComposerSubmit));
+      await settle(tester);
+      expect(find.text(e.$3), findsOneWidget);
+    });
+  }
+
+  // Reached directly (a deep link): a persona that may not create gets the
+  // generic refusal and the sheet never opens.
+  for (final locale in const [Locale('en'), Locale('ar')]) {
+    final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+    final refusal = locale.languageCode == 'ar'
+        ? 'لا يمكنك إنشاء هذا اللقاء الآن. حاول مرة أخرى لاحقًا.'
+        : "You can't create this meet-up right now. Try again later.";
+    for (final persona in <PersonaType?>[
+      PersonaType.socialiser,
+      PersonaType.host,
+      null,
+    ]) {
+      testWidgets('direct entry refused for ${persona?.name} - $dir', (
+        tester,
+      ) async {
+        await pumpMeetups(
+          tester,
+          Builder(
+            builder: (context) => DabblerButton(
+              label: 'open',
+              onPressed: () => showMeetupComposerSheet(context),
+            ),
+          ),
+          FakeMeetupRepository(),
+          locale: locale,
+          overrides: <Override>[
+            activePersonaProvider.overrideWithValue(persona),
+          ],
+        );
+        await tester.tap(find.text('open'));
+        await settle(tester);
+        expect(find.byType(DabblerSheet), findsNothing);
+        expect(find.byType(MeetupComposerScreen), findsNothing);
+        expect(find.text(refusal), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  }
 }

@@ -8,6 +8,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -338,6 +339,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
 
     final l = AppLocalizations.of(context);
     final canCreateMeetup = ref.watch(canOfferCreateMeetupProvider);
+    // Create game follows the persona rule alone (unknown persona: hidden).
+    final canCreateGame = canCreateGameOrMeetup(
+      ref.watch(activePersonaProvider),
+    );
 
     // One layout at every width: the design has no desktop shell. The page
     // holds the active branch and the bottom bar, and on a window wider than
@@ -381,7 +386,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             if (FeatureFlags.enableMeetups)
               DabblerNavigationItem(
                 id: _idMeetups,
-                icon: 'calendar',
+                icon: 'calendar-1',
                 label: l.nav_meetups,
               ),
           ],
@@ -405,12 +410,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
               label: l.nav_create_post,
               iconTone: DabblerNavigationIconTone.info,
             ),
-            DabblerNavigationCreateItem(
-              id: _createGame,
-              icon: 'game',
-              label: l.nav_create_game,
-              iconTone: DabblerNavigationIconTone.success,
-            ),
+            if (canCreateGame)
+              DabblerNavigationCreateItem(
+                id: _createGame,
+                icon: 'game',
+                label: l.nav_create_game,
+                iconTone: DabblerNavigationIconTone.success,
+              ),
             if (canCreateMeetup)
               DabblerNavigationCreateItem(
                 id: _createMeetup,

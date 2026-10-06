@@ -7,6 +7,7 @@ class MeetupFailures {
   const MeetupFailures._();
 
   static const Map<String, FailureCode> _byMessage = {
+    'persona_not_allowed': FailureCode.forbidden,
     'organiser_required': FailureCode.forbidden,
     'not_host': FailureCode.forbidden,
     'cannot_remove_host': FailureCode.forbidden,
