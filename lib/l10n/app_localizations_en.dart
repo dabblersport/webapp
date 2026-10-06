@@ -5703,4 +5703,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get venue_amenity_vending => 'Vending machines';
+
+  @override
+  String get feedback_dismiss => 'Dismiss';
+
+  @override
+  String get feedback_joining => 'Joining…';
+
+  @override
+  String get feedback_join_failed => 'Couldn\'t join the game.';
+
+  @override
+  String checkin_done_day(int day, int total) {
+    return 'Checked in! Day $day of $total';
+  }
+
+  @override
+  String get checkin_badge_earned =>
+      'Congratulations! You earned the Early Bird badge!';
+
+  @override
+  String get checkin_already => 'Already checked in today!';
 }

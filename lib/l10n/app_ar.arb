@@ -2119,5 +2119,11 @@
   "venue_amenity_equipment_rental": "تأجير المعدات",
   "venue_amenity_air_conditioning": "تكييف الهواء",
   "venue_amenity_spectator_seating": "مقاعد المشاهدين",
-  "venue_amenity_vending": "آلات البيع"
+  "venue_amenity_vending": "آلات البيع",
+  "feedback_dismiss": "إغلاق",
+  "feedback_joining": "جارٍ الانضمام…",
+  "feedback_join_failed": "تعذّر الانضمام إلى المباراة.",
+  "checkin_done_day": "تم تسجيل حضورك! اليوم {day} من {total}",
+  "checkin_badge_earned": "تهانينا! حصلت على شارة الطائر المبكر!",
+  "checkin_already": "سجّلت حضورك اليوم بالفعل!"
 }

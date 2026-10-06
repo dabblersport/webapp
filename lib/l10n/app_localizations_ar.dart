@@ -5748,4 +5748,24 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get venue_amenity_vending => 'آلات البيع';
+
+  @override
+  String get feedback_dismiss => 'إغلاق';
+
+  @override
+  String get feedback_joining => 'جارٍ الانضمام…';
+
+  @override
+  String get feedback_join_failed => 'تعذّر الانضمام إلى المباراة.';
+
+  @override
+  String checkin_done_day(int day, int total) {
+    return 'تم تسجيل حضورك! اليوم $day من $total';
+  }
+
+  @override
+  String get checkin_badge_earned => 'تهانينا! حصلت على شارة الطائر المبكر!';
+
+  @override
+  String get checkin_already => 'سجّلت حضورك اليوم بالفعل!';
 }

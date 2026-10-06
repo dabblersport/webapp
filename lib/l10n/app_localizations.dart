@@ -10354,6 +10354,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Vending machines'**
   String get venue_amenity_vending;
+
+  /// No description provided for @feedback_dismiss.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get feedback_dismiss;
+
+  /// No description provided for @feedback_joining.
+  ///
+  /// In en, this message translates to:
+  /// **'Joining…'**
+  String get feedback_joining;
+
+  /// No description provided for @feedback_join_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t join the game.'**
+  String get feedback_join_failed;
+
+  /// No description provided for @checkin_done_day.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in! Day {day} of {total}'**
+  String checkin_done_day(int day, int total);
+
+  /// No description provided for @checkin_badge_earned.
+  ///
+  /// In en, this message translates to:
+  /// **'Congratulations! You earned the Early Bird badge!'**
+  String get checkin_badge_earned;
+
+  /// No description provided for @checkin_already.
+  ///
+  /// In en, this message translates to:
+  /// **'Already checked in today!'**
+  String get checkin_already;
 }
 
 class _AppLocalizationsDelegate

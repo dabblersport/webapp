@@ -2011,5 +2011,12 @@
   "venue_amenity_equipment_rental": "Equipment rental",
   "venue_amenity_air_conditioning": "Air conditioning",
   "venue_amenity_spectator_seating": "Spectator seating",
-  "venue_amenity_vending": "Vending machines"
+  "venue_amenity_vending": "Vending machines",
+  "feedback_dismiss": "Dismiss",
+  "feedback_joining": "Joining…",
+  "feedback_join_failed": "Couldn't join the game.",
+  "checkin_done_day": "Checked in! Day {day} of {total}",
+  "@checkin_done_day": {"placeholders": {"day": {"type": "int"}, "total": {"type": "int"}}},
+  "checkin_badge_earned": "Congratulations! You earned the Early Bird badge!",
+  "checkin_already": "Already checked in today!"
 }
