@@ -2,10 +2,9 @@ import 'package:dabbler/features/games/presentation/providers/nearby_games_provi
     show GamesSkillFilter, gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
-import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
 import 'package:dabbler/features/meetups/presentation/rsvp_state.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
-import 'package:dabbler/features/meetups/presentation/widgets/meetup_toasts.dart';
+import 'package:dabbler/features/meetups/presentation/widgets/meetup_feedback.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -42,12 +41,14 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
   Future<void> _run(RsvpAction action) async {
     if (_busy) return;
     setState(() => _busy = true);
-    final toasts = DabblerToastProvider.maybeOf(context);
-    final l = AppLocalizations.of(context);
-    final result = await ref
-        .read(meetupActionsProvider)
-        .rsvp(widget.meetup.id, action);
-    result.fold((f) => showMeetupFailure(toasts, l, f), (_) {});
+    // The Action Area reports a failure with Retry (feedback center); the
+    // button keeps its own local busy state. Success stays silent, as before.
+    await rsvpWithFeedback(
+      ProviderScope.containerOf(context, listen: false),
+      widget.meetup.id,
+      action,
+      AppLocalizations.of(context),
+    );
     if (mounted) setState(() => _busy = false);
   }
 

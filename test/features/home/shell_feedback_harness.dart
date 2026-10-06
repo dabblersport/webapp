@@ -60,6 +60,7 @@ Future<ShellHarness> pumpShell(
   Locale locale = const Locale('en'),
   bool reduceMotion = false,
   double bottomInset = 0,
+  List<Override> overrides = const [],
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
@@ -105,6 +106,7 @@ Future<ShellHarness> pumpShell(
         feedNotifierProvider.overrideWith(
           (ref) => FakeFeed(const FeedLoading()),
         ),
+        ...overrides,
       ],
       child: MaterialApp.router(
         routerConfig: router,

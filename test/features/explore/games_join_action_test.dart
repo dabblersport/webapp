@@ -1,4 +1,5 @@
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/feedback/toast_presenter.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
@@ -144,7 +145,10 @@ Future<void> _pump(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        builder: (context, child) => DabblerToastProvider(child: child!),
+        // As main.dart: the feedback center presents through the toast
+        // provider while no shell surface is current.
+        builder: (context, child) =>
+            DabblerToastProvider(child: FeedbackToastPresenter(child: child!)),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -250,6 +254,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 100));
     }
     expect(find.text('Only the game creator can do that.'), findsOneWidget);
+    // The error carries Retry and is sticky until handled.
+    expect(find.text('Retry'), findsOneWidget);
     expect(find.text('Join game'), findsOneWidget);
     await tester.pump(const Duration(seconds: 6));
   }, variant: desktop);

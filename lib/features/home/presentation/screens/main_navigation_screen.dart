@@ -1,4 +1,6 @@
 import 'package:dabbler/core/constants/timing/play_timing.dart';
+import 'package:dabbler/core/feedback/feedback_center.dart';
+import 'package:dabbler/core/feedback/feedback_intent.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
@@ -141,18 +143,26 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             // Always close the modal after check-in attempt
             Navigator.of(context, rootNavigator: true).pop();
 
+            // The result is an Information on the feedback center. The modal
+            // has just popped: let the shell report itself current first, so
+            // it lands in the Action Area rather than as a standard toast.
+            final l = AppLocalizations.of(context);
+            final center = ref.read(feedbackCenterProvider.notifier);
+            await WidgetsBinding.instance.endOfFrame;
+            await WidgetsBinding.instance.endOfFrame;
+
             if (wasFirstToday) {
               final newStatus = ref.read(checkInControllerProvider).valueOrNull;
               final completedDays = newStatus?.totalDaysCompleted ?? 1;
 
-              DabblerToastProvider.of(context).show(
-                DabblerToastSpec(
+              center.inform(
+                FeedbackInformation(
                   message: completedDays >= 14
-                      ? 'Congratulations! You earned the Early Bird badge!'
-                      : 'Checked in! Day $completedDays of 14',
-                  tone: DabblerToastTone.success,
+                      ? l.checkin_badge_earned
+                      : l.checkin_done_day(completedDays, 14),
                   duration: DabblerMotion.toastLong,
                 ),
+                key: 'early-bird-check-in',
               );
 
               if (completedDays >= 14) {
@@ -172,12 +182,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                 }
               }
             } else {
-              // Already checked in today
-              DabblerToastProvider.of(context).show(
-                const DabblerToastSpec(
-                  message: 'Already checked in today!',
+              // Already checked in today: an announcement.
+              center.inform(
+                FeedbackInformation(
+                  message: l.checkin_already,
+                  tone: InfoTone.neutral,
                   duration: DabblerMotion.toastShort,
                 ),
+                key: 'early-bird-check-in',
               );
             }
           },
