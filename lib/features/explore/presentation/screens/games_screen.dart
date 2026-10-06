@@ -217,39 +217,26 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
           ),
         ],
       ),
-      // The DS cards and tabs carry no screen gutter of their own.
-      body: Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: DabblerSpacing.space6,
-        ),
-        child: DabblerTabPager(
-          scrollable: true,
-          items: <DabblerTabItem>[
-            DabblerTabItem(id: 'all', label: l.listing_all_sports),
-            for (final sport in widget.sports)
-              DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
-          ],
-          pages: List.generate(
-            _tabCount,
-            // The applied-filters rail sits under the tabs, above each list.
-            (i) => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                DabblerFilterRail(
-                  items: active,
-                  clearAllLabel: l.listing_clear_all,
-                  onClearAll: _resetFilters,
-                ),
-                Expanded(
-                  child: _GameTabBody(
-                    sportId: _sportIdForTab(i),
-                    scrollController: _scrollControllers[i],
-                    onRefresh: _handleRefresh,
-                    onRetry: () => ref.invalidate(nearbyGamesProvider),
-                    onChangeFilters: _openFilters,
-                  ),
-                ),
-              ],
+      body: ListingTabs(
+        items: <DabblerTabItem>[
+          DabblerTabItem(id: 'all', label: l.listing_all_sports),
+          for (final sport in widget.sports)
+            DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
+        ],
+        pages: List.generate(
+          _tabCount,
+          // The applied-filters rail sits under the tabs, above each list.
+          (i) => ListingPage(
+            filters: active,
+            clearAllLabel: l.listing_clear_all,
+            onClearAll: _resetFilters,
+            body: _GameTabBody(
+              sports: widget.sports,
+              sportId: _sportIdForTab(i),
+              scrollController: _scrollControllers[i],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.invalidate(nearbyGamesProvider),
+              onChangeFilters: _openFilters,
             ),
           ),
         ),
@@ -361,6 +348,7 @@ class _ShowGamesButton extends ConsumerWidget {
 
 class _GameTabBody extends ConsumerWidget {
   const _GameTabBody({
+    required this.sports,
     required this.sportId,
     required this.scrollController,
     required this.onRefresh,
@@ -368,11 +356,24 @@ class _GameTabBody extends ConsumerWidget {
     required this.onChangeFilters,
   });
 
+  /// The listing's sports, to show a game's sport in the viewer's language.
+  final List<Sport> sports;
   final String? sportId;
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
   final VoidCallback onChangeFilters;
+
+  /// [name] (the RPC's English sport name) in the viewer's language.
+  String? _sportLabel(BuildContext context, String? name) {
+    if (name == null) return null;
+    for (final s in sports) {
+      if (s.nameEn.toLowerCase() == name.toLowerCase()) {
+        return s.localizedName(context);
+      }
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -388,23 +389,19 @@ class _GameTabBody extends ConsumerWidget {
         const <NearbyGameModel>[];
 
     return gamesAsync.when(
-      loading: () => ListView(
-        physics: const NeverScrollableScrollPhysics(),
-        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
-        children: const [
-          DabblerSkeleton.card(),
-          DabblerGap.v(DabblerSpacing.space4),
-          DabblerSkeleton.card(),
-          DabblerGap.v(DabblerSpacing.space4),
-          DabblerSkeleton.card(),
-        ],
-      ),
-      error: (e, _) => Center(
-        child: DabblerEmptyState.error(
-          title: l.listing_load_games_failed,
-          size: DabblerEmptyStateSize.inline,
-          onRetry: onRetry,
-          retryLabel: l.feed_retry,
+      loading: () =>
+          const ListingSkeletons(kind: DabblerListingSkeletonKind.game),
+      error: (e, _) => Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: ListingLayout.gutter,
+        ),
+        child: Center(
+          child: DabblerEmptyState.error(
+            title: l.listing_load_games_failed,
+            size: DabblerEmptyStateSize.inline,
+            onRetry: onRetry,
+            retryLabel: l.feed_retry,
+          ),
         ),
       ),
       data: (games) {
@@ -425,46 +422,62 @@ class _GameTabBody extends ConsumerWidget {
 
         if (pinned.isEmpty && others.isEmpty) {
           final narrowed = filtersActive && games.isNotEmpty;
-          return Center(
-            child: DabblerEmptyState(
-              icon: 'game',
-              title: narrowed
-                  ? l.listing_games_filtered_title
-                  : isFiltered
-                  ? l.listing_games_nearby_title
-                  : l.listing_games_none_title,
-              text: narrowed
-                  ? l.listing_games_filtered_text
-                  : isFiltered
-                  ? l.listing_games_nearby_text
-                  : l.listing_games_none_text,
-              action: DabblerButton(
-                label: l.listing_change_filters,
-                onPressed: onChangeFilters,
-              ),
+          return ListingEmpty(
+            icon: 'game',
+            title: narrowed
+                ? l.listing_games_filtered_title
+                : isFiltered
+                ? l.listing_games_nearby_title
+                : l.listing_games_none_title,
+            text: narrowed
+                ? l.listing_games_filtered_text
+                : isFiltered
+                ? l.listing_games_nearby_text
+                : l.listing_games_none_text,
+            action: DabblerButton(
+              label: l.listing_change_filters,
+              onPressed: onChangeFilters,
             ),
           );
         }
 
+        const EdgeInsetsDirectional gutter = EdgeInsetsDirectional.symmetric(
+          horizontal: ListingLayout.gutter,
+        );
         return DabblerRefresh(
           onRefresh: onRefresh,
           child: ListView(
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),
+            // The rail bleeds to the screen edge (`margin: 0 -18px`), so the
+            // gutter is per row rather than on the list.
             padding: const EdgeInsetsDirectional.only(
-              top: DabblerSpacing.space4,
-              bottom: DabblerSpacing.space8,
+              top: ListingLayout.listTop,
+              bottom: ListingLayout.listBottom,
             ),
             children: [
               if (pinned.isNotEmpty) ...[
-                DabblerText(l.listing_upcoming, style: DabblerType.displayLabel),
-                const DabblerGap.v(DabblerSpacing.space4),
+                Padding(
+                  padding: gutter,
+                  child: DabblerText(
+                    l.listing_upcoming,
+                    style: DabblerType.displayLabel,
+                  ),
+                ),
+                const DabblerGap.v(ListingLayout.upcomingGap),
                 _UpcomingRail(games: pinned),
-                const DabblerGap.v(DabblerSpacing.space4),
+                const DabblerGap.v(ListingLayout.cardGap),
               ],
-              for (final g in others) ...[
-                _GameCard(game: g, showDistance: isFiltered),
-                const DabblerGap.v(DabblerSpacing.space4),
+              for (var i = 0; i < others.length; i++) ...[
+                if (i > 0) const DabblerGap.v(ListingLayout.cardGap),
+                Padding(
+                  padding: gutter,
+                  child: _GameCard(
+                    game: others[i],
+                    showDistance: isFiltered,
+                    sportLabel: _sportLabel(context, others[i].sportName),
+                  ),
+                ),
               ],
             ],
           ),
@@ -494,10 +507,26 @@ class _UpcomingRail extends StatelessWidget {
       for (var i = 0; i < games.length; i++)
         _tile(context, games[i], i, locale, single),
     ];
-    if (single) return tiles.first;
+    if (single) {
+      return Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: ListingLayout.gutter,
+        ),
+        child: tiles.first,
+      );
+    }
+    // `Listings.dc.html:141`: the rail scrolls edge to edge, tiles 9 apart,
+    // each hugging its content.
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
-      child: Row(spacing: DabblerSpacing.space4, children: tiles),
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: ListingLayout.gutter,
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: DabblerSpacing.space3,
+        children: tiles,
+      ),
     );
   }
 
@@ -526,8 +555,15 @@ class _UpcomingRail extends StatelessWidget {
       value = '${remaining.inMinutes}';
       unit = l.listing_unit_min;
     }
+    // Single: the date-first tile (`Listings.dc.html:119-137`), "venue ·
+    // time" beside the date block. Several: the ring-first rail tile
+    // (`:143-167`), date and time over the venue and its distance.
     return DabblerCardUpcoming(
-      width: single ? null : DabblerSizing.railCardWidth,
+      rail: !single,
+      month: single && at != null
+          ? DateFormat.MMM(locale).format(at).toUpperCase()
+          : null,
+      day: single && at != null ? '${at.day}' : null,
       tone: DabblerCardUpcomingTone
           .values[i % DabblerCardUpcomingTone.values.length],
       fraction: at == null
@@ -538,8 +574,11 @@ class _UpcomingRail extends StatelessWidget {
       title: g.title,
       when: at == null
           ? null
+          : single
+          ? DateFormat.jm(locale).format(at)
           : '${DateFormat.MMMd(locale).format(at)} · ${DateFormat.jm(locale).format(at)}',
       place: g.venueName,
+      distance: !single && g.distanceMeters > 0 ? g.distanceLabel : null,
       onTap: () => context.push(RoutePaths.gameDetail(g.id)),
     );
   }
@@ -554,40 +593,44 @@ class _UpcomingRail extends StatelessWidget {
 /// data or feature behind them in the app, so the card draws none. The action
 /// slot holds the design's "Join game" button ([_JoinAction]).
 class _GameCard extends StatelessWidget {
-  const _GameCard({required this.game, this.showDistance = false});
+  const _GameCard({
+    required this.game,
+    this.showDistance = false,
+    this.sportLabel,
+  });
 
   final NearbyGameModel game;
   final bool showDistance;
+
+  /// The sport tag's words, localised; falls back to the model's name.
+  final String? sportLabel;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final locale = Localizations.localeOf(context).toString();
     final at = game.scheduledAt;
-    final colors = DabblerColors.of(context);
     final skill = gamesSkillTierFor(game.minSkill, game.maxSkill);
 
     return DabblerCardGame(
       title: game.title,
+      // `Listings.dc.html:220`: sport in info, skill in its tone.
       tags: [
         if (game.sportName?.isNotEmpty == true)
-          DabblerBadge(
-            label: game.sportName!,
-            status: colors.status(DabblerStatusTone.info),
-          ),
+          DabblerListingTag(label: sportLabel ?? game.sportName!),
         if (skill != null)
-          DabblerBadge(
+          DabblerListingTag(
             label: _skillLabel(l, skill),
-            status: colors.status(switch (skill) {
-              GamesSkillFilter.beginner => DabblerStatusTone.success,
-              GamesSkillFilter.intermediate => DabblerStatusTone.warning,
-              _ => DabblerStatusTone.error,
-            }),
+            tone: switch (skill) {
+              GamesSkillFilter.beginner => DabblerListingTagTone.success,
+              GamesSkillFilter.intermediate => DabblerListingTagTone.warning,
+              _ => DabblerListingTagTone.error,
+            },
           ),
         if (game.isMine)
-          DabblerBadge(
+          DabblerListingTag(
             label: game.isCreated ? l.listing_created : l.listing_joined,
-            status: colors.status(DabblerStatusTone.success),
+            tone: DabblerListingTagTone.success,
           ),
       ],
       dayLabel: at == null ? null : _dayLabel(l, at, locale),

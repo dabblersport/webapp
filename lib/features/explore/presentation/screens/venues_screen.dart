@@ -305,15 +305,20 @@ class _AllVenuesList extends ConsumerWidget {
   Widget _loading() =>
       const ListingSkeletons(kind: DabblerListingSkeletonKind.venue);
 
-  Widget _error(BuildContext context, WidgetRef ref) => Center(
-    child: DabblerEmptyState.error(
-      title: AppLocalizations.of(context).listing_load_venues_failed,
-      size: DabblerEmptyStateSize.inline,
-      onRetry: () {
-        ref.invalidate(nearbyVenuesProvider);
-        ref.invalidate(venuesBySportWithFiltersProvider);
-      },
-      retryLabel: AppLocalizations.of(context).feed_retry,
+  Widget _error(BuildContext context, WidgetRef ref) => Padding(
+    padding: const EdgeInsetsDirectional.symmetric(
+      horizontal: ListingLayout.gutter,
+    ),
+    child: Center(
+      child: DabblerEmptyState.error(
+        title: AppLocalizations.of(context).listing_load_venues_failed,
+        size: DabblerEmptyStateSize.inline,
+        onRetry: () {
+          ref.invalidate(nearbyVenuesProvider);
+          ref.invalidate(venuesBySportWithFiltersProvider);
+        },
+        retryLabel: AppLocalizations.of(context).feed_retry,
+      ),
     ),
   );
 
@@ -335,10 +340,7 @@ class _AllVenuesList extends ConsumerWidget {
         ref.invalidate(venuesBySportWithFiltersProvider);
       },
       child: ListView(
-        padding: const EdgeInsetsDirectional.only(
-          top: ListingLayout.listTop,
-          bottom: ListingLayout.listBottom,
-        ),
+        padding: ListingLayout.listPadding,
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           for (var i = 0; i < venues.length; i++) ...[

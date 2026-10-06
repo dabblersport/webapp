@@ -80,11 +80,17 @@ abstract final class ListingLayout {
 
   /// The list's bottom inset above the floating bar.
   static const double listBottom = DabblerSpacing.space8;
+
+  /// A listing's scroll padding: the gutter, [listTop] and [listBottom].
+  static const EdgeInsetsDirectional listPadding =
+      EdgeInsetsDirectional.fromSTEB(gutter, listTop, gutter, listBottom);
 }
 
 /// The listing tab rail and its pages (`Listings.dc.html:91-95`): the
-/// `listing` tabs with their 1px rail across the full width, and each page
-/// inset by the screen gutter.
+/// `listing` tabs inset by the gutter with their 1px rail across the full
+/// width. Pages run edge to edge — each inset its own content by
+/// [ListingLayout.gutter], so horizontal rails can bleed as the frame's do
+/// (`margin: 0 -18px; padding: 0 18px`).
 class ListingTabs extends StatelessWidget {
   const ListingTabs({super.key, required this.items, required this.pages});
 
@@ -99,15 +105,7 @@ class ListingTabs extends StatelessWidget {
       horizontal: ListingLayout.gutter,
     ),
     items: items,
-    pages: <Widget>[
-      for (final Widget p in pages)
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: ListingLayout.gutter,
-          ),
-          child: p,
-        ),
-    ],
+    pages: pages,
   );
 }
 
@@ -142,6 +140,9 @@ class ListingPage extends StatelessWidget {
             items: filters,
             clearAllLabel: clearAllLabel,
             onClearAll: onClearAll,
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: ListingLayout.gutter,
+            ),
           ),
         ),
       Expanded(child: body),
@@ -158,7 +159,7 @@ class ListingSkeletons extends StatelessWidget {
   @override
   Widget build(BuildContext context) => ListView(
     physics: const NeverScrollableScrollPhysics(),
-    padding: const EdgeInsetsDirectional.only(top: ListingLayout.listTop),
+    padding: ListingLayout.listPadding,
     children: <Widget>[
       for (int i = 0; i < 3; i++) ...<Widget>[
         if (i > 0)
@@ -191,9 +192,11 @@ class ListingEmpty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsetsDirectional.only(
-      top: ListingLayout.emptyTop,
-      bottom: ListingLayout.listBottom,
+    padding: const EdgeInsetsDirectional.fromSTEB(
+      ListingLayout.gutter,
+      ListingLayout.emptyTop,
+      ListingLayout.gutter,
+      ListingLayout.listBottom,
     ),
     children: <Widget>[
       DabblerEmptyState(
