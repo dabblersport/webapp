@@ -16,6 +16,13 @@
 
          This Theme is only used starting with V2 of Flutter's Android embedding. -->
     <style name="NormalTheme" parent="@android:style/Theme.Light.NoTitleBar">
-        <item name="android:windowBackground">@color/splash_purple</item>
+        <item name="android:windowBackground">@color/page_background</item>
+        <!-- After launch the system bars sit on the page ground; icon
+             brightness contrasts with it. Flutter's SystemChrome overlay style
+             (SystemChromeSync) keeps this in step with the in-app theme. -->
+        <item name="android:statusBarColor">@color/page_background</item>
+        <item name="android:navigationBarColor">@color/page_background</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowLightNavigationBar">true</item>
     </style>
 </resources>

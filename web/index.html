@@ -28,7 +28,9 @@
   <meta name="apple-itunes-app" content="app-id=APP_ID">
   -->
   <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
+  <!-- iOS ignores theme-color: "default" keeps the status bar on a light/dark
+       system ground that matches the page instead of forcing black. -->
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Dabbler">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 
@@ -50,6 +52,13 @@
   <style>
     html, body { margin: 0; background-color: #7328CE; }
   </style>
+  <!--
+    theme-color is the launch purple only while the splash plays. When the app
+    is showing (and on every theme toggle) lib/core/system_ui replaces this
+    meta and the html/body background with the page ground: #F5F0E6
+    (DabblerPalette.surfacePage) in light, #141414 (DabblerPalette.ink) in dark.
+  -->
+  <meta name="theme-color" content="#7328CE">
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

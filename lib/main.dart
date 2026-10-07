@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
@@ -290,11 +291,13 @@ class MyApp extends ConsumerWidget {
             return Theme(
               data: DabblerDesignSystemTheme.withFonts(base, locale: locale),
               child: Builder(
-                builder: (context) => ColoredBox(
-                  color: DabblerColors.of(context).bgPrimary,
-                  // Shell-aware: on the main shell a toast is presented by
-                  // the Action Area; elsewhere it is the standard toast.
-                  child: ShellAwareToastProvider(child: child),
+                builder: (context) => SystemChromeSync(
+                  child: ColoredBox(
+                    color: DabblerColors.of(context).bgPrimary,
+                    // Shell-aware: on the main shell a toast is presented by
+                    // the Action Area; elsewhere it is the standard toast.
+                    child: ShellAwareToastProvider(child: child),
+                  ),
                 ),
               ),
             );

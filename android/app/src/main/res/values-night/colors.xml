@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Page ground, dark: DabblerProvisionalDark.bgPrimary = DabblerPalette.ink
+         (DabblerColors.bgPrimary in dark). -->
+    <color name="page_background">#141414</color>
+</resources>
