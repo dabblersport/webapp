@@ -142,13 +142,9 @@ class SystemChromeSurface extends StatefulWidget {
     required this.child,
   });
 
-  /// The coloured band a detail header draws, resolved from the header's own
-  /// [tile] or [theme] the way `DabblerDetailHeader` resolves its fill
-  /// (`tile.surface`, else the section theme's brand colour).
-  ///
-  /// DS gap: the header does not expose its fill, so this mirrors its rule
-  /// (`detail_header.dart` build()). A `DabblerDetailHeader.fillOf(context,
-  /// tile:, theme:)` would remove the duplication.
+  /// The coloured band a detail header draws: the header's own fill, read
+  /// through `DabblerDetailHeader.fillOf` with the same [tile] / [theme] the
+  /// header gets, so the status bar can never disagree with the band.
   static Widget detailHeader({
     Key? key,
     DabblerDetailHeaderTile? tile,
@@ -156,19 +152,10 @@ class SystemChromeSurface extends StatefulWidget {
     required Widget child,
   }) => Builder(
     key: key,
-    builder: (context) {
-      final outer = DabblerColors.of(context);
-      final Color fill = switch (tile) {
-        DabblerDetailHeaderTile.amber => DabblerColors.tileAmber.surface,
-        DabblerDetailHeaderTile.info => DabblerColors.tileInfo.surface,
-        DabblerDetailHeaderTile.accent => DabblerColors.tileAccent.surface,
-        null => DabblerColors.resolve(
-          theme: theme,
-          brightness: outer.brightness,
-        ).brandPrimary,
-      };
-      return SystemChromeSurface(top: fill, child: child);
-    },
+    builder: (context) => SystemChromeSurface(
+      top: DabblerDetailHeader.fillOf(context, tile: tile, theme: theme),
+      child: child,
+    ),
   );
 
   final Color? top;
