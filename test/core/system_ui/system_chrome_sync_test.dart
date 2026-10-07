@@ -71,6 +71,100 @@ void main() {
     expect(_style(tester).statusBarColor, isNot(light.statusBarColor));
   });
 
+  group('dynamic surfaces', () {
+    Future<void> pumpApp(
+      WidgetTester tester,
+      Widget Function(BuildContext) detail,
+    ) async {
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: DabblerDesignSystemTheme.withTokens(
+            ThemeData(brightness: Brightness.light),
+          ),
+          builder: (context, child) =>
+              Builder(builder: (context) => SystemChromeSync(child: child!)),
+          home: Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.of(
+                context,
+              ).push(MaterialPageRoute<void>(builder: detail)),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+    }
+
+    SystemUiOverlayStyle effective(WidgetTester tester) => tester
+        .widget<AnnotatedRegion<SystemUiOverlayStyle>>(
+          find
+              .descendant(
+                of: find.byType(SystemChromeSync),
+                matching: find.byType(AnnotatedRegion<SystemUiOverlayStyle>),
+              )
+              .first,
+        )
+        .value;
+
+    testWidgets('a yellow-hero screen sets the bars, pop restores the page', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        (_) => Scaffold(
+          body: SystemChromeSurface.detailHeader(
+            tile: DabblerDetailHeaderTile.amber,
+            child: const SizedBox(height: 100),
+          ),
+        ),
+      );
+      final page = effective(tester);
+      expect(page.statusBarColor, isNot(DabblerColors.tileAmber.surface));
+
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final hero = effective(tester);
+      expect(hero.statusBarColor, DabblerColors.tileAmber.surface);
+      // The bottom has no declared surface: still the page ground.
+      expect(hero.systemNavigationBarColor, page.systemNavigationBarColor);
+      // Icon brightness follows the effective colour's luminance.
+      expect(
+        hero.statusBarIconBrightness,
+        ThemeData.estimateBrightnessForColor(DabblerColors.tileAmber.surface) ==
+                Brightness.light
+            ? Brightness.dark
+            : Brightness.light,
+      );
+
+      Navigator.of(tester.element(find.byType(Scaffold))).pop();
+      await tester.pumpAndSettle();
+      final back = effective(tester);
+      expect(back.statusBarColor, page.statusBarColor);
+      expect(back.statusBarIconBrightness, page.statusBarIconBrightness);
+    });
+
+    testWidgets('icon brightness follows the colour, not the theme', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        (_) => const SystemChromeSurface(
+          top: Color(0xFF101010),
+          bottom: Color(0xFFFAFAFA),
+          child: Scaffold(body: SizedBox()),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      final s = effective(tester);
+      expect(
+        s.statusBarIconBrightness,
+        Brightness.light,
+      ); // light theme, dark surface
+      expect(s.systemNavigationBarIconBrightness, Brightness.dark);
+    });
+  });
+
   group('platform files', () {
     test('web: bars are the page ground from the first byte, no purple', () {
       final html = File('web/index.html').readAsStringSync();
@@ -99,7 +193,7 @@ void main() {
       expect(live, isNot(contains('#7228CC')));
       final manifest = File('web/manifest.json').readAsStringSync();
       expect(manifest, contains('"theme_color": "#F5F0E6"'));
-      expect(manifest, contains('"background_color": "#7328CE"'));
+      expect(manifest, contains('"background_color": "#F5F0E6"'));
     });
 
     test('web: the runtime swap updates both metas and color-scheme', () {

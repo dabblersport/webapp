@@ -3,7 +3,7 @@
     "short_name": "Dabbler",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#7328CE",
+    "background_color": "#F5F0E6",
     "theme_color": "#F5F0E6",
     "description": "Dabbler app.",
     "orientation": "portrait-primary",

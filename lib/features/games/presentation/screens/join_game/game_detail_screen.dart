@@ -1,3 +1,4 @@
+import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
@@ -156,28 +157,33 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     return DabblerDetailPage(
       controller: _scroll,
       banner: showBanner ? _openInAppBanner(game.id) : null,
-      header: DabblerDetailHeader(
-        leading: DabblerOnColorIconButton(
-          icon: 'arrow-circle-left',
-          mirrorInRtl: true,
-          semanticLabel: AppLocalizations.of(context).auth_back,
-          onPressed: () => context.pop(),
-        ),
-        actions: [
-          DabblerOnColorIconButton(
-            icon: 'share',
-            semanticLabel: AppLocalizations.of(context).sfx_share,
-            onPressed: () => _shareGame(game),
+      header: SystemChromeSurface.detailHeader(
+        child: DabblerDetailHeader(
+          leading: DabblerOnColorIconButton(
+            icon: 'arrow-circle-left',
+            mirrorInRtl: true,
+            semanticLabel: AppLocalizations.of(context).auth_back,
+            onPressed: () => context.pop(),
           ),
-        ],
-        chips: [
-          game.statusLabel,
-          if (game.sportNameEn != null) game.sportNameEn!,
-          if (game.variantNameEn != null) game.variantNameEn!,
-          ?_skillChip(game),
-        ],
-        title: game.title,
-        place: [game.venueName, game.areaName].whereType<String>().join(' · '),
+          actions: [
+            DabblerOnColorIconButton(
+              icon: 'share',
+              semanticLabel: AppLocalizations.of(context).sfx_share,
+              onPressed: () => _shareGame(game),
+            ),
+          ],
+          chips: [
+            game.statusLabel,
+            if (game.sportNameEn != null) game.sportNameEn!,
+            if (game.variantNameEn != null) game.variantNameEn!,
+            ?_skillChip(game),
+          ],
+          title: game.title,
+          place: [
+            game.venueName,
+            game.areaName,
+          ].whereType<String>().join(' · '),
+        ),
       ),
       bottomBar: _actionBar(state, ctrl),
       children: [

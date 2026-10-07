@@ -8,15 +8,18 @@ String _hex(Color c) {
   return '#${two(c.r)}${two(c.g)}${two(c.b)}';
 }
 
-/// Keeps the document ground, both `theme-color` metas and `color-scheme` on
-/// the app's page colour and theme [brightness].
+/// Keeps both `theme-color` metas on [top] (the status bar's surface), the
+/// document background on [bottom] (the surface under the browser's bottom
+/// toolbar) and `color-scheme` on the app's theme [brightness]. Called again on
+/// every route change.
 ///
 /// index.html already ships the right static values for the OS scheme; this is
 /// for the in-app theme toggle, which can differ from the OS. Both the light
 /// and the dark `theme-color` meta get [color] (the app's mode, not the OS,
 /// decides), and html/body get the same background and `color-scheme`.
-void setWebChromeColor(Color color, Brightness brightness) {
-  final hex = _hex(color);
+void setWebChromeColor(Color top, Color bottom, Brightness brightness) {
+  final hex = _hex(top);
+  final bottomHex = _hex(bottom);
   final doc = globalContext['document'] as JSObject?;
   if (doc == null) return;
 
@@ -44,7 +47,7 @@ void setWebChromeColor(Color color, Brightness brightness) {
   final scheme = brightness == Brightness.dark ? 'dark' : 'light';
   for (final key in ['documentElement', 'body']) {
     final style = (doc[key] as JSObject?)?['style'] as JSObject?;
-    style?['backgroundColor'] = hex.toJS;
+    style?['backgroundColor'] = bottomHex.toJS;
     style?['colorScheme'] = scheme.toJS;
   }
 }

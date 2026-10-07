@@ -1,3 +1,4 @@
+import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
     show gamesSkillTierFor, gamesSkillTierLabel;
@@ -108,10 +109,13 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     final back = widget.onBack ?? () => context.pop();
     return card.when(
       loading: () => DabblerDetailPage(
-        header: DabblerDetailHeader(
+        header: SystemChromeSurface.detailHeader(
           tile: DabblerDetailHeaderTile.amber,
-          leading: _backButton(back),
-          title: '',
+          child: DabblerDetailHeader(
+            tile: DabblerDetailHeaderTile.amber,
+            leading: _backButton(back),
+            title: '',
+          ),
         ),
         children: const <Widget>[
           DabblerSkeleton.rect(
@@ -249,38 +253,41 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     final skillLabel = tier == null ? null : gamesSkillTierLabel(l, tier);
     Widget glyph(String n) => DabblerIcon(n, size: DabblerSizing.iconSm);
     return DabblerDetailPage(
-      header: DabblerDetailHeader(
+      header: SystemChromeSurface.detailHeader(
         tile: DabblerDetailHeaderTile.amber,
-        leading: _backButton(back),
-        actions: <Widget>[
-          DabblerOnColorIconButton(
-            onTile: true,
-            icon: 'share',
-            semanticLabel: l.meetups_share,
-            onPressed: () => _share(c),
-          ),
-          if (!c.isHost)
+        child: DabblerDetailHeader(
+          tile: DabblerDetailHeaderTile.amber,
+          leading: _backButton(back),
+          actions: <Widget>[
             DabblerOnColorIconButton(
               onTile: true,
-              icon: 'more',
-              semanticLabel: l.meetups_more,
-              onPressed: () => _openMore(c),
+              icon: 'share',
+              semanticLabel: l.meetups_share,
+              onPressed: () => _share(c),
             ),
-        ],
-        chips: <String>[
-          if (c.isCancelled) l.meetups_cta_cancelled,
-          ?_sportName(c),
-          ?skillLabel,
-          ?vibeLabel,
-        ],
-        title: c.title ?? '',
-        place: c.locationName,
-        meta: distance == null
-            ? null
-            : l.meetups_km_away((distance / 1000).toStringAsFixed(1)),
-        extra: at == null
-            ? null
-            : '${meetupDayLabel(l, at, now, locale)} ${DateFormat.jm(locale).format(at)}',
+            if (!c.isHost)
+              DabblerOnColorIconButton(
+                onTile: true,
+                icon: 'more',
+                semanticLabel: l.meetups_more,
+                onPressed: () => _openMore(c),
+              ),
+          ],
+          chips: <String>[
+            if (c.isCancelled) l.meetups_cta_cancelled,
+            ?_sportName(c),
+            ?skillLabel,
+            ?vibeLabel,
+          ],
+          title: c.title ?? '',
+          place: c.locationName,
+          meta: distance == null
+              ? null
+              : l.meetups_km_away((distance / 1000).toStringAsFixed(1)),
+          extra: at == null
+              ? null
+              : '${meetupDayLabel(l, at, now, locale)} ${DateFormat.jm(locale).format(at)}',
+        ),
       ),
       bottomBar: DabblerActionBar(
         price: l.listing_free,

@@ -2,58 +2,215 @@ import 'package:dabbler/core/system_ui/web_chrome_stub.dart'
     if (dart.library.js_interop) 'package:dabbler/core/system_ui/web_chrome_web.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter/material.dart' show Theme;
 import 'package:flutter/widgets.dart';
 
-/// The overlay style for system bars sitting on [pageColor] in [brightness]:
-/// both bars take the page ground, icons contrast with it.
+/// The overlay style for a status bar over [top] and a navigation bar over
+/// [bottom]. Each icon set contrasts with the colour behind it, computed from
+/// that colour's luminance (not from the theme).
 ///
 /// Android reads `statusBarIconBrightness` / `systemNavigationBarIconBrightness`
-/// (the icons' own brightness: dark icons on a light page); iOS reads
+/// (the icons' own brightness: dark icons on a light surface); iOS reads
 /// `statusBarBrightness` (the brightness of the bar's background, the
 /// opposite of the icons).
-SystemUiOverlayStyle systemOverlayStyleFor(
-  Color pageColor,
-  Brightness brightness,
-) {
-  final icons = brightness == Brightness.light
+SystemUiOverlayStyle systemOverlayStyleFor(Color top, Color bottom) {
+  Brightness icons(Color c) =>
+      ThemeData.estimateBrightnessForColor(c) == Brightness.light
       ? Brightness.dark
       : Brightness.light;
   return SystemUiOverlayStyle(
-    statusBarColor: pageColor,
-    statusBarIconBrightness: icons,
-    statusBarBrightness: brightness,
-    systemNavigationBarColor: pageColor,
-    systemNavigationBarDividerColor: pageColor,
-    systemNavigationBarIconBrightness: icons,
+    statusBarColor: top,
+    statusBarIconBrightness: icons(top),
+    statusBarBrightness: ThemeData.estimateBrightnessForColor(top),
+    systemNavigationBarColor: bottom,
+    systemNavigationBarDividerColor: bottom,
+    systemNavigationBarIconBrightness: icons(bottom),
     systemNavigationBarContrastEnforced: false,
   );
 }
 
-/// The single place that styles the platform chrome from the active theme:
-/// the design system's page ground (`DabblerColors.bgPrimary`) and the theme
-/// brightness decide the status bar and navigation bar (Android, iOS) and, on
-/// the web, the document background and `theme-color`. Mount it once, inside
-/// the app's Theme.
-class SystemChromeSync extends StatelessWidget {
+class _Claim {
+  _Claim(this.top, this.bottom);
+  Color? top;
+  Color? bottom;
+}
+
+/// What [SystemChromeSurface] talks to: claims the nearest [SystemChromeSync]
+/// keeps, in the order they were first made. The last claim with a colour wins,
+/// so a pushed route's surface covers the one below and popping it restores
+/// that one.
+class SystemChromeScope extends InheritedWidget {
+  const SystemChromeScope({
+    super.key,
+    required this.state,
+    required super.child,
+  });
+
+  final SystemChromeSyncState state;
+
+  static SystemChromeSyncState? maybeOf(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<SystemChromeScope>()?.state;
+
+  @override
+  bool updateShouldNotify(SystemChromeScope oldWidget) =>
+      oldWidget.state != state;
+}
+
+/// The single place that styles the platform chrome: the design system's page
+/// ground (`DabblerColors.bgPrimary`) by default, or the surface a screen
+/// declares through [SystemChromeSurface]. Drives the status and navigation
+/// bars (Android, iOS) and, on the web, the `theme-color` metas and the
+/// document background. Mount it once, inside the app's Theme.
+class SystemChromeSync extends StatefulWidget {
   const SystemChromeSync({super.key, required this.child});
 
   final Widget child;
 
   @override
+  State<SystemChromeSync> createState() => SystemChromeSyncState();
+}
+
+class SystemChromeSyncState extends State<SystemChromeSync> {
+  final List<_Claim> _claims = <_Claim>[];
+
+  /// Adds or updates [token]'s claim. Call outside of build.
+  void claim(Object token, Color? top, Color? bottom) {
+    final existing = _tokens[token];
+    if (existing == null) {
+      final c = _Claim(top, bottom);
+      _tokens[token] = c;
+      _claims.add(c);
+    } else {
+      existing.top = top;
+      existing.bottom = bottom;
+    }
+    if (mounted) setState(() {});
+  }
+
+  /// Removes [token]'s claim. Call outside of build.
+  void release(Object token) {
+    final c = _tokens.remove(token);
+    if (c == null) return;
+    _claims.remove(c);
+    if (mounted) setState(() {});
+  }
+
+  final Map<Object, _Claim> _tokens = <Object, _Claim>{};
+
+  Color? _lastOf(Color? Function(_Claim c) pick) {
+    for (final c in _claims.reversed) {
+      final v = pick(c);
+      if (v != null) return v;
+    }
+    return null;
+  }
+
+  @override
   Widget build(BuildContext context) {
     final page = DabblerColors.of(context).bgPrimary;
     final brightness = Theme.of(context).brightness;
+    final top = _lastOf((c) => c.top) ?? page;
+    final bottom = _lastOf((c) => c.bottom) ?? page;
     if (kIsWeb) {
       SchedulerBinding.instance.addPostFrameCallback(
-        (_) => setWebChromeColor(page, brightness),
+        (_) => setWebChromeColor(top, bottom, brightness),
       );
     }
-    return AnnotatedRegion<SystemUiOverlayStyle>(
-      value: systemOverlayStyleFor(page, brightness),
-      child: child,
+    return SystemChromeScope(
+      state: this,
+      child: AnnotatedRegion<SystemUiOverlayStyle>(
+        value: systemOverlayStyleFor(top, bottom),
+        child: widget.child,
+      ),
     );
   }
+}
+
+/// Declares the colour of the surface at the top and/or bottom of a screen, so
+/// the status bar and navigation bar take it instead of the page background.
+/// While this widget is in the tree it is the effective colour (the latest one
+/// wins); when it leaves (the route is popped) the previous colour returns.
+///
+/// Give it the colour from the same token the header or bar paints with.
+class SystemChromeSurface extends StatefulWidget {
+  const SystemChromeSurface({
+    super.key,
+    this.top,
+    this.bottom,
+    required this.child,
+  });
+
+  /// The coloured band a detail header draws, resolved from the header's own
+  /// [tile] or [theme] the way `DabblerDetailHeader` resolves its fill
+  /// (`tile.surface`, else the section theme's brand colour).
+  ///
+  /// DS gap: the header does not expose its fill, so this mirrors its rule
+  /// (`detail_header.dart` build()). A `DabblerDetailHeader.fillOf(context,
+  /// tile:, theme:)` would remove the duplication.
+  static Widget detailHeader({
+    Key? key,
+    DabblerDetailHeaderTile? tile,
+    DabblerTheme theme = DabblerTheme.sport,
+    required Widget child,
+  }) => Builder(
+    key: key,
+    builder: (context) {
+      final outer = DabblerColors.of(context);
+      final Color fill = switch (tile) {
+        DabblerDetailHeaderTile.amber => DabblerColors.tileAmber.surface,
+        DabblerDetailHeaderTile.info => DabblerColors.tileInfo.surface,
+        DabblerDetailHeaderTile.accent => DabblerColors.tileAccent.surface,
+        null => DabblerColors.resolve(
+          theme: theme,
+          brightness: outer.brightness,
+        ).brandPrimary,
+      };
+      return SystemChromeSurface(top: fill, child: child);
+    },
+  );
+
+  final Color? top;
+  final Color? bottom;
+  final Widget child;
+
+  @override
+  State<SystemChromeSurface> createState() => _SystemChromeSurfaceState();
+}
+
+class _SystemChromeSurfaceState extends State<SystemChromeSurface> {
+  final Object _token = Object();
+  SystemChromeSyncState? _sync;
+
+  void _later(void Function(SystemChromeSyncState s) f) {
+    final s = _sync;
+    if (s == null) return;
+    SchedulerBinding.instance.addPostFrameCallback((_) => f(s));
+    SchedulerBinding.instance.ensureVisualUpdate();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _sync = SystemChromeScope.maybeOf(context);
+    _later((s) => s.claim(_token, widget.top, widget.bottom));
+  }
+
+  @override
+  void didUpdateWidget(SystemChromeSurface old) {
+    super.didUpdateWidget(old);
+    if (old.top != widget.top || old.bottom != widget.bottom) {
+      _later((s) => s.claim(_token, widget.top, widget.bottom));
+    }
+  }
+
+  @override
+  void dispose() {
+    _later((s) => s.release(_token));
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => widget.child;
 }
