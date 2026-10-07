@@ -11,6 +11,7 @@ import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/providers.dart' hide nearbyGamesProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -198,47 +199,47 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     ];
 
     return DabblerPage(
-      topBar: DabblerPageHeader(
-        title: AppLocalizations.of(context).nav_games,
-        locationLabel: locState is ActiveLocationReady
-            ? locState.location.area.name
-            : l.listing_set_location,
-        onLocationPressed: () => HomeLocationPickerSheet.show(context),
-        actions: <DabblerPageHeaderAction>[
-          DabblerPageHeaderAction(
-            icon: 'search-normal',
-            semanticLabel: l.listing_search,
-            onPressed: () => context.push(RoutePaths.socialSearch),
-          ),
-          DabblerPageHeaderAction(
-            icon: 'filter',
-            semanticLabel: l.listing_filters,
-            onPressed: _openFilters,
-            count: active.length,
-          ),
-        ],
-      ),
-      body: ListingTabs(
-        items: <DabblerTabItem>[
+      body: ListingScaffold(
+        head: DabblerListingHead.tint,
+        header: DabblerPageHeader(
+          safeArea: false,
+          contentPadding: DabblerPageHeader.listingPadding,
+          title: AppLocalizations.of(context).nav_games,
+          locationLabel: locState is ActiveLocationReady
+              ? locState.location.area.name
+              : l.listing_set_location,
+          onLocationPressed: () => HomeLocationPickerSheet.show(context),
+          actions: <DabblerPageHeaderAction>[
+            DabblerPageHeaderAction(
+              icon: 'search-normal',
+              semanticLabel: l.listing_search,
+              onPressed: () => context.push(RoutePaths.socialSearch),
+            ),
+            DabblerPageHeaderAction(
+              icon: 'filter',
+              semanticLabel: l.listing_filters,
+              onPressed: _openFilters,
+              count: active.length,
+            ),
+          ],
+        ),
+        tabs: <DabblerTabItem>[
           DabblerTabItem(id: 'all', label: l.listing_all_sports),
           for (final sport in widget.sports)
             DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
         ],
+        filters: active,
+        clearAllLabel: l.listing_clear_all,
+        onClearAll: _resetFilters,
         pages: List.generate(
           _tabCount,
-          // The applied-filters rail sits under the tabs, above each list.
-          (i) => ListingPage(
-            filters: active,
-            clearAllLabel: l.listing_clear_all,
-            onClearAll: _resetFilters,
-            body: _GameTabBody(
-              sports: widget.sports,
-              sportId: _sportIdForTab(i),
-              scrollController: _scrollControllers[i],
-              onRefresh: _handleRefresh,
-              onRetry: () => ref.invalidate(nearbyGamesProvider),
-              onChangeFilters: _openFilters,
-            ),
+          (i) => _GameTabBody(
+            sports: widget.sports,
+            sportId: _sportIdForTab(i),
+            scrollController: _scrollControllers[i],
+            onRefresh: _handleRefresh,
+            onRetry: () => ref.invalidate(nearbyGamesProvider),
+            onChangeFilters: _openFilters,
           ),
         ),
       ),

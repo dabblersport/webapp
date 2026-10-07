@@ -60,7 +60,11 @@ final nearbyMeetupsProvider = FutureProvider.autoDispose
       (ref, q) => _unwrap(
         ref
             .watch(meetupRepositoryProvider)
-            .nearbyMeetups(lat: q.lat, lng: q.lng, radiusMeters: q.radiusMeters),
+            .nearbyMeetups(
+              lat: q.lat,
+              lng: q.lng,
+              radiusMeters: q.radiusMeters,
+            ),
       ),
     );
 

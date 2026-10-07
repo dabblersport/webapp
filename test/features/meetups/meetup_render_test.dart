@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/features/home/presentation/widgets/section_themed.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
@@ -273,6 +274,61 @@ void main() {
         );
       });
     }
+  }
+
+  // Listings v2: the collapsing, accent-tinted header (Meetups = `active`).
+  for (final bool filters in <bool>[true, false]) {
+    testWidgets('listing v2 ${filters ? 'filters' : 'plain'}', (tester) async {
+      final String mode = const String.fromEnvironment('RENDER_DARK') == '1'
+          ? 'dark'
+          : 'light';
+      final String fs = filters ? 'filters' : 'plain';
+      final String dir = const String.fromEnvironment(
+        'LISTINGS_V2_DIR',
+        defaultValue: '$kShotsRoot/listings-v2/app',
+      );
+      Future<void> shoot(String name) async {
+        final key = tester.firstWidget<RepaintBoundary>(
+          find.byType(RepaintBoundary),
+        );
+        await tester.runAsync(() async {
+          final boundary =
+              tester.renderObject(find.byWidget(key)) as RenderRepaintBoundary;
+          final image = await boundary.toImage(pixelRatio: 2);
+          final png = await image.toByteData(format: ui.ImageByteFormat.png);
+          Directory(dir).createSync(recursive: true);
+          File('$dir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+        });
+      }
+
+      final list = <MeetupListItem>[
+        for (var i = 0; i < 6; i++)
+          ...rows('en', upcoming: 1).take(1).map((r) => r),
+      ];
+      await _shoot(
+        tester,
+        SectionThemed(
+          theme: DabblerTheme.active,
+          child: const DabblerPage(body: MeetupsScreen()),
+        ),
+        FakeMeetupRepository()
+          ..nearbyList = nearby
+          ..list = list,
+        const Locale('en'),
+        'meetups-v2-$mode-$fs-top',
+        overrides: <Override>[
+          if (filters) meetupRadiusProvider.overrideWith((ref) => 5000),
+          if (filters)
+            meetupSortProvider.overrideWith((ref) => MeetupSort.nearest),
+        ],
+        before: () async => shoot('meetups-$mode-$fs-top'),
+      );
+      await tester.drag(find.byType(ListView).last, const Offset(0, -240));
+      for (var i = 0; i < 6; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      await shoot('meetups-$mode-$fs-collapsed');
+    });
   }
 
   for (final l in <Locale>[const Locale('en'), const Locale('ar')]) {

@@ -10,6 +10,7 @@ import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chi
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
@@ -113,63 +114,62 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
     ];
 
     return DabblerPage(
-      topBar: DabblerPageHeader(
-        title: AppLocalizations.of(context).nav_venues,
-        locationLabel: locState is ActiveLocationReady
-            ? locState.location.area.name
-            : l.listing_set_location,
-        onLocationPressed: () => HomeLocationPickerSheet.show(context),
-        actions: <DabblerPageHeaderAction>[
-          if (isOrganiser)
-            DabblerPageHeaderAction(
-              icon: 'add',
-              semanticLabel: l.listing_add_venue,
-              onPressed: () => context.push(RoutePaths.createVenueSubmission),
-            ),
-          DabblerPageHeaderAction(
-            icon: 'heart',
-            semanticLabel: l.listing_saved_venues,
-            onPressed: () => Navigator.of(context).push(
-              MaterialPageRoute(
-                builder: (_) => const SportsLibraryScreen(initialTabIndex: 1),
-              ),
-            ),
-          ),
-          DabblerPageHeaderAction(
-            icon: 'search-normal',
-            semanticLabel: l.listing_search,
-            onPressed: () => context.push(RoutePaths.socialSearch),
-          ),
-          DabblerPageHeaderAction(
-            icon: 'filter',
-            semanticLabel: l.listing_filters,
-            onPressed: _openFilters,
-            count: active.length,
-          ),
-        ],
-      ),
       body: sports.isEmpty
           ? const SizedBox.shrink()
-          : ListingTabs(
-              items: <DabblerTabItem>[
+          : ListingScaffold(
+              head: DabblerListingHead.tint,
+              header: DabblerPageHeader(
+                safeArea: false,
+                contentPadding: DabblerPageHeader.listingVenuesPadding,
+                title: AppLocalizations.of(context).nav_venues,
+                locationLabel: locState is ActiveLocationReady
+                    ? locState.location.area.name
+                    : l.listing_set_location,
+                onLocationPressed: () => HomeLocationPickerSheet.show(context),
+                actions: <DabblerPageHeaderAction>[
+                  if (isOrganiser)
+                    DabblerPageHeaderAction(
+                      icon: 'add',
+                      semanticLabel: l.listing_add_venue,
+                      onPressed: () =>
+                          context.push(RoutePaths.createVenueSubmission),
+                    ),
+                  DabblerPageHeaderAction(
+                    icon: 'heart',
+                    semanticLabel: l.listing_saved_venues,
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            const SportsLibraryScreen(initialTabIndex: 1),
+                      ),
+                    ),
+                  ),
+                  DabblerPageHeaderAction(
+                    icon: 'search-normal',
+                    semanticLabel: l.listing_search,
+                    onPressed: () => context.push(RoutePaths.socialSearch),
+                  ),
+                  DabblerPageHeaderAction(
+                    icon: 'filter',
+                    semanticLabel: l.listing_filters,
+                    onPressed: _openFilters,
+                    count: active.length,
+                  ),
+                ],
+              ),
+              tabs: <DabblerTabItem>[
                 for (final sport in sports)
                   DabblerTabItem(
                     id: sport.id,
                     label: sport.localizedName(context),
                   ),
               ],
+              filters: active,
+              clearAllLabel: l.listing_clear_all,
+              onClearAll: _resetFilters,
               pages: [
                 for (final sport in sports)
-                  // The applied-filters rail sits under the tabs.
-                  ListingPage(
-                    filters: active,
-                    clearAllLabel: l.listing_clear_all,
-                    onClearAll: _resetFilters,
-                    body: _AllVenuesList(
-                      sport: sport,
-                      onChangeFilters: _openFilters,
-                    ),
-                  ),
+                  _AllVenuesList(sport: sport, onChangeFilters: _openFilters),
               ],
             ),
     );

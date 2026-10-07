@@ -2,6 +2,7 @@ import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:dabbler/core/feedback/feedback_center.dart';
 import 'package:dabbler/core/feedback/feedback_intent.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
+import 'package:dabbler/features/home/presentation/widgets/section_themed.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -367,90 +368,97 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         if (didPop) return;
         _handleSystemBack();
       },
-      child: DabblerPage(
-        maxContentWidth: DabblerPage.readableWidth,
-        // The page raises the body's bottom padding by the floating bar's
-        // height, so branch pages scroll their last item clear of it. The
-        // fade behind the bar washes the content out to the page colour.
-        body: widget.navigationShell,
-        // The bar sits under the shell's one Action Area surface, which
-        // presents the feedback center's shell entries (Action Area plan
-        // §3). With nothing to present it is the bar alone.
-        bottomOverlay: ShellActionAreaHost(
-          createMenuOpen: _createMenuOpen,
-          branchIndex: _currentIndex,
-          dismissSemanticLabel: l.feedback_dismiss,
-          bar: DabblerNavigationBottomBar(
-            items: <DabblerNavigationItem>[
-              DabblerNavigationItem(
-                id: _idHome,
-                icon: 'home-2',
-                label: l.nav_feeds,
-              ),
-              if (FeatureFlags.enableCommunityMobileNav)
+      child: SectionThemed(
+        theme: switch (NavigationBranch.values[_currentIndex]) {
+          NavigationBranch.games => DabblerTheme.sport,
+          NavigationBranch.meetups => DabblerTheme.active,
+          _ => null,
+        },
+        child: DabblerPage(
+          maxContentWidth: DabblerPage.readableWidth,
+          // The page raises the body's bottom padding by the floating bar's
+          // height, so branch pages scroll their last item clear of it. The
+          // fade behind the bar washes the content out to the page colour.
+          body: widget.navigationShell,
+          // The bar sits under the shell's one Action Area surface, which
+          // presents the feedback center's shell entries (Action Area plan
+          // §3). With nothing to present it is the bar alone.
+          bottomOverlay: ShellActionAreaHost(
+            createMenuOpen: _createMenuOpen,
+            branchIndex: _currentIndex,
+            dismissSemanticLabel: l.feedback_dismiss,
+            bar: DabblerNavigationBottomBar(
+              items: <DabblerNavigationItem>[
                 DabblerNavigationItem(
-                  id: _idCommunity,
-                  icon: 'people',
-                  label: l.nav_community,
+                  id: _idHome,
+                  icon: 'home-2',
+                  label: l.nav_feeds,
                 ),
-              DabblerNavigationItem(
-                id: _idVenues,
-                icon: 'location',
-                label: l.nav_venues,
-              ),
-              DabblerNavigationItem(
-                id: _idGames,
-                icon: 'game',
-                label: l.nav_games,
-              ),
-              if (FeatureFlags.enableMeetups)
+                if (FeatureFlags.enableCommunityMobileNav)
+                  DabblerNavigationItem(
+                    id: _idCommunity,
+                    icon: 'people',
+                    label: l.nav_community,
+                  ),
                 DabblerNavigationItem(
-                  id: _idMeetups,
-                  icon: 'calendar-1',
-                  label: l.nav_meetups,
+                  id: _idVenues,
+                  icon: 'location',
+                  label: l.nav_venues,
                 ),
-            ],
-            active: _activeId,
-            onSelect: _onSelect,
-            menuOpen: _createMenuOpen,
-            // The Home Feed frame swaps the action's "+" for `close-circle`
-            // while the menu is open (`fabIcon: createMenuOpen ? 'close-circle'
-            // : 'add'`; the CEO's `ceo-design-menu.png`: a light disc carrying a
-            // brand x), upright rather than turned, and draws the Arabic bar
-            // unmirrored: pill on the physical left, action on the right
-            // (`Home_feed_—_Arabic.png`).
-            rotateActionOnOpen: false,
-            actionOpenIcon: 'close-circle',
-            mirrorInRtl: false,
-            onAction: (open) => setState(() => _createMenuOpen = open),
-            createItems: <DabblerNavigationCreateItem>[
-              DabblerNavigationCreateItem(
-                id: _createPost,
-                icon: 'edit',
-                label: l.nav_create_post,
-                iconTone: DabblerNavigationIconTone.info,
-              ),
-              if (canCreateGame)
-                DabblerNavigationCreateItem(
-                  id: _createGame,
+                DabblerNavigationItem(
+                  id: _idGames,
                   icon: 'game',
-                  label: l.nav_create_game,
-                  iconTone: DabblerNavigationIconTone.success,
+                  label: l.nav_games,
                 ),
-              if (canCreateMeetup)
+                if (FeatureFlags.enableMeetups)
+                  DabblerNavigationItem(
+                    id: _idMeetups,
+                    icon: 'calendar-1',
+                    label: l.nav_meetups,
+                  ),
+              ],
+              active: _activeId,
+              onSelect: _onSelect,
+              menuOpen: _createMenuOpen,
+              // The Home Feed frame swaps the action's "+" for `close-circle`
+              // while the menu is open (`fabIcon: createMenuOpen ? 'close-circle'
+              // : 'add'`; the CEO's `ceo-design-menu.png`: a light disc carrying a
+              // brand x), upright rather than turned, and draws the Arabic bar
+              // unmirrored: pill on the physical left, action on the right
+              // (`Home_feed_—_Arabic.png`).
+              rotateActionOnOpen: false,
+              actionOpenIcon: 'close-circle',
+              mirrorInRtl: false,
+              onAction: (open) => setState(() => _createMenuOpen = open),
+              createItems: <DabblerNavigationCreateItem>[
                 DabblerNavigationCreateItem(
-                  id: _createMeetup,
-                  // The frame's dot-grid calendar. In iconsax_flutter that glyph
-                  // is `calendar-1`; plain `calendar` draws a day number (the
-                  // DS icon audit, `foundations/icons.md`).
-                  icon: 'calendar-1',
-                  label: l.nav_create_meetup,
-                  // `--tile-accent-surface` (`[role="menu"] > button:nth-child(3)`
-                  // in the frame's page CSS).
-                  iconTone: DabblerNavigationIconTone.accent,
+                  id: _createPost,
+                  icon: 'edit',
+                  label: l.nav_create_post,
+                  iconTone: DabblerNavigationIconTone.info,
                 ),
-            ],
-            onCreate: _onCreate,
+                if (canCreateGame)
+                  DabblerNavigationCreateItem(
+                    id: _createGame,
+                    icon: 'game',
+                    label: l.nav_create_game,
+                    iconTone: DabblerNavigationIconTone.success,
+                  ),
+                if (canCreateMeetup)
+                  DabblerNavigationCreateItem(
+                    id: _createMeetup,
+                    // The frame's dot-grid calendar. In iconsax_flutter that glyph
+                    // is `calendar-1`; plain `calendar` draws a day number (the
+                    // DS icon audit, `foundations/icons.md`).
+                    icon: 'calendar-1',
+                    label: l.nav_create_meetup,
+                    // `--tile-accent-surface` (`[role="menu"] > button:nth-child(3)`
+                    // in the frame's page CSS).
+                    iconTone: DabblerNavigationIconTone.accent,
+                  ),
+              ],
+              onCreate: _onCreate,
+            ),
           ),
         ),
       ),

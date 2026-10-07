@@ -60,9 +60,9 @@ abstract final class ListingLayout {
   /// The screen gutter — `padding: 0 18px`.
   static const double gutter = DabblerSpacing.space6;
 
-  /// Tabs (or the applied-filters rail) to the first card: the header's
-  /// `gap: 12` plus the list's `padding-top: 3`.
-  static const double listTop = DabblerSpacing.space4 + DabblerSpacing.space1;
+  /// Tabs (or the applied-filters rail) to the first card: the list's
+  /// `padding-top: 12` (`Listings.dc.html` 2026-10-08).
+  static const double listTop = DabblerSpacing.space4;
 
   /// Card to card on the games and meetups lists — `gap: 12`.
   static const double cardGap = DabblerSpacing.space4;
@@ -84,70 +84,6 @@ abstract final class ListingLayout {
   /// A listing's scroll padding: the gutter, [listTop] and [listBottom].
   static const EdgeInsetsDirectional listPadding =
       EdgeInsetsDirectional.fromSTEB(gutter, listTop, gutter, listBottom);
-}
-
-/// The listing tab rail and its pages (`Listings.dc.html:91-95`): the
-/// `listing` tabs inset by the gutter with their 1px rail across the full
-/// width. Pages run edge to edge — each inset its own content by
-/// [ListingLayout.gutter], so horizontal rails can bleed as the frame's do
-/// (`margin: 0 -18px; padding: 0 18px`).
-class ListingTabs extends StatelessWidget {
-  const ListingTabs({super.key, required this.items, required this.pages});
-
-  final List<DabblerTabItem> items;
-  final List<Widget> pages;
-
-  @override
-  Widget build(BuildContext context) => DabblerTabPager(
-    variant: DabblerTabsVariant.listing,
-    scrollable: true,
-    tabsPadding: const EdgeInsetsDirectional.symmetric(
-      horizontal: ListingLayout.gutter,
-    ),
-    items: items,
-    pages: pages,
-  );
-}
-
-/// One listing page: the applied-filters rail (12 under the tabs, 3 above
-/// the list, as the frame's header column lays it out) over [body].
-class ListingPage extends StatelessWidget {
-  const ListingPage({
-    super.key,
-    required this.filters,
-    required this.clearAllLabel,
-    required this.onClearAll,
-    required this.body,
-  });
-
-  final List<DabblerFilterRailItem> filters;
-  final String clearAllLabel;
-  final VoidCallback onClearAll;
-  final Widget body;
-
-  @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: <Widget>[
-      if (filters.isNotEmpty)
-        Padding(
-          // `gap: 12` under the tabs; the rail's own `padding-bottom: 3`.
-          padding: const EdgeInsetsDirectional.only(
-            top: DabblerSpacing.space4,
-            bottom: DabblerSpacing.space1,
-          ),
-          child: DabblerFilterRail(
-            items: filters,
-            clearAllLabel: clearAllLabel,
-            onClearAll: onClearAll,
-            padding: const EdgeInsetsDirectional.symmetric(
-              horizontal: ListingLayout.gutter,
-            ),
-          ),
-        ),
-      Expanded(child: body),
-    ],
-  );
 }
 
 /// Three listing skeletons of [kind], as the frame's loading state draws them.

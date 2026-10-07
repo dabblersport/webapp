@@ -755,7 +755,9 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                     const DabblerGap.h(DabblerSpacing.space1),
                     DabblerButton.icon(
                       icon: 'refresh',
-                      semanticLabel: AppLocalizations.of(context).location_change_title,
+                      semanticLabel: AppLocalizations.of(
+                        context,
+                      ).location_change_title,
                       tone: DabblerButtonTone.text,
                       size: DabblerButtonSize.small,
                       onPressed: () {

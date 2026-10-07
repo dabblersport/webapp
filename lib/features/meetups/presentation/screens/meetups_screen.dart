@@ -7,6 +7,7 @@ import 'package:dabbler/features/meetups/presentation/providers/meetup_providers
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_listing_card.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_upcoming.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -83,46 +84,47 @@ class _MeetupsTabs extends ConsumerWidget {
         ),
     ];
     return DabblerPage(
-      topBar: DabblerPageHeader(
-        title: l.nav_meetups,
-        locationLabel: loc is ActiveLocationReady
-            ? loc.location.area.name
-            : l.listing_set_location,
-        onLocationPressed:
-            onPickLocation ?? () => HomeLocationPickerSheet.show(context),
-        actions: <DabblerPageHeaderAction>[
-          DabblerPageHeaderAction(
-            icon: 'search-normal',
-            semanticLabel: l.listing_search,
-            onPressed: () => context.push(RoutePaths.socialSearch),
-          ),
-          DabblerPageHeaderAction(
-            icon: 'filter',
-            semanticLabel: l.listing_filters,
-            count: active.length,
-            onPressed: () => showListingFilterSheet(
-              context,
-              onReset: reset,
-              builder: (_) => const _MeetupFilterBody(),
-              footerBuilder: (_) => const _ShowMeetupsButton(),
+      body: ListingScaffold(
+        head: DabblerListingHead.accent,
+        header: DabblerPageHeader(
+          safeArea: false,
+          contentPadding: DabblerPageHeader.listingPadding,
+          title: l.nav_meetups,
+          locationLabel: loc is ActiveLocationReady
+              ? loc.location.area.name
+              : l.listing_set_location,
+          onLocationPressed:
+              onPickLocation ?? () => HomeLocationPickerSheet.show(context),
+          actions: <DabblerPageHeaderAction>[
+            DabblerPageHeaderAction(
+              icon: 'search-normal',
+              semanticLabel: l.listing_search,
+              onPressed: () => context.push(RoutePaths.socialSearch),
             ),
-          ),
-        ],
-      ),
-      body: ListingTabs(
-        items: <DabblerTabItem>[
+            DabblerPageHeaderAction(
+              icon: 'filter',
+              semanticLabel: l.listing_filters,
+              count: active.length,
+              onPressed: () => showListingFilterSheet(
+                context,
+                onReset: reset,
+                builder: (_) => const _MeetupFilterBody(),
+                footerBuilder: (_) => const _ShowMeetupsButton(),
+              ),
+            ),
+          ],
+        ),
+        tabs: <DabblerTabItem>[
           DabblerTabItem(id: 'all', label: l.meetups_tab_all),
           for (final s in sports)
             DabblerTabItem(id: s.id, label: meetupSportName(context, s)),
         ],
+        filters: active,
+        clearAllLabel: l.listing_clear_all,
+        onClearAll: reset,
         pages: <Widget>[
           for (final id in <String?>[null, for (final s in sports) s.id])
-            ListingPage(
-              filters: active,
-              clearAllLabel: l.listing_clear_all,
-              onClearAll: reset,
-              body: _MeetupsBody(sportId: id, onOpen: onOpen),
-            ),
+            _MeetupsBody(sportId: id, onOpen: onOpen),
         ],
       ),
     );
