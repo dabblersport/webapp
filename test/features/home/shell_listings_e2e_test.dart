@@ -6,6 +6,7 @@ import 'package:dabbler/features/explore/presentation/screens/games_screen.dart'
 import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
+import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -252,64 +253,174 @@ void main() {
     tester,
   ) async {
     final router = await _pump(tester);
-    final mode = renderThemeBase().brightness == Brightness.dark
-        ? 'dark'
-        : 'light';
-    final page = DabblerColors.resolve(
-      theme: DabblerTheme.main,
-      brightness: renderThemeBase().brightness,
-    ).bgPrimary;
+    final Brightness b = renderThemeBase().brightness;
+    final mode = b == Brightness.dark ? 'dark' : 'light';
+    DabblerColors tokens(DabblerTheme t) =>
+        DabblerColors.resolve(theme: t, brightness: b);
+    final page = tokens(DabblerTheme.main).bgPrimary;
 
-    // Home: no band, the page ground behind the status bar.
-    expect(_bars(tester).statusBarColor, page);
-    await _shoot(tester, 'shell-$mode-1-home');
+    // The expected band of a tinted listing for a theme: the DS tint.
+    Color tint(DabblerTheme t) => Color.lerp(
+      tokens(t).surfaceCard,
+      tokens(t).brandPrimary,
+      DabblerListingPage.tintShare,
+    )!;
+    final Color accent = b == Brightness.dark
+        ? DabblerProvisionalDark.tileAccentSurface
+        : DabblerColors.tileAccent.surface;
 
-    for (final (String route, String name, DabblerTheme? section)
-        in <(String, String, DabblerTheme?)>[
-          (RoutePaths.venuesTab, 'venues', null),
-          (RoutePaths.gamesTab, 'games', DabblerTheme.sport),
-          (RoutePaths.meetups, 'meetups', DabblerTheme.active),
-        ]) {
-      router.go(route);
+    // Every tab with ITS theme. Venues is `main` (not "no override"): it must
+    // stay the main brand, never the sport (Games) or active (Meetups) one.
+    final rows =
+        <
+          ({
+            String route,
+            String name,
+            DabblerTheme theme,
+            Color? band, // null: no band, the page ground
+          })
+        >[
+          (route: '/home', name: 'home', theme: DabblerTheme.main, band: null),
+          (
+            route: RoutePaths.venuesTab,
+            name: 'venues',
+            theme: DabblerTheme.main,
+            band: tint(DabblerTheme.main),
+          ),
+          (
+            route: RoutePaths.gamesTab,
+            name: 'games',
+            theme: DabblerTheme.sport,
+            band: tint(DabblerTheme.sport),
+          ),
+          (
+            route: RoutePaths.meetups,
+            name: 'meetups',
+            theme: DabblerTheme.active,
+            band: accent,
+          ),
+        ];
+    final others = <DabblerTheme>[
+      DabblerTheme.main,
+      DabblerTheme.sport,
+      DabblerTheme.active,
+    ];
+    Future<void> settle() async {
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      // The band is under the status bar: the system status bar follows it,
-      // and it is not the page ground.
-      final bar = _bars(tester).statusBarColor!;
-      expect(bar, isNot(page), reason: '$name status bar is the band');
-      // The shell paints the same colour across the 50px inset.
-      final strip = find.descendant(
-        of: find.byType(DabblerTopFill),
-        matching: find.byType(ColoredBox),
-      );
-      expect(
-        tester.widgetList<ColoredBox>(strip).map((c) => c.color),
-        contains(bar),
-        reason: '$name top fill',
-      );
-      await _shoot(tester, 'shell-$mode-2-$name');
-      // Scroll: the band folds, still under the status bar.
-      await tester.drag(find.byType(ListView).last, const Offset(0, -260));
-      for (var i = 0; i < 6; i++) {
-        await tester.pump(const Duration(milliseconds: 100));
-      }
-      expect(_bars(tester).statusBarColor, bar);
-      await _shoot(tester, 'shell-$mode-3-$name-collapsed');
-      expect(
-        section == null ||
-            section == DabblerTheme.sport ||
-            section == DabblerTheme.active,
-        isTrue,
-      );
     }
+
+    final bottomBar = find.byType(DabblerNavigationBottomBar);
+    final actionArea = find.byType(ShellActionAreaHost);
+    final topFill = find.byType(DabblerTopFill);
+
+    for (final r in rows) {
+      if (r.route != '/home') router.go(r.route);
+      await settle();
+      final DabblerColors want = tokens(r.theme);
+
+      // 1. The status band: the system status bar AND the shell's top fill
+      //    are the DS band token for this theme (or the page ground at Home).
+      final Color expectedBand = r.band ?? page;
+      expect(
+        _bars(tester).statusBarColor,
+        expectedBand,
+        reason: '${r.name}: status bar band',
+      );
+      if (r.band != null) {
+        expect(
+          _painted(tester, topFill),
+          contains(expectedBand),
+          reason: '${r.name}: top fill band',
+        );
+      }
+
+      // 2. The bottom bar, by its own finder: the theme's brand, resolved
+      //    for it and painted, and no other section's brand.
+      expect(
+        DabblerColors.of(tester.element(bottomBar)).brandPrimary,
+        want.brandPrimary,
+        reason: '${r.name}: bottom bar brand',
+      );
+      expect(
+        _painted(tester, bottomBar),
+        contains(want.brandPrimary),
+        reason: '${r.name}: bottom bar fill',
+      );
+
+      // 3. The Action Area host, by its own finder.
+      expect(
+        DabblerColors.of(tester.element(actionArea)).brandPrimary,
+        want.brandPrimary,
+        reason: '${r.name}: Action Area brand',
+      );
+      expect(
+        _painted(tester, actionArea),
+        contains(want.brandPrimary),
+        reason: '${r.name}: Action Area fill',
+      );
+
+      // 4. Never another section's brand.
+      for (final t in others.where(
+        (t) => tokens(t).brandPrimary != want.brandPrimary,
+      )) {
+        expect(
+          _painted(tester, bottomBar),
+          isNot(contains(tokens(t).brandPrimary)),
+          reason: '${r.name}: bottom bar is not ${t.name}',
+        );
+      }
+      await _shoot(tester, 'shell-$mode-2-${r.name}');
+
+      // Scroll: the band folds, still under the status bar.
+      if (r.band != null) {
+        await tester.drag(find.byType(ListView).last, const Offset(0, -260));
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        expect(_bars(tester).statusBarColor, expectedBand);
+        await _shoot(tester, 'shell-$mode-3-${r.name}-collapsed');
+      }
+    }
+
+    // The Venues-stays-main regression: its bottom bar and band are the MAIN
+    // brand, never the sport (Games) or active (Meetups) one.
+    router.go(RoutePaths.venuesTab);
+    await settle();
+    final venuesBar = DabblerColors.of(tester.element(bottomBar)).brandPrimary;
+    final venuesBand = _bars(tester).statusBarColor;
+    final sportBand = tint(DabblerTheme.sport);
+    expect(venuesBar, tokens(DabblerTheme.main).brandPrimary);
+    expect(venuesBar, isNot(tokens(DabblerTheme.sport).brandPrimary));
+    expect(venuesBar, isNot(tokens(DabblerTheme.active).brandPrimary));
+    expect(venuesBand, isNot(sportBand));
+    expect(venuesBand, isNot(accent));
 
     // Back to Home: the band and its status colour are released.
     router.go('/home');
-    for (var i = 0; i < 10; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
+    await settle();
     expect(_bars(tester).statusBarColor, page);
   });
+}
+
+/// The colours painted by plain boxes under [root] (DecoratedBox fills and
+/// ColoredBox colours): what actually reaches the pixels of a DS widget.
+Set<Color> _painted(WidgetTester tester, Finder root) {
+  final out = <Color>{};
+  for (final e
+      in find
+          .descendant(of: root, matching: find.byType(DecoratedBox))
+          .evaluate()) {
+    final d = (e.widget as DecoratedBox).decoration;
+    if (d is BoxDecoration && d.color != null) out.add(d.color!);
+  }
+  for (final e
+      in find
+          .descendant(of: root, matching: find.byType(ColoredBox))
+          .evaluate()) {
+    out.add((e.widget as ColoredBox).color);
+  }
+  return out;
 }
