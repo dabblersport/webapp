@@ -48,7 +48,7 @@ class SystemChromeSync extends StatelessWidget {
     final brightness = Theme.of(context).brightness;
     if (kIsWeb) {
       SchedulerBinding.instance.addPostFrameCallback(
-        (_) => setWebChromeColor(page),
+        (_) => setWebChromeColor(page, brightness),
       );
     }
     return AnnotatedRegion<SystemUiOverlayStyle>(

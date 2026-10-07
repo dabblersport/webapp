@@ -72,21 +72,45 @@ void main() {
   });
 
   group('platform files', () {
-    test(
-      'web: launch purple only in the splash ground, manifest on the page',
-      () {
-        final html = File('web/index.html').readAsStringSync();
-        expect(
-          html,
-          contains('html, body { margin: 0; background-color: #7328CE; }'),
-        );
-        expect(html, contains('name="theme-color" content="#7328CE"'));
-        expect(html, contains('status-bar-style" content="default"'));
-        final manifest = File('web/manifest.json').readAsStringSync();
-        expect(manifest, contains('"theme_color": "#F5F0E6"'));
-        expect(manifest, isNot(contains('#6D28D9')));
-      },
-    );
+    test('web: bars are the page ground from the first byte, no purple', () {
+      final html = File('web/index.html').readAsStringSync();
+      expect(
+        html,
+        contains(
+          'name="theme-color" media="(prefers-color-scheme: light)" content="#F5F0E6"',
+        ),
+      );
+      expect(
+        html,
+        contains(
+          'name="theme-color" media="(prefers-color-scheme: dark)" content="#141414"',
+        ),
+      );
+      expect(html, contains('<meta name="color-scheme" content="light dark">'));
+      expect(
+        html,
+        contains('html, body { margin: 0; background-color: #F5F0E6; }'),
+      );
+      expect(html, contains('html, body { background-color: #141414; }'));
+      expect(html, contains('status-bar-style" content="default"'));
+      // No purple theme-color or html/body ground: the splash draws its own.
+      final live = html.replaceAll(RegExp(r'<!--.*?-->', dotAll: true), '');
+      expect(live, isNot(contains('#7328CE')));
+      expect(live, isNot(contains('#7228CC')));
+      final manifest = File('web/manifest.json').readAsStringSync();
+      expect(manifest, contains('"theme_color": "#F5F0E6"'));
+      expect(manifest, contains('"background_color": "#7328CE"'));
+    });
+
+    test('web: the runtime swap updates both metas and color-scheme', () {
+      final src = File(
+        'lib/core/system_ui/web_chrome_web.dart',
+      ).readAsStringSync();
+      expect(src, contains('meta[name="theme-color"]'));
+      expect(src, contains("'content'.toJS, hex.toJS"));
+      expect(src, contains("style?['colorScheme']"));
+      expect(src, contains('Brightness brightness'));
+    });
 
     test('android: NormalTheme bars and window are the page ground', () {
       for (final d in [

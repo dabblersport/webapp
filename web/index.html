@@ -45,20 +45,30 @@
   <!-- Google Sign-In API for web -->
   <script src="https://accounts.google.com/gsi/client" async defer></script>
   <!--
-    Launch background #7328CE: the splash video's ground (its first frame
-    decodes to #7228CC) and the design-system token DabblerPalette.mainP600.
-    Painted before Flutter loads so launch -> splash video has no flash.
+    System-bar colours, correct from the first byte. Safari tints the status bar
+    and the bottom toolbar from the FIRST theme-color meta it parses and from the
+    html/body background, and does not reliably re-tint after a later script
+    swap, so these are static: the page ground, per scheme.
+      light  #F5F0E6 = DabblerPalette.surfacePage (DabblerColors.bgPrimary, light)
+      dark   #141414 = DabblerPalette.ink         (DabblerColors.bgPrimary, dark)
+    lib/core/system_ui keeps both in step with the in-app theme toggle (which can
+    differ from the OS).
+
+    The launch video's purple (#7328CE, DabblerPalette.mainP600) is NOT painted
+    here: the Flutter splash widget draws it inside the viewport. Trade-off
+    accepted: the cream/ink ground shows for the instant before Flutter paints
+    the splash; tinting the bars purple for the splash would leave them purple.
   -->
+  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F0E6">
+  <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#141414">
   <style>
-    html, body { margin: 0; background-color: #7328CE; }
+    :root { color-scheme: light dark; }
+    html, body { margin: 0; background-color: #F5F0E6; }
+    @media (prefers-color-scheme: dark) {
+      html, body { background-color: #141414; }
+    }
   </style>
-  <!--
-    theme-color is the launch purple only while the splash plays. When the app
-    is showing (and on every theme toggle) lib/core/system_ui replaces this
-    meta and the html/body background with the page ground: #F5F0E6
-    (DabblerPalette.surfacePage) in light, #141414 (DabblerPalette.ink) in dark.
-  -->
-  <meta name="theme-color" content="#7328CE">
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

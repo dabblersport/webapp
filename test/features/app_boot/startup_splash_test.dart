@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dabbler/core/constants/timing/splash_timing.dart';
 import 'package:dabbler/features/app_boot/startup_splash.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -78,6 +79,29 @@ Future<void> _pump(
 }
 
 void main() {
+  testWidgets('the splash draws its own launch purple, not html/body', (
+    tester,
+  ) async {
+    final video = FakeSplashVideo();
+    final bootstrap = Completer<Widget>();
+    await _pump(tester, video, bootstrap.future);
+    final box = tester.widget<ColoredBox>(
+      find
+          .descendant(
+            of: find.byType(StartupSplash),
+            matching: find.byType(ColoredBox),
+          )
+          .first,
+    );
+    expect(box.color, DabblerPalette.mainP600);
+    expect(box.color, const Color(0xFF7328CE));
+    // Finish the splash so no timer outlives the test.
+    video.end();
+    bootstrap.complete(_app);
+    await tester.pump();
+    await tester.pump();
+  });
+
   testWidgets('video ended -> shows the app once bootstrap is done', (
     tester,
   ) async {
