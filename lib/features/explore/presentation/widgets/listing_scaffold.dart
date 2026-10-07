@@ -40,29 +40,59 @@ class ListingScaffold extends ConsumerStatefulWidget {
 
 class _ListingScaffoldState extends ConsumerState<ListingScaffold> {
   Color? _band;
+  Color? _published;
+
+  /// A shell keeps every branch mounted (indexed stack); only the visible one
+  /// — the one whose tickers run — may claim the status bar and the shell's
+  /// top fill. Written after the frame, and only ever cleared by its owner.
+  void _sync(bool visible) {
+    final Color? want = visible ? _band : null;
+    if (_published == want) return;
+    final Color? previous = _published;
+    _published = want;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      try {
+        final StateController<Color?> c = ref.read(
+          listingHeadTintProvider.notifier,
+        );
+        if (want != null) {
+          c.state = want;
+        } else if (c.state == previous) {
+          c.state = null;
+        }
+      } on StateError {
+        // The scope is already gone (the app or a test is being torn down).
+      }
+    });
+  }
 
   void _onBand(Color? band) {
-    if (!mounted && band != null) return;
-    if (mounted && _band != band) setState(() => _band = band);
-    try {
-      ref.read(listingHeadTintProvider.notifier).state = band;
-    } on StateError {
-      // The scope is already gone (the app or a test is being torn down).
-    }
+    if (!mounted || _band == band) return;
+    setState(() => _band = band);
   }
 
   @override
-  Widget build(BuildContext context) => SystemChromeSurface(
-    top: _band,
-    child: DabblerListingPage(
-      head: widget.head,
-      onBandColor: _onBand,
-      header: widget.header,
-      tabs: widget.tabs,
-      pages: widget.pages,
-      filters: widget.filters,
-      clearAllLabel: widget.clearAllLabel,
-      onClearAll: widget.onClearAll,
-    ),
-  );
+  void deactivate() {
+    _sync(false);
+    super.deactivate();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final bool visible = TickerMode.of(context);
+    _sync(visible);
+    return SystemChromeSurface(
+      top: visible ? _band : null,
+      child: DabblerListingPage(
+        head: widget.head,
+        onBandColor: _onBand,
+        header: widget.header,
+        tabs: widget.tabs,
+        pages: widget.pages,
+        filters: widget.filters,
+        clearAllLabel: widget.clearAllLabel,
+        onClearAll: widget.onClearAll,
+      ),
+    );
+  }
 }
