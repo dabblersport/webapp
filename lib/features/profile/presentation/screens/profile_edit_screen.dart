@@ -1,3 +1,5 @@
+import 'package:dabbler/utils/enums/game_enums.dart'
+    show skillBandIndexForValue;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -297,10 +299,12 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   }
 
   SkillLevel _intToSkillLevel(int level) {
-    if (level <= 3) return SkillLevel.beginner;
-    if (level <= 5) return SkillLevel.intermediate;
-    if (level <= 8) return SkillLevel.advanced;
-    return SkillLevel.expert;
+    // The app's one three-level scale: 1-3, 4-6, 7-10.
+    return <SkillLevel>[
+      SkillLevel.beginner,
+      SkillLevel.intermediate,
+      SkillLevel.advanced,
+    ][skillBandIndexForValue(level)];
   }
 
   int _skillLevelToInt(SkillLevel level) {
@@ -310,9 +314,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       case SkillLevel.intermediate:
         return 5;
       case SkillLevel.advanced:
-        return 7;
       case SkillLevel.expert:
-        return 9;
+        return 7;
     }
   }
 

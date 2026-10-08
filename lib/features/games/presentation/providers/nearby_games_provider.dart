@@ -39,7 +39,10 @@ T _defaultOnLocation<T>(StateProviderRef<T> ref, T ifReady, T otherwise) {
       ref.read(activeLocationProvider).valueOrNull is ActiveLocationReady;
   var settled = readyNow;
   final T initial = readyNow ? ifReady : otherwise;
-  ref.listen<AsyncValue<ActiveLocationState>>(activeLocationProvider, (_, next) {
+  ref.listen<AsyncValue<ActiveLocationState>>(activeLocationProvider, (
+    _,
+    next,
+  ) {
     if (settled || next.valueOrNull is! ActiveLocationReady) return;
     settled = true;
     // Only when the viewer has not changed it meanwhile.
@@ -116,9 +119,10 @@ final gamesDateFilterProvider = StateProvider<GamesDateFilter>(
   (ref) => GamesDateFilter.any,
 );
 
-/// Skill-level filter — same tiers/ranges as the game composer's skill
-/// picker (min_skill/max_skill 1-10 on the game).
-enum GamesSkillFilter { any, beginner, intermediate, advanced, pro }
+/// Skill-level filter — the app's one three-level scale (Beginner 1-3,
+/// Intermediate 4-6, Advanced 7-10), the same as the game and meetup
+/// composers' skill pickers (min_skill/max_skill on the game).
+enum GamesSkillFilter { any, beginner, intermediate, advanced }
 
 extension GamesSkillFilterX on GamesSkillFilter {
   String get label => switch (this) {
@@ -126,15 +130,13 @@ extension GamesSkillFilterX on GamesSkillFilter {
     GamesSkillFilter.beginner => 'Beginner',
     GamesSkillFilter.intermediate => 'Intermediate',
     GamesSkillFilter.advanced => 'Advanced',
-    GamesSkillFilter.pro => 'Pro',
   };
 
   (int, int)? get range => switch (this) {
     GamesSkillFilter.any => null,
     GamesSkillFilter.beginner => (1, 3),
     GamesSkillFilter.intermediate => (4, 6),
-    GamesSkillFilter.advanced => (7, 8),
-    GamesSkillFilter.pro => (9, 10),
+    GamesSkillFilter.advanced => (7, 10),
   };
 
   /// A game matches when its skill window overlaps this tier. Games without
@@ -168,7 +170,6 @@ String gamesSkillTierLabel(AppLocalizations l, GamesSkillFilter f) =>
       GamesSkillFilter.beginner => l.listing_skill_beginner,
       GamesSkillFilter.intermediate => l.listing_skill_intermediate,
       GamesSkillFilter.advanced => l.listing_skill_advanced,
-      GamesSkillFilter.pro => l.listing_skill_pro,
     };
 
 /// Selected skill tier for the games list.

@@ -3477,9 +3477,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_skill_advanced => 'Advanced';
 
   @override
-  String get listing_skill_pro => 'Pro';
-
-  @override
   String get listing_load_sports_failed => 'Failed to load sports';
 
   @override

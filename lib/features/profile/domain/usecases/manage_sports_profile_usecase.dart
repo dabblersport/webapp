@@ -655,7 +655,8 @@ class ManageSportsProfileUseCase {
       case 'advanced':
         return SkillLevel.advanced;
       case 'expert':
-        return SkillLevel.expert;
+        // There is no fourth level: an old "expert" is Advanced.
+        return SkillLevel.advanced;
       default:
         return SkillLevel.beginner;
     }

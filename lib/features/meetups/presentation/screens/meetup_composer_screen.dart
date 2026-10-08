@@ -260,24 +260,16 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
               Navigator.pop(ctx);
             },
           ),
-        for (final t in const <(String, int, int)>[
-          ('Beginner', 1, 3),
-          ('Intermediate', 4, 6),
-          ('Advanced', 7, 8),
-          ('Pro', 9, 10),
-        ])
-          ComposerPickerRow(
-            title: t.$1,
-            trailingText: '${t.$2}–${t.$3}',
-            selected: _minSkill == t.$2,
-            onTap: () {
-              setState(() {
-                _minSkill = t.$2;
-                _maxSkill = t.$3;
-              });
-              Navigator.pop(ctx);
-            },
-          ),
+        MeetupSkillRows(
+          minSkill: _minSkill,
+          onPick: (min, max) {
+            setState(() {
+              _minSkill = min;
+              _maxSkill = max;
+            });
+            Navigator.pop(ctx);
+          },
+        ),
       ],
     ),
   );
@@ -569,5 +561,42 @@ class _SectionLabel extends StatelessWidget {
       style: DabblerType.caption2,
       tone: DabblerTextTone.tertiary,
     ),
+  );
+}
+
+/// The skill rows of the meetup composer: Beginner 1–3, Intermediate 4–6,
+/// Advanced 7–10 (the app's one scale). A stored value anywhere in a band
+/// selects it, so an old (9, 10) meetup shows Advanced.
+class MeetupSkillRows extends StatelessWidget {
+  const MeetupSkillRows({
+    super.key,
+    required this.minSkill,
+    required this.onPick,
+  });
+
+  final int? minSkill;
+  final void Function(int min, int max) onPick;
+
+  static const List<(String, int, int)> bands = <(String, int, int)>[
+    ('Beginner', 1, 3),
+    ('Intermediate', 4, 6),
+    ('Advanced', 7, 10),
+  ];
+
+  @override
+  Widget build(BuildContext context) => Column(
+    mainAxisSize: MainAxisSize.min,
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: <Widget>[
+      for (final t in bands)
+        ComposerPickerRow(
+          title: t.$1,
+          // LTR isolate: "1–3" keeps its order inside Arabic text.
+          trailingText: '\u2066${t.$2}–${t.$3}\u2069',
+          // Any stored value in the band selects it (old (9, 10) rows too).
+          selected: minSkill != null && minSkill! >= t.$2 && minSkill! <= t.$3,
+          onTap: () => onPick(t.$2, t.$3),
+        ),
+    ],
   );
 }

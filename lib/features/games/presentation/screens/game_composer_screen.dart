@@ -278,8 +278,9 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
   String? _skillLabelFor(int? min, int? max) => switch ((min, max)) {
     (1, 3) => 'Beginner',
     (4, 6) => 'Intermediate',
-    (7, 8) => 'Advanced',
-    (9, 10) => 'Pro',
+    // (7, 10) is what the picker writes; (7, 8) and (9, 10) are the old
+    // Advanced and Pro rows, which open as Advanced.
+    (7, 10) || (7, 8) || (9, 10) => 'Advanced',
     _ => null,
   };
 
@@ -389,8 +390,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     final (min, max) = switch (level) {
       'Beginner' => (1, 3),
       'Intermediate' => (4, 6),
-      'Advanced' => (7, 8),
-      'Pro' => (9, 10),
+      'Advanced' => (7, 10),
       _ => (1, 10),
     };
     state = state.copyWith(skillLevel: level, minSkill: min, maxSkill: max);
@@ -1083,7 +1083,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     await showComposerSheet<void>(
       context,
       title: AppLocalizations.of(context).game_skill_level,
-      builder: (_) => _SkillPickerSheet(
+      builder: (_) => GameSkillPickerSheet(
         onSelect: ref.read(_gameComposerProvider.notifier).selectSkillLevel,
         onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
         canClear: ref.read(_gameComposerProvider).skillLevel != null,
@@ -1350,8 +1350,9 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
   }
 }
 
-class _SkillPickerSheet extends StatelessWidget {
-  const _SkillPickerSheet({
+/// The skill sheet: Beginner 1–3, Intermediate 4–6, Advanced 7–10.
+class GameSkillPickerSheet extends StatelessWidget {
+  const GameSkillPickerSheet({
     required this.onSelect,
     required this.onClear,
     required this.canClear,
@@ -1364,8 +1365,7 @@ class _SkillPickerSheet extends StatelessWidget {
   static const _levels = [
     ('Beginner', '1–3', 'Just getting started'),
     ('Intermediate', '4–6', 'Plays regularly'),
-    ('Advanced', '7–8', 'Competitive level'),
-    ('Pro', '9–10', 'Elite / professional'),
+    ('Advanced', '7–10', 'Competitive level'),
   ];
 
   @override
@@ -1385,7 +1385,8 @@ class _SkillPickerSheet extends StatelessWidget {
           ComposerPickerRow(
             title: l.$1,
             subtitle: l.$3,
-            trailingText: l.$2,
+            // LTR isolate: "1–3" keeps its order inside Arabic text.
+            trailingText: '\u2066${l.$2}\u2069',
             onTap: () {
               onSelect(l.$1);
               Navigator.pop(context);

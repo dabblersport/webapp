@@ -1276,7 +1276,6 @@
   "listing_skill_beginner": "Beginner",
   "listing_skill_intermediate": "Intermediate",
   "listing_skill_advanced": "Advanced",
-  "listing_skill_pro": "Pro",
   "listing_load_sports_failed": "Failed to load sports",
   "listing_load_games_failed": "Couldn't load games",
   "listing_load_venues_failed": "Couldn't load venues",

@@ -6269,12 +6269,6 @@ abstract class AppLocalizations {
   /// **'Advanced'**
   String get listing_skill_advanced;
 
-  /// No description provided for @listing_skill_pro.
-  ///
-  /// In en, this message translates to:
-  /// **'Pro'**
-  String get listing_skill_pro;
-
   /// No description provided for @listing_load_sports_failed.
   ///
   /// In en, this message translates to:

@@ -1,3 +1,5 @@
+import 'package:dabbler/utils/enums/game_enums.dart'
+    show kSkillBandWriteValues, skillBandIndexForValue;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -258,25 +260,15 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
   }
 
   SkillLevel _parseSkillLevelFromOrganiserLevel(int level) {
-    // Map organiser level (1-10) to skill level
-    if (level <= 3) return SkillLevel.beginner;
-    if (level <= 7) return SkillLevel.intermediate;
-    return SkillLevel.advanced;
+    // Map organiser level (1-10) to skill level, on the app's one scale.
+    return SkillLevel.values[skillBandIndexForValue(level)];
   }
 
   SkillLevel _parseSkillLevel(dynamic level) {
-    if (level is int) {
-      switch (level) {
-        case 1:
-          return SkillLevel.beginner;
-        case 2:
-          return SkillLevel.intermediate;
-        case 3:
-          return SkillLevel.advanced;
-        default:
-          return SkillLevel.beginner;
-      }
-    }
+    // Any stored 1-10 value reads into its band (Beginner 1-3, Intermediate
+    // 4-6, Advanced 7-10). This screen used to write 1 / 2 / 3; a stored 2 or
+    // 3 now reads as Beginner (see the skill-3levels note).
+    if (level is int) return SkillLevel.values[skillBandIndexForValue(level)];
     return SkillLevel.beginner;
   }
 
@@ -515,14 +507,8 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
   }
 
   int _skillLevelToInt(SkillLevel level) {
-    switch (level) {
-      case SkillLevel.beginner:
-        return 1;
-      case SkillLevel.intermediate:
-        return 2;
-      case SkillLevel.advanced:
-        return 3;
-    }
+    // New saves write the band's value (2 / 5 / 7); reads accept any 1-10.
+    return kSkillBandWriteValues[level.index];
   }
 
   int _skillLevelToOrganiserLevel(SkillLevel level) {

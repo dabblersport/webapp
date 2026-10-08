@@ -3472,9 +3472,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_skill_advanced => 'متقدم';
 
   @override
-  String get listing_skill_pro => 'محترف';
-
-  @override
   String get listing_load_sports_failed => 'تعذّر تحميل الرياضات';
 
   @override

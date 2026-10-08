@@ -504,7 +504,34 @@ extension TeamAssignmentExtension on TeamAssignment {
   }
 }
 
-/// Skill level for games and players
+/// The ONE skill scale of the app (CEO 2026-10-08): Beginner / Intermediate /
+/// Advanced, on the 1-10 skill columns. Index 0 Beginner, 1 Intermediate,
+/// 2 Advanced.
+///
+/// * [kSkillBandRanges] — the (min, max) a game or meetup stores for a band.
+/// * [kSkillBandWriteValues] — the single value a player's sport profile stores
+///   for a band on a new save (inside the band, and equal to what the profile
+///   editor already wrote for 2 / 5 / 7).
+/// * [skillBandIndexForValue] — the READ side: any stored 1-10 value (old or
+///   new) belongs to exactly one band.
+const List<(int, int)> kSkillBandRanges = <(int, int)>[(1, 3), (4, 6), (7, 10)];
+
+/// See [kSkillBandRanges].
+const List<int> kSkillBandWriteValues = <int>[2, 5, 7];
+
+/// The band index (0 Beginner, 1 Intermediate, 2 Advanced) of a stored skill
+/// [value]; values below 1 are Beginner and above 10 Advanced.
+int skillBandIndexForValue(int value) {
+  for (var i = 0; i < kSkillBandRanges.length; i++) {
+    if (value <= kSkillBandRanges[i].$2) return i;
+  }
+  return kSkillBandRanges.length - 1;
+}
+
+/// Skill level for games and players. There are three levels; [expert] and
+/// [mixed] are kept only so stored data and old code paths still parse, and
+/// both present as Advanced / Intermediate-or-above rather than as levels of
+/// their own.
 enum SkillLevel {
   /// Beginner level
   beginner,
@@ -533,7 +560,7 @@ extension SkillLevelExtension on SkillLevel {
       case SkillLevel.advanced:
         return 'Advanced';
       case SkillLevel.expert:
-        return 'Expert';
+        return 'Advanced';
       case SkillLevel.mixed:
         return 'Mixed Levels';
     }
@@ -549,7 +576,7 @@ extension SkillLevelExtension on SkillLevel {
       case SkillLevel.advanced:
         return 'Strong player with good technique and strategy';
       case SkillLevel.expert:
-        return 'Professional or near-professional level';
+        return 'Strong player with good technique and strategy';
       case SkillLevel.mixed:
         return 'All skill levels welcome';
     }
@@ -565,7 +592,7 @@ extension SkillLevelExtension on SkillLevel {
       case SkillLevel.advanced:
         return 3;
       case SkillLevel.expert:
-        return 4;
+        return 3;
       case SkillLevel.mixed:
         return 0; // Special case for mixed
     }
