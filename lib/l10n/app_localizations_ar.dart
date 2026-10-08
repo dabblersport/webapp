@@ -3385,6 +3385,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_this_weekend => 'نهاية الأسبوع';
 
   @override
+  String get listing_no_charge => 'بدون رسوم';
+
+  @override
+  String get listing_share_game => 'مشاركة المباراة';
+
+  @override
+  String get listing_favourite_add => 'أضف إلى المفضلة';
+
+  @override
+  String get listing_favourite_remove => 'أزل من المفضلة';
+
+  @override
+  String get listing_verified_host => 'منظّم موثّق';
+
+  @override
+  String listing_duration_min(int minutes) {
+    return '$minutes دقيقة';
+  }
+
+  @override
   String get listing_skill_all_levels => 'كل المستويات';
 
   @override

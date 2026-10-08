@@ -6143,6 +6143,42 @@ abstract class AppLocalizations {
   /// **'This weekend'**
   String get listing_this_weekend;
 
+  /// No description provided for @listing_no_charge.
+  ///
+  /// In en, this message translates to:
+  /// **'no charge'**
+  String get listing_no_charge;
+
+  /// No description provided for @listing_share_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Share game'**
+  String get listing_share_game;
+
+  /// No description provided for @listing_favourite_add.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to favourites'**
+  String get listing_favourite_add;
+
+  /// No description provided for @listing_favourite_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favourites'**
+  String get listing_favourite_remove;
+
+  /// No description provided for @listing_verified_host.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified host'**
+  String get listing_verified_host;
+
+  /// No description provided for @listing_duration_min.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} min'**
+  String listing_duration_min(int minutes);
+
   /// No description provided for @listing_skill_all_levels.
   ///
   /// In en, this message translates to:

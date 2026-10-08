@@ -26,6 +26,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
 import '../../support/geometry_dump.dart';
+import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import '../../support/render_mode.dart';
 
 /// Renders the Games and Venues listings (content, loading, empty, filter
@@ -35,6 +36,25 @@ const String _shotsDir = String.fromEnvironment(
   'PLACES_SHOTS_DIR',
   defaultValue: '$kShotsRoot/places',
 );
+
+/// Where the games-match C4 renders go (`games-{dir}-{light|dark}-{state}`).
+const String _c4Dir = String.fromEnvironment(
+  'GAMES_C4_DIR',
+  defaultValue: '$kShotsRoot/games-match1',
+);
+
+Future<void> _shootC4(WidgetTester tester, Key key, String name) async {
+  await tester.runAsync(() async {
+    final RenderRepaintBoundary boundary =
+        tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
+    final ui.Image image = await boundary.toImage(pixelRatio: 2);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
+    Directory(_c4Dir).createSync(recursive: true);
+    File('$_c4Dir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+  });
+}
 
 class _Location extends ActiveLocationNotifier {
   @override
@@ -147,6 +167,41 @@ List<NearbyGameModel> _games() {
       minSkill: 4,
       maxSkill: 5,
       isPublic: true,
+      endAt: now.add(const Duration(days: 1, minutes: 90)),
+      variantNameEn: 'Half court',
+      variantNameAr: 'نصف ملعب',
+      hostVerified: true,
+      favoriteCount: 12,
+      favouritedByMe: true,
+    ),
+    NearbyGameModel(
+      id: 'g4',
+      title: 'Sunset futsal',
+      sportName: 'Football',
+      scheduledAt: now.add(const Duration(minutes: 40)),
+      status: 'upcoming',
+      venueName: 'Kite Beach',
+      distanceMeters: 2400,
+      playerCount: 6,
+      spotsRemaining: 4,
+      isPublic: true,
+      endAt: now.add(const Duration(minutes: 100)),
+      variantNameEn: 'Futsal 5s',
+      variantNameAr: 'خماسي صالات',
+      favoriteCount: 2,
+    ),
+    NearbyGameModel(
+      id: 'g5',
+      title: 'Weekend kickabout',
+      sportName: 'Football',
+      scheduledAt: now.add(const Duration(days: 2)),
+      status: 'upcoming',
+      venueName: 'Al Barsha Pond Park',
+      distanceMeters: 4100,
+      playerCount: 5,
+      spotsRemaining: 7,
+      isPublic: true,
+      endAt: now.add(const Duration(days: 2, minutes: 60)),
     ),
     NearbyGameModel(
       id: 'g3',
@@ -161,6 +216,10 @@ List<NearbyGameModel> _games() {
       minSkill: 2,
       maxSkill: 3,
       isPublic: true,
+      endAt: now.add(const Duration(days: 3, minutes: 60)),
+      variantNameEn: 'Doubles',
+      variantNameAr: 'زوجي',
+      favoriteCount: 3,
     ),
   ];
 }
@@ -317,10 +376,56 @@ void main() {
       expect(find.text(l.listing_spots_almost_full(1)), findsOneWidget);
       // The full game shows the note and a disabled "Full" button; the open
       // one the design's "Join game" button (`Listings.dc.html:258`).
-      expect(find.text(l.listing_full), findsNWidgets(2));
-      expect(find.text(l.listing_join_game), findsOneWidget);
+      expect(find.text(l.listing_join_game), findsWidgets);
+      // Phase B card fields (GAP #1, #2, #4, #6, #8, #10).
+      expect(find.text(l.listing_free), findsWidgets);
+      expect(find.text(l.listing_no_charge), findsWidgets);
+      expect(
+        find.text(dir == 'rtl' ? 'نصف ملعب' : 'Half court'),
+        findsOneWidget,
+      );
+      expect(find.text(l.listing_starts_soon), findsOneWidget);
+      expect(find.text(l.listing_skill_all_levels), findsWidgets);
+      expect(find.bySemanticsLabel(RegExp(l.listing_favourite_remove)), findsWidgets);
+      expect(find.bySemanticsLabel(l.listing_share_game), findsWidgets);
       await _shoot(tester, key, 'games-listing-$dir');
+      // The full game sits further down: its note and disabled button.
+      await tester.dragUntilVisible(
+        find.text('Padel doubles'),
+        find.byType(ListView).first,
+        const Offset(0, -200),
+      );
+      await tester.pump(const Duration(milliseconds: 300));
+      expect(find.text(l.listing_full), findsNWidgets(2));
     }, variant: desktop);
+
+    final String theme =
+        const String.fromEnvironment('RENDER_DARK') == '1' ? 'dark' : 'light';
+    for (final String state in const ['default', 'filters', 'empty']) {
+      testWidgets('games C4 $state - $dir $theme', (tester) async {
+        await _pump(
+          tester,
+          const GamesScreen(),
+          locale,
+          mode: state == 'empty' ? _Mode.empty : _Mode.content,
+          extra: [
+            if (state == 'filters') ...[
+              gamesDateFilterProvider.overrideWith(
+                (ref) => GamesDateFilter.thisWeek,
+              ),
+              gamesSkillFilterProvider.overrideWith(
+                (ref) => GamesSkillFilter.intermediate,
+              ),
+              nearbyGameSortProvider.overrideWith(
+                (ref) => NearbySortOrder.nearest,
+              ),
+            ],
+          ],
+        );
+        expect(tester.takeException(), isNull);
+        await _shootC4(tester, key, 'games-$dir-$theme-$state');
+      }, variant: desktop);
+    }
 
     testWidgets('games listing: filter sheet - $dir', (tester) async {
       await _pump(

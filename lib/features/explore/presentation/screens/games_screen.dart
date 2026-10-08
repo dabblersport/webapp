@@ -1,13 +1,11 @@
 import 'dart:async';
 
-import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
-import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
-import 'package:dabbler/features/games/presentation/controllers/join_game_feedback.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/utils/games_listing_copy.dart';
+import 'package:dabbler/features/games/presentation/widgets/games_listing_card.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
@@ -417,6 +415,11 @@ class _GameTabBody extends ConsumerWidget {
             .where((g) => !pinnedIds.contains(g.id))
             .where((g) => _passes(ref, g, now))
             .toList();
+        // Default order is starting soonest (CEO 2026-10-08), whichever path
+        // served the rows; "Nearest" keeps the server's distance order.
+        if (ref.watch(nearbyGameSortProvider) != NearbySortOrder.nearest) {
+          others.sort(_bySoonest);
+        }
 
         if (pinned.isEmpty && others.isEmpty) {
           // `Listings.2026-10-08.dc.html:211-212` whenever anything narrows
@@ -473,9 +476,8 @@ class _GameTabBody extends ConsumerWidget {
                 if (i > 0) const DabblerGap.v(ListingLayout.cardGap),
                 Padding(
                   padding: gutter,
-                  child: _GameCard(
+                  child: GamesListingCard(
                     game: others[i],
-                    showDistance: isFiltered,
                     sportLabel: _sportLabel(context, others[i].sportName),
                   ),
                 ),
@@ -585,185 +587,11 @@ class _UpcomingRail extends StatelessWidget {
   }
 }
 
-// =============================================================================
-// GAME CARD
-// =============================================================================
-
-/// A game on the design system's game card (`Listings.dc.html:207-262`).
-/// The listing's price, verified-host mark, duration, likes and shares have no
-/// data or feature behind them in the app, so the card draws none. The action
-/// slot holds the design's "Join game" button ([_JoinAction]).
-class _GameCard extends StatelessWidget {
-  const _GameCard({
-    required this.game,
-    this.showDistance = false,
-    this.sportLabel,
-  });
-
-  final NearbyGameModel game;
-  final bool showDistance;
-
-  /// The sport tag's words, localised; falls back to the model's name.
-  final String? sportLabel;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toString();
-    final at = game.scheduledAt;
-    final skill = gamesSkillTierFor(game.minSkill, game.maxSkill);
-    final status = gamesCardStatus(
-      spotsRemaining: game.spotsRemaining ?? 0,
-      startsAt: at,
-      now: DateTime.now(),
-    );
-
-    return DabblerCardGame(
-      title: game.title,
-      // `Listings.dc.html:220`: sport in info, skill in its tone.
-      tags: [
-        if (game.sportName?.isNotEmpty == true)
-          DabblerListingTag(label: sportLabel ?? game.sportName!),
-        if (skill != null)
-          DabblerListingTag(
-            label: _skillLabel(l, skill),
-            tone: switch (skill) {
-              GamesSkillFilter.beginner => DabblerListingTagTone.success,
-              GamesSkillFilter.intermediate => DabblerListingTagTone.warning,
-              _ => DabblerListingTagTone.error,
-            },
-          )
-        else
-          // No skill range: open to every level, so every card keeps the
-          // design's skill tag (`Listings.2026-10-08.dc.html:2147`).
-          DabblerListingTag(
-            label: l.listing_skill_all_levels,
-            tone: DabblerListingTagTone.neutral,
-          ),
-        if (game.isMine)
-          DabblerListingTag(
-            label: game.isCreated ? l.listing_created : l.listing_joined,
-            tone: DabblerListingTagTone.success,
-          ),
-      ],
-      dayLabel: at == null ? null : _dayLabel(l, at, locale),
-      timeLabel: at == null ? null : DateFormat.jm(locale).format(at),
-      meta: [
-        if (game.venueName?.isNotEmpty == true) game.venueName!,
-        if (showDistance && game.distanceMeters > 0) game.distanceLabel,
-      ],
-      progress: game.spotsRemaining != null && game.playerCount != null
-          ? DabblerCardEventPlayers(
-              label: l.listing_players_in(
-                game.playerCount!,
-                game.playerCount! + game.spotsRemaining!,
-              ),
-              joined: game.playerCount!,
-              capacity: game.playerCount! + game.spotsRemaining!,
-              note: gamesStatusNote(l, status, game.spotsRemaining!),
-              tone: gamesStatusTone(status),
-            )
-          : null,
-      action: _JoinAction(game: game),
-      onTap: () => context.push(RoutePaths.gameDetail(game.id)),
-      semanticLabel: game.title,
-    );
-  }
-
-  static String _dayLabel(AppLocalizations l, DateTime dt, String locale) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final gameDay = DateTime(dt.year, dt.month, dt.day);
-    final diff = gameDay.difference(today).inDays;
-    if (diff == 0) return l.listing_today;
-    if (diff == 1) return l.listing_tomorrow;
-    return DateFormat.MMMd(locale).format(dt);
-  }
-}
-
-// =============================================================================
-// JOIN ACTION — the card's button, on the detail screen's own join flow
-// =============================================================================
-
-enum _JoinOutcome { none, waitlisted, requested }
-
-/// The card's "Join game" button (`Listings.dc.html:258`). It runs the game
-/// detail's own [GameViewController.joinGame] — the same RPC, outcomes, errors
-/// and toast copy — with no confirmation step. The states the frame does not
-/// draw follow the rules the detail uses: already on the game → a disabled
-/// "Joined"/"Created", no spots left → a disabled "Full", and after the server
-/// answers "waitlisted" / "request submitted" the button settles on the
-/// matching disabled label (the detail's "On waitlist" / pending request).
-class _JoinAction extends ConsumerStatefulWidget {
-  const _JoinAction({required this.game});
-
-  final NearbyGameModel game;
-
-  @override
-  ConsumerState<_JoinAction> createState() => _JoinActionState();
-}
-
-class _JoinActionState extends ConsumerState<_JoinAction> {
-  bool _joining = false;
-  _JoinOutcome _outcome = _JoinOutcome.none;
-
-  Future<void> _join() async {
-    if (_joining) return;
-    setState(() => _joining = true);
-    // The Action Area reports the join (feedback center); the button keeps
-    // its own local loading and outcome.
-    final r = await joinGameWithFeedback(
-      ProviderScope.containerOf(context, listen: false),
-      widget.game.id,
-      AppLocalizations.of(context),
-    );
-    if (!mounted) return;
-    setState(() {
-      _joining = false;
-      _outcome = switch (r) {
-        Ok(value: JoinActionResult.waitlisted) => _JoinOutcome.waitlisted,
-        Ok(value: JoinActionResult.requestSubmitted) => _JoinOutcome.requested,
-        _ => _JoinOutcome.none,
-      };
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final game = widget.game;
-    if (game.isMine) {
-      return DabblerCardEventListing.joinButton(
-        label: game.isCreated ? l.listing_created : l.listing_joined,
-        disabled: true,
-      );
-    }
-    switch (_outcome) {
-      case _JoinOutcome.waitlisted:
-        return DabblerCardEventListing.joinButton(
-          label: l.listing_on_waitlist,
-          disabled: true,
-        );
-      case _JoinOutcome.requested:
-        return DabblerCardEventListing.joinButton(
-          label: l.listing_request_sent,
-          disabled: true,
-        );
-      case _JoinOutcome.none:
-        break;
-    }
-    if (game.spotsRemaining == 0) {
-      return DabblerCardEventListing.joinButton(
-        label: l.listing_full,
-        disabled: true,
-      );
-    }
-    return DabblerCardEventListing.joinButton(
-      label: l.listing_join_game,
-      loading: _joining,
-      onPressed: _join,
-    );
-  }
+int _bySoonest(NearbyGameModel a, NearbyGameModel b) {
+  final x = a.scheduledAt, y = b.scheduledAt;
+  if (x == null) return y == null ? 0 : 1;
+  if (y == null) return -1;
+  return x.compareTo(y);
 }
 
 String _dateLabel(AppLocalizations l, GamesDateFilter f) => switch (f) {

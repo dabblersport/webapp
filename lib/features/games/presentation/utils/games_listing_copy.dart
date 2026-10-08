@@ -84,3 +84,9 @@ DabblerProgressBarTone gamesStatusTone(GamesCardStatus status) =>
       GamesCardStatus.almostFull => DabblerProgressBarTone.warning,
       GamesCardStatus.open => DabblerProgressBarTone.info,
     };
+
+/// The card's price block. No game has a price amount anywhere in the database
+/// yet (CEO 2026-10-08), so every game reads "Free · no charge"; this is the
+/// one place to change when a price source exists.
+({String label, String? note, bool free}) gamesPrice(AppLocalizations l) =>
+    (label: l.listing_free, note: l.listing_no_charge, free: true);

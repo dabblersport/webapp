@@ -348,7 +348,9 @@ void main() {
       await _shoot(tester, key, 'games-$mode-$fs-top');
       await _scroll(
         tester,
-        find.text(filters ? 'Evening game 4' : 'Half court pickup'),
+        filters
+            ? find.text('Evening game 4')
+            : find.byType(DabblerCardGame).first,
       );
       // Collapsed: the tabs fold away; with filters the title row goes too.
       expect(_opacityOf(tester, tabs), 0);

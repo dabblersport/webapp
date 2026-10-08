@@ -1,11 +1,14 @@
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/fp/result.dart';
+
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/games/data/datasources/nearby_games_datasource.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
+import 'package:dabbler/features/games/data/repositories/favorites_repository.dart';
 import 'package:dabbler/features/games/data/repositories/nearby_games_repository.dart';
 
 // =============================================================================
@@ -45,17 +48,11 @@ T _defaultOnLocation<T>(StateProviderRef<T> ref, T ifReady, T otherwise) {
   return initial;
 }
 
-/// The games list's sort, or null when none is applied (the list then runs in
-/// start-time order). Defaults to "Nearest" once a location is ready
-/// (`Listings.2026-10-08.dc.html:1989`). Without a location "Nearest" stays a
-/// chip only: the unlocated query is always ordered by start time.
-final nearbyGameSortProvider = StateProvider<NearbySortOrder?>(
-  (ref) => _defaultOnLocation<NearbySortOrder?>(
-    ref,
-    NearbySortOrder.nearest,
-    null,
-  ),
-);
+/// The games list's sort, or null for the default: "Starting soonest" (start
+/// time ascending, CEO 2026-10-08), which shows no rail chip. "Nearest" is an
+/// option, and a chip when chosen; without a location it stays a chip only,
+/// since the unlocated query is always in start-time order.
+final nearbyGameSortProvider = StateProvider<NearbySortOrder?>((ref) => null);
 
 /// Whether the "nearby" distance filter is active on the games list. On by
 /// default only when the viewer's location is ready.
@@ -229,3 +226,71 @@ final myPinnedGamesProvider = FutureProvider.autoDispose
       final result = await repo.getMyUpcomingGames(sportId: sportId);
       return result.fold((f) => throw Exception(f.message), (g) => g);
     });
+
+// =============================================================================
+// FAVOURITES (the card's heart; not likes)
+// =============================================================================
+
+final favoritesRepositoryProvider = Provider<FavoritesRepository>((ref) {
+  return SupabaseFavoritesRepository(ref.watch(supabaseServiceProvider));
+});
+
+/// Whether a viewer is signed in, for the heart: signed out, a tap is ignored.
+final favouriteSignedInProvider = Provider<bool>((ref) {
+  try {
+    return ref.watch(supabaseServiceProvider).client.auth.currentUser != null;
+  } catch (_) {
+    return false;
+  }
+});
+
+/// The viewer's favourite changes this session, by game id, laid over the
+/// fetched rows so a toggle shows at once on every list that holds the game.
+final gameFavouriteOverridesProvider =
+    StateProvider<Map<String, FavoriteState>>((ref) => const {});
+
+/// [game] with this session's favourite change applied.
+NearbyGameModel gameWithFavourite(
+  Map<String, FavoriteState> overrides,
+  NearbyGameModel game,
+) {
+  final o = overrides[game.id];
+  return o == null
+      ? game
+      : game.withFavourite(favourited: o.favourited, count: o.count);
+}
+
+/// Toggles the favourite on [game]: optimistic, then the server's answer, or
+/// back to where it was on error. Returns false when nothing was sent (signed
+/// out) or the call failed.
+Future<bool> toggleGameFavourite(
+  ProviderContainer container,
+  NearbyGameModel game,
+) async {
+  if (!container.read(favouriteSignedInProvider)) return false;
+  final overrides = container.read(gameFavouriteOverridesProvider.notifier);
+  final before = gameWithFavourite(overrides.state, game);
+  final FavoriteState previous = (
+    favourited: before.favouritedByMe,
+    count: before.favoriteCount,
+  );
+  final next = !previous.favourited;
+  overrides.state = {
+    ...overrides.state,
+    game.id: (
+      favourited: next,
+      count: next
+          ? previous.count + 1
+          : (previous.count > 0 ? previous.count - 1 : 0),
+    ),
+  };
+  final result = await container
+      .read(favoritesRepositoryProvider)
+      .toggle(FavoriteTarget.game, game.id);
+  if (result case Ok(:final value)) {
+    overrides.state = {...overrides.state, game.id: value};
+    return true;
+  }
+  overrides.state = {...overrides.state, game.id: previous};
+  return false;
+}

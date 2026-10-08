@@ -163,7 +163,12 @@ Future<void> _pump(
 }
 
 void main() {
-  setUpAll(initHomeTestSupabase);
+  setUpAll(() async {
+    await initHomeTestSupabase();
+    // The real faces: the test font's 1em-square glyphs widen the Arabic
+    // "Join game" past the action row once the heart and share sit beside it.
+    await loadRenderFonts();
+  });
 
   final desktop = TargetPlatformVariant.only(TargetPlatform.macOS);
 

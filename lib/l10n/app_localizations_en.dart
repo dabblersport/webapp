@@ -3393,6 +3393,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_this_weekend => 'This weekend';
 
   @override
+  String get listing_no_charge => 'no charge';
+
+  @override
+  String get listing_share_game => 'Share game';
+
+  @override
+  String get listing_favourite_add => 'Add to favourites';
+
+  @override
+  String get listing_favourite_remove => 'Remove from favourites';
+
+  @override
+  String get listing_verified_host => 'Verified host';
+
+  @override
+  String listing_duration_min(int minutes) {
+    return '$minutes min';
+  }
+
+  @override
   String get listing_skill_all_levels => 'All levels';
 
   @override
