@@ -392,7 +392,8 @@ class FavouriteRow extends StatelessWidget {
                       ),
                     ),
                     // A venue's rating ends the line (`4.8 ★`); the star is the
-                    // DS glyph, as the display faces cannot draw it as text.
+                    // DS icon (the faces cannot draw it as text) in its plain linear
+                    // weight: the bold glyph carries shooting-star dashes.
                     if (item.kind == FavouriteKind.venue &&
                         item.rating != null) ...<Widget>[
                       const DabblerText(
@@ -407,8 +408,7 @@ class FavouriteRow extends StatelessWidget {
                       ),
                       DabblerIcon(
                         'star',
-                        size: DabblerSizing.iconXs,
-                        weight: DabblerIconWeight.bold,
+                        size: DabblerMetaLine.iconSize,
                         color: DabblerColors.of(context).textTertiary,
                       ),
                     ],

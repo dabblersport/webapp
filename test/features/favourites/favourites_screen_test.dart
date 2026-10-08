@@ -272,10 +272,25 @@ void main() {
       expect(find.text(l.fav_title), findsOneWidget);
       expect(find.text('Elite Football Arena'), findsOneWidget);
       expect(find.textContaining('Dubai Silicon Oasis · '), findsOneWidget);
+      // Area, distance, rating, then a clean star: nothing stray between the
+      // rating and the star.
       expect(find.text('4.8'), findsOneWidget);
+      final stars = tester
+          .widgetList<DabblerIcon>(find.byType(DabblerIcon))
+          .where((w) => w.name == 'star')
+          .toList();
+      expect(stars, hasLength(2));
+      // Plain (linear) star: the bold glyph draws shooting-star dashes.
+      expect(stars.every((s) => s.weight == DabblerIconWeight.linear), isTrue);
+      final metas = tester
+          .widgetList<DabblerText>(find.byType(DabblerText))
+          .map((w) => w.data ?? '')
+          .where((d) => d.startsWith('Dubai Silicon Oasis'))
+          .toList();
+      expect(metas, hasLength(1));
       expect(
-        find.byWidgetPredicate((w) => w is DabblerIcon && w.name == 'star'),
-        findsNWidgets(2),
+        metas.single,
+        matches(RegExp(r'^Dubai Silicon Oasis · [\d.]+ km$')),
       );
       expect(_hearts, findsNWidgets(2));
       final heart = tester.widget<DabblerFeedAction>(_hearts.first);
