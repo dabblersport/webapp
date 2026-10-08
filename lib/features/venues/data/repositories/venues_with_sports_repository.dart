@@ -1,5 +1,6 @@
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
 import 'package:dabbler/features/venues/data/datasources/venues_with_sports_datasource.dart';
+import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
 
@@ -12,6 +13,9 @@ abstract class VenuesWithSportsRepository {
     bool? isActive,
     bool? isIndoor,
     int limit = 50,
+    double? maxPrice,
+    double? minRating,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
   });
 }
 
@@ -27,6 +31,9 @@ class VenuesWithSportsRepositoryImpl implements VenuesWithSportsRepository {
     bool? isActive,
     bool? isIndoor,
     int limit = 50,
+    double? maxPrice,
+    double? minRating,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
   }) async {
     return _dataSource.getVenuesBySport(
       sportId: sportId,
@@ -34,6 +41,9 @@ class VenuesWithSportsRepositoryImpl implements VenuesWithSportsRepository {
       isActive: isActive,
       isIndoor: isIndoor,
       limit: limit,
+      maxPrice: maxPrice,
+      minRating: minRating,
+      sortOrder: sortOrder,
     );
   }
 }

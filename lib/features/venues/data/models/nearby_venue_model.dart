@@ -15,6 +15,14 @@ class NearbyVenueModel {
     this.longitude,
     required this.distanceMeters,
     this.sportNames = const [],
+    this.coverUrl,
+    this.rating,
+    this.ratingCount = 0,
+    this.isVerified = false,
+    this.isOpenNow = false,
+    this.amenities = const [],
+    this.sports = const [],
+    this.sportsAr = const [],
   });
 
   final String id;
@@ -33,6 +41,21 @@ class NearbyVenueModel {
   /// All sport names supported by this venue.
   final List<String> sportNames;
 
+  final String? coverUrl;
+
+  /// Aggregate rating (null: not rated yet) and its review count.
+  final double? rating;
+  final int ratingCount;
+  final bool isVerified;
+  final bool isOpenNow;
+
+  /// Amenity catalog keys.
+  final List<String> amenities;
+
+  /// Every sport the venue offers (English / Arabic names).
+  final List<String> sports;
+  final List<String> sportsAr;
+
   factory NearbyVenueModel.fromJson(Map<String, dynamic> json) {
     return NearbyVenueModel(
       id: json['id'] as String,
@@ -46,6 +69,14 @@ class NearbyVenueModel {
       longitude: (json['longitude'] as num?)?.toDouble(),
       distanceMeters: (json['distance_meters'] as num?)?.toDouble() ?? 0.0,
       sportNames: _parseStrings(json['sport_names']),
+      coverUrl: json['cover_url'] as String?,
+      rating: (json['rating'] as num?)?.toDouble(),
+      ratingCount: (json['rating_count'] as num?)?.toInt() ?? 0,
+      isVerified: json['is_verified'] as bool? ?? false,
+      isOpenNow: json['is_open_now'] as bool? ?? false,
+      amenities: _parseStrings(json['amenities']),
+      sports: _parseStrings(json['sports']),
+      sportsAr: _parseStrings(json['sports_ar']),
     );
   }
 
@@ -56,13 +87,13 @@ class NearbyVenueModel {
   }
 
   /// Formatted distance label: "850 m" or "1.2 km".
-  String get distanceLabel {
-    if (distanceMeters < 1000) {
-      return '${distanceMeters.round()} m';
-    }
-    final km = distanceMeters / 1000;
-    // One decimal if < 10 km, zero decimals otherwise.
-    final formatted = km < 10 ? km.toStringAsFixed(1) : km.round().toString();
-    return '$formatted km';
-  }
+  String get distanceLabel => formatDistanceMeters(distanceMeters);
+}
+
+/// Formatted distance: "850 m" or "1.2 km" (one decimal under 10 km).
+String formatDistanceMeters(double meters) {
+  if (meters < 1000) return '${meters.round()} m';
+  final km = meters / 1000;
+  final formatted = km < 10 ? km.toStringAsFixed(1) : km.round().toString();
+  return '$formatted km';
 }

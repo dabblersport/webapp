@@ -1,6 +1,6 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
-import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/features/venues/data/datasources/nearby_venues_datasource.dart';
 import 'package:dabbler/features/venues/data/models/nearby_venue_model.dart';
 
@@ -10,7 +10,10 @@ abstract class NearbyVenuesRepository {
     required double lng,
     required int radiusMeters,
     String? sportId,
-    NearbySortOrder sortOrder = NearbySortOrder.nearest,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
+    bool? indoor,
+    double? maxPrice,
+    double? minRating,
   });
 }
 
@@ -25,12 +28,18 @@ class NearbyVenuesRepositoryImpl implements NearbyVenuesRepository {
     required double lng,
     required int radiusMeters,
     String? sportId,
-    NearbySortOrder sortOrder = NearbySortOrder.nearest,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
+    bool? indoor,
+    double? maxPrice,
+    double? minRating,
   }) => _datasource.getNearbyVenues(
     lat: lat,
     lng: lng,
     radiusMeters: radiusMeters,
     sportId: sportId,
     sortOrder: sortOrder,
+    indoor: indoor,
+    maxPrice: maxPrice,
+    minRating: minRating,
   );
 }

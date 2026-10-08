@@ -10390,6 +10390,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Already checked in today!'**
   String get checkin_already;
+
+  /// No description provided for @listing_badge_top_rated.
+  ///
+  /// In en, this message translates to:
+  /// **'Top rated'**
+  String get listing_badge_top_rated;
+
+  /// No description provided for @listing_badge_verified.
+  ///
+  /// In en, this message translates to:
+  /// **'Verified'**
+  String get listing_badge_verified;
+
+  /// No description provided for @listing_badge_open_now.
+  ///
+  /// In en, this message translates to:
+  /// **'Open now'**
+  String get listing_badge_open_now;
+
+  /// No description provided for @listing_group_setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Indoor / outdoor'**
+  String get listing_group_setting;
+
+  /// No description provided for @listing_group_price_hour.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per hour'**
+  String get listing_group_price_hour;
+
+  /// No description provided for @listing_group_rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get listing_group_rating;
+
+  /// No description provided for @listing_price_up_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to AED {amount}'**
+  String listing_price_up_to(String amount);
+
+  /// No description provided for @listing_any_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Any price'**
+  String get listing_any_price;
+
+  /// No description provided for @listing_rating_and_up.
+  ///
+  /// In en, this message translates to:
+  /// **'{rating} and up'**
+  String listing_rating_and_up(String rating);
+
+  /// No description provided for @listing_venue_sort_distance.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance'**
+  String get listing_venue_sort_distance;
+
+  /// No description provided for @listing_venue_sort_rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get listing_venue_sort_rating;
+
+  /// No description provided for @listing_venue_sort_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Lowest price'**
+  String get listing_venue_sort_price;
+
+  /// No description provided for @listing_expand_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Expand search area'**
+  String get listing_expand_search;
+
+  /// No description provided for @listing_venues_none_filters_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try loosening a filter or widening the search area.'**
+  String get listing_venues_none_filters_text;
+
+  /// No description provided for @listing_reviews_count.
+  ///
+  /// In en, this message translates to:
+  /// **'({count})'**
+  String listing_reviews_count(String count);
 }
 
 class _AppLocalizationsDelegate

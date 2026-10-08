@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/venues/data/datasources/nearby_venues_datasource.dart';
 import 'package:dabbler/features/venues/data/models/nearby_venue_model.dart';
@@ -20,9 +20,15 @@ final nearbyVenuesRepositoryProvider = Provider<NearbyVenuesRepository>((ref) {
 
 /// Per-screen sort state for nearby venues.
 /// Screens read/write this to change the sort order without a full rebuild.
-final nearbyVenueSortProvider = StateProvider<NearbySortOrder>(
-  (ref) => NearbySortOrder.nearest,
+final nearbyVenueSortProvider = StateProvider<VenueSortOrder>(
+  (ref) => VenueSortOrder.distance,
 );
+
+/// Venues-list filters of the filter sheet: indoor / outdoor (null: both),
+/// the most per hour in AED (null: any price) and the least rating (null: any).
+final venueIndoorFilterProvider = StateProvider<bool?>((ref) => null);
+final venueMaxPriceFilterProvider = StateProvider<double?>((ref) => null);
+final venueMinRatingFilterProvider = StateProvider<double?>((ref) => null);
 
 /// Whether the "nearby" distance filter is active on the venues list.
 final nearbyVenuesFilterEnabledProvider = StateProvider<bool>((ref) => false);
@@ -39,7 +45,10 @@ typedef NearbyVenuesParams = ({
   double lng,
   int radiusMeters,
   String? sportId,
-  NearbySortOrder sortOrder,
+  VenueSortOrder sortOrder,
+  bool? indoor,
+  double? maxPrice,
+  double? minRating,
 });
 
 // =============================================================================
@@ -75,6 +84,9 @@ final nearbyVenuesProvider = FutureProvider.autoDispose
             radiusMeters: params.radiusMeters,
             sportId: params.sportId,
             sortOrder: params.sortOrder,
+            indoor: params.indoor,
+            maxPrice: params.maxPrice,
+            minRating: params.minRating,
           );
 
       return result.fold(

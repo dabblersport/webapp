@@ -2125,5 +2125,20 @@
   "feedback_join_failed": "تعذّر الانضمام إلى المباراة.",
   "checkin_done_day": "تم تسجيل حضورك! اليوم {day} من {total}",
   "checkin_badge_earned": "تهانينا! حصلت على شارة الطائر المبكر!",
-  "checkin_already": "سجّلت حضورك اليوم بالفعل!"
+  "checkin_already": "سجّلت حضورك اليوم بالفعل!",
+  "listing_badge_top_rated": "الأعلى تقييمًا",
+  "listing_badge_verified": "موثّق",
+  "listing_badge_open_now": "مفتوح الآن",
+  "listing_group_setting": "داخلي / خارجي",
+  "listing_group_price_hour": "السعر في الساعة",
+  "listing_group_rating": "التقييم",
+  "listing_price_up_to": "حتى {amount} د.إ",
+  "listing_any_price": "أي سعر",
+  "listing_rating_and_up": "{rating} فأكثر",
+  "listing_venue_sort_distance": "المسافة",
+  "listing_venue_sort_rating": "التقييم",
+  "listing_venue_sort_price": "الأقل سعرًا",
+  "listing_expand_search": "وسّع نطاق البحث",
+  "listing_venues_none_filters_text": "جرّب تخفيف أحد الفلاتر أو توسيع نطاق البحث.",
+  "listing_reviews_count": "({count} تقييم)"
 }

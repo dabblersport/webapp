@@ -64,7 +64,12 @@ void main() {
     // KAN-429 appends 20260915130000_meetups_card_fields.sql, KAN-431 appends
     // 20260915150000_meetups_notifications.sql after it, KAN-436 appends
     // 20260915150100_kan436_push_payload_meetup_id.sql.
-    expect(names.last, '20260915150100_kan436_push_payload_meetup_id.sql');
+    expect(names, contains('20260915150100_kan436_push_payload_meetup_id.sql'));
+    // Later migrations (e.g. 20261008100000_venues_listing_match.sql) sort after.
+    expect(
+      names.last.compareTo('20260915150100_kan436_push_payload_meetup_id.sql'),
+      greaterThanOrEqualTo(0),
+    );
     expect(names, contains('20260915120000_meetups_hardening.sql'));
   });
 

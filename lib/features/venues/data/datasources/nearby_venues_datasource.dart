@@ -1,6 +1,6 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
-import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/venues/data/models/nearby_venue_model.dart';
 
@@ -10,7 +10,10 @@ abstract class NearbyVenuesDatasource {
     required double lng,
     required int radiusMeters,
     String? sportId,
-    NearbySortOrder sortOrder = NearbySortOrder.nearest,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
+    bool? indoor,
+    double? maxPrice,
+    double? minRating,
   });
 }
 
@@ -25,7 +28,10 @@ class SupabaseNearbyVenuesDatasource implements NearbyVenuesDatasource {
     required double lng,
     required int radiusMeters,
     String? sportId,
-    NearbySortOrder sortOrder = NearbySortOrder.nearest,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
+    bool? indoor,
+    double? maxPrice,
+    double? minRating,
   }) => Result.guard(() async {
     final response = await _svc.client.rpc(
       'rpc_get_nearby_venues',
@@ -34,7 +40,10 @@ class SupabaseNearbyVenuesDatasource implements NearbyVenuesDatasource {
         'p_lng': lng,
         'p_radius_meters': radiusMeters,
         if (sportId != null) 'p_sport_id': sportId,
-        'p_sort': sortOrder == NearbySortOrder.nearest ? 'distance' : 'default',
+        'p_sort': sortOrder.rpcValue,
+        if (indoor != null) 'p_indoor': indoor,
+        if (maxPrice != null) 'p_max_price': maxPrice,
+        if (minRating != null) 'p_min_rating': minRating,
       },
     );
 

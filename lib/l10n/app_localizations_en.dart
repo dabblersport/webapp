@@ -5724,4 +5724,56 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get checkin_already => 'Already checked in today!';
+
+  @override
+  String get listing_badge_top_rated => 'Top rated';
+
+  @override
+  String get listing_badge_verified => 'Verified';
+
+  @override
+  String get listing_badge_open_now => 'Open now';
+
+  @override
+  String get listing_group_setting => 'Indoor / outdoor';
+
+  @override
+  String get listing_group_price_hour => 'Price per hour';
+
+  @override
+  String get listing_group_rating => 'Rating';
+
+  @override
+  String listing_price_up_to(String amount) {
+    return 'Up to AED $amount';
+  }
+
+  @override
+  String get listing_any_price => 'Any price';
+
+  @override
+  String listing_rating_and_up(String rating) {
+    return '$rating and up';
+  }
+
+  @override
+  String get listing_venue_sort_distance => 'Distance';
+
+  @override
+  String get listing_venue_sort_rating => 'Rating';
+
+  @override
+  String get listing_venue_sort_price => 'Lowest price';
+
+  @override
+  String get listing_expand_search => 'Expand search area';
+
+  @override
+  String get listing_venues_none_filters_text =>
+      'Try loosening a filter or widening the search area.';
+
+  @override
+  String listing_reviews_count(String count) {
+    return '($count)';
+  }
 }

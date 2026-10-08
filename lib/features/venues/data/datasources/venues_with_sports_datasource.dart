@@ -1,6 +1,7 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
+import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/fp/failure.dart';
 
@@ -15,6 +16,9 @@ abstract class VenuesWithSportsDataSource {
     bool? isActive,
     bool? isIndoor,
     int limit = 50,
+    double? maxPrice,
+    double? minRating,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
   });
 }
 
@@ -30,6 +34,9 @@ class SupabaseVenuesWithSportsDataSource implements VenuesWithSportsDataSource {
     bool? isActive,
     bool? isIndoor,
     int limit = 50,
+    double? maxPrice,
+    double? minRating,
+    VenueSortOrder sortOrder = VenueSortOrder.distance,
   }) async {
     return Result.guard(
       () async {
@@ -52,10 +59,29 @@ class SupabaseVenuesWithSportsDataSource implements VenuesWithSportsDataSource {
           query = query.eq('is_indoor', isIndoor);
         }
 
-        // Apply limit and order
-        final response = await query
-            .order('name_en', ascending: true)
-            .limit(limit);
+        if (maxPrice != null) {
+          query = query.lte('price_per_hour', maxPrice);
+        }
+        if (minRating != null) {
+          query = query.gte('rating', minRating);
+        }
+
+        // Apply order and limit. Distance is ordered on the client (it needs
+        // the user's position), so the server order is by name there.
+        final ordered = switch (sortOrder) {
+          VenueSortOrder.rating => query.order(
+            'rating',
+            ascending: false,
+            nullsFirst: false,
+          ),
+          VenueSortOrder.price => query.order(
+            'price_per_hour',
+            ascending: true,
+            nullsFirst: false,
+          ),
+          VenueSortOrder.distance => query.order('name_en', ascending: true),
+        };
+        final response = await ordered.limit(limit);
 
         // Parse response
         final venues = (response as List)

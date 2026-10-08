@@ -4,7 +4,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
-import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -12,6 +11,10 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
+import 'package:dabbler/features/venues/data/models/nearby_venue_model.dart'
+    show formatDistanceMeters;
+import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
 import 'package:dabbler/providers.dart' hide nearbyVenuesProvider;
@@ -69,7 +72,10 @@ class _VenuesTabScreen extends ConsumerStatefulWidget {
 class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
   void _resetFilters() {
     ref.read(nearbyVenuesFilterEnabledProvider.notifier).state = false;
-    ref.read(nearbyVenueSortProvider.notifier).state = NearbySortOrder.nearest;
+    ref.read(nearbyVenueSortProvider.notifier).state = VenueSortOrder.distance;
+    ref.read(venueIndoorFilterProvider.notifier).state = null;
+    ref.read(venueMaxPriceFilterProvider.notifier).state = null;
+    ref.read(venueMinRatingFilterProvider.notifier).state = null;
   }
 
   void _openFilters() {
@@ -91,6 +97,9 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
     final nearby = ref.watch(nearbyVenuesFilterEnabledProvider);
     final radius = ref.watch(nearbyRadiusProvider);
     final sort = ref.watch(nearbyVenueSortProvider);
+    final indoor = ref.watch(venueIndoorFilterProvider);
+    final maxPrice = ref.watch(venueMaxPriceFilterProvider);
+    final minRating = ref.watch(venueMinRatingFilterProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
     final isOrganiser =
         ref.watch(profileControllerProvider).profile?.profileType ==
@@ -105,11 +114,29 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
               ref.read(nearbyVenuesFilterEnabledProvider.notifier).state =
                   false,
         ),
-      if (sort != NearbySortOrder.nearest)
+      if (indoor != null)
         DabblerFilterRailItem(
-          label: l.listing_sort_soonest,
+          label: indoor ? l.listing_indoor : l.listing_outdoor,
+          onRemove: () =>
+              ref.read(venueIndoorFilterProvider.notifier).state = null,
+        ),
+      if (maxPrice != null)
+        DabblerFilterRailItem(
+          label: l.listing_price_up_to(maxPrice.toStringAsFixed(0)),
+          onRemove: () =>
+              ref.read(venueMaxPriceFilterProvider.notifier).state = null,
+        ),
+      if (minRating != null)
+        DabblerFilterRailItem(
+          label: l.listing_rating_and_up(minRating.toStringAsFixed(1)),
+          onRemove: () =>
+              ref.read(venueMinRatingFilterProvider.notifier).state = null,
+        ),
+      if (sort != VenueSortOrder.distance)
+        DabblerFilterRailItem(
+          label: _sortLabel(l, sort),
           onRemove: () => ref.read(nearbyVenueSortProvider.notifier).state =
-              NearbySortOrder.nearest,
+              VenueSortOrder.distance,
         ),
     ];
 
@@ -167,10 +194,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
               filters: active,
               clearAllLabel: l.listing_clear_all,
               onClearAll: _resetFilters,
-              pages: [
-                for (final sport in sports)
-                  _AllVenuesList(sport: sport, onChangeFilters: _openFilters),
-              ],
+              pages: [for (final sport in sports) _AllVenuesList(sport: sport)],
             ),
     );
   }
@@ -180,14 +204,24 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
 // FILTER SHEET
 // =============================================================================
 
-/// Distance and Sort by — the design's groups the app has a feature for.
-/// Indoor / outdoor, price per hour and rating have no filter behind them.
+String _sortLabel(AppLocalizations l, VenueSortOrder sort) => switch (sort) {
+  VenueSortOrder.distance => l.listing_venue_sort_distance,
+  VenueSortOrder.rating => l.listing_venue_sort_rating,
+  VenueSortOrder.price => l.listing_venue_sort_price,
+};
+
+/// The venues filter groups (`Listings.dc.html:1832-1839`): Distance,
+/// Indoor / outdoor, Price per hour, Rating and Sort by.
 class _VenuesFilterBody extends ConsumerWidget {
   const _VenuesFilterBody();
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final indoor = ref.watch(venueIndoorFilterProvider);
+    final maxPrice = ref.watch(venueMaxPriceFilterProvider);
+    final minRating = ref.watch(venueMinRatingFilterProvider);
+    final sort = ref.watch(nearbyVenueSortProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -202,8 +236,61 @@ class _VenuesFilterBody extends ConsumerWidget {
           ),
         ),
         DabblerFilterGroup(
+          label: l.listing_group_setting,
+          children: [
+            for (final value in const [true, false])
+              DabblerChip(
+                label: value ? l.listing_indoor : l.listing_outdoor,
+                selected: indoor == value,
+                onTap: () =>
+                    ref.read(venueIndoorFilterProvider.notifier).state =
+                        indoor == value ? null : value,
+              ),
+          ],
+        ),
+        DabblerFilterGroup(
+          label: l.listing_group_price_hour,
+          children: [
+            for (final price in kVenueMaxPricePresets)
+              DabblerChip(
+                label: l.listing_price_up_to(price.toStringAsFixed(0)),
+                selected: maxPrice == price,
+                onTap: () =>
+                    ref.read(venueMaxPriceFilterProvider.notifier).state =
+                        price,
+              ),
+            DabblerChip(
+              label: l.listing_any_price,
+              selected: maxPrice == null,
+              onTap: () =>
+                  ref.read(venueMaxPriceFilterProvider.notifier).state = null,
+            ),
+          ],
+        ),
+        DabblerFilterGroup(
+          label: l.listing_group_rating,
+          children: [
+            for (final rating in kVenueMinRatingPresets)
+              DabblerChip(
+                label: l.listing_rating_and_up(rating.toStringAsFixed(1)),
+                selected: minRating == rating,
+                onTap: () =>
+                    ref.read(venueMinRatingFilterProvider.notifier).state =
+                        minRating == rating ? null : rating,
+              ),
+          ],
+        ),
+        DabblerFilterGroup(
           label: l.listing_group_sort,
-          children: nearbySortChips(context, ref, nearbyVenueSortProvider),
+          children: [
+            for (final value in VenueSortOrder.values)
+              DabblerChip(
+                label: _sortLabel(l, value),
+                selected: sort == value,
+                onTap: () =>
+                    ref.read(nearbyVenueSortProvider.notifier).state = value,
+              ),
+          ],
         ),
       ],
     );
@@ -215,32 +302,37 @@ class _VenuesFilterBody extends ConsumerWidget {
 // =============================================================================
 
 class _AllVenuesList extends ConsumerWidget {
-  const _AllVenuesList({required this.sport, required this.onChangeFilters});
+  const _AllVenuesList({required this.sport});
 
   final Sport sport;
-  final VoidCallback onChangeFilters;
 
   String get sportId => sport.id;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final nearbyEnabled = ref.watch(nearbyVenuesFilterEnabledProvider);
-    final locState = nearbyEnabled
-        ? ref.watch(activeLocationProvider).valueOrNull
-        : null;
+    final locState = ref.watch(activeLocationProvider).valueOrNull;
     final location = locState is ActiveLocationReady ? locState.location : null;
+    final sort = ref.watch(nearbyVenueSortProvider);
+    final indoor = ref.watch(venueIndoorFilterProvider);
+    final maxPrice = ref.watch(venueMaxPriceFilterProvider);
+    final minRating = ref.watch(venueMinRatingFilterProvider);
 
     // Nearby path: PostGIS RPC filtered by the active location + radius.
     // While the filter is on but location isn't ready (locating/denied),
     // fall back to the unfiltered list.
-    if (location != null) {
+    if (nearbyEnabled && location != null) {
       final params = (
         lat: location.lat,
         lng: location.lng,
         radiusMeters: location.nearbyRadiusMeters,
         sportId: sportId,
-        sortOrder: ref.watch(nearbyVenueSortProvider),
+        sortOrder: sort,
+        indoor: indoor,
+        maxPrice: maxPrice,
+        minRating: minRating,
       );
       final nearbyAsync = ref.watch(nearbyVenuesProvider(params));
 
@@ -250,6 +342,7 @@ class _AllVenuesList extends ConsumerWidget {
         data: (venues) => venues.isEmpty
             ? _empty(
                 context,
+                ref,
                 hint: l.listing_venues_radius_text(
                   (location.nearbyRadiusMeters / 1000).round(),
                 ),
@@ -260,13 +353,21 @@ class _AllVenuesList extends ConsumerWidget {
                     .map(
                       (v) => _VenueCardData(
                         id: v.id,
-                        name: v.nameEn,
+                        name: isArabic && (v.nameAr?.isNotEmpty ?? false)
+                            ? v.nameAr!
+                            : v.nameEn,
                         city: v.city,
                         area: v.area,
                         pricePerHour: v.pricePerHour,
                         isIndoor: v.isIndoor,
                         distanceLabel: v.distanceLabel,
-                        sports: v.sportNames,
+                        sports: _sportNames(isArabic, v.sports, v.sportsAr),
+                        amenities: v.amenities,
+                        coverUrl: v.coverUrl,
+                        rating: v.rating,
+                        ratingCount: v.ratingCount,
+                        isVerified: v.isVerified,
+                        isOpenNow: v.isOpenNow,
                       ),
                     )
                     .toList(),
@@ -274,33 +375,77 @@ class _AllVenuesList extends ConsumerWidget {
       );
     }
 
-    final filters = VenuesBySportFilters(sportId: sportId, isActive: true);
+    final filters = VenuesBySportFilters(
+      sportId: sportId,
+      isActive: true,
+      isIndoor: indoor,
+      maxPrice: maxPrice,
+      minRating: minRating,
+      sortOrder: sort,
+      limit: 200,
+    );
     final venuesAsync = ref.watch(venuesBySportWithFiltersProvider(filters));
 
     return venuesAsync.when(
       loading: _loading,
       error: (_, __) => _error(context, ref),
-      data: (venues) => venues.isEmpty
-          ? _empty(context)
-          : _cards(
-              ref,
-              venues
-                  .map(
-                    (v) => _VenueCardData(
-                      id: v.id,
-                      name: v.nameEn,
-                      city: v.city,
-                      area: v.area,
-                      pricePerHour: v.pricePerHour,
-                      isIndoor: v.isIndoor,
-                      sports: [sport.localizedName(context)],
-                      amenities: v.amenities,
-                    ),
-                  )
-                  .toList(),
+      data: (rows) {
+        // The view has one row per venue and sport setting; keep the first.
+        final seen = <String>{};
+        final venues = [
+          for (final v in rows)
+            if (seen.add(v.id)) v,
+        ];
+        double? metres(VenueWithSportModel v) =>
+            location == null || v.latitude == null || v.longitude == null
+            ? null
+            : haversineMeters(
+                location.lat,
+                location.lng,
+                v.latitude!,
+                v.longitude!,
+              );
+        if (sort == VenueSortOrder.distance && location != null) {
+          venues.sort(
+            (a, b) => (metres(a) ?? double.infinity).compareTo(
+              metres(b) ?? double.infinity,
             ),
+          );
+        }
+        if (venues.isEmpty) return _empty(context, ref);
+        return _cards(
+          ref,
+          venues.map((v) {
+            final m = metres(v);
+            return _VenueCardData(
+              id: v.id,
+              name: isArabic && (v.nameAr?.isNotEmpty ?? false)
+                  ? v.nameAr!
+                  : v.nameEn,
+              city: v.city,
+              area: v.area,
+              pricePerHour: v.pricePerHour,
+              isIndoor: v.isIndoor,
+              distanceLabel: m == null ? null : formatDistanceMeters(m),
+              sports: _sportNames(isArabic, v.sports, v.sportsAr),
+              amenities: v.amenities,
+              coverUrl: v.coverUrl,
+              rating: v.rating,
+              ratingCount: v.ratingCount,
+              isVerified: v.isVerified,
+              isOpenNow: v.isOpenNow,
+            );
+          }).toList(),
+        );
+      },
     );
   }
+
+  static List<String> _sportNames(
+    bool isArabic,
+    List<String> en,
+    List<String> ar,
+  ) => isArabic && ar.isNotEmpty ? ar : en;
 
   Widget _loading() =>
       const ListingSkeletons(kind: DabblerListingSkeletonKind.venue);
@@ -322,16 +467,33 @@ class _AllVenuesList extends ConsumerWidget {
     ),
   );
 
-  Widget _empty(BuildContext context, {String? hint}) => ListingEmpty(
-    // `Listings.dc.html:740` — the bold location glyph.
-    icon: 'location',
-    title: AppLocalizations.of(context).listing_venues_none_title,
-    text: hint ?? AppLocalizations.of(context).listing_venues_none_text,
-    action: DabblerButton(
-      label: AppLocalizations.of(context).listing_change_filters,
-      onPressed: onChangeFilters,
-    ),
-  );
+  Widget _empty(BuildContext context, WidgetRef ref, {String? hint}) =>
+      ListingEmpty(
+        // `Listings.dc.html:740` — the bold location glyph.
+        icon: 'location',
+        title: AppLocalizations.of(context).listing_venues_none_title,
+        text: hint ?? AppLocalizations.of(context).listing_venues_none_text,
+        action: DabblerButton(
+          label: AppLocalizations.of(context).listing_expand_search,
+          onPressed: () => _expandSearch(ref),
+        ),
+      );
+
+  /// "Expand search area" (`Listings.dc.html:760`): widens the radius to the
+  /// next step while the distance filter is on; otherwise (nothing to widen)
+  /// it clears the indoor, price and rating filters that narrowed the list.
+  void _expandSearch(WidgetRef ref) {
+    final enabled = ref.read(nearbyVenuesFilterEnabledProvider);
+    final radius = ref.read(nearbyRadiusProvider);
+    final next = enabled ? nextVenueRadius(radius) : null;
+    if (next != null) {
+      ref.read(activeLocationProvider.notifier).setRadiusOverride(next);
+      return;
+    }
+    ref.read(venueIndoorFilterProvider.notifier).state = null;
+    ref.read(venueMaxPriceFilterProvider.notifier).state = null;
+    ref.read(venueMinRatingFilterProvider.notifier).state = null;
+  }
 
   Widget _cards(WidgetRef ref, List<_VenueCardData> venues) {
     return DabblerRefresh(
@@ -370,6 +532,11 @@ class _VenueCardData {
     this.distanceLabel,
     this.sports = const [],
     this.amenities = const [],
+    this.coverUrl,
+    this.rating,
+    this.ratingCount = 0,
+    this.isVerified = false,
+    this.isOpenNow = false,
   });
 
   final String id;
@@ -386,15 +553,23 @@ class _VenueCardData {
   /// The sports the venue is listed under.
   final List<String> sports;
 
-  /// Raw amenity names; the ones with a glyph show as facilities.
+  /// `amenities_catalog` keys; the ones with a glyph show as facilities.
   final List<String> amenities;
+
+  final String? coverUrl;
+
+  /// Aggregate rating (null: not rated yet) and its review count.
+  final double? rating;
+  final int ratingCount;
+  final bool isVerified;
+  final bool isOpenNow;
 }
 
-/// A venue on the design system's venue card (`Listings.dc.html:750-820`).
-/// The app has no venue photo, rating, review count or status badges ("Top
-/// rated", "Instant booking"), so the card draws no cover, no rating and no
-/// badges — the frame's photo-less card (`v.hasPhoto` false); the favourite
-/// heart toggles `venue_favorites`.
+/// A venue on the design system's venue card (`Listings.dc.html:750-820`):
+/// the 170px cover (a placeholder until the venue has a photo), the aggregate
+/// rating, the "Top rated" / "Verified" / "Open now" badges, the distance chip,
+/// every sport and the keyed facilities; the favourite heart toggles
+/// `venue_favorites`.
 class _VenueCard extends ConsumerStatefulWidget {
   const _VenueCard({required this.venue});
 
@@ -438,26 +613,6 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
     );
   }
 
-  /// Amenity text → the design's facility glyph; unknown amenities draw none.
-  static const Map<String, String> _amenityIcons = {
-    'park': 'car',
-    'shower': 'drop',
-    'locker': 'lock',
-    'changing': 'lock',
-    'cafe': 'cup',
-    'coffee': 'cup',
-    'light': 'flash',
-    'shop': 'shop',
-  };
-
-  static String? _iconFor(String amenity) {
-    final a = amenity.toLowerCase();
-    for (final e in _amenityIcons.entries) {
-      if (a.contains(e.key)) return e.value;
-    }
-    return null;
-  }
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -466,6 +621,16 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
         .watch(favoriteVenueIdsForCurrentUserProvider)
         .maybeWhen(data: (ids) => ids, orElse: () => <String>{});
     final isFav = _optimistic ?? favIds.contains(venue.id);
+    final colors = DabblerColors.of(context);
+    final isArabic = Localizations.localeOf(context).languageCode == 'ar';
+    final catalog = ref
+        .watch(venueAmenityCatalogProvider)
+        .maybeWhen(
+          data: (c) => c,
+          orElse: () => const <String, VenueAmenityLabel>{},
+        );
+    final rating = venue.rating;
+    final rated = rating != null && venue.ratingCount > 0;
 
     final locationLine = [
       if (venue.area?.isNotEmpty == true) venue.area!,
@@ -480,11 +645,42 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
 
     return DabblerCardVenue(
       name: venue.name,
+      // The cover slot always draws; without a photo it is the sunken fill
+      // with the gallery glyph.
+      cover: DabblerImage(
+        url: venue.coverUrl,
+        height: DabblerCardVenue.coverHeight,
+        radius: BorderRadius.zero,
+        placeholderGlyph: true,
+      ),
       area: locationLine,
       tags: [
         if (venue.distanceLabel != null)
           DabblerCardVenue.distanceTag(
             label: l.listing_km_away(venue.distanceLabel!),
+          ),
+        if (rated)
+          DabblerCardVenue.rating(
+            rating: rating.toStringAsFixed(1),
+            reviews: l.listing_reviews_count(venue.ratingCount.toString()),
+          ),
+        if (rated && rating >= kVenueTopRated)
+          DabblerBadge(
+            label: l.listing_badge_top_rated,
+            status: colors.warning,
+            tone: DabblerBadgeTone.warning,
+          ),
+        if (venue.isVerified)
+          DabblerBadge(
+            label: l.listing_badge_verified,
+            status: colors.success,
+            tone: DabblerBadgeTone.success,
+          ),
+        if (venue.isOpenNow)
+          DabblerBadge(
+            label: l.listing_badge_open_now,
+            status: colors.info,
+            tone: DabblerBadgeTone.info,
           ),
         // The setting, as the meetup card tags it (`Listings.dc.html:1866`).
         if (venue.isIndoor != null)
@@ -497,9 +693,14 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
         for (final s in venue.sports) DabblerListingTag.outlined(label: s),
       ],
       facilities: [
-        for (final a in venue.amenities)
-          if (_iconFor(a) != null)
-            DabblerCardVenue.facility(icon: _iconFor(a)!, label: a),
+        for (final key in venue.amenities)
+          if (kVenueAmenityIcons[key] != null)
+            DabblerCardVenue.facility(
+              icon: kVenueAmenityIcons[key]!,
+              label: isArabic
+                  ? (catalog[key]?.ar ?? catalog[key]?.en ?? key)
+                  : (catalog[key]?.en ?? key),
+            ),
       ],
       favourite: DabblerFavouriteButton(
         selected: isFav,

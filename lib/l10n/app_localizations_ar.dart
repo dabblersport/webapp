@@ -5768,4 +5768,56 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get checkin_already => 'سجّلت حضورك اليوم بالفعل!';
+
+  @override
+  String get listing_badge_top_rated => 'الأعلى تقييمًا';
+
+  @override
+  String get listing_badge_verified => 'موثّق';
+
+  @override
+  String get listing_badge_open_now => 'مفتوح الآن';
+
+  @override
+  String get listing_group_setting => 'داخلي / خارجي';
+
+  @override
+  String get listing_group_price_hour => 'السعر في الساعة';
+
+  @override
+  String get listing_group_rating => 'التقييم';
+
+  @override
+  String listing_price_up_to(String amount) {
+    return 'حتى $amount د.إ';
+  }
+
+  @override
+  String get listing_any_price => 'أي سعر';
+
+  @override
+  String listing_rating_and_up(String rating) {
+    return '$rating فأكثر';
+  }
+
+  @override
+  String get listing_venue_sort_distance => 'المسافة';
+
+  @override
+  String get listing_venue_sort_rating => 'التقييم';
+
+  @override
+  String get listing_venue_sort_price => 'الأقل سعرًا';
+
+  @override
+  String get listing_expand_search => 'وسّع نطاق البحث';
+
+  @override
+  String get listing_venues_none_filters_text =>
+      'جرّب تخفيف أحد الفلاتر أو توسيع نطاق البحث.';
+
+  @override
+  String listing_reviews_count(String count) {
+    return '($count تقييم)';
+  }
 }
