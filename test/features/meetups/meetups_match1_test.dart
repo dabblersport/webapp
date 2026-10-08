@@ -36,15 +36,18 @@ const String _shotsDir = String.fromEnvironment(
 final bool _dark = const String.fromEnvironment('RENDER_DARK') == '1';
 
 class _Ready extends ActiveLocationNotifier {
+  _Ready([this.areaName = 'Dubai Marina']);
+  final String areaName;
+
   @override
   Future<ActiveLocationState> build() async => ActiveLocationReady(
-    const ActiveLocation(
+    ActiveLocation(
       lat: 25.2,
       lng: 55.27,
       source: ActiveLocationSource.saved,
       area: Area(
         id: 'a1',
-        name: 'Dubai Marina',
+        name: areaName,
         district: 'Marina',
         city: 'Dubai',
         country: 'AE',
@@ -68,6 +71,21 @@ class _ByTab extends FakeMeetupRepository {
   ]);
 }
 
+const List<MeetupAvatar> _faces = <MeetupAvatar>[
+  MeetupAvatar(displayName: 'Ahmed Farouk'),
+  MeetupAvatar(displayName: 'Lina Haddad'),
+  MeetupAvatar(displayName: 'Yousef Amer'),
+  MeetupAvatar(displayName: 'Nadia Saleh'),
+];
+
+/// Distances the nearby query would return, so the card shows "place · km".
+const List<NearbyMeetup> _nearby = <NearbyMeetup>[
+  NearbyMeetup(id: 'u', title: 't', distanceM: 4600),
+  NearbyMeetup(id: 'a', title: 't', distanceM: 3000),
+  NearbyMeetup(id: 'b', title: 't', distanceM: 4200),
+  NearbyMeetup(id: 'c', title: 't', distanceM: 5200),
+];
+
 MeetupListItem _row(
   String id,
   String title, {
@@ -76,11 +94,14 @@ MeetupListItem _row(
   String sportId = 's1',
   String sport = 'Running',
   String sportAr = 'جري',
+  String? my,
 }) => meetupRow(
   id,
   title: title,
   startsIn: startsIn,
   going: going,
+  my: my,
+  faces: _faces,
 ).copyWith(sportId: sportId, sportNameEn: sport, sportNameAr: sportAr);
 
 Future<void> _pump(
@@ -98,7 +119,11 @@ Future<void> _pump(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
         activePersonaProvider.overrideWithValue(PersonaType.player),
-        activeLocationProvider.overrideWith(_Ready.new),
+        activeLocationProvider.overrideWith(
+          () => _Ready(
+            locale.languageCode == 'ar' ? 'مارينا دبي' : 'Dubai Marina',
+          ),
+        ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         ...overrides,
       ],
@@ -203,6 +228,13 @@ void main() {
   ]) {
     final bool ar = dir == 'rtl';
     List<MeetupListItem> rows() => <MeetupListItem>[
+      // The viewer is going: it counts down in the Upcoming row.
+      _row(
+        'u',
+        ar ? 'ركوب الفجر' : 'Dawn ride',
+        startsIn: const Duration(hours: 20),
+        my: 'going',
+      ),
       _row(
         'a',
         ar ? 'جري الشروق' : 'Sunrise run',
@@ -225,12 +257,19 @@ void main() {
         sportAr: 'يوغا',
       ),
     ];
-    const settings = <String, bool?>{'a': false, 'b': false, 'c': null};
+    const settings = <String, bool?>{
+      'u': null,
+      'a': false,
+      'b': false,
+      'c': null,
+    };
 
     testWidgets('meetups $mode $dir default', (tester) async {
       await _pump(
         tester,
-        FakeMeetupRepository()..list = rows(),
+        FakeMeetupRepository()
+          ..nearbyList = _nearby
+          ..list = rows(),
         locale,
         overrides: [
           meetupSettingsProvider.overrideWith((ref) async => settings),
@@ -250,7 +289,9 @@ void main() {
     testWidgets('meetups $mode $dir filtered', (tester) async {
       await _pump(
         tester,
-        FakeMeetupRepository()..list = rows(),
+        FakeMeetupRepository()
+          ..nearbyList = _nearby
+          ..list = rows(),
         locale,
         overrides: [
           meetupSettingsProvider.overrideWith((ref) async => settings),
