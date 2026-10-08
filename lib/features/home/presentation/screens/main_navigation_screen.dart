@@ -370,7 +370,9 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
       },
       child: SectionThemed(
         theme: switch (NavigationBranch.values[_currentIndex]) {
-          NavigationBranch.games => DabblerTheme.sport,
+          // Games takes the main theme, the design default (`gamesTheme:
+          // 'main'`, `Listings.2026-10-08.dc.html:2085`).
+          NavigationBranch.games => DabblerTheme.main,
           NavigationBranch.meetups => DabblerTheme.active,
           _ => null,
         },

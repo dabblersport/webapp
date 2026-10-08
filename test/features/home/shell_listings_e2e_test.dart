@@ -290,7 +290,7 @@ void main() {
           (
             route: RoutePaths.gamesTab,
             name: 'games',
-            theme: DabblerTheme.sport,
+            theme: DabblerTheme.main,
             // Plain header, the design default (GAP #28): no band.
             band: null,
           ),
