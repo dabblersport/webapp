@@ -11,6 +11,8 @@ import 'package:dabbler/features/explore/presentation/widgets/sport_specific_fil
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/widgets/empty_states/no_upcoming_games_widget.dart';
+import 'package:dabbler/data/models/active_location.dart';
+import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
@@ -59,6 +61,27 @@ Future<void> _shootC4(WidgetTester tester, Key key, String name) async {
 class _Location extends ActiveLocationNotifier {
   @override
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
+}
+
+/// A ready location (Dubai), for frames the design draws with one.
+class _ReadyLocation extends ActiveLocationNotifier {
+  @override
+  Future<ActiveLocationState> build() async => ActiveLocationReady(
+    ActiveLocation(
+      lat: 25.2,
+      lng: 55.3,
+      area: const Area(
+        id: 'a1',
+        name: 'Al Barsha',
+        district: 'Dubai',
+        city: 'Dubai',
+        country: 'AE',
+        centerLat: 25.2,
+        centerLng: 55.3,
+      ),
+      source: ActiveLocationSource.manual,
+    ),
+  );
 }
 
 Future<void> _loadFonts() async {
@@ -262,6 +285,7 @@ Future<void> _pump(
   List<Override> extra = const <Override>[],
   Key key = const Key('shot'),
   Size size = const Size(393, 852),
+  bool locationReady = false,
 }) async {
   tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
@@ -281,7 +305,9 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        activeLocationProvider.overrideWith(_Location.new),
+        activeLocationProvider.overrideWith(
+          locationReady ? _ReadyLocation.new : _Location.new,
+        ),
         activeChallengeSportsByProfileCountryProvider.overrideWith(
           (ref) async => _sports,
         ),
@@ -411,7 +437,12 @@ void main() {
           mode: state == 'empty' ? _Mode.empty : _Mode.content,
           // Tall enough to show every spots tone (info, warning, error).
           size: const Size(393, 2200),
+          locationReady: state == 'empty',
           extra: [
+            // The design's empty frame is the filtered one: Within 5 km on,
+            // a ready location, nothing in range.
+            if (state == 'empty')
+              nearbyGamesFilterEnabledProvider.overrideWith((ref) => true),
             if (state == 'filters') ...[
               gamesDateFilterProvider.overrideWith(
                 (ref) => GamesDateFilter.thisWeek,
