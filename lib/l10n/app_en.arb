@@ -2072,5 +2072,17 @@
   "@listing_share_venue_headline": {"placeholders": {"name": {"type": "String"}}},
   "skill_sub_beginner": "Just getting started",
   "skill_sub_intermediate": "Plays regularly",
-  "skill_sub_advanced": "Competitive level"
+  "skill_sub_advanced": "Competitive level",
+  "listing_price_ask": "Ask",
+  "listing_price_aed": "AED {amount}",
+  "@listing_price_aed": {"placeholders": {"amount": {"type": "String"}}},
+  "game_price": "Price",
+  "game_price_hint": "Price per player, in AED",
+  "game_price_sub": "Enter 0 for a free game",
+  "game_price_required": "Enter a price — 0 means free",
+  "game_price_unit": "AED",
+  "listing_popular": "Popular",
+  "meetup_setting": "Setting",
+  "meetup_setting_sub": "Where it takes place when there is no venue",
+  "meetup_setting_required": "Choose Indoor or Outdoor"
 }

@@ -17,6 +17,7 @@ class CreateMeetupInput {
     this.minSkill,
     this.maxSkill,
     this.vibeKey,
+    this.isIndoor,
   });
 
   final String sportId;
@@ -40,6 +41,10 @@ class CreateMeetupInput {
 
   /// A `DabblerVibe.key`.
   final String? vibeKey;
+
+  /// Indoor (true) / outdoor (false). Required when there is no [venueId]
+  /// (the venue then supplies the setting), ignored by the server otherwise.
+  final bool? isIndoor;
 }
 
 /// Input for `rpc_meetup_update`. Null = unchanged (the RPC cannot clear

@@ -10642,6 +10642,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Competitive level'**
   String get skill_sub_advanced;
+
+  /// No description provided for @listing_price_ask.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask'**
+  String get listing_price_ask;
+
+  /// No description provided for @listing_price_aed.
+  ///
+  /// In en, this message translates to:
+  /// **'AED {amount}'**
+  String listing_price_aed(String amount);
+
+  /// No description provided for @game_price.
+  ///
+  /// In en, this message translates to:
+  /// **'Price'**
+  String get game_price;
+
+  /// No description provided for @game_price_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Price per player, in AED'**
+  String get game_price_hint;
+
+  /// No description provided for @game_price_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter 0 for a free game'**
+  String get game_price_sub;
+
+  /// No description provided for @game_price_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a price — 0 means free'**
+  String get game_price_required;
+
+  /// No description provided for @game_price_unit.
+  ///
+  /// In en, this message translates to:
+  /// **'AED'**
+  String get game_price_unit;
+
+  /// No description provided for @listing_popular.
+  ///
+  /// In en, this message translates to:
+  /// **'Popular'**
+  String get listing_popular;
+
+  /// No description provided for @meetup_setting.
+  ///
+  /// In en, this message translates to:
+  /// **'Setting'**
+  String get meetup_setting;
+
+  /// No description provided for @meetup_setting_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Where it takes place when there is no venue'**
+  String get meetup_setting_sub;
+
+  /// No description provided for @meetup_setting_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose Indoor or Outdoor'**
+  String get meetup_setting_required;
 }
 
 class _AppLocalizationsDelegate

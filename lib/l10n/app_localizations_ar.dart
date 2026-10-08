@@ -5929,4 +5929,39 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get skill_sub_advanced => 'مستوى تنافسي';
+
+  @override
+  String get listing_price_ask => 'اسأل';
+
+  @override
+  String listing_price_aed(String amount) {
+    return '$amount د.إ';
+  }
+
+  @override
+  String get game_price => 'السعر';
+
+  @override
+  String get game_price_hint => 'السعر لكل لاعب بالدرهم';
+
+  @override
+  String get game_price_sub => 'أدخل 0 للمباراة المجانية';
+
+  @override
+  String get game_price_required => 'أدخل السعر — 0 يعني مجاني';
+
+  @override
+  String get game_price_unit => 'د.إ';
+
+  @override
+  String get listing_popular => 'رائج';
+
+  @override
+  String get meetup_setting => 'المكان';
+
+  @override
+  String get meetup_setting_sub => 'داخلي أم خارجي عند عدم وجود ملعب';
+
+  @override
+  String get meetup_setting_required => 'اختر داخلي أو خارجي';
 }

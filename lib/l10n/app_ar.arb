@@ -2167,5 +2167,16 @@
   "listing_share_venue_headline": "تعرّف على {name} في Dabbler!",
   "skill_sub_beginner": "في بداية الطريق",
   "skill_sub_intermediate": "يلعب بانتظام",
-  "skill_sub_advanced": "مستوى تنافسي"
+  "skill_sub_advanced": "مستوى تنافسي",
+  "listing_price_ask": "اسأل",
+  "listing_price_aed": "{amount} د.إ",
+  "game_price": "السعر",
+  "game_price_hint": "السعر لكل لاعب بالدرهم",
+  "game_price_sub": "أدخل 0 للمباراة المجانية",
+  "game_price_required": "أدخل السعر — 0 يعني مجاني",
+  "game_price_unit": "د.إ",
+  "listing_popular": "رائج",
+  "meetup_setting": "المكان",
+  "meetup_setting_sub": "داخلي أم خارجي عند عدم وجود ملعب",
+  "meetup_setting_required": "اختر داخلي أو خارجي"
 }

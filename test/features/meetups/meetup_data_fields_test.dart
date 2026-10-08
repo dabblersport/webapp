@@ -131,8 +131,10 @@ void main() {
       expect(find.text('3.0 km'), findsOneWidget);
       expect(find.text('Free'), findsOneWidget);
       expect(find.text('Running'), findsWidgets);
-      // Sport and skill, on the frame's listing tags (`Listings.dc.html:526`).
-      expect(find.byType(DabblerListingTag), findsNWidgets(2));
+      // Sport and skill, on the frame's listing tags (`Listings.dc.html:526`),
+      // plus Popular: 24 of 40 going is over half the places.
+      expect(find.byType(DabblerListingTag), findsNWidgets(3));
+      expect(find.text('Popular'), findsOneWidget);
       expect(find.byType(DabblerBadge), findsNothing);
     });
   });

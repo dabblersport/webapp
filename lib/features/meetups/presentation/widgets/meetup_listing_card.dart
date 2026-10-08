@@ -15,6 +15,13 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
+/// Whether a meetup earns the "Popular" tag: at least half of its capacity is
+/// going, or - with no capacity - at least 20 are.
+bool meetupIsPopular({required int goingCount, required int? capacity}) =>
+    capacity != null && capacity > 0
+    ? goingCount * 2 >= capacity
+    : goingCount >= 20;
+
 /// A meetup on the design system's game card, drawn from the Listings meetup
 /// card (`Listings.dc.html:601-654`). The card has no price (meetups are free
 /// in v1); the trailing slot holds the favourite heart and share.
@@ -31,8 +38,8 @@ class MeetupListingCard extends ConsumerStatefulWidget {
   final MeetupListItem meetup;
   final double? distanceMeters;
 
-  /// The venue's setting (`v_meetup_list.venue_is_indoor`); null when the
-  /// meetup has no venue, so no setting is tagged.
+  /// The setting (`v_meetup_list.setting_is_indoor`: the venue's, else the one
+  /// the host chose); null when neither exists, so no setting is tagged.
   final bool? isIndoor;
   final VoidCallback? onOpen;
 
@@ -128,6 +135,13 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
                     (m.sportNameAr?.trim().isNotEmpty ?? false)
                 ? m.sportNameAr!
                 : m.sportNameEn!,
+          ),
+        // Busy meetup (CEO 2026-10-08): half the places gone, or 20 going when
+        // there is no cap.
+        if (meetupIsPopular(goingCount: m.goingCount, capacity: m.capacity))
+          DabblerListingTag(
+            label: l.listing_popular,
+            tone: DabblerListingTagTone.warning,
           ),
         // The setting, as the venue card tags it (`Listings.dc.html:605`).
         if (widget.isIndoor != null)

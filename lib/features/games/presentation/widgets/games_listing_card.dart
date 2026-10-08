@@ -40,9 +40,11 @@ class GamesListingCard extends ConsumerWidget {
       ref.watch(gameFavouriteOverridesProvider),
       this.game,
     );
-    final format = game.formatName(Localizations.localeOf(context).languageCode);
+    final format = game.formatName(
+      Localizations.localeOf(context).languageCode,
+    );
     final minutes = game.durationMinutes;
-    final price = gamesPrice(l);
+    final price = gamesPrice(l, game.priceAed);
     final at = game.scheduledAt;
     final skill = gamesSkillTierFor(game.minSkill, game.maxSkill);
     final status = gamesCardStatus(
@@ -91,8 +93,7 @@ class GamesListingCard extends ConsumerWidget {
       meta: [
         if (game.venueName?.isNotEmpty == true) game.venueName!,
         // Only the location path measures distance; "Any distance" has none.
-        if (game.distanceMeters > 0)
-          gamesDistanceLabel(l, game.distanceMeters),
+        if (game.distanceMeters > 0) gamesDistanceLabel(l, game.distanceMeters),
         if (minutes != null) l.listing_duration_min(minutes),
       ],
       progress: game.spotsRemaining != null && game.playerCount != null
@@ -249,4 +250,3 @@ class _JoinActionState extends ConsumerState<_JoinAction> {
     );
   }
 }
-

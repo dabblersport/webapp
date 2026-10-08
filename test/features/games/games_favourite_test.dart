@@ -25,7 +25,10 @@ class MockFavoritesRepository extends Mock implements FavoritesRepository {
             ),
             returnValueForMissingStub:
                 Future<Result<FavoriteState, Failure>>.value(
-                  const Ok<FavoriteState, Failure>((favourited: false, count: 0)),
+                  const Ok<FavoriteState, Failure>((
+                    favourited: false,
+                    count: 0,
+                  )),
                 ),
           )
           as Future<Result<FavoriteState, Failure>>;
@@ -59,7 +62,8 @@ void main() {
 
   test('optimistic, then the server answer', () async {
     when(repo.toggle(FavoriteTarget.game, 'g1')).thenAnswer(
-      (_) async => const Ok<FavoriteState, Failure>((favourited: true, count: 9)),
+      (_) async =>
+          const Ok<FavoriteState, Failure>((favourited: true, count: 9)),
     );
     final c = container();
     final pending = toggleGameFavourite(c, game);
@@ -116,12 +120,20 @@ void main() {
   });
 
   for (final loc in const [Locale('en'), Locale('ar')]) {
-    test('every game is Free, no charge - ${loc.languageCode}', () {
+    test('price block: AED N / Free / Ask - ${loc.languageCode}', () {
       final l = lookupAppLocalizations(loc);
-      final p = gamesPrice(l);
-      expect(p.label, l.listing_free);
-      expect(p.note, l.listing_no_charge);
-      expect(p.free, isTrue);
+      final priced = gamesPrice(l, 50);
+      expect(priced.label, l.listing_price_aed('50'));
+      expect(priced.free, isFalse);
+      expect(gamesPrice(l, 12.5).label, l.listing_price_aed('12.50'));
+      final free = gamesPrice(l, 0);
+      expect(free.label, l.listing_free);
+      expect(free.note, l.listing_no_charge);
+      expect(free.free, isTrue);
+      // A game with no stored price is never "Free".
+      final ask = gamesPrice(l, null);
+      expect(ask.label, l.listing_price_ask);
+      expect(ask.free, isFalse);
     });
   }
 }

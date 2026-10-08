@@ -126,6 +126,11 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   int? _minSkill;
   int? _maxSkill;
   DabblerVibe? _vibe;
+
+  /// Indoor (true) / Outdoor (false); asked, and required, only while the
+  /// place is not a venue (a venue supplies its own setting).
+  bool? _indoor;
+  bool _settingMissing = false;
   bool _more = true; // the frame opens with Advanced options shown
   bool _busy = false;
   String? _error;
@@ -162,6 +167,9 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   String? _missing(AppLocalizations l) {
     if (_title.text.trim().length < 3) return l.meetups_err_title_invalid;
     if (_place == null) return l.meetups_err_location_required;
+    if (_place!.venueId == null && _indoor == null) {
+      return l.meetup_setting_required;
+    }
     return null;
   }
 
@@ -172,7 +180,10 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
     final l = AppLocalizations.of(context);
     final missing = _missing(l);
     if (missing != null) {
-      setState(() => _error = missing);
+      setState(() {
+        _error = missing;
+        _settingMissing = _place?.venueId == null && _indoor == null;
+      });
       return;
     }
     setState(() {
@@ -211,6 +222,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             minSkill: _minSkill,
             maxSkill: _maxSkill,
             vibeKey: _vibe?.key,
+            isIndoor: place.venueId == null ? _indoor : null,
           ),
         );
     if (!mounted) return;
@@ -311,7 +323,12 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
 
   Future<void> _pickPlace() async {
     final p = await pickMeetupPlace(context, _place);
-    if (p != null && mounted) setState(() => _place = p);
+    if (p != null && mounted) {
+      setState(() {
+        _place = p;
+        _settingMissing = false;
+      });
+    }
   }
 
   Future<void> _pickPolicy() => showComposerSheet<void>(
@@ -431,6 +448,37 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             onPressed: _pickPlace,
           ),
         ),
+        // No venue: the host says Indoor or Outdoor (CEO 2026-10-08); a venue
+        // brings its own setting, so the row is not asked then.
+        if (_place?.venueId == null)
+          DabblerComposerRow(
+            icon: 'sun-1',
+            title: l.meetup_setting,
+            subtitle: _settingMissing
+                ? l.meetup_setting_required
+                : l.meetup_setting_sub,
+            trailing: Wrap(
+              spacing: DabblerSpacing.space2,
+              children: <Widget>[
+                ComposerPolicyChip(
+                  label: l.listing_indoor,
+                  selected: _indoor == true,
+                  onTap: () => setState(() {
+                    _indoor = true;
+                    _settingMissing = false;
+                  }),
+                ),
+                ComposerPolicyChip(
+                  label: l.listing_outdoor,
+                  selected: _indoor == false,
+                  onTap: () => setState(() {
+                    _indoor = false;
+                    _settingMissing = false;
+                  }),
+                ),
+              ],
+            ),
+          ),
         DabblerComposerRow(
           icon: 'people',
           title: l.meetups_capacity,

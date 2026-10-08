@@ -19,6 +19,7 @@ String meetupErrorText(AppLocalizations l, Failure failure, String fallback) =>
       'meetup_cancelled' => l.meetups_error_cancelled,
       'attendee_not_found' => l.meetups_err_attendee_not_found,
       'no_pending_request' => l.meetups_err_no_pending,
+      'setting_required' => l.meetup_setting_required,
       'free_meetups_only' ||
       'visibility_not_supported' => l.meetups_err_unsupported,
       _ => fallback,

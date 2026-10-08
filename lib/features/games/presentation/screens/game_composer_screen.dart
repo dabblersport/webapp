@@ -47,6 +47,8 @@ class _ComposerState {
     this.maxSkill,
     this.minPlayers,
     this.maxPlayers,
+    this.priceText = '',
+    this.priceError = false,
     this.isSubmitting = false,
     this.error,
   });
@@ -86,10 +88,23 @@ class _ComposerState {
   final int? maxSkill;
   final int? minPlayers;
   final int? maxPlayers;
+
+  /// What the host typed in the price field (AED per player). Required: the
+  /// game cannot be created or saved without a value, 0 meaning free.
+  final String priceText;
+
+  /// Shown once a submit was refused for a missing / invalid price.
+  final bool priceError;
   final bool isSubmitting;
   final String? error;
 
   bool get isEditing => editingGameId != null;
+
+  /// The typed price, or null when empty / not a non-negative number.
+  double? get priceAed {
+    final v = double.tryParse(priceText.trim().replaceAll(',', '.'));
+    return v == null || v.isNaN || v.isInfinite || v < 0 ? null : v;
+  }
 
   bool get canSubmit =>
       sportId != null &&
@@ -127,6 +142,8 @@ class _ComposerState {
     int? maxSkill,
     int? minPlayers,
     int? maxPlayers,
+    String? priceText,
+    bool? priceError,
     bool? isSubmitting,
     String? error,
     bool clearError = false,
@@ -166,6 +183,8 @@ class _ComposerState {
       maxSkill: clearSkill ? null : maxSkill ?? this.maxSkill,
       minPlayers: clearPlayers ? null : minPlayers ?? this.minPlayers,
       maxPlayers: clearPlayers ? null : maxPlayers ?? this.maxPlayers,
+      priceText: priceText ?? this.priceText,
+      priceError: priceError ?? this.priceError,
       isSubmitting: isSubmitting ?? this.isSubmitting,
       error: clearError ? null : error ?? this.error,
     );
@@ -264,6 +283,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         // games created before max_players was stored there.
         minPlayers: rules['min_players'] as int?,
         maxPlayers: rules['max_players'] as int? ?? row['capacity'] as int?,
+        priceText: _priceTextFor(row['price_aed'] as num?),
       );
 
       // Warm the picker caches so format/venue sheets open populated.
@@ -398,6 +418,26 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
   void clearSkill() => state = state.copyWith(clearSkill: true);
 
+  /// A stored price as the field shows it: `50`, `12.5`; empty when never set.
+  static String _priceTextFor(num? v) {
+    if (v == null) return '';
+    final d = v.toDouble();
+    return d == d.roundToDouble() ? d.round().toString() : d.toString();
+  }
+
+  /// Live check: an emptied or non-numeric price shows its error at once.
+  void setPriceText(String v) {
+    final next = state.copyWith(priceText: v);
+    state = next.copyWith(priceError: next.priceAed == null);
+  }
+
+  /// False (and the field shows its error) while the price is missing.
+  bool validatePrice() {
+    if (state.priceAed != null) return true;
+    state = state.copyWith(priceError: true);
+    return false;
+  }
+
   void setMinPlayers(int v) => state = state.copyWith(minPlayers: v);
   void setMaxPlayers(int v) => state = state.copyWith(maxPlayers: v);
   void clearPlayers() => state = state.copyWith(clearPlayers: true);
@@ -464,6 +504,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
             'p_clear_skill': true,
           if (state.minPlayers != null) 'p_min_players': state.minPlayers,
           if (state.maxPlayers != null) 'p_max_players': state.maxPlayers,
+          'p_price_aed': state.priceAed,
         };
 
         await _db.rpc(SupabaseConfig.rpcUpdateGameFn, params: params);
@@ -492,6 +533,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         // extend rpc_create_game to accept p_min_players / p_max_players.
         if (state.minPlayers != null) 'p_min_players': state.minPlayers,
         if (state.maxPlayers != null) 'p_max_players': state.maxPlayers,
+        'p_price_aed': state.priceAed,
       };
 
       await _db.rpc(SupabaseConfig.rpcCreateGameFn, params: params);
@@ -505,6 +547,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         'creator_profile_not_found' => 'Complete your profile first.',
         'not_host_or_not_found' => 'This game can no longer be edited.',
         'invalid_player_range' => 'Min players cannot exceed max players.',
+        'price_required' => 'Enter a price — 0 means free.',
         'invalid_min_players' ||
         'invalid_max_players' => 'Player counts must be at least 1.',
         _ => e.message,
@@ -542,6 +585,7 @@ class GameComposerScreen extends ConsumerStatefulWidget {
 class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
+  final _priceController = TextEditingController();
 
   bool get _isEditing => widget.editGameId != null;
 
@@ -557,6 +601,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         final s = ref.read(_gameComposerProvider);
         _titleController.text = s.title ?? '';
         _descController.text = s.description ?? '';
+        _priceController.text = s.priceText;
       });
     } else {
       // Kick off sport load so the chips appear as soon as the drawer opens.
@@ -570,10 +615,12 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   void dispose() {
     _titleController.dispose();
     _descController.dispose();
+    _priceController.dispose();
     super.dispose();
   }
 
   Future<void> _submit() async {
+    if (!ref.read(_gameComposerProvider.notifier).validatePrice()) return;
     final ok = await ref.read(_gameComposerProvider.notifier).submit();
     if (!mounted) return;
     if (ok) {
@@ -835,6 +882,33 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                 ),
               ],
             ),
+          ),
+        ),
+
+        // ── Price (required; 0 is free) ─────────────────────────────────────
+        Padding(
+          padding: block,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ComposerSectionLabel(
+                label: AppLocalizations.of(context).game_price,
+              ),
+              const SizedBox(height: DabblerSpacing.space3),
+              DabblerTextField(
+                controller: _priceController,
+                placeholder: AppLocalizations.of(context).game_price_hint,
+                helperText: AppLocalizations.of(context).game_price_sub,
+                suffixText: AppLocalizations.of(context).game_price_unit,
+                errorText: state.priceError
+                    ? AppLocalizations.of(context).game_price_required
+                    : null,
+                keyboardType: const TextInputType.numberWithOptions(
+                  decimal: true,
+                ),
+                onChanged: notifier.setPriceText,
+              ),
+            ],
           ),
         ),
 

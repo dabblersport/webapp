@@ -47,6 +47,13 @@ Future<void> _fill(WidgetTester tester) async {
   await tester.pump();
   await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
   await tester.pump();
+  // No venue: the setting is asked and required (CEO 2026-10-08).
+  final indoor = find.byWidgetPredicate(
+    (w) => w is DabblerChip && (w.label == 'Indoor' || w.label == 'داخلي'),
+  );
+  await tester.ensureVisible(indoor);
+  await tester.tap(indoor);
+  await tester.pump();
 }
 
 void main() {
@@ -101,6 +108,7 @@ void main() {
       expect(c.startAt, DateTime(2030, 1, 15, 18));
       expect(c.rsvpPolicy, 'open');
       expect(c.capacity, 8);
+      expect(c.isIndoor, isTrue);
       expect(created, 'new1');
     });
   }
@@ -122,10 +130,17 @@ void main() {
     tester.takeException();
     await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
     await tester.pump();
+    final outdoor = find.byWidgetPredicate(
+      (w) => w is DabblerChip && w.label == 'Outdoor',
+    );
+    await tester.ensureVisible(outdoor);
+    await tester.tap(outdoor);
+    await tester.pump();
     await tester.ensureVisible(find.byType(DabblerComposerSubmit));
     await tester.tap(find.byType(DabblerComposerSubmit));
     await settle(tester);
     final c = repo.createCalls.single;
+    expect(c.isIndoor, isFalse);
     final now = DateTime.now();
     final todaySix = DateTime(now.year, now.month, now.day, 6);
     expect(

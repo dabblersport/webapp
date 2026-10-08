@@ -190,6 +190,7 @@ List<NearbyGameModel> _games() {
       minSkill: 4,
       maxSkill: 5,
       isPublic: true,
+      priceAed: 0,
       endAt: now.add(const Duration(days: 1, minutes: 90)),
       variantNameEn: 'Half court',
       variantNameAr: 'نصف ملعب',
@@ -208,6 +209,7 @@ List<NearbyGameModel> _games() {
       playerCount: 6,
       spotsRemaining: 4,
       isPublic: true,
+      priceAed: 40,
       endAt: now.add(const Duration(minutes: 100)),
       variantNameEn: 'Futsal 5s',
       variantNameAr: 'خماسي صالات',
@@ -407,13 +409,17 @@ void main() {
       // Phase B card fields (GAP #1, #2, #4, #6, #8, #10).
       expect(find.text(l.listing_free), findsWidgets);
       expect(find.text(l.listing_no_charge), findsWidgets);
+      expect(find.text(l.listing_price_aed('40')), findsOneWidget);
       expect(
         find.text(dir == 'rtl' ? 'نصف ملعب' : 'Half court'),
         findsOneWidget,
       );
       expect(find.text(l.listing_starts_soon), findsOneWidget);
       expect(find.text(l.listing_skill_all_levels), findsWidgets);
-      expect(find.bySemanticsLabel(RegExp(l.listing_favourite_remove)), findsWidgets);
+      expect(
+        find.bySemanticsLabel(RegExp(l.listing_favourite_remove)),
+        findsWidgets,
+      );
       expect(find.bySemanticsLabel(l.listing_share_game), findsWidgets);
       await _shoot(tester, key, 'games-listing-$dir');
       // The full game sits further down: its note and disabled button.
@@ -426,8 +432,9 @@ void main() {
       expect(find.text(l.listing_full), findsNWidgets(2));
     }, variant: desktop);
 
-    final String theme =
-        const String.fromEnvironment('RENDER_DARK') == '1' ? 'dark' : 'light';
+    final String theme = const String.fromEnvironment('RENDER_DARK') == '1'
+        ? 'dark'
+        : 'light';
     for (final String state in const ['default', 'filters', 'empty']) {
       testWidgets('games C4 $state - $dir $theme', (tester) async {
         await _pump(
@@ -498,7 +505,9 @@ void main() {
       await _shoot(tester, key, 'games-filter-sheet-$dir');
     }, variant: desktop);
 
-    testWidgets('games listing: rail tap opens the sheet - $dir', (tester) async {
+    testWidgets('games listing: rail tap opens the sheet - $dir', (
+      tester,
+    ) async {
       await _pump(
         tester,
         const GamesScreen(),
@@ -513,7 +522,9 @@ void main() {
       expect(find.text(l.listing_group_skill), findsNothing);
       // Tap the rail's trailing edge: the centre can land on the Clear all
       // button (it does in Arabic), which resets the filter instead.
-      final rail = tester.getRect(find.bySemanticsLabel(l.listing_filters_open));
+      final rail = tester.getRect(
+        find.bySemanticsLabel(l.listing_filters_open),
+      );
       await tester.tapAt(
         Offset(dir == 'rtl' ? rail.left + 12 : rail.right - 12, rail.center.dy),
       );

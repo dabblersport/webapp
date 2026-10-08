@@ -5882,4 +5882,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get skill_sub_advanced => 'Competitive level';
+
+  @override
+  String get listing_price_ask => 'Ask';
+
+  @override
+  String listing_price_aed(String amount) {
+    return 'AED $amount';
+  }
+
+  @override
+  String get game_price => 'Price';
+
+  @override
+  String get game_price_hint => 'Price per player, in AED';
+
+  @override
+  String get game_price_sub => 'Enter 0 for a free game';
+
+  @override
+  String get game_price_required => 'Enter a price — 0 means free';
+
+  @override
+  String get game_price_unit => 'AED';
+
+  @override
+  String get listing_popular => 'Popular';
+
+  @override
+  String get meetup_setting => 'Setting';
+
+  @override
+  String get meetup_setting_sub =>
+      'Where it takes place when there is no venue';
+
+  @override
+  String get meetup_setting_required => 'Choose Indoor or Outdoor';
 }

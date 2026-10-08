@@ -308,6 +308,13 @@ void main() {
       await _settle(tester);
       await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
       await tester.pump();
+      // No venue: the setting is required (CEO 2026-10-08).
+      final indoor = find.byWidgetPredicate(
+        (w) => w is DabblerChip && (w.label == 'Indoor' || w.label == 'داخلي'),
+      );
+      await tester.ensureVisible(indoor);
+      await tester.tap(indoor);
+      await tester.pump();
       await tester.ensureVisible(find.byType(DabblerComposerSubmit));
       await tester.tap(find.byType(DabblerComposerSubmit));
       await _settle(tester);
@@ -465,6 +472,13 @@ void main() {
       await _settle(tester);
       await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
       await tester.pump();
+      // No venue: the setting is required (CEO 2026-10-08).
+      final indoor = find.byWidgetPredicate(
+        (w) => w is DabblerChip && (w.label == 'Indoor' || w.label == 'داخلي'),
+      );
+      await tester.ensureVisible(indoor);
+      await tester.tap(indoor);
+      await tester.pump();
       await tester.ensureVisible(find.byType(DabblerComposerSubmit));
       await tester.tap(find.byType(DabblerComposerSubmit));
       await _settle(tester);
@@ -495,6 +509,13 @@ void main() {
       await _settle(tester);
       await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
       await tester.pump();
+      // No venue: the setting is required (CEO 2026-10-08).
+      final indoor = find.byWidgetPredicate(
+        (w) => w is DabblerChip && (w.label == 'Indoor' || w.label == 'داخلي'),
+      );
+      await tester.ensureVisible(indoor);
+      await tester.tap(indoor);
+      await tester.pump();
       await tester.ensureVisible(find.byType(DabblerComposerSubmit));
       await tester.tap(find.byType(DabblerComposerSubmit));
       await _settle(tester);
@@ -521,6 +542,13 @@ void main() {
       );
       await _settle(tester);
       await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
+      await tester.pump();
+      // No venue: the setting is required (CEO 2026-10-08).
+      final indoor = find.byWidgetPredicate(
+        (w) => w is DabblerChip && (w.label == 'Indoor' || w.label == 'داخلي'),
+      );
+      await tester.ensureVisible(indoor);
+      await tester.tap(indoor);
       await tester.pump();
       await tester.ensureVisible(find.byType(DabblerComposerSubmit));
       await tester.tap(find.byType(DabblerComposerSubmit));

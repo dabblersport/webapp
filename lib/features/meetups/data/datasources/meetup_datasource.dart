@@ -29,6 +29,7 @@ class MeetupRpcParams {
     'p_min_skill': i.minSkill,
     'p_max_skill': i.maxSkill,
     'p_vibe_key': i.vibeKey,
+    'p_is_indoor': i.venueId == null ? i.isIndoor : null,
   };
 
   static Map<String, dynamic> rsvp(
