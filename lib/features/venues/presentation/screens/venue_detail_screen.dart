@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -392,21 +393,21 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     final result = await repository.toggleVenueFavorite(widget.venueId);
     if (!mounted) return;
     result.fold(
-      (failure) {
+      (_) {
         setState(() {
           _favoriteBusy = false;
           _favoriteOptimistic = currentlyFavorited;
         });
-        _snack(failure.message);
+        showFavouriteToast(context, FavouriteKind.venue, added: null);
       },
-      (_) {
+      (favourited) {
         ref.invalidate(favoriteVenuesForCurrentUserProvider);
         ref.invalidate(favoriteVenueIdsForCurrentUserProvider);
         setState(() {
           _favoriteBusy = false;
           _favoriteOptimistic = null;
         });
-        _snack(currentlyFavorited ? 'Removed from saved' : 'Saved');
+        showFavouriteToast(context, FavouriteKind.venue, added: favourited);
       },
     );
   }

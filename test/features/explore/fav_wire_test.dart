@@ -72,11 +72,14 @@ class _FakeVenuesRemote implements VenuesRemoteDataSource {
   final List<String> toggles = <String>[];
   bool fail = false;
 
+  /// The server's `favourited` after the toggle.
+  bool answer = true;
+
   @override
   Future<bool> toggleVenueFavorite(String venueId) async {
     toggles.add(venueId);
     if (fail) throw Exception('rpc failed');
-    return true;
+    return answer;
   }
 
   @override
@@ -277,6 +280,7 @@ void main() {
       await settle(tester);
       expect(remote.toggles, ['v1']);
       expect(find.text('15'), findsOneWidget);
+      expect(find.text('Venue added to favourites'), findsOneWidget);
     }, variant: desktop);
 
     testWidgets('a failed toggle rolls the heart and count back', (
@@ -289,13 +293,25 @@ void main() {
       expect(remote.toggles, ['v1']);
       expect(find.text('14'), findsOneWidget);
       expect(find.text('15'), findsNothing);
+      expect(
+        find.text("Couldn't update favourites. Try again."),
+        findsOneWidget,
+      );
     }, variant: desktop);
 
     testWidgets('unfavouriting decrements', (tester) async {
-      await _pumpVenues(tester, _FakeVenuesRemote(), const Locale('en'));
+      await _pumpVenues(
+        tester,
+        _FakeVenuesRemote()..answer = false,
+        const Locale('en'),
+      );
       await tester.tap(find.bySemanticsLabel('Remove from saved').first);
       await tester.pump();
       expect(find.text('2'), findsOneWidget);
+      // The toast follows the server's answer: removed.
+      await settle(tester);
+      expect(find.text('2'), findsOneWidget);
+      expect(find.text('Venue removed from favourites'), findsOneWidget);
     }, variant: desktop);
 
     testWidgets(
@@ -342,6 +358,7 @@ void main() {
       expect(find.text('10'), findsOneWidget);
       await settle(tester);
       expect(calls, ['a']);
+      expect(find.text('Meetup added to favourites'), findsOneWidget);
       await tester.tap(find.bySemanticsLabel('Share').first);
       await settle(tester);
       expect(share.calls.single.$1, endsWith('/meetups/a'));
@@ -362,6 +379,10 @@ void main() {
       await settle(tester);
       expect(find.text('9'), findsOneWidget);
       expect(find.text('10'), findsNothing);
+      expect(
+        find.text("Couldn't update favourites. Try again."),
+        findsOneWidget,
+      );
     }, variant: desktop);
 
     testWidgets('the group is at least 44 tall', (tester) async {

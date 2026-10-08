@@ -2084,5 +2084,12 @@
   "listing_popular": "Popular",
   "meetup_setting": "Setting",
   "meetup_setting_sub": "Where it takes place when there is no venue",
-  "meetup_setting_required": "Choose Indoor or Outdoor"
+  "meetup_setting_required": "Choose Indoor or Outdoor",
+  "fav_toast_game_added": "Game added to favourites",
+  "fav_toast_game_removed": "Game removed from favourites",
+  "fav_toast_venue_added": "Venue added to favourites",
+  "fav_toast_venue_removed": "Venue removed from favourites",
+  "fav_toast_meetup_added": "Meetup added to favourites",
+  "fav_toast_meetup_removed": "Meetup removed from favourites",
+  "fav_toast_error": "Couldn't update favourites. Try again."
 }

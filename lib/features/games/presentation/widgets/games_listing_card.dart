@@ -5,6 +5,7 @@ import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
 import 'package:dabbler/features/games/presentation/controllers/join_game_feedback.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/games/presentation/utils/games_listing_copy.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -18,6 +19,24 @@ import 'package:share_plus/share_plus.dart';
 // =============================================================================
 // GAME CARD
 // =============================================================================
+
+/// Taps the heart: the card flips at once (optimistic, in
+/// [toggleGameFavourite]), then the toast says what the server settled on, or
+/// that it could not be updated (the card has rolled back by then).
+Future<void> _toggleFavourite(BuildContext context, NearbyGameModel game) async {
+  final container = ProviderScope.containerOf(context, listen: false);
+  final ok = await toggleGameFavourite(container, game);
+  if (!context.mounted) return;
+  final now = gameWithFavourite(
+    container.read(gameFavouriteOverridesProvider),
+    game,
+  );
+  showFavouriteToast(
+    context,
+    FavouriteKind.game,
+    added: ok ? now.favouritedByMe : null,
+  );
+}
 
 /// A game on the design system's game card (`Listings.2026-10-08.dc.html:
 /// 207-279`): verified tick, sport / format / skill tags, day and time, the
@@ -131,10 +150,7 @@ class GamesListingCard extends ConsumerWidget {
             semanticLabel: game.favouritedByMe
                 ? l.listing_favourite_remove
                 : l.listing_favourite_add,
-            onTap: () => toggleGameFavourite(
-              ProviderScope.containerOf(context, listen: false),
-              game,
-            ),
+            onTap: () => _toggleFavourite(context, game),
           ),
           DabblerFeedAction(
             icon: 'share',

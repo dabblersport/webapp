@@ -5918,4 +5918,25 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetup_setting_required => 'Choose Indoor or Outdoor';
+
+  @override
+  String get fav_toast_game_added => 'Game added to favourites';
+
+  @override
+  String get fav_toast_game_removed => 'Game removed from favourites';
+
+  @override
+  String get fav_toast_venue_added => 'Venue added to favourites';
+
+  @override
+  String get fav_toast_venue_removed => 'Venue removed from favourites';
+
+  @override
+  String get fav_toast_meetup_added => 'Meetup added to favourites';
+
+  @override
+  String get fav_toast_meetup_removed => 'Meetup removed from favourites';
+
+  @override
+  String get fav_toast_error => 'Couldn\'t update favourites. Try again.';
 }

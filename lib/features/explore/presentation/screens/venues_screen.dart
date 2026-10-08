@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
@@ -624,14 +625,28 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
     final result = await repository.toggleVenueFavorite(widget.venue.id);
     if (!mounted) return;
     result.fold(
-      (_) => setState(() {
-        _busy = false;
-        _favourite = current;
-      }),
       (_) {
+        setState(() {
+          _busy = false;
+          _favourite = current;
+        });
+        showFavouriteToast(context, FavouriteKind.venue, added: null);
+      },
+      (favourited) {
         ref.invalidate(favoriteVenuesForCurrentUserProvider);
         ref.invalidate(favoriteVenueIdsForCurrentUserProvider);
-        setState(() => _busy = false);
+        // Reconcile with the server's `favourited`: the count follows it.
+        final base = current.mine ? current.count - 1 : current.count;
+        setState(() {
+          _busy = false;
+          _favourite = (
+            count: favourited
+                ? (base < 0 ? 0 : base) + 1
+                : (base < 0 ? 0 : base),
+            mine: favourited,
+          );
+        });
+        showFavouriteToast(context, FavouriteKind.venue, added: favourited);
       },
     );
   }

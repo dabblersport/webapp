@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
     show GamesSkillFilter, gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
@@ -81,6 +82,7 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
       // The server's state, or the state before the tap on an error.
       _favourite = result ?? current;
     });
+    showFavouriteToast(context, FavouriteKind.meetup, added: result?.mine);
   }
 
   Future<void> _share() {

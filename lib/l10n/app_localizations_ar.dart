@@ -5964,4 +5964,25 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get meetup_setting_required => 'اختر داخلي أو خارجي';
+
+  @override
+  String get fav_toast_game_added => 'تمت إضافة اللعبة إلى المفضلة';
+
+  @override
+  String get fav_toast_game_removed => 'تمت إزالة اللعبة من المفضلة';
+
+  @override
+  String get fav_toast_venue_added => 'تمت إضافة المكان إلى المفضلة';
+
+  @override
+  String get fav_toast_venue_removed => 'تمت إزالة المكان من المفضلة';
+
+  @override
+  String get fav_toast_meetup_added => 'تمت إضافة اللقاء إلى المفضلة';
+
+  @override
+  String get fav_toast_meetup_removed => 'تمت إزالة اللقاء من المفضلة';
+
+  @override
+  String get fav_toast_error => 'تعذّر تحديث المفضلة. حاول مرة أخرى.';
 }

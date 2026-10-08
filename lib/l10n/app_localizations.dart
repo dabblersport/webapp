@@ -10708,6 +10708,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose Indoor or Outdoor'**
   String get meetup_setting_required;
+
+  /// No description provided for @fav_toast_game_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Game added to favourites'**
+  String get fav_toast_game_added;
+
+  /// No description provided for @fav_toast_game_removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Game removed from favourites'**
+  String get fav_toast_game_removed;
+
+  /// No description provided for @fav_toast_venue_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue added to favourites'**
+  String get fav_toast_venue_added;
+
+  /// No description provided for @fav_toast_venue_removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue removed from favourites'**
+  String get fav_toast_venue_removed;
+
+  /// No description provided for @fav_toast_meetup_added.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup added to favourites'**
+  String get fav_toast_meetup_added;
+
+  /// No description provided for @fav_toast_meetup_removed.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup removed from favourites'**
+  String get fav_toast_meetup_removed;
+
+  /// No description provided for @fav_toast_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update favourites. Try again.'**
+  String get fav_toast_error;
 }
 
 class _AppLocalizationsDelegate
