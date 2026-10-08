@@ -16,6 +16,10 @@ class FeatureFlags {
   /// details route) is gated on this flag. Free, public, organiser-created only.
   static const bool enableMeetups = true;
 
+  /// Favourites screen (venues, games, meetups; reached from the listings'
+  /// heart). Read-only apart from removing a favourite.
+  static const bool enableFavourites = true;
+
   /// Games & Matches
   static const bool enableGameBrowsing = true;
 

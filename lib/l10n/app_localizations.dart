@@ -10768,6 +10768,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{first} · {second}'**
   String listing_note_join(String first, String second);
+
+  /// No description provided for @fav_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Favourites'**
+  String get fav_title;
+
+  /// No description provided for @fav_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get fav_back;
+
+  /// No description provided for @fav_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get fav_ended;
+
+  /// No description provided for @fav_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favourites'**
+  String get fav_remove;
+
+  /// No description provided for @fav_empty_venues_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite venues yet.'**
+  String get fav_empty_venues_title;
+
+  /// No description provided for @fav_empty_venues_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a venue to save it here.'**
+  String get fav_empty_venues_body;
+
+  /// No description provided for @fav_empty_games_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite games yet.'**
+  String get fav_empty_games_title;
+
+  /// No description provided for @fav_empty_games_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a game to save it here.'**
+  String get fav_empty_games_body;
+
+  /// No description provided for @fav_empty_meetups_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite meetups yet.'**
+  String get fav_empty_meetups_title;
+
+  /// No description provided for @fav_empty_meetups_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a meetup to save it here.'**
+  String get fav_empty_meetups_body;
+
+  /// No description provided for @fav_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your favourites.'**
+  String get fav_load_failed;
+
+  /// No description provided for @fav_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get fav_retry;
+
+  /// No description provided for @fav_meta_players.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}/{cap} players'**
+  String fav_meta_players(int n, int cap);
+
+  /// No description provided for @fav_meta_going.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} going'**
+  String fav_meta_going(int n);
+
+  /// No description provided for @fav_meta_went.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} went'**
+  String fav_meta_went(int n);
 }
 
 class _AppLocalizationsDelegate

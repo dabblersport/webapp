@@ -6008,4 +6008,55 @@ class AppLocalizationsAr extends AppLocalizations {
   String listing_note_join(String first, String second) {
     return '$first · $second';
   }
+
+  @override
+  String get fav_title => 'المفضلة';
+
+  @override
+  String get fav_back => 'رجوع';
+
+  @override
+  String get fav_ended => 'انتهت';
+
+  @override
+  String get fav_remove => 'إزالة من المفضلة';
+
+  @override
+  String get fav_empty_venues_title => 'لا توجد ملاعب مفضلة بعد.';
+
+  @override
+  String get fav_empty_venues_body => 'اضغط على القلب في أي ملعب لحفظه هنا.';
+
+  @override
+  String get fav_empty_games_title => 'لا توجد مباريات مفضلة بعد.';
+
+  @override
+  String get fav_empty_games_body => 'اضغط على القلب في أي مباراة لحفظها هنا.';
+
+  @override
+  String get fav_empty_meetups_title => 'لا توجد لقاءات مفضلة بعد.';
+
+  @override
+  String get fav_empty_meetups_body => 'اضغط على القلب في أي لقاء لحفظه هنا.';
+
+  @override
+  String get fav_load_failed => 'تعذّر تحميل مفضلتك.';
+
+  @override
+  String get fav_retry => 'حاول مرة أخرى';
+
+  @override
+  String fav_meta_players(int n, int cap) {
+    return '$n/$cap لاعبين';
+  }
+
+  @override
+  String fav_meta_going(int n) {
+    return '$n سيحضرون';
+  }
+
+  @override
+  String fav_meta_went(int n) {
+    return '$n حضروا';
+  }
 }

@@ -394,6 +394,16 @@ void main() {
     testWidgets('games listing - $dir', (tester) async {
       await _pump(tester, const GamesScreen(), locale);
       expect(tester.takeException(), isNull);
+      // Listings 2026-10-08b: the Favourites heart leads the header actions.
+      expect(
+        tester
+            .widget<DabblerPageHeader>(find.byType(DabblerPageHeader))
+            .actions
+            .first
+            .icon,
+        'heart',
+      );
+
       expect(find.text(l.nav_games), findsOneWidget);
       // The viewer's own game counts down in the Upcoming rail.
       expect(find.text(l.listing_upcoming), findsOneWidget);
@@ -573,11 +583,26 @@ void main() {
     testWidgets('venues listing - $dir', (tester) async {
       await _pump(tester, const VenuesScreen(), locale);
       expect(tester.takeException(), isNull);
+      expect(
+        tester
+            .widget<DabblerPageHeader>(find.byType(DabblerPageHeader))
+            .actions
+            .any((a) => a.icon == 'heart'),
+        isTrue,
+      );
+
       expect(find.text(dir == 'rtl' ? 'ملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
       expect(find.byType(DabblerCardVenue), findsWidgets);
-      // The favourite is the DS heart + share group.
-      expect(find.byType(DabblerListingSocial), findsWidgets);
+      // The favourite is the bare DS heart (Listings 2026-10-08b): no chip,
+      // no share group.
+      expect(find.byType(DabblerListingSocial), findsNothing);
+      expect(
+        find.byWidgetPredicate(
+          (w) => w is DabblerFeedAction && w.icon == 'heart',
+        ),
+        findsWidgets,
+      );
       await _shoot(tester, key, 'venues-listing-$dir');
     }, variant: desktop);
 

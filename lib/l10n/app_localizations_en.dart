@@ -5957,4 +5957,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String listing_note_join(String first, String second) {
     return '$first · $second';
   }
+
+  @override
+  String get fav_title => 'Favourites';
+
+  @override
+  String get fav_back => 'Back';
+
+  @override
+  String get fav_ended => 'Ended';
+
+  @override
+  String get fav_remove => 'Remove from favourites';
+
+  @override
+  String get fav_empty_venues_title => 'No favourite venues yet.';
+
+  @override
+  String get fav_empty_venues_body =>
+      'Tap the heart on a venue to save it here.';
+
+  @override
+  String get fav_empty_games_title => 'No favourite games yet.';
+
+  @override
+  String get fav_empty_games_body => 'Tap the heart on a game to save it here.';
+
+  @override
+  String get fav_empty_meetups_title => 'No favourite meetups yet.';
+
+  @override
+  String get fav_empty_meetups_body =>
+      'Tap the heart on a meetup to save it here.';
+
+  @override
+  String get fav_load_failed => 'Couldn\'t load your favourites.';
+
+  @override
+  String get fav_retry => 'Try again';
+
+  @override
+  String fav_meta_players(int n, int cap) {
+    return '$n/$cap players';
+  }
+
+  @override
+  String fav_meta_going(int n) {
+    return '$n going';
+  }
+
+  @override
+  String fav_meta_went(int n) {
+    return '$n went';
+  }
 }

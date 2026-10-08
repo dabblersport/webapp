@@ -2188,5 +2188,20 @@
   "fav_toast_meetup_removed": "تمت إزالة اللقاء من المفضلة",
   "fav_toast_error": "تعذّر تحديث المفضلة. حاول مرة أخرى.",
   "listing_following_joined": "{count, plural, =1{1 ممّن تتابعهم} =2{2 ممّن تتابعهم} zero{{count} ممّن تتابعهم} few{{count} ممّن تتابعهم} many{{count} ممّن تتابعهم} other{{count} ممّن تتابعهم}}",
-  "listing_note_join": "{first} · {second}"
+  "listing_note_join": "{first} · {second}",
+  "fav_title": "المفضلة",
+  "fav_back": "رجوع",
+  "fav_ended": "انتهت",
+  "fav_remove": "إزالة من المفضلة",
+  "fav_empty_venues_title": "لا توجد ملاعب مفضلة بعد.",
+  "fav_empty_venues_body": "اضغط على القلب في أي ملعب لحفظه هنا.",
+  "fav_empty_games_title": "لا توجد مباريات مفضلة بعد.",
+  "fav_empty_games_body": "اضغط على القلب في أي مباراة لحفظها هنا.",
+  "fav_empty_meetups_title": "لا توجد لقاءات مفضلة بعد.",
+  "fav_empty_meetups_body": "اضغط على القلب في أي لقاء لحفظه هنا.",
+  "fav_load_failed": "تعذّر تحميل مفضلتك.",
+  "fav_retry": "حاول مرة أخرى",
+  "fav_meta_players": "{n}/{cap} لاعبين",
+  "fav_meta_going": "{n} سيحضرون",
+  "fav_meta_went": "{n} حضروا"
 }

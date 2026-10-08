@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -111,6 +112,14 @@ class _MeetupsTabs extends ConsumerWidget {
           onLocationPressed:
               onPickLocation ?? () => HomeLocationPickerSheet.show(context),
           actions: <DabblerPageHeaderAction>[
+            // The Favourites entry (`Listings.2026-10-08b.dc.html:403-405`).
+            DabblerPageHeaderAction(
+              icon: 'heart',
+              semanticLabel: l.fav_title,
+              onPressed: () => context.push(
+                '${RoutePaths.favourites}?tab=${FavouriteKind.meetup.name}',
+              ),
+            ),
             DabblerPageHeaderAction(
               icon: 'search-normal',
               semanticLabel: l.listing_search,

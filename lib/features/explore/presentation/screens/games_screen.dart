@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'dart:async';
 
 import 'package:dabbler/data/models/social/sport.dart';
@@ -69,7 +70,8 @@ NearbyGamesParams _paramsFor(WidgetRef ref, String? sportId) {
     lng: location?.lng,
     radiusMeters: location == null ? null : ref.watch(gamesRadiusProvider),
     sportId: sportId,
-    sortOrder: ref.watch(nearbyGameSortProvider) ?? NearbySortOrder.defaultOrder,
+    sortOrder:
+        ref.watch(nearbyGameSortProvider) ?? NearbySortOrder.defaultOrder,
   );
 }
 
@@ -203,6 +205,14 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
               : l.listing_set_location,
           onLocationPressed: () => HomeLocationPickerSheet.show(context),
           actions: <DabblerPageHeaderAction>[
+            // The Favourites entry (`Listings.2026-10-08b.dc.html:96-98`).
+            DabblerPageHeaderAction(
+              icon: 'heart',
+              semanticLabel: l.fav_title,
+              onPressed: () => context.push(
+                '${RoutePaths.favourites}?tab=${FavouriteKind.game.name}',
+              ),
+            ),
             DabblerPageHeaderAction(
               icon: 'search-normal',
               semanticLabel: l.listing_search,

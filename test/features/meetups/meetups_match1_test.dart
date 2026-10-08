@@ -276,6 +276,16 @@ void main() {
         ],
       );
       expect(tester.takeException(), isNull);
+      // Listings 2026-10-08b: the Favourites heart leads the header actions.
+      expect(
+        tester
+            .widget<DabblerPageHeader>(find.byType(DabblerPageHeader))
+            .actions
+            .first
+            .icon,
+        'heart',
+      );
+
       // Setting tag only where the venue is known.
       expect(find.text(ar ? 'خارجي' : 'Outdoor'), findsNWidgets(2));
       // Three faces at most.
