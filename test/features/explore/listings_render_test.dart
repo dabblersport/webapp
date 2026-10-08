@@ -261,8 +261,9 @@ Future<void> _pump(
   _Mode mode = _Mode.content,
   List<Override> extra = const <Override>[],
   Key key = const Key('shot'),
+  Size size = const Size(393, 852),
 }) async {
-  tester.view.physicalSize = const Size(393, 852);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
@@ -408,6 +409,8 @@ void main() {
           const GamesScreen(),
           locale,
           mode: state == 'empty' ? _Mode.empty : _Mode.content,
+          // Tall enough to show every spots tone (info, warning, error).
+          size: const Size(393, 2200),
           extra: [
             if (state == 'filters') ...[
               gamesDateFilterProvider.overrideWith(

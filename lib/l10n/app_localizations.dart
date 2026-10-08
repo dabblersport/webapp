@@ -6143,6 +6143,18 @@ abstract class AppLocalizations {
   /// **'This weekend'**
   String get listing_this_weekend;
 
+  /// No description provided for @listing_distance_km.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km'**
+  String listing_distance_km(String km);
+
+  /// No description provided for @listing_distance_m.
+  ///
+  /// In en, this message translates to:
+  /// **'{meters} m'**
+  String listing_distance_m(int meters);
+
   /// No description provided for @listing_no_charge.
   ///
   /// In en, this message translates to:

@@ -3385,6 +3385,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_this_weekend => 'نهاية الأسبوع';
 
   @override
+  String listing_distance_km(String km) {
+    return '$km كم';
+  }
+
+  @override
+  String listing_distance_m(int meters) {
+    return '$meters م';
+  }
+
+  @override
   String get listing_no_charge => 'بدون رسوم';
 
   @override

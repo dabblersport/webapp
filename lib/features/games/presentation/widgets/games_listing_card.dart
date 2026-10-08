@@ -91,7 +91,8 @@ class GamesListingCard extends ConsumerWidget {
       meta: [
         if (game.venueName?.isNotEmpty == true) game.venueName!,
         // Only the location path measures distance; "Any distance" has none.
-        if (game.distanceMeters > 0) game.distanceLabel,
+        if (game.distanceMeters > 0)
+          gamesDistanceLabel(l, game.distanceMeters),
         if (minutes != null) l.listing_duration_min(minutes),
       ],
       progress: game.spotsRemaining != null && game.playerCount != null

@@ -90,3 +90,13 @@ DabblerProgressBarTone gamesStatusTone(GamesCardStatus status) =>
 /// one place to change when a price source exists.
 ({String label, String? note, bool free}) gamesPrice(AppLocalizations l) =>
     (label: l.listing_free, note: l.listing_no_charge, free: true);
+
+/// A distance in the viewer's language: "850 m" / "2.4 km" (`٢٫٤` never:
+/// digits stay Western), "2.4 كم" in Arabic so the unit reads after the number.
+String gamesDistanceLabel(AppLocalizations l, double meters) {
+  if (meters < 1000) return l.listing_distance_m(meters.round());
+  final double km = meters / 1000;
+  return l.listing_distance_km(
+    km < 10 ? km.toStringAsFixed(1) : km.round().toString(),
+  );
+}
