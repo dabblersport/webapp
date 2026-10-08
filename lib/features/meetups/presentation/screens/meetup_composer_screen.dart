@@ -584,19 +584,36 @@ class MeetupSkillRows extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) => Column(
-    mainAxisSize: MainAxisSize.min,
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: <Widget>[
-      for (final t in bands)
-        ComposerPickerRow(
-          title: t.$1,
-          // LTR isolate: "1–3" keeps its order inside Arabic text.
-          trailingText: '\u2066${t.$2}–${t.$3}\u2069',
-          // Any stored value in the band selects it (old (9, 10) rows too).
-          selected: minSkill != null && minSkill! >= t.$2 && minSkill! <= t.$3,
-          onTap: () => onPick(t.$2, t.$3),
-        ),
-    ],
-  );
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    final titles = <String>[
+      l.listing_skill_beginner,
+      l.listing_skill_intermediate,
+      l.listing_skill_advanced,
+    ];
+    final subtitles = <String>[
+      l.skill_sub_beginner,
+      l.skill_sub_intermediate,
+      l.skill_sub_advanced,
+    ];
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: <Widget>[
+        for (var i = 0; i < bands.length; i++)
+          ComposerPickerRow(
+            title: titles[i],
+            subtitle: subtitles[i],
+            // LTR isolate: "1–3" keeps its order inside Arabic text.
+            trailingText: '\u2066${bands[i].$2}–${bands[i].$3}\u2069',
+            // Any stored value in the band selects it (old (9, 10) rows too).
+            selected:
+                minSkill != null &&
+                minSkill! >= bands[i].$2 &&
+                minSkill! <= bands[i].$3,
+            onTap: () => onPick(bands[i].$2, bands[i].$3),
+          ),
+      ],
+    );
+  }
 }

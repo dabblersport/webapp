@@ -802,9 +802,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
             title: AppLocalizations.of(context).game_skill_level,
             subtitle: AppLocalizations.of(context).game_skill_sub,
             trailing: ComposerSelectPill(
-              value:
-                  state.skillLevel ??
-                  AppLocalizations.of(context).game_any_level,
+              value: _skillText(AppLocalizations.of(context), state.skillLevel),
               caret: ComposerSelectCaret.down,
               onTap: () => _openSkillPicker(context),
             ),
@@ -1362,10 +1360,17 @@ class GameSkillPickerSheet extends StatelessWidget {
   final VoidCallback onClear;
   final bool canClear;
 
-  static const _levels = [
-    ('Beginner', '1–3', 'Just getting started'),
-    ('Intermediate', '4–6', 'Plays regularly'),
-    ('Advanced', '7–10', 'Competitive level'),
+  /// (state key, range, localised title, localised subtitle). The state key
+  /// stays the English word ([selectSkillLevel] and `_skillLabelFor` use it).
+  static List<(String, String, String, String)> _levels(AppLocalizations l) => [
+    ('Beginner', '1–3', l.listing_skill_beginner, l.skill_sub_beginner),
+    (
+      'Intermediate',
+      '4–6',
+      l.listing_skill_intermediate,
+      l.skill_sub_intermediate,
+    ),
+    ('Advanced', '7–10', l.listing_skill_advanced, l.skill_sub_advanced),
   ];
 
   @override
@@ -1381,10 +1386,10 @@ class GameSkillPickerSheet extends StatelessWidget {
               Navigator.pop(context);
             },
           ),
-        for (final l in _levels)
+        for (final l in _levels(AppLocalizations.of(context)))
           ComposerPickerRow(
-            title: l.$1,
-            subtitle: l.$3,
+            title: l.$3,
+            subtitle: l.$4,
             // LTR isolate: "1–3" keeps its order inside Arabic text.
             trailingText: '\u2066${l.$2}\u2069',
             onTap: () {
@@ -1396,3 +1401,12 @@ class GameSkillPickerSheet extends StatelessWidget {
     );
   }
 }
+
+/// The localised name of a stored skill key ('Beginner', 'Intermediate',
+/// 'Advanced'); the "any level" words when none is chosen.
+String _skillText(AppLocalizations l, String? key) => switch (key) {
+  'Beginner' => l.listing_skill_beginner,
+  'Intermediate' => l.listing_skill_intermediate,
+  'Advanced' => l.listing_skill_advanced,
+  _ => key ?? l.game_any_level,
+};

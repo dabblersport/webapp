@@ -5920,4 +5920,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String listing_share_venue_headline(String name) {
     return 'تعرّف على $name في Dabbler!';
   }
+
+  @override
+  String get skill_sub_beginner => 'في بداية الطريق';
+
+  @override
+  String get skill_sub_intermediate => 'يلعب بانتظام';
+
+  @override
+  String get skill_sub_advanced => 'مستوى تنافسي';
 }

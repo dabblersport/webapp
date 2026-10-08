@@ -162,6 +162,30 @@ void main() {
     expect((min, max), (7, 10));
   });
 
+  testWidgets('both composers speak Arabic: labels and subtitles', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      GameSkillPickerSheet(onSelect: (_) {}, onClear: () {}, canClear: false),
+      const Locale('ar'),
+    );
+    for (final t in ['مبتدئ', 'متوسط', 'متقدم', 'مستوى تنافسي']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    expect(find.text('Beginner'), findsNothing);
+    expect(find.text('Competitive level'), findsNothing);
+    await _pump(
+      tester,
+      MeetupSkillRows(minSkill: null, onPick: (_, __) {}),
+      const Locale('ar'),
+    );
+    for (final t in ['مبتدئ', 'متوسط', 'متقدم', 'مستوى تنافسي']) {
+      expect(find.text(t), findsOneWidget, reason: t);
+    }
+    expect(find.text('Advanced'), findsNothing);
+  });
+
   for (final (String dir, Locale locale) in <(String, Locale)>[
     ('ltr', const Locale('en')),
     ('rtl', const Locale('ar')),

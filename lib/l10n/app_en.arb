@@ -2069,5 +2069,8 @@
   "meetups_empty_text": "{activity} has no meetups right now. Sessions are coming up in {others}.",
   "@meetups_empty_text": {"placeholders": {"activity": {"type": "String"}, "others": {"type": "String"}}},
   "listing_share_venue_headline": "Check out {name} on Dabbler!",
-  "@listing_share_venue_headline": {"placeholders": {"name": {"type": "String"}}}
+  "@listing_share_venue_headline": {"placeholders": {"name": {"type": "String"}}},
+  "skill_sub_beginner": "Just getting started",
+  "skill_sub_intermediate": "Plays regularly",
+  "skill_sub_advanced": "Competitive level"
 }

@@ -2164,5 +2164,8 @@
   "meetups_favourite": "أضف إلى المفضلة",
   "meetups_unfavourite": "إزالة من المفضلة",
   "meetups_empty_text": "لا توجد لقاءات في {activity} الآن. توجد جلسات قادمة في {others}.",
-  "listing_share_venue_headline": "تعرّف على {name} في Dabbler!"
+  "listing_share_venue_headline": "تعرّف على {name} في Dabbler!",
+  "skill_sub_beginner": "في بداية الطريق",
+  "skill_sub_intermediate": "يلعب بانتظام",
+  "skill_sub_advanced": "مستوى تنافسي"
 }

@@ -5873,4 +5873,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String listing_share_venue_headline(String name) {
     return 'Check out $name on Dabbler!';
   }
+
+  @override
+  String get skill_sub_beginner => 'Just getting started';
+
+  @override
+  String get skill_sub_intermediate => 'Plays regularly';
+
+  @override
+  String get skill_sub_advanced => 'Competitive level';
 }

@@ -10624,6 +10624,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Check out {name} on Dabbler!'**
   String listing_share_venue_headline(String name);
+
+  /// No description provided for @skill_sub_beginner.
+  ///
+  /// In en, this message translates to:
+  /// **'Just getting started'**
+  String get skill_sub_beginner;
+
+  /// No description provided for @skill_sub_intermediate.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays regularly'**
+  String get skill_sub_intermediate;
+
+  /// No description provided for @skill_sub_advanced.
+  ///
+  /// In en, this message translates to:
+  /// **'Competitive level'**
+  String get skill_sub_advanced;
 }
 
 class _AppLocalizationsDelegate
