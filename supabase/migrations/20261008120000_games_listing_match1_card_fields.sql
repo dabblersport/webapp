@@ -19,12 +19,15 @@
 --     recreated with favorite_count + favourited_by_me.
 --  6. venue_favorites, toggle_venue_favorite (both overloads), activity_favorites
 --     and fn_activity_favorites_sync retired by RENAME + REVOKE.
--- Deviation from the ruling: toggle_favorite is SECURITY DEFINER (search_path='',
--- auth.uid() only, no user parameter) because RLS lets a caller read only their
--- own rows, so an invoker count(*) would return 0 or 1 instead of the real total.
--- favorite_count_of(text, uuid) is a STABLE definer helper that returns only a
--- count, used where the view / function runs as invoker (v_venues_with_sports,
--- rpc_get_nearby_venues).
+-- toggle_favorite is SECURITY INVOKER (ruling v2; search_path='', auth.uid() only,
+-- no user parameter). It was first applied as DEFINER and corrected afterwards
+-- (CREATE OR REPLACE ... SECURITY INVOKER, no DROP): it returns the real total
+-- through favorite_count_of(text, uuid), a STABLE definer helper that returns only
+-- a number (RLS shows a caller only their own rows). The helper is also used where
+-- the view / function runs as invoker (v_venues_with_sports, rpc_get_nearby_venues).
+-- Correction applied after verification: rpc_get_nearby_games now joins the venue
+-- as COALESCE(vs.venue_id, g.venue_id), like v_game_card, so venue_name matches
+-- on both paths (before, a game with a venue but no space got a NULL venue_name).
 
 -- (1) v_game_card ------------------------------------------------------------
 CREATE OR REPLACE VIEW public.v_game_card AS
