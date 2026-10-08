@@ -5820,4 +5820,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String listing_reviews_count(String count) {
     return '($count تقييم)';
   }
+
+  @override
+  String get listing_this_weekend => 'نهاية هذا الأسبوع';
+
+  @override
+  String get listing_sort_popular => 'الأكثر شعبية';
+
+  @override
+  String get meetups_like => 'أعجبني';
+
+  @override
+  String get meetups_unlike => 'إزالة الإعجاب';
+
+  @override
+  String meetups_empty_text(String activity, String others) {
+    return 'لا توجد لقاءات في $activity الآن. توجد جلسات قادمة في $others.';
+  }
 }

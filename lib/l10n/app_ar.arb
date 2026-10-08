@@ -2140,5 +2140,10 @@
   "listing_venue_sort_price": "الأقل سعرًا",
   "listing_expand_search": "وسّع نطاق البحث",
   "listing_venues_none_filters_text": "جرّب تخفيف أحد الفلاتر أو توسيع نطاق البحث.",
-  "listing_reviews_count": "({count} تقييم)"
+  "listing_reviews_count": "({count} تقييم)",
+  "listing_this_weekend": "نهاية هذا الأسبوع",
+  "listing_sort_popular": "الأكثر شعبية",
+  "meetups_like": "أعجبني",
+  "meetups_unlike": "إزالة الإعجاب",
+  "meetups_empty_text": "لا توجد لقاءات في {activity} الآن. توجد جلسات قادمة في {others}."
 }

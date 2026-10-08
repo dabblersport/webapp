@@ -12,20 +12,24 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 /// A meetup on the design system's game card, drawn from the Listings meetup
-/// card (`Listings.dc.html:519-570`). The card has no price (meetups are free
-/// in v1), no faces (the list row carries counts, not attendees) and no
-/// like/share counts (no feature behind them).
+/// card (`Listings.dc.html:601-654`). The card has no price (meetups are free
+/// in v1) and no like/share (no design-system part for them yet).
 class MeetupListingCard extends ConsumerStatefulWidget {
   const MeetupListingCard({
     super.key,
     required this.meetup,
     this.distanceMeters,
+    this.isIndoor,
     this.onOpen,
     this.now,
   });
 
   final MeetupListItem meetup;
   final double? distanceMeters;
+
+  /// The venue's setting (`v_meetup_list.venue_is_indoor`); null when the
+  /// meetup has no venue, so no setting is tagged.
+  final bool? isIndoor;
   final VoidCallback? onOpen;
 
   /// The clock; tests pin it.
@@ -76,6 +80,12 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
                 ? m.sportNameAr!
                 : m.sportNameEn!,
           ),
+        // The setting, as the venue card tags it (`Listings.dc.html:605`).
+        if (widget.isIndoor != null)
+          DabblerListingTag(
+            label: widget.isIndoor! ? l.listing_indoor : l.listing_outdoor,
+            tone: DabblerListingTagTone.brandTint,
+          ),
         if (skill != null)
           DabblerListingTag(
             label: gamesSkillTierLabel(l, skill),
@@ -94,8 +104,8 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
           l.meetups_distance_km((distance / 1000).toStringAsFixed(1)),
       ],
       progress: DabblerMeetupAttendees(
-        // The frame's card draws four faces (`Listings.dc.html:545`).
-        maxAvatars: 4,
+        // The frame's card draws three faces (`Listings.dc.html:618`).
+        maxAvatars: 3,
         people: <String>[
           for (final a in m.attendeeAvatars) a.displayName ?? a.avatarUrl ?? '',
         ],

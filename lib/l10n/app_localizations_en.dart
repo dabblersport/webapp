@@ -5776,4 +5776,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String listing_reviews_count(String count) {
     return '($count)';
   }
+
+  @override
+  String get listing_this_weekend => 'This weekend';
+
+  @override
+  String get listing_sort_popular => 'Most popular';
+
+  @override
+  String get meetups_like => 'Like';
+
+  @override
+  String get meetups_unlike => 'Remove like';
+
+  @override
+  String meetups_empty_text(String activity, String others) {
+    return '$activity has no meetups right now. Sessions are coming up in $others.';
+  }
 }

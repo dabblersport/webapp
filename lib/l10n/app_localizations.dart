@@ -10480,6 +10480,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'({count})'**
   String listing_reviews_count(String count);
+
+  /// No description provided for @listing_this_weekend.
+  ///
+  /// In en, this message translates to:
+  /// **'This weekend'**
+  String get listing_this_weekend;
+
+  /// No description provided for @listing_sort_popular.
+  ///
+  /// In en, this message translates to:
+  /// **'Most popular'**
+  String get listing_sort_popular;
+
+  /// No description provided for @meetups_like.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get meetups_like;
+
+  /// No description provided for @meetups_unlike.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove like'**
+  String get meetups_unlike;
+
+  /// No description provided for @meetups_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'{activity} has no meetups right now. Sessions are coming up in {others}.'**
+  String meetups_empty_text(String activity, String others);
 }
 
 class _AppLocalizationsDelegate
