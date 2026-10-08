@@ -6137,12 +6137,6 @@ abstract class AppLocalizations {
   /// **'This week'**
   String get listing_this_week;
 
-  /// No description provided for @listing_this_weekend.
-  ///
-  /// In en, this message translates to:
-  /// **'This weekend'**
-  String get listing_this_weekend;
-
   /// No description provided for @listing_distance_km.
   ///
   /// In en, this message translates to:

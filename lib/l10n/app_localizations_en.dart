@@ -3390,9 +3390,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_this_week => 'This week';
 
   @override
-  String get listing_this_weekend => 'This weekend';
-
-  @override
   String listing_distance_km(String km) {
     return '$km km';
   }

@@ -1247,7 +1247,6 @@
   "listing_today": "Today",
   "listing_tomorrow": "Tomorrow",
   "listing_this_week": "This week",
-  "listing_this_weekend": "This weekend",
   "listing_distance_km": "{km} km",
   "@listing_distance_km": {"placeholders": {"km": {"type": "String"}}},
   "listing_distance_m": "{meters} m",
