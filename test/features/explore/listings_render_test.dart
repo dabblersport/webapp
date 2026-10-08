@@ -511,7 +511,12 @@ void main() {
       );
       expect(find.text(l.listing_this_weekend), findsOneWidget);
       expect(find.text(l.listing_group_skill), findsNothing);
-      await tester.tap(find.bySemanticsLabel(l.listing_filters_open));
+      // Tap the rail's trailing edge: the centre can land on the Clear all
+      // button (it does in Arabic), which resets the filter instead.
+      final rail = tester.getRect(find.bySemanticsLabel(l.listing_filters_open));
+      await tester.tapAt(
+        Offset(dir == 'rtl' ? rail.left + 12 : rail.right - 12, rail.center.dy),
+      );
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
