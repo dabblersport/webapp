@@ -472,12 +472,21 @@ class _AllVenuesList extends ConsumerWidget {
         // `Listings.dc.html:740` — the bold location glyph.
         icon: 'location',
         title: AppLocalizations.of(context).listing_venues_none_title,
-        text: hint ?? AppLocalizations.of(context).listing_venues_none_text,
+        // With a filter applied the useful advice is to loosen it, not to try
+        // another sport.
+        text: _filtersApplied(ref)
+            ? AppLocalizations.of(context).listing_venues_none_filters_text
+            : hint ?? AppLocalizations.of(context).listing_venues_none_text,
         action: DabblerButton(
           label: AppLocalizations.of(context).listing_expand_search,
           onPressed: () => _expandSearch(ref),
         ),
       );
+
+  bool _filtersApplied(WidgetRef ref) =>
+      ref.read(venueIndoorFilterProvider) != null ||
+      ref.read(venueMaxPriceFilterProvider) != null ||
+      ref.read(venueMinRatingFilterProvider) != null;
 
   /// "Expand search area" (`Listings.dc.html:760`): widens the radius to the
   /// next step while the distance filter is on; otherwise (nothing to widen)

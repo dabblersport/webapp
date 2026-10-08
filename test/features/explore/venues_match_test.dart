@@ -389,4 +389,14 @@ void main() {
     expect(find.text('Starting soonest'), findsNothing);
     await _shoot(tester, const Key('shot'), 'venues-ltr-filter-sheet');
   }, variant: desktop);
+
+  testWidgets('filter rail carries Clear all after the applied pills', (
+    tester,
+  ) async {
+    await _pump(tester, const Locale('en'), filters: true);
+    // Four applied pills overflow the rail, so Clear all is the last item,
+    // reached by scrolling the rail (as on the Games listing).
+    expect(find.byKey(DabblerFilterRail.clearAllKey), findsOneWidget);
+    expect(find.text('Clear all'), findsOneWidget);
+  }, variant: desktop);
 }
