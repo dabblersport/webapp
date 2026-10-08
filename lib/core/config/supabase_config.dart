@@ -241,6 +241,12 @@ class SupabaseConfig {
   static const String userSettingsTable = 'user_settings';
   static const String favoritesTable = 'favorites';
   static const String vGameCardTable = 'v_game_card';
+
+  /// Favourites of games, meetups and venues (one row per profile + target).
+  static const String favoritesTable = 'favorites';
+
+  /// `toggle_favorite(p_target_type, p_target_id)` → (favourited, favorite_count).
+  static const String toggleFavoriteRpc = 'toggle_favorite';
   static const String vModQueueOpenTable = 'v_mod_queue_open';
   static const String vSafetyOverviewTable = 'v_safety_overview';
   static const String vVenuesWithSportsTable = 'v_venues_with_sports';

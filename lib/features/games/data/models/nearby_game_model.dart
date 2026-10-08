@@ -20,6 +20,12 @@ class NearbyGameModel {
     this.isJoined = false,
     this.minSkill,
     this.maxSkill,
+    this.endAt,
+    this.variantNameEn,
+    this.variantNameAr,
+    this.hostVerified = false,
+    this.favoriteCount = 0,
+    this.favouritedByMe = false,
   });
 
   final String id;
@@ -49,7 +55,63 @@ class NearbyGameModel {
   final int? minSkill;
   final int? maxSkill;
 
+  /// When the game ends; with [scheduledAt] gives its length.
+  final DateTime? endAt;
+
+  /// The format (`sport_variants.name_en/ar`) — `Futsal 5s`, `Doubles`.
+  final String? variantNameEn;
+  final String? variantNameAr;
+
+  /// The host is verified (profile or organiser for the sport), from the DB.
+  final bool hostVerified;
+
+  /// How many profiles favourited the game, and whether the viewer did.
+  final int favoriteCount;
+  final bool favouritedByMe;
+
   bool get isMine => isCreated || isJoined;
+
+  /// The game's length in whole minutes, or null without a valid end.
+  int? get durationMinutes {
+    final s = scheduledAt, e = endAt;
+    if (s == null || e == null || !e.isAfter(s)) return null;
+    return e.difference(s).inMinutes;
+  }
+
+  /// The format in [languageCode], falling back to English.
+  String? formatName(String languageCode) {
+    final ar = variantNameAr;
+    if (languageCode == 'ar' && ar != null && ar.isNotEmpty) return ar;
+    final en = variantNameEn;
+    return en != null && en.isNotEmpty ? en : null;
+  }
+
+  /// This game with its favourite state replaced.
+  NearbyGameModel withFavourite({required bool favourited, required int count}) =>
+      NearbyGameModel(
+        id: id,
+        title: title,
+        sportName: sportName,
+        scheduledAt: scheduledAt,
+        status: status,
+        venueName: venueName,
+        latitude: latitude,
+        longitude: longitude,
+        distanceMeters: distanceMeters,
+        playerCount: playerCount,
+        spotsRemaining: spotsRemaining,
+        isPublic: isPublic,
+        isCreated: isCreated,
+        isJoined: isJoined,
+        minSkill: minSkill,
+        maxSkill: maxSkill,
+        endAt: endAt,
+        variantNameEn: variantNameEn,
+        variantNameAr: variantNameAr,
+        hostVerified: hostVerified,
+        favoriteCount: count,
+        favouritedByMe: favourited,
+      );
 
   factory NearbyGameModel.fromJson(Map<String, dynamic> json) {
     return NearbyGameModel(
@@ -71,6 +133,14 @@ class NearbyGameModel {
       isJoined: json['is_joined'] as bool? ?? false,
       minSkill: json['min_skill'] as int?,
       maxSkill: json['max_skill'] as int?,
+      endAt: json['end_at'] != null
+          ? DateTime.tryParse(json['end_at'] as String)
+          : null,
+      variantNameEn: json['variant_name_en'] as String?,
+      variantNameAr: json['variant_name_ar'] as String?,
+      hostVerified: json['host_verified'] as bool? ?? false,
+      favoriteCount: (json['favorite_count'] as num?)?.toInt() ?? 0,
+      favouritedByMe: json['favourited_by_me'] as bool? ?? false,
     );
   }
 

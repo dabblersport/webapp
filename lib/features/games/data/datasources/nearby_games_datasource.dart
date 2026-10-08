@@ -58,7 +58,8 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   static const _cardColumns =
       'id, title, sport_name_en, start_at, end_at, is_cancelled, '
       'venue_name, area_name, capacity, roster_count, sport_id, '
-      'is_creator, is_joined, min_skill, max_skill';
+      'is_creator, is_joined, min_skill, max_skill, variant_name_en, '
+      'variant_name_ar, host_verified, favorite_count, favourited_by_me';
 
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
@@ -137,6 +138,12 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
         isJoined: row['is_joined'] as bool? ?? false,
         minSkill: row['min_skill'] as int?,
         maxSkill: row['max_skill'] as int?,
+        endAt: endAt,
+        variantNameEn: row['variant_name_en'] as String?,
+        variantNameAr: row['variant_name_ar'] as String?,
+        hostVerified: row['host_verified'] as bool? ?? false,
+        favoriteCount: (row['favorite_count'] as num?)?.toInt() ?? 0,
+        favouritedByMe: row['favourited_by_me'] as bool? ?? false,
       );
     }).toList();
   }
