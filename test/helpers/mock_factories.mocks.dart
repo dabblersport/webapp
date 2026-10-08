@@ -2160,14 +2160,13 @@ class MockVenuesRepository extends _i1.Mock implements _i15.VenuesRepository {
   @override
   _i4.Future<_i9.Either<_i6.Failure, bool>> toggleVenueFavorite(
     String? venueId,
-    String? userId,
   ) =>
       (super.noSuchMethod(
-            Invocation.method(#toggleVenueFavorite, [venueId, userId]),
+            Invocation.method(#toggleVenueFavorite, [venueId]),
             returnValue: _i4.Future<_i9.Either<_i6.Failure, bool>>.value(
               _i11.dummyValue<_i9.Either<_i6.Failure, bool>>(
                 this,
-                Invocation.method(#toggleVenueFavorite, [venueId, userId]),
+                Invocation.method(#toggleVenueFavorite, [venueId]),
               ),
             ),
           )

@@ -5828,13 +5828,18 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_sort_popular => 'الأكثر شعبية';
 
   @override
-  String get meetups_like => 'أعجبني';
+  String get meetups_favourite => 'أضف إلى المفضلة';
 
   @override
-  String get meetups_unlike => 'إزالة الإعجاب';
+  String get meetups_unfavourite => 'إزالة من المفضلة';
 
   @override
   String meetups_empty_text(String activity, String others) {
     return 'لا توجد لقاءات في $activity الآن. توجد جلسات قادمة في $others.';
+  }
+
+  @override
+  String listing_share_venue_headline(String name) {
+    return 'تعرّف على $name في Dabbler!';
   }
 }

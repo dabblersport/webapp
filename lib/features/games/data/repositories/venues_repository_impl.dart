@@ -454,18 +454,12 @@ class VenuesRepositoryImpl implements VenuesRepository {
   }
 
   @override
-  Future<Either<Failure, bool>> toggleVenueFavorite(
-    String venueId,
-    String userId,
-  ) async {
+  Future<Either<Failure, bool>> toggleVenueFavorite(String venueId) async {
     try {
-      final success = await remoteDataSource.toggleVenueFavorite(
-        venueId,
-        userId,
-      );
+      final success = await remoteDataSource.toggleVenueFavorite(venueId);
 
-      // Clear related cache entries
-      _clearUserRelatedCache(userId);
+      // Clear cached favourites lists
+      _clearUserRelatedCache('favorites');
 
       return Right(success);
     } on VenueServerException catch (e) {

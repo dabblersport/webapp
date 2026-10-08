@@ -30,6 +30,8 @@ class VenueWithSportModel {
     this.isOpenNow = false,
     this.sports = const [],
     this.sportsAr = const [],
+    this.favoriteCount = 0,
+    this.favouritedByMe = false,
   });
 
   final String id;
@@ -67,6 +69,10 @@ class VenueWithSportModel {
   final List<String> sports;
   final List<String> sportsAr;
 
+  /// `favorites` rows for the venue, and whether the signed-in user has one.
+  final int favoriteCount;
+  final bool favouritedByMe;
+
   factory VenueWithSportModel.fromJson(Map<String, dynamic> json) {
     List<String> strings(Object? raw) =>
         raw is List ? raw.map((e) => e.toString()).toList() : const [];
@@ -98,6 +104,8 @@ class VenueWithSportModel {
       isOpenNow: json['is_open_now'] as bool? ?? false,
       sports: strings(json['sports']),
       sportsAr: strings(json['sports_ar']),
+      favoriteCount: (json['favorite_count'] as num?)?.toInt() ?? 0,
+      favouritedByMe: json['favourited_by_me'] as bool? ?? false,
     );
   }
 }

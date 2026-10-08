@@ -2143,7 +2143,8 @@
   "listing_reviews_count": "({count} تقييم)",
   "listing_this_weekend": "نهاية هذا الأسبوع",
   "listing_sort_popular": "الأكثر شعبية",
-  "meetups_like": "أعجبني",
-  "meetups_unlike": "إزالة الإعجاب",
-  "meetups_empty_text": "لا توجد لقاءات في {activity} الآن. توجد جلسات قادمة في {others}."
+  "meetups_favourite": "أضف إلى المفضلة",
+  "meetups_unfavourite": "إزالة من المفضلة",
+  "meetups_empty_text": "لا توجد لقاءات في {activity} الآن. توجد جلسات قادمة في {others}.",
+  "listing_share_venue_headline": "تعرّف على {name} في Dabbler!"
 }

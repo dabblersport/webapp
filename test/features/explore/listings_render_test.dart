@@ -376,8 +376,8 @@ void main() {
       expect(find.text(dir == 'rtl' ? 'ملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
       expect(find.byType(DabblerCardVenue), findsWidgets);
-      // The favourite is the DS square well, not an icon button.
-      expect(find.byType(DabblerFavouriteButton), findsWidgets);
+      // The favourite is the DS heart + share group.
+      expect(find.byType(DabblerListingSocial), findsWidgets);
       await _shoot(tester, key, 'venues-listing-$dir');
     }, variant: desktop);
 

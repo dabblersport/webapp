@@ -2,7 +2,11 @@ import 'package:dabbler/features/games/presentation/providers/nearby_games_provi
     show GamesSkillFilter, gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
+import 'package:dabbler/core/utils/bidi_isolate.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_favourites.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
 import 'package:dabbler/features/meetups/presentation/rsvp_state.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_feedback.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -13,7 +17,7 @@ import 'package:intl/intl.dart';
 
 /// A meetup on the design system's game card, drawn from the Listings meetup
 /// card (`Listings.dc.html:601-654`). The card has no price (meetups are free
-/// in v1) and no like/share (no design-system part for them yet).
+/// in v1); the trailing slot holds the favourite heart and share.
 class MeetupListingCard extends ConsumerStatefulWidget {
   const MeetupListingCard({
     super.key,
@@ -42,6 +46,47 @@ class MeetupListingCard extends ConsumerStatefulWidget {
 class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
   bool _busy = false;
 
+  /// The favourite as the viewer sees it right now: set optimistically on a
+  /// tap, then to the server's answer, or back on failure. Null: the list's.
+  MeetupFavourite? _favourite;
+  bool _favouriteBusy = false;
+
+  Future<void> _toggleFavourite(MeetupFavourite current) async {
+    if (_favouriteBusy) return;
+    setState(() {
+      _favouriteBusy = true;
+      _favourite = (
+        count: current.mine
+            ? (current.count > 0 ? current.count - 1 : 0)
+            : current.count + 1,
+        mine: !current.mine,
+      );
+    });
+    MeetupFavourite? result;
+    try {
+      result = await ref.read(meetupFavouriteToggleProvider)(widget.meetup.id);
+    } catch (_) {
+      result = null;
+    }
+    if (!mounted) return;
+    setState(() {
+      _favouriteBusy = false;
+      // The server's state, or the state before the tap on an error.
+      _favourite = result ?? current;
+    });
+  }
+
+  Future<void> _share() {
+    final l = AppLocalizations.of(context);
+    final headline = l.meetups_share_headline(
+      context.isolate(widget.meetup.title),
+    );
+    return ref.read(meetupShareProvider)(
+      RoutePaths.meetupLink(widget.meetup.id),
+      context.isolateTrailing(headline, 'Dabbler'),
+    );
+  }
+
   Future<void> _run(RsvpAction action) async {
     if (_busy) return;
     setState(() => _busy = true);
@@ -67,6 +112,10 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
     final place = m.venueName ?? m.locationName ?? m.areaName;
     final distance = widget.distanceMeters;
     final skill = gamesSkillTierFor(m.minSkill, m.maxSkill);
+    final fav =
+        _favourite ??
+        ref.watch(meetupFavouritesProvider).valueOrNull?[m.id] ??
+        (count: 0, mine: false);
     return DabblerCardGame(
       title: m.title,
       // `Listings.dc.html:526`: activity in info, then the skill in its tone
@@ -127,6 +176,15 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
         size: DabblerRsvpCtaSize.card,
         loading: _busy,
         onPressed: action == null ? widget.onOpen : () => _run(action),
+      ),
+      // The heart is the favourite, with its count; share has no count.
+      trailing: DabblerListingSocial(
+        favourited: fav.mine,
+        onFavourite: _favouriteBusy ? null : () => _toggleFavourite(fav),
+        favouriteLabel: fav.mine ? l.meetups_unfavourite : l.meetups_favourite,
+        favouriteCount: '${fav.count}',
+        onShare: _share,
+        shareLabel: l.meetups_share,
       ),
       onTap: widget.onOpen,
       semanticLabel: m.title,

@@ -10493,23 +10493,29 @@ abstract class AppLocalizations {
   /// **'Most popular'**
   String get listing_sort_popular;
 
-  /// No description provided for @meetups_like.
+  /// No description provided for @meetups_favourite.
   ///
   /// In en, this message translates to:
-  /// **'Like'**
-  String get meetups_like;
+  /// **'Add to favourites'**
+  String get meetups_favourite;
 
-  /// No description provided for @meetups_unlike.
+  /// No description provided for @meetups_unfavourite.
   ///
   /// In en, this message translates to:
-  /// **'Remove like'**
-  String get meetups_unlike;
+  /// **'Remove from favourites'**
+  String get meetups_unfavourite;
 
   /// No description provided for @meetups_empty_text.
   ///
   /// In en, this message translates to:
   /// **'{activity} has no meetups right now. Sessions are coming up in {others}.'**
   String meetups_empty_text(String activity, String others);
+
+  /// No description provided for @listing_share_venue_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'Check out {name} on Dabbler!'**
+  String listing_share_venue_headline(String name);
 }
 
 class _AppLocalizationsDelegate

@@ -180,10 +180,7 @@ abstract class VenuesRepository {
   );
 
   /// Marks venue as favorite for a user
-  Future<Either<Failure, bool>> toggleVenueFavorite(
-    String venueId,
-    String userId,
-  );
+  Future<Either<Failure, bool>> toggleVenueFavorite(String venueId);
 
   /// Gets user's favorite venues
   Future<Either<Failure, List<Venue>>> getFavoriteVenues(

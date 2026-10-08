@@ -137,8 +137,9 @@ abstract class VenuesRemoteDataSource {
   /// Reports a venue for issues
   Future<bool> reportVenue(String venueId, String reason, String? description);
 
-  /// Toggles venue favorite status
-  Future<bool> toggleVenueFavorite(String venueId, String userId);
+  /// Toggles venue favorite status for the signed-in user; returns the new
+  /// state (true: now a favourite).
+  Future<bool> toggleVenueFavorite(String venueId);
 
   /// Gets user's favorite venues
   Future<List<VenueModel>> getFavoriteVenues(

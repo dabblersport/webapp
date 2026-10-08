@@ -389,7 +389,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
       _favoriteOptimistic = !currentlyFavorited;
     });
     final repository = ref.read(games_providers.venuesRepositoryProvider);
-    final result = await repository.toggleVenueFavorite(widget.venueId, userId);
+    final result = await repository.toggleVenueFavorite(widget.venueId);
     if (!mounted) return;
     result.fold(
       (failure) {

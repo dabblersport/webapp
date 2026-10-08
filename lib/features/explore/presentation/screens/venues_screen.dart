@@ -1,4 +1,6 @@
+import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
@@ -368,6 +370,8 @@ class _AllVenuesList extends ConsumerWidget {
                         ratingCount: v.ratingCount,
                         isVerified: v.isVerified,
                         isOpenNow: v.isOpenNow,
+                        favoriteCount: v.favoriteCount,
+                        favouritedByMe: v.favouritedByMe,
                       ),
                     )
                     .toList(),
@@ -434,6 +438,8 @@ class _AllVenuesList extends ConsumerWidget {
               ratingCount: v.ratingCount,
               isVerified: v.isVerified,
               isOpenNow: v.isOpenNow,
+              favoriteCount: v.favoriteCount,
+              favouritedByMe: v.favouritedByMe,
             );
           }).toList(),
         );
@@ -546,6 +552,8 @@ class _VenueCardData {
     this.ratingCount = 0,
     this.isVerified = false,
     this.isOpenNow = false,
+    this.favoriteCount = 0,
+    this.favouritedByMe = false,
   });
 
   final String id;
@@ -572,13 +580,18 @@ class _VenueCardData {
   final int ratingCount;
   final bool isVerified;
   final bool isOpenNow;
+
+  /// `favorites` rows for the venue, and whether the viewer has one.
+  final int favoriteCount;
+  final bool favouritedByMe;
 }
 
 /// A venue on the design system's venue card (`Listings.dc.html:750-820`):
 /// the 170px cover (a placeholder until the venue has a photo), the aggregate
 /// rating, the "Top rated" / "Verified" / "Open now" badges, the distance chip,
-/// every sport and the keyed facilities; the favourite heart toggles
-/// `venue_favorites`.
+/// every sport and the keyed facilities; the heart toggles the favourite
+/// (`toggle_favorite`, `favorites` table) and the share glyph shares the
+/// venue's link.
 class _VenueCard extends ConsumerStatefulWidget {
   const _VenueCard({required this.venue});
 
@@ -589,36 +602,48 @@ class _VenueCard extends ConsumerStatefulWidget {
 }
 
 class _VenueCardState extends ConsumerState<_VenueCard> {
-  bool? _optimistic;
+  /// The favourite as the viewer sees it: set on a tap (optimistic), and back
+  /// to the previous state if the toggle fails. Null: the list's own.
+  ({int count, bool mine})? _favourite;
   bool _busy = false;
 
-  Future<void> _toggle(bool currently) async {
+  Future<void> _toggle(({int count, bool mine}) current) async {
     if (_busy) return;
     final userId = ref.read(currentUserIdProvider);
     if (userId == null || userId.isEmpty) return;
     setState(() {
       _busy = true;
-      _optimistic = !currently;
+      _favourite = (
+        count: current.mine
+            ? (current.count > 0 ? current.count - 1 : 0)
+            : current.count + 1,
+        mine: !current.mine,
+      );
     });
     final repository = ref.read(games_providers.venuesRepositoryProvider);
-    final result = await repository.toggleVenueFavorite(
-      widget.venue.id,
-      userId,
-    );
+    final result = await repository.toggleVenueFavorite(widget.venue.id);
     if (!mounted) return;
     result.fold(
       (_) => setState(() {
         _busy = false;
-        _optimistic = currently;
+        _favourite = current;
       }),
       (_) {
         ref.invalidate(favoriteVenuesForCurrentUserProvider);
         ref.invalidate(favoriteVenueIdsForCurrentUserProvider);
-        setState(() {
-          _busy = false;
-          _optimistic = null;
-        });
+        setState(() => _busy = false);
       },
+    );
+  }
+
+  Future<void> _share() {
+    final l = AppLocalizations.of(context);
+    final headline = l.listing_share_venue_headline(
+      context.isolate(widget.venue.name),
+    );
+    return ref.read(meetupShareProvider)(
+      '${RoutePaths.webLinkBase}${RoutePaths.venueDetail(widget.venue.id)}',
+      context.isolateTrailing(headline, 'Dabbler'),
     );
   }
 
@@ -626,10 +651,8 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final venue = widget.venue;
-    final favIds = ref
-        .watch(favoriteVenueIdsForCurrentUserProvider)
-        .maybeWhen(data: (ids) => ids, orElse: () => <String>{});
-    final isFav = _optimistic ?? favIds.contains(venue.id);
+    final fav =
+        _favourite ?? (count: venue.favoriteCount, mine: venue.favouritedByMe);
     final colors = DabblerColors.of(context);
     final isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final catalog = ref
@@ -711,10 +734,17 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
                   : (catalog[key]?.en ?? key),
             ),
       ],
-      favourite: DabblerFavouriteButton(
-        selected: isFav,
-        semanticLabel: isFav ? l.listing_remove_saved : l.listing_save_venue,
-        onPressed: _busy ? null : () => _toggle(isFav),
+      // The heart (a favourite, with its count) and share, as on the meetup
+      // card; share has no count.
+      favourite: DabblerListingSocial(
+        favourited: fav.mine,
+        onFavourite: _busy ? null : () => _toggle(fav),
+        favouriteLabel: fav.mine
+            ? l.listing_remove_saved
+            : l.listing_save_venue,
+        favouriteCount: '${fav.count}',
+        onShare: _share,
+        shareLabel: l.meetups_share,
       ),
       price: priceLabel,
       priceCaption: priceLabel == null ? null : l.listing_starting_from,

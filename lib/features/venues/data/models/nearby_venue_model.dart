@@ -23,6 +23,8 @@ class NearbyVenueModel {
     this.amenities = const [],
     this.sports = const [],
     this.sportsAr = const [],
+    this.favoriteCount = 0,
+    this.favouritedByMe = false,
   });
 
   final String id;
@@ -56,6 +58,10 @@ class NearbyVenueModel {
   final List<String> sports;
   final List<String> sportsAr;
 
+  /// `favorites` rows for the venue, and whether the signed-in user has one.
+  final int favoriteCount;
+  final bool favouritedByMe;
+
   factory NearbyVenueModel.fromJson(Map<String, dynamic> json) {
     return NearbyVenueModel(
       id: json['id'] as String,
@@ -77,6 +83,8 @@ class NearbyVenueModel {
       amenities: _parseStrings(json['amenities']),
       sports: _parseStrings(json['sports']),
       sportsAr: _parseStrings(json['sports_ar']),
+      favoriteCount: (json['favorite_count'] as num?)?.toInt() ?? 0,
+      favouritedByMe: json['favourited_by_me'] as bool? ?? false,
     );
   }
 

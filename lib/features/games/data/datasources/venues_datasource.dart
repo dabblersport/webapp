@@ -712,13 +712,18 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
   }
 
   @override
-  Future<bool> toggleVenueFavorite(String venueId, String userId) async {
+  Future<bool> toggleVenueFavorite(String venueId) async {
     try {
-      await _supabaseClient.rpc(
-        'toggle_venue_favorite',
-        params: {'venue_id': venueId, 'user_id': userId},
+      // One toggle for every target type (CTO ruling v2); the caller is the
+      // auth user, there is no user id to pass.
+      final rows = await _supabaseClient.rpc(
+        SupabaseConfig.toggleFavoriteRpc,
+        params: {'p_target_type': 'venue', 'p_target_id': venueId},
       );
-
+      // Returns the new state: (favourited, favorite_count).
+      if (rows is List && rows.isNotEmpty && rows.first is Map) {
+        return (rows.first as Map)['favourited'] == true;
+      }
       return true;
     } on PostgrestException catch (e) {
       throw VenueServerException('Database error: ${e.message}');
@@ -736,13 +741,15 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
     int limit = 20,
   }) async {
     try {
-      // Query via venue_favorites -> venues relationship.
+      // Query via favorites -> venues relationship (favorites rows for venues
+      // have venue_id set; RLS limits the rows to the caller's own).
       // This is more robust than querying venues with a reverse embed, which can
       // return empty depending on PostgREST relationship inference/caching.
       final response = await _supabaseClient
-          .from(SupabaseConfig.venueFavoritesTable)
+          .from(SupabaseConfig.favoritesTable)
           .select('venue:venues(*)')
           .eq('user_id', userId)
+          .not('venue_id', 'is', null)
           .order('created_at', ascending: false)
           .range((page - 1) * limit, page * limit - 1);
 

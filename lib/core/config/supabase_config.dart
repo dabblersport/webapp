@@ -22,6 +22,7 @@ class SupabaseConfig {
 
   // RPC function names
   static const String searchMatchesFunction = 'search_matches';
+  static const String toggleFavoriteRpc = 'toggle_favorite';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';
   static const String amenitiesCatalogTable = 'amenities_catalog';
 
@@ -238,11 +239,11 @@ class SupabaseConfig {
   static const String userProfilesTable = 'user_profiles';
   static const String userRetentionPoliciesTable = 'user_retention_policies';
   static const String userSettingsTable = 'user_settings';
+  static const String favoritesTable = 'favorites';
   static const String vGameCardTable = 'v_game_card';
   static const String vModQueueOpenTable = 'v_mod_queue_open';
   static const String vSafetyOverviewTable = 'v_safety_overview';
   static const String vVenuesWithSportsTable = 'v_venues_with_sports';
-  static const String venueFavoritesTable = 'venue_favorites';
   static const String venuePhotosTable = 'venue_photos';
   static const String venueReviewsTable = 'venue_reviews';
 

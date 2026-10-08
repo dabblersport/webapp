@@ -2039,8 +2039,10 @@
   "@listing_reviews_count": {"placeholders": {"count": {"type": "String"}}},
   "listing_this_weekend": "This weekend",
   "listing_sort_popular": "Most popular",
-  "meetups_like": "Like",
-  "meetups_unlike": "Remove like",
+  "meetups_favourite": "Add to favourites",
+  "meetups_unfavourite": "Remove from favourites",
   "meetups_empty_text": "{activity} has no meetups right now. Sessions are coming up in {others}.",
-  "@meetups_empty_text": {"placeholders": {"activity": {"type": "String"}, "others": {"type": "String"}}}
+  "@meetups_empty_text": {"placeholders": {"activity": {"type": "String"}, "others": {"type": "String"}}},
+  "listing_share_venue_headline": "Check out {name} on Dabbler!",
+  "@listing_share_venue_headline": {"placeholders": {"name": {"type": "String"}}}
 }
