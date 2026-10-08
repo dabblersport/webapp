@@ -45,6 +45,12 @@ const String _shotsDir = String.fromEnvironment(
   'FAV_WIRE_DIR',
   defaultValue: '$kShotsRoot/fav-wire/app',
 );
+
+/// Card + toast renders (CEO 2026-10-08): `--dart-define=FAV_TOAST_DIR=<dir>`.
+const String _toastDir = String.fromEnvironment(
+  'FAV_TOAST_DIR',
+  defaultValue: '$kShotsRoot/fav-toast/app',
+);
 final bool _dark = const String.fromEnvironment('RENDER_DARK') == '1';
 
 class _Location extends ActiveLocationNotifier {
@@ -157,8 +163,9 @@ Future<void> _pumpVenues(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        builder: (context, child) => DabblerToastProvider(
-          child: RepaintBoundary(key: const Key('shot'), child: child),
+        builder: (context, child) => RepaintBoundary(
+          key: const Key('shot'),
+          child: DabblerToastProvider(child: child!),
         ),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -223,8 +230,9 @@ Future<void> _pumpMeetups(
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        builder: (context, child) => DabblerToastProvider(
-          child: RepaintBoundary(key: const Key('shot'), child: child),
+        builder: (context, child) => RepaintBoundary(
+          key: const Key('shot'),
+          child: DabblerToastProvider(child: child!),
         ),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -255,6 +263,24 @@ Future<void> _shoot(WidgetTester tester, String name) async {
   });
 }
 
+Future<void> _shootToast(WidgetTester tester, String name) async {
+  await tester.runAsync(() async {
+    final boundary =
+        tester.renderObject(find.byKey(const Key('shot')))
+            as RenderRepaintBoundary;
+    final image = await boundary.toImage(pixelRatio: 2);
+    final png = await image.toByteData(format: ui.ImageByteFormat.png);
+    Directory(_toastDir).createSync(recursive: true);
+    File('$_toastDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
+  });
+}
+
+/// Whether the n-th heart on screen is drawn filled (the viewer's favourite).
+bool _filled(WidgetTester tester, int n) => tester
+    .widgetList<DabblerListingSocial>(find.byType(DabblerListingSocial))
+    .elementAt(n)
+    .favourited;
+
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
@@ -273,13 +299,17 @@ void main() {
       // First venue: 14, not favourited; second: 3, favourited.
       expect(find.text('14'), findsOneWidget);
       expect(find.text('3'), findsOneWidget);
+      expect(_filled(tester, 0), isFalse);
       await tester.tap(find.bySemanticsLabel('Save venue').first);
       await tester.pump();
-      // Optimistic: 15 at once, then the RPC was called with no user id.
+      // Optimistic: 15 at once and the heart filled, then the RPC was called
+      // with no user id.
       expect(find.text('15'), findsOneWidget);
+      expect(_filled(tester, 0), isTrue);
       await settle(tester);
       expect(remote.toggles, ['v1']);
       expect(find.text('15'), findsOneWidget);
+      expect(_filled(tester, 0), isTrue);
       expect(find.text('Venue added to favourites'), findsOneWidget);
     }, variant: desktop);
 
@@ -291,6 +321,8 @@ void main() {
       await tester.tap(find.bySemanticsLabel('Save venue').first);
       await settle(tester);
       expect(remote.toggles, ['v1']);
+      // Rolled back: outline heart, old count.
+      expect(_filled(tester, 0), isFalse);
       expect(find.text('14'), findsOneWidget);
       expect(find.text('15'), findsNothing);
       expect(
@@ -305,12 +337,15 @@ void main() {
         _FakeVenuesRemote()..answer = false,
         const Locale('en'),
       );
+      expect(_filled(tester, 1), isTrue);
       await tester.tap(find.bySemanticsLabel('Remove from saved').first);
       await tester.pump();
       expect(find.text('2'), findsOneWidget);
+      expect(_filled(tester, 1), isFalse);
       // The toast follows the server's answer: removed.
       await settle(tester);
       expect(find.text('2'), findsOneWidget);
+      expect(_filled(tester, 1), isFalse);
       expect(find.text('Venue removed from favourites'), findsOneWidget);
     }, variant: desktop);
 
@@ -353,11 +388,14 @@ void main() {
       );
       expect(find.text('9'), findsOneWidget);
       expect(find.text('4'), findsOneWidget);
+      expect(_filled(tester, 0), isFalse);
       await tester.tap(find.bySemanticsLabel('Add to favourites').first);
       await tester.pump();
       expect(find.text('10'), findsOneWidget);
+      expect(_filled(tester, 0), isTrue);
       await settle(tester);
       expect(calls, ['a']);
+      expect(_filled(tester, 0), isTrue);
       expect(find.text('Meetup added to favourites'), findsOneWidget);
       await tester.tap(find.bySemanticsLabel('Share').first);
       await settle(tester);
@@ -379,6 +417,8 @@ void main() {
       await settle(tester);
       expect(find.text('9'), findsOneWidget);
       expect(find.text('10'), findsNothing);
+      // Rolled back: outline heart again.
+      expect(_filled(tester, 0), isFalse);
       expect(
         find.text("Couldn't update favourites. Try again."),
         findsOneWidget,
@@ -405,6 +445,68 @@ void main() {
     ('ltr', const Locale('en')),
     ('rtl', const Locale('ar')),
   ]) {
+    final l = lookupAppLocalizations(locale);
+    for (final (String tag, String label, _FakeVenuesRemote remote, int heart)
+        in <(String, String, _FakeVenuesRemote, int)>[
+          ('add', l.listing_save_venue, _FakeVenuesRemote(), 0),
+          (
+            'remove',
+            l.listing_remove_saved,
+            _FakeVenuesRemote()..answer = false,
+            1,
+          ),
+          ('error', l.listing_save_venue, _FakeVenuesRemote()..fail = true, 0),
+        ]) {
+      testWidgets('render venue card + toast $tag $mode $dir', (tester) async {
+        await _pumpVenues(tester, remote, locale);
+        await tester.tap(find.bySemanticsLabel(label).first);
+        await settle(tester);
+        final toast = switch (tag) {
+          'add' => l.fav_toast_venue_added,
+          'remove' => l.fav_toast_venue_removed,
+          _ => l.fav_toast_error,
+        };
+        expect(find.text(toast), findsOneWidget);
+        // add: filled; remove: outline; error: rolled back to the start.
+        expect(_filled(tester, heart), tag == 'add');
+        expect(tester.takeException(), isNull);
+        await _shootToast(tester, 'card-venue-$tag-$dir');
+      }, variant: desktop);
+    }
+
+    for (final (String tag, String label, bool server, bool fail, int heart)
+        in <(String, String, bool, bool, int)>[
+          ('add', l.meetups_favourite, true, false, 0),
+          ('remove', l.meetups_unfavourite, false, false, 1),
+          ('error', l.meetups_favourite, true, true, 0),
+        ]) {
+      testWidgets('render meetup card + toast $tag $mode $dir', (tester) async {
+        await _pumpMeetups(
+          tester,
+          locale,
+          favourites: const {
+            'a': (count: 9, mine: false),
+            'b': (count: 4, mine: true),
+          },
+          toggle: (id) async => fail
+              ? throw Exception('rpc failed')
+              : (count: server ? 10 : 3, mine: server),
+          share: _Share(),
+        );
+        await tester.tap(find.bySemanticsLabel(label).first);
+        await settle(tester);
+        final toast = switch (tag) {
+          'add' => l.fav_toast_meetup_added,
+          'remove' => l.fav_toast_meetup_removed,
+          _ => l.fav_toast_error,
+        };
+        expect(find.text(toast), findsOneWidget);
+        expect(_filled(tester, heart), tag == 'add');
+        expect(tester.takeException(), isNull);
+        await _shootToast(tester, 'card-meetup-$tag-$dir');
+      }, variant: desktop);
+    }
+
     testWidgets('render venue card $mode $dir', (tester) async {
       await _pumpVenues(tester, _FakeVenuesRemote(), locale);
       expect(tester.takeException(), isNull);

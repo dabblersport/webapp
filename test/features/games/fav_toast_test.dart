@@ -145,6 +145,10 @@ final _heart = find.byWidgetPredicate(
   (w) => w is DabblerFeedAction && w.icon == 'heart',
 );
 
+/// Whether the card's heart is drawn filled (bold) rather than outlined.
+bool _filled(WidgetTester tester) =>
+    tester.widget<DabblerFeedAction>(_heart).weight == DabblerIconWeight.bold;
+
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
@@ -172,9 +176,11 @@ void main() {
           overrides: overrides(repo),
         );
         expect(find.text('4'), findsOneWidget);
+        expect(_filled(tester), isFalse);
         await tester.tap(_heart);
         await tester.pump();
         expect(find.text('5'), findsOneWidget);
+        expect(_filled(tester), isTrue);
         expect(find.text(l.fav_toast_game_added), findsNothing);
         repo.gate.complete();
         for (var i = 0; i < 4; i++) {
@@ -183,6 +189,7 @@ void main() {
         expect(repo.calls, ['game:g1']);
         expect(find.text(l.fav_toast_game_added), findsOneWidget);
         expect(find.text('5'), findsOneWidget);
+        expect(_filled(tester), isTrue);
       });
 
       testWidgets('remove: count -1, then the removed toast - $tag', (
@@ -195,14 +202,17 @@ void main() {
           locale,
           overrides: overrides(repo),
         );
+        expect(_filled(tester), isTrue);
         await tester.tap(_heart);
         await tester.pump();
         expect(find.text('3'), findsOneWidget);
+        expect(_filled(tester), isFalse);
         repo.gate.complete();
         for (var i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
         expect(find.text(l.fav_toast_game_removed), findsOneWidget);
+        expect(_filled(tester), isFalse);
       });
 
       testWidgets('failure: rolls back and shows the error toast - $tag', (
@@ -218,10 +228,13 @@ void main() {
         await tester.tap(_heart);
         await tester.pump();
         expect(find.text('5'), findsOneWidget);
+        expect(_filled(tester), isTrue);
         repo.gate.complete();
         for (var i = 0; i < 4; i++) {
           await tester.pump(const Duration(milliseconds: 100));
         }
+        // Rolled back: outline heart and the old count.
+        expect(_filled(tester), isFalse);
         expect(find.text('4'), findsOneWidget);
         expect(find.text('5'), findsNothing);
         expect(find.text(l.fav_toast_error), findsOneWidget);
@@ -255,6 +268,44 @@ void main() {
     ('rtl', const Locale('ar')),
   ]) {
     final String mode = _dark ? 'dark' : 'light';
+    final lc = lookupAppLocalizations(locale);
+    for (final (String tag, bool mine, Result<FavoriteState, Failure> answer)
+        in <(String, bool, Result<FavoriteState, Failure>)>[
+          ('add', false, const Ok((favourited: true, count: 5))),
+          ('remove', true, const Ok((favourited: false, count: 3))),
+          ('error', false, Err(Failure.from('boom'))),
+        ]) {
+      testWidgets('render game card + toast $tag $mode $dir', (tester) async {
+        final repo = _Repo(answer)..gate.complete();
+        await _pump(
+          tester,
+          Padding(
+            padding: const EdgeInsets.all(DabblerSpacing.space6),
+            child: GamesListingCard(game: _game(mine: mine)),
+          ),
+          locale,
+          overrides: [
+            favoritesRepositoryProvider.overrideWithValue(repo),
+            favouriteSignedInProvider.overrideWithValue(true),
+          ],
+          height: 720,
+        );
+        await tester.tap(_heart);
+        for (var i = 0; i < 6; i++) {
+          await tester.pump(const Duration(milliseconds: 100));
+        }
+        final toast = switch (tag) {
+          'add' => lc.fav_toast_game_added,
+          'remove' => lc.fav_toast_game_removed,
+          _ => lc.fav_toast_error,
+        };
+        expect(find.text(toast), findsOneWidget);
+        // add: filled; remove: outline; error: rolled back to the start.
+        expect(_filled(tester), tag == 'add' ? true : false);
+        expect(tester.takeException(), isNull);
+        await _shoot(tester, 'card-game-$tag-$dir');
+      });
+    }
     for (final kind in FavouriteKind.values) {
       for (final (String tag, bool? added) in <(String, bool?)>[
         ('add', true),
