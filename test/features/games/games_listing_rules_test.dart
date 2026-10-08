@@ -77,4 +77,28 @@ void main() {
       );
     });
   }
+
+  for (final loc in const [Locale('en'), Locale('ar')]) {
+    test('card note with following - ${loc.languageCode}', () {
+      final l = lookupAppLocalizations(loc);
+      // Spots + following on one line, a middle dot between.
+      expect(
+        gamesCardNote(l, GamesCardStatus.open, 4, 2),
+        l.listing_note_join(
+          l.listing_spots_left(4),
+          l.listing_following_joined(2),
+        ),
+      );
+      // Full: the following note only.
+      expect(
+        gamesCardNote(l, GamesCardStatus.full, 0, 1),
+        l.listing_following_joined(1),
+      );
+      // Nobody followed: nothing added.
+      expect(
+        gamesCardNote(l, GamesCardStatus.almostFull, 1, 0),
+        l.listing_spots_almost_full(1),
+      );
+    });
+  }
 }

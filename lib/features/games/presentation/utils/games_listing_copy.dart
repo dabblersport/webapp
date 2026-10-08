@@ -74,6 +74,29 @@ String gamesStatusNote(
   GamesCardStatus.open => l.listing_spots_left(spotsRemaining),
 };
 
+/// The players bar's whole note with the "N following" note
+/// ([followingJoined], the people the viewer follows in the game) joined on
+/// after a middle dot: "3 spots left · 2 following". A full game drops its
+/// status note and shows only "2 following"; with nobody followed in the game
+/// the status note stands alone. Null when there is nothing to show.
+String? gamesCardNote(
+  AppLocalizations l,
+  GamesCardStatus status,
+  int spotsRemaining,
+  int followingJoined,
+) {
+  final String? spots = status == GamesCardStatus.full && followingJoined > 0
+      ? null
+      : gamesStatusNote(l, status, spotsRemaining);
+  final String? following = followingJoined > 0
+      ? l.listing_following_joined(followingJoined)
+      : null;
+  if (spots != null && following != null) {
+    return l.listing_note_join(spots, following);
+  }
+  return spots ?? following;
+}
+
 /// The players bar's tone (`Listings.2026-10-08.dc.html:1891,1895,1899`):
 /// info while there is room, warning when almost full, error when full or
 /// starting soon.

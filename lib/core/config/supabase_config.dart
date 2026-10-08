@@ -23,6 +23,8 @@ class SupabaseConfig {
   // RPC function names
   static const String searchMatchesFunction = 'search_matches';
   static const String toggleFavoriteRpc = 'toggle_favorite';
+  /// Per game, how many people the viewer follows are in it (count only).
+  static const String gamesFollowingJoinedRpc = 'rpc_games_following_joined';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';
   static const String amenitiesCatalogTable = 'amenities_catalog';
 

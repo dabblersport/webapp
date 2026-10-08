@@ -2091,5 +2091,9 @@
   "fav_toast_venue_removed": "Venue removed from favourites",
   "fav_toast_meetup_added": "Meetup added to favourites",
   "fav_toast_meetup_removed": "Meetup removed from favourites",
-  "fav_toast_error": "Couldn't update favourites. Try again."
+  "fav_toast_error": "Couldn't update favourites. Try again.",
+  "listing_following_joined": "{count, plural, other{{count} following}}",
+  "@listing_following_joined": {"description": "Game card note: how many people the viewer follows are in the game. Count only.", "placeholders": {"count": {"type": "int"}}},
+  "listing_note_join": "{first} · {second}",
+  "@listing_note_join": {"description": "Two game card notes on one line, joined by a middle dot.", "placeholders": {"first": {"type": "String"}, "second": {"type": "String"}}}
 }

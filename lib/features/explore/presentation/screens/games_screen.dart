@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
+import 'package:dabbler/features/games/presentation/providers/games_following_provider.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/utils/games_listing_copy.dart';
 import 'package:dabbler/features/games/presentation/widgets/games_listing_card.dart';
@@ -411,15 +412,17 @@ class _GameTabBody extends ConsumerWidget {
             dateFilter != GamesDateFilter.any ||
             ref.watch(gamesSkillFilterProvider) != GamesSkillFilter.any;
 
-        final others = games
+        final listed = games
             .where((g) => !pinnedIds.contains(g.id))
             .where((g) => _passes(ref, g, now))
             .toList();
         // Default order is starting soonest (CEO 2026-10-08), whichever path
         // served the rows; "Nearest" keeps the server's distance order.
         if (ref.watch(nearbyGameSortProvider) != NearbySortOrder.nearest) {
-          others.sort(_bySoonest);
+          listed.sort(_bySoonest);
         }
+        // One "N following" fetch per set of visible cards, either data path.
+        final others = watchGamesWithFollowing(ref, listed);
 
         if (pinned.isEmpty && others.isEmpty) {
           // `Listings.2026-10-08.dc.html:211-212` whenever anything narrows

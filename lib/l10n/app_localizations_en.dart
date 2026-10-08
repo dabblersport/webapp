@@ -5939,4 +5939,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get fav_toast_error => 'Couldn\'t update favourites. Try again.';
+
+  @override
+  String listing_following_joined(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count following',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listing_note_join(String first, String second) {
+    return '$first · $second';
+  }
 }

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// content review once it lists the legitimately identical keys).
 const Map<String, String> _identicalAllowed = {
   'auth_email_placeholder': 'sample email address, LTR token',
+  'listing_note_join': 'punctuation-only template: two notes and a middle dot',
   'email_input_hint': 'email format hint, LTR token',
   'email_password_hint_email': 'email format hint, LTR token',
   'post_card_kind_dab': 'brand term "Dab"',

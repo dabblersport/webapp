@@ -5985,4 +5985,24 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get fav_toast_error => 'تعذّر تحديث المفضلة. حاول مرة أخرى.';
+
+  @override
+  String listing_following_joined(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ممّن تتابعهم',
+      many: '$count ممّن تتابعهم',
+      few: '$count ممّن تتابعهم',
+      zero: '$count ممّن تتابعهم',
+      two: '2 ممّن تتابعهم',
+      one: '1 ممّن تتابعهم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String listing_note_join(String first, String second) {
+    return '$first · $second';
+  }
 }

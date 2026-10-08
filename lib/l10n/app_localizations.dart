@@ -10750,6 +10750,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t update favourites. Try again.'**
   String get fav_toast_error;
+
+  /// Game card note: how many people the viewer follows are in the game. Count only.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, other{{count} following}}'**
+  String listing_following_joined(int count);
+
+  /// Two game card notes on one line, joined by a middle dot.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} · {second}'**
+  String listing_note_join(String first, String second);
 }
 
 class _AppLocalizationsDelegate

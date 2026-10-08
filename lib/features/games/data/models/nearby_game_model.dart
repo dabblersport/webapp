@@ -27,6 +27,7 @@ class NearbyGameModel {
     this.favoriteCount = 0,
     this.favouritedByMe = false,
     this.priceAed,
+    this.followingJoined = 0,
   });
 
   final String id;
@@ -73,6 +74,9 @@ class NearbyGameModel {
   /// The price per player in AED (`games.price_aed`): above 0 it is the price,
   /// 0 is "Free", null (a game made before the price became required) is "Ask".
   final double? priceAed;
+  /// How many people the viewer follows are in this game; 0 when none or
+  /// unknown. Not part of the listing rows: merged in after they load.
+  final int followingJoined;
 
   bool get isMine => isCreated || isJoined;
 
@@ -119,7 +123,39 @@ class NearbyGameModel {
     favoriteCount: count,
     favouritedByMe: favourited,
     priceAed: priceAed,
+    followingJoined: followingJoined,
   );
+
+  /// This game with [count] people the viewer follows in it (the card's
+  /// "N following" note; `rpc_games_following_joined`, merged client side).
+  NearbyGameModel withFollowing(int count) => count == followingJoined
+      ? this
+      : NearbyGameModel(
+          id: id,
+          title: title,
+          sportName: sportName,
+          scheduledAt: scheduledAt,
+          status: status,
+          venueName: venueName,
+          latitude: latitude,
+          longitude: longitude,
+          distanceMeters: distanceMeters,
+          playerCount: playerCount,
+          spotsRemaining: spotsRemaining,
+          isPublic: isPublic,
+          isCreated: isCreated,
+          isJoined: isJoined,
+          minSkill: minSkill,
+          maxSkill: maxSkill,
+          endAt: endAt,
+          variantNameEn: variantNameEn,
+          variantNameAr: variantNameAr,
+          hostVerified: hostVerified,
+          favoriteCount: favoriteCount,
+          favouritedByMe: favouritedByMe,
+          priceAed: priceAed,
+          followingJoined: count,
+        );
 
   factory NearbyGameModel.fromJson(Map<String, dynamic> json) {
     return NearbyGameModel(

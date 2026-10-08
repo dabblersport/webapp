@@ -123,7 +123,12 @@ class GamesListingCard extends ConsumerWidget {
               ),
               joined: game.playerCount!,
               capacity: game.playerCount! + game.spotsRemaining!,
-              note: gamesStatusNote(l, status, game.spotsRemaining!),
+              note: gamesCardNote(
+                l,
+                status,
+                game.spotsRemaining!,
+                game.followingJoined,
+              ),
               tone: gamesStatusTone(status),
             )
           : null,
