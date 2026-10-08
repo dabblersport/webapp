@@ -291,7 +291,8 @@ void main() {
             route: RoutePaths.gamesTab,
             name: 'games',
             theme: DabblerTheme.sport,
-            band: tint(DabblerTheme.sport),
+            // Plain header, the design default (GAP #28): no band.
+            band: null,
           ),
           (
             route: RoutePaths.meetups,

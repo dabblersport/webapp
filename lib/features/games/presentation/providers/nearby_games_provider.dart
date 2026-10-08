@@ -2,6 +2,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/games/data/datasources/nearby_games_datasource.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
@@ -19,19 +20,61 @@ final nearbyGamesRepositoryProvider = Provider<NearbyGamesRepository>((ref) {
   return NearbyGamesRepositoryImpl(ref.watch(nearbyGamesDatasourceProvider));
 });
 
-/// Per-screen sort state for nearby games.
-final nearbyGameSortProvider = StateProvider<NearbySortOrder>(
-  (ref) => NearbySortOrder.nearest,
+/// The games list's default radius (`Listings.2026-10-08.dc.html:1989`: the
+/// design opens on "Within 5 km").
+const int kGamesDefaultRadiusMeters = 5000;
+
+/// A value that starts as [ifReady] when the viewer's location is ready, and
+/// otherwise as [otherwise] — switching to [ifReady] once, the first time the
+/// location becomes ready, as long as nothing has been applied by hand before.
+///
+/// This never asks for a location: it only listens to [activeLocationProvider],
+/// which the games screen already watches for its header. No location, no
+/// default — the filters stay off.
+T _defaultOnLocation<T>(StateProviderRef<T> ref, T ifReady, T otherwise) {
+  final bool readyNow =
+      ref.read(activeLocationProvider).valueOrNull is ActiveLocationReady;
+  var settled = readyNow;
+  final T initial = readyNow ? ifReady : otherwise;
+  ref.listen<AsyncValue<ActiveLocationState>>(activeLocationProvider, (_, next) {
+    if (settled || next.valueOrNull is! ActiveLocationReady) return;
+    settled = true;
+    // Only when the viewer has not changed it meanwhile.
+    if (ref.controller.state == initial) ref.controller.state = ifReady;
+  });
+  return initial;
+}
+
+/// The games list's sort, or null when none is applied (the list then runs in
+/// start-time order). Defaults to "Nearest" once a location is ready
+/// (`Listings.2026-10-08.dc.html:1989`). Without a location "Nearest" stays a
+/// chip only: the unlocated query is always ordered by start time.
+final nearbyGameSortProvider = StateProvider<NearbySortOrder?>(
+  (ref) => _defaultOnLocation<NearbySortOrder?>(
+    ref,
+    NearbySortOrder.nearest,
+    null,
+  ),
 );
 
-/// Whether the "nearby" distance filter is active on the games list.
-final nearbyGamesFilterEnabledProvider = StateProvider<bool>((ref) => false);
+/// Whether the "nearby" distance filter is active on the games list. On by
+/// default only when the viewer's location is ready.
+final nearbyGamesFilterEnabledProvider = StateProvider<bool>(
+  (ref) => _defaultOnLocation<bool>(ref, true, false),
+);
+
+/// The games list's own radius, in metres — "Within 5 km" until the viewer
+/// picks another preset. Kept apart from the location's saved radius so the
+/// games default does not move other listings.
+final gamesRadiusProvider = StateProvider<int>(
+  (ref) => kGamesDefaultRadiusMeters,
+);
 
 // =============================================================================
 // LIST FILTERS (client-side, applied to the fetched list)
 // =============================================================================
 
-enum GamesDateFilter { any, today, tomorrow, thisWeek }
+enum GamesDateFilter { any, today, tomorrow, thisWeek, thisWeekend }
 
 extension GamesDateFilterLabel on GamesDateFilter {
   String get label => switch (this) {
@@ -39,8 +82,14 @@ extension GamesDateFilterLabel on GamesDateFilter {
     GamesDateFilter.today => 'Today',
     GamesDateFilter.tomorrow => 'Tomorrow',
     GamesDateFilter.thisWeek => 'This week',
+    GamesDateFilter.thisWeekend => 'This weekend',
   };
 
+  /// Whether a game at [scheduledAt] falls in this window, seen from [now].
+  ///
+  /// "This weekend" is the UAE weekend, Saturday and Sunday (since 2022): the
+  /// coming Saturday and Sunday, or what is left of them when [now] is already
+  /// on one. A Friday is not weekend. Days are local calendar days.
   bool matches(DateTime? scheduledAt, DateTime now) {
     if (this == GamesDateFilter.any) return true;
     if (scheduledAt == null) return false;
@@ -56,6 +105,11 @@ extension GamesDateFilterLabel on GamesDateFilter {
       GamesDateFilter.today => diff == 0,
       GamesDateFilter.tomorrow => diff == 1,
       GamesDateFilter.thisWeek => diff >= 0 && diff < 7,
+      GamesDateFilter.thisWeekend =>
+        diff >= 0 &&
+            diff <= (DateTime.sunday - now.weekday) % 7 &&
+            (gameDay.weekday == DateTime.saturday ||
+                gameDay.weekday == DateTime.sunday),
     };
   }
 }
@@ -64,9 +118,6 @@ extension GamesDateFilterLabel on GamesDateFilter {
 final gamesDateFilterProvider = StateProvider<GamesDateFilter>(
   (ref) => GamesDateFilter.any,
 );
-
-/// Only show games with open spots.
-final gamesOpenSpotsOnlyProvider = StateProvider<bool>((ref) => false);
 
 /// Skill-level filter — same tiers/ranges as the game composer's skill
 /// picker (min_skill/max_skill 1-10 on the game).

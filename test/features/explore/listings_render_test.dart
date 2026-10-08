@@ -349,11 +349,35 @@ void main() {
         find.textContaining(l.listing_show_games(0).substring(0, 2)),
         findsOneWidget,
       );
-      expect(find.text(l.listing_open_spots), findsWidgets);
+      // The design has no Availability group (GAP #18); it has the weekend.
+      expect(find.text(l.listing_open_spots), findsNothing);
+      expect(find.text(l.listing_group_availability), findsNothing);
+      expect(find.text(l.listing_this_weekend), findsOneWidget);
       // "Filters" and Reset sit in the sheet header, Reset once.
       expect(find.text(l.listing_filters), findsOneWidget);
       expect(find.text(l.listing_reset), findsOneWidget);
       await _shoot(tester, key, 'games-filter-sheet-$dir');
+    }, variant: desktop);
+
+    testWidgets('games listing: rail tap opens the sheet - $dir', (tester) async {
+      await _pump(
+        tester,
+        const GamesScreen(),
+        locale,
+        extra: [
+          gamesDateFilterProvider.overrideWith(
+            (ref) => GamesDateFilter.thisWeekend,
+          ),
+        ],
+      );
+      expect(find.text(l.listing_this_weekend), findsOneWidget);
+      expect(find.text(l.listing_group_skill), findsNothing);
+      await tester.tap(find.bySemanticsLabel(l.listing_filters_open));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(tester.takeException(), isNull);
+      expect(find.text(l.listing_group_skill), findsOneWidget);
     }, variant: desktop);
 
     testWidgets('games listing: loading - $dir', (tester) async {
@@ -368,6 +392,27 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(l.listing_games_none_title), findsOneWidget);
       await _shoot(tester, key, 'games-empty-$dir');
+    }, variant: desktop);
+
+    testWidgets('games listing: empty under filters - $dir', (tester) async {
+      await _pump(
+        tester,
+        const GamesScreen(),
+        locale,
+        mode: _Mode.empty,
+        extra: [
+          gamesDateFilterProvider.overrideWith(
+            (ref) => GamesDateFilter.thisWeekend,
+          ),
+        ],
+      );
+      expect(tester.takeException(), isNull);
+      expect(find.text(l.listing_games_nearby_title), findsOneWidget);
+      expect(
+        find.text(l.listing_games_empty_window(l.listing_window_weekend)),
+        findsOneWidget,
+      );
+      expect(find.text(l.listing_change_filters), findsOneWidget);
     }, variant: desktop);
 
     testWidgets('venues listing - $dir', (tester) async {

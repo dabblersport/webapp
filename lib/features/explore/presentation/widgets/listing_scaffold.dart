@@ -24,6 +24,8 @@ class ListingScaffold extends ConsumerStatefulWidget {
     required this.clearAllLabel,
     required this.onClearAll,
     this.head = DabblerListingHead.tint,
+    this.onFiltersTap,
+    this.filtersTapSemanticLabel,
   });
 
   final Widget header;
@@ -33,6 +35,13 @@ class ListingScaffold extends ConsumerStatefulWidget {
   final String clearAllLabel;
   final VoidCallback onClearAll;
   final DabblerListingHead head;
+
+  /// Opens the filter sheet from the applied-filter rail (null: not tappable).
+  final VoidCallback? onFiltersTap;
+
+  /// The rail's accessible name as a button, localised. Used with
+  /// [onFiltersTap].
+  final String? filtersTapSemanticLabel;
 
   @override
   ConsumerState<ListingScaffold> createState() => _ListingScaffoldState();
@@ -92,6 +101,8 @@ class _ListingScaffoldState extends ConsumerState<ListingScaffold> {
         filters: widget.filters,
         clearAllLabel: widget.clearAllLabel,
         onClearAll: widget.onClearAll,
+        onFiltersTap: widget.onFiltersTap,
+        filtersTapSemanticLabel: widget.filtersTapSemanticLabel,
       ),
     );
   }

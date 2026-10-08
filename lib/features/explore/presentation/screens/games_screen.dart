@@ -7,6 +7,7 @@ import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
 import 'package:dabbler/features/games/presentation/controllers/join_game_feedback.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
+import 'package:dabbler/features/games/presentation/utils/games_listing_copy.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
@@ -67,9 +68,9 @@ NearbyGamesParams _paramsFor(WidgetRef ref, String? sportId) {
   return (
     lat: location?.lat,
     lng: location?.lng,
-    radiusMeters: location?.nearbyRadiusMeters,
+    radiusMeters: location == null ? null : ref.watch(gamesRadiusProvider),
     sportId: sportId,
-    sortOrder: ref.watch(nearbyGameSortProvider),
+    sortOrder: ref.watch(nearbyGameSortProvider) ?? NearbySortOrder.defaultOrder,
   );
 }
 
@@ -77,9 +78,6 @@ NearbyGamesParams _paramsFor(WidgetRef ref, String? sportId) {
 /// here — history lives in My Sports → History.
 bool _passes(WidgetRef ref, NearbyGameModel g, DateTime now) {
   if (g.status == 'ended' || g.status == 'cancelled') return false;
-  if (ref.watch(gamesOpenSpotsOnlyProvider) && (g.spotsRemaining ?? 1) <= 0) {
-    return false;
-  }
   if (!ref.watch(gamesSkillFilterProvider).matches(g.minSkill, g.maxSkill)) {
     return false;
   }
@@ -137,8 +135,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     ref.read(nearbyGamesFilterEnabledProvider.notifier).state = false;
     ref.read(gamesDateFilterProvider.notifier).state = GamesDateFilter.any;
     ref.read(gamesSkillFilterProvider.notifier).state = GamesSkillFilter.any;
-    ref.read(gamesOpenSpotsOnlyProvider.notifier).state = false;
-    ref.read(nearbyGameSortProvider.notifier).state = NearbySortOrder.nearest;
+    ref.read(nearbyGameSortProvider.notifier).state = null;
   }
 
   void _openFilters() {
@@ -158,10 +155,9 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     // that narrows the list.
     final l = AppLocalizations.of(context);
     final nearby = ref.watch(nearbyGamesFilterEnabledProvider);
-    final radius = ref.watch(nearbyRadiusProvider);
+    final radius = ref.watch(gamesRadiusProvider);
     final dateFilter = ref.watch(gamesDateFilterProvider);
     final skillFilter = ref.watch(gamesSkillFilterProvider);
-    final openSpots = ref.watch(gamesOpenSpotsOnlyProvider);
     final sortOrder = ref.watch(nearbyGameSortProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
 
@@ -184,23 +180,21 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
           onRemove: () => ref.read(gamesSkillFilterProvider.notifier).state =
               GamesSkillFilter.any,
         ),
-      if (openSpots)
+      // Every applied key is a chip, the sort included
+      // (`Listings.2026-10-08.dc.html:2009-2021`).
+      if (sortOrder != null)
         DabblerFilterRailItem(
-          label: l.listing_open_spots,
+          label: gamesSortLabel(l, sortOrder),
           onRemove: () =>
-              ref.read(gamesOpenSpotsOnlyProvider.notifier).state = false,
-        ),
-      if (sortOrder != NearbySortOrder.nearest)
-        DabblerFilterRailItem(
-          label: l.listing_sort_soonest,
-          onRemove: () => ref.read(nearbyGameSortProvider.notifier).state =
-              NearbySortOrder.nearest,
+              ref.read(nearbyGameSortProvider.notifier).state = null,
         ),
     ];
 
     return DabblerPage(
       body: ListingScaffold(
-        head: DabblerListingHead.tint,
+        // The design's default header is plain (`gamesHead: 'none'`,
+        // `Listings.2026-10-08.dc.html:2085-2088`); the tint is its variant.
+        head: DabblerListingHead.none,
         header: DabblerPageHeader(
           safeArea: false,
           contentPadding: DabblerPageHeader.listingPadding,
@@ -231,6 +225,9 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
         filters: active,
         clearAllLabel: l.listing_clear_all,
         onClearAll: _resetFilters,
+        // The whole rail opens the sheet (`Listings.2026-10-08.dc.html:111`).
+        onFiltersTap: _openFilters,
+        filtersTapSemanticLabel: l.listing_filters_open,
         pages: List.generate(
           _tabCount,
           (i) => _GameTabBody(
@@ -251,8 +248,9 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
 // FILTER SHEET
 // =============================================================================
 
-/// The design's groups: Distance, Date, Skill level, then the app's own
-/// Availability, and Sort by. Everything writes straight to its provider.
+/// The design's groups: Distance, Date, Skill level and Sort by
+/// (`Listings.2026-10-08.dc.html:1816-1823`; the price group waits for a price
+/// source). Everything writes straight to its provider.
 class _GamesFilterBody extends ConsumerWidget {
   const _GamesFilterBody();
 
@@ -261,7 +259,7 @@ class _GamesFilterBody extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final dateFilter = ref.watch(gamesDateFilterProvider);
     final skillFilter = ref.watch(gamesSkillFilterProvider);
-    final openSpotsOnly = ref.watch(gamesOpenSpotsOnlyProvider);
+    final sortOrder = ref.watch(nearbyGameSortProvider);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -274,6 +272,7 @@ class _GamesFilterBody extends ConsumerWidget {
             context,
             ref,
             nearbyGamesFilterEnabledProvider,
+            radiusProvider: gamesRadiusProvider,
           ),
         ),
         DabblerFilterGroup(
@@ -305,19 +304,16 @@ class _GamesFilterBody extends ConsumerWidget {
           ],
         ),
         DabblerFilterGroup(
-          label: l.listing_group_availability,
-          children: [
-            DabblerChip(
-              label: l.listing_open_spots,
-              selected: openSpotsOnly,
-              onTap: () => ref.read(gamesOpenSpotsOnlyProvider.notifier).state =
-                  !openSpotsOnly,
-            ),
-          ],
-        ),
-        DabblerFilterGroup(
           label: l.listing_group_sort,
-          children: nearbySortChips(context, ref, nearbyGameSortProvider),
+          children: [
+            for (final o in NearbySortOrder.values)
+              DabblerChip(
+                label: gamesSortLabel(l, o),
+                selected: o == sortOrder,
+                onTap: () => ref.read(nearbyGameSortProvider.notifier).state =
+                    o == sortOrder ? null : o,
+              ),
+          ],
         ),
       ],
     );
@@ -412,10 +408,10 @@ class _GameTabBody extends ConsumerWidget {
         // Pinned "Upcoming" games stay visible — the filters narrow
         // discovery, not your own commitments.
         final now = DateTime.now();
+        final dateFilter = ref.watch(gamesDateFilterProvider);
         final filtersActive =
-            ref.watch(gamesDateFilterProvider) != GamesDateFilter.any ||
-            ref.watch(gamesSkillFilterProvider) != GamesSkillFilter.any ||
-            ref.watch(gamesOpenSpotsOnlyProvider);
+            dateFilter != GamesDateFilter.any ||
+            ref.watch(gamesSkillFilterProvider) != GamesSkillFilter.any;
 
         final others = games
             .where((g) => !pinnedIds.contains(g.id))
@@ -423,18 +419,21 @@ class _GameTabBody extends ConsumerWidget {
             .toList();
 
         if (pinned.isEmpty && others.isEmpty) {
-          final narrowed = filtersActive && games.isNotEmpty;
+          // `Listings.2026-10-08.dc.html:211-212` whenever anything narrows
+          // the list; "No games yet" only for the bare, unlocated list, which
+          // the design has no frame for.
+          final narrowed = filtersActive || isFiltered;
           return ListingEmpty(
             icon: 'game',
             title: narrowed
-                ? l.listing_games_filtered_title
-                : isFiltered
                 ? l.listing_games_nearby_title
                 : l.listing_games_none_title,
             text: narrowed
-                ? l.listing_games_filtered_text
-                : isFiltered
-                ? l.listing_games_nearby_text
+                ? gamesEmptyText(
+                    l,
+                    radiusMeters: params.radiusMeters,
+                    date: dateFilter,
+                  )
                 : l.listing_games_none_text,
             action: DabblerButton(
               label: l.listing_change_filters,
@@ -613,6 +612,11 @@ class _GameCard extends StatelessWidget {
     final locale = Localizations.localeOf(context).toString();
     final at = game.scheduledAt;
     final skill = gamesSkillTierFor(game.minSkill, game.maxSkill);
+    final status = gamesCardStatus(
+      spotsRemaining: game.spotsRemaining ?? 0,
+      startsAt: at,
+      now: DateTime.now(),
+    );
 
     return DabblerCardGame(
       title: game.title,
@@ -628,6 +632,13 @@ class _GameCard extends StatelessWidget {
               GamesSkillFilter.intermediate => DabblerListingTagTone.warning,
               _ => DabblerListingTagTone.error,
             },
+          )
+        else
+          // No skill range: open to every level, so every card keeps the
+          // design's skill tag (`Listings.2026-10-08.dc.html:2147`).
+          DabblerListingTag(
+            label: l.listing_skill_all_levels,
+            tone: DabblerListingTagTone.neutral,
           ),
         if (game.isMine)
           DabblerListingTag(
@@ -649,16 +660,8 @@ class _GameCard extends StatelessWidget {
               ),
               joined: game.playerCount!,
               capacity: game.playerCount! + game.spotsRemaining!,
-              note: game.spotsRemaining! == 0
-                  ? l.listing_full
-                  : game.spotsRemaining! <= 2
-                  ? l.listing_spots_almost_full(game.spotsRemaining!)
-                  : l.listing_spots_left(game.spotsRemaining!),
-              tone: game.spotsRemaining! == 0
-                  ? DabblerProgressBarTone.error
-                  : game.spotsRemaining! <= 2
-                  ? DabblerProgressBarTone.warning
-                  : DabblerProgressBarTone.brand,
+              note: gamesStatusNote(l, status, game.spotsRemaining!),
+              tone: gamesStatusTone(status),
             )
           : null,
       action: _JoinAction(game: game),
@@ -768,6 +771,7 @@ String _dateLabel(AppLocalizations l, GamesDateFilter f) => switch (f) {
   GamesDateFilter.today => l.listing_today,
   GamesDateFilter.tomorrow => l.listing_tomorrow,
   GamesDateFilter.thisWeek => l.listing_this_week,
+  GamesDateFilter.thisWeekend => l.listing_this_weekend,
 };
 
 String _skillLabel(AppLocalizations l, GamesSkillFilter f) =>

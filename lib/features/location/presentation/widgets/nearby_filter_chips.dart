@@ -20,14 +20,22 @@ String nearbyRadiusLabel(AppLocalizations l, int meters) =>
 
 /// "Within 5 km", "Within 10 km", "Any distance". Picking a preset turns the
 /// nearby filter on at that radius; "Any distance" turns it off.
+///
+/// The radius is the active location's ([nearbyRadiusProvider]) unless the
+/// listing keeps its own: then pass [radiusProvider] and the presets write
+/// there instead of overriding the location's radius.
 List<Widget> nearbyDistanceChips(
   BuildContext context,
   WidgetRef ref,
-  StateProvider<bool> enabledProvider,
-) {
+  StateProvider<bool> enabledProvider, {
+  StateProvider<int>? radiusProvider,
+}) {
   final AppLocalizations l = AppLocalizations.of(context);
   final bool enabled = ref.watch(enabledProvider);
-  final int radius = ref.watch(nearbyRadiusProvider);
+  final StateProvider<int>? own = radiusProvider;
+  final int radius = own != null
+      ? ref.watch(own)
+      : ref.watch(nearbyRadiusProvider);
   return <Widget>[
     for (final int meters in kNearbyRadiusPresets)
       DabblerChip(
@@ -35,7 +43,11 @@ List<Widget> nearbyDistanceChips(
         selected: enabled && radius == meters,
         onTap: () {
           ref.read(enabledProvider.notifier).state = true;
-          ref.read(activeLocationProvider.notifier).setRadiusOverride(meters);
+          if (own != null) {
+            ref.read(own.notifier).state = meters;
+          } else {
+            ref.read(activeLocationProvider.notifier).setRadiusOverride(meters);
+          }
         },
       ),
     DabblerChip(

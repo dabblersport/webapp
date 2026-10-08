@@ -3390,6 +3390,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_this_week => 'This week';
 
   @override
+  String get listing_this_weekend => 'This weekend';
+
+  @override
+  String get listing_skill_all_levels => 'All levels';
+
+  @override
+  String get listing_starts_soon => 'Starts soon';
+
+  @override
+  String get listing_filters_open => 'Open filters';
+
+  @override
+  String listing_games_empty_radius_window(int km, String window) {
+    return 'Nothing within $km km $window. Widen the date or sport.';
+  }
+
+  @override
+  String listing_games_empty_radius(int km) {
+    return 'Nothing within $km km. Widen the distance or sport.';
+  }
+
+  @override
+  String listing_games_empty_window(String window) {
+    return 'Nothing $window. Widen the date or sport.';
+  }
+
+  @override
+  String get listing_games_empty_fallback =>
+      'Nothing matches these filters. Widen the date or sport.';
+
+  @override
+  String get listing_window_today => 'today';
+
+  @override
+  String get listing_window_tomorrow => 'tomorrow';
+
+  @override
+  String listing_window_days(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'in the next $days days',
+      one: 'in the next day',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get listing_window_weekend => 'this weekend';
+
+  @override
   String get listing_skill_beginner => 'Beginner';
 
   @override

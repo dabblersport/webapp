@@ -3382,6 +3382,60 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_this_week => 'هذا الأسبوع';
 
   @override
+  String get listing_this_weekend => 'نهاية الأسبوع';
+
+  @override
+  String get listing_skill_all_levels => 'كل المستويات';
+
+  @override
+  String get listing_starts_soon => 'يبدأ قريبًا';
+
+  @override
+  String get listing_filters_open => 'فتح الفلاتر';
+
+  @override
+  String listing_games_empty_radius_window(int km, String window) {
+    return 'لا توجد مباريات ضمن $km كم $window. وسّع نطاق التاريخ أو الرياضة.';
+  }
+
+  @override
+  String listing_games_empty_radius(int km) {
+    return 'لا توجد مباريات ضمن $km كم. وسّع المسافة أو الرياضة.';
+  }
+
+  @override
+  String listing_games_empty_window(String window) {
+    return 'لا توجد مباريات $window. وسّع نطاق التاريخ أو الرياضة.';
+  }
+
+  @override
+  String get listing_games_empty_fallback =>
+      'لا توجد مباريات تطابق هذه الفلاتر. وسّع نطاق التاريخ أو الرياضة.';
+
+  @override
+  String get listing_window_today => 'اليوم';
+
+  @override
+  String get listing_window_tomorrow => 'غدًا';
+
+  @override
+  String listing_window_days(int days) {
+    String _temp0 = intl.Intl.pluralLogic(
+      days,
+      locale: localeName,
+      other: 'خلال الأيام الـ$days القادمة',
+      many: 'خلال الـ$days يومًا القادمة',
+      few: 'خلال الأيام الـ$days القادمة',
+      two: 'خلال اليومين القادمين',
+      one: 'خلال اليوم القادم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get listing_window_weekend => 'في نهاية الأسبوع';
+
+  @override
   String get listing_skill_beginner => 'مبتدئ';
 
   @override

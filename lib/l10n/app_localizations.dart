@@ -6137,6 +6137,78 @@ abstract class AppLocalizations {
   /// **'This week'**
   String get listing_this_week;
 
+  /// No description provided for @listing_this_weekend.
+  ///
+  /// In en, this message translates to:
+  /// **'This weekend'**
+  String get listing_this_weekend;
+
+  /// No description provided for @listing_skill_all_levels.
+  ///
+  /// In en, this message translates to:
+  /// **'All levels'**
+  String get listing_skill_all_levels;
+
+  /// No description provided for @listing_starts_soon.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts soon'**
+  String get listing_starts_soon;
+
+  /// No description provided for @listing_filters_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open filters'**
+  String get listing_filters_open;
+
+  /// No description provided for @listing_games_empty_radius_window.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing within {km} km {window}. Widen the date or sport.'**
+  String listing_games_empty_radius_window(int km, String window);
+
+  /// No description provided for @listing_games_empty_radius.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing within {km} km. Widen the distance or sport.'**
+  String listing_games_empty_radius(int km);
+
+  /// No description provided for @listing_games_empty_window.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing {window}. Widen the date or sport.'**
+  String listing_games_empty_window(String window);
+
+  /// No description provided for @listing_games_empty_fallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing matches these filters. Widen the date or sport.'**
+  String get listing_games_empty_fallback;
+
+  /// No description provided for @listing_window_today.
+  ///
+  /// In en, this message translates to:
+  /// **'today'**
+  String get listing_window_today;
+
+  /// No description provided for @listing_window_tomorrow.
+  ///
+  /// In en, this message translates to:
+  /// **'tomorrow'**
+  String get listing_window_tomorrow;
+
+  /// No description provided for @listing_window_days.
+  ///
+  /// In en, this message translates to:
+  /// **'{days, plural, =1{in the next day} other{in the next {days} days}}'**
+  String listing_window_days(int days);
+
+  /// No description provided for @listing_window_weekend.
+  ///
+  /// In en, this message translates to:
+  /// **'this weekend'**
+  String get listing_window_weekend;
+
   /// No description provided for @listing_skill_beginner.
   ///
   /// In en, this message translates to:
