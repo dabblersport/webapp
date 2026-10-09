@@ -49,6 +49,11 @@ const String _dir = String.fromEnvironment(
   defaultValue: '$kShotsRoot/listings-v2/app-shell',
 );
 
+/// The render locale: `--dart-define=RENDER_LOCALE=ar` renders Arabic (RTL).
+const Locale _locale = Locale(
+  String.fromEnvironment('RENDER_LOCALE', defaultValue: 'en'),
+);
+
 class _Location extends ActiveLocationNotifier {
   @override
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
@@ -191,12 +196,12 @@ Future<GoRouter> _pump(WidgetTester tester) async {
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         routerConfig: router,
-        locale: const Locale('en'),
+        locale: _locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withFonts(
           DabblerDesignSystemTheme.withTokens(renderThemeBase()),
-          locale: const Locale('en'),
+          locale: _locale,
         ),
         builder: (context, child) {
           // A 50px status bar over the app, as on a phone.
@@ -290,8 +295,8 @@ void main() {
           (
             route: RoutePaths.gamesTab,
             name: 'games',
-            theme: DabblerTheme.main,
-            // Plain header, the design default (GAP #28): no band.
+            // The sport palette (KAN-454). Plain header kept: no band.
+            theme: DabblerTheme.sport,
             band: null,
           ),
           (
@@ -373,7 +378,7 @@ void main() {
           reason: '${r.name}: bottom bar is not ${t.name}',
         );
       }
-      await _shoot(tester, 'shell-$mode-2-${r.name}');
+      await _shoot(tester, 'shell-$mode-${_locale.languageCode}-2-${r.name}');
 
       // Scroll: the band folds, still under the status bar.
       if (r.band != null) {
@@ -382,7 +387,10 @@ void main() {
           await tester.pump(const Duration(milliseconds: 100));
         }
         expect(_bars(tester).statusBarColor, expectedBand);
-        await _shoot(tester, 'shell-$mode-3-${r.name}-collapsed');
+        await _shoot(
+          tester,
+          'shell-$mode-${_locale.languageCode}-3-${r.name}-collapsed',
+        );
       }
     }
 
@@ -398,6 +406,40 @@ void main() {
     expect(venuesBar, isNot(tokens(DabblerTheme.active).brandPrimary));
     expect(venuesBand, isNot(sportBand));
     expect(venuesBand, isNot(accent));
+
+    // KAN-454: Games -> Venues -> Meetups -> Games. Each section re-tints the
+    // bar and the Action Area to its own palette, with no sport left over on
+    // Venues or Meetups and no stale band under the status bar.
+    final hops = <(String, DabblerTheme, Color)>[
+      (RoutePaths.gamesTab, DabblerTheme.sport, page),
+      (RoutePaths.venuesTab, DabblerTheme.main, tint(DabblerTheme.main)),
+      (RoutePaths.meetups, DabblerTheme.active, accent),
+      (RoutePaths.gamesTab, DabblerTheme.sport, page),
+    ];
+    for (final (route, theme, band) in hops) {
+      router.go(route);
+      await settle();
+      final Color brand = tokens(theme).brandPrimary;
+      expect(
+        DabblerColors.of(tester.element(bottomBar)).brandPrimary,
+        brand,
+        reason: '$route: bottom bar brand',
+      );
+      expect(
+        DabblerColors.of(tester.element(actionArea)).brandPrimary,
+        brand,
+        reason: '$route: Action Area brand',
+      );
+      expect(_painted(tester, bottomBar), contains(brand), reason: route);
+      expect(_bars(tester).statusBarColor, band, reason: '$route: band');
+      if (theme != DabblerTheme.sport) {
+        expect(
+          _painted(tester, bottomBar),
+          isNot(contains(tokens(DabblerTheme.sport).brandPrimary)),
+          reason: '$route: no sport leak',
+        );
+      }
+    }
 
     // Back to Home: the band and its status colour are released.
     router.go('/home');

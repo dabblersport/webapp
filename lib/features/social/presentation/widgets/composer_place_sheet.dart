@@ -22,7 +22,8 @@ class ComposerPlacePick {
   final double? lng;
 }
 
-/// Opens "Add location" (`Home Feed.dc.html:818-875`): a search field, the
+/// Opens "Add location" (`Home Feed.dc.html:818-875`): a search field, "Use
+/// current location" and the Recent group until something is typed, then the
 /// matching places, a Clear action and a `Confirm` footer that applies the
 /// pending place.
 Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
@@ -67,6 +68,7 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
     detent: DabblerSheetDetent.content,
     contentMaxFraction: DabblerSheet.contentMaxFractionMedium,
     pageBackground: true,
+    hairlineOutside: ComposerFrameScope.active(context),
     showCloseButton: false,
     headerActionBuilder: (ctx) => composerSheetHeaderActions(
       context,
@@ -74,7 +76,10 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
       onClear: notifier.clearLocation,
     ),
     footerBuilder: (_) => composerSheetFooter(confirm),
-    builder: (_) => ComposerPlaceSheet(pending: pending),
+    builder: composerFrameBuilder(
+      context,
+      (_) => ComposerPlaceSheet(pending: pending),
+    ),
   );
 }
 
@@ -91,6 +96,40 @@ class ComposerPlaceSheet extends ConsumerStatefulWidget {
 class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
   final _search = TextEditingController();
   String _query = '';
+  bool _locating = false;
+  bool _locationDenied = false;
+
+  /// "Use current location": tags the post with the device position through
+  /// [PostComposerNotifier.useCurrentLocation], then closes the sheet as a
+  /// confirmed pick does; when the location is unavailable it changes
+  /// nothing and shows the inline message instead.
+  Future<void> _useCurrentLocation() async {
+    if (_locating) return;
+    final l = AppLocalizations.of(context);
+    setState(() {
+      _locating = true;
+      _locationDenied = false;
+    });
+    final outcome = await ref
+        .read(postComposerProvider.notifier)
+        .useCurrentLocation(fallbackName: l.composer_place_current_location);
+    if (!mounted) return;
+    if (outcome == ComposerLocateOutcome.unavailable) {
+      setState(() {
+        _locating = false;
+        _locationDenied = true;
+      });
+      return;
+    }
+    final s = ref.read(postComposerProvider);
+    widget.pending.value = ComposerPlacePick(
+      name: s.locationName ?? l.composer_place_current_location,
+      lat: s.geoLat,
+      lng: s.geoLng,
+    );
+    setState(() => _locating = false);
+    Navigator.of(context).maybePop();
+  }
 
   @override
   void dispose() {
@@ -111,6 +150,51 @@ class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
           placeholder: l.composer_place_search,
           onChanged: (v) => setState(() => _query = v),
         ),
+        // Before anything is typed (`Home Feed.dc.html:836-849`, `placesFor`
+        // at ~2979): "Use current location", then the "Recent" group.
+        if (typed.isEmpty) ...[
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space3,
+            ),
+            child: ComposerPickerRow(
+              key: const Key('composer-place-use-current'),
+              icon: 'gps',
+              accent: true,
+              title: l.home_location_use_current,
+              onTap: _useCurrentLocation,
+            ),
+          ),
+          if (_locationDenied)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                top: DabblerSpacing.space2,
+              ),
+              child: DabblerText(
+                l.composer_place_location_denied,
+                key: const Key('composer-place-location-denied'),
+                style: DabblerType.caption1,
+                tone: DabblerTextTone.secondary,
+              ),
+            ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space5,
+              bottom: DabblerSpacing.space2,
+            ),
+            child: DabblerText(
+              l.home_location_recent,
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+            ),
+          ),
+          // The app keeps no recent places (CTO ruling dreq-d30fdcb3: build
+          // no storage), so the group shows its empty state.
+          ComposerCenteredState.message(
+            l.composer_place_recent_empty,
+            key: const Key('composer-place-recent-empty'),
+          ),
+        ],
         if (typed.length >= 2)
           ValueListenableBuilder<ComposerPlacePick?>(
             valueListenable: widget.pending,

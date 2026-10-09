@@ -49,6 +49,16 @@ class MainNavigationScreen extends ConsumerStatefulWidget {
       _MainNavigationScreenState();
 }
 
+/// The section theme the shell takes for [branch]: Games the sport palette
+/// (KAN-454, superseding the design file's `gamesTheme: 'main'` adopted in
+/// 76880f6f), Meetups the active palette, every other branch (Venues
+/// included) the app's own main theme.
+DabblerTheme? sectionThemeFor(NavigationBranch branch) => switch (branch) {
+  NavigationBranch.games => DabblerTheme.sport,
+  NavigationBranch.meetups => DabblerTheme.active,
+  _ => null,
+};
+
 class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
   bool _hasShownModalThisSession = false;
   bool _checkInModalInFlight = false;
@@ -369,13 +379,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         _handleSystemBack();
       },
       child: SectionThemed(
-        theme: switch (NavigationBranch.values[_currentIndex]) {
-          // Games takes the main theme, the design default (`gamesTheme:
-          // 'main'`, `Listings.2026-10-08.dc.html:2085`).
-          NavigationBranch.games => DabblerTheme.main,
-          NavigationBranch.meetups => DabblerTheme.active,
-          _ => null,
-        },
+        theme: sectionThemeFor(NavigationBranch.values[_currentIndex]),
         child: DabblerPage(
           maxContentWidth: DabblerPage.readableWidth,
           // The page raises the body's bottom padding by the floating bar's

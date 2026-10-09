@@ -1,10 +1,7 @@
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
-import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/data/models/social/sport.dart';
-import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
-import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
@@ -23,9 +20,6 @@ import 'package:dabbler/features/venues/presentation/providers/venues_with_sport
 import 'package:dabbler/providers.dart' hide nearbyVenuesProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-// MaterialPageRoute is the navigation route the favourites action pushes, kept
-// exactly as it was; it paints nothing of its own.
-import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -166,12 +160,9 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
                     ),
                   DabblerPageHeaderAction(
                     icon: 'heart',
-                    semanticLabel: l.listing_saved_venues,
-                    onPressed: () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) =>
-                            const SportsLibraryScreen(initialTabIndex: 1),
-                      ),
+                    semanticLabel: l.fav_title,
+                    onPressed: () => context.push(
+                      '${RoutePaths.favourites}?tab=${FavouriteKind.venue.name}',
                     ),
                   ),
                   DabblerPageHeaderAction(
@@ -655,17 +646,6 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
     );
   }
 
-  Future<void> _share() {
-    final l = AppLocalizations.of(context);
-    final headline = l.listing_share_venue_headline(
-      context.isolate(widget.venue.name),
-    );
-    return ref.read(meetupShareProvider)(
-      '${RoutePaths.webLinkBase}${RoutePaths.venueDetail(widget.venue.id)}',
-      context.isolateTrailing(headline, 'Dabbler'),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
@@ -755,20 +735,20 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
                   : (catalog[key]?.en ?? key),
             ),
       ],
-      // The heart (a favourite, with its count) and share, as on the meetup
-      // card; share has no count.
-      favourite: DabblerListingSocial(
-        favourited: fav.mine,
-        onFavourite: _busy ? null : () => _toggle(fav),
-        favouriteLabel: fav.mine
-            ? l.listing_remove_saved
-            : l.listing_save_venue,
-        favouriteCount: '${fav.count}',
-        onShare: _share,
-        shareLabel: l.meetups_share,
+      // The heart alone (Listings 2026-10-08b `:795-799`): no chip, no count,
+      // no share; red and bold when favourited.
+      favourite: DabblerFeedAction(
+        icon: 'heart',
+        metrics: DabblerFeedMetrics.drawn,
+        weight: fav.mine ? DabblerIconWeight.bold : DabblerIconWeight.linear,
+        color: fav.mine ? colors.error.base : null,
+        semanticLabel: fav.mine ? l.listing_remove_saved : l.listing_save_venue,
+        onTap: _busy ? null : () => _toggle(fav),
       ),
       price: priceLabel,
       priceCaption: priceLabel == null ? null : l.listing_starting_from,
+      // The button leads the price row (`:836-840`).
+      actionFirst: true,
       trailing: DabblerButton(
         label: l.listing_view_venue,
         onPressed: () => context.push(RoutePaths.venueDetail(venue.id)),

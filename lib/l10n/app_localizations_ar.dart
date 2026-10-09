@@ -4445,7 +4445,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get game_format_sub => 'صيغة المباراة';
 
   @override
-  String get game_select_sport_first => 'اختر الرياضة أولًا';
+  String get game_select_sport_first => 'اختر رياضة أولًا';
 
   @override
   String get game_select_format => 'اختر الصيغة';
@@ -5375,6 +5375,180 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String composer_vibe_count(int count, String kind) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جوّ لنوع «$kind»',
+      many: '$count جوًّا لنوع «$kind»',
+      few: '$count أجواء لنوع «$kind»',
+      two: 'جوّان لنوع «$kind»',
+      one: 'جوّ واحد لنوع «$kind»',
+      zero: 'لا أجواء لنوع «$kind»',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get home_location_saved_home => 'المنزل';
+
+  @override
+  String get home_location_saved_work => 'العمل';
+
+  @override
+  String get home_location_custom => 'موقع مخصص';
+
+  @override
+  String get home_location_nearby_areas => 'مناطق قريبة';
+
+  @override
+  String get composer_games_joined_hint => 'المباريات التي انضممت إليها';
+
+  @override
+  String get composer_content_class_title => 'فئة المحتوى';
+
+  @override
+  String get composer_content_class_social => 'اجتماعي';
+
+  @override
+  String get composer_content_class_editorial => 'تحريري';
+
+  @override
+  String get composer_content_class_social_sub => 'منشور اجتماعي عادي';
+
+  @override
+  String get composer_content_class_editorial_sub => 'محتوى تحريري أو مطوّل';
+
+  @override
+  String composer_posting_as(String name) {
+    return 'النشر باسم $name';
+  }
+
+  @override
+  String composer_posting_as_switch(String name) {
+    return 'النشر باسم $name. اضغط لتبديل الملف الشخصي.';
+  }
+
+  @override
+  String get composer_tool_value_set => 'تم التحديد';
+
+  @override
+  String composer_tool_vibe_set(String name) {
+    return 'الأجواء: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String composer_tool_sport_set(String name) {
+    return 'الرياضة: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String composer_tool_location_set(String name) {
+    return 'الموقع: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String composer_tool_game_set(String name) {
+    return 'المباراة: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String get composer_media_gif => 'GIF';
+
+  @override
+  String get composer_media_image => 'صورة';
+
+  @override
+  String get composer_place_current_location => 'الموقع الحالي';
+
+  @override
+  String get composer_place_recent_empty => 'لا توجد أماكن حديثة';
+
+  @override
+  String get composer_place_location_denied =>
+      'فعّل الموقع لاستخدام مكانك الحالي';
+
+  @override
+  String game_format_choose_sub(String sport) {
+    return 'اختر صيغة $sport';
+  }
+
+  @override
+  String get game_players_min => 'أدنى';
+
+  @override
+  String get game_players_max => 'أقصى';
+
+  @override
+  String game_sport_tile_semantic(String name) {
+    return 'الرياضة: $name، اضغط للاختيار';
+  }
+
+  @override
+  String get game_create_failed => 'تعذّر إنشاء المباراة';
+
+  @override
+  String get game_save_failed => 'تعذّر حفظ التغييرات';
+
+  @override
+  String get game_load_failed => 'تعذّر تحميل المباراة';
+
+  @override
+  String get game_venue_search_placeholder =>
+      'ابحث عن ملاعب أو مساحات أو منطقة…';
+
+  @override
+  String get game_venue_none => 'لا توجد ملاعب متاحة لهذه الصيغة';
+
+  @override
+  String get game_error_sport_unavailable => 'هذه الرياضة غير متاحة للمباريات.';
+
+  @override
+  String get game_error_invalid_format => 'الصيغة غير صالحة لهذه الرياضة.';
+
+  @override
+  String get game_error_invalid_time_range =>
+      'يجب أن يكون وقت الانتهاء بعد وقت البدء.';
+
+  @override
+  String get game_error_profile_incomplete => 'أكمل ملفك الشخصي أولاً.';
+
+  @override
+  String get game_error_not_editable => 'لم يعد بالإمكان تعديل هذه المباراة.';
+
+  @override
+  String get game_error_player_range =>
+      'لا يمكن أن يتجاوز الحد الأدنى للاعبين الحد الأقصى.';
+
+  @override
+  String get game_error_player_count_min => 'يجب ألا يقل عدد اللاعبين عن 1.';
+
+  @override
+  String game_error_daily_limit(String reset) {
+    return 'بلغت الحد اليومي. حاول مرة أخرى في $reset.';
+  }
+
+  @override
+  String get game_error_generic => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String composer_counter_semantic(int used, int max) {
+    return 'الأحرف المستخدمة: $used من $max';
+  }
+
+  @override
+  String get game_format_locked => 'مقفل';
+
+  @override
+  String get game_duration_30m => '30 د';
+
+  @override
+  String get game_duration_1h => '1 س';
+
+  @override
+  String get game_duration_2h => '2 س';
+
+  @override
   String sfx_comments_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -6007,5 +6181,56 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String listing_note_join(String first, String second) {
     return '$first · $second';
+  }
+
+  @override
+  String get fav_title => 'المفضلة';
+
+  @override
+  String get fav_back => 'رجوع';
+
+  @override
+  String get fav_ended => 'انتهت';
+
+  @override
+  String get fav_remove => 'إزالة من المفضلة';
+
+  @override
+  String get fav_empty_venues_title => 'لا توجد ملاعب مفضلة بعد.';
+
+  @override
+  String get fav_empty_venues_body => 'اضغط على القلب في أي ملعب لحفظه هنا.';
+
+  @override
+  String get fav_empty_games_title => 'لا توجد مباريات مفضلة بعد.';
+
+  @override
+  String get fav_empty_games_body => 'اضغط على القلب في أي مباراة لحفظها هنا.';
+
+  @override
+  String get fav_empty_meetups_title => 'لا توجد لقاءات مفضلة بعد.';
+
+  @override
+  String get fav_empty_meetups_body => 'اضغط على القلب في أي لقاء لحفظه هنا.';
+
+  @override
+  String get fav_load_failed => 'تعذّر تحميل مفضلتك.';
+
+  @override
+  String get fav_retry => 'حاول مرة أخرى';
+
+  @override
+  String fav_meta_players(int n, int cap) {
+    return '$n/$cap لاعبين';
+  }
+
+  @override
+  String fav_meta_going(int n) {
+    return '$n سيحضرون';
+  }
+
+  @override
+  String fav_meta_went(int n) {
+    return '$n حضروا';
   }
 }

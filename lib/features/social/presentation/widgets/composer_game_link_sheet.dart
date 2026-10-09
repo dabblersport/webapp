@@ -8,7 +8,7 @@ import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens "Link a game" (`Home Feed.dc.html:876-925`): a search field, the
-/// matching games as [DabblerGameLinkRow]s, a Clear action and a `Confirm`
+/// viewer's joined games until something is typed, then the matching games as [DabblerGameLinkRow]s, a Clear action and a `Confirm`
 /// footer that links the pending game.
 Future<void> showComposerGameLinkSheet(BuildContext context, WidgetRef ref) {
   final state = ref.read(postComposerProvider);
@@ -22,7 +22,7 @@ Future<void> showComposerGameLinkSheet(BuildContext context, WidgetRef ref) {
   return showComposerSheet<void>(
     context,
     title: l.composer_link_a_game,
-    subtitle: l.composer_games_hint,
+    subtitle: l.composer_games_joined_hint,
     onClear: notifier.clearGame,
     confirm: ComposerSheetConfirm(
       label: l.composer_confirm,
@@ -71,12 +71,18 @@ class _ComposerGameLinkSheetState extends ConsumerState<ComposerGameLinkSheet> {
           placeholder: l.composer_games_search,
           onChanged: (v) => setState(() => _query = v),
         ),
-        if (typed.length >= 2)
+        // Joined games before anything is typed (no minimum length); search
+        // results from two characters on, as before.
+        if (typed.isEmpty || typed.length >= 2)
           ValueListenableBuilder<({String id, String name})?>(
             valueListenable: widget.pending,
             builder: (context, current, _) => Consumer(
               builder: (context, ref, _) => ref
-                  .watch(gameSearchProvider(typed))
+                  .watch(
+                    typed.isEmpty
+                        ? composerJoinedGamesProvider
+                        : gameSearchProvider(typed),
+                  )
                   .when(
                     loading: () => const ComposerCenteredState.loading(),
                     error: (_, __) =>

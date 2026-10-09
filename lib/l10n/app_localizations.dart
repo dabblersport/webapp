@@ -8030,7 +8030,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_select_sport_first.
   ///
   /// In en, this message translates to:
-  /// **'Select sport first'**
+  /// **'Pick a sport first'**
   String get game_select_sport_first;
 
   /// No description provided for @game_select_format.
@@ -8048,7 +8048,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_date_time.
   ///
   /// In en, this message translates to:
-  /// **'Date & Time'**
+  /// **'Date & time'**
   String get game_date_time;
 
   /// No description provided for @game_date_time_sub.
@@ -8108,7 +8108,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_skill_level.
   ///
   /// In en, this message translates to:
-  /// **'Skill Level'**
+  /// **'Skill level'**
   String get game_skill_level;
 
   /// No description provided for @game_skill_sub.
@@ -8132,7 +8132,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_players_sub.
   ///
   /// In en, this message translates to:
-  /// **'Min & max players'**
+  /// **'Min and max players'**
   String get game_players_sub;
 
   /// No description provided for @game_fewer_min.
@@ -9695,6 +9695,282 @@ abstract class AppLocalizations {
   /// **'{count} players'**
   String composer_players_count(int count);
 
+  /// Vibe sheet subtitle: how many vibes are available for the selected post kind. {kind} is the localized post-kind name (composer_type_moment, composer_type_dab or composer_type_kickin); in English the caller lowercases it (design: 'dab'), in Arabic pass it as is.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 vibe for {kind}} other{{count} vibes for {kind}}}'**
+  String composer_vibe_count(int count, String kind);
+
+  /// Saved-place chip label in the Change location sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home_location_saved_home;
+
+  /// Saved-place chip label in the Change location sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get home_location_saved_work;
+
+  /// Chip that lets the user type their own location in the Change location sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom location'**
+  String get home_location_custom;
+
+  /// Group heading above the nearby-area list in the Change location sheet when the search box is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby areas'**
+  String get home_location_nearby_areas;
+
+  /// Subtitle of the Link a game sheet: the list shows only games the viewer has joined.
+  ///
+  /// In en, this message translates to:
+  /// **'Games you have joined'**
+  String get composer_games_joined_hint;
+
+  /// Title of the Content Class sheet on the Create Post screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Content Class'**
+  String get composer_content_class_title;
+
+  /// Content Class row title: social post.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get composer_content_class_social;
+
+  /// Content Class row title: editorial post.
+  ///
+  /// In en, this message translates to:
+  /// **'Editorial'**
+  String get composer_content_class_editorial;
+
+  /// Subtitle of the Social Content Class row.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard social post'**
+  String get composer_content_class_social_sub;
+
+  /// Subtitle of the Editorial Content Class row.
+  ///
+  /// In en, this message translates to:
+  /// **'Editorial or long-form content'**
+  String get composer_content_class_editorial_sub;
+
+  /// Label showing the profile the post is published as. {name} is the profile name.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting as {name}'**
+  String composer_posting_as(String name);
+
+  /// Semantic label for the Posting as control. {name} is the profile name.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting as {name}. Tap to switch profile.'**
+  String composer_posting_as_switch(String name);
+
+  /// Fallback word shown when a vibe, sport or game is chosen but has no name.
+  ///
+  /// In en, this message translates to:
+  /// **'set'**
+  String get composer_tool_value_set;
+
+  /// Semantic label of the Vibe tool once chosen. {name} is the vibe name.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe: {name}. Tap to change.'**
+  String composer_tool_vibe_set(String name);
+
+  /// Semantic label of the Sport tool once chosen. {name} is the sport name.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport: {name}. Tap to change.'**
+  String composer_tool_sport_set(String name);
+
+  /// Semantic label of the Location tool once chosen. {name} is the place name.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {name}. Tap to change.'**
+  String composer_tool_location_set(String name);
+
+  /// Semantic label of the Game tool once linked. {name} is the game name.
+  ///
+  /// In en, this message translates to:
+  /// **'Game: {name}. Tap to change.'**
+  String composer_tool_game_set(String name);
+
+  /// GIF badge and semantic label on attached media.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF'**
+  String get composer_media_gif;
+
+  /// Semantic label for an attached image.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get composer_media_image;
+
+  /// Label of the resolved place when the Use current location row finds no named area. A place name slot, keep short.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get composer_place_current_location;
+
+  /// Empty state under the Recent section of the Create Post place sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent places'**
+  String get composer_place_recent_empty;
+
+  /// Inline message in the Create Post place sheet when location permission is off or denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to use your current place'**
+  String get composer_place_location_denied;
+
+  /// Subtitle of the Format row once a sport is chosen. {sport} is the localized sport name.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the {sport} format'**
+  String game_format_choose_sub(String sport);
+
+  /// Short word beside the minimum-players number in the Create game Players row, e.g. 'min 4'.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get game_players_min;
+
+  /// Short word beside the maximum-players number in the Create game Players row, e.g. 'max 10'.
+  ///
+  /// In en, this message translates to:
+  /// **'max'**
+  String get game_players_max;
+
+  /// Screen reader label of a sport tile in the Create game sport picker. {name} is the localized sport name.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport: {name}, tap to select'**
+  String game_sport_tile_semantic(String name);
+
+  /// Toast when creating a game fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create game'**
+  String get game_create_failed;
+
+  /// Toast when saving edits to a game fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save changes'**
+  String get game_save_failed;
+
+  /// Toast when loading a game for editing fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load game'**
+  String get game_load_failed;
+
+  /// Placeholder of the venue search field in the Create game screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Search venues, spaces or area…'**
+  String get game_venue_search_placeholder;
+
+  /// Empty state in the Create game venue list when no venue supports the chosen format.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues available for this format'**
+  String get game_venue_none;
+
+  /// Server rejected the chosen sport for Create game.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport not available for games.'**
+  String get game_error_sport_unavailable;
+
+  /// Server rejected the chosen format (sport variant).
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid format for this sport.'**
+  String get game_error_invalid_format;
+
+  /// Create game time range validation error.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get game_error_invalid_time_range;
+
+  /// Create game blocked because the creator profile is incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile first.'**
+  String get game_error_profile_incomplete;
+
+  /// Edit refused: not the host or game not found.
+  ///
+  /// In en, this message translates to:
+  /// **'This game can no longer be edited.'**
+  String get game_error_not_editable;
+
+  /// Create game player range validation error.
+  ///
+  /// In en, this message translates to:
+  /// **'Min players cannot exceed max players.'**
+  String get game_error_player_range;
+
+  /// Shared message for invalid min or max player count.
+  ///
+  /// In en, this message translates to:
+  /// **'Player counts must be at least 1.'**
+  String get game_error_player_count_min;
+
+  /// Daily game creation limit message. {reset} is the formatted reset date and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily limit reached. Try again at {reset}.'**
+  String game_error_daily_limit(String reset);
+
+  /// Fallback for unknown Create game failures; same wording as meetups_error_generic.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get game_error_generic;
+
+  /// Screen-reader sentence for the Create Post body character counter, not the visual counter. {used} is the current length, {max} the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} characters used'**
+  String composer_counter_semantic(int used, int max);
+
+  /// State label on the Format chip while no sport is chosen; the chip does nothing until then.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get game_format_locked;
+
+  /// Duration chip: 30 minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'30m'**
+  String get game_duration_30m;
+
+  /// Duration chip: 1 hour.
+  ///
+  /// In en, this message translates to:
+  /// **'1h'**
+  String get game_duration_1h;
+
+  /// Duration chip: 2 hours.
+  ///
+  /// In en, this message translates to:
+  /// **'2h'**
+  String get game_duration_2h;
+
   /// No description provided for @sfx_comments_count.
   ///
   /// In en, this message translates to:
@@ -10768,6 +11044,96 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{first} · {second}'**
   String listing_note_join(String first, String second);
+
+  /// No description provided for @fav_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Favourites'**
+  String get fav_title;
+
+  /// No description provided for @fav_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get fav_back;
+
+  /// No description provided for @fav_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get fav_ended;
+
+  /// No description provided for @fav_remove.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from favourites'**
+  String get fav_remove;
+
+  /// No description provided for @fav_empty_venues_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite venues yet.'**
+  String get fav_empty_venues_title;
+
+  /// No description provided for @fav_empty_venues_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a venue to save it here.'**
+  String get fav_empty_venues_body;
+
+  /// No description provided for @fav_empty_games_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite games yet.'**
+  String get fav_empty_games_title;
+
+  /// No description provided for @fav_empty_games_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a game to save it here.'**
+  String get fav_empty_games_body;
+
+  /// No description provided for @fav_empty_meetups_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No favourite meetups yet.'**
+  String get fav_empty_meetups_title;
+
+  /// No description provided for @fav_empty_meetups_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap the heart on a meetup to save it here.'**
+  String get fav_empty_meetups_body;
+
+  /// No description provided for @fav_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your favourites.'**
+  String get fav_load_failed;
+
+  /// No description provided for @fav_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get fav_retry;
+
+  /// No description provided for @fav_meta_players.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}/{cap} players'**
+  String fav_meta_players(int n, int cap);
+
+  /// No description provided for @fav_meta_going.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} going'**
+  String fav_meta_going(int n);
+
+  /// No description provided for @fav_meta_went.
+  ///
+  /// In en, this message translates to:
+  /// **'{n} went'**
+  String fav_meta_went(int n);
 }
 
 class _AppLocalizationsDelegate

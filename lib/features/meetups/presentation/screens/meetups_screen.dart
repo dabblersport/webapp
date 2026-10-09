@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -111,6 +112,14 @@ class _MeetupsTabs extends ConsumerWidget {
           onLocationPressed:
               onPickLocation ?? () => HomeLocationPickerSheet.show(context),
           actions: <DabblerPageHeaderAction>[
+            // The Favourites entry (`Listings.2026-10-08b.dc.html:403-405`).
+            DabblerPageHeaderAction(
+              icon: 'heart',
+              semanticLabel: l.fav_title,
+              onPressed: () => context.push(
+                '${RoutePaths.favourites}?tab=${FavouriteKind.meetup.name}',
+              ),
+            ),
             DabblerPageHeaderAction(
               icon: 'search-normal',
               semanticLabel: l.listing_search,
@@ -182,7 +191,7 @@ class _MeetupsBody extends ConsumerWidget {
         ar && (m.sportNameAr?.trim().isNotEmpty ?? false)
         ? m.sportNameAr
         : m.sportNameEn;
-    final now = DateTime.now();
+    final now = ref.read(meetupClockProvider)();
     String? mine;
     final others = <String>[];
     for (final m in everything) {
@@ -237,7 +246,7 @@ class _MeetupsBody extends ConsumerWidget {
         ),
       ),
       data: (all) {
-        final now = DateTime.now();
+        final now = ref.read(meetupClockProvider)();
         // A meetup the viewer answered going or interested, still ahead,
         // counts down in the Upcoming row (the list row carries my_rsvp_status).
         final mine = <MeetupListItem>[
@@ -259,6 +268,7 @@ class _MeetupsBody extends ConsumerWidget {
           date: date,
           indoor: indoor,
           settings: settings,
+          now: now,
         );
         if (mine.isEmpty && others.isEmpty) {
           // The frame's copy under the title names other activities' sessions,
@@ -287,6 +297,7 @@ class _MeetupsBody extends ConsumerWidget {
               if (mine.isNotEmpty) ...<Widget>[
                 MeetupUpcoming(
                   meetups: mine,
+                  now: now,
                   onOpen: (m) => _open(context, m.id),
                 ),
                 const DabblerGap.v(ListingLayout.cardGap),
@@ -301,6 +312,7 @@ class _MeetupsBody extends ConsumerWidget {
                     meetup: others[i],
                     distanceMeters: distances[others[i].id],
                     isIndoor: settings[others[i].id],
+                    now: now,
                     onOpen: () => _open(context, others[i].id),
                   ),
                 ),
@@ -414,6 +426,7 @@ class _ShowMeetupsButton extends ConsumerWidget {
             settings:
                 ref.watch(meetupSettingsProvider).valueOrNull ??
                 const <String, bool?>{},
+            now: ref.read(meetupClockProvider)(),
           ).length;
     return DabblerButton(
       label: count == null ? l.meetups_tab_all : l.meetups_show_count(count),

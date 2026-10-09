@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_game_link_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
@@ -50,6 +51,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   final _bodyFocusNode = FocusNode();
   final AuthService _authService = AuthService();
   Map<String, dynamic>? _userProfile;
+
+  /// A context inside the Create post design frame, from which the pickers open
+  /// so their sheets keep the frame's chrome (see [build]).
+  BuildContext? _frameContext;
+  BuildContext get _sheetContext => _frameContext ?? context;
 
   @override
   void initState() {
@@ -111,7 +117,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     // Circle visibility has no picker wired in this composer yet
     // (KAN-47) — selecting it always fails at submit time.
     showComposerChoiceSheet<PostVisibility>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_who_can_see,
       selected: state.visibility,
       onConfirm: ref.read(postComposerProvider.notifier).setVisibility,
@@ -134,14 +140,20 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final state = ref.read(postComposerProvider);
     final notifier = ref.read(postComposerProvider.notifier);
     showComposerVibesSheet(
-      context,
+      _sheetContext,
       ref,
       selectedVibeId: state.vibeId,
+      kindLabel: _postTypeLabel(state.postType),
+      postType: state.postType,
       onClear: notifier.clearVibe,
       onConfirm: (vibe) =>
           notifier.setVibe(id: vibe.id, label: vibe.labelEn, emoji: vibe.emoji),
     );
   }
+
+  /// Sport id -> `sport_key` of sports picked here, so the tag finds the
+  /// design emoji (KAN-462) when the shown name is localized. Display only.
+  final Map<String, String> _sportKeys = <String, String>{};
 
   void _showSportsPicker() {
     final composerState = ref.read(postComposerProvider);
@@ -154,26 +166,31 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         : null;
 
     showComposerSportSheet(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_which_sport,
       sportsProvider: activeSportsByProfileCountryProvider,
       selected: selectedSport,
       showClear: true,
       onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
-      onConfirm: (sport) => ref
-          .read(postComposerProvider.notifier)
-          .setSport(
-            id: sport.id,
-            name: sport.localizedName(context),
-            emoji: sport.emoji,
-          ),
+      emojiFor: (sport) => composerSportEmoji(sport.sportKey ?? sport.nameEn),
+      onConfirm: (sport) {
+        final key = sport.sportKey;
+        if (key != null) _sportKeys[sport.id] = key;
+        ref
+            .read(postComposerProvider.notifier)
+            .setSport(
+              id: sport.id,
+              name: sport.localizedName(context),
+              emoji: sport.emoji,
+            );
+      },
     );
   }
 
   void _showExpiryPicker() {
     final now = DateTime.now();
     showComposerSheet<void>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_expiry,
       builder: (ctx) => _ExpiryPickerSheet(
         first: now,
@@ -188,14 +205,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  void _showGamePicker() => showComposerGameLinkSheet(context, ref);
+  void _showGamePicker() => showComposerGameLinkSheet(_sheetContext, ref);
 
-  void _showLocationPicker() => showComposerPlaceSheet(context, ref);
+  void _showLocationPicker() => showComposerPlaceSheet(_sheetContext, ref);
 
   void _showPostTypePicker() {
     final state = ref.read(postComposerProvider);
     showComposerChoiceSheet<PostType>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_kind_of_post,
       selected: state.postType,
       onConfirm: ref.read(postComposerProvider.notifier).setPostType,
@@ -219,17 +236,25 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     showComposerSheet<void>(
       context,
-      title: 'Content Class',
+      title: AppLocalizations.of(context).composer_content_class_title,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final cc in classes)
             ComposerPickerRow(
               icon: cc == 'social' ? 'people' : 'document-text',
-              title: _prettifyLabel(cc),
+              title: cc == 'social'
+                  ? AppLocalizations.of(context).composer_content_class_social
+                  : AppLocalizations.of(
+                      context,
+                    ).composer_content_class_editorial,
               subtitle: cc == 'social'
-                  ? 'Standard social post'
-                  : 'Editorial or long-form content',
+                  ? AppLocalizations.of(
+                      context,
+                    ).composer_content_class_social_sub
+                  : AppLocalizations.of(
+                      context,
+                    ).composer_content_class_editorial_sub,
               selected: state.contentClass == cc,
               onTap: () {
                 ref.read(postComposerProvider.notifier).setContentClass(cc);
@@ -244,7 +269,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   void _showMediaInput() {
     final l = AppLocalizations.of(context);
     showComposerSheet<void>(
-      context,
+      _sheetContext,
       title: l.composer_add_media_title,
       confirm: ComposerSheetConfirm(
         label: l.composer_done,
@@ -320,7 +345,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final activeType = ref.read(activeProfileTypeProvider);
 
     showComposerSheet<void>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_post_as,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -417,43 +442,64 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       isSubmitting: composerState.isSubmitting,
       onCtaTap: _submit,
       errorMessage: composerState.error,
+      designFrame: true,
       children: [
         Padding(
+          // `Home Feed.dc.html` Create post: 24dp from the Cancel row to the
+          // author row (the shell's 6dp + 18dp here), then 15dp between
+          // author, kind/visibility pills and the card.
           padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space8,
-            top: DabblerSpacing.space1,
-            end: DabblerSpacing.space8,
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space6,
+            end: DabblerSpacing.space6,
           ),
           child: _buildAuthorRow(),
         ),
         Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space3,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space5,
+            end: DabblerSpacing.space6,
+            bottom: DabblerSpacing.space4,
           ),
           child: _buildKindVisibilityRow(composerState),
         ),
         Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space1,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            top: DabblerSpacing.space1,
+            end: DabblerSpacing.space6,
+            bottom: DabblerSpacing.space5,
           ),
           child: _buildTextBoxCard(composerState),
         ),
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space2,
+        // The media rail sits 15dp under the card and 18dp above the options
+        // (its 3dp bottom padding plus the 15dp gap); with no media nothing
+        // is added.
+        if (composerState.hasMedia)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space6,
+              end: DabblerSpacing.space6,
+              bottom: DabblerSpacing.space6,
+            ),
+            child: _buildMediaTilesRow(composerState),
           ),
-          child: composerState.hasMedia
-              ? _buildMediaTilesRow(composerState)
-              : const SizedBox.shrink(),
-        ),
         _buildOptionsSection(composerState),
       ],
     );
 
-    return shell;
+    // The pickers open from a context inside the frame so they keep it (the
+    // sport sheet is shared with the game composer and draws the old chrome
+    // unless it is opened from here).
+    return ComposerFrameScope(
+      child: Builder(
+        builder: (frameContext) {
+          _frameContext = frameContext;
+          return shell;
+        },
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -472,8 +518,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     return Semantics(
       label: canSwitch
-          ? 'Posting as $displayName. Tap to switch profile.'
-          : 'Posting as $displayName',
+          ? AppLocalizations.of(
+              context,
+            ).composer_posting_as_switch(_isolate(context, displayName))
+          : AppLocalizations.of(
+              context,
+            ).composer_posting_as(_isolate(context, displayName)),
       button: canSwitch,
       excludeSemantics: true,
       child: DabblerFeedTappable(
@@ -550,17 +600,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final bodyLen = composerState.body.length;
     final hasLocation = composerState.locationName != null;
     final nearLimit = bodyLen > maxLen * 0.9;
-
-    final tagPills = <Widget>[
-      if (composerState.hasSport && composerState.sportName != null)
-        _tagBadge(composerState.sportName!.toUpperCase()),
-      if (hasLocation) _tagBadge(composerState.locationName!),
-      if (composerState.hasGame && composerState.gameName != null)
-        _tagBadge(composerState.gameName!),
-    ];
-    final vibe = composerState.hasVibe && composerState.vibeName != null
-        ? DabblerVibe.fromKey(composerState.vibeName!.toLowerCase())
-        : null;
+    final l = AppLocalizations.of(context);
 
     return DabblerComposerBox(
       controller: _bodyController,
@@ -568,35 +608,36 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       placeholder: AppLocalizations.of(context).composer_body_hint,
       onChanged: (value) =>
           ref.read(postComposerProvider.notifier).setBody(value),
+      // KAN-462: the design's field is 162dp (132 + 15 + 15).
+      minFieldHeight: DabblerComposerBox.designedFieldMinHeight,
       counter: '$bodyLen/$maxLen',
       counterSemanticLabel: '$bodyLen of $maxLen characters used',
       counterEmphasised: nearLimit,
-      tags: tagPills.isEmpty && !composerState.hasVibe
-          ? null
-          : Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: [
-                if (composerState.hasVibe && composerState.vibeName != null)
-                  DabblerChip(
-                    label: composerState.vibeName!,
-                    vibe: vibe,
-                    selected: true,
-                  ),
-                ...tagPills,
-              ],
-            ),
+      tags: composerTagRow(
+        vibeName: composerState.hasVibe ? composerState.vibeName : null,
+        sportName: composerState.hasSport ? composerState.sportName : null,
+        sportKey: _sportKeys[composerState.sportId],
+        locationName: composerState.locationName,
+        gameName: composerState.hasGame ? composerState.gameName : null,
+      ),
       tools: [
         DabblerComposerTool(
           icon: 'gallery',
           label: AppLocalizations.of(context).composer_add_media,
-          active: composerState.hasMedia,
+          // The design never tints the media glyph — only the vibe, sport,
+          // location and game tools take the brand ink once set.
+          active: false,
           onTap: _showMediaInput,
         ),
         DabblerComposerTool(
           icon: 'emoji-happy',
           label: composerState.hasVibe
-              ? 'Vibe: ${composerState.vibeName ?? "set"}. Tap to change.'
+              ? l.composer_tool_vibe_set(
+                  _isolate(
+                    context,
+                    composerState.vibeName ?? l.composer_tool_value_set,
+                  ),
+                )
               : AppLocalizations.of(context).composer_add_vibe,
           active: composerState.hasVibe,
           onTap: _showVibesPicker,
@@ -604,7 +645,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'cup',
           label: composerState.hasSport
-              ? 'Sport: ${composerState.sportName ?? "set"}. Tap to change.'
+              ? l.composer_tool_sport_set(
+                  _isolate(
+                    context,
+                    composerState.sportName ?? l.composer_tool_value_set,
+                  ),
+                )
               : AppLocalizations.of(context).composer_add_sport,
           active: composerState.hasSport,
           onTap: _showSportsPicker,
@@ -612,7 +658,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'location',
           label: hasLocation
-              ? 'Location: ${composerState.locationName}. Tap to change.'
+              ? l.composer_tool_location_set(
+                  _isolate(context, composerState.locationName!),
+                )
               : AppLocalizations.of(context).composer_add_location,
           active: hasLocation,
           onTap: _showLocationPicker,
@@ -620,7 +668,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'game',
           label: composerState.hasGame
-              ? 'Game: ${composerState.gameName ?? "set"}. Tap to change.'
+              ? l.composer_tool_game_set(
+                  _isolate(
+                    context,
+                    composerState.gameName ?? l.composer_tool_value_set,
+                  ),
+                )
               : AppLocalizations.of(context).composer_link_game,
           active: composerState.hasGame,
           onTap: _showGamePicker,
@@ -628,9 +681,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       ],
     );
   }
-
-  Widget _tagBadge(String label) =>
-      DabblerBadge(label: label, tone: DabblerBadgeTone.warning);
 
   // ═══════════════════════════════════════════════════════════════════════
   // MEDIA SECTION
@@ -673,9 +723,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   Widget _buildOptionsSection(PostComposerState state) {
     return Padding(
       padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space8,
-        end: DabblerSpacing.space8,
-        bottom: DabblerSpacing.space3,
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -810,7 +859,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       case PostType.moment:
         return AppLocalizations.of(context).composer_type_moment_sub;
       case PostType.dab:
-        return 'Share what you\'re vibing with';
+        return AppLocalizations.of(context).composer_type_dab_sub;
       case PostType.kickIn:
         return AppLocalizations.of(context).composer_type_kickin_sub;
       default:
@@ -822,6 +871,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 // ═════════════════════════════════════════════════════════════════════════════
 // REUSABLE WIDGETS
 // ═════════════════════════════════════════════════════════════════════════════
+
+/// KAN-467: wraps user data inserted into a sentence in an FSI…PDI isolate,
+/// only when the ambient direction is RTL, so a Latin name does not reorder
+/// the Arabic sentence. English output stays byte-identical (no marks added).
+String _isolate(BuildContext context, String value) =>
+    Directionality.of(context) == TextDirection.rtl
+    ? '\u2068$value\u2069'
+    : value;
 
 /// Single image/GIF tile in the filled-state media row.
 class _MediaTile extends StatelessWidget {
@@ -838,11 +895,13 @@ class _MediaTile extends StatelessWidget {
       thumbnail: DabblerImage(
         url: url,
         overlay: _isGif
-            ? const Align(
+            ? Align(
                 alignment: AlignmentDirectional.bottomStart,
                 child: Padding(
-                  padding: EdgeInsets.all(DabblerSpacing.space2),
-                  child: DabblerBadge(label: 'GIF'),
+                  padding: const EdgeInsets.all(DabblerSpacing.space2),
+                  child: DabblerBadge(
+                    label: AppLocalizations.of(context).composer_media_gif,
+                  ),
                 ),
               )
             : null,
@@ -852,7 +911,9 @@ class _MediaTile extends StatelessWidget {
         DabblerSizing.mediaRailHeight,
       ),
       borderRadius: DabblerRadius.lgAll,
-      semanticLabel: _isGif ? 'GIF' : 'Image',
+      semanticLabel: _isGif
+          ? AppLocalizations.of(context).composer_media_gif
+          : AppLocalizations.of(context).composer_media_image,
       removeLabel: AppLocalizations.of(context).composer_remove_media,
       onRemove: onRemove,
     );
@@ -951,3 +1012,54 @@ class _HashtagTextEditingController extends TextEditingController {
     return TextSpan(children: spans, style: style);
   }
 }
+
+/// The composer's selected-tag row: sport, vibe, location and game, in the
+/// design's order. Null when nothing is set.
+///
+/// KAN-426/456: every pill is drawn at the same DS size class — the vibe as the
+/// `tag` chip and the rest as `comfortable` warning badges — both 12px type on
+/// 6/12 padding, so all four share one 28dp height instead of the regular
+/// 40dp chip beside the 25dp list badge.
+///
+/// KAN-462: each pill carries the design's emoji through the DS slot
+/// (`composer_emoji.dart`), display only; [sportKey] resolves the sport's
+/// emoji when [sportName] is localized. An unlisted vibe or sport has none.
+@visibleForTesting
+Widget? composerTagRow({
+  String? vibeName,
+  String? sportName,
+  String? sportKey,
+  String? locationName,
+  String? gameName,
+}) {
+  // Order and casing follow the design's `postTags`: sport, vibe, location,
+  // game, each as written (`Home Feed.dc.html:3264-3269`).
+  final pills = <Widget>[
+    if (sportName != null)
+      _tagBadge(sportName, composerSportEmoji(sportKey ?? sportName)),
+    if (vibeName != null)
+      DabblerChip(
+        label: vibeName,
+        vibe: DabblerVibe.fromKey(vibeName.toLowerCase()),
+        emoji: composerVibeEmoji(vibeName),
+        selected: true,
+        tag: true,
+      ),
+    if (locationName != null) _tagBadge(locationName, composerPlaceTagEmoji),
+    if (gameName != null) _tagBadge(gameName, composerGameTagEmoji),
+  ];
+  if (pills.isEmpty) return null;
+  return Wrap(
+    spacing: DabblerSpacing.space2,
+    runSpacing: DabblerSpacing.space2,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: pills,
+  );
+}
+
+Widget _tagBadge(String label, String? emoji) => DabblerBadge(
+  label: label,
+  emoji: emoji,
+  tone: DabblerBadgeTone.warning,
+  comfortable: true,
+);

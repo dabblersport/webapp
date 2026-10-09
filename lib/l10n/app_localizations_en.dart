@@ -4444,7 +4444,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_format_sub => 'Game format';
 
   @override
-  String get game_select_sport_first => 'Select sport first';
+  String get game_select_sport_first => 'Pick a sport first';
 
   @override
   String get game_select_format => 'Select format';
@@ -4453,7 +4453,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_venue_sub => 'Where to play';
 
   @override
-  String get game_date_time => 'Date & Time';
+  String get game_date_time => 'Date & time';
 
   @override
   String get game_date_time_sub => 'When is the game';
@@ -4483,7 +4483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_visibility => 'Visibility';
 
   @override
-  String get game_skill_level => 'Skill Level';
+  String get game_skill_level => 'Skill level';
 
   @override
   String get game_skill_sub => 'Player experience';
@@ -4495,7 +4495,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_players => 'Players';
 
   @override
-  String get game_players_sub => 'Min & max players';
+  String get game_players_sub => 'Min and max players';
 
   @override
   String get game_fewer_min => 'Fewer minimum players';
@@ -5355,6 +5355,176 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String composer_vibe_count(int count, String kind) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count vibes for $kind',
+      one: '1 vibe for $kind',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get home_location_saved_home => 'Home';
+
+  @override
+  String get home_location_saved_work => 'Work';
+
+  @override
+  String get home_location_custom => 'Custom location';
+
+  @override
+  String get home_location_nearby_areas => 'Nearby areas';
+
+  @override
+  String get composer_games_joined_hint => 'Games you have joined';
+
+  @override
+  String get composer_content_class_title => 'Content Class';
+
+  @override
+  String get composer_content_class_social => 'Social';
+
+  @override
+  String get composer_content_class_editorial => 'Editorial';
+
+  @override
+  String get composer_content_class_social_sub => 'Standard social post';
+
+  @override
+  String get composer_content_class_editorial_sub =>
+      'Editorial or long-form content';
+
+  @override
+  String composer_posting_as(String name) {
+    return 'Posting as $name';
+  }
+
+  @override
+  String composer_posting_as_switch(String name) {
+    return 'Posting as $name. Tap to switch profile.';
+  }
+
+  @override
+  String get composer_tool_value_set => 'set';
+
+  @override
+  String composer_tool_vibe_set(String name) {
+    return 'Vibe: $name. Tap to change.';
+  }
+
+  @override
+  String composer_tool_sport_set(String name) {
+    return 'Sport: $name. Tap to change.';
+  }
+
+  @override
+  String composer_tool_location_set(String name) {
+    return 'Location: $name. Tap to change.';
+  }
+
+  @override
+  String composer_tool_game_set(String name) {
+    return 'Game: $name. Tap to change.';
+  }
+
+  @override
+  String get composer_media_gif => 'GIF';
+
+  @override
+  String get composer_media_image => 'Image';
+
+  @override
+  String get composer_place_current_location => 'Current location';
+
+  @override
+  String get composer_place_recent_empty => 'No recent places';
+
+  @override
+  String get composer_place_location_denied =>
+      'Turn on location to use your current place';
+
+  @override
+  String game_format_choose_sub(String sport) {
+    return 'Choose the $sport format';
+  }
+
+  @override
+  String get game_players_min => 'min';
+
+  @override
+  String get game_players_max => 'max';
+
+  @override
+  String game_sport_tile_semantic(String name) {
+    return 'Sport: $name, tap to select';
+  }
+
+  @override
+  String get game_create_failed => 'Failed to create game';
+
+  @override
+  String get game_save_failed => 'Failed to save changes';
+
+  @override
+  String get game_load_failed => 'Failed to load game';
+
+  @override
+  String get game_venue_search_placeholder => 'Search venues, spaces or area…';
+
+  @override
+  String get game_venue_none => 'No venues available for this format';
+
+  @override
+  String get game_error_sport_unavailable => 'Sport not available for games.';
+
+  @override
+  String get game_error_invalid_format => 'Invalid format for this sport.';
+
+  @override
+  String get game_error_invalid_time_range =>
+      'End time must be after start time.';
+
+  @override
+  String get game_error_profile_incomplete => 'Complete your profile first.';
+
+  @override
+  String get game_error_not_editable => 'This game can no longer be edited.';
+
+  @override
+  String get game_error_player_range =>
+      'Min players cannot exceed max players.';
+
+  @override
+  String get game_error_player_count_min => 'Player counts must be at least 1.';
+
+  @override
+  String game_error_daily_limit(String reset) {
+    return 'Daily limit reached. Try again at $reset.';
+  }
+
+  @override
+  String get game_error_generic => 'Something went wrong. Try again.';
+
+  @override
+  String composer_counter_semantic(int used, int max) {
+    return '$used of $max characters used';
+  }
+
+  @override
+  String get game_format_locked => 'Locked';
+
+  @override
+  String get game_duration_30m => '30m';
+
+  @override
+  String get game_duration_1h => '1h';
+
+  @override
+  String get game_duration_2h => '2h';
+
+  @override
   String sfx_comments_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -5956,5 +6126,58 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String listing_note_join(String first, String second) {
     return '$first · $second';
+  }
+
+  @override
+  String get fav_title => 'Favourites';
+
+  @override
+  String get fav_back => 'Back';
+
+  @override
+  String get fav_ended => 'Ended';
+
+  @override
+  String get fav_remove => 'Remove from favourites';
+
+  @override
+  String get fav_empty_venues_title => 'No favourite venues yet.';
+
+  @override
+  String get fav_empty_venues_body =>
+      'Tap the heart on a venue to save it here.';
+
+  @override
+  String get fav_empty_games_title => 'No favourite games yet.';
+
+  @override
+  String get fav_empty_games_body => 'Tap the heart on a game to save it here.';
+
+  @override
+  String get fav_empty_meetups_title => 'No favourite meetups yet.';
+
+  @override
+  String get fav_empty_meetups_body =>
+      'Tap the heart on a meetup to save it here.';
+
+  @override
+  String get fav_load_failed => 'Couldn\'t load your favourites.';
+
+  @override
+  String get fav_retry => 'Try again';
+
+  @override
+  String fav_meta_players(int n, int cap) {
+    return '$n/$cap players';
+  }
+
+  @override
+  String fav_meta_going(int n) {
+    return '$n going';
+  }
+
+  @override
+  String fav_meta_went(int n) {
+    return '$n went';
   }
 }

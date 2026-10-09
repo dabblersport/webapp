@@ -275,6 +275,18 @@ Future<void> _shootToast(WidgetTester tester, String name) async {
   });
 }
 
+/// Whether the n-th venue-card heart (a bare [DabblerFeedAction]) is filled.
+bool _venueFilled(WidgetTester tester, int n) =>
+    tester
+        .widgetList<DabblerFeedAction>(
+          find.byWidgetPredicate(
+            (w) => w is DabblerFeedAction && w.icon == 'heart',
+          ),
+        )
+        .elementAt(n)
+        .weight ==
+    DabblerIconWeight.bold;
+
 /// Whether the n-th heart on screen is drawn filled (the viewer's favourite).
 bool _filled(WidgetTester tester, int n) => tester
     .widgetList<DabblerListingSocial>(find.byType(DabblerListingSocial))
@@ -290,81 +302,76 @@ void main() {
   final String mode = _dark ? 'dark' : 'light';
 
   group('venue card', () {
-    testWidgets('shows the count; the heart toggles optimistically', (
+    testWidgets('a bare heart (no count, no share); it toggles at once', (
       tester,
     ) async {
       final remote = _FakeVenuesRemote();
       await _pumpVenues(tester, remote, const Locale('en'));
-      expect(find.byType(DabblerListingSocial), findsWidgets);
-      // First venue: 14, not favourited; second: 3, favourited.
-      expect(find.text('14'), findsOneWidget);
-      expect(find.text('3'), findsOneWidget);
-      expect(_filled(tester, 0), isFalse);
+      // Listings 2026-10-08b: the heart alone - no social group, no count.
+      expect(find.byType(DabblerListingSocial), findsNothing);
+      expect(find.text('14'), findsNothing);
+      expect(_venueFilled(tester, 0), isFalse);
+      expect(_venueFilled(tester, 1), isTrue);
       await tester.tap(find.bySemanticsLabel('Save venue').first);
       await tester.pump();
-      // Optimistic: 15 at once and the heart filled, then the RPC was called
-      // with no user id.
-      expect(find.text('15'), findsOneWidget);
-      expect(_filled(tester, 0), isTrue);
+      // Optimistic: the heart is filled at once, then the RPC is called with
+      // no user id and the toast names the venue.
+      expect(_venueFilled(tester, 0), isTrue);
       await settle(tester);
       expect(remote.toggles, ['v1']);
-      expect(find.text('15'), findsOneWidget);
-      expect(_filled(tester, 0), isTrue);
+      expect(_venueFilled(tester, 0), isTrue);
       expect(find.text('Venue added to favourites'), findsOneWidget);
     }, variant: desktop);
 
-    testWidgets('a failed toggle rolls the heart and count back', (
-      tester,
-    ) async {
+    testWidgets('a failed toggle rolls the heart back', (tester) async {
       final remote = _FakeVenuesRemote()..fail = true;
       await _pumpVenues(tester, remote, const Locale('en'));
       await tester.tap(find.bySemanticsLabel('Save venue').first);
       await settle(tester);
       expect(remote.toggles, ['v1']);
-      // Rolled back: outline heart, old count.
-      expect(_filled(tester, 0), isFalse);
-      expect(find.text('14'), findsOneWidget);
-      expect(find.text('15'), findsNothing);
+      expect(_venueFilled(tester, 0), isFalse);
       expect(
         find.text("Couldn't update favourites. Try again."),
         findsOneWidget,
       );
     }, variant: desktop);
 
-    testWidgets('unfavouriting decrements', (tester) async {
+    testWidgets('unfavouriting outlines the heart; toast says removed', (
+      tester,
+    ) async {
       await _pumpVenues(
         tester,
         _FakeVenuesRemote()..answer = false,
         const Locale('en'),
       );
-      expect(_filled(tester, 1), isTrue);
+      expect(_venueFilled(tester, 1), isTrue);
       await tester.tap(find.bySemanticsLabel('Remove from saved').first);
       await tester.pump();
-      expect(find.text('2'), findsOneWidget);
-      expect(_filled(tester, 1), isFalse);
-      // The toast follows the server's answer: removed.
+      expect(_venueFilled(tester, 1), isFalse);
       await settle(tester);
-      expect(find.text('2'), findsOneWidget);
-      expect(_filled(tester, 1), isFalse);
+      expect(_venueFilled(tester, 1), isFalse);
       expect(find.text('Venue removed from favourites'), findsOneWidget);
     }, variant: desktop);
 
-    testWidgets(
-      'the heart is at least 45 tall and reachable around the glyph',
-      (tester) async {
-        final remote = _FakeVenuesRemote();
-        await _pumpVenues(tester, remote, const Locale('en'));
-        final group = find.byType(DabblerListingSocial).first;
-        expect(tester.getSize(group).height, greaterThanOrEqualTo(44));
-        final glyph = tester.getRect(
-          find.descendant(of: group, matching: find.byType(DabblerIcon)).first,
+    for (final locale in const [Locale('en'), Locale('ar')]) {
+      testWidgets('View venue leads the price row - ${locale.languageCode}', (
+        tester,
+      ) async {
+        await _pumpVenues(tester, _FakeVenuesRemote(), locale);
+        final l = lookupAppLocalizations(locale);
+        final button = tester.getCenter(find.text(l.listing_view_venue).first);
+        final price = tester.getCenter(
+          find.text(l.listing_price_per_hour('120')).first,
         );
-        await tester.tapAt(glyph.center + Offset(0, glyph.height / 2 + 8));
-        await tester.pump();
-        expect(remote.toggles, ['v1']);
-      },
-      variant: desktop,
-    );
+        // Inline start: left in LTR, right in RTL (`:836-840`).
+        expect(
+          locale.languageCode == 'ar'
+              ? button.dx > price.dx
+              : button.dx < price.dx,
+          isTrue,
+        );
+      }, variant: desktop);
+    }
   });
 
   group('meetup card', () {
@@ -468,7 +475,7 @@ void main() {
         };
         expect(find.text(toast), findsOneWidget);
         // add: filled; remove: outline; error: rolled back to the start.
-        expect(_filled(tester, heart), tag == 'add');
+        expect(_venueFilled(tester, heart), tag == 'add');
         expect(tester.takeException(), isNull);
         await _shootToast(tester, 'card-venue-$tag-$dir');
       }, variant: desktop);

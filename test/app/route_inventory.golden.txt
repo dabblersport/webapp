@@ -35,6 +35,7 @@
 /meetups/:meetupId/edit	meetup-edit	GoRoute
 /news/:newsId	news-detail	GoRoute
 /sports/venues/:venueId	venue-detail	GoRoute
+/favourites	favourites	GoRoute
 /game/:gameId	-	GoRoute
 /social	social	GoRoute
 /sports-explore	sports	GoRoute

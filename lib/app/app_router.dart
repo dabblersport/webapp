@@ -388,6 +388,7 @@ class AppRouter {
     if (FeatureFlags.enableMeetups) meetupEditRoute,
     newsNewsIdRoute,
     sportsVenuesVenueIdRoute,
+    favouritesRoute,
     gameGameIdRoute,
     socialRoute,
     sportsExploreRoute,

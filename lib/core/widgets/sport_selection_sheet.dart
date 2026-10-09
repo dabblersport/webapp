@@ -13,6 +13,12 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// Pass a [sportsProvider] that returns [AsyncValue<List<Sport>>] so each
 /// call site controls which filtered list it gets (e.g. all active sports vs
 /// challenge-only sports).
+///
+/// [emojiFor] (KAN-478, Create Post only) returns a sport's display emoji;
+/// a non-null result is handed to the DS slot `DabblerInputRow.emoji` and
+/// replaces the sport icon, as the design row does (`Home Feed.dc.html:742`).
+/// Null (the default) keeps every other caller, Create Game included,
+/// rendering exactly as before.
 Future<void> showComposerSportSheet(
   BuildContext context, {
   required String title,
@@ -21,6 +27,7 @@ Future<void> showComposerSportSheet(
   Sport? selected,
   bool showClear = false,
   VoidCallback? onClear,
+  String? Function(Sport)? emojiFor,
 }) {
   final pending = ValueNotifier<Sport?>(selected);
   return showComposerSheet<void>(
@@ -35,8 +42,11 @@ Future<void> showComposerSportSheet(
         Navigator.of(context).maybePop();
       },
     ),
-    builder: (_) =>
-        SportSelectionSheet(sportsProvider: sportsProvider, pending: pending),
+    builder: (_) => SportSelectionSheet(
+      sportsProvider: sportsProvider,
+      pending: pending,
+      emojiFor: emojiFor,
+    ),
   );
 }
 
@@ -47,10 +57,14 @@ class SportSelectionSheet extends ConsumerWidget {
     super.key,
     required this.sportsProvider,
     required this.pending,
+    this.emojiFor,
   });
 
   final ProviderListenable<AsyncValue<List<Sport>>> sportsProvider;
   final ValueNotifier<Sport?> pending;
+
+  /// See [showComposerSportSheet]; null draws no emoji anywhere.
+  final String? Function(Sport)? emojiFor;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -84,16 +98,19 @@ class SportSelectionSheet extends ConsumerWidget {
               for (final sport in sports) ...[
                 DabblerInputRow(
                   title: sport.localizedName(context),
-                  leading: DabblerSportIcon.fromKey(
-                    (sport.sportKey ?? '').replaceAll('_', '-'),
-                    size: DabblerSizing.iconMd,
-                    weight: sport.id == current?.id
-                        ? DabblerIconWeight.bold
-                        : DabblerIconWeight.linear,
-                    color: sport.id == current?.id
-                        ? colors.brandPrimary
-                        : colors.textSecondary,
-                  ),
+                  emoji: emojiFor?.call(sport),
+                  leading: emojiFor?.call(sport) != null
+                      ? null
+                      : DabblerSportIcon.fromKey(
+                          (sport.sportKey ?? '').replaceAll('_', '-'),
+                          size: DabblerSizing.iconMd,
+                          weight: sport.id == current?.id
+                              ? DabblerIconWeight.bold
+                              : DabblerIconWeight.linear,
+                          color: sport.id == current?.id
+                              ? colors.brandPrimary
+                              : colors.textSecondary,
+                        ),
                   trailing: sport.id == current?.id
                       ? DabblerIcon(
                           'tick-circle',
