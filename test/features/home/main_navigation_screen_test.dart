@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
@@ -17,7 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:go_router/go_router.dart';
 
-import 'home_test_harness.dart' show FakeFeed;
+import 'home_test_harness.dart' show FakeFeed, initHomeTestSupabase;
 import '../../support/render_mode.dart';
 
 /// The app shell: a [DabblerPage] holding the active branch and a
@@ -117,7 +118,10 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 }
 
 void main() {
-  setUpAll(loadRenderFonts);
+  setUpAll(() async {
+    await initHomeTestSupabase();
+    await loadRenderFonts();
+  });
 
   testWidgets('a DabblerPage with the DS bottom bar: Feeds, Venues, Games, Meetups', (
     tester,
@@ -166,8 +170,15 @@ void main() {
     expect(find.text('Create game'), findsOneWidget);
     expect(find.text('Create meetup'), findsOneWidget);
     await tester.tap(find.text('Create game'));
-    await tester.pumpAndSettle();
-    expect(find.text('create-game-route'), findsOneWidget);
+    await tester.pump();
+    for (var i = 0; i < 10; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+    // KAN-475: the tile opens the Create game sheet (as Create meetup does),
+    // not the route.
+    expect(find.byType(GameComposerScreen), findsOneWidget);
+    expect(find.byType(DabblerSheet), findsOneWidget);
+    expect(find.text('create-game-route'), findsNothing);
     semantics.dispose();
   });
 
