@@ -4,6 +4,7 @@ import 'dart:ui' as ui;
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/social/presentation/screens/post_composer_screen.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
@@ -316,6 +317,8 @@ void main() {
   for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
     final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
     final AppLocalizations l = lookupAppLocalizations(locale);
+    final bool rtl = locale.languageCode == 'ar';
+    String iso(String v) => rtl ? '\u2068$v\u2069' : v;
 
     testWidgets('KAN-459 initial state — $dir', (tester) async {
       const Key key = Key('shot');
@@ -379,15 +382,139 @@ void main() {
         await settle(tester);
       }
 
-      await open(find.bySemanticsLabel(RegExp('Vibe: Inspired')), 'vibe-sheet');
-      await open(find.bySemanticsLabel(RegExp('Sport: Padel')), 'sport-sheet');
-      await open(find.bySemanticsLabel(RegExp('Location: ')), 'place-sheet',
+      // KAN-467: the tool labels are localized now, so find them by key.
+      await open(find.bySemanticsLabel(l.composer_tool_vibe_set(iso('Inspired'))), 'vibe-sheet');
+      await open(find.bySemanticsLabel(l.composer_tool_sport_set(iso('Padel'))), 'sport-sheet');
+      await open(
+          find.bySemanticsLabel(l.composer_tool_location_set(iso('Nad Al Sheba Sports Complex'))),
+          'place-sheet',
           type: 'Nad');
-      await open(find.bySemanticsLabel(RegExp('Game: ')), 'game-sheet',
+      await open(find.bySemanticsLabel(l.composer_tool_game_set(iso('Padel doubles'))), 'game-sheet',
           type: 'Pad');
       await open(find.text(l.composer_type_dab), 'kind-sheet');
       await open(find.text(l.composer_vis_public), 'visibility-sheet');
       await open(find.bySemanticsLabel(l.composer_add_more_media), 'media-sheet');
+    }, variant: desktop);
+    testWidgets('KAN-467 localized labels, filled + GIF — $dir', (tester) async {
+      const Key key = Key('shot');
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: <Override>[
+            ...pickerData,
+            activeProfileTypeProvider.overrideWith((ref) => 'player'),
+          ]);
+      await fill(tester);
+      ProviderScope.containerOf(tester.element(find.byType(PostComposerScreen)))
+          .read(postComposerProvider.notifier)
+          .addMediaUrl('https://example.invalid/c.gif');
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      final String you = l.composer_you;
+      final List<String> labels = <String>[
+        l.composer_posting_as_switch(iso(you)),
+        l.composer_tool_vibe_set(iso('Inspired')),
+        l.composer_tool_sport_set(iso('Padel')),
+        l.composer_tool_location_set(iso('Nad Al Sheba Sports Complex')),
+        l.composer_tool_game_set(iso('Padel doubles')),
+        l.composer_media_image,
+        l.composer_media_gif,
+      ];
+      for (final String s in labels) {
+        expect(find.bySemanticsLabel(s), findsWidgets, reason: s);
+      }
+      expect(find.text(l.composer_media_gif), findsOneWidget);
+      if (rtl) {
+        expect(labels.first, 'النشر باسم \u2068أنت\u2069. اضغط لتبديل الملف الشخصي.');
+        expect(labels[1], 'الأجواء: \u2068Inspired\u2069. اضغط للتغيير.');
+        expect(l.composer_media_image, 'صورة');
+        for (final String s in labels) {
+          expect(RegExp('Vibe:|Sport:|Location:|Game:|Posting as|Tap to').hasMatch(s), isFalse);
+        }
+      } else {
+        // English is byte-identical to the pre-KAN-467 hardcoded strings.
+        expect(labels, <String>[
+          'Posting as You. Tap to switch profile.',
+          'Vibe: Inspired. Tap to change.',
+          'Sport: Padel. Tap to change.',
+          'Location: Nad Al Sheba Sports Complex. Tap to change.',
+          'Game: Padel doubles. Tap to change.',
+          'Image',
+          'GIF',
+        ]);
+        expect(labels.join().contains(RegExp('[\u2066-\u2069]')), isFalse);
+      }
+      await _shoot(tester, key, 'kan467-filled-$dir');
+    }, variant: desktop);
+
+    testWidgets('KAN-467 "set" fallback + no-switch label — $dir', (tester) async {
+      await _pumpModal(tester, const PostComposerScreen(), locale, const Key('shot'),
+          extraOverrides: pickerData);
+      final PostComposerNotifier n = ProviderScope.containerOf(
+        tester.element(find.byType(PostComposerScreen)),
+      ).read(postComposerProvider.notifier);
+      n.setVibe(id: 'inspired', label: null, emoji: '\u2728');
+      await settle(tester);
+      expect(find.bySemanticsLabel(l.composer_posting_as(iso(l.composer_you))), findsWidgets);
+      final String vibe = l.composer_tool_vibe_set(iso(l.composer_tool_value_set));
+      expect(find.bySemanticsLabel(vibe), findsWidgets);
+      if (!rtl) {
+        expect(l.composer_posting_as(l.composer_you), 'Posting as You');
+        expect(vibe, 'Vibe: set. Tap to change.');
+      } else {
+        expect(vibe, 'الأجواء: \u2068تم التحديد\u2069. اضغط للتغيير.');
+      }
+    }, variant: desktop);
+
+    // The Content Class sheet is unreachable today (its row is hidden and
+    // `_showContentClassPicker` is private), so assert the source wires the
+    // keys and render the same rows with the same keys for review.
+    testWidgets('KAN-467 Content Class sheet keys — $dir', (tester) async {
+      final String src = File(
+        'lib/features/social/presentation/screens/post_composer_screen.dart',
+      ).readAsStringSync();
+      for (final String old in <String>[
+        "'Content Class'", "'Standard social post'",
+        "'Editorial or long-form content'", "'Posting as", "Tap to change.'",
+        "'GIF'", "'Image'",
+      ]) {
+        expect(src.contains(old), isFalse, reason: old);
+      }
+      for (final String k in <String>[
+        'composer_content_class_title', 'composer_content_class_social',
+        'composer_content_class_editorial', 'composer_content_class_social_sub',
+        'composer_content_class_editorial_sub',
+      ]) {
+        expect(src.contains('.$k'), isTrue, reason: k);
+      }
+      const Key key = Key('shot');
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: pickerData);
+      showComposerSheet<void>(
+        tester.element(find.byType(PostComposerScreen)),
+        title: l.composer_content_class_title,
+        builder: (ctx) => Column(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            ComposerPickerRow(icon: 'people', title: l.composer_content_class_social,
+                subtitle: l.composer_content_class_social_sub, selected: true, onTap: () {}),
+            ComposerPickerRow(icon: 'document-text', title: l.composer_content_class_editorial,
+                subtitle: l.composer_content_class_editorial_sub, selected: false, onTap: () {}),
+          ],
+        ),
+      );
+      await settle(tester);
+      expect(tester.takeException(), isNull);
+      expect(find.text(l.composer_content_class_title), findsOneWidget);
+      if (!rtl) {
+        expect(<String>[l.composer_content_class_title, l.composer_content_class_social,
+            l.composer_content_class_editorial, l.composer_content_class_social_sub,
+            l.composer_content_class_editorial_sub],
+            <String>['Content Class', 'Social', 'Editorial', 'Standard social post',
+            'Editorial or long-form content']);
+      } else {
+        expect(find.text('فئة المحتوى'), findsOneWidget);
+        expect(find.text('منشور اجتماعي عادي'), findsOneWidget);
+      }
+      await _shoot(tester, key, 'kan467-content-class-$dir');
     }, variant: desktop);
   }
 }
