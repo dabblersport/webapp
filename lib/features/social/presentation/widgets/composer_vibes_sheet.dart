@@ -10,11 +10,13 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// Opens "What's the vibe?" (`Home Feed.dc.html:650-690`): a searchable wrap
 /// of vibe chips, a Clear action when something is chosen and a `Confirm`
 /// footer that hands the pending vibe to [onConfirm]. As tall as its chips,
-/// up to the frame's `max-height: 82%`.
+/// up to the frame's `max-height: 82%`. [kindLabel] is the localized name of
+/// the post kind the count subtitle names.
 Future<void> showComposerVibesSheet(
   BuildContext context,
   WidgetRef ref, {
   required String? selectedVibeId,
+  required String kindLabel,
   required ValueChanged<Vibe> onConfirm,
   required VoidCallback onClear,
 }) {
@@ -30,14 +32,21 @@ Future<void> showComposerVibesSheet(
       Navigator.of(context).maybePop();
     },
   );
-  const title = "What's the vibe?";
+  final l = AppLocalizations.of(context);
+  final title = l.home_vibe_title;
+  // The design lowercases the kind in English only ('12 vibes for dab').
+  final kind = Localizations.localeOf(context).languageCode == 'en'
+      ? kindLabel.toLowerCase()
+      : kindLabel;
   // Content-sized, capped at the frame's 82% (`sheetP82`).
   return showDabblerSheet<void>(
     context: context,
     title: title,
     titleWidget: composerSheetTitle(
       title,
-      subtitle: vibes.isEmpty ? null : '${vibes.length} vibes',
+      subtitle: vibes.isEmpty
+          ? null
+          : l.composer_vibe_count(vibes.length, kind),
     ),
     detent: DabblerSheetDetent.content,
     contentMaxFraction: DabblerSheet.contentMaxFractionTall,

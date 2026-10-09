@@ -142,6 +142,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       _sheetContext,
       ref,
       selectedVibeId: state.vibeId,
+      kindLabel: _postTypeLabel(state.postType),
       onClear: notifier.clearVibe,
       onConfirm: (vibe) =>
           notifier.setVibe(id: vibe.id, label: vibe.labelEn, emoji: vibe.emoji),
@@ -640,7 +641,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-
   // ═══════════════════════════════════════════════════════════════════════
   // MEDIA SECTION
   // ═══════════════════════════════════════════════════════════════════════
@@ -818,7 +818,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       case PostType.moment:
         return AppLocalizations.of(context).composer_type_moment_sub;
       case PostType.dab:
-        return 'Share what you\'re vibing with';
+        return AppLocalizations.of(context).composer_type_dab_sub;
       case PostType.kickIn:
         return AppLocalizations.of(context).composer_type_kickin_sub;
       default:

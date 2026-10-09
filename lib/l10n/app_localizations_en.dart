@@ -4444,7 +4444,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_format_sub => 'Game format';
 
   @override
-  String get game_select_sport_first => 'Select sport first';
+  String get game_select_sport_first => 'Pick a sport first';
 
   @override
   String get game_select_format => 'Select format';

@@ -8030,7 +8030,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_select_sport_first.
   ///
   /// In en, this message translates to:
-  /// **'Select sport first'**
+  /// **'Pick a sport first'**
   String get game_select_sport_first;
 
   /// No description provided for @game_select_format.
