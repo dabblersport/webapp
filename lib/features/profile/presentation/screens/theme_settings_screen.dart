@@ -152,11 +152,15 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           flat: true,
           showDivider: false,
           leading: settingsRowIcon(context, 'clock'),
-          title: l10n.appr_auto_title,
-          subtitle: l10n.appr_auto_sub,
+          // Opt-in (KAN-488): off reads "Match device", on describes the
+          // time-of-day switching.
+          title: l10n.appr_auto_switch_label,
+          subtitle: _themeService.autoThemeEnabled
+              ? l10n.appr_auto_sub
+              : l10n.appr_auto_match_device,
           trailing: DabblerToggle(
             checked: _themeService.autoThemeEnabled,
-            semanticLabel: l10n.appr_auto_title,
+            semanticLabel: l10n.appr_auto_switch_label,
             onChanged: (value) => _themeService.setAutoThemeEnabled(value),
           ),
         ),

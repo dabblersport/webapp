@@ -22,7 +22,9 @@ class ThemeService extends ChangeNotifier {
 
   ThemeMode _themeMode = ThemeMode.system;
   String _themeCategory = ThemeCategories.defaultCategory;
-  bool _autoThemeEnabled = true;
+  // Off by default (KAN-488): with no stored preference the theme follows the
+  // device appearance; time-of-day theming is opt-in.
+  bool _autoThemeEnabled = false;
   TimeOfDay _dayStartTime = const TimeOfDay(hour: 6, minute: 0); // 6:00 AM
   TimeOfDay _nightStartTime = const TimeOfDay(hour: 18, minute: 0); // 6:00 PM
   StreamSubscription<AuthState>? _authSubscription;
@@ -98,7 +100,20 @@ class ThemeService extends ChangeNotifier {
           .maybeSingle();
 
       if (row == null) return;
+      await applyAccountRow(row);
+    } on PostgrestException catch (error) {
+      debugPrint('ThemeService hydrateFromAccount skipped: ${error.message}');
+    } catch (error) {
+      debugPrint('ThemeService hydrateFromAccount skipped: $error');
+    }
+  }
 
+  /// Applies a `user_settings` row to the local preferences. A NULL or absent
+  /// `auto_theme_enabled` keeps the current local value (device-follow unless
+  /// the user stored otherwise); any stored value is honoured as it is.
+  @visibleForTesting
+  Future<void> applyAccountRow(Map<String, dynamic> row) async {
+    try {
       final nextThemeMode = _parseThemeMode(row['theme_mode']);
       final nextThemeCategory = ThemeCategories.normalize(
         row['theme_category'] as String? ?? _themeCategory,
@@ -159,7 +174,7 @@ class ThemeService extends ChangeNotifier {
     );
 
     // Load auto theme setting
-    _autoThemeEnabled = prefs.getBool(_autoThemeKey) ?? true;
+    _autoThemeEnabled = prefs.getBool(_autoThemeKey) ?? false;
 
     // Load day start time with validation
     final dayStartMinutes = prefs.getInt(_dayStartTimeKey) ?? 360; // 6:00 AM
@@ -383,10 +398,9 @@ class ThemeService extends ChangeNotifier {
         return;
       }
 
-      await client.from(SupabaseConfig.userSettingsTable).insert(<String, dynamic>{
-        'user_id': user.id,
-        ...payload,
-      });
+      await client.from(SupabaseConfig.userSettingsTable).insert(
+        <String, dynamic>{'user_id': user.id, ...payload},
+      );
     } on PostgrestException catch (error) {
       debugPrint('ThemeService sync skipped: ${error.message}');
     } catch (error) {
