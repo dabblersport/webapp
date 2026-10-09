@@ -9815,6 +9815,24 @@ abstract class AppLocalizations {
   /// **'Image'**
   String get composer_media_image;
 
+  /// Label of the resolved place when the Use current location row finds no named area. A place name slot, keep short.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get composer_place_current_location;
+
+  /// Empty state under the Recent section of the Create Post place sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No recent places'**
+  String get composer_place_recent_empty;
+
+  /// Inline message in the Create Post place sheet when location permission is off or denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn on location to use your current place'**
+  String get composer_place_location_denied;
+
   /// Subtitle of the Format row once a sport is chosen. {sport} is the localized sport name.
   ///
   /// In en, this message translates to:

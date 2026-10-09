@@ -5459,6 +5459,16 @@ class AppLocalizationsAr extends AppLocalizations {
   String get composer_media_image => 'صورة';
 
   @override
+  String get composer_place_current_location => 'الموقع الحالي';
+
+  @override
+  String get composer_place_recent_empty => 'لا توجد أماكن حديثة';
+
+  @override
+  String get composer_place_location_denied =>
+      'فعّل الموقع لاستخدام مكانك الحالي';
+
+  @override
   String game_format_choose_sub(String sport) {
     return 'اختر صيغة $sport';
   }
