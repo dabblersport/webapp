@@ -8048,7 +8048,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_date_time.
   ///
   /// In en, this message translates to:
-  /// **'Date & Time'**
+  /// **'Date & time'**
   String get game_date_time;
 
   /// No description provided for @game_date_time_sub.
@@ -8108,7 +8108,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_skill_level.
   ///
   /// In en, this message translates to:
-  /// **'Skill Level'**
+  /// **'Skill level'**
   String get game_skill_level;
 
   /// No description provided for @game_skill_sub.
@@ -8132,7 +8132,7 @@ abstract class AppLocalizations {
   /// No description provided for @game_players_sub.
   ///
   /// In en, this message translates to:
-  /// **'Min & max players'**
+  /// **'Min and max players'**
   String get game_players_sub;
 
   /// No description provided for @game_fewer_min.
@@ -9838,6 +9838,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose the {sport} format'**
   String game_format_choose_sub(String sport);
+
+  /// Short word beside the minimum-players number in the Create game Players row, e.g. 'min 4'.
+  ///
+  /// In en, this message translates to:
+  /// **'min'**
+  String get game_players_min;
+
+  /// Short word beside the maximum-players number in the Create game Players row, e.g. 'max 10'.
+  ///
+  /// In en, this message translates to:
+  /// **'max'**
+  String get game_players_max;
+
+  /// Screen reader label of a sport tile in the Create game sport picker. {name} is the localized sport name.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport: {name}, tap to select'**
+  String game_sport_tile_semantic(String name);
+
+  /// Toast when creating a game fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to create game'**
+  String get game_create_failed;
+
+  /// Toast when saving edits to a game fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to save changes'**
+  String get game_save_failed;
+
+  /// Toast when loading a game for editing fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load game'**
+  String get game_load_failed;
+
+  /// Placeholder of the venue search field in the Create game screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Search venues, spaces or area…'**
+  String get game_venue_search_placeholder;
+
+  /// Empty state in the Create game venue list when no venue supports the chosen format.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues available for this format'**
+  String get game_venue_none;
 
   /// State label on the Format chip while no sport is chosen; the chip does nothing until then.
   ///
