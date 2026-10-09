@@ -54,10 +54,9 @@
     lib/core/system_ui keeps both in step with the in-app theme toggle (which can
     differ from the OS).
 
-    The launch video's purple (#7328CE, DabblerPalette.mainP600) is NOT painted
-    here: the Flutter splash widget draws it inside the viewport. Trade-off
-    accepted: the cream/ink ground shows for the instant before Flutter paints
-    the splash; tinting the bars purple for the splash would leave them purple.
+    The Flutter startup splash (assets/Splash.lottie) draws the same two
+    grounds inside the viewport, so web launch -> animation has no seam. There
+    is no purple interstitial and no startup video.
   -->
   <meta name="color-scheme" content="light dark">
   <meta name="theme-color" media="(prefers-color-scheme: light)" content="#F5F0E6">

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Android 12+ launch icon: intentionally empty. The animation (assets/Splash.lottie)
-     starts from the plain splash_purple ground and draws its mark in, so the
+     starts from the plain splash_background ground (the app's welcome ground, light/dark) and draws its mark in, so the
      system splash shows only that ground; any icon here would appear and then
      restart as the animation begins. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"

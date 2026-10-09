@@ -4,3 +4,20 @@
   Content-Type: application/json
 /.well-known/assetlinks.json
   Content-Type: application/json
+
+# The app shell must revalidate on every load (ETag -> 304 when unchanged).
+# Cloudflare Pages otherwise serves .js with max-age=14400, so a browser can run
+# a build up to four hours stale after a deploy (the old startup splash after the
+# startup was changed). No manual cache clearing needed (KAN-485).
+/main.dart.js
+  Cache-Control: no-cache
+/flutter_bootstrap.js
+  Cache-Control: no-cache
+/flutter.js
+  Cache-Control: no-cache
+/flutter_service_worker.js
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
+/version.json
+  Cache-Control: no-cache

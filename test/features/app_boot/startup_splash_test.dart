@@ -41,22 +41,53 @@ double _progress(WidgetTester tester) =>
     tester.widget<Lottie>(find.byType(Lottie)).controller!.value;
 
 void main() {
-  testWidgets('the splash draws its own launch purple, not html/body', (
-    tester,
-  ) async {
+  Color ground(WidgetTester tester) => tester
+      .widget<ColoredBox>(
+        find
+            .descendant(
+              of: find.byType(StartupSplash),
+              matching: find.byType(ColoredBox),
+            )
+            .first,
+      )
+      .color;
+
+  for (final Brightness b in Brightness.values) {
+    testWidgets('the splash ground is the welcome background, ${b.name}', (
+      tester,
+    ) async {
+      tester.platformDispatcher.platformBrightnessTestValue = b;
+      addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
+      final bootstrap = Completer<Widget>();
+      await _pump(tester, bootstrap.future);
+      final DabblerColors c = DabblerColors.resolve(
+        theme: DabblerTheme.main,
+        brightness: b,
+      );
+      expect(ground(tester), c.bgPrimary);
+      expect(
+        ground(tester),
+        b == Brightness.dark
+            ? const Color(0xFF141414)
+            : const Color(0xFFF5F0E6),
+      );
+      expect(ground(tester), isNot(DabblerPalette.mainP600));
+      // Finish the splash so no timer outlives the test.
+      bootstrap.complete(_app);
+      await tester.pump(_duration + SplashTiming.endedGrace);
+      await tester.pump();
+    });
+  }
+
+  testWidgets('the ground follows a device appearance change', (tester) async {
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
     final bootstrap = Completer<Widget>();
     await _pump(tester, bootstrap.future);
-    final box = tester.widget<ColoredBox>(
-      find
-          .descendant(
-            of: find.byType(StartupSplash),
-            matching: find.byType(ColoredBox),
-          )
-          .first,
-    );
-    expect(box.color, DabblerPalette.mainP600);
-    expect(box.color, const Color(0xFF7328CE));
-    // Finish the splash so no timer outlives the test.
+    expect(ground(tester), const Color(0xFFF5F0E6));
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    await tester.pump();
+    expect(ground(tester), const Color(0xFF141414));
     bootstrap.complete(_app);
     await tester.pump(_duration + SplashTiming.endedGrace);
     await tester.pump();
