@@ -244,6 +244,9 @@ Future<DateTime> _fill(WidgetTester tester, AppLocalizations l) async {
   await _tap(tester, find.text(l.composer_confirm));
   await _tap(tester, find.text(l.composer_select));
   await _tap(tester, find.text('Padel Pro · Court 1'));
+  // KAN-473: the venue sheet is the place-sheet frame; a row is the pending
+  // pick and Confirm applies it.
+  await _tap(tester, find.text(l.composer_confirm));
   await _tap(tester, find.text(l.game_date));
   final DateTime now = DateTime.now();
   final DateTime day = DateTime(now.year, now.month, now.day + 1);
