@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/utils/enums/game_enums.dart'
     show kSkillBandWriteValues, skillBandIndexForValue;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -10,8 +11,6 @@ import 'package:dabbler/features/profile/presentation/widgets/profile_sports_vie
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
-
-import '../../../../../utils/constants/route_constants.dart';
 
 /// Screen for managing user's sports and game preferences
 class ProfileSportsScreen extends ConsumerStatefulWidget {
@@ -294,7 +293,7 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       positionsFor: _getPositionsForSport,
       onBack: () => context.pop(),
       onSave: _savePreferences,
-      onCreateGame: () => context.push(RoutePaths.createGame),
+      onCreateGame: () => showGameComposerSheet(context),
       onToggleExpanded: (key) => setState(() {
         if (!_expanded.remove(key)) _expanded.add(key);
       }),

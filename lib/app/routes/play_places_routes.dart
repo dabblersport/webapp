@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/widgets/game_create_guard.dart';
 import 'package:dabbler/features/favourites/presentation/screens/favourites_screen.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 // Play & places — games, venues, explore and venue-submission routes.
@@ -197,24 +198,9 @@ RouteBase get createGameRoute =>
       name: RouteNames.createGame,
       parentNavigatorKey: rootNavigatorKey,
       redirect: (context, state) async {
-        // Check user's profile type and apply feature flags
+        // Profile type + feature flags: the one shared rule (KAN-475).
         final container = ProviderScope.containerOf(context, listen: false);
-        final profileState = container.read(profileControllerProvider);
-        final profileType = profileState.profile?.profileType;
-
-        // Block players from creating games if feature disabled
-        if (profileType == 'player' && !FeatureFlags.enablePlayerGameCreation) {
-          return RoutePaths.home;
-        }
-
-        // Block organisers from creating games if feature disabled
-        if (profileType == 'organiser' &&
-            !FeatureFlags.enableOrganiserGameCreation) {
-          return RoutePaths.home;
-        }
-
-        // Allow access if profile type has permission
-        return null;
+        return gameCreationAllowedFor(container) ? null : RoutePaths.home;
       },
       // The design's DS sheet (KAN-472, D-035): 94% over the scrim, a scrim
       // tap closes it, as Create meet-up presents.
@@ -230,18 +216,9 @@ RouteBase get createGameBasicInfoRoute =>
       name: RouteNames.createGameBasicInfo,
       parentNavigatorKey: rootNavigatorKey,
       redirect: (context, state) async {
+        // Profile type + feature flags: the one shared rule (KAN-475).
         final container = ProviderScope.containerOf(context, listen: false);
-        final profileState = container.read(profileControllerProvider);
-        final profileType = profileState.profile?.profileType;
-
-        if (profileType == 'player' && !FeatureFlags.enablePlayerGameCreation) {
-          return RoutePaths.home;
-        }
-        if (profileType == 'organiser' &&
-            !FeatureFlags.enableOrganiserGameCreation) {
-          return RoutePaths.home;
-        }
-        return null;
+        return gameCreationAllowedFor(container) ? null : RoutePaths.home;
       },
       pageBuilder: (context, state) => GameComposerSheetPage(
         key: state.pageKey,

@@ -17,7 +17,7 @@ import 'package:flutter/widgets.dart';
 /// Composer-only: it reuses the kit's title and header actions and changes no
 /// kit default. [opener] must sit inside a [ComposerFrameScope] for the kit's
 /// framed rows and search box to draw as the frame does.
-Future<T?> showGameComposerSheet<T>(
+Future<T?> showGamePickSheet<T>(
   BuildContext opener, {
   required String title,
   required WidgetBuilder builder,
