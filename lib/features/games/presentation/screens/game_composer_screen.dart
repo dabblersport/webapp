@@ -1,4 +1,5 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -9,6 +10,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheets.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
@@ -648,226 +650,238 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     // The Create game frame's scroller (`Home Feed.dc.html:934-1061`): one
     // column, `gap:12px`; the DS sheet supplies the 18 gutters and the 18 at
     // the foot, the header is the sheet's sticky title row.
-    return DabblerSheetBody(
-      children: <Widget>[
-        GameSectionLabel(l.game_sport, first: true),
-        // Sport is locked in edit mode — capacity and the roster derive from
-        // the sport/format chosen at creation.
-        DabblerInert(
-          inert: _isEditing,
-          child: _SportTiles(
-            sports: state.sports,
-            loaded: state.sportsLoaded,
-            selectedSportId: state.sportId,
-            onSelect: notifier.selectSport,
-          ),
-        ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    //
+    // KAN-473: the sub-sheets open from inside the composer frame scope, so
+    // [showGameComposerSheet] draws the design's pick-sheet frame (header
+    // hairline, framed search, brand-ink chosen rows); the body below uses no
+    // frame-aware kit widget, so it is unchanged.
+    return ComposerFrameScope(
+      child: Builder(
+        builder: (context) => DabblerSheetBody(
           children: <Widget>[
-            DabblerComposerRow(
-              icon: 'grid-2',
-              title: l.game_format,
-              subtitle: l.game_format_sub,
-              // Locked until a sport is picked (`formatLabel`, `:3413`), and
-              // in edit mode.
-              trailing: GameSelectPill(
-                label:
-                    state.variantNameEn ??
-                    (state.sportId == null
-                        ? l.game_format_locked
-                        : l.game_select_format),
-                state: state.sportId == null || _isEditing
-                    ? GamePillState.locked
-                    : state.variantNameEn == null
-                    ? GamePillState.idle
-                    : GamePillState.chosen,
-                onTap: () => _openVariantPicker(context),
+            GameSectionLabel(l.game_sport, first: true),
+            // Sport is locked in edit mode — capacity and the roster derive from
+            // the sport/format chosen at creation.
+            DabblerInert(
+              inert: _isEditing,
+              child: _SportTiles(
+                sports: state.sports,
+                loaded: state.sportsLoaded,
+                selectedSportId: state.sportId,
+                onSelect: notifier.selectSport,
               ),
             ),
-            DabblerComposerRow(
-              icon: 'location',
-              title: l.composer_venue,
-              subtitle: l.game_venue_sub,
-              // A venue SPACE (ruling 4): disabled until a format is picked,
-              // then the venue name in ink.
-              trailing: GameSelectPill(
-                label: _venueLabel(state),
-                state: state.variantId == null
-                    ? GamePillState.locked
-                    : state.venueSpaceId == null
-                    ? GamePillState.idle
-                    : GamePillState.chosen,
-                onTap: () => _openVenuePicker(context),
-              ),
-            ),
-            DabblerComposerRow(
-              icon: 'calendar',
-              title: l.game_date_time,
-              subtitle: l.game_date_time_sub,
-              trailing: Wrap(
-                spacing: DabblerSpacing.space2,
-                runSpacing: DabblerSpacing.space2,
-                children: <Widget>[
-                  GameSelectPill(
-                    label: _formatDateChip(state.selectedDate),
-                    state: state.selectedDate == null
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                DabblerComposerRow(
+                  icon: 'grid-2',
+                  title: l.game_format,
+                  subtitle: l.game_format_sub,
+                  // Locked until a sport is picked (`formatLabel`, `:3413`), and
+                  // in edit mode.
+                  trailing: GameSelectPill(
+                    label:
+                        state.variantNameEn ??
+                        (state.sportId == null
+                            ? l.game_format_locked
+                            : l.game_select_format),
+                    state: state.sportId == null || _isEditing
+                        ? GamePillState.locked
+                        : state.variantNameEn == null
                         ? GamePillState.idle
                         : GamePillState.chosen,
-                    onTap: () => _pickDate(context),
+                    onTap: () => _openVariantPicker(context),
                   ),
-                  GameSelectPill(
-                    label: _formatTimeChip(context, state.selectedTime),
-                    state: state.selectedTime == null
+                ),
+                DabblerComposerRow(
+                  icon: 'location',
+                  title: l.composer_venue,
+                  subtitle: l.game_venue_sub,
+                  // A venue SPACE (ruling 4): disabled until a format is picked,
+                  // then the venue name in ink.
+                  trailing: GameSelectPill(
+                    label: _venueLabel(state),
+                    state: state.variantId == null
+                        ? GamePillState.locked
+                        : state.venueSpaceId == null
                         ? GamePillState.idle
                         : GamePillState.chosen,
-                    onTap: () => _pickTime(context),
+                    onTap: () => _openVenuePicker(context),
                   ),
-                ],
-              ),
-            ),
-            DabblerComposerRow(
-              icon: 'timer',
-              title: l.game_duration,
-              subtitle: l.game_duration_sub,
-              trailing: GameOptionPills<int>(
-                options: <(int, String)>[
-                  for (final m in {30, 60, 120, state.durationMinutes})
-                    (m, _formatDurationChip(m)),
-                ],
-                selected: state.durationMinutes,
-                onSelect: notifier.setDuration,
-              ),
-            ),
-          ],
-        ),
-        GameSectionLabel(l.game_join_policy),
-        GameOptionPills<String>(
-          options: <(String, String)>[
-            ('open', l.game_join_open),
-            ('request', l.game_join_request),
-            ('invite', l.game_join_invite),
-            ('link', l.game_join_link),
-          ],
-          selected: state.joinPolicy,
-          onSelect: notifier.setJoinPolicy,
-        ),
-        GameSectionLabel(l.game_visibility),
-        GameOptionPills<String>(
-          options: <(String, String)>[
-            ('public', l.composer_vis_public),
-            ('followers', l.composer_vis_followers),
-            ('private', l.composer_vis_private),
-          ],
-          selected: state.listingVisibility,
-          onSelect: notifier.setVisibility,
-        ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            DabblerComposerRow(
-              icon: 'medal-star',
-              title: l.game_skill_level,
-              subtitle: l.game_skill_sub,
-              // Ruling 5: the 3-level picker, "Any level" while unset.
-              trailing: GameSelectPill(
-                label: _skillText(l, state.skillLevel),
-                trailingIcon: 'arrow-circle-down',
-                state: state.skillLevel == null
-                    ? GamePillState.idle
-                    : GamePillState.chosen,
-                onTap: () => _openSkillPicker(context),
-              ),
-            ),
-            DabblerComposerRow(
-              icon: 'people',
-              title: l.game_players,
-              subtitle: l.game_players_sub,
-              trailing: Wrap(
-                spacing: DabblerSpacing.space2,
-                runSpacing: DabblerSpacing.space2,
-                children: <Widget>[
-                  DabblerStepperPill(
-                    value: state.minPlayers ?? state.requiredPlayers ?? 2,
-                    min: 1,
-                    valueLabel: (v) => '${l.game_players_min} $v',
-                    decreaseLabel: l.game_fewer_min,
-                    increaseLabel: l.game_more_min,
-                    onChanged: notifier.setMinPlayers,
+                ),
+                DabblerComposerRow(
+                  icon: 'calendar',
+                  title: l.game_date_time,
+                  subtitle: l.game_date_time_sub,
+                  trailing: Wrap(
+                    spacing: DabblerSpacing.space2,
+                    runSpacing: DabblerSpacing.space2,
+                    children: <Widget>[
+                      GameSelectPill(
+                        label: _formatDateChip(state.selectedDate),
+                        state: state.selectedDate == null
+                            ? GamePillState.idle
+                            : GamePillState.chosen,
+                        onTap: () => _pickDate(context),
+                      ),
+                      GameSelectPill(
+                        label: _formatTimeChip(context, state.selectedTime),
+                        state: state.selectedTime == null
+                            ? GamePillState.idle
+                            : GamePillState.chosen,
+                        onTap: () => _pickTime(context),
+                      ),
+                    ],
                   ),
-                  DabblerStepperPill(
-                    value: state.maxPlayers ?? state.requiredPlayers ?? 10,
-                    min: 1,
-                    valueLabel: (v) => '${l.game_players_max} $v',
-                    decreaseLabel: l.game_fewer_max,
-                    increaseLabel: l.game_more_max,
-                    onChanged: notifier.setMaxPlayers,
+                ),
+                DabblerComposerRow(
+                  icon: 'timer',
+                  title: l.game_duration,
+                  subtitle: l.game_duration_sub,
+                  trailing: GameOptionPills<int>(
+                    options: <(int, String)>[
+                      for (final m in {30, 60, 120, state.durationMinutes})
+                        (m, _formatDurationChip(m)),
+                    ],
+                    selected: state.durationMinutes,
+                    onSelect: notifier.setDuration,
                   ),
-                ],
+                ),
+              ],
+            ),
+            GameSectionLabel(l.game_join_policy),
+            GameOptionPills<String>(
+              options: <(String, String)>[
+                ('open', l.game_join_open),
+                ('request', l.game_join_request),
+                ('invite', l.game_join_invite),
+                ('link', l.game_join_link),
+              ],
+              selected: state.joinPolicy,
+              onSelect: notifier.setJoinPolicy,
+            ),
+            GameSectionLabel(l.game_visibility),
+            GameOptionPills<String>(
+              options: <(String, String)>[
+                ('public', l.composer_vis_public),
+                ('followers', l.composer_vis_followers),
+                ('private', l.composer_vis_private),
+              ],
+              selected: state.listingVisibility,
+              onSelect: notifier.setVisibility,
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                DabblerComposerRow(
+                  icon: 'medal-star',
+                  title: l.game_skill_level,
+                  subtitle: l.game_skill_sub,
+                  // Ruling 5: the 3-level picker, "Any level" while unset.
+                  trailing: GameSelectPill(
+                    label: _skillText(l, state.skillLevel),
+                    trailingIcon: 'arrow-circle-down',
+                    state: state.skillLevel == null
+                        ? GamePillState.idle
+                        : GamePillState.chosen,
+                    onTap: () => _openSkillPicker(context),
+                  ),
+                ),
+                DabblerComposerRow(
+                  icon: 'people',
+                  title: l.game_players,
+                  subtitle: l.game_players_sub,
+                  trailing: Wrap(
+                    spacing: DabblerSpacing.space2,
+                    runSpacing: DabblerSpacing.space2,
+                    children: <Widget>[
+                      DabblerStepperPill(
+                        value: state.minPlayers ?? state.requiredPlayers ?? 2,
+                        min: 1,
+                        valueLabel: (v) => '${l.game_players_min} $v',
+                        decreaseLabel: l.game_fewer_min,
+                        increaseLabel: l.game_more_min,
+                        onChanged: notifier.setMinPlayers,
+                      ),
+                      DabblerStepperPill(
+                        value: state.maxPlayers ?? state.requiredPlayers ?? 10,
+                        min: 1,
+                        valueLabel: (v) => '${l.game_players_max} $v',
+                        decreaseLabel: l.game_fewer_max,
+                        increaseLabel: l.game_more_max,
+                        onChanged: notifier.setMaxPlayers,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            // Price (ruling 1, retained from 0f1cce48): required, 0 is free.
+            GameSectionLabel(l.game_price),
+            GamePriceField(
+              controller: _priceController,
+              showError: state.priceError,
+              onChanged: notifier.setPriceText,
+            ),
+            Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                DabblerComposerRow(
+                  icon: 'people',
+                  title: l.game_waitlist,
+                  subtitle: l.game_waitlist_sub,
+                  trailing: DabblerToggle(
+                    checked: state.allowWaitlist,
+                    compactHitArea: true,
+                    semanticLabel: l.game_waitlist,
+                    onChanged: (_) => notifier.toggleWaitlist(),
+                  ),
+                ),
+                DabblerComposerRow(
+                  icon: 'eye',
+                  title: l.game_spectators,
+                  subtitle: l.game_spectators_sub,
+                  trailing: DabblerToggle(
+                    checked: state.allowSpectators,
+                    compactHitArea: true,
+                    semanticLabel: l.game_spectators,
+                    onChanged: (_) => notifier.toggleSpectators(),
+                  ),
+                ),
+              ],
+            ),
+            GameSectionLabel(l.game_details),
+            DabblerComposerField(
+              controller: _titleController,
+              placeholder: l.game_title_hint,
+              onChanged: notifier.setTitle,
+            ),
+            DabblerComposerField(
+              controller: _descController,
+              placeholder: l.game_note_hint,
+              multiline: true,
+              onChanged: notifier.setDescription,
+            ),
+            if (state.error != null && state.error!.isNotEmpty)
+              DabblerBanner(
+                tone: DabblerBannerTone.error,
+                message: state.error,
               ),
+            // The Create button scrolls at the end of the form (`:1060`).
+            DabblerComposerSubmit(
+              key: const ValueKey<String>('game-composer-submit'),
+              label: _isEditing ? l.game_save_changes : l.game_create,
+              enabled: state.canSubmit,
+              loading: state.isSubmitting,
+              onPressed: _submit,
             ),
           ],
         ),
-        // Price (ruling 1, retained from 0f1cce48): required, 0 is free.
-        GameSectionLabel(l.game_price),
-        GamePriceField(
-          controller: _priceController,
-          showError: state.priceError,
-          onChanged: notifier.setPriceText,
-        ),
-        Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            DabblerComposerRow(
-              icon: 'people',
-              title: l.game_waitlist,
-              subtitle: l.game_waitlist_sub,
-              trailing: DabblerToggle(
-                checked: state.allowWaitlist,
-                compactHitArea: true,
-                semanticLabel: l.game_waitlist,
-                onChanged: (_) => notifier.toggleWaitlist(),
-              ),
-            ),
-            DabblerComposerRow(
-              icon: 'eye',
-              title: l.game_spectators,
-              subtitle: l.game_spectators_sub,
-              trailing: DabblerToggle(
-                checked: state.allowSpectators,
-                compactHitArea: true,
-                semanticLabel: l.game_spectators,
-                onChanged: (_) => notifier.toggleSpectators(),
-              ),
-            ),
-          ],
-        ),
-        GameSectionLabel(l.game_details),
-        DabblerComposerField(
-          controller: _titleController,
-          placeholder: l.game_title_hint,
-          onChanged: notifier.setTitle,
-        ),
-        DabblerComposerField(
-          controller: _descController,
-          placeholder: l.game_note_hint,
-          multiline: true,
-          onChanged: notifier.setDescription,
-        ),
-        if (state.error != null && state.error!.isNotEmpty)
-          DabblerBanner(tone: DabblerBannerTone.error, message: state.error),
-        // The Create button scrolls at the end of the form (`:1060`).
-        DabblerComposerSubmit(
-          key: const ValueKey<String>('game-composer-submit'),
-          label: _isEditing ? l.game_save_changes : l.game_create,
-          enabled: state.canSubmit,
-          loading: state.isSubmitting,
-          onPressed: _submit,
-        ),
-      ],
+      ),
     );
   }
 
@@ -931,7 +945,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final pending = ValueNotifier<Map<String, dynamic>?>(
       notifier.variants.where((v) => v['id'] == state.variantId).firstOrNull,
     );
-    await showComposerSheet<void>(
+    await showGameComposerSheet<void>(
       context,
       title: l.composer_format_title(state.sportNameEn ?? ''),
       confirm: ComposerSheetConfirm(
@@ -987,7 +1001,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final canContinue = ValueNotifier<bool>(pending.value != null);
     pending.addListener(() => canContinue.value = pending.value != null);
     var advance = false;
-    await showComposerSheet<void>(
+    await showGameComposerSheet<void>(
       context,
       title: l.composer_pick_date,
       subtitle: l.composer_step_1,
@@ -1002,10 +1016,15 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           Navigator.of(context).maybePop();
         },
       ),
-      builder: (_) => ComposerDateSheet(
-        first: now,
-        last: now.add(const Duration(days: 365)),
-        pending: pending,
+      // The design's 12 gap under the header plus its body padding
+      // (`padding:12px 18px 0`, `:1080`); the sheet supplies the 18 gutters.
+      builder: (_) => Padding(
+        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space8),
+        child: ComposerDateSheet(
+          first: now,
+          last: now.add(const Duration(days: 365)),
+          pending: pending,
+        ),
       ),
     );
     if (advance && context.mounted) {
@@ -1020,7 +1039,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       ref.read(_gameComposerProvider).selectedTime ??
           const TimeOfDay(hour: 18, minute: 0),
     );
-    await showComposerSheet<void>(
+    await showGameComposerSheet<void>(
       context,
       title: l.composer_pick_time,
       subtitle: step == 2 ? l.composer_step_2 : l.composer_kickoff_time,
@@ -1031,36 +1050,80 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           Navigator.of(context).maybePop();
         },
       ),
-      builder: (_) => ComposerTimeSheet(pending: pending),
+      builder: (_) => Padding(
+        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space8),
+        child: ComposerTimeSheet(pending: pending),
+      ),
     );
   }
 
+  /// The venue SPACE picker (ruling 4) drawn in the design's place-sheet
+  /// frame (`Home Feed.dc.html:961-964`, `sheetP74`): header hairline, framed
+  /// search, picker rows with the chosen tick, a header Clear and a Confirm
+  /// foot that applies the pending space. What it selects is unchanged
+  /// ([_ComposerNotifier.selectVenueSpace] with the same space map).
   Future<void> _openVenuePicker(BuildContext context) async {
     final notifier = ref.read(_gameComposerProvider.notifier);
     await notifier.loadVenueSpaces();
     final spaces = notifier.venueSpaces;
     if (!context.mounted) return;
 
-    await showComposerSheet<void>(
+    final l = AppLocalizations.of(context);
+    final state = ref.read(_gameComposerProvider);
+    final pending = ValueNotifier<Map<String, dynamic>?>(
+      spaces.where((sp) => sp['id'] == state.venueSpaceId).firstOrNull,
+    );
+    final confirm = ComposerSheetConfirm(
+      label: l.composer_confirm,
+      onTap: () {
+        final sp = pending.value;
+        if (sp != null) notifier.selectVenueSpace(sp);
+        Navigator.of(context).maybePop();
+      },
+    );
+    await showGameComposerSheet<void>(
       context,
-      title: AppLocalizations.of(context).game_select_venue,
+      title: l.game_select_venue,
+      contentMaxFraction: DabblerSheet.contentMaxFractionMedium,
+      // The place sheet's header has no border (`:820`).
+      headerDivider: false,
+      onClear: state.venueSpaceId != null ? notifier.clearVenue : null,
+      confirm: confirm,
       builder: (_) => _VenuePickerSheet(
         spaces: spaces,
-        onSelect: notifier.selectVenueSpace,
+        pending: pending,
+        onSelect: (sp) => pending.value = sp,
         onClear: notifier.clearVenue,
-        canClear: ref.read(_gameComposerProvider).venueSpaceId != null,
+        canClear: false,
       ),
     );
   }
 
+  /// The skill sheet (ruling 5): the three levels as choice pills in the
+  /// same sheet frame as the format sheet, a header Clear and a Confirm foot.
+  /// The stored key and its (min, max) mapping are unchanged
+  /// ([_ComposerNotifier.selectSkillLevel]).
   Future<void> _openSkillPicker(BuildContext context) async {
-    await showComposerSheet<void>(
+    final notifier = ref.read(_gameComposerProvider.notifier);
+    final current = ref.read(_gameComposerProvider).skillLevel;
+    final pending = ValueNotifier<String?>(current);
+    await showGameComposerSheet<void>(
       context,
       title: AppLocalizations.of(context).game_skill_level,
+      onClear: current != null ? notifier.clearSkill : null,
+      confirm: ComposerSheetConfirm(
+        label: AppLocalizations.of(context).composer_confirm,
+        onTap: () {
+          final v = pending.value;
+          if (v != null && v != current) notifier.selectSkillLevel(v);
+          Navigator.of(context).maybePop();
+        },
+      ),
       builder: (_) => GameSkillPickerSheet(
-        onSelect: ref.read(_gameComposerProvider.notifier).selectSkillLevel,
-        onClear: ref.read(_gameComposerProvider.notifier).clearSkill,
-        canClear: ref.read(_gameComposerProvider).skillLevel != null,
+        selected: current,
+        onSelect: (v) => pending.value = v,
+        onClear: notifier.clearSkill,
+        canClear: false,
       ),
     );
   }
@@ -1136,21 +1199,32 @@ class ComposerVariantSheet extends StatelessWidget {
     }
     return ValueListenableBuilder<Map<String, dynamic>?>(
       valueListenable: pending,
-      builder: (context, current, _) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final v in variants)
-            ComposerPickerRow(
-              title: v['name_en'] as String,
-              subtitle: (v['required_players'] as int?) != null
-                  ? AppLocalizations.of(
-                      context,
-                    ).composer_players_count(v['required_players'] as int)
-                  : null,
-              selected: current?['id'] == v['id'],
-              onTap: () => pending.value = v,
-            ),
-        ],
+      // The design's 12 body gap plus the list's `padding-block:6px`
+      // (`:1108`) above the rows, measured 31 from Cancel to row 0 (KAN-473
+      // C1); below, the 30 to the pill is the DS footer's own spacing.
+      builder: (context, current, _) => Padding(
+        padding: const EdgeInsetsDirectional.only(
+          top:
+              DabblerSpacing.space4 +
+              DabblerSpacing.space2 +
+              DabblerSizing.borderDefault,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            for (final v in variants)
+              GameSheetOptionRow(
+                title: v['name_en'] as String,
+                subtitle: (v['required_players'] as int?) != null
+                    ? AppLocalizations.of(
+                        context,
+                      ).composer_players_count(v['required_players'] as int)
+                    : null,
+                selected: current?['id'] == v['id'],
+                onTap: () => pending.value = v,
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -1220,12 +1294,16 @@ class _VenuePickerSheet extends StatefulWidget {
     required this.onSelect,
     required this.onClear,
     required this.canClear,
+    this.pending,
   });
 
   final List<Map<String, dynamic>> spaces;
   final void Function(Map<String, dynamic>) onSelect;
   final VoidCallback onClear;
   final bool canClear;
+
+  /// The space picked but not yet confirmed; drawn with the chosen tick.
+  final ValueListenable<Map<String, dynamic>?>? pending;
 
   @override
   State<_VenuePickerSheet> createState() => _VenuePickerSheetState();
@@ -1253,11 +1331,33 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
     }).toList();
   }
 
+  Widget _row(BuildContext context, Map<String, dynamic> sp, Object? chosen) {
+    final venue = sp['venue'] as Map<String, dynamic>? ?? const {};
+    final venueName =
+        venue['name_en'] as String? ??
+        AppLocalizations.of(context).composer_venue;
+    final spaceName = sp['name_en'] as String?;
+    return GameSheetOptionRow(
+      key: ValueKey<String>('game-venue-space-${sp['id']}'),
+      icon: 'location',
+      verticalPadding: GameSheetOptionRow.placePadding,
+      subtitleStyle: DabblerType.caption1,
+      title: '$venueName${spaceName != null ? ' · $spaceName' : ''}',
+      subtitle: venue['area'] as String?,
+      selected: chosen != null && chosen == sp['id'],
+      onTap: () => widget.onSelect(sp),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final filtered = _filtered();
     final hasAnySpaces = widget.spaces.isNotEmpty;
+    final pending =
+        widget.pending ?? ValueNotifier<Map<String, dynamic>?>(null);
 
+    // The place sheet's body (`Home Feed.dc.html:818-870`): the framed search
+    // box, then the rows. A bounded list only when it would not fit.
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -1269,6 +1369,7 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
               Navigator.pop(context);
             },
           ),
+        const SizedBox(height: DabblerSpacing.space4),
         // Search — only shown when there are spaces to filter
         if (hasAnySpaces)
           ComposerSearchField(
@@ -1276,58 +1377,51 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
             placeholder: 'Search venues, spaces or area…',
             onChanged: (v) => setState(() => _query = v.trim()),
           ),
-        ComposerScrollArea(
-          fraction: 0.5,
-          child: !hasAnySpaces
-              ? const ComposerCenteredState.message(
-                  'No venues available for this format',
-                )
-              : filtered.isEmpty
-              ? ComposerCenteredState.message(
-                  AppLocalizations.of(context).game_no_matches,
-                )
-              : ListView.builder(
-                  itemCount: filtered.length,
-                  itemBuilder: (_, i) {
-                    final sp = filtered[i];
-                    final venue =
-                        sp['venue'] as Map<String, dynamic>? ?? const {};
-                    final venueName =
-                        venue['name_en'] as String? ??
-                        AppLocalizations.of(context).composer_venue;
-                    final area = venue['area'] as String?;
-                    final spaceName = sp['name_en'] as String?;
-                    return ComposerPickerRow(
-                      icon: 'location',
-                      title:
-                          '$venueName'
-                          '${spaceName != null ? ' · $spaceName' : ''}',
-                      subtitle: area,
-                      onTap: () {
-                        widget.onSelect(sp);
-                        Navigator.pop(context);
-                      },
-                    );
-                  },
-                ),
-        ),
+        // The 12 between the search and the list (`:840`).
+        if (hasAnySpaces) const SizedBox(height: DabblerSpacing.space4),
+        if (!hasAnySpaces)
+          const ComposerCenteredState.message(
+            'No venues available for this format',
+          )
+        else if (filtered.isEmpty)
+          ComposerCenteredState.message(
+            AppLocalizations.of(context).game_no_matches,
+          )
+        else
+          ValueListenableBuilder<Map<String, dynamic>?>(
+            valueListenable: pending,
+            builder: (context, current, _) => Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                for (final sp in filtered) _row(context, sp, current?['id']),
+              ],
+            ),
+          ),
       ],
     );
   }
 }
 
-/// The skill sheet: Beginner 1–3, Intermediate 4–6, Advanced 7–10.
-class GameSkillPickerSheet extends StatelessWidget {
+/// The skill sheet (ruling 5): Beginner 1–3, Intermediate 4–6, Advanced
+/// 7–10 as choice pills styled like the join-policy pills
+/// (`Home Feed.dc.html:1001-1002`), each level's range and line under them.
+class GameSkillPickerSheet extends StatefulWidget {
   const GameSkillPickerSheet({
     super.key,
     required this.onSelect,
     required this.onClear,
     required this.canClear,
+    this.selected,
   });
 
+  /// Called with the state key of the tapped pill.
   final void Function(String) onSelect;
   final VoidCallback onClear;
   final bool canClear;
+
+  /// The level chosen when the sheet opens.
+  final String? selected;
 
   /// (state key, range, localised title, localised subtitle). The state key
   /// stays the English word ([selectSkillLevel] and `_skillLabelFor` use it).
@@ -1343,28 +1437,63 @@ class GameSkillPickerSheet extends StatelessWidget {
   ];
 
   @override
+  State<GameSkillPickerSheet> createState() => _GameSkillPickerSheetState();
+}
+
+class _GameSkillPickerSheetState extends State<GameSkillPickerSheet> {
+  late String? _picked = widget.selected;
+
+  @override
   Widget build(BuildContext context) {
+    final levels = GameSkillPickerSheet._levels(AppLocalizations.of(context));
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        if (canClear)
+        if (widget.canClear)
           ComposerClearRow(
             onClear: () {
-              onClear();
+              widget.onClear();
               Navigator.pop(context);
             },
           ),
-        for (final l in _levels(AppLocalizations.of(context)))
-          ComposerPickerRow(
-            title: l.$3,
-            subtitle: l.$4,
-            // LTR isolate: "1–3" keeps its order inside Arabic text.
-            trailingText: '\u2066${l.$2}\u2069',
-            onTap: () {
-              onSelect(l.$1);
-              Navigator.pop(context);
+        Padding(
+          padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space3),
+          child: GameOptionPills<String>(
+            options: <(String, String)>[for (final l in levels) (l.$1, l.$3)],
+            selected: _picked ?? '',
+            onSelect: (v) {
+              setState(() => _picked = v);
+              widget.onSelect(v);
             },
+          ),
+        ),
+        const SizedBox(height: DabblerSpacing.space5),
+        for (final l in levels)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              bottom: DabblerSpacing.space2,
+            ),
+            child: Row(
+              children: [
+                DabblerText(
+                  // LTR isolate: "1–3" keeps its order inside Arabic text.
+                  '\u2066${l.$2}\u2069',
+                  style: DabblerType.caption1,
+                  tone: l.$1 == _picked
+                      ? DabblerTextTone.primary
+                      : DabblerTextTone.secondary,
+                ),
+                const SizedBox(width: DabblerSpacing.space4),
+                Expanded(
+                  child: DabblerText(
+                    l.$4,
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
+                  ),
+                ),
+              ],
+            ),
           ),
       ],
     );
