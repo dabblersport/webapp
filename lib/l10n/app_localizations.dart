@@ -9731,6 +9731,90 @@ abstract class AppLocalizations {
   /// **'Games you have joined'**
   String get composer_games_joined_hint;
 
+  /// Title of the Content Class sheet on the Create Post screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Content Class'**
+  String get composer_content_class_title;
+
+  /// Content Class row title: social post.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get composer_content_class_social;
+
+  /// Content Class row title: editorial post.
+  ///
+  /// In en, this message translates to:
+  /// **'Editorial'**
+  String get composer_content_class_editorial;
+
+  /// Subtitle of the Social Content Class row.
+  ///
+  /// In en, this message translates to:
+  /// **'Standard social post'**
+  String get composer_content_class_social_sub;
+
+  /// Subtitle of the Editorial Content Class row.
+  ///
+  /// In en, this message translates to:
+  /// **'Editorial or long-form content'**
+  String get composer_content_class_editorial_sub;
+
+  /// Label showing the profile the post is published as. {name} is the profile name.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting as {name}'**
+  String composer_posting_as(String name);
+
+  /// Semantic label for the Posting as control. {name} is the profile name.
+  ///
+  /// In en, this message translates to:
+  /// **'Posting as {name}. Tap to switch profile.'**
+  String composer_posting_as_switch(String name);
+
+  /// Fallback word shown when a vibe, sport or game is chosen but has no name.
+  ///
+  /// In en, this message translates to:
+  /// **'set'**
+  String get composer_tool_value_set;
+
+  /// Semantic label of the Vibe tool once chosen. {name} is the vibe name.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe: {name}. Tap to change.'**
+  String composer_tool_vibe_set(String name);
+
+  /// Semantic label of the Sport tool once chosen. {name} is the sport name.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport: {name}. Tap to change.'**
+  String composer_tool_sport_set(String name);
+
+  /// Semantic label of the Location tool once chosen. {name} is the place name.
+  ///
+  /// In en, this message translates to:
+  /// **'Location: {name}. Tap to change.'**
+  String composer_tool_location_set(String name);
+
+  /// Semantic label of the Game tool once linked. {name} is the game name.
+  ///
+  /// In en, this message translates to:
+  /// **'Game: {name}. Tap to change.'**
+  String composer_tool_game_set(String name);
+
+  /// GIF badge and semantic label on attached media.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF'**
+  String get composer_media_gif;
+
+  /// Semantic label for an attached image.
+  ///
+  /// In en, this message translates to:
+  /// **'Image'**
+  String get composer_media_image;
+
   /// Subtitle of the Format row once a sport is chosen. {sport} is the localized sport name.
   ///
   /// In en, this message translates to:
