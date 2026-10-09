@@ -145,7 +145,7 @@ dependencies:
   # Map rendering (no API key required — OpenStreetMap tiles)
   flutter_map: ^7.0.2
   latlong2: ^0.9.0
-  video_player: ^2.14.1
+  lottie: ^3.6.1
 dependency_overrides:
   # share_plus 13.2+ declares win32 ^6 but file_picker 8 only compiles against
   # win32 5. Pinned down — win32 code paths only run on Windows desktop builds,
@@ -204,6 +204,7 @@ flutter:
     - assets/logos/
     - assets/logo.png
     - assets/Splash.mp4
+    - assets/Splash.lottie
     - supabase/schema/schema.json
 
   # An image asset can refer to one or more resolution-specific "variants", see

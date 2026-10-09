@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Android 12+ launch icon: intentionally empty. The animation (assets/Splash.lottie)
+     starts from the plain splash_purple ground and draws its mark in, so the
+     system splash shows only that ground; any icon here would appear and then
+     restart as the animation begins. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#00000000"
+        android:pathData="M0,0h24v24h-24z" />
+</vector>

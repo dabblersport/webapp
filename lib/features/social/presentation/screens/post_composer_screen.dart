@@ -611,7 +611,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       // KAN-462: the design's field is 162dp (132 + 15 + 15).
       minFieldHeight: DabblerComposerBox.designedFieldMinHeight,
       counter: '$bodyLen/$maxLen',
-      counterSemanticLabel: '$bodyLen of $maxLen characters used',
+      counterSemanticLabel: l.composer_counter_semantic(bodyLen, maxLen),
       counterEmphasised: nearLimit,
       tags: composerTagRow(
         vibeName: composerState.hasVibe ? composerState.vibeName : null,

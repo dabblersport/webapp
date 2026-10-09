@@ -64,62 +64,6 @@ void _softShadows(bool on) {
   if (_shotsDir.isNotEmpty) debugDisableShadows = !on;
 }
 
-Future<void> _loadFonts() async {
-  final List<String> dirs = <String>[
-    '${Directory.current.parent.path}/dabbler-design-system/fonts',
-    '${Directory.current.path}/../ds-luxor/fonts',
-  ];
-  Future<void> family(String name, List<String> files) async {
-    final FontLoader loader = FontLoader(name);
-    var any = false;
-    for (final String f in files) {
-      for (final String d in dirs) {
-        final File file = File('$d/$f');
-        if (file.existsSync()) {
-          loader.addFont(
-            file.readAsBytes().then((b) => ByteData.sublistView(b)),
-          );
-          any = true;
-          break;
-        }
-      }
-    }
-    if (any) await loader.load();
-  }
-
-  const String pkg = 'packages/dabbler_design_system';
-  const List<String> glory = <String>[
-    'Glory-Light.ttf',
-    'Glory-Regular.ttf',
-    'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf',
-    'Glory-Bold.ttf',
-  ];
-  const List<String> meral = <String>[
-    'meral-sans-light.ttf',
-    'meral-sans-regular.ttf',
-    'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf',
-    'meral-sans-bold.ttf',
-  ];
-  for (final String prefix in <String>['$pkg/', '']) {
-    await family('${prefix}Glory', glory);
-    await family('${prefix}Gloock', <String>['Gloock-Regular.ttf']);
-    await family('${prefix}Meral Sans', meral);
-    await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
-  }
-  final String home = Platform.environment['HOME'] ?? '';
-  final File iconsax = File(
-    '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
-  );
-  if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader(
-      'packages/iconsax_flutter/FlutterIconsax',
-    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
-    await loader.load();
-  }
-}
-
 Future<void> _pump(
   WidgetTester tester, {
   required Locale locale,
@@ -494,7 +438,7 @@ List<_Row> _rows(Map<String, List<double>> design, Map<String, Rect?> app) =>
 // ---------------------------------------------------------------- exceptions
 
 void main() {
-  setUpAll(_loadFonts);
+  setUpAll(loadRenderFonts);
   tearDownAll(() {
     if (_mdOut.isEmpty) return;
     final StringBuffer b = StringBuffer()

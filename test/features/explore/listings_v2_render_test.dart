@@ -40,52 +40,6 @@ class _Location extends ActiveLocationNotifier {
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
 }
 
-Future<void> _loadFonts() async {
-  final String dsFonts =
-      '${Directory.current.parent.path}/dabbler-design-system/fonts';
-  Future<void> family(String name, List<String> files) async {
-    final FontLoader loader = FontLoader(name);
-    for (final String f in files) {
-      final File file = File('$dsFonts/$f');
-      if (!file.existsSync()) return;
-      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
-    }
-    await loader.load();
-  }
-
-  const String pkg = 'packages/dabbler_design_system';
-  const List<String> glory = <String>[
-    'Glory-Light.ttf',
-    'Glory-Regular.ttf',
-    'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf',
-    'Glory-Bold.ttf',
-  ];
-  const List<String> meral = <String>[
-    'meral-sans-light.ttf',
-    'meral-sans-regular.ttf',
-    'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf',
-    'meral-sans-bold.ttf',
-  ];
-  for (final String prefix in <String>['$pkg/', '']) {
-    await family('${prefix}Glory', glory);
-    await family('${prefix}Gloock', <String>['Gloock-Regular.ttf']);
-    await family('${prefix}Meral Sans', meral);
-    await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
-  }
-  final String home = Platform.environment['HOME'] ?? '';
-  final File iconsax = File(
-    '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
-  );
-  if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader(
-      'packages/iconsax_flutter/FlutterIconsax',
-    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
-    await loader.load();
-  }
-}
-
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {
   dumpGeometry(tester, name);
   await tester.runAsync(() async {
@@ -319,7 +273,7 @@ double _opacityOf(WidgetTester tester, Finder f) => tester
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
-    await _loadFonts();
+    await loadRenderFonts();
   });
 
   final desktop = TargetPlatformVariant.only(TargetPlatform.macOS);

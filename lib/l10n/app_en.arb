@@ -1978,6 +1978,8 @@
   "@game_error_daily_limit": {"description": "Daily game creation limit message. {reset} is the formatted reset date and time.", "placeholders": {"reset": {"type": "String"}}},
   "game_error_generic": "Something went wrong. Try again.",
   "@game_error_generic": {"description": "Fallback for unknown Create game failures; same wording as meetups_error_generic."},
+  "composer_counter_semantic": "{used} of {max} characters used",
+  "@composer_counter_semantic": {"description": "Screen-reader sentence for the Create Post body character counter, not the visual counter. {used} is the current length, {max} the limit.", "placeholders": {"used": {"type": "int"}, "max": {"type": "int"}}},
   "@game_format_choose_sub": {"description": "Subtitle of the Format row once a sport is chosen. {sport} is the localized sport name.", "placeholders": {"sport": {"type": "String"}}},
   "game_format_locked": "Locked",
   "@game_format_locked": {"description": "State label on the Format chip while no sport is chosen; the chip does nothing until then."},
