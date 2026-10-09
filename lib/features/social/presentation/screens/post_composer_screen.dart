@@ -51,6 +51,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   final AuthService _authService = AuthService();
   Map<String, dynamic>? _userProfile;
 
+  /// A context inside the Create post design frame, from which the pickers open
+  /// so their sheets keep the frame's chrome (see [build]).
+  BuildContext? _frameContext;
+  BuildContext get _sheetContext => _frameContext ?? context;
+
   @override
   void initState() {
     super.initState();
@@ -111,7 +116,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     // Circle visibility has no picker wired in this composer yet
     // (KAN-47) — selecting it always fails at submit time.
     showComposerChoiceSheet<PostVisibility>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_who_can_see,
       selected: state.visibility,
       onConfirm: ref.read(postComposerProvider.notifier).setVisibility,
@@ -134,7 +139,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final state = ref.read(postComposerProvider);
     final notifier = ref.read(postComposerProvider.notifier);
     showComposerVibesSheet(
-      context,
+      _sheetContext,
       ref,
       selectedVibeId: state.vibeId,
       onClear: notifier.clearVibe,
@@ -154,7 +159,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         : null;
 
     showComposerSportSheet(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_which_sport,
       sportsProvider: activeSportsByProfileCountryProvider,
       selected: selectedSport,
@@ -173,7 +178,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   void _showExpiryPicker() {
     final now = DateTime.now();
     showComposerSheet<void>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_expiry,
       builder: (ctx) => _ExpiryPickerSheet(
         first: now,
@@ -188,14 +193,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  void _showGamePicker() => showComposerGameLinkSheet(context, ref);
+  void _showGamePicker() => showComposerGameLinkSheet(_sheetContext, ref);
 
-  void _showLocationPicker() => showComposerPlaceSheet(context, ref);
+  void _showLocationPicker() => showComposerPlaceSheet(_sheetContext, ref);
 
   void _showPostTypePicker() {
     final state = ref.read(postComposerProvider);
     showComposerChoiceSheet<PostType>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_kind_of_post,
       selected: state.postType,
       onConfirm: ref.read(postComposerProvider.notifier).setPostType,
@@ -244,7 +249,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   void _showMediaInput() {
     final l = AppLocalizations.of(context);
     showComposerSheet<void>(
-      context,
+      _sheetContext,
       title: l.composer_add_media_title,
       confirm: ComposerSheetConfirm(
         label: l.composer_done,
@@ -320,7 +325,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final activeType = ref.read(activeProfileTypeProvider);
 
     showComposerSheet<void>(
-      context,
+      _sheetContext,
       title: AppLocalizations.of(context).composer_post_as,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
@@ -417,32 +422,33 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       isSubmitting: composerState.isSubmitting,
       onCtaTap: _submit,
       errorMessage: composerState.error,
+      designFrame: true,
       children: [
         Padding(
           // `Home Feed.dc.html` Create post: 24dp from the Cancel row to the
           // author row (the shell's 6dp + 18dp here), then 15dp between
           // author, kind/visibility pills and the card.
           padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space8,
+            start: DabblerSpacing.space6,
             top: DabblerSpacing.space6,
-            end: DabblerSpacing.space8,
+            end: DabblerSpacing.space6,
           ),
           child: _buildAuthorRow(),
         ),
         Padding(
           padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space8,
+            start: DabblerSpacing.space6,
             top: DabblerSpacing.space5,
-            end: DabblerSpacing.space8,
+            end: DabblerSpacing.space6,
             bottom: DabblerSpacing.space4,
           ),
           child: _buildKindVisibilityRow(composerState),
         ),
         Padding(
           padding: const EdgeInsetsDirectional.only(
-            start: DabblerSpacing.space8,
+            start: DabblerSpacing.space6,
             top: DabblerSpacing.space1,
-            end: DabblerSpacing.space8,
+            end: DabblerSpacing.space6,
             bottom: DabblerSpacing.space5,
           ),
           child: _buildTextBoxCard(composerState),
@@ -453,8 +459,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         if (composerState.hasMedia)
           Padding(
             padding: const EdgeInsetsDirectional.only(
-              start: DabblerSpacing.space8,
-              end: DabblerSpacing.space8,
+              start: DabblerSpacing.space6,
+              end: DabblerSpacing.space6,
               bottom: DabblerSpacing.space6,
             ),
             child: _buildMediaTilesRow(composerState),
@@ -463,7 +469,17 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       ],
     );
 
-    return shell;
+    // The pickers open from a context inside the frame so they keep it (the
+    // sport sheet is shared with the game composer and draws the old chrome
+    // unless it is opened from here).
+    return ComposerFrameScope(
+      child: Builder(
+        builder: (frameContext) {
+          _frameContext = frameContext;
+          return shell;
+        },
+      ),
+    );
   }
 
   // ═══════════════════════════════════════════════════════════════════════
@@ -666,9 +682,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
   Widget _buildOptionsSection(PostComposerState state) {
     return Padding(
       padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space8,
-        end: DabblerSpacing.space8,
-        bottom: DabblerSpacing.space3,
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,

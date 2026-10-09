@@ -42,11 +42,15 @@ Future<void> showComposerVibesSheet(
     detent: DabblerSheetDetent.content,
     contentMaxFraction: DabblerSheet.contentMaxFractionTall,
     pageBackground: true,
+    hairlineOutside: ComposerFrameScope.active(context),
     showCloseButton: false,
     headerActionBuilder: (ctx) =>
         composerSheetHeaderActions(context, ctx, onClear: onClear),
     footerBuilder: (_) => composerSheetFooter(confirm),
-    builder: (_) => ComposerVibesSheet(pending: pending),
+    builder: composerFrameBuilder(
+      context,
+      (_) => ComposerVibesSheet(pending: pending),
+    ),
   );
 }
 
