@@ -8,6 +8,7 @@ import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
@@ -168,6 +169,7 @@ class _ComposerState {
     this.variantId,
     this.variantKey,
     this.variantNameEn,
+    this.variantNameAr,
     this.requiredPlayers,
     this.selectedDate,
     this.selectedTime,
@@ -175,6 +177,8 @@ class _ComposerState {
     this.venueSpaceId,
     this.venueName,
     this.venueSpaceName,
+    this.venueNameAr,
+    this.venueSpaceNameAr,
     this.joinPolicy = 'open',
     this.listingVisibility = 'public',
     this.allowWaitlist = false,
@@ -209,6 +213,9 @@ class _ComposerState {
   /// `sport_variants.variant_key` — used to filter `venue_spaces.sport_variant_keys`.
   final String? variantKey;
   final String? variantNameEn;
+
+  /// The Arabic names, for display only; null when the database has none.
+  final String? variantNameAr;
   final int? requiredPlayers;
   final DateTime? selectedDate;
   final TimeOfDay? selectedTime;
@@ -216,6 +223,8 @@ class _ComposerState {
   final String? venueSpaceId;
   final String? venueName;
   final String? venueSpaceName;
+  final String? venueNameAr;
+  final String? venueSpaceNameAr;
   final String joinPolicy;
   final String listingVisibility;
   final bool allowWaitlist;
@@ -263,6 +272,7 @@ class _ComposerState {
     String? variantId,
     String? variantKey,
     String? variantNameEn,
+    String? variantNameAr,
     int? requiredPlayers,
     DateTime? selectedDate,
     TimeOfDay? selectedTime,
@@ -270,6 +280,8 @@ class _ComposerState {
     String? venueSpaceId,
     String? venueName,
     String? venueSpaceName,
+    String? venueNameAr,
+    String? venueSpaceNameAr,
     String? joinPolicy,
     String? listingVisibility,
     bool? allowWaitlist,
@@ -302,6 +314,7 @@ class _ComposerState {
       variantId: clearVariant ? null : variantId ?? this.variantId,
       variantKey: clearVariant ? null : variantKey ?? this.variantKey,
       variantNameEn: clearVariant ? null : variantNameEn ?? this.variantNameEn,
+      variantNameAr: clearVariant ? null : variantNameAr ?? this.variantNameAr,
       requiredPlayers: clearVariant
           ? null
           : requiredPlayers ?? this.requiredPlayers,
@@ -311,6 +324,10 @@ class _ComposerState {
       venueSpaceId: clearVenue ? null : venueSpaceId ?? this.venueSpaceId,
       venueName: clearVenue ? null : venueName ?? this.venueName,
       venueSpaceName: clearVenue ? null : venueSpaceName ?? this.venueSpaceName,
+      venueNameAr: clearVenue ? null : venueNameAr ?? this.venueNameAr,
+      venueSpaceNameAr: clearVenue
+          ? null
+          : venueSpaceNameAr ?? this.venueSpaceNameAr,
       joinPolicy: joinPolicy ?? this.joinPolicy,
       listingVisibility: listingVisibility ?? this.listingVisibility,
       allowWaitlist: allowWaitlist ?? this.allowWaitlist,
@@ -402,6 +419,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         variantId: row['sport_variant_id'] as String?,
         variantKey: row['variant_key'] as String?,
         variantNameEn: row['variant_name_en'] as String?,
+        variantNameAr: row['variant_name_ar'] as String?,
         requiredPlayers: row['required_players'] as int?,
         selectedDate: DateTime(startAt.year, startAt.month, startAt.day),
         selectedTime: TimeOfDay(hour: startAt.hour, minute: startAt.minute),
@@ -428,6 +446,17 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       // Warm the picker caches so format/venue sheets open populated.
       await loadVariants(row['sport_id'] as String);
       await loadVenueSpaces();
+      // The view carries no Arabic venue or space name: take them from the
+      // loaded space the game is booked on (display only).
+      for (final sp in _venueSpaces) {
+        if (sp['id'] != state.venueSpaceId) continue;
+        final venue = sp['venue'] as Map<String, dynamic>? ?? const {};
+        state = state.copyWith(
+          venueNameAr: venue['name_ar'] as String?,
+          venueSpaceNameAr: sp['name_ar'] as String?,
+        );
+        break;
+      }
     } catch (_) {
       state = state.copyWith(
         error: const GameComposerError(GameComposerErrorCode.loadFailed),
@@ -450,7 +479,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       final rows = await _db
           .from(SupabaseConfig.sportVariantsTable)
           .select(
-            'id, variant_key, name_en, required_players, players_per_side',
+            'id, variant_key, name_en, name_ar, required_players, players_per_side',
           )
           .eq('sport_id', sportId)
           .eq('is_active', true)
@@ -478,8 +507,8 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       final rows = await _db
           .from(SupabaseConfig.venueSpacesTable)
           .select(
-            'id, name_en, sport_id, sport_variant_keys, '
-            'venue:venues(id, name_en, area)',
+            'id, name_en, name_ar, sport_id, sport_variant_keys, '
+            'venue:venues(id, name_en, name_ar, area)',
           )
           .eq('sport_id', sportId)
           .eq('is_active', true)
@@ -509,6 +538,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       variantId: variant['id'] as String,
       variantKey: variant['variant_key'] as String?,
       variantNameEn: variant['name_en'] as String,
+      variantNameAr: variant['name_ar'] as String?,
       requiredPlayers: required,
       // Default min/max to the variant's `required_players` so the row reads
       // out something immediately; user can still tap to override.
@@ -530,6 +560,8 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       venueSpaceId: space['id'] as String,
       venueName: venue['name_en'] as String?,
       venueSpaceName: space['name_en'] as String?,
+      venueNameAr: venue['name_ar'] as String?,
+      venueSpaceNameAr: space['name_ar'] as String?,
     );
   }
 
@@ -820,7 +852,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                   // in edit mode.
                   trailing: GameSelectPill(
                     label:
-                        state.variantNameEn ??
+                        _variantLabel(state) ??
                         (state.sportId == null
                             ? l.game_format_locked
                             : l.game_select_format),
@@ -1056,22 +1088,39 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   }
 
   String _formatDurationChip(int minutes) {
+    final l = AppLocalizations.of(context);
     final h = minutes ~/ 60;
     final m = minutes % 60;
-    if (h > 0 && m > 0) return '${h}h ${m}m';
-    if (h > 0) return '${h}h';
-    return '${m}m';
+    if (h > 0 && m > 0) return l.game_duration_chip_hours_minutes(h, m);
+    if (h > 0) return l.game_duration_chip_hours(h);
+    return l.game_duration_chip_minutes(m);
   }
 
   String _venueLabel(_ComposerState state) {
     if (state.venueSpaceId == null) {
       return AppLocalizations.of(context).composer_select;
     }
+    final lang = Localizations.localeOf(context).languageCode;
     return [
-      state.venueName,
-      state.venueSpaceName,
+      gameLocalizedName(
+        languageCode: lang,
+        nameEn: state.venueName,
+        nameAr: state.venueNameAr,
+      ),
+      gameLocalizedName(
+        languageCode: lang,
+        nameEn: state.venueSpaceName,
+        nameAr: state.venueSpaceNameAr,
+      ),
     ].whereType<String>().join(' · ');
   }
+
+  /// The chosen format's name in the viewer's language (null: none chosen).
+  String? _variantLabel(_ComposerState state) => gameLocalizedName(
+    languageCode: Localizations.localeOf(context).languageCode,
+    nameEn: state.variantNameEn,
+    nameAr: state.variantNameAr,
+  );
 
   // ─── Pickers ───────────────────────────────────────────────────────────────
 
@@ -1375,7 +1424,12 @@ class ComposerVariantSheet extends StatelessWidget {
           children: [
             for (final v in variants)
               GameSheetOptionRow(
-                title: v['name_en'] as String,
+                title:
+                    gameRowName(
+                      v,
+                      Localizations.localeOf(context).languageCode,
+                    ) ??
+                    '',
                 subtitle: (v['required_players'] as int?) != null
                     ? AppLocalizations.of(
                         context,
@@ -1485,19 +1539,19 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
     final q = _query.toLowerCase();
     return widget.spaces.where((sp) {
       final venue = sp['venue'] as Map<String, dynamic>? ?? const {};
-      final venueName = (venue['name_en'] as String? ?? '').toLowerCase();
-      final spaceName = (sp['name_en'] as String? ?? '').toLowerCase();
       final area = (venue['area'] as String? ?? '').toLowerCase();
-      return venueName.contains(q) || spaceName.contains(q) || area.contains(q);
+      return gameRowNameMatches(venue, q) ||
+          gameRowNameMatches(sp, q) ||
+          area.contains(q);
     }).toList();
   }
 
   Widget _row(BuildContext context, Map<String, dynamic> sp, Object? chosen) {
     final venue = sp['venue'] as Map<String, dynamic>? ?? const {};
+    final lang = Localizations.localeOf(context).languageCode;
     final venueName =
-        venue['name_en'] as String? ??
-        AppLocalizations.of(context).composer_venue;
-    final spaceName = sp['name_en'] as String?;
+        gameRowName(venue, lang) ?? AppLocalizations.of(context).composer_venue;
+    final spaceName = gameRowName(sp, lang);
     return GameSheetOptionRow(
       key: ValueKey<String>('game-venue-space-${sp['id']}'),
       icon: 'location',
