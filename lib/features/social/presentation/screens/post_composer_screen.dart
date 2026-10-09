@@ -419,36 +419,46 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       errorMessage: composerState.error,
       children: [
         Padding(
+          // `Home Feed.dc.html` Create post: 24dp from the Cancel row to the
+          // author row (the shell's 6dp + 18dp here), then 15dp between
+          // author, kind/visibility pills and the card.
           padding: const EdgeInsetsDirectional.only(
             start: DabblerSpacing.space8,
-            top: DabblerSpacing.space1,
+            top: DabblerSpacing.space6,
             end: DabblerSpacing.space8,
           ),
           child: _buildAuthorRow(),
         ),
         Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space3,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space8,
+            top: DabblerSpacing.space5,
+            end: DabblerSpacing.space8,
+            bottom: DabblerSpacing.space4,
           ),
           child: _buildKindVisibilityRow(composerState),
         ),
         Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space1,
+          padding: const EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space8,
+            top: DabblerSpacing.space1,
+            end: DabblerSpacing.space8,
+            bottom: DabblerSpacing.space5,
           ),
           child: _buildTextBoxCard(composerState),
         ),
-        Padding(
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space8,
-            vertical: DabblerSpacing.space2,
+        // The media rail sits 15dp under the card and 18dp above the options
+        // (its 3dp bottom padding plus the 15dp gap); with no media nothing
+        // is added.
+        if (composerState.hasMedia)
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space8,
+              end: DabblerSpacing.space8,
+              bottom: DabblerSpacing.space6,
+            ),
+            child: _buildMediaTilesRow(composerState),
           ),
-          child: composerState.hasMedia
-              ? _buildMediaTilesRow(composerState)
-              : const SizedBox.shrink(),
-        ),
         _buildOptionsSection(composerState),
       ],
     );
@@ -557,6 +567,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       placeholder: AppLocalizations.of(context).composer_body_hint,
       onChanged: (value) =>
           ref.read(postComposerProvider.notifier).setBody(value),
+      // The design's field is 162dp (132 + 15 + 15); seven 20dp lines plus the
+      // 30dp padding is the nearest the DS's line-count API reaches (170dp).
+      minLines: 7,
       counter: '$bodyLen/$maxLen',
       counterSemanticLabel: '$bodyLen of $maxLen characters used',
       counterEmphasised: nearLimit,
@@ -570,7 +583,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'gallery',
           label: AppLocalizations.of(context).composer_add_media,
-          active: composerState.hasMedia,
+          // The design never tints the media glyph — only the vibe, sport,
+          // location and game tools take the brand ink once set.
+          active: false,
           onTap: _showMediaInput,
         ),
         DabblerComposerTool(
@@ -930,8 +945,8 @@ class _HashtagTextEditingController extends TextEditingController {
   }
 }
 
-/// The composer's selected-tag row: vibe, sport, location and game. Null when
-/// nothing is set.
+/// The composer's selected-tag row: sport, vibe, location and game, in the
+/// design's order. Null when nothing is set.
 ///
 /// KAN-426/456: every pill is drawn at the same DS size class — the vibe as the
 /// `tag` chip and the rest as `comfortable` warning badges — both 12px type on
@@ -944,7 +959,10 @@ Widget? composerTagRow({
   String? locationName,
   String? gameName,
 }) {
+  // Order and casing follow the design's `postTags`: sport, vibe, location,
+  // game, each as written (`Home Feed.dc.html:3264-3269`).
   final pills = <Widget>[
+    if (sportName != null) _tagBadge(sportName),
     if (vibeName != null)
       DabblerChip(
         label: vibeName,
@@ -952,7 +970,6 @@ Widget? composerTagRow({
         selected: true,
         tag: true,
       ),
-    if (sportName != null) _tagBadge(sportName.toUpperCase()),
     if (locationName != null) _tagBadge(locationName),
     if (gameName != null) _tagBadge(gameName),
   ];
