@@ -1,7 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Brand splash background (matches Flutter SplashScreen). -->
-    <color name="splash_purple">#7328CE</color>
+    <!-- Launch ground, light: the welcome/first-screen background —
+         DabblerPalette.surfacePage = DabblerColors.bgPrimary (light), the
+         ground DabblerPage paints. Night variant in values-night. -->
+    <color name="splash_background">#F5F0E6</color>
     <!-- Page ground, light: DabblerPalette.surfacePage (DabblerColors.bgPrimary). -->
     <color name="page_background">#F5F0E6</color>
 </resources>

@@ -17,11 +17,11 @@ typedef SplashCompositionLoader = Future<LottieComposition> Function();
 ///
 /// The OS launch screens cannot play a `.lottie`: Android's system splash is a
 /// static icon on a colour and an iOS launch storyboard cannot run code. So
-/// the native launch screens show only the ground ([DabblerPalette.mainP600],
-/// `splash_purple` on Android, the storyboard colour on iOS, `index.html` on
-/// the web) — which is the animation's own start frame (the mark is a stroke
-/// that draws in from nothing) — and this widget then plays the animation once
-/// on the same ground. There is no second route, no replay and no added delay.
+/// the native launch screens show only the ground — the app's welcome /
+/// first-screen background in the device's light or dark appearance
+/// ([groundFor]) — which is the animation's own start frame (the mark is a
+/// stroke that draws in from nothing) — and this widget then plays the
+/// animation once on the same ground. There is no second route, no replay and no added delay.
 ///
 /// It is not a route: nothing here touches the router, so the platform's
 /// initial location (a deep link or a web URL) is what the app's router reads
@@ -52,6 +52,16 @@ class StartupSplash extends StatefulWidget {
   /// fades to the bare ground.
   static const double stillFrame = 89 / 132;
 
+  /// The splash ground for [brightness]: the welcome / first-screen background,
+  /// [DabblerColors.bgPrimary] of the main theme (`#F5F0E6` light, `#141414`
+  /// dark) — what [DabblerPage] paints. The native launch resources
+  /// (`splash_background` on Android, `LaunchGround` on iOS, `index.html` on
+  /// the web) carry the same two values.
+  static Color groundFor(Brightness brightness) => DabblerColors.resolve(
+    theme: DabblerTheme.main,
+    brightness: brightness,
+  ).bgPrimary;
+
   static Future<LottieComposition> defaultLoader() => AssetLottie(asset).load();
 
   @override
@@ -59,7 +69,7 @@ class StartupSplash extends StatefulWidget {
 }
 
 class _StartupSplashState extends State<StartupSplash>
-    with SingleTickerProviderStateMixin {
+    with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _controller = AnimationController(vsync: this);
   final Completer<void> _animationDone = Completer<void>();
   Timer? _cap;
@@ -67,10 +77,24 @@ class _StartupSplashState extends State<StartupSplash>
   bool _started = false;
   Widget? _app;
 
+  late Brightness _brightness = _deviceBrightness;
+
+  Brightness get _deviceBrightness =>
+      WidgetsBinding.instance.platformDispatcher.platformBrightness;
+
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     unawaited(_waitForBoth());
+  }
+
+  // No MediaQuery or theme exists above the splash, so it follows the device's
+  // automatic light/dark appearance directly, the same one the native launch
+  // surfaces follow.
+  @override
+  void didChangePlatformBrightness() {
+    if (mounted) setState(() => _brightness = _deviceBrightness);
   }
 
   @override
@@ -120,6 +144,7 @@ class _StartupSplashState extends State<StartupSplash>
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _cap?.cancel();
     _controller.dispose();
     super.dispose();
@@ -135,7 +160,7 @@ class _StartupSplashState extends State<StartupSplash>
       // Same colour as the native and web launch backgrounds, so launch ->
       // animation has no visible seam.
       child: ColoredBox(
-        color: DabblerPalette.mainP600,
+        color: StartupSplash.groundFor(_brightness),
         child: composition == null
             ? const SizedBox.expand()
             : Center(

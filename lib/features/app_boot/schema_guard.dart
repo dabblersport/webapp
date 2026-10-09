@@ -26,7 +26,9 @@ class _BootSplash extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: DabblerColors.of(context).brandPrimary,
+      // The same ground as the startup splash and the welcome screen, so the
+      // schema check adds no coloured interstitial after the animation.
+      color: DabblerColors.of(context).bgPrimary,
       child: const SizedBox.expand(),
     );
   }
