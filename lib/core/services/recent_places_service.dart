@@ -2,6 +2,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:dabbler/data/models/area.dart';
+
 /// A place the user picked, as remembered on the device.
 class RecentPlace {
   const RecentPlace({required this.name, this.venueId, this.lat, this.lng});
@@ -60,6 +62,13 @@ class RecentPlacesService {
 
   static String keyFor(String userId) => '$keyPrefix$userId';
 
+  /// The home location picker's scope: areas, not places, so each sheet only
+  /// lists recents it can hand back. Shares [keyPrefix], so [clearAll] still
+  /// removes it.
+  static const String homeKeyPrefix = '${keyPrefix}home:';
+
+  static String homeKeyFor(String userId) => '$homeKeyPrefix$userId';
+
   Future<List<RecentPlace>> read(String? userId) async {
     if (userId == null || userId.isEmpty) return const [];
     try {
@@ -98,12 +107,58 @@ class RecentPlacesService {
     }
   }
 
+  /// The home picker's recent areas for [userId], newest first.
+  Future<List<Area>> readAreas(String? userId) async {
+    if (userId == null || userId.isEmpty) return const [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final raw = prefs.getString(homeKeyFor(userId));
+      if (raw == null) return const [];
+      final list = json.decode(raw);
+      if (list is! List) return const [];
+      final out = <Area>[];
+      for (final e in list) {
+        if (e is! Map) continue;
+        try {
+          out.add(Area.fromJson(Map<String, dynamic>.from(e)));
+        } catch (_) {
+          // Skip an entry that no longer parses.
+        }
+      }
+      return out;
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Puts [area] first in the home scope, de-duplicated by area id, keeping
+  /// at most [maxRecent].
+  Future<void> addArea(String? userId, Area area) async {
+    if (userId == null || userId.isEmpty) return;
+    try {
+      final list = [...await readAreas(userId)]
+        ..removeWhere((e) => e.id == area.id)
+        ..insert(0, area.copyWith(distanceM: null));
+      while (list.length > maxRecent) {
+        list.removeLast();
+      }
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setString(
+        homeKeyFor(userId),
+        json.encode([for (final a in list) a.toJson()]),
+      );
+    } catch (_) {
+      // Best effort: a failed write loses one recent.
+    }
+  }
+
   Future<void> clear(String userId) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(keyFor(userId));
+    await prefs.remove(homeKeyFor(userId));
   }
 
-  /// Removes every user's recents on this device (sign-out).
+  /// Removes every user's recents, both scopes, on this device (sign-out).
   Future<void> clearAll() async {
     final prefs = await SharedPreferences.getInstance();
     for (final k in prefs.getKeys().where((k) => k.startsWith(keyPrefix))) {

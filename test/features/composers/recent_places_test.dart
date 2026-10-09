@@ -1,5 +1,6 @@
 import 'package:dabbler/core/services/recent_places_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
@@ -127,6 +128,72 @@ void main() {
       expect(await _svc.read('b'), hasLength(1));
       await _svc.clearAll();
       expect(await _svc.read('b'), isEmpty);
+    });
+  });
+
+  group('RecentPlacesService home scope', () {
+    Area a(int i) => Area(
+      id: 'a$i',
+      name: 'Area $i',
+      district: 'D',
+      city: 'Dubai',
+      country: 'UAE',
+      centerLat: 25,
+      centerLng: 55,
+    );
+
+    test('home scope adds newest first', () async {
+      await _svc.addArea('a', a(1));
+      await _svc.addArea('a', a(2));
+      expect((await _svc.readAreas('a')).map((e) => e.id), ['a2', 'a1']);
+      expect((await _svc.readAreas('a')).first, a(2));
+    });
+
+    test('home scope de-dupes by area identity', () async {
+      await _svc.addArea('a', a(1));
+      await _svc.addArea('a', a(2));
+      await _svc.addArea('a', a(1).copyWith(name: 'Renamed'));
+      final list = await _svc.readAreas('a');
+      expect(list.map((e) => e.name), ['Renamed', 'Area 2']);
+    });
+
+    test('home scope is capped at 25', () async {
+      for (var i = 1; i <= 30; i++) {
+        await _svc.addArea('a', a(i));
+      }
+      final list = await _svc.readAreas('a');
+      expect(list.length, 25);
+      expect(list.first.id, 'a30');
+      expect(list.last.id, 'a6');
+    });
+
+    test('home scope is per user', () async {
+      await _svc.addArea('a', a(1));
+      expect(await _svc.readAreas('b'), isEmpty);
+      expect(await _svc.readAreas(null), isEmpty);
+      await _svc.addArea(null, a(2));
+      expect(await _svc.readAreas('a'), hasLength(1));
+    });
+
+    test('composer scope unaffected by the home scope', () async {
+      await _svc.add('a', _p(1));
+      await _svc.addArea('a', a(1));
+      expect((await _svc.read('a')).single.venueId, 'v1');
+      expect((await _svc.readAreas('a')).single.id, 'a1');
+      expect(
+        RecentPlacesService.keyFor('a'),
+        isNot(RecentPlacesService.homeKeyFor('a')),
+      );
+    });
+
+    test('clearAll clears both scopes', () async {
+      await _svc.add('a', _p(1));
+      await _svc.addArea('a', a(1));
+      await _svc.addArea('b', a(2));
+      await _svc.clearAll();
+      expect(await _svc.read('a'), isEmpty);
+      expect(await _svc.readAreas('a'), isEmpty);
+      expect(await _svc.readAreas('b'), isEmpty);
     });
   });
 

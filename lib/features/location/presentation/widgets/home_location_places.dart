@@ -21,6 +21,7 @@ class HomeLocationPlaces extends StatelessWidget {
     required this.onSaved,
     required this.onArea,
     required this.onAdd,
+    this.recents = const <Area>[],
     this.frame = false,
   });
 
@@ -30,6 +31,9 @@ class HomeLocationPlaces extends StatelessWidget {
 
   final Future<Map<String, List<Area>>> areas;
   final List<ProfileLocation> saved;
+
+  /// Device recents (KAN-469), newest first, listed before [saved].
+  final List<Area> recents;
   final String query;
   final ActiveLocationState? currentState;
   final void Function(ProfileLocation location) onSaved;
@@ -75,12 +79,16 @@ class HomeLocationPlaces extends StatelessWidget {
                 (byId[loc.areaId]?.name.toLowerCase().contains(q) ?? false))
               loc,
         ];
+        final recentRows = <Area>[
+          for (final a in recents)
+            if (hit(a)) a,
+        ];
         final filtered = <String, List<Area>>{
           for (final e in grouped.entries)
             if (e.value.any(hit)) e.key: e.value.where(hit).toList(),
         };
 
-        if (savedRows.isEmpty && filtered.isEmpty) {
+        if (recentRows.isEmpty && savedRows.isEmpty && filtered.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(
@@ -146,6 +154,26 @@ class HomeLocationPlaces extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             label(l10n.home_location_recent),
+            for (final area in recentRows)
+              row(
+                icon: 'location',
+                title: area.name,
+                subtitle: _sub(area, ready),
+                selected: ready?.location.area.id == area.id,
+                onTap: () => onArea(area),
+              ),
+            if (q.isEmpty && recents.isEmpty && saved.isEmpty)
+              Padding(
+                padding: const EdgeInsetsDirectional.only(
+                  bottom: DabblerSpacing.space2,
+                ),
+                child: DabblerText(
+                  l10n.composer_place_recent_empty,
+                  key: const Key('home-location-recent-empty'),
+                  style: DabblerType.caption1,
+                  tone: DabblerTextTone.secondary,
+                ),
+              ),
             for (final loc in savedRows)
               row(
                 icon: _savedIcon(loc),

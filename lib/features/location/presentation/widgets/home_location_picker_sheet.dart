@@ -6,9 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
 import 'package:dabbler/core/services/gps_service.dart';
+import 'package:dabbler/core/services/recent_places_service.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_places.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -108,6 +111,19 @@ class _HomeLocationPickerSheetState
       .read(areaRepositoryV2Provider)
       .areasByDistrict();
 
+  /// KAN-469: this user's recent areas on the device, listed first in Recent.
+  List<Area> _recents = const <Area>[];
+
+  @override
+  void initState() {
+    super.initState();
+    const RecentPlacesService().readAreas(ref.read(currentUserIdProvider)).then(
+      (list) {
+        if (mounted) setState(() => _recents = list);
+      },
+    );
+  }
+
   @override
   void dispose() {
     _searchController.dispose();
@@ -206,6 +222,7 @@ class _HomeLocationPickerSheetState
           frame: widget.frameHeader,
           areas: _areas,
           saved: saved ?? const <ProfileLocation>[],
+          recents: _recents,
           query: _query,
           currentState: currentState,
           onSaved: _useSaved,
@@ -273,6 +290,11 @@ class _HomeLocationPickerSheetState
   }
 
   Future<void> _useManual(Area area) async {
+    // KAN-469: remember the picked area (search, browse or a recent row).
+    await const RecentPlacesService().addArea(
+      ref.read(currentUserIdProvider),
+      area,
+    );
     await ref.read(activeLocationProvider.notifier).useManualArea(area);
     if (mounted) Navigator.of(context).pop();
   }
