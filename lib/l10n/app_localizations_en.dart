@@ -4453,7 +4453,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_venue_sub => 'Where to play';
 
   @override
-  String get game_date_time => 'Date & Time';
+  String get game_date_time => 'Date & time';
 
   @override
   String get game_date_time_sub => 'When is the game';
@@ -4483,7 +4483,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_visibility => 'Visibility';
 
   @override
-  String get game_skill_level => 'Skill Level';
+  String get game_skill_level => 'Skill level';
 
   @override
   String get game_skill_sub => 'Player experience';
@@ -4495,7 +4495,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_players => 'Players';
 
   @override
-  String get game_players_sub => 'Min & max players';
+  String get game_players_sub => 'Min and max players';
 
   @override
   String get game_fewer_min => 'Fewer minimum players';
@@ -5449,6 +5449,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String game_format_choose_sub(String sport) {
     return 'Choose the $sport format';
   }
+
+  @override
+  String get game_players_min => 'min';
+
+  @override
+  String get game_players_max => 'max';
+
+  @override
+  String game_sport_tile_semantic(String name) {
+    return 'Sport: $name, tap to select';
+  }
+
+  @override
+  String get game_create_failed => 'Failed to create game';
+
+  @override
+  String get game_save_failed => 'Failed to save changes';
+
+  @override
+  String get game_load_failed => 'Failed to load game';
+
+  @override
+  String get game_venue_search_placeholder => 'Search venues, spaces or area…';
+
+  @override
+  String get game_venue_none => 'No venues available for this format';
 
   @override
   String get game_format_locked => 'Locked';

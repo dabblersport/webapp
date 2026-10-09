@@ -5474,6 +5474,33 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get game_players_min => 'أدنى';
+
+  @override
+  String get game_players_max => 'أقصى';
+
+  @override
+  String game_sport_tile_semantic(String name) {
+    return 'الرياضة: $name، اضغط للاختيار';
+  }
+
+  @override
+  String get game_create_failed => 'تعذّر إنشاء المباراة';
+
+  @override
+  String get game_save_failed => 'تعذّر حفظ التغييرات';
+
+  @override
+  String get game_load_failed => 'تعذّر تحميل المباراة';
+
+  @override
+  String get game_venue_search_placeholder =>
+      'ابحث عن ملاعب أو مساحات أو منطقة…';
+
+  @override
+  String get game_venue_none => 'لا توجد ملاعب متاحة لهذه الصيغة';
+
+  @override
   String get game_format_locked => 'مقفل';
 
   @override
