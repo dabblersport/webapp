@@ -5436,6 +5436,16 @@ class AppLocalizationsEn extends AppLocalizations {
   String get composer_media_image => 'Image';
 
   @override
+  String get composer_place_current_location => 'Current location';
+
+  @override
+  String get composer_place_recent_empty => 'No recent places';
+
+  @override
+  String get composer_place_location_denied =>
+      'Turn on location to use your current place';
+
+  @override
   String game_format_choose_sub(String sport) {
     return 'Choose the $sport format';
   }
