@@ -235,17 +235,25 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     showComposerSheet<void>(
       context,
-      title: 'Content Class',
+      title: AppLocalizations.of(context).composer_content_class_title,
       builder: (ctx) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           for (final cc in classes)
             ComposerPickerRow(
               icon: cc == 'social' ? 'people' : 'document-text',
-              title: _prettifyLabel(cc),
+              title: cc == 'social'
+                  ? AppLocalizations.of(context).composer_content_class_social
+                  : AppLocalizations.of(
+                      context,
+                    ).composer_content_class_editorial,
               subtitle: cc == 'social'
-                  ? 'Standard social post'
-                  : 'Editorial or long-form content',
+                  ? AppLocalizations.of(
+                      context,
+                    ).composer_content_class_social_sub
+                  : AppLocalizations.of(
+                      context,
+                    ).composer_content_class_editorial_sub,
               selected: state.contentClass == cc,
               onTap: () {
                 ref.read(postComposerProvider.notifier).setContentClass(cc);
@@ -509,8 +517,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
     return Semantics(
       label: canSwitch
-          ? 'Posting as $displayName. Tap to switch profile.'
-          : 'Posting as $displayName',
+          ? AppLocalizations.of(
+              context,
+            ).composer_posting_as_switch(_isolate(context, displayName))
+          : AppLocalizations.of(
+              context,
+            ).composer_posting_as(_isolate(context, displayName)),
       button: canSwitch,
       excludeSemantics: true,
       child: DabblerFeedTappable(
@@ -587,6 +599,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final bodyLen = composerState.body.length;
     final hasLocation = composerState.locationName != null;
     final nearLimit = bodyLen > maxLen * 0.9;
+    final l = AppLocalizations.of(context);
 
     return DabblerComposerBox(
       controller: _bodyController,
@@ -618,7 +631,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'emoji-happy',
           label: composerState.hasVibe
-              ? 'Vibe: ${composerState.vibeName ?? "set"}. Tap to change.'
+              ? l.composer_tool_vibe_set(
+                  _isolate(
+                    context,
+                    composerState.vibeName ?? l.composer_tool_value_set,
+                  ),
+                )
               : AppLocalizations.of(context).composer_add_vibe,
           active: composerState.hasVibe,
           onTap: _showVibesPicker,
@@ -626,7 +644,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'cup',
           label: composerState.hasSport
-              ? 'Sport: ${composerState.sportName ?? "set"}. Tap to change.'
+              ? l.composer_tool_sport_set(
+                  _isolate(
+                    context,
+                    composerState.sportName ?? l.composer_tool_value_set,
+                  ),
+                )
               : AppLocalizations.of(context).composer_add_sport,
           active: composerState.hasSport,
           onTap: _showSportsPicker,
@@ -634,7 +657,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'location',
           label: hasLocation
-              ? 'Location: ${composerState.locationName}. Tap to change.'
+              ? l.composer_tool_location_set(
+                  _isolate(context, composerState.locationName!),
+                )
               : AppLocalizations.of(context).composer_add_location,
           active: hasLocation,
           onTap: _showLocationPicker,
@@ -642,7 +667,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         DabblerComposerTool(
           icon: 'game',
           label: composerState.hasGame
-              ? 'Game: ${composerState.gameName ?? "set"}. Tap to change.'
+              ? l.composer_tool_game_set(
+                  _isolate(
+                    context,
+                    composerState.gameName ?? l.composer_tool_value_set,
+                  ),
+                )
               : AppLocalizations.of(context).composer_link_game,
           active: composerState.hasGame,
           onTap: _showGamePicker,
@@ -841,6 +871,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 // REUSABLE WIDGETS
 // ═════════════════════════════════════════════════════════════════════════════
 
+/// KAN-467: wraps user data inserted into a sentence in an FSI…PDI isolate,
+/// only when the ambient direction is RTL, so a Latin name does not reorder
+/// the Arabic sentence. English output stays byte-identical (no marks added).
+String _isolate(BuildContext context, String value) =>
+    Directionality.of(context) == TextDirection.rtl
+    ? '\u2068$value\u2069'
+    : value;
+
 /// Single image/GIF tile in the filled-state media row.
 class _MediaTile extends StatelessWidget {
   const _MediaTile({required this.url, required this.onRemove});
@@ -856,11 +894,13 @@ class _MediaTile extends StatelessWidget {
       thumbnail: DabblerImage(
         url: url,
         overlay: _isGif
-            ? const Align(
+            ? Align(
                 alignment: AlignmentDirectional.bottomStart,
                 child: Padding(
-                  padding: EdgeInsets.all(DabblerSpacing.space2),
-                  child: DabblerBadge(label: 'GIF'),
+                  padding: const EdgeInsets.all(DabblerSpacing.space2),
+                  child: DabblerBadge(
+                    label: AppLocalizations.of(context).composer_media_gif,
+                  ),
                 ),
               )
             : null,
@@ -870,7 +910,9 @@ class _MediaTile extends StatelessWidget {
         DabblerSizing.mediaRailHeight,
       ),
       borderRadius: DabblerRadius.lgAll,
-      semanticLabel: _isGif ? 'GIF' : 'Image',
+      semanticLabel: _isGif
+          ? AppLocalizations.of(context).composer_media_gif
+          : AppLocalizations.of(context).composer_media_image,
       removeLabel: AppLocalizations.of(context).composer_remove_media,
       onRemove: onRemove,
     );
