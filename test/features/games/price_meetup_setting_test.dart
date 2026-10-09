@@ -3,6 +3,8 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/games/presentation/widgets/games_listing_card.dart';
 import 'package:dabbler/features/meetups/data/datasources/meetup_datasource.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
@@ -106,6 +108,23 @@ NearbyGameModel _game(double? price) => NearbyGameModel(
   priceAed: price,
 );
 
+/// The DabblerSheet the Create game route pushes (GameComposerSheetPage),
+/// built inline for a test with no route.
+Widget _gameSheet(Widget child, {bool editing = false}) => Builder(
+  builder: (context) => DabblerSheet(
+    onClose: () => Navigator.of(context).maybePop(),
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionFull,
+    pageBackground: true,
+    showCloseButton: false,
+    titleWidget: GameComposerSheetTitle(editing: editing),
+    headerAction: GameComposerCancel(
+      onPressed: () => Navigator.of(context).maybePop(),
+    ),
+    child: child,
+  ),
+);
+
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
@@ -193,11 +212,16 @@ void main() {
     testWidgets('game composer: required price, empty-state error $mode $dir', (
       tester,
     ) async {
-      await _pump(tester, const GameComposerScreen(), locale, height: 1700);
-      final field = find.byWidgetPredicate(
-        (w) => w is DabblerTextField && w.placeholder == l.game_price_hint,
+      await _pump(
+        tester,
+        _gameSheet(const GameComposerScreen()),
+        locale,
+        height: 1700,
       );
+      // KAN-472: the price is drawn in the frame's field style.
+      final field = find.byType(GamePriceField);
       expect(field, findsOneWidget);
+      expect(find.text(l.game_price_hint), findsOneWidget);
       expect(find.text(l.game_price_sub), findsOneWidget);
       expect(find.text(l.game_price_required), findsNothing);
       final input = find.descendant(

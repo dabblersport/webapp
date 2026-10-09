@@ -30,6 +30,7 @@ import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
@@ -552,11 +553,17 @@ void main() {
     testWidgets('create game drawer - $dir', (tester) async {
       await pump(tester);
       final BuildContext ctx = _home(tester);
+      // KAN-472: the route presents the DS sheet, as Create meet-up.
       Navigator.of(ctx, rootNavigator: true).push(
-        AdaptiveModalPage(child: const GameComposerScreen()).createRoute(ctx),
+        const GameComposerSheetPage(child: GameComposerScreen()).createRoute(ctx),
       );
       await _settle(tester);
-      _measureDrawer(tester, 'create game', dir);
+      _measureDsSheet(
+        tester,
+        'create game',
+        dir,
+        DabblerSheet.contentMaxFractionFull,
+      );
       await _shoot(tester, 'app-$dir-create-game');
     }, variant: desktop);
 
