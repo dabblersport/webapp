@@ -231,10 +231,10 @@ void main() {
         final light = !d.contains('night');
         expect(normal, contains('windowLightStatusBar">$light'), reason: d);
         expect(normal, contains('windowLightNavigationBar">$light'), reason: d);
-        // The launch theme keeps the purple.
+        // The launch theme keeps the native splash ground.
         expect(
           s.substring(0, s.indexOf('name="NormalTheme"')),
-          anyOf(contains('splash_purple'), contains('launch_background')),
+          anyOf(contains('splash_background'), contains('launch_background')),
           reason: d,
         );
       }
