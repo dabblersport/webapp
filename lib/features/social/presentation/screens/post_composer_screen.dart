@@ -9,6 +9,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
+import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_game_link_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
@@ -150,6 +151,10 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
+  /// Sport id -> `sport_key` of sports picked here, so the tag finds the
+  /// design emoji (KAN-462) when the shown name is localized. Display only.
+  final Map<String, String> _sportKeys = <String, String>{};
+
   void _showSportsPicker() {
     final composerState = ref.read(postComposerProvider);
     final selectedSport = composerState.sportId != null
@@ -167,13 +172,17 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       selected: selectedSport,
       showClear: true,
       onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
-      onConfirm: (sport) => ref
-          .read(postComposerProvider.notifier)
-          .setSport(
-            id: sport.id,
-            name: sport.localizedName(context),
-            emoji: sport.emoji,
-          ),
+      onConfirm: (sport) {
+        final key = sport.sportKey;
+        if (key != null) _sportKeys[sport.id] = key;
+        ref
+            .read(postComposerProvider.notifier)
+            .setSport(
+              id: sport.id,
+              name: sport.localizedName(context),
+              emoji: sport.emoji,
+            );
+      },
     );
   }
 
@@ -585,15 +594,15 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       placeholder: AppLocalizations.of(context).composer_body_hint,
       onChanged: (value) =>
           ref.read(postComposerProvider.notifier).setBody(value),
-      // The design's field is 162dp (132 + 15 + 15); seven 20dp lines plus the
-      // 30dp padding is the nearest the DS's line-count API reaches (170dp).
-      minLines: 7,
+      // KAN-462: the design's field is 162dp (132 + 15 + 15).
+      minFieldHeight: DabblerComposerBox.designedFieldMinHeight,
       counter: '$bodyLen/$maxLen',
       counterSemanticLabel: '$bodyLen of $maxLen characters used',
       counterEmphasised: nearLimit,
       tags: composerTagRow(
         vibeName: composerState.hasVibe ? composerState.vibeName : null,
         sportName: composerState.hasSport ? composerState.sportName : null,
+        sportKey: _sportKeys[composerState.sportId],
         locationName: composerState.locationName,
         gameName: composerState.hasGame ? composerState.gameName : null,
       ),
@@ -968,26 +977,33 @@ class _HashtagTextEditingController extends TextEditingController {
 /// `tag` chip and the rest as `comfortable` warning badges — both 12px type on
 /// 6/12 padding, so all four share one 28dp height instead of the regular
 /// 40dp chip beside the 25dp list badge.
+///
+/// KAN-462: each pill carries the design's emoji through the DS slot
+/// (`composer_emoji.dart`), display only; [sportKey] resolves the sport's
+/// emoji when [sportName] is localized. An unlisted vibe or sport has none.
 @visibleForTesting
 Widget? composerTagRow({
   String? vibeName,
   String? sportName,
+  String? sportKey,
   String? locationName,
   String? gameName,
 }) {
   // Order and casing follow the design's `postTags`: sport, vibe, location,
   // game, each as written (`Home Feed.dc.html:3264-3269`).
   final pills = <Widget>[
-    if (sportName != null) _tagBadge(sportName),
+    if (sportName != null)
+      _tagBadge(sportName, composerSportEmoji(sportKey ?? sportName)),
     if (vibeName != null)
       DabblerChip(
         label: vibeName,
         vibe: DabblerVibe.fromKey(vibeName.toLowerCase()),
+        emoji: composerVibeEmoji(vibeName),
         selected: true,
         tag: true,
       ),
-    if (locationName != null) _tagBadge(locationName),
-    if (gameName != null) _tagBadge(gameName),
+    if (locationName != null) _tagBadge(locationName, composerPlaceTagEmoji),
+    if (gameName != null) _tagBadge(gameName, composerGameTagEmoji),
   ];
   if (pills.isEmpty) return null;
   return Wrap(
@@ -998,8 +1014,9 @@ Widget? composerTagRow({
   );
 }
 
-Widget _tagBadge(String label) => DabblerBadge(
+Widget _tagBadge(String label, String? emoji) => DabblerBadge(
   label: label,
+  emoji: emoji,
   tone: DabblerBadgeTone.warning,
   comfortable: true,
 );

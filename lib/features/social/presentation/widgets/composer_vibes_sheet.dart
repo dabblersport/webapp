@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
+import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -160,6 +161,8 @@ class _ComposerVibesSheetState extends ConsumerState<ComposerVibesSheet> {
                     DabblerChip(
                       label: _label(v),
                       vibe: DabblerVibe.fromKey(v.key),
+                      // KAN-462: the design's emoji (display only).
+                      emoji: composerVibeEmoji(v.key),
                       selected: current?.id == v.id,
                       onTap: () => widget.pending.value = v,
                     ),
