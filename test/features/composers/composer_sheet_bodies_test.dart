@@ -351,7 +351,7 @@ void main() {
                   padding: const EdgeInsets.all(16),
                   child: composerTagRow(
                     vibeName: 'Disappointed',
-                    sportName: 'gym',
+                    sportName: 'Gym',
                     locationName: 'al quoz',
                     gameName:
                         'Friday night 5-a-side at Nad Al Sheba Sports Complex',
@@ -368,7 +368,7 @@ void main() {
         final badges = find.byType(DabblerBadge);
         expect(vibe, findsOneWidget);
         expect(badges, findsNWidgets(3));
-        expect(find.text('GYM'), findsOneWidget);
+        expect(find.text('Gym'), findsOneWidget);
         final double h = tester.getSize(vibe).height;
         for (final Element e in badges.evaluate()) {
           expect((e.renderObject! as RenderBox).size.height, h);
@@ -386,6 +386,32 @@ void main() {
 
   test('KAN-456 tag row: nothing set draws no row', () {
     expect(composerTagRow(), isNull);
+  });
+
+  // KAN-459: the design draws the tags sport, vibe, location, game
+  // (`Home Feed.dc.html:3264-3269`) with the labels as written.
+  testWidgets('KAN-459 tag row: design order, labels as written', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+        home: Scaffold(
+          body: composerTagRow(
+            vibeName: 'Inspired',
+            sportName: 'Padel',
+            locationName: 'Nad Al Sheba',
+            gameName: 'Padel doubles',
+          ),
+        ),
+      ),
+    );
+    expect(find.text('PADEL'), findsNothing);
+    final double padel = tester.getTopLeft(find.text('Padel').first).dx;
+    final double vibe = tester.getTopLeft(find.text('Inspired')).dx;
+    final double place = tester.getTopLeft(find.text('Nad Al Sheba')).dx;
+    expect(padel, lessThan(vibe));
+    expect(vibe, lessThan(place));
   });
 }
 

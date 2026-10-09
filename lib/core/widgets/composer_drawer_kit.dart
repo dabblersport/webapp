@@ -9,8 +9,41 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// and fields are all `Dabbler*` components, coloured through
 /// [DabblerColors].
 
+/// Marks a subtree as drawn in the Create Post design frame
+/// (`Home Feed.dc.html` "Create post", `:470-1000`).
+///
+/// **Opt-in, default off.** It exists only below a
+/// `ComposerDrawerShell(designFrame: true)` and in the sheets that a context
+/// below such a shell opens through [showComposerSheet] /
+/// [composerFrameBuilder]. Every kit widget that draws differently in the frame
+/// asks [active] and takes its existing code path when the answer is false, so
+/// the game and meet-up composers, and every other caller, render exactly as
+/// before (KAN-460, `tmp/kan460/blast_radius.md`).
+class ComposerFrameScope extends InheritedWidget {
+  const ComposerFrameScope({super.key, required super.child});
+
+  /// Whether [context] sits inside the Create Post design frame.
+  static bool active(BuildContext context) =>
+      context.getInheritedWidgetOfExactType<ComposerFrameScope>() != null;
+
+  @override
+  bool updateShouldNotify(ComposerFrameScope oldWidget) => false;
+}
+
+/// Wraps [builder] so the sheet it builds keeps the Create Post design frame
+/// when [opener] is inside it (a sheet is pushed on the root navigator, outside
+/// the opener's tree). Returns [builder] itself otherwise.
+WidgetBuilder composerFrameBuilder(BuildContext opener, WidgetBuilder builder) =>
+    ComposerFrameScope.active(opener)
+    ? (ctx) => ComposerFrameScope(child: builder(ctx))
+    : builder;
+
 /// The composer sheet content: a title with a Cancel action, the
 /// scrolling [children], an optional error banner and the call-to-action.
+///
+/// With [designFrame] it is drawn as the Create Post frame: a page-coloured
+/// panel, the drag handle, 18dp gutters, and the call-to-action inside the
+/// scroll area under a hairline instead of pinned below it.
 class ComposerDrawerShell extends StatelessWidget {
   const ComposerDrawerShell({
     super.key,
@@ -22,7 +55,12 @@ class ComposerDrawerShell extends StatelessWidget {
     this.isSubmitting = false,
     this.errorMessage,
     this.bottomSpacer = DabblerSpacing.space4,
+    this.designFrame = false,
   });
+
+  /// Draws the Create Post design frame (default false: the shell every other
+  /// composer uses).
+  final bool designFrame;
 
   final String title;
   final String ctaLabel;
@@ -37,6 +75,7 @@ class ComposerDrawerShell extends StatelessWidget {
   Widget build(BuildContext context) {
     final keyboardOpen = MediaQuery.viewInsetsOf(context).bottom > 0;
     final safeBottom = MediaQuery.paddingOf(context).bottom;
+    if (designFrame) return _buildFrame(context, keyboardOpen, safeBottom);
 
     // The route's modal frame supplies the sheet surface, its corners, the
     // keyboard inset and the height cap; the shell is only its content.
@@ -108,6 +147,174 @@ class ComposerDrawerShell extends StatelessWidget {
   }
 }
 
+/// `AdaptiveModalPage`'s compact breakpoint (`_kCompactWidth`): below it the
+/// route is a bottom sheet, from it a centred dialog.
+const double _kAdaptiveCompactWidth = 600;
+
+extension on ComposerDrawerShell {
+  /// The Create Post frame (`Home Feed.dc.html:470-574`): handle, title row,
+  /// then one scroll area that ends with the Post button under a hairline.
+  Widget _buildFrame(BuildContext context, bool keyboardOpen, double safeBottom) {
+    final colors = DabblerColors.of(context);
+    // The frame's sheet is its `max-height: 94%` cap whenever the content
+    // fills it (the scroll area is `flex: 1`, `Home Feed.dc.html:481`; measured
+    // 800.9 of 852 even with an empty draft), so on a phone the column takes
+    // the height the route offers instead of shrink-wrapping. On a wide screen
+    // the route is a centred dialog and stays content-sized.
+    final fill = MediaQuery.sizeOf(context).width < _kAdaptiveCompactWidth;
+    return ComposerFrameScope(
+      // The route's frame paints the card colour; the design's sheet is the
+      // page colour (`sheetP94`: `background: var(--surface-page)`). The sheet
+      // is as tall as this column, so painting here covers the whole panel.
+      child: Container(
+        key: const ValueKey<String>('composer-frame-surface'),
+        decoration: BoxDecoration(
+          color: colors.bgPrimary,
+          // The sheet's own 1px `--outline-card` edge on top and sides, with
+          // the content laid out inside it (`hairlineOutside`).
+          border: Border(
+            top: BorderSide(
+              color: colors.borderDefault,
+              width: DabblerSizing.borderDefault,
+            ),
+            left: BorderSide(
+              color: colors.borderDefault,
+              width: DabblerSizing.borderDefault,
+            ),
+            right: BorderSide(
+              color: colors.borderDefault,
+              width: DabblerSizing.borderDefault,
+            ),
+          ),
+          borderRadius: const BorderRadius.vertical(
+            top: Radius.circular(DabblerRadius.xl),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: fill ? MainAxisSize.max : MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            const _ComposerHandle(),
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: DabblerSpacing.space6,
+                end: DabblerSpacing.space6,
+                bottom: DabblerSpacing.space2,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: DabblerText(title, style: DabblerType.title3),
+                  ),
+                  DabblerButton(
+                    label: AppLocalizations.of(context).composer_cancel,
+                    tone: DabblerButtonTone.neutral,
+                    size: DabblerButtonSize.small,
+                    onPressed: () => Navigator.of(context).maybePop(),
+                  ),
+                ],
+              ),
+            ),
+            Flexible(
+              fit: fill ? FlexFit.tight : FlexFit.loose,
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    ...children,
+                    if (errorMessage != null && errorMessage!.isNotEmpty)
+                      Padding(
+                        padding: const EdgeInsetsDirectional.only(
+                          start: DabblerSpacing.space6,
+                          end: DabblerSpacing.space6,
+                          top: DabblerSpacing.space5,
+                        ),
+                        child: DabblerBanner(
+                          tone: DabblerBannerTone.error,
+                          message: errorMessage,
+                        ),
+                      ),
+                    // The Post block scrolls with the content: 15dp under the
+                    // options, a `--faint` hairline, padding 12 / 24, a 48dp
+                    // pill (`:565-568`).
+                    Padding(
+                      padding: const EdgeInsetsDirectional.only(
+                        start: DabblerSpacing.space6,
+                        end: DabblerSpacing.space6,
+                        top: DabblerSpacing.space5,
+                      ),
+                      child: Container(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(
+                              color: colors.bgTertiary,
+                              width: DabblerSizing.borderDefault,
+                            ),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: EdgeInsetsDirectional.only(
+                            top: DabblerSpacing.space4,
+                            bottom: keyboardOpen
+                                ? DabblerSpacing.space8
+                                : DabblerSpacing.space8 + safeBottom,
+                          ),
+                          // 48dp tall (`height: 48px`), against the DS
+                          // button's 45dp floor.
+                          child: SizedBox(
+                            height: DabblerSpacing.space11,
+                            child: DabblerButton(
+                              label: ctaLabel,
+                              fullWidth: true,
+                              loading: isSubmitting,
+                              disabled: !canSubmit,
+                              onPressed: canSubmit && !isSubmitting
+                                  ? onCtaTap
+                                  : null,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    // The scroll area's own `padding-block: 0 18px`, then the
+                    // sheet body's 18dp bottom padding.
+                    const SizedBox(height: DabblerSpacing.space6),
+                    const SizedBox(height: DabblerSpacing.space6),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The sheet's 40x4 grab bar in its 45dp row (`Sheet.jsx:101-104`), as the
+/// Create post frame draws it above the title.
+class _ComposerHandle extends StatelessWidget {
+  const _ComposerHandle();
+
+  @override
+  Widget build(BuildContext context) => ExcludeSemantics(
+    child: SizedBox(
+      height: DabblerSizing.touchTargetMin,
+      child: Center(
+        child: Container(
+          width: DabblerSheet.handleWidth,
+          height: DabblerSheet.handleHeight,
+          decoration: BoxDecoration(
+            color: DabblerColors.of(context).borderStrong,
+            borderRadius: DabblerRadius.pillAll,
+          ),
+        ),
+      ),
+    ),
+  );
+}
+
 /// Small section heading inside a composer.
 class ComposerSectionLabel extends StatelessWidget {
   const ComposerSectionLabel({super.key, required this.label});
@@ -147,6 +354,39 @@ class ComposerSettingsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
+    if (ComposerFrameScope.active(context)) {
+      // The frame's option row (`:529-558`): `padding: 12px 0`, a 20dp glyph,
+      // 15/20 title over a 13/18 note and a `border-bottom: 1px solid
+      // var(--faint)` that takes its own pixel: 63 + 1 = 64dp. The DS `flat` +
+      // `dense` row supplies the rest; its own hairline is painted inside the
+      // padding (no layout), so the pixel is added here with the same token.
+      return Container(
+        decoration: showDivider
+            ? BoxDecoration(
+                border: Border(
+                  bottom: BorderSide(
+                    color: colors.bgTertiary,
+                    width: DabblerSizing.borderDefault,
+                  ),
+                ),
+              )
+            : null,
+        child: DabblerInputRow(
+          title: title,
+          subtitle: subtitle,
+          leading: DabblerIcon(
+            icon,
+            size: DabblerHomeFrame.listRowGlyph,
+            color: colors.textSecondary,
+          ),
+          trailing: trailing,
+          onTap: onTap,
+          flat: true,
+          dense: true,
+          showDivider: false,
+        ),
+      );
+    }
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -185,6 +425,9 @@ class ComposerToggle extends StatelessWidget {
     checked: value,
     onChanged: onChanged,
     semanticLabel: semanticLabel,
+    // The frame's switch is its painted 48x28 (`hint-size="48px,28px"`), with
+    // the 45dp target kept as a hit area only; elsewhere the 45dp box stays.
+    compactHitArea: ComposerFrameScope.active(context),
   );
 }
 
@@ -333,10 +576,14 @@ Future<T?> showComposerSheet<T>(
   detent: DabblerSheetDetent.content,
   pageBackground: true,
   showCloseButton: false,
+  // The Create post frame's pick sheets draw a `--faint` hairline under the
+  // header (`:577`, `:614`, `:731`, `:879`); only inside that frame.
+  headerDivider: ComposerFrameScope.active(context),
+  hairlineOutside: ComposerFrameScope.active(context),
   headerActionBuilder: (ctx) =>
       composerSheetHeaderActions(context, ctx, onClear: onClear),
   footerBuilder: confirm == null ? null : (ctx) => composerSheetFooter(confirm),
-  builder: builder,
+  builder: composerFrameBuilder(context, builder),
 );
 
 /// The title block of a composer sheet: the title in headline semibold and an
@@ -369,7 +616,19 @@ Widget composerSheetHeaderActions(
 }) => Row(
   mainAxisSize: MainAxisSize.min,
   children: [
-    if (onClear != null)
+    if (onClear != null && ComposerFrameScope.active(opener)) ...[
+      // The frame's Clear is a plain 13/18 muted word, not a text button
+      // (`:670`): the secondary text role (D-003: `--muted` is not a text
+      // colour), 12dp from Cancel (`gap: 12px`).
+      _ComposerClearLink(
+        label: AppLocalizations.of(sheet).composer_clear,
+        onTap: () {
+          onClear();
+          Navigator.of(sheet).maybePop();
+        },
+      ),
+      const SizedBox(width: DabblerSpacing.space4),
+    ] else if (onClear != null)
       DabblerButton(
         label: AppLocalizations.of(sheet).composer_clear,
         tone: DabblerButtonTone.text,
@@ -387,6 +646,37 @@ Widget composerSheetHeaderActions(
     ),
   ],
 );
+
+class _ComposerClearLink extends StatelessWidget {
+  const _ComposerClearLink({required this.label, required this.onTap});
+
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    label: label,
+    excludeSemantics: true,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(
+          minWidth: DabblerSizing.touchTargetMin,
+          minHeight: DabblerSizing.touchTargetMin,
+        ),
+        child: Center(
+          child: DabblerText(
+            label,
+            style: DabblerType.footnote,
+            tone: DabblerTextTone.secondary,
+          ),
+        ),
+      ),
+    ),
+  );
+}
 
 /// The pinned footer of a composer sheet: the full-width [confirm] button,
 /// live-enabled through [ComposerSheetConfirm.enabledWhen] when set.
@@ -491,13 +781,28 @@ class ComposerPickerRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
+    // In the Create post frame the chosen row is drawn as the design draws it
+    // (`iconType: sel ? 'bold' : 'linear'`, brand title - `:3198-3222`): a
+    // filled glyph and a brand-ink title.
+    final framedSelected = selected && ComposerFrameScope.active(context);
     final row = DabblerInputRow(
-      title: title,
+      title: framedSelected ? null : title,
+      titleSpan: framedSelected
+          ? TextSpan(
+              text: title,
+              style: DabblerType.subheadline
+                  .resolveForDirection(Directionality.of(context))
+                  .copyWith(color: colors.brandPrimary),
+            )
+          : null,
       subtitle: subtitle,
       leading: icon == null
           ? null
           : DabblerIcon(
               icon!,
+              weight: framedSelected
+                  ? DabblerIconWeight.bold
+                  : DabblerIconWeight.linear,
               size: DabblerSizing.iconRow,
               color: selected || accent
                   ? colors.brandPrimary
@@ -550,19 +855,36 @@ class ComposerSearchField extends StatelessWidget {
   final ValueChanged<String> onChanged;
 
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsetsDirectional.only(
-      start: DabblerSpacing.space6,
-      end: DabblerSpacing.space6,
-      bottom: DabblerSpacing.space3,
-    ),
-    child: DabblerTextField(
-      variant: DabblerTextFieldVariant.search,
-      controller: controller,
-      placeholder: placeholder,
-      onChanged: onChanged,
-    ),
-  );
+  Widget build(BuildContext context) {
+    if (ComposerFrameScope.active(context)) {
+      // The frame's search box (`:660-668`): 42dp, `--radius-xxl`, a 16dp
+      // glyph, flush with the sheet's 18dp gutter (the sheet already pads its
+      // body), 12dp above the list.
+      return Padding(
+        padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
+        child: DabblerTextField(
+          variant: DabblerTextFieldVariant.search,
+          metrics: DabblerFeedMetrics.drawn,
+          controller: controller,
+          placeholder: placeholder,
+          onChanged: onChanged,
+        ),
+      );
+    }
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space3,
+      ),
+      child: DabblerTextField(
+        variant: DabblerTextFieldVariant.search,
+        controller: controller,
+        placeholder: placeholder,
+        onChanged: onChanged,
+      ),
+    );
+  }
 }
 
 /// Centred spinner or message for a picker body.

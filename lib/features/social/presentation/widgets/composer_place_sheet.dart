@@ -67,6 +67,7 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
     detent: DabblerSheetDetent.content,
     contentMaxFraction: DabblerSheet.contentMaxFractionMedium,
     pageBackground: true,
+    hairlineOutside: ComposerFrameScope.active(context),
     showCloseButton: false,
     headerActionBuilder: (ctx) => composerSheetHeaderActions(
       context,
@@ -74,7 +75,10 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
       onClear: notifier.clearLocation,
     ),
     footerBuilder: (_) => composerSheetFooter(confirm),
-    builder: (_) => ComposerPlaceSheet(pending: pending),
+    builder: composerFrameBuilder(
+      context,
+      (_) => ComposerPlaceSheet(pending: pending),
+    ),
   );
 }
 
