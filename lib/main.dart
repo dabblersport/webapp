@@ -137,7 +137,7 @@ Future<void> main() async {
         debugProfileBuildsEnabled = false;
       }
 
-      // The launch video plays while bootstrap runs; the app replaces it
+      // The launch animation plays while bootstrap runs; the app replaces it
       // once both are done (see StartupSplash). Not a route.
       runApp(StartupSplash(bootstrap: _bootstrap()));
     },
