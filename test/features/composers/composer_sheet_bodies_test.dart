@@ -321,4 +321,71 @@ void main() {
       await _shoot(tester, key, 'sheet-type-$dir');
     });
   }
+
+  // KAN-456: the composer tag row draws vibe, sport, location and game at one
+  // height, at phone width, both directions and both brightnesses.
+  for (final bool dark in const <bool>[false, true]) {
+    for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
+      final String dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
+      final String mode = dark ? 'dark' : 'light';
+      testWidgets('KAN-456 tag row: equal heights — $dir $mode', (
+        tester,
+      ) async {
+        const key = Key('kan456-tags');
+        tester.view.physicalSize = const Size(360, 400);
+        tester.view.devicePixelRatio = 1;
+        addTearDown(tester.view.reset);
+        await tester.pumpWidget(
+          MaterialApp(
+            debugShowCheckedModeBanner: false,
+            locale: locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: DabblerDesignSystemTheme.withTokens(
+              dark ? ThemeData.dark() : ThemeData.light(),
+            ),
+            home: Scaffold(
+              body: RepaintBoundary(
+                key: key,
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: composerTagRow(
+                    vibeName: 'Disappointed',
+                    sportName: 'gym',
+                    locationName: 'al quoz',
+                    gameName:
+                        'Friday night 5-a-side at Nad Al Sheba Sports Complex',
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pump();
+        expect(tester.takeException(), isNull);
+
+        final vibe = find.byType(DabblerChip);
+        final badges = find.byType(DabblerBadge);
+        expect(vibe, findsOneWidget);
+        expect(badges, findsNWidgets(3));
+        expect(find.text('GYM'), findsOneWidget);
+        final double h = tester.getSize(vibe).height;
+        for (final Element e in badges.evaluate()) {
+          expect((e.renderObject! as RenderBox).size.height, h);
+        }
+        // The long game label wraps onto its own run without overflowing.
+        final Rect row = tester.getRect(find.byType(Wrap));
+        final Rect game = tester.getRect(badges.last);
+        expect(game.top, greaterThan(tester.getRect(vibe).top));
+        expect(game.left, greaterThanOrEqualTo(row.left));
+        expect(game.right, lessThanOrEqualTo(row.right));
+        await _shoot(tester, key, 'kan456-tags-$dir-$mode');
+      });
+    }
+  }
+
+  test('KAN-456 tag row: nothing set draws no row', () {
+    expect(composerTagRow(), isNull);
+  });
 }
+
