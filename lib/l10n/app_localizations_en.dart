@@ -5525,6 +5525,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_duration_2h => '2h';
 
   @override
+  String game_duration_chip_minutes(int minutes) {
+    return '${minutes}m';
+  }
+
+  @override
+  String game_duration_chip_hours(int hours) {
+    return '${hours}h';
+  }
+
+  @override
+  String game_duration_chip_hours_minutes(int hours, int minutes) {
+    return '${hours}h ${minutes}m';
+  }
+
+  @override
   String sfx_comments_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
