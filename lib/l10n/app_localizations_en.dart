@@ -5477,6 +5477,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_venue_none => 'No venues available for this format';
 
   @override
+  String get game_error_sport_unavailable => 'Sport not available for games.';
+
+  @override
+  String get game_error_invalid_format => 'Invalid format for this sport.';
+
+  @override
+  String get game_error_invalid_time_range =>
+      'End time must be after start time.';
+
+  @override
+  String get game_error_profile_incomplete => 'Complete your profile first.';
+
+  @override
+  String get game_error_not_editable => 'This game can no longer be edited.';
+
+  @override
+  String get game_error_player_range =>
+      'Min players cannot exceed max players.';
+
+  @override
+  String get game_error_player_count_min => 'Player counts must be at least 1.';
+
+  @override
+  String game_error_daily_limit(String reset) {
+    return 'Daily limit reached. Try again at $reset.';
+  }
+
+  @override
+  String get game_error_generic => 'Something went wrong. Try again.';
+
+  @override
   String get game_format_locked => 'Locked';
 
   @override

@@ -5501,6 +5501,37 @@ class AppLocalizationsAr extends AppLocalizations {
   String get game_venue_none => 'لا توجد ملاعب متاحة لهذه الصيغة';
 
   @override
+  String get game_error_sport_unavailable => 'هذه الرياضة غير متاحة للمباريات.';
+
+  @override
+  String get game_error_invalid_format => 'الصيغة غير صالحة لهذه الرياضة.';
+
+  @override
+  String get game_error_invalid_time_range =>
+      'يجب أن يكون وقت الانتهاء بعد وقت البدء.';
+
+  @override
+  String get game_error_profile_incomplete => 'أكمل ملفك الشخصي أولاً.';
+
+  @override
+  String get game_error_not_editable => 'لم يعد بالإمكان تعديل هذه المباراة.';
+
+  @override
+  String get game_error_player_range =>
+      'لا يمكن أن يتجاوز الحد الأدنى للاعبين الحد الأقصى.';
+
+  @override
+  String get game_error_player_count_min => 'يجب ألا يقل عدد اللاعبين عن 1.';
+
+  @override
+  String game_error_daily_limit(String reset) {
+    return 'بلغت الحد اليومي. حاول مرة أخرى في $reset.';
+  }
+
+  @override
+  String get game_error_generic => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
   String get game_format_locked => 'مقفل';
 
   @override

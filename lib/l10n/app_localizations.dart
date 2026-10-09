@@ -9887,6 +9887,60 @@ abstract class AppLocalizations {
   /// **'No venues available for this format'**
   String get game_venue_none;
 
+  /// Server rejected the chosen sport for Create game.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport not available for games.'**
+  String get game_error_sport_unavailable;
+
+  /// Server rejected the chosen format (sport variant).
+  ///
+  /// In en, this message translates to:
+  /// **'Invalid format for this sport.'**
+  String get game_error_invalid_format;
+
+  /// Create game time range validation error.
+  ///
+  /// In en, this message translates to:
+  /// **'End time must be after start time.'**
+  String get game_error_invalid_time_range;
+
+  /// Create game blocked because the creator profile is incomplete.
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your profile first.'**
+  String get game_error_profile_incomplete;
+
+  /// Edit refused: not the host or game not found.
+  ///
+  /// In en, this message translates to:
+  /// **'This game can no longer be edited.'**
+  String get game_error_not_editable;
+
+  /// Create game player range validation error.
+  ///
+  /// In en, this message translates to:
+  /// **'Min players cannot exceed max players.'**
+  String get game_error_player_range;
+
+  /// Shared message for invalid min or max player count.
+  ///
+  /// In en, this message translates to:
+  /// **'Player counts must be at least 1.'**
+  String get game_error_player_count_min;
+
+  /// Daily game creation limit message. {reset} is the formatted reset date and time.
+  ///
+  /// In en, this message translates to:
+  /// **'Daily limit reached. Try again at {reset}.'**
+  String game_error_daily_limit(String reset);
+
+  /// Fallback for unknown Create game failures; same wording as meetups_error_generic.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get game_error_generic;
+
   /// State label on the Format chip while no sport is chosen; the chip does nothing until then.
   ///
   /// In en, this message translates to:
