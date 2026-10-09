@@ -16,7 +16,13 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:dabbler/core/services/gps_service.dart';
+import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/data/repositories/area_repository_v2.dart';
+import 'package:mockito/mockito.dart';
+
 import '../../support/render_mode.dart';
+import 'composer_locate_test.mocks.dart';
 import '../home/home_test_harness.dart';
 
 /// KAN-463: the Create Post sheets' defaults per `Home Feed.dc.html` —
@@ -95,8 +101,9 @@ final List<Map<String, dynamic>> _searched = [
 Future<ProviderContainer> _host(
   WidgetTester tester,
   Locale locale,
-  void Function(BuildContext, WidgetRef) open,
-) async {
+  void Function(BuildContext, WidgetRef) open, {
+  List<Override> overrides = const [],
+}) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -108,6 +115,7 @@ Future<ProviderContainer> _host(
         gameSearchProvider.overrideWith((ref, q) async => _searched),
         composerJoinedGamesProvider.overrideWith((ref) async => _joined),
         vibesProvider.overrideWith((ref) async => _vibes),
+        ...overrides,
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -241,6 +249,8 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(l.home_location_use_current), findsOneWidget);
       expect(find.text(l.home_location_recent), findsOneWidget);
+      expect(find.text(l.composer_place_recent_empty), findsOneWidget);
+      expect(find.text(l.composer_place_location_denied), findsNothing);
       expect(find.text(l.composer_results), findsNothing);
       expect(find.text('Nad Al Sheba Sports Complex'), findsNothing);
       await _shoot(tester, 'place-default-$lang');
@@ -249,6 +259,7 @@ void main() {
       await _settle(tester);
       expect(find.text(l.home_location_use_current), findsNothing);
       expect(find.text(l.home_location_recent), findsNothing);
+      expect(find.text(l.composer_place_recent_empty), findsNothing);
       expect(find.text(l.composer_results), findsOneWidget);
       expect(find.text('Nad Al Sheba Sports Complex'), findsOneWidget);
       await _shoot(tester, 'place-typed-$lang');
@@ -263,6 +274,74 @@ void main() {
       await tester.tap(find.text(l.composer_clear).first);
       await _settle(tester);
       expect(c.read(postComposerProvider).locationName, isNull);
+    });
+
+    testWidgets('place sheet: use current location commits — $lang', (
+      tester,
+    ) async {
+      final gps = MockGpsService();
+      final areas = MockAreaRepository();
+      when(gps.getCurrentLocation()).thenAnswer(
+        (_) async => LocationSuccess(lat: 25.2, lng: 55.3, accuracyMeters: 5),
+      );
+      when(areas.resolveNearest(25.2, 55.3)).thenAnswer(
+        (_) async => const Area(
+          id: 'area-1',
+          name: 'Dubai Marina',
+          district: 'Dubai',
+          city: 'Dubai',
+          country: 'AE',
+          centerLat: 25.2,
+          centerLng: 55.3,
+        ),
+      );
+      final c = await _host(
+        tester,
+        locale,
+        (context, ref) => showComposerPlaceSheet(context, ref),
+        overrides: [
+          gpsServiceProvider.overrideWithValue(gps),
+          areaRepositoryV2Provider.overrideWithValue(areas),
+        ],
+      );
+      await _open(tester);
+      await tester.tap(find.text(l.home_location_use_current));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      // The sheet closed with the place committed, as a confirmed pick does.
+      expect(find.text(l.home_location_use_current), findsNothing);
+      final s = c.read(postComposerProvider);
+      expect(s.locationName, 'Dubai Marina');
+      expect(s.locationTagId, 'area-1');
+      expect(s.geoLat, 25.2);
+      expect(s.geoLng, 55.3);
+    });
+
+    testWidgets('place sheet: denied shows the inline message — $lang', (
+      tester,
+    ) async {
+      final gps = MockGpsService();
+      final areas = MockAreaRepository();
+      when(gps.getCurrentLocation()).thenAnswer((_) async => LocationDenied());
+      final c = await _host(
+        tester,
+        locale,
+        (context, ref) => showComposerPlaceSheet(context, ref),
+        overrides: [
+          gpsServiceProvider.overrideWithValue(gps),
+          areaRepositoryV2Provider.overrideWithValue(areas),
+        ],
+      );
+      await _open(tester);
+      await tester.tap(find.text(l.home_location_use_current));
+      await _settle(tester);
+      expect(tester.takeException(), isNull);
+      // Still open, nothing set, inline message shown.
+      expect(find.text(l.home_location_use_current), findsOneWidget);
+      expect(find.text(l.composer_place_location_denied), findsOneWidget);
+      expect(c.read(postComposerProvider).locationName, isNull);
+      verifyNever(areas.resolveNearest(any, any));
+      await _shoot(tester, 'place-denied-$lang');
     });
 
     testWidgets('game sheet: joined games, then search — $lang', (
