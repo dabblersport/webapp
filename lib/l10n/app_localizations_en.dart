@@ -3615,6 +3615,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_outdoor => 'Outdoor';
 
   @override
+  String get listing_distance_unavailable => 'Distance unavailable';
+
+  @override
   String listing_km_away(String distance) {
     return '$distance away';
   }
