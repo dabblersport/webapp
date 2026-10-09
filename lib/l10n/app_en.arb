@@ -1204,6 +1204,14 @@
   "appr_group_auto_note": "Automatically switch between light and dark themes",
   "appr_auto_title": "Time-based theme",
   "appr_auto_sub": "Switch themes based on time of day",
+  "appr_auto_switch_label": "Switch theme by time of day",
+  "@appr_auto_switch_label": {
+    "description": "Label of the opt-in Settings > Appearance switch that turns on time-of-day theming."
+  },
+  "appr_auto_match_device": "Match device",
+  "@appr_auto_match_device": {
+    "description": "State text shown when the time-of-day switch is off: the app follows the device appearance."
+  },
   "appr_group_schedule": "Day & night schedule",
   "appr_group_schedule_note": "Set when light and dark themes should activate",
   "appr_day_title": "Day starts at",

@@ -1352,6 +1352,8 @@
   "appr_group_auto_note": "بدّل تلقائيًا بين السمة الفاتحة والداكنة",
   "appr_auto_title": "سمة حسب الوقت",
   "appr_auto_sub": "بدّل السمة حسب وقت اليوم",
+  "appr_auto_switch_label": "تبديل السمة حسب وقت اليوم",
+  "appr_auto_match_device": "مطابقة الجهاز",
   "appr_group_schedule": "جدول النهار والليل",
   "appr_group_schedule_note": "حدد متى تعمل السمة الفاتحة والداكنة",
   "appr_day_title": "يبدأ النهار عند",

@@ -3262,6 +3262,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get appr_auto_sub => 'Switch themes based on time of day';
 
   @override
+  String get appr_auto_switch_label => 'Switch theme by time of day';
+
+  @override
+  String get appr_auto_match_device => 'Match device';
+
+  @override
   String get appr_group_schedule => 'Day & night schedule';
 
   @override

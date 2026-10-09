@@ -5891,6 +5891,18 @@ abstract class AppLocalizations {
   /// **'Switch themes based on time of day'**
   String get appr_auto_sub;
 
+  /// Label of the opt-in Settings > Appearance switch that turns on time-of-day theming.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch theme by time of day'**
+  String get appr_auto_switch_label;
+
+  /// State text shown when the time-of-day switch is off: the app follows the device appearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Match device'**
+  String get appr_auto_match_device;
+
   /// No description provided for @appr_group_schedule.
   ///
   /// In en, this message translates to:
