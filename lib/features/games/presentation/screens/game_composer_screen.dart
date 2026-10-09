@@ -18,6 +18,91 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
+// ─── Errors ───────────────────────────────────────────────────────────────────
+
+/// Why a Create game load / submit failed. The notifier holds the code (and
+/// its data); the widget turns it into words with `AppLocalizations`, so no
+/// English text lives in the notifier (KAN-477).
+enum GameComposerErrorCode {
+  loadFailed,
+  dailyLimit,
+  sportUnavailable,
+  invalidFormat,
+  invalidTimeRange,
+  profileIncomplete,
+  notEditable,
+  playerRange,
+  playerCountMin,
+  priceRequired,
+
+  /// A failure with no code of its own; shows the server's own text.
+  unknown,
+}
+
+/// A [GameComposerErrorCode] with the data its message needs.
+class GameComposerError {
+  const GameComposerError(this.code, {this.resetAt, this.raw});
+
+  final GameComposerErrorCode code;
+
+  /// [GameComposerErrorCode.dailyLimit]: when the daily limit resets.
+  final DateTime? resetAt;
+
+  /// [GameComposerErrorCode.unknown]: the server's text, shown as it is.
+  final String? raw;
+
+  /// The code for a server error message (`rpc_create_game` / `rpc_update_game`
+  /// raise these as the exception message); anything else is [unknown] and
+  /// keeps its text.
+  factory GameComposerError.fromServer(String message) => switch (message) {
+    'sport_not_challenge_eligible' => const GameComposerError(
+      GameComposerErrorCode.sportUnavailable,
+    ),
+    'invalid_sport_variant' => const GameComposerError(
+      GameComposerErrorCode.invalidFormat,
+    ),
+    'invalid_time_range' => const GameComposerError(
+      GameComposerErrorCode.invalidTimeRange,
+    ),
+    'creator_profile_not_found' => const GameComposerError(
+      GameComposerErrorCode.profileIncomplete,
+    ),
+    'not_host_or_not_found' => const GameComposerError(
+      GameComposerErrorCode.notEditable,
+    ),
+    'invalid_player_range' => const GameComposerError(
+      GameComposerErrorCode.playerRange,
+    ),
+    'price_required' => const GameComposerError(
+      GameComposerErrorCode.priceRequired,
+    ),
+    'invalid_min_players' || 'invalid_max_players' => const GameComposerError(
+      GameComposerErrorCode.playerCountMin,
+    ),
+    _ => GameComposerError(GameComposerErrorCode.unknown, raw: message),
+  };
+
+  /// The message in [l]'s language; [locale] formats the daily-limit reset.
+  String text(AppLocalizations l, String locale) => switch (code) {
+    GameComposerErrorCode.loadFailed => l.game_load_failed,
+    GameComposerErrorCode.dailyLimit => l.game_error_daily_limit(
+      DateFormat(
+        'MMM d, HH:mm',
+        locale,
+      ).format(resetAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+    ),
+    GameComposerErrorCode.sportUnavailable => l.game_error_sport_unavailable,
+    GameComposerErrorCode.invalidFormat => l.game_error_invalid_format,
+    GameComposerErrorCode.invalidTimeRange => l.game_error_invalid_time_range,
+    GameComposerErrorCode.profileIncomplete => l.game_error_profile_incomplete,
+    GameComposerErrorCode.notEditable => l.game_error_not_editable,
+    GameComposerErrorCode.playerRange => l.game_error_player_range,
+    GameComposerErrorCode.playerCountMin => l.game_error_player_count_min,
+    GameComposerErrorCode.priceRequired => l.game_price_required,
+    GameComposerErrorCode.unknown => raw ?? '',
+  };
+}
+
 // ─── State ────────────────────────────────────────────────────────────────────
 
 class _ComposerState {
@@ -99,7 +184,7 @@ class _ComposerState {
   /// Shown once a submit was refused for a missing / invalid price.
   final bool priceError;
   final bool isSubmitting;
-  final String? error;
+  final GameComposerError? error;
 
   bool get isEditing => editingGameId != null;
 
@@ -148,7 +233,7 @@ class _ComposerState {
     String? priceText,
     bool? priceError,
     bool? isSubmitting,
-    String? error,
+    GameComposerError? error,
     bool clearError = false,
     bool clearVenue = false,
     bool clearVariant = false,
@@ -293,7 +378,9 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       await loadVariants(row['sport_id'] as String);
       await loadVenueSpaces();
     } catch (_) {
-      state = state.copyWith(error: 'Failed to load game');
+      state = state.copyWith(
+        error: const GameComposerError(GameComposerErrorCode.loadFailed),
+      );
     }
   }
 
@@ -459,10 +546,12 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           limitCount: 5,
         );
         if (!cooldown.allowed) {
-          final reset = DateFormat('MMM d, HH:mm').format(cooldown.resetAt);
           state = state.copyWith(
             isSubmitting: false,
-            error: 'Daily limit reached. Try again at $reset.',
+            error: GameComposerError(
+              GameComposerErrorCode.dailyLimit,
+              resetAt: cooldown.resetAt,
+            ),
           );
           return false;
         }
@@ -543,24 +632,16 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       state = state.copyWith(isSubmitting: false);
       return true;
     } on PostgrestException catch (e) {
-      final msg = switch (e.message) {
-        'sport_not_challenge_eligible' => 'Sport not available for games.',
-        'invalid_sport_variant' => 'Invalid format for this sport.',
-        'invalid_time_range' => 'End time must be after start time.',
-        'creator_profile_not_found' => 'Complete your profile first.',
-        'not_host_or_not_found' => 'This game can no longer be edited.',
-        'invalid_player_range' => 'Min players cannot exceed max players.',
-        'price_required' => 'Enter a price — 0 means free.',
-        'invalid_min_players' ||
-        'invalid_max_players' => 'Player counts must be at least 1.',
-        _ => e.message,
-      };
+      final msg = GameComposerError.fromServer(e.message);
       state = state.copyWith(isSubmitting: false, error: msg);
       return false;
     } catch (e) {
       state = state.copyWith(
         isSubmitting: false,
-        error: e.toString().replaceFirst('Exception: ', ''),
+        error: GameComposerError(
+          GameComposerErrorCode.unknown,
+          raw: e.toString().replaceFirst('Exception: ', ''),
+        ),
       );
       return false;
     }
@@ -633,7 +714,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       DabblerToastProvider.of(context).show(
         DabblerToastSpec(
           message:
-              err ??
+              err?.text(
+                AppLocalizations.of(context),
+                Localizations.localeOf(context).toString(),
+              ) ??
               (_isEditing
                   ? AppLocalizations.of(context).game_save_failed
                   : AppLocalizations.of(context).game_create_failed),
@@ -868,10 +952,16 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
               multiline: true,
               onChanged: notifier.setDescription,
             ),
-            if (state.error != null && state.error!.isNotEmpty)
+            if (state.error != null &&
+                state.error!
+                    .text(l, Localizations.localeOf(context).toString())
+                    .isNotEmpty)
               DabblerBanner(
                 tone: DabblerBannerTone.error,
-                message: state.error,
+                message: state.error!.text(
+                  l,
+                  Localizations.localeOf(context).toString(),
+                ),
               ),
             // The Create button scrolls at the end of the form (`:1060`).
             DabblerComposerSubmit(

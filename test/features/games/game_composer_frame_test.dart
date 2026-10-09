@@ -600,7 +600,9 @@ void main() {
       _rpcFailure = 'price_required';
       await _tap(tester, submit);
       expect(_rpc.where((c) => c.$1 == 'rpc_create_game'), hasLength(1));
-      expect(find.text('Enter a price — 0 means free.'), findsWidgets);
+      // KAN-477: the server path now reads the ARB sentence too (it showed the
+      // notifier's English in Arabic before).
+      expect(find.text(l.game_price_required), findsWidgets);
       expect(tester.takeException(), isNull);
     });
 
