@@ -9971,6 +9971,24 @@ abstract class AppLocalizations {
   /// **'2h'**
   String get game_duration_2h;
 
+  /// Create Game duration chip: whole minutes, e.g. 45m.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes}m'**
+  String game_duration_chip_minutes(int minutes);
+
+  /// Create Game duration chip: whole hours, e.g. 3h.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h'**
+  String game_duration_chip_hours(int hours);
+
+  /// Create Game duration chip: hours and minutes, e.g. 1h 30m.
+  ///
+  /// In en, this message translates to:
+  /// **'{hours}h {minutes}m'**
+  String game_duration_chip_hours_minutes(int hours, int minutes);
+
   /// No description provided for @sfx_comments_count.
   ///
   /// In en, this message translates to:
