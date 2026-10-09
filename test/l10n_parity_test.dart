@@ -15,6 +15,7 @@ const Map<String, String> _identicalAllowed = {
   'post_card_kind_kick_in': 'brand term "Kick-in"',
   'post_card_kick_in_label': 'brand term "Kick-in"',
   'notif_quiet_hours_range': 'time range placeholders only',
+  'composer_media_gif': 'format name "GIF", LTR token',
 };
 
 const _validCategories = {'zero', 'one', 'two', 'few', 'many', 'other'};

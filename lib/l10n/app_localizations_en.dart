@@ -5381,6 +5381,71 @@ class AppLocalizationsEn extends AppLocalizations {
   String get composer_games_joined_hint => 'Games you have joined';
 
   @override
+  String get composer_content_class_title => 'Content Class';
+
+  @override
+  String get composer_content_class_social => 'Social';
+
+  @override
+  String get composer_content_class_editorial => 'Editorial';
+
+  @override
+  String get composer_content_class_social_sub => 'Standard social post';
+
+  @override
+  String get composer_content_class_editorial_sub =>
+      'Editorial or long-form content';
+
+  @override
+  String composer_posting_as(String name) {
+    return 'Posting as $name';
+  }
+
+  @override
+  String composer_posting_as_switch(String name) {
+    return 'Posting as $name. Tap to switch profile.';
+  }
+
+  @override
+  String get composer_tool_value_set => 'set';
+
+  @override
+  String composer_tool_vibe_set(String name) {
+    return 'Vibe: $name. Tap to change.';
+  }
+
+  @override
+  String composer_tool_sport_set(String name) {
+    return 'Sport: $name. Tap to change.';
+  }
+
+  @override
+  String composer_tool_location_set(String name) {
+    return 'Location: $name. Tap to change.';
+  }
+
+  @override
+  String composer_tool_game_set(String name) {
+    return 'Game: $name. Tap to change.';
+  }
+
+  @override
+  String get composer_media_gif => 'GIF';
+
+  @override
+  String get composer_media_image => 'Image';
+
+  @override
+  String get composer_place_current_location => 'Current location';
+
+  @override
+  String get composer_place_recent_empty => 'No recent places';
+
+  @override
+  String get composer_place_location_denied =>
+      'Turn on location to use your current place';
+
+  @override
   String game_format_choose_sub(String sport) {
     return 'Choose the $sport format';
   }

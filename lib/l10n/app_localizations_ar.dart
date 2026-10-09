@@ -5405,6 +5405,70 @@ class AppLocalizationsAr extends AppLocalizations {
   String get composer_games_joined_hint => 'المباريات التي انضممت إليها';
 
   @override
+  String get composer_content_class_title => 'فئة المحتوى';
+
+  @override
+  String get composer_content_class_social => 'اجتماعي';
+
+  @override
+  String get composer_content_class_editorial => 'تحريري';
+
+  @override
+  String get composer_content_class_social_sub => 'منشور اجتماعي عادي';
+
+  @override
+  String get composer_content_class_editorial_sub => 'محتوى تحريري أو مطوّل';
+
+  @override
+  String composer_posting_as(String name) {
+    return 'النشر باسم $name';
+  }
+
+  @override
+  String composer_posting_as_switch(String name) {
+    return 'النشر باسم $name. اضغط لتبديل الملف الشخصي.';
+  }
+
+  @override
+  String get composer_tool_value_set => 'تم التحديد';
+
+  @override
+  String composer_tool_vibe_set(String name) {
+    return 'الأجواء: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String composer_tool_sport_set(String name) {
+    return 'الرياضة: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String composer_tool_location_set(String name) {
+    return 'الموقع: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String composer_tool_game_set(String name) {
+    return 'المباراة: $name. اضغط للتغيير.';
+  }
+
+  @override
+  String get composer_media_gif => 'GIF';
+
+  @override
+  String get composer_media_image => 'صورة';
+
+  @override
+  String get composer_place_current_location => 'الموقع الحالي';
+
+  @override
+  String get composer_place_recent_empty => 'لا توجد أماكن حديثة';
+
+  @override
+  String get composer_place_location_denied =>
+      'فعّل الموقع لاستخدام مكانك الحالي';
+
+  @override
   String game_format_choose_sub(String sport) {
     return 'اختر صيغة $sport';
   }
