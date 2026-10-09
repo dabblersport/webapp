@@ -1453,6 +1453,7 @@
   "listing_remove_saved": "أزل من المحفوظ",
   "listing_indoor": "داخلي",
   "listing_outdoor": "خارجي",
+  "listing_distance_unavailable": "المسافة غير متاحة",
   "listing_km_away": "على بعد {distance}",
   "listing_free": "مجاني",
   "listing_price_per_hour": "{amount} د.إ / ساعة",

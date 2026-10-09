@@ -3625,6 +3625,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_outdoor => 'خارجي';
 
   @override
+  String get listing_distance_unavailable => 'المسافة غير متاحة';
+
+  @override
   String listing_km_away(String distance) {
     return 'على بعد $distance';
   }

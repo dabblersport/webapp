@@ -61,6 +61,12 @@ class _Location extends ActiveLocationNotifier {
   );
 }
 
+/// No ready active location (KAN-446): the listing has nothing to measure from.
+class _NoLocation extends ActiveLocationNotifier {
+  @override
+  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+}
+
 Future<void> _loadFonts() async {
   final String dsFonts =
       '${Directory.current.parent.path}/dabbler-design-system/fonts';
@@ -191,6 +197,8 @@ Future<void> _pump(
   Locale locale, {
   required bool filters,
   List<VenueWithSportModel> venues = _venues,
+  bool locationReady = true,
+  List<NearbyVenueModel>? nearby,
 }) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
@@ -198,7 +206,13 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        activeLocationProvider.overrideWith(_Location.new),
+        activeLocationProvider.overrideWith(
+          locationReady ? _Location.new : _NoLocation.new,
+        ),
+        if (nearby != null) ...[
+          nearbyVenuesFilterEnabledProvider.overrideWith((ref) => true),
+          nearbyVenuesProvider.overrideWith((ref, p) async => nearby),
+        ],
         activeSportsByProfileCountryProvider.overrideWith(
           (ref) async => _sports,
         ),
@@ -399,4 +413,154 @@ void main() {
     expect(find.byKey(DabblerFilterRail.clearAllKey), findsOneWidget);
     expect(find.text('Clear all'), findsOneWidget);
   }, variant: desktop);
+  // KAN-446: the distance tag never hides; without a distance it says so.
+  group('distance unavailable', () {
+    // Both venues carry coordinates: only the missing location hides them.
+    final List<VenueWithSportModel> withCoords = _venues.sublist(0, 2);
+    const VenueWithSportModel noLat = VenueWithSportModel(
+      id: 'n1',
+      sportId: 's1',
+      nameEn: 'No Lat Venue',
+      city: 'Dubai',
+      longitude: 55.2,
+    );
+    const VenueWithSportModel noLng = VenueWithSportModel(
+      id: 'n2',
+      sportId: 's1',
+      nameEn: 'No Lng Venue',
+      city: 'Dubai',
+      latitude: 25.1,
+    );
+    const VenueWithSportModel origin = VenueWithSportModel(
+      id: 'n3',
+      sportId: 's1',
+      nameEn: 'Same Spot Venue',
+      city: 'Dubai',
+      latitude: _lat,
+      longitude: _lng,
+    );
+    const VenueWithSportModel nullIsland = VenueWithSportModel(
+      id: 'n4',
+      sportId: 's1',
+      nameEn: 'Zero Coords Venue',
+      city: 'Dubai',
+      latitude: 0.0,
+      longitude: 0.0,
+    );
+    NearbyVenueModel near(
+      String id, {
+      double? lat,
+      double? lng,
+      double metres = 0,
+    }) => NearbyVenueModel(
+      id: id,
+      nameEn: 'Nearby $id',
+      city: 'Dubai',
+      latitude: lat,
+      longitude: lng,
+      distanceMeters: metres,
+    );
+
+    for (final (String code, String unavailable, String away)
+        in <(String, String, String)>[
+          ('en', 'Distance unavailable', 'away'),
+          ('ar', 'المسافة غير متاحة', 'على بعد'),
+        ]) {
+      final Locale locale = Locale(code);
+
+      testWidgets('$code: no ready location, normal list', (tester) async {
+        await _pump(
+          tester,
+          locale,
+          filters: false,
+          locationReady: false,
+          venues: withCoords,
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(unavailable), findsNWidgets(withCoords.length));
+        expect(find.textContaining(away), findsNothing);
+      }, variant: desktop);
+
+      testWidgets('$code: no ready location, nearby falls back', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          locale,
+          filters: false,
+          locationReady: false,
+          venues: withCoords,
+          nearby: [near('x', lat: _lat, lng: _lng, metres: 900)],
+        );
+        expect(tester.takeException(), isNull);
+        // The fallback renders the normal list, every card unavailable.
+        expect(find.text('Nearby x'), findsNothing);
+        expect(find.text(unavailable), findsNWidgets(withCoords.length));
+        expect(find.textContaining(away), findsNothing);
+      }, variant: desktop);
+
+      testWidgets('$code: missing latitude / longitude, normal list', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          locale,
+          filters: false,
+          venues: const [noLat, noLng],
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(unavailable), findsNWidgets(2));
+        expect(find.textContaining(away), findsNothing);
+      }, variant: desktop);
+
+      testWidgets('$code: missing latitude / longitude, nearby list', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          locale,
+          filters: false,
+          nearby: [
+            near('a', lng: _lng, metres: 900),
+            near('b', lat: _lat, metres: 900),
+          ],
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(unavailable), findsNWidgets(2));
+        expect(find.textContaining(away), findsNothing);
+      }, variant: desktop);
+
+      testWidgets('$code: available distance stays numeric, zeros included', (
+        tester,
+      ) async {
+        await _pump(
+          tester,
+          locale,
+          filters: false,
+          venues: const [origin, nullIsland],
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(unavailable), findsNothing);
+        expect(find.textContaining(away), findsNWidgets(2));
+        expect(find.textContaining('0 m'), findsOneWidget);
+      }, variant: desktop);
+
+      testWidgets('$code: nearby available distance unchanged', (tester) async {
+        await _pump(
+          tester,
+          locale,
+          filters: false,
+          nearby: [
+            near('c', lat: _lat, lng: _lng, metres: 1500),
+            near('d', lat: 0.0, lng: 0.0),
+          ],
+        );
+        expect(tester.takeException(), isNull);
+        expect(find.text(unavailable), findsNothing);
+        final AppLocalizations l = lookupAppLocalizations(locale);
+        expect(find.text(l.listing_km_away('1.5 km')), findsOneWidget);
+        expect(find.text(l.listing_km_away('0 m')), findsOneWidget);
+      }, variant: desktop);
+    }
+  });
 }

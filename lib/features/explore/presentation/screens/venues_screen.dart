@@ -363,7 +363,10 @@ class _AllVenuesList extends ConsumerWidget {
                         area: v.area,
                         pricePerHour: v.pricePerHour,
                         isIndoor: v.isIndoor,
-                        distanceLabel: v.distanceLabel,
+                        // KAN-446: missing coordinates read as unavailable.
+                        distanceLabel: v.latitude == null || v.longitude == null
+                            ? null
+                            : v.distanceLabel,
                         sports: _sportNames(isArabic, v.sports, v.sportsAr),
                         amenities: v.amenities,
                         coverUrl: v.coverUrl,
@@ -564,8 +567,9 @@ class _VenueCardData {
   final double? pricePerHour;
   final bool? isIndoor;
 
-  /// Formatted distance (e.g. "1.2 km"); non-null only when the nearby
-  /// filter is active.
+  /// Formatted distance (e.g. "1.2 km"); null when there is no ready active
+  /// location or the venue lacks a coordinate (the card then shows
+  /// "Distance unavailable").
   final String? distanceLabel;
 
   /// The sports the venue is listed under.
@@ -702,10 +706,12 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
       ),
       area: locationLine,
       tags: [
-        if (venue.distanceLabel != null)
-          DabblerCardVenue.distanceTag(
-            label: l.listing_km_away(venue.distanceLabel!),
-          ),
+        // KAN-446: the tag always shows; without a distance it says so.
+        DabblerCardVenue.distanceTag(
+          label: venue.distanceLabel == null
+              ? l.listing_distance_unavailable
+              : l.listing_km_away(venue.distanceLabel!),
+        ),
         if (rated)
           DabblerCardVenue.rating(
             rating: rating.toStringAsFixed(1),
