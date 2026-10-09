@@ -9695,6 +9695,72 @@ abstract class AppLocalizations {
   /// **'{count} players'**
   String composer_players_count(int count);
 
+  /// Vibe sheet subtitle: how many vibes are available for the selected post kind. {kind} is the localized post-kind name (composer_type_moment, composer_type_dab or composer_type_kickin); in English the caller lowercases it (design: 'dab'), in Arabic pass it as is.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 vibe for {kind}} other{{count} vibes for {kind}}}'**
+  String composer_vibe_count(int count, String kind);
+
+  /// Saved-place chip label in the Change location sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Home'**
+  String get home_location_saved_home;
+
+  /// Saved-place chip label in the Change location sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Work'**
+  String get home_location_saved_work;
+
+  /// Chip that lets the user type their own location in the Change location sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom location'**
+  String get home_location_custom;
+
+  /// Group heading above the nearby-area list in the Change location sheet when the search box is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Nearby areas'**
+  String get home_location_nearby_areas;
+
+  /// Subtitle of the Link a game sheet: the list shows only games the viewer has joined.
+  ///
+  /// In en, this message translates to:
+  /// **'Games you have joined'**
+  String get composer_games_joined_hint;
+
+  /// Subtitle of the Format row once a sport is chosen. {sport} is the localized sport name.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the {sport} format'**
+  String game_format_choose_sub(String sport);
+
+  /// State label on the Format chip while no sport is chosen; the chip does nothing until then.
+  ///
+  /// In en, this message translates to:
+  /// **'Locked'**
+  String get game_format_locked;
+
+  /// Duration chip: 30 minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'30m'**
+  String get game_duration_30m;
+
+  /// Duration chip: 1 hour.
+  ///
+  /// In en, this message translates to:
+  /// **'1h'**
+  String get game_duration_1h;
+
+  /// Duration chip: 2 hours.
+  ///
+  /// In en, this message translates to:
+  /// **'2h'**
+  String get game_duration_2h;
+
   /// No description provided for @sfx_comments_count.
   ///
   /// In en, this message translates to:

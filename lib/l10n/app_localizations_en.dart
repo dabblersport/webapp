@@ -5355,6 +5355,49 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String composer_vibe_count(int count, String kind) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count vibes for $kind',
+      one: '1 vibe for $kind',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get home_location_saved_home => 'Home';
+
+  @override
+  String get home_location_saved_work => 'Work';
+
+  @override
+  String get home_location_custom => 'Custom location';
+
+  @override
+  String get home_location_nearby_areas => 'Nearby areas';
+
+  @override
+  String get composer_games_joined_hint => 'Games you have joined';
+
+  @override
+  String game_format_choose_sub(String sport) {
+    return 'Choose the $sport format';
+  }
+
+  @override
+  String get game_format_locked => 'Locked';
+
+  @override
+  String get game_duration_30m => '30m';
+
+  @override
+  String get game_duration_1h => '1h';
+
+  @override
+  String get game_duration_2h => '2h';
+
+  @override
   String sfx_comments_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
