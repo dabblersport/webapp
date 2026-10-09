@@ -4445,7 +4445,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get game_format_sub => 'صيغة المباراة';
 
   @override
-  String get game_select_sport_first => 'اختر الرياضة أولًا';
+  String get game_select_sport_first => 'اختر رياضة أولًا';
 
   @override
   String get game_select_format => 'اختر الصيغة';

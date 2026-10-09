@@ -22,7 +22,7 @@ Future<void> showComposerGameLinkSheet(BuildContext context, WidgetRef ref) {
   return showComposerSheet<void>(
     context,
     title: l.composer_link_a_game,
-    subtitle: l.composer_games_hint,
+    subtitle: l.composer_games_joined_hint,
     onClear: notifier.clearGame,
     confirm: ComposerSheetConfirm(
       label: l.composer_confirm,
