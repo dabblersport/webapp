@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
@@ -126,6 +127,23 @@ final _sportsProvider = Provider<AsyncValue<List<Sport>>>(
 );
 
 Future<void> _loadFonts() => loadRenderFonts();
+
+/// The DabblerSheet the Create game route pushes (GameComposerSheetPage),
+/// built inline for a test with no route.
+Widget _gameSheet(Widget child, {bool editing = false}) => Builder(
+  builder: (context) => DabblerSheet(
+    onClose: () => Navigator.of(context).maybePop(),
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionFull,
+    pageBackground: true,
+    showCloseButton: false,
+    titleWidget: GameComposerSheetTitle(editing: editing),
+    headerAction: GameComposerCancel(
+      onPressed: () => Navigator.of(context).maybePop(),
+    ),
+    child: child,
+  ),
+);
 
 void main() {
   setUpAll(() async {
@@ -300,10 +318,7 @@ void main() {
         tester,
         locale,
         key,
-        (_, __) => const Align(
-          alignment: Alignment.bottomCenter,
-          child: GameComposerScreen(),
-        ),
+        (_, __) => _gameSheet(const GameComposerScreen()),
       );
       await tester.tap(find.text(l.game_date));
       await _settle(tester);

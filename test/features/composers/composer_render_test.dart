@@ -6,6 +6,7 @@ import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/social/presentation/screens/post_composer_screen.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
@@ -139,6 +140,23 @@ Future<void> _pumpModal(
   }
 }
 
+/// The DabblerSheet the Create game route pushes (GameComposerSheetPage),
+/// built inline for a test with no route.
+Widget _gameSheet(Widget child, {bool editing = false}) => Builder(
+  builder: (context) => DabblerSheet(
+    onClose: () => Navigator.of(context).maybePop(),
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionFull,
+    pageBackground: true,
+    showCloseButton: false,
+    titleWidget: GameComposerSheetTitle(editing: editing),
+    headerAction: GameComposerCancel(
+      onPressed: () => Navigator.of(context).maybePop(),
+    ),
+    child: child,
+  ),
+);
+
 void main() {
   setUpAll(() async {
     await initHomeTestSupabase();
@@ -187,7 +205,7 @@ void main() {
 
     testWidgets('renders the game composer — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pump(tester, const GameComposerScreen(), locale, key);
+      await _pump(tester, _gameSheet(const GameComposerScreen()), locale, key);
       expect(tester.takeException(), isNull);
       expect(find.text(lookupAppLocalizations(locale).game_create), findsWidgets);
       await _shoot(tester, key, 'game-$dir');
@@ -195,7 +213,7 @@ void main() {
 
     testWidgets('game composer: date sheet — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pump(tester, const GameComposerScreen(), locale, key);
+      await _pump(tester, _gameSheet(const GameComposerScreen()), locale, key);
       await tester.tap(find.text(lookupAppLocalizations(locale).game_date));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -207,7 +225,7 @@ void main() {
 
     testWidgets('game composer: time sheet — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pump(tester, const GameComposerScreen(), locale, key);
+      await _pump(tester, _gameSheet(const GameComposerScreen()), locale, key);
       await tester.tap(find.text(lookupAppLocalizations(locale).game_time));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));

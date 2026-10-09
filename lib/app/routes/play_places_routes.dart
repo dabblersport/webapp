@@ -16,6 +16,7 @@ import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/activities/presentation/screens/activities_screen_v2.dart';
 import 'package:dabbler/data/models/venue_submission_model.dart';
 import 'package:dabbler/features/venue_submissions/presentation/screens/create_venue_submission_screen.dart';
@@ -215,9 +216,9 @@ RouteBase get createGameRoute =>
         // Allow access if profile type has permission
         return null;
       },
-      // Drawer-style modal: leaves the top safe area exposed and lets the
-      // composer's glass surface blur the screen behind it.
-      pageBuilder: (context, state) => AdaptiveModalPage(
+      // The design's DS sheet (KAN-472, D-035): 94% over the scrim, a scrim
+      // tap closes it, as Create meet-up presents.
+      pageBuilder: (context, state) => GameComposerSheetPage(
         key: state.pageKey,
         child: const GameCreateGate(child: GameComposerScreen()),
       ),
@@ -242,7 +243,7 @@ RouteBase get createGameBasicInfoRoute =>
         }
         return null;
       },
-      pageBuilder: (context, state) => AdaptiveModalPage(
+      pageBuilder: (context, state) => GameComposerSheetPage(
         key: state.pageKey,
         child: const GameCreateGate(child: GameComposerScreen()),
       ),
@@ -255,8 +256,9 @@ RouteBase get editGameRoute =>
       path: RoutePaths.editGame,
       name: RouteNames.editGame,
       parentNavigatorKey: rootNavigatorKey,
-      pageBuilder: (context, state) => AdaptiveModalPage(
+      pageBuilder: (context, state) => GameComposerSheetPage(
         key: state.pageKey,
+        editing: true,
         child: GameComposerScreen(
           editGameId: state.pathParameters['gameId']!,
         ),
