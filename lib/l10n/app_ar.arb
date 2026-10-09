@@ -2052,6 +2052,7 @@
   "game_error_player_count_min": "يجب ألا يقل عدد اللاعبين عن 1.",
   "game_error_daily_limit": "بلغت الحد اليومي. حاول مرة أخرى في {reset}.",
   "game_error_generic": "حدث خطأ ما. حاول مرة أخرى.",
+  "composer_counter_semantic": "الأحرف المستخدمة: {used} من {max}",
   "game_format_choose_sub": "اختر صيغة {sport}",
   "game_format_locked": "مقفل",
   "game_duration_30m": "30 د",

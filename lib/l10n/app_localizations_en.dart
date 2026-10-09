@@ -5508,6 +5508,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_error_generic => 'Something went wrong. Try again.';
 
   @override
+  String composer_counter_semantic(int used, int max) {
+    return '$used of $max characters used';
+  }
+
+  @override
   String get game_format_locked => 'Locked';
 
   @override
