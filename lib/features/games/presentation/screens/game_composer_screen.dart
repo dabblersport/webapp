@@ -213,7 +213,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     try {
       final rows = await _db
           .from(SupabaseConfig.sportsTable)
-          .select('id, sport_key, name_en, emoji, color_code')
+          .select('id, sport_key, name_en, name_ar, emoji, color_code')
           .eq('is_active', true)
           .eq('is_challenge_sport', true)
           .order('name_en');
@@ -634,7 +634,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         DabblerToastSpec(
           message:
               err ??
-              (_isEditing ? 'Failed to save changes' : 'Failed to create game'),
+              (_isEditing
+                  ? AppLocalizations.of(context).game_save_failed
+                  : AppLocalizations.of(context).game_create_failed),
           tone: DabblerToastTone.error,
         ),
       );
@@ -901,7 +903,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         date.day == tomorrow.day) {
       return AppLocalizations.of(context).game_tomorrow;
     }
-    return DateFormat('MMM d').format(date);
+    return DateFormat(
+      'MMM d',
+      Localizations.localeOf(context).toString(),
+    ).format(date);
   }
 
   String _formatTimeChip(BuildContext context, TimeOfDay? time) {
@@ -1166,14 +1171,29 @@ class _SportTiles extends StatelessWidget {
       spacing: DabblerSpacing.space3,
       runSpacing: DabblerSpacing.space3,
       children: <Widget>[
-        for (final sport in sports)
-          DabblerEmojiTile(
-            emoji: sport['emoji'] as String? ?? '',
-            label: sport['name_en'] as String? ?? l.game_sport,
-            selected: (sport['id'] as String) == selectedSportId,
-            onTap: () => onSelect(sport),
-          ),
+        for (final sport in sports) _sportTile(context, l, sport),
       ],
+    );
+  }
+
+  /// One sport tile: the name in the viewer's language, and the screen-reader
+  /// sentence from the ARB ("Sport: Football, tap to select").
+  Widget _sportTile(
+    BuildContext context,
+    AppLocalizations l,
+    Map<String, dynamic> sport,
+  ) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    final nameAr = (sport['name_ar'] as String?)?.trim();
+    final name = ar && nameAr != null && nameAr.isNotEmpty
+        ? nameAr
+        : sport['name_en'] as String? ?? l.game_sport;
+    return DabblerEmojiTile(
+      emoji: sport['emoji'] as String? ?? '',
+      label: name,
+      semanticLabel: l.game_sport_tile_semantic(name),
+      selected: (sport['id'] as String) == selectedSportId,
+      onTap: () => onSelect(sport),
     );
   }
 }
@@ -1374,14 +1394,16 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
         if (hasAnySpaces)
           ComposerSearchField(
             controller: _searchController,
-            placeholder: 'Search venues, spaces or area…',
+            placeholder: AppLocalizations.of(
+              context,
+            ).game_venue_search_placeholder,
             onChanged: (v) => setState(() => _query = v.trim()),
           ),
         // The 12 between the search and the list (`:840`).
         if (hasAnySpaces) const SizedBox(height: DabblerSpacing.space4),
         if (!hasAnySpaces)
-          const ComposerCenteredState.message(
-            'No venues available for this format',
+          ComposerCenteredState.message(
+            AppLocalizations.of(context).game_venue_none,
           )
         else if (filtered.isEmpty)
           ComposerCenteredState.message(
