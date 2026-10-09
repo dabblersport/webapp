@@ -1319,6 +1319,7 @@
   "listing_remove_saved": "Remove from saved",
   "listing_indoor": "Indoor",
   "listing_outdoor": "Outdoor",
+  "listing_distance_unavailable": "Distance unavailable",
   "listing_km_away": "{distance} away",
   "@listing_km_away": {"placeholders": {"distance": {"type": "String"}}},
   "listing_free": "Free",

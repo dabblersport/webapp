@@ -6497,6 +6497,12 @@ abstract class AppLocalizations {
   /// **'Outdoor'**
   String get listing_outdoor;
 
+  /// No description provided for @listing_distance_unavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Distance unavailable'**
+  String get listing_distance_unavailable;
+
   /// No description provided for @listing_km_away.
   ///
   /// In en, this message translates to:
