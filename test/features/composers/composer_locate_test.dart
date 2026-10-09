@@ -3,6 +3,8 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/annotations.dart';
@@ -53,6 +55,30 @@ ProviderContainer containerFor(MockGpsService gps, MockAreaRepository areas) {
   return c;
 }
 
+/// Runs [act] and proves activeLocationProvider was never written: no new
+/// value emitted, the settled value is the same instance, built once.
+Future<T> expectActiveLocationUntouched<T>(
+  ProviderContainer c,
+  Future<T> Function() act,
+) async {
+  final seen = <AsyncValue<ActiveLocationState>>[];
+  c.listen(activeLocationProvider, (_, next) => seen.add(next));
+  await c.read(activeLocationProvider.future);
+  final settled = c.read(activeLocationProvider);
+  seen.clear();
+
+  final result = await act();
+  await Future<void>.delayed(Duration.zero);
+
+  expect(seen, isEmpty, reason: 'activeLocationProvider was written');
+  expect(identical(c.read(activeLocationProvider), settled), isTrue);
+  expect(SpyActiveLocation.builds, 1);
+  return result;
+}
+
+final en = lookupAppLocalizations(const Locale('en'));
+final ar = lookupAppLocalizations(const Locale('ar'));
+
 void main() {
   late MockGpsService gps;
   late MockAreaRepository areas;
@@ -70,9 +96,12 @@ void main() {
     when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => marina);
     final c = containerFor(gps, areas);
 
-    final outcome = await c
-        .read(postComposerProvider.notifier)
-        .useCurrentLocation(fallbackName: 'Current location');
+    final outcome = await expectActiveLocationUntouched(
+      c,
+      () => c
+          .read(postComposerProvider.notifier)
+          .useCurrentLocation(fallbackName: en.composer_place_current_location),
+    );
 
     expect(outcome, ComposerLocateOutcome.area);
     final s = c.read(postComposerProvider);
@@ -84,24 +113,34 @@ void main() {
     verify(areas.resolveNearest(lat, lng)).called(1);
   });
 
-  test('no area sets fallback label and coordinates', () async {
-    when(gps.getCurrentLocation()).thenAnswer(
-      (_) async => LocationSuccess(lat: lat, lng: lng, accuracyMeters: 5),
+  for (final l in [en, ar]) {
+    test(
+      'no area sets fallback label and coordinates (${l.localeName})',
+      () async {
+        when(gps.getCurrentLocation()).thenAnswer(
+          (_) async => LocationSuccess(lat: lat, lng: lng, accuracyMeters: 5),
+        );
+        when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => null);
+        final c = containerFor(gps, areas);
+
+        final outcome = await expectActiveLocationUntouched(
+          c,
+          () => c
+              .read(postComposerProvider.notifier)
+              .useCurrentLocation(
+                fallbackName: l.composer_place_current_location,
+              ),
+        );
+
+        expect(outcome, ComposerLocateOutcome.coordinates);
+        final s = c.read(postComposerProvider);
+        expect(s.locationName, l.composer_place_current_location);
+        expect(s.locationTagId, isNull);
+        expect(s.geoLat, lat);
+        expect(s.geoLng, lng);
+      },
     );
-    when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => null);
-    final c = containerFor(gps, areas);
-
-    final outcome = await c
-        .read(postComposerProvider.notifier)
-        .useCurrentLocation(fallbackName: 'Current location');
-
-    expect(outcome, ComposerLocateOutcome.coordinates);
-    final s = c.read(postComposerProvider);
-    expect(s.locationName, 'Current location');
-    expect(s.locationTagId, isNull);
-    expect(s.geoLat, lat);
-    expect(s.geoLng, lng);
-  });
+  }
 
   final failures = <String, LocationResult Function()>{
     'denied': LocationDenied.new,
@@ -118,8 +157,11 @@ void main() {
       n.setRawLocation(name: 'Kept', lat: 1, lng: 2);
       final before = c.read(postComposerProvider);
 
-      final outcome = await n.useCurrentLocation(
-        fallbackName: 'Current location',
+      final outcome = await expectActiveLocationUntouched(
+        c,
+        () => n.useCurrentLocation(
+          fallbackName: en.composer_place_current_location,
+        ),
       );
 
       expect(outcome, ComposerLocateOutcome.unavailable);
@@ -135,12 +177,16 @@ void main() {
     final c = containerFor(gps, areas);
     final before = c.read(postComposerProvider);
 
-    final outcome = await c
-        .read(postComposerProvider.notifier)
-        .useCurrentLocation(fallbackName: 'Current location');
+    final outcome = await expectActiveLocationUntouched(
+      c,
+      () => c
+          .read(postComposerProvider.notifier)
+          .useCurrentLocation(fallbackName: en.composer_place_current_location),
+    );
 
     expect(outcome, ComposerLocateOutcome.unavailable);
     expect(identical(c.read(postComposerProvider), before), isTrue);
+    verifyNever(areas.resolveNearest(any, any));
   });
 
   test('active location is never written', () async {
@@ -149,20 +195,12 @@ void main() {
     );
     when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => marina);
     final c = containerFor(gps, areas);
-    final seen = <AsyncValue<ActiveLocationState>>[];
-    c.listen(activeLocationProvider, (_, next) => seen.add(next));
-    await c.read(activeLocationProvider.future);
-    final settled = c.read(activeLocationProvider);
-    seen.clear();
-
-    await c
-        .read(postComposerProvider.notifier)
-        .useCurrentLocation(fallbackName: 'Current location');
-    await Future<void>.delayed(Duration.zero);
-
-    expect(seen, isEmpty, reason: 'activeLocationProvider was written');
-    expect(identical(c.read(activeLocationProvider), settled), isTrue);
-    expect(SpyActiveLocation.builds, 1);
+    await expectActiveLocationUntouched(
+      c,
+      () => c
+          .read(postComposerProvider.notifier)
+          .useCurrentLocation(fallbackName: en.composer_place_current_location),
+    );
     // The composer asked the GPS once, itself — not via the active location.
     verify(gps.getCurrentLocation()).called(1);
   });
