@@ -3255,6 +3255,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get appr_auto_sub => 'بدّل السمة حسب وقت اليوم';
 
   @override
+  String get appr_auto_switch_label => 'تبديل السمة حسب وقت اليوم';
+
+  @override
+  String get appr_auto_match_device => 'مطابقة الجهاز';
+
+  @override
   String get appr_group_schedule => 'جدول النهار والليل';
 
   @override
