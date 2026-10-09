@@ -5375,6 +5375,53 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String composer_vibe_count(int count, String kind) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count جوّ لنوع «$kind»',
+      many: '$count جوًّا لنوع «$kind»',
+      few: '$count أجواء لنوع «$kind»',
+      two: 'جوّان لنوع «$kind»',
+      one: 'جوّ واحد لنوع «$kind»',
+      zero: 'لا أجواء لنوع «$kind»',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get home_location_saved_home => 'المنزل';
+
+  @override
+  String get home_location_saved_work => 'العمل';
+
+  @override
+  String get home_location_custom => 'موقع مخصص';
+
+  @override
+  String get home_location_nearby_areas => 'مناطق قريبة';
+
+  @override
+  String get composer_games_joined_hint => 'المباريات التي انضممت إليها';
+
+  @override
+  String game_format_choose_sub(String sport) {
+    return 'اختر صيغة $sport';
+  }
+
+  @override
+  String get game_format_locked => 'مقفل';
+
+  @override
+  String get game_duration_30m => '30 د';
+
+  @override
+  String get game_duration_1h => '1 س';
+
+  @override
+  String get game_duration_2h => '2 س';
+
+  @override
   String sfx_comments_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
