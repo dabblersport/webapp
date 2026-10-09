@@ -2,7 +2,10 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/services/recent_places_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -20,6 +23,16 @@ class ComposerPlacePick {
   final String? venueId;
   final double? lat;
   final double? lng;
+
+  RecentPlace toRecent() =>
+      RecentPlace(name: name, venueId: venueId, lat: lat, lng: lng);
+
+  static ComposerPlacePick fromRecent(RecentPlace r) => ComposerPlacePick(
+    name: r.name,
+    venueId: r.venueId,
+    lat: r.lat,
+    lng: r.lng,
+  );
 }
 
 /// Opens "Add location" (`Home Feed.dc.html:818-875`): a search field, "Use
@@ -45,6 +58,11 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
     onTap: () {
       final pick = pending.value;
       if (pick != null) {
+        // KAN-469: remember the confirmed place for this user's Recent group.
+        const RecentPlacesService().add(
+          ref.read(currentUserIdProvider),
+          pick.toRecent(),
+        );
         if (pick.venueId != null) {
           notifier.setVenue(
             id: pick.venueId!,
@@ -98,6 +116,8 @@ class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
   String _query = '';
   bool _locating = false;
   bool _locationDenied = false;
+  late final Future<List<RecentPlace>> _recents = const RecentPlacesService()
+      .read(ref.read(currentUserIdProvider));
 
   /// "Use current location": tags the post with the device position through
   /// [PostComposerNotifier.useCurrentLocation], then closes the sheet as a
@@ -188,11 +208,36 @@ class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
               tone: DabblerTextTone.secondary,
             ),
           ),
-          // The app keeps no recent places (CTO ruling dreq-d30fdcb3: build
-          // no storage), so the group shows its empty state.
-          ComposerCenteredState.message(
-            l.composer_place_recent_empty,
-            key: const Key('composer-place-recent-empty'),
+          // KAN-469: this user's confirmed places, newest first; the empty
+          // state until one has been confirmed.
+          FutureBuilder<List<RecentPlace>>(
+            future: _recents,
+            builder: (context, snap) {
+              final recents = snap.data ?? const <RecentPlace>[];
+              if (recents.isEmpty) {
+                return ComposerCenteredState.message(
+                  l.composer_place_recent_empty,
+                  key: const Key('composer-place-recent-empty'),
+                );
+              }
+              return ValueListenableBuilder<ComposerPlacePick?>(
+                valueListenable: widget.pending,
+                builder: (context, current, _) => Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    for (final r in recents)
+                      ComposerPickerRow(
+                        key: ValueKey('composer-place-recent-${r.identity}'),
+                        icon: 'location',
+                        title: r.name,
+                        selected: current?.toRecent().identity == r.identity,
+                        onTap: () => widget.pending.value =
+                            ComposerPlacePick.fromRecent(r),
+                      ),
+                  ],
+                ),
+              );
+            },
           ),
         ],
         if (typed.length >= 2)
