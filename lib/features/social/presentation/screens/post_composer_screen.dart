@@ -172,6 +172,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       selected: selectedSport,
       showClear: true,
       onClear: () => ref.read(postComposerProvider.notifier).clearSport(),
+      emojiFor: (sport) => composerSportEmoji(sport.sportKey ?? sport.nameEn),
       onConfirm: (sport) {
         final key = sport.sportKey;
         if (key != null) _sportKeys[sport.id] = key;
