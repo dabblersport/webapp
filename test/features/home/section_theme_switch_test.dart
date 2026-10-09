@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/home/presentation/widgets/section_themed.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -102,11 +103,45 @@ void main() {
   testWidgets('Home -> Venues -> Games -> Meetups re-tints the brand only', (
     tester,
   ) async {
+    // The shell's own mapping (KAN-454): Games sport, Venues main (no
+    // override), Meetups active.
+    expect(sectionThemeFor(NavigationBranch.games), DabblerTheme.sport);
+    expect(sectionThemeFor(NavigationBranch.venues), isNull);
+    expect(sectionThemeFor(NavigationBranch.meetups), DabblerTheme.active);
+    expect(sectionThemeFor(NavigationBranch.home), isNull);
     final home = await _pump(tester, 'home', null);
-    final venues = await _pump(tester, 'venues', null);
-    final games = await _pump(tester, 'games', DabblerTheme.sport);
-    final meetups = await _pump(tester, 'meetups', DabblerTheme.active);
+    final venues = await _pump(
+      tester,
+      'venues',
+      sectionThemeFor(NavigationBranch.venues),
+    );
+    final games = await _pump(
+      tester,
+      'games',
+      sectionThemeFor(NavigationBranch.games),
+    );
+    final meetups = await _pump(
+      tester,
+      'meetups',
+      sectionThemeFor(NavigationBranch.meetups),
+    );
     final Brightness b = renderThemeBase().brightness;
+    DabblerColors tokens(DabblerTheme t) =>
+        DabblerColors.resolve(theme: t, brightness: b);
+    expect(venues.brandPrimary, tokens(DabblerTheme.main).brandPrimary);
+    expect(meetups.brandPrimary, tokens(DabblerTheme.active).brandPrimary);
+
+    // Games -> Venues -> Meetups -> Games: each pump takes its own palette,
+    // nothing of the previous section stays.
+    for (final (id, branch, want) in <(String, NavigationBranch, DabblerTheme)>[
+      ('games', NavigationBranch.games, DabblerTheme.sport),
+      ('venues', NavigationBranch.venues, DabblerTheme.main),
+      ('meetups', NavigationBranch.meetups, DabblerTheme.active),
+      ('games', NavigationBranch.games, DabblerTheme.sport),
+    ]) {
+      final c = await _pump(tester, id, sectionThemeFor(branch));
+      expect(c.brandPrimary, tokens(want).brandPrimary, reason: id);
+    }
     expect(games.brandPrimary, isNot(home.brandPrimary));
     expect(meetups.brandPrimary, isNot(home.brandPrimary));
     expect(meetups.brandPrimary, isNot(games.brandPrimary));

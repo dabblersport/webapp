@@ -88,7 +88,7 @@ class _ListingScaffoldState extends ConsumerState<ListingScaffold> {
 
   @override
   Widget build(BuildContext context) {
-    final bool visible = TickerMode.of(context);
+    final bool visible = TickerMode.valuesOf(context).enabled;
     _sync(visible);
     return SystemChromeSurface(
       top: visible ? _band : null,
