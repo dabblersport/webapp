@@ -4,6 +4,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/services/gps_service.dart';
+import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/utils/language_detector.dart';
 import 'package:dabbler/data/models/social/post.dart';
@@ -11,6 +13,8 @@ import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart'
+    show userUpcomingGamesProvider;
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -190,6 +194,11 @@ class PostComposerState {
     );
   }
 }
+
+/// What [PostComposerNotifier.useCurrentLocation] did: tagged a resolved
+/// [area], tagged bare [coordinates], or changed nothing because the location
+/// was [unavailable] (denied, services off, timed out or failed).
+enum ComposerLocateOutcome { area, coordinates, unavailable }
 
 // =============================================================================
 // COMPOSER NOTIFIER
@@ -624,6 +633,45 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     return result;
   }
 
+  /// "Use current location" in the place sheet (KAN-463, CTO ruling
+  /// dreq-d30fdcb3 option b). Reads the device position through
+  /// [gpsServiceProvider] and names it through the existing read-only
+  /// [AreaRepository.resolveNearest]; it never touches the app-wide active
+  /// location. When no area resolves, the post is tagged with the
+  /// coordinates under [fallbackName] (a localized label supplied by the
+  /// caller). Denied, service-off, timeout and error leave the state
+  /// untouched. Never throws.
+  Future<ComposerLocateOutcome> useCurrentLocation({
+    required String fallbackName,
+  }) async {
+    try {
+      final result = await _ref.read(gpsServiceProvider).getCurrentLocation();
+      switch (result) {
+        case LocationSuccess(:final lat, :final lng):
+          final area = await _ref
+              .read(areaRepositoryV2Provider)
+              .resolveNearest(lat, lng);
+          if (!mounted) return ComposerLocateOutcome.unavailable;
+          if (area != null) {
+            // setRawLocation rebuilds the state, so the tag id goes last.
+            setRawLocation(name: area.name, lat: lat, lng: lng);
+            setLocationTagId(area.id);
+            return ComposerLocateOutcome.area;
+          }
+          setRawLocation(name: fallbackName, lat: lat, lng: lng);
+          return ComposerLocateOutcome.coordinates;
+        case LocationDenied():
+        case LocationDeniedForever():
+        case LocationServiceOff():
+        case LocationTimeout():
+        case LocationError():
+          return ComposerLocateOutcome.unavailable;
+      }
+    } catch (_) {
+      return ComposerLocateOutcome.unavailable;
+    }
+  }
+
   /// Applies a [LocationPickerResult] to the composer state.
   void setLocationFromPickerResult(LocationPickerResult result) {
     switch (result.type) {
@@ -676,4 +724,22 @@ final gameSearchProvider = FutureProvider.autoDispose
       final repo = ref.watch(postRepositoryProvider);
       final result = await repo.searchGames(query.trim());
       return result.fold((err) => <Map<String, dynamic>>[], (games) => games);
+    });
+
+/// The viewer's joined upcoming games (the "Link a game" sheet's default list
+/// before anything is typed, `Home Feed.dc.html:888`), read through the
+/// existing [userUpcomingGamesProvider] and shaped like [gameSearchProvider]
+/// rows so the sheet draws both the same way.
+final composerJoinedGamesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final games = await ref.watch(userUpcomingGamesProvider.future);
+      return [
+        for (final g in games)
+          {
+            'id': g.id,
+            'title': g.title,
+            'sport': g.sport,
+            'start_at': g.getScheduledStartDateTime().toIso8601String(),
+          },
+      ];
     });

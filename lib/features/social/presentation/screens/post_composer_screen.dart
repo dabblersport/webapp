@@ -143,6 +143,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       ref,
       selectedVibeId: state.vibeId,
       kindLabel: _postTypeLabel(state.postType),
+      postType: state.postType,
       onClear: notifier.clearVibe,
       onConfirm: (vibe) =>
           notifier.setVibe(id: vibe.id, label: vibe.labelEn, emoji: vibe.emoji),

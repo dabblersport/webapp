@@ -86,6 +86,7 @@ Future<void> _host(
       overrides: [
         venueSearchProvider.overrideWith((ref, q) async => _venues),
         gameSearchProvider.overrideWith((ref, q) async => _games),
+        composerJoinedGamesProvider.overrideWith((ref) async => _games),
         vibesProvider.overrideWith((ref) async => _vibes),
       ],
       child: MaterialApp(
