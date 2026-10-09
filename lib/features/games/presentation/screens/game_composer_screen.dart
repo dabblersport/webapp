@@ -4,13 +4,15 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_create_guard.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_sheets.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/data/models/social/sport.dart';
@@ -102,6 +104,55 @@ class GameComposerError {
     GameComposerErrorCode.priceRequired => l.game_price_required,
     GameComposerErrorCode.unknown => raw ?? '',
   };
+}
+
+// ─── The sheet ────────────────────────────────────────────────────────────────
+
+/// Opens Create game (or, with [editGameId], Edit game) as the design's sheet,
+/// exactly as Create meet-up's `showMeetupComposerSheet` does: the DS sheet on
+/// the page colour, content-sized up to 94% over the scrim, a scrim tap or
+/// Cancel closing it (KAN-475). Every entry point calls this; the routes remain
+/// for deep links and draw the same sheet (`GameComposerSheetPage`).
+///
+/// Create is guarded as the routes' redirects were: a profile the feature
+/// flags refuse (`gameCreationAllowed`) gets the generic refusal and the form
+/// never opens; the persona rule is `GameCreateGate`'s, inside the sheet.
+/// Editing has no gate, as its route had none (the server stays the authority).
+/// Resolves to true once the game was saved.
+Future<bool?> showGameComposerSheet(
+  BuildContext context, {
+  String? editGameId,
+}) {
+  final l = AppLocalizations.of(context);
+  final editing = editGameId != null;
+  if (!editing &&
+      !gameCreationAllowedFor(
+        ProviderScope.containerOf(context, listen: false),
+      )) {
+    DabblerToastProvider.maybeOf(context)?.show(
+      DabblerToastSpec(
+        message: l.game_err_create_refused,
+        tone: DabblerToastTone.error,
+      ),
+    );
+    return Future<bool?>.value();
+  }
+  return showDabblerSheet<bool>(
+    context: context,
+    // `max-height: 94%`, `height: auto` (`sheetP94`), as Create meet-up.
+    detent: DabblerSheetDetent.content,
+    contentMaxFraction: DabblerSheet.contentMaxFractionFull,
+    pageBackground: true,
+    showCloseButton: false,
+    title: editing ? l.game_edit : l.game_create,
+    titleWidget: GameComposerSheetTitle(editing: editing),
+    headerActionBuilder: (sheetContext) => GameComposerCancel(
+      onPressed: () => Navigator.of(sheetContext).maybePop(),
+    ),
+    builder: (_) => editing
+        ? GameComposerScreen(editGameId: editGameId)
+        : const GameCreateGate(child: GameComposerScreen()),
+  );
 }
 
 // ─── State ────────────────────────────────────────────────────────────────────
@@ -750,7 +801,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final ok = await ref.read(_gameComposerProvider.notifier).submit();
     if (!mounted) return;
     if (ok) {
-      context.pop(true);
+      Navigator.of(context).pop(true);
     } else {
       final err = ref.read(_gameComposerProvider).error;
       DabblerToastProvider.of(context).show(
@@ -780,7 +831,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     // the foot, the header is the sheet's sticky title row.
     //
     // KAN-473: the sub-sheets open from inside the composer frame scope, so
-    // [showGameComposerSheet] draws the design's pick-sheet frame (header
+    // [showGamePickSheet] draws the design's pick-sheet frame (header
     // hairline, framed search, brand-ink chosen rows); the body below uses no
     // frame-aware kit widget, so it is unchanged.
     return ComposerFrameScope(
@@ -1095,7 +1146,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final pending = ValueNotifier<Map<String, dynamic>?>(
       notifier.variants.where((v) => v['id'] == state.variantId).firstOrNull,
     );
-    await showGameComposerSheet<void>(
+    await showGamePickSheet<void>(
       context,
       title: l.composer_format_title(state.sportNameEn ?? ''),
       confirm: ComposerSheetConfirm(
@@ -1151,7 +1202,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final canContinue = ValueNotifier<bool>(pending.value != null);
     pending.addListener(() => canContinue.value = pending.value != null);
     var advance = false;
-    await showGameComposerSheet<void>(
+    await showGamePickSheet<void>(
       context,
       title: l.composer_pick_date,
       subtitle: l.composer_step_1,
@@ -1189,7 +1240,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       ref.read(_gameComposerProvider).selectedTime ??
           const TimeOfDay(hour: 18, minute: 0),
     );
-    await showGameComposerSheet<void>(
+    await showGamePickSheet<void>(
       context,
       title: l.composer_pick_time,
       subtitle: step == 2 ? l.composer_step_2 : l.composer_kickoff_time,
@@ -1231,7 +1282,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         Navigator.of(context).maybePop();
       },
     );
-    await showGameComposerSheet<void>(
+    await showGamePickSheet<void>(
       context,
       title: l.game_select_venue,
       contentMaxFraction: DabblerSheet.contentMaxFractionMedium,
@@ -1257,7 +1308,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final notifier = ref.read(_gameComposerProvider.notifier);
     final current = ref.read(_gameComposerProvider).skillLevel;
     final pending = ValueNotifier<String?>(current);
-    await showGameComposerSheet<void>(
+    await showGamePickSheet<void>(
       context,
       title: AppLocalizations.of(context).game_skill_level,
       onClear: current != null ? notifier.clearSkill : null,

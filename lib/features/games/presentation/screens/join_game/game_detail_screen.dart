@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
@@ -371,10 +372,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       policy == 'request' ? 'send' : 'tick-circle';
 
   Future<void> _openEditGame(String gameId, GameViewController ctrl) async {
-    final updated = await context.pushNamed(
-      RouteNames.editGame,
-      pathParameters: {'gameId': gameId},
-    );
+    final updated = await showGameComposerSheet(context, editGameId: gameId);
     if (updated == true) await ctrl.refresh();
   }
 

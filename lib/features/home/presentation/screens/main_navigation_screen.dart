@@ -1,3 +1,4 @@
+import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:dabbler/core/feedback/feedback_center.dart';
 import 'package:dabbler/core/feedback/feedback_intent.dart';
@@ -274,7 +275,7 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           feedNotifier.clearNewPostsBadge();
         }
       case _createGame:
-        router.push(RoutePaths.createGame);
+        showGameComposerSheet(context);
       case _createMeetup:
         showMeetupComposerSheet(context);
     }
