@@ -277,9 +277,10 @@ void _expectHeader(
   String title, {
   String? caption,
   String tag = '',
+  bool divider = true,
 }) {
   final DabblerSheet sheet = tester.widget(_topSheet());
-  expect(sheet.headerDivider, isTrue, reason: 'header hairline');
+  expect(sheet.headerDivider, divider, reason: 'header hairline');
   expect(sheet.pageBackground, isTrue);
   expect(sheet.showCloseButton, isFalse);
   final DabblerText t = _textOf(tester, title);
@@ -320,6 +321,19 @@ void _expectHeader(
 
 /// The 48dp pill foot (the DS composer submit), full sheet width less the
 /// gutters.
+Rect _cancelRect(WidgetTester tester, AppLocalizations l) => tester.getRect(
+  find.descendant(
+    of: _topSheet(),
+    matching: find.widgetWithText(DabblerButton, l.composer_cancel),
+  ),
+);
+
+/// KAN-473 C1: a measured gap must match the design within 1dp.
+void _expectGap(String tag, double app, double design) {
+  _meas('$tag.gap', 'app ${app.toStringAsFixed(1)} design $design');
+  expect((app - design).abs(), lessThanOrEqualTo(1), reason: tag);
+}
+
 void _expectFoot(WidgetTester tester, String label, String tag) {
   final Finder foot = find.descendant(
     of: _topSheet(),
@@ -413,6 +427,26 @@ void main() {
       expect(find.text(l.composer_players_count(4)), findsOneWidget);
       _meas('format.row0', _r(tester.getRect(rows.at(0))));
       _meas('format.row1', _r(tester.getRect(rows.at(1))));
+      // Design: Cancel bottom to row 0 is 31, the last row to the pill 30.
+      _expectGap(
+        'format.cancel-row0',
+        tester.getRect(rows.at(0)).top - _cancelRect(tester, l).bottom,
+        31,
+      );
+      _expectGap(
+        'format.list-pill',
+        tester
+                .getRect(
+                  find.byWidgetPredicate(
+                    (w) =>
+                        w is DabblerComposerSubmit &&
+                        w.label == l.composer_confirm,
+                  ),
+                )
+                .top -
+            tester.getRect(rows.at(1)).bottom,
+        30,
+      );
       // No tick until picked; then the bold brand tick and brand-ink label.
       expect(
         find.descendant(
@@ -466,6 +500,14 @@ void main() {
         findsOneWidget,
       );
       _meas('date.calendar', _r(tester.getRect(find.byType(DabblerCalendar))));
+      // Design: the hairline sits 12 under Cancel, the calendar ~24.5 under
+      // the hairline: 36 from Cancel.
+      _expectGap(
+        'date.cancel-calendar',
+        tester.getRect(find.byType(DabblerCalendar)).top -
+            _cancelRect(tester, l).bottom,
+        36,
+      );
       // Continue is disabled until a day is picked.
       DabblerComposerSubmit cont() => tester.widget(
         find.byWidgetPredicate(
@@ -490,6 +532,12 @@ void main() {
       expect(find.text(l.composer_kickoff_time), findsNothing);
       expect(find.byType(DabblerTimePicker), findsOneWidget);
       _meas('time.picker', _r(tester.getRect(find.byType(DabblerTimePicker))));
+      _expectGap(
+        'time.cancel-picker',
+        tester.getRect(find.byType(DabblerTimePicker)).top -
+            _cancelRect(tester, l).bottom,
+        36,
+      );
       await _shoot(tester, 'time-step2-$dir-$mode');
       await _tap(tester, find.text(l.composer_confirm));
       expect(find.byType(DabblerSheet), findsOneWidget);
@@ -551,7 +599,14 @@ void main() {
       expect(_pillOf(tester, l.composer_select).state, GamePillState.idle);
       await _tapPill(tester, l.composer_select);
       expect(tester.takeException(), isNull);
-      _expectHeader(tester, l, l.game_select_venue, tag: 'venue');
+      // The place sheet's header has no hairline (`:820`).
+      _expectHeader(
+        tester,
+        l,
+        l.game_select_venue,
+        tag: 'venue',
+        divider: false,
+      );
       _expectFoot(tester, l.composer_confirm, 'venue');
       final DabblerSheet sheet = tester.widget(_topSheet());
       expect(sheet.contentMaxFraction, DabblerSheet.contentMaxFractionMedium);
@@ -567,6 +622,12 @@ void main() {
         const ValueKey<String>('game-venue-space-vs-1'),
       );
       _meas('venue.row', _r(tester.getRect(row)));
+      // Design: 24 from the search box to the row box (12 + 12).
+      _expectGap(
+        'venue.search-row',
+        tester.getRect(row).top - tester.getRect(search).bottom,
+        24,
+      );
       await _tap(tester, find.text('Padel Pro · Court 1'));
       expect(tester.widget<GameSheetOptionRow>(row).selected, isTrue);
       await _shoot(tester, 'venue-selected-$dir-$mode');
@@ -607,6 +668,80 @@ void main() {
         _pillOf(tester, l.listing_skill_advanced).state,
         GamePillState.chosen,
       );
+    });
+
+    Finder sheetCancel() => find.descendant(
+      of: _topSheet(),
+      matching: find.text(l.composer_cancel),
+    );
+
+    Finder clearLink() =>
+        find.descendant(of: _topSheet(), matching: find.text(l.composer_clear));
+
+    testWidgets('venue header Clear: stored only, clears; Cancel discards - '
+        '$dir', (tester) async {
+      await _pump(tester, _gameSheet(const GameComposerScreen()), locale);
+      await _tap(tester, find.text('Padel'));
+      await _tapPill(tester, l.game_select_format);
+      await _tap(tester, find.text('Doubles'));
+      await _tap(tester, find.text(l.composer_confirm));
+      // Nothing stored: no Clear; a picked row then Cancel writes nothing.
+      await _tapPill(tester, l.composer_select);
+      expect(clearLink(), findsNothing);
+      await _tap(tester, find.text('Padel Pro · Court 1'));
+      await _tap(tester, sheetCancel());
+      expect(find.byType(DabblerSheet), findsOneWidget);
+      expect(_pillOf(tester, l.composer_select).state, GamePillState.idle);
+      // Stored: Clear shows; Cancel keeps the stored space.
+      await _tapPill(tester, l.composer_select);
+      await _tap(tester, find.text('Padel Pro · Court 1'));
+      await _tap(tester, find.text(l.composer_confirm));
+      await _tapPill(tester, 'Padel Pro · Court 1');
+      expect(clearLink(), findsOneWidget);
+      await _tap(tester, sheetCancel());
+      expect(
+        _pillOf(tester, 'Padel Pro · Court 1').state,
+        GamePillState.chosen,
+      );
+      // Clear empties the venue (clearVenue) and closes the sheet.
+      await _tapPill(tester, 'Padel Pro · Court 1');
+      await _tap(tester, clearLink());
+      expect(find.byType(DabblerSheet), findsOneWidget);
+      expect(_pillOf(tester, l.composer_select).state, GamePillState.idle);
+      expect(find.text('Padel Pro · Court 1'), findsNothing);
+      // Format and sport are untouched; nothing was sent.
+      expect(_pillOf(tester, 'Doubles').state, GamePillState.chosen);
+      expect(_rpc.where((c) => c.$1 == 'rpc_create_game'), isEmpty);
+    });
+
+    testWidgets('skill header Clear: stored only, clears; Cancel discards - '
+        '$dir', (tester) async {
+      await _pump(tester, _gameSheet(const GameComposerScreen()), locale);
+      await _tapPill(tester, l.game_any_level);
+      expect(clearLink(), findsNothing);
+      // A pending pill then Cancel writes nothing.
+      await _tap(tester, find.text(l.listing_skill_beginner).last);
+      await _tap(tester, sheetCancel());
+      expect(find.byType(DabblerSheet), findsOneWidget);
+      expect(_pillOf(tester, l.game_any_level).state, GamePillState.idle);
+      // Store Advanced; reopen: Clear shows; Beginner then Cancel keeps it.
+      await _tapPill(tester, l.game_any_level);
+      await _tap(tester, find.text(l.listing_skill_advanced).last);
+      await _tap(tester, find.text(l.composer_confirm));
+      await _tapPill(tester, l.listing_skill_advanced);
+      expect(clearLink(), findsOneWidget);
+      await _tap(tester, find.text(l.listing_skill_beginner).last);
+      await _tap(tester, sheetCancel());
+      expect(
+        _pillOf(tester, l.listing_skill_advanced).state,
+        GamePillState.chosen,
+      );
+      // Clear empties the level (clearSkill) and closes the sheet.
+      await _tapPill(tester, l.listing_skill_advanced);
+      await _tap(tester, clearLink());
+      expect(find.byType(DabblerSheet), findsOneWidget);
+      expect(_pillOf(tester, l.game_any_level).state, GamePillState.idle);
+      expect(_rpc.where((c) => c.$1 == 'rpc_create_game'), isEmpty);
     });
   }
 

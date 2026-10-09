@@ -9,7 +9,7 @@ import 'package:flutter/widgets.dart';
 /// `sheetP74` passes [DabblerSheet.contentMaxFractionMedium]), the 17/22
 /// semibold title with an optional 12/16 caption [subtitle], an optional
 /// header Clear and a small neutral Cancel, the `--faint` hairline under the
-/// header, and the design's 48dp pill foot (`height:48px`,
+/// header (the place sheet has none, `:820`: pass [headerDivider] false), and the design's 48dp pill foot (`height:48px`,
 /// `border-radius: var(--radius-pill)`, 15/20) — the DS
 /// [DabblerComposerSubmit], where [showComposerSheet]'s footer is the 45dp
 /// DS button.
@@ -25,6 +25,7 @@ Future<T?> showGameComposerSheet<T>(
   VoidCallback? onClear,
   ComposerSheetConfirm? confirm,
   double? contentMaxFraction,
+  bool headerDivider = true,
 }) => showDabblerSheet<T>(
   context: opener,
   title: title,
@@ -34,7 +35,7 @@ Future<T?> showGameComposerSheet<T>(
       contentMaxFraction ?? DabblerSheet.defaultContentMaxFraction,
   pageBackground: true,
   showCloseButton: false,
-  headerDivider: true,
+  headerDivider: headerDivider,
   hairlineOutside: true,
   headerActionBuilder: (ctx) =>
       composerSheetHeaderActions(opener, ctx, onClear: onClear),

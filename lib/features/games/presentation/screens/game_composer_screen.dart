@@ -1016,10 +1016,10 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
           Navigator.of(context).maybePop();
         },
       ),
-      // The design's body padding (`padding:12px 18px 0`, `:1080`); the
-      // sheet supplies the 18 gutters.
+      // The design's 12 gap under the header plus its body padding
+      // (`padding:12px 18px 0`, `:1080`); the sheet supplies the 18 gutters.
       builder: (_) => Padding(
-        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
+        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space8),
         child: ComposerDateSheet(
           first: now,
           last: now.add(const Duration(days: 365)),
@@ -1051,7 +1051,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
         },
       ),
       builder: (_) => Padding(
-        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space4),
+        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space8),
         child: ComposerTimeSheet(pending: pending),
       ),
     );
@@ -1085,6 +1085,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       context,
       title: l.game_select_venue,
       contentMaxFraction: DabblerSheet.contentMaxFractionMedium,
+      // The place sheet's header has no border (`:820`).
+      headerDivider: false,
       onClear: state.venueSpaceId != null ? notifier.clearVenue : null,
       confirm: confirm,
       builder: (_) => _VenuePickerSheet(
@@ -1197,9 +1199,16 @@ class ComposerVariantSheet extends StatelessWidget {
     }
     return ValueListenableBuilder<Map<String, dynamic>?>(
       valueListenable: pending,
-      // The list's `padding-block:6px` (`:1108`).
+      // The design's 12 body gap plus the list's `padding-block:6px`
+      // (`:1108`) above the rows, measured 31 from Cancel to row 0 (KAN-473
+      // C1); below, the 30 to the pill is the DS footer's own spacing.
       builder: (context, current, _) => Padding(
-        padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space2),
+        padding: const EdgeInsetsDirectional.only(
+          top:
+              DabblerSpacing.space4 +
+              DabblerSpacing.space2 +
+              DabblerSizing.borderDefault,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -1368,6 +1377,8 @@ class _VenuePickerSheetState extends State<_VenuePickerSheet> {
             placeholder: 'Search venues, spaces or area…',
             onChanged: (v) => setState(() => _query = v.trim()),
           ),
+        // The 12 between the search and the list (`:840`).
+        if (hasAnySpaces) const SizedBox(height: DabblerSpacing.space4),
         if (!hasAnySpaces)
           const ComposerCenteredState.message(
             'No venues available for this format',
