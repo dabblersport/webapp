@@ -86,6 +86,10 @@ const List<NearbyMeetup> _nearby = <NearbyMeetup>[
   NearbyMeetup(id: 'c', title: 't', distanceM: 5200),
 ];
 
+/// The fixture's clock (KAN-470): rows and screen read the same fixed instant,
+/// so "Today" holds whatever the wall clock says.
+final DateTime _fixedNow = DateTime(2030, 1, 15, 12);
+
 MeetupListItem _row(
   String id,
   String title, {
@@ -99,6 +103,7 @@ MeetupListItem _row(
   id,
   title: title,
   startsIn: startsIn,
+  anchor: _fixedNow,
   going: going,
   my: my,
   faces: _faces,
@@ -118,6 +123,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
+        meetupClockProvider.overrideWithValue(() => _fixedNow),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(
           () => _Ready(

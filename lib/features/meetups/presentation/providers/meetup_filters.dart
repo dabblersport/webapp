@@ -29,6 +29,12 @@ bool meetupInDateFilter(DateTime start, MeetupDateFilter filter, DateTime now) {
   };
 }
 
+/// The listing's clock. Production reads the wall clock; a test overrides it
+/// with a fixed instant so date filters do not depend on the time of day.
+final meetupClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
+
 /// The radius filter in metres; null is "Any distance".
 final meetupRadiusProvider = StateProvider<int?>((ref) => null);
 
