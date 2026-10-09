@@ -28,13 +28,15 @@ Future<void> settleImages(WidgetTester tester) async {
   }
 }
 
-/// The design-system `fonts/` folder: the sibling checkout when present, else
-/// the folder of the package the app is actually resolved against.
-String _dsFontsDir() {
-  final String sibling =
-      '${Directory.current.parent.path}/dabbler-design-system/fonts';
-  if (Directory(sibling).existsSync()) return sibling;
-  final File cfg = File('${Directory.current.path}/.dart_tool/package_config.json');
+/// Where the design-system `fonts/` folder can be, in the order it is tried:
+/// the folder of the package the app is actually resolved against (read from
+/// `.dart_tool/package_config.json`, so it works in any checkout, worktree or
+/// CI layout and needs no sibling), then the sibling checkout as a fallback.
+List<String> renderFontDirCandidates() {
+  final List<String> dirs = <String>[];
+  final File cfg = File(
+    '${Directory.current.path}/.dart_tool/package_config.json',
+  );
   if (cfg.existsSync()) {
     final Match? m = RegExp(
       r'"name":\s*"dabbler_design_system",\s*"rootUri":\s*"([^"]+)"',
@@ -47,26 +49,46 @@ String _dsFontsDir() {
                 .resolve('.dart_tool/')
                 .resolveUri(root)
                 .toFilePath();
-      return '${base.endsWith('/') ? base : '$base/'}fonts';
+      dirs.add('${base.endsWith('/') ? base : '$base/'}fonts');
     }
   }
-  return sibling;
+  dirs.add('${Directory.current.parent.path}/dabbler-design-system/fonts');
+  return dirs;
 }
 
 /// Loads the design-system fonts for a render test (call from `setUpAll`).
+///
+/// Throws a [StateError] naming every folder tried when none holds the fonts:
+/// without them the test engine falls back to Ahem (every glyph a full em
+/// wide) and the render fails with layout errors that hide the real cause.
+/// [searchDirs] overrides the folders tried (for the negative test).
 ///
 /// Wingx, the Arabic display face, draws Arabic only — it has no Latin
 /// letters. Latin text under an Arabic locale (data that is not translated)
 /// therefore needs a fallback, and the test engine has none, so it drew
 /// black blocks. This registers Gloock (the Latin display face) and Glory
 /// under the fallback family names the engine consults, so those glyphs draw.
-Future<void> loadRenderFonts() async {
-  final String dsFonts = _dsFontsDir();
+Future<void> loadRenderFonts({List<String>? searchDirs}) async {
+  final List<String> tried = searchDirs ?? renderFontDirCandidates();
+  final String? dsFonts = tried.cast<String?>().firstWhere(
+    (String? d) => File('$d/Glory-Regular.ttf').existsSync(),
+    orElse: () => null,
+  );
+  if (dsFonts == null) {
+    throw StateError(
+      'Design-system fonts not found; render tests would fall back to Ahem. '
+      'Looked for Glory-Regular.ttf in: ${tried.join(', ')}. Run '
+      '`flutter pub get` so dabbler_design_system resolves in '
+      '.dart_tool/package_config.json.',
+    );
+  }
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
     for (final String f in files) {
       final File file = File('$dsFonts/$f');
-      if (!file.existsSync()) return;
+      if (!file.existsSync()) {
+        throw StateError('Design-system font missing: ${file.path}');
+      }
       loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
     }
     await loader.load();
