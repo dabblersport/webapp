@@ -22,7 +22,8 @@ class ComposerPlacePick {
   final double? lng;
 }
 
-/// Opens "Add location" (`Home Feed.dc.html:818-875`): a search field, the
+/// Opens "Add location" (`Home Feed.dc.html:818-875`): a search field, "Use
+/// current location" and the Recent group until something is typed, then the
 /// matching places, a Clear action and a `Confirm` footer that applies the
 /// pending place.
 Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
@@ -115,6 +116,36 @@ class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
           placeholder: l.composer_place_search,
           onChanged: (v) => setState(() => _query = v),
         ),
+        // Before anything is typed (`Home Feed.dc.html:836-849`, `placesFor`
+        // at ~2979): "Use current location", then the "Recent" group. The app
+        // keeps no recent places (no read path exists), so the group is empty.
+        if (typed.isEmpty) ...[
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space3,
+            ),
+            child: ComposerPickerRow(
+              key: const Key('composer-place-use-current'),
+              icon: 'gps',
+              accent: true,
+              title: l.home_location_use_current,
+              // Naming the device location for a post has no existing read
+              // path (KAN-463 decision_required); the row is drawn, not wired.
+              onTap: () {},
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsetsDirectional.only(
+              top: DabblerSpacing.space5,
+              bottom: DabblerSpacing.space2,
+            ),
+            child: DabblerText(
+              l.home_location_recent,
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+            ),
+          ),
+        ],
         if (typed.length >= 2)
           ValueListenableBuilder<ComposerPlacePick?>(
             valueListenable: widget.pending,

@@ -11,6 +11,8 @@ import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart'
+    show userUpcomingGamesProvider;
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -676,4 +678,22 @@ final gameSearchProvider = FutureProvider.autoDispose
       final repo = ref.watch(postRepositoryProvider);
       final result = await repo.searchGames(query.trim());
       return result.fold((err) => <Map<String, dynamic>>[], (games) => games);
+    });
+
+/// The viewer's joined upcoming games (the "Link a game" sheet's default list
+/// before anything is typed, `Home Feed.dc.html:888`), read through the
+/// existing [userUpcomingGamesProvider] and shaped like [gameSearchProvider]
+/// rows so the sheet draws both the same way.
+final composerJoinedGamesProvider =
+    FutureProvider.autoDispose<List<Map<String, dynamic>>>((ref) async {
+      final games = await ref.watch(userUpcomingGamesProvider.future);
+      return [
+        for (final g in games)
+          {
+            'id': g.id,
+            'title': g.title,
+            'sport': g.sport,
+            'start_at': g.getScheduledStartDateTime().toIso8601String(),
+          },
+      ];
     });

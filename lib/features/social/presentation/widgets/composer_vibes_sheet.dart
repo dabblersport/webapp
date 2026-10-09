@@ -3,6 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -11,16 +12,23 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// of vibe chips, a Clear action when something is chosen and a `Confirm`
 /// footer that hands the pending vibe to [onConfirm]. As tall as its chips,
 /// up to the frame's `max-height: 82%`. [kindLabel] is the localized name of
-/// the post kind the count subtitle names.
+/// the post kind the count subtitle names. With [postType], only the vibes the
+/// design offers for that kind are listed (`Home Feed.dc.html` `vibesFor()`,
+/// the `contexts` of each vibe, carried by [DabblerVibe.contexts]) and the
+/// count is theirs.
 Future<void> showComposerVibesSheet(
   BuildContext context,
   WidgetRef ref, {
   required String? selectedVibeId,
   required String kindLabel,
+  PostType? postType,
   required ValueChanged<Vibe> onConfirm,
   required VoidCallback onClear,
 }) {
-  final vibes = ref.read(vibesProvider).valueOrNull ?? const <Vibe>[];
+  final vibes = composerVibesFor(
+    ref.read(vibesProvider).valueOrNull ?? const <Vibe>[],
+    postType,
+  );
   final pending = ValueNotifier<Vibe?>(
     vibes.where((v) => v.id == selectedVibeId).firstOrNull,
   );
@@ -58,16 +66,38 @@ Future<void> showComposerVibesSheet(
     footerBuilder: (_) => composerSheetFooter(confirm),
     builder: composerFrameBuilder(
       context,
-      (_) => ComposerVibesSheet(pending: pending),
+      (_) => ComposerVibesSheet(pending: pending, postType: postType),
     ),
   );
 }
 
+/// The design context a [PostType] offers vibes in; `null` for a kind the
+/// design has no vibe list for.
+DabblerVibeContext? composerVibeContext(PostType? type) => switch (type) {
+  PostType.moment => DabblerVibeContext.moment,
+  PostType.dab => DabblerVibeContext.dab,
+  PostType.kickIn => DabblerVibeContext.kickin,
+  _ => null,
+};
+
+/// [vibes] limited to those the design offers for [type] (unfiltered when
+/// [type] has no design context). A vibe whose key the design does not know
+/// is not offered for any kind.
+List<Vibe> composerVibesFor(List<Vibe> vibes, PostType? type) {
+  final ctx = composerVibeContext(type);
+  if (ctx == null) return vibes;
+  return [
+    for (final v in vibes)
+      if (DabblerVibe.fromKey(v.key)?.contexts.contains(ctx) ?? false) v,
+  ];
+}
+
 /// The search field and vibe chips of [showComposerVibesSheet].
 class ComposerVibesSheet extends ConsumerStatefulWidget {
-  const ComposerVibesSheet({super.key, required this.pending});
+  const ComposerVibesSheet({super.key, required this.pending, this.postType});
 
   final ValueNotifier<Vibe?> pending;
+  final PostType? postType;
 
   @override
   ConsumerState<ComposerVibesSheet> createState() => _ComposerVibesSheetState();
@@ -107,7 +137,7 @@ class _ComposerVibesSheetState extends ConsumerState<ComposerVibesSheet> {
             AppLocalizations.of(context).composer_vibe_failed,
           ),
           data: (vibes) {
-            final shown = vibes
+            final shown = composerVibesFor(vibes, widget.postType)
                 .where(
                   (v) =>
                       _query.isEmpty ||
