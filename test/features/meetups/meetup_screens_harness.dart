@@ -202,10 +202,11 @@ MeetupListItem meetupRow(
   int? maxSkill,
   String? vibeKey,
   List<MeetupAvatar> faces = const <MeetupAvatar>[],
+  DateTime? anchor,
 }) => MeetupListItem(
   id: id,
   title: title,
-  startAt: DateTime.now().add(startsIn),
+  startAt: (anchor ?? DateTime.now()).add(startsIn),
   capacity: capacity,
   goingCount: going,
   myRsvpStatus: my,
