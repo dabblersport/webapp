@@ -420,9 +420,9 @@ void main() {
       expect(skill.state, GamePillState.idle);
 
       // Duration 30m/1h/2h, Join policy and Visibility: small option pills.
-      expect(find.text('30m'), findsOneWidget);
-      expect(find.text('1h'), findsOneWidget);
-      expect(find.text('2h'), findsOneWidget);
+      expect(find.text(l.game_duration_chip_minutes(30)), findsOneWidget);
+      expect(find.text(l.game_duration_chip_hours(1)), findsOneWidget);
+      expect(find.text(l.game_duration_chip_hours(2)), findsOneWidget);
       for (final String s in <String>[
         l.game_join_open,
         l.game_join_request,
