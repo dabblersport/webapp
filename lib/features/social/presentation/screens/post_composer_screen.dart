@@ -551,17 +551,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final hasLocation = composerState.locationName != null;
     final nearLimit = bodyLen > maxLen * 0.9;
 
-    final tagPills = <Widget>[
-      if (composerState.hasSport && composerState.sportName != null)
-        _tagBadge(composerState.sportName!.toUpperCase()),
-      if (hasLocation) _tagBadge(composerState.locationName!),
-      if (composerState.hasGame && composerState.gameName != null)
-        _tagBadge(composerState.gameName!),
-    ];
-    final vibe = composerState.hasVibe && composerState.vibeName != null
-        ? DabblerVibe.fromKey(composerState.vibeName!.toLowerCase())
-        : null;
-
     return DabblerComposerBox(
       controller: _bodyController,
       focusNode: _bodyFocusNode,
@@ -571,21 +560,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       counter: '$bodyLen/$maxLen',
       counterSemanticLabel: '$bodyLen of $maxLen characters used',
       counterEmphasised: nearLimit,
-      tags: tagPills.isEmpty && !composerState.hasVibe
-          ? null
-          : Wrap(
-              spacing: DabblerSpacing.space2,
-              runSpacing: DabblerSpacing.space2,
-              children: [
-                if (composerState.hasVibe && composerState.vibeName != null)
-                  DabblerChip(
-                    label: composerState.vibeName!,
-                    vibe: vibe,
-                    selected: true,
-                  ),
-                ...tagPills,
-              ],
-            ),
+      tags: composerTagRow(
+        vibeName: composerState.hasVibe ? composerState.vibeName : null,
+        sportName: composerState.hasSport ? composerState.sportName : null,
+        locationName: composerState.locationName,
+        gameName: composerState.hasGame ? composerState.gameName : null,
+      ),
       tools: [
         DabblerComposerTool(
           icon: 'gallery',
@@ -629,8 +609,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  Widget _tagBadge(String label) =>
-      DabblerBadge(label: label, tone: DabblerBadgeTone.warning);
 
   // ═══════════════════════════════════════════════════════════════════════
   // MEDIA SECTION
@@ -951,3 +929,44 @@ class _HashtagTextEditingController extends TextEditingController {
     return TextSpan(children: spans, style: style);
   }
 }
+
+/// The composer's selected-tag row: vibe, sport, location and game. Null when
+/// nothing is set.
+///
+/// KAN-426/456: every pill is drawn at the same DS size class — the vibe as the
+/// `tag` chip and the rest as `comfortable` warning badges — both 12px type on
+/// 6/12 padding, so all four share one 28dp height instead of the regular
+/// 40dp chip beside the 25dp list badge.
+@visibleForTesting
+Widget? composerTagRow({
+  String? vibeName,
+  String? sportName,
+  String? locationName,
+  String? gameName,
+}) {
+  final pills = <Widget>[
+    if (vibeName != null)
+      DabblerChip(
+        label: vibeName,
+        vibe: DabblerVibe.fromKey(vibeName.toLowerCase()),
+        selected: true,
+        tag: true,
+      ),
+    if (sportName != null) _tagBadge(sportName.toUpperCase()),
+    if (locationName != null) _tagBadge(locationName),
+    if (gameName != null) _tagBadge(gameName),
+  ];
+  if (pills.isEmpty) return null;
+  return Wrap(
+    spacing: DabblerSpacing.space2,
+    runSpacing: DabblerSpacing.space2,
+    crossAxisAlignment: WrapCrossAlignment.center,
+    children: pills,
+  );
+}
+
+Widget _tagBadge(String label) => DabblerBadge(
+  label: label,
+  tone: DabblerBadgeTone.warning,
+  comfortable: true,
+);
