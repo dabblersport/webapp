@@ -5532,6 +5532,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get game_error_generic => 'حدث خطأ ما. حاول مرة أخرى.';
 
   @override
+  String composer_counter_semantic(int used, int max) {
+    return 'الأحرف المستخدمة: $used من $max';
+  }
+
+  @override
   String get game_format_locked => 'مقفل';
 
   @override

@@ -9941,6 +9941,12 @@ abstract class AppLocalizations {
   /// **'Something went wrong. Try again.'**
   String get game_error_generic;
 
+  /// Screen-reader sentence for the Create Post body character counter, not the visual counter. {used} is the current length, {max} the limit.
+  ///
+  /// In en, this message translates to:
+  /// **'{used} of {max} characters used'**
+  String composer_counter_semantic(int used, int max);
+
   /// State label on the Format chip while no sport is chosen; the chip does nothing until then.
   ///
   /// In en, this message translates to:
