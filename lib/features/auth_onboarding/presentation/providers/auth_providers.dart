@@ -35,10 +35,13 @@ class RouterRefreshNotifier extends ChangeNotifier {
     notifyListeners();
   }
 
-  void clearPostLoginWelcome() {
+  /// [notify] false: the caller navigates itself right after (Welcome ->
+  /// Continue), so the router must not re-run the welcome redirect (-> Home)
+  /// in between and undo the destination.
+  void clearPostLoginWelcome({bool notify = true}) {
     if (!_needsPostLoginWelcome) return;
     _needsPostLoginWelcome = false;
-    notifyListeners();
+    if (notify) notifyListeners();
   }
 
   void notifyAuthStateChanged() {
