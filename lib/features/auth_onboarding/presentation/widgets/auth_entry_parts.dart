@@ -23,6 +23,29 @@ final RegExp _emojiRun = RegExp(
   unicode: true,
 );
 
+/// Whether the on-screen keyboard is open. The login and sign-up email screens
+/// follow it: with the keyboard up they keep only the title, the fields and the
+/// primary action (and the code link) above it, so the active field is never
+/// hidden; the back header and the secondary group (Google, Apple, Create an
+/// account) wait below the keyboard and return when it closes.
+bool authKeyboardOpen(BuildContext context) =>
+    MediaQuery.viewInsetsOf(context).bottom > 0;
+
+/// The room left above the keyboard (below the status bar) on a small phone:
+/// under this the subtitle gives way as well, so the fields and the primary
+/// action are never squeezed or overlapped. A real iPhone SE with its keyboard
+/// leaves about 356.
+const double kAuthTightHeight = 420;
+
+/// Whether the keyboard is open AND the room above it is [kAuthTightHeight] or
+/// less (a small phone, or a large text size).
+bool authKeyboardTight(BuildContext context) {
+  final media = MediaQuery.of(context);
+  return media.viewInsets.bottom > 0 &&
+      media.size.height - media.viewInsets.bottom - media.padding.top <=
+          kAuthTightHeight;
+}
+
 /// Removes emoji from a localized string (the design system carries none).
 String authStripEmoji(String text) =>
     text.replaceAll(_emojiRun, '').replaceAll(RegExp(r'\s+$'), '');
