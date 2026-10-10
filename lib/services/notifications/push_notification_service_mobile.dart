@@ -11,16 +11,61 @@ import 'dart:convert';
 
 import 'package:dabbler/core/config/notification_preference.dart';
 
+/// The native notification permission, behind a seam so a test can prove when
+/// the system prompt is (not) asked for. [request] shows the native alert;
+/// [status] never does.
+abstract class PushPermissionGateway {
+  Future<AuthorizationStatus> status();
+  Future<AuthorizationStatus> request();
+}
+
+class _FirebasePermissionGateway implements PushPermissionGateway {
+  const _FirebasePermissionGateway();
+
+  @override
+  Future<AuthorizationStatus> status() async =>
+      (await FirebaseMessaging.instance.getNotificationSettings())
+          .authorizationStatus;
+
+  @override
+  Future<AuthorizationStatus> request() async =>
+      (await FirebaseMessaging.instance.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      )).authorizationStatus;
+}
+
 /// Mobile implementation of push notification service (Android/iOS).
+///
+/// The native permission prompt is never shown at app start: [init] only wires
+/// listeners (and, when the user already allowed notifications earlier, the
+/// token and topics). The prompt is asked for by [requestNotificationPermission],
+/// which runs only when the signed-in user turns notifications on in the app.
+/// The FCM token is registered only once the permission is granted.
 class PushNotificationService {
   PushNotificationService._internal();
+
+  /// A separate instance for tests.
+  @visibleForTesting
+  PushNotificationService.forTest();
+
   static final PushNotificationService instance =
       PushNotificationService._internal();
+
+  /// The native permission, replaceable in tests.
+  @visibleForTesting
+  PushPermissionGateway permission = const _FirebasePermissionGateway();
 
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
   bool _initialized = false;
+  bool _activated = false;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<AuthState>? _authStateSub;
 
@@ -35,19 +80,48 @@ class PushNotificationService {
       'notification_prompt_next_at_ms';
   static const Duration _remindLaterCooldown = Duration(hours: 72);
 
+  /// Startup: wires what needs no permission and never shows the native
+  /// prompt. When notifications were already allowed (an earlier session), the
+  /// token and topics are registered too.
   Future<void> init() async {
     if (_initialized) return;
+    _initialized = true;
 
-    await _requestPermissions();
+    // Each step on its own: one failing (a missing plugin, no Firebase yet)
+    // must not stop the others, least of all the permission read.
+    await _step('platform setup', _configurePlatform);
+    await _step('auth listener', () async => _listenAuthState());
+    await _step('initial message', _handleInitialMessage);
+    await _step('opened-app listener', () async => _listenMessageOpenedApp());
+    await _step('activation', () async {
+      if (await _permissionGranted()) await _activate();
+    });
+  }
+
+  Future<void> _step(String name, Future<void> Function() run) async {
+    try {
+      await run();
+    } catch (e) {
+      debugPrint('Push init ($name) error: $e');
+    }
+  }
+
+  /// Whether the user has allowed notifications (never prompts).
+  Future<bool> _permissionGranted() async {
+    final status = await permission.status();
+    return status == AuthorizationStatus.authorized ||
+        status == AuthorizationStatus.provisional;
+  }
+
+  /// Everything that follows a granted permission: foreground handling, the
+  /// token, topics and the refresh listener. Safe to call twice.
+  Future<void> _activate() async {
+    if (_activated) return;
+    _activated = true;
     await _configureForegroundHandling();
     await _logFcmToken();
     await _subscribeToTopics();
     _listenTokenRefresh();
-    _listenAuthState();
-    await _handleInitialMessage();
-    _listenMessageOpenedApp();
-
-    _initialized = true;
   }
 
   /// Re-save the FCM token whenever the user signs in. On a fresh install
@@ -57,17 +131,18 @@ class PushNotificationService {
   /// overlapping saves are harmless.
   void _listenAuthState() {
     _authStateSub?.cancel();
-    _authStateSub = Supabase.instance.client.auth.onAuthStateChange.listen(
-      (state) async {
-        final signedIn = state.event == AuthChangeEvent.signedIn ||
-            (state.event == AuthChangeEvent.initialSession &&
-                state.session != null);
-        if (signedIn) {
-          await _logFcmToken();
-        }
-      },
-      onError: (e) => debugPrint('Auth-state FCM token sync error: $e'),
-    );
+    _authStateSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+      state,
+    ) async {
+      final signedIn =
+          state.event == AuthChangeEvent.signedIn ||
+          (state.event == AuthChangeEvent.initialSession &&
+              state.session != null);
+      // Only once notifications are allowed: no permission, no token.
+      if (signedIn && await _permissionGranted()) {
+        await _logFcmToken();
+      }
+    }, onError: (e) => debugPrint('Auth-state FCM token sync error: $e'));
   }
 
   /// Subscribe to Firebase topics for broadcast notifications
@@ -84,16 +159,9 @@ class PushNotificationService {
     }
   }
 
-  Future<void> _requestPermissions() async {
-    await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      provisional: false,
-      sound: true,
-    );
-
+  /// Channel and presentation setup. Asks for nothing: the native permission
+  /// prompt belongs to [requestNotificationPermission].
+  Future<void> _configurePlatform() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       // Android: foreground messages are displayed via flutter_local_notifications.
       const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
@@ -115,7 +183,8 @@ class PushNotificationService {
       );
       await _localNotificationsPlugin
           .resolvePlatformSpecificImplementation<
-              AndroidFlutterLocalNotificationsPlugin>()
+            AndroidFlutterLocalNotificationsPlugin
+          >()
           ?.createNotificationChannel(channel);
     } else {
       // iOS/macOS: DO NOT initialize flutter_local_notifications here — it
@@ -126,10 +195,10 @@ class PushNotificationService {
       // for foreground and background alike.
       await FirebaseMessaging.instance
           .setForegroundNotificationPresentationOptions(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
+            alert: true,
+            badge: true,
+            sound: true,
+          );
     }
   }
 
@@ -358,7 +427,10 @@ class PushNotificationService {
     NotificationPreference preference,
   ) async {
     final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_notificationPromptPreferenceKey, preference.wireValue);
+    await prefs.setString(
+      _notificationPromptPreferenceKey,
+      preference.wireValue,
+    );
 
     if (preference == NotificationPreference.remindLater) {
       final nextAt = DateTime.now().add(_remindLaterCooldown);
@@ -378,38 +450,35 @@ class PushNotificationService {
     return settings.authorizationStatus;
   }
 
-  /// Request notification permissions (called when user clicks "Enable")
+  /// Request notification permissions: the one place the native prompt is
+  /// asked for, called when the signed-in user turns notifications on in the
+  /// app (the settings switch, the Home sheet's Enable, the onboarding step).
   Future<bool> requestNotificationPermission() async {
-    final settings = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      announcement: false,
-      badge: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-      sound: true,
-    );
+    final status = await permission.request();
 
-    if (settings.authorizationStatus == AuthorizationStatus.authorized ||
-        settings.authorizationStatus == AuthorizationStatus.provisional) {
-      await _configureForegroundHandling();
-      await _logFcmToken();
-      await _subscribeToTopics();
-      _listenTokenRefresh();
+    if (status == AuthorizationStatus.authorized ||
+        status == AuthorizationStatus.provisional) {
+      try {
+        await _configurePlatform();
+        await _activate();
 
-      // Initialize local notifications with tap callback
-      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
-      const darwinInit = DarwinInitializationSettings();
-      const initSettings = InitializationSettings(
-        android: androidInit,
-        iOS: darwinInit,
-        macOS: darwinInit,
-      );
-      await _localNotificationsPlugin.initialize(
-        initSettings,
-        onDidReceiveNotificationResponse: _onLocalNotificationTap,
-      );
-
+        // Initialize local notifications with tap callback
+        const androidInit = AndroidInitializationSettings(
+          '@mipmap/ic_launcher',
+        );
+        const darwinInit = DarwinInitializationSettings();
+        const initSettings = InitializationSettings(
+          android: androidInit,
+          iOS: darwinInit,
+          macOS: darwinInit,
+        );
+        await _localNotificationsPlugin.initialize(
+          initSettings,
+          onDidReceiveNotificationResponse: _onLocalNotificationTap,
+        );
+      } catch (e) {
+        debugPrint('Push activation error: $e');
+      }
       return true;
     }
     return false;

@@ -1,3 +1,5 @@
+import 'package:dabbler/services/notifications/push_notification_service.dart';
+import 'dart:async';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
@@ -263,7 +265,18 @@ class NotificationSettingsScreen extends ConsumerWidget {
           l10n.notif_settings_push_sub,
           'notification',
           settings.pushEnabled,
-          controller.setPushEnabled,
+          (on) {
+            controller.setPushEnabled(on);
+            // Turning push on is the in-app question: the native prompt is
+            // asked for here, and only here (never at app start). With it off
+            // nothing is requested.
+            if (on) {
+              unawaited(
+                PushNotificationService.instance
+                    .requestNotificationPermission(),
+              );
+            }
+          },
         ),
         _switchRow(
           context,
