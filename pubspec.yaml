@@ -203,6 +203,9 @@ flutter:
     - assets/images/Group-1.svg
     - assets/images/Group.svg
     - assets/images/location_intro.webp
+    # The 11 sport posters ship as WebP copies; the supplied PNGs in
+    # assets/images/ ("Retro ... .png") stay unchanged and are not bundled.
+    - assets/images/sport_welcome/
     - assets/images/logoTypo.svg
     - assets/images/undraw/
     - assets/Avatar/
