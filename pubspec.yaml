@@ -196,7 +196,14 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/
+    # Listed file by file: assets/images/Location.md is the unchanged 3.5 MB
+    # source of location_intro.webp and must not ship a second time.
+    - assets/images/dabbler_logo.svg
+    - assets/images/dabbler_text_logo.svg
+    - assets/images/Group-1.svg
+    - assets/images/Group.svg
+    - assets/images/location_intro.webp
+    - assets/images/logoTypo.svg
     - assets/images/undraw/
     - assets/Avatar/
     - assets/elements/

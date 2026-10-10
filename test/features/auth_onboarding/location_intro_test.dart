@@ -371,10 +371,30 @@ void main() {
     expect(l.location_intro_later, 'Maybe later');
   });
 
-  test('supplied artwork bytes are preserved in the bundled PNG copy', () {
+  test('the supplied artwork source is unchanged and not bundled', () {
+    // Location.md is the unchanged 3.5 MB source (a PNG); it stays in the repo
+    // but must not ship a second time.
     final a = File('assets/images/Location.md').readAsBytesSync();
-    final b = File('assets/images/location_intro.png').readAsBytesSync();
-    expect(a, b);
+    expect(a.length, 3499368);
+    expect(a.sublist(0, 8), <int>[137, 80, 78, 71, 13, 10, 26, 10]);
+    final String pubspec = File('pubspec.yaml').readAsStringSync();
+    expect(pubspec, isNot(contains('- assets/images/\n')));
+    expect(pubspec.contains('Location.md'), isTrue, reason: 'explained once');
+    expect(pubspec.contains('- assets/images/Location.md'), isFalse);
+  });
+
+  test('the bundled intro art is a small WebP of the same dimensions', () {
+    final f = File('assets/images/location_intro.webp');
+    final bytes = f.readAsBytesSync();
+    expect(bytes.length, lessThan(400 * 1024));
+    // RIFF....WEBP
+    expect(String.fromCharCodes(bytes.sublist(0, 4)), 'RIFF');
+    expect(String.fromCharCodes(bytes.sublist(8, 12)), 'WEBP');
+    expect(File('assets/images/location_intro.png').existsSync(), isFalse);
+    expect(
+      File('pubspec.yaml').readAsStringSync(),
+      contains('- assets/images/location_intro.webp'),
+    );
   });
 
   test('background location init never prompts (source guard)', () {

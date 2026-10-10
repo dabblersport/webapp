@@ -20,7 +20,7 @@ class LocationIntroScreen extends ConsumerStatefulWidget {
   final VoidCallback? onFinish;
 
   /// The bundled PNG copy of the supplied `Location.md` artwork.
-  static const String artAsset = 'assets/images/location_intro.png';
+  static const String artAsset = 'assets/images/location_intro.webp';
 
   @override
   ConsumerState<LocationIntroScreen> createState() =>
