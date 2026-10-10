@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -81,7 +81,7 @@ final locationPermissionGatewayProvider = Provider<LocationPermissionGateway>(
 );
 
 /// The signed-in user the introduction is recorded for (overridable in tests).
-final locationIntroUserIdProvider = Provider<String?>(
+final locationIntroUserIdProvider = Provider.autoDispose<String?>(
   (ref) => Supabase.instance.client.auth.currentUser?.id,
 );
 
@@ -89,23 +89,50 @@ final locationIntroStoreProvider = Provider<LocationIntroStore>(
   (ref) => const LocationIntroStore(),
 );
 
-/// Whether to show the introduction to [userId] now: never for a signed-out
-/// user, never twice, never when the permission is already granted. Reads the
-/// permission without requesting it.
+/// Why the introduction is shown or skipped (logged, so a skip is explainable).
+enum LocationIntroDecision {
+  show,
+  skipNoUser,
+  skipAlreadySeen,
+  skipPermissionGranted,
+}
+
+/// Decides whether to show the introduction to [userId] now: never for a
+/// signed-out user, never twice, never when the permission is already granted.
+/// Reads the permission without requesting it. A permission that cannot be
+/// read (the browser's Permissions API throwing or being unsupported) counts
+/// as "not granted": the page is shown, the user can skip it.
+Future<LocationIntroDecision> decideLocationIntro({
+  required String? userId,
+  required LocationPermissionGateway gateway,
+  required LocationIntroStore store,
+}) async {
+  if (userId == null || userId.isEmpty) {
+    return LocationIntroDecision.skipNoUser;
+  }
+  if (await store.seen(userId)) return LocationIntroDecision.skipAlreadySeen;
+  try {
+    if (locationPermissionGranted(await gateway.check())) {
+      return LocationIntroDecision.skipPermissionGranted;
+    }
+  } catch (_) {
+    // Unreadable permission: not granted.
+  }
+  return LocationIntroDecision.show;
+}
+
 Future<bool> shouldShowLocationIntro({
   required String? userId,
   required LocationPermissionGateway gateway,
   required LocationIntroStore store,
 }) async {
-  if (userId == null || userId.isEmpty) return false;
-  if (await store.seen(userId)) return false;
-  try {
-    if (locationPermissionGranted(await gateway.check())) return false;
-  } catch (_) {
-    // An unreadable permission must not trap the user: skip the page.
-    return false;
-  }
-  return true;
+  final decision = await decideLocationIntro(
+    userId: userId,
+    gateway: gateway,
+    store: store,
+  );
+  debugPrint('[LocationIntro] ${decision.name}');
+  return decision == LocationIntroDecision.show;
 }
 
 /// What the screen shows.

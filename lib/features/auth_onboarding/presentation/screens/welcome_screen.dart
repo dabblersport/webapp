@@ -68,7 +68,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   Future<void> _continue() async {
     if (_continuing) return;
     _continuing = true;
-    routerRefreshNotifier.clearPostLoginWelcome();
+    // Decide first, while this screen is still the current route; then drop
+    // the welcome guard and navigate in one step, so no router refresh sends
+    // the user Home in between.
     final container = ProviderScope.containerOf(context, listen: false);
     final show = await shouldShowLocationIntro(
       userId: container.read(locationIntroUserIdProvider),
@@ -76,6 +78,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       store: container.read(locationIntroStoreProvider),
     );
     if (!mounted) return;
+    routerRefreshNotifier.clearPostLoginWelcome(notify: false);
     context.go(show ? RoutePaths.locationIntro : RoutePaths.home);
   }
 
