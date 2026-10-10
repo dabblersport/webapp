@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:dabbler/core/constants/timing/splash_timing.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:lottie/lottie.dart';
 
@@ -9,41 +11,47 @@ import 'package:lottie/lottie.dart';
 /// bundle.
 typedef SplashCompositionLoader = Future<LottieComposition> Function();
 
-/// Plays the launch animation (`assets/Splash.lottie`) once over a plain brand
-/// ground while [bootstrap] runs, then shows the widget [bootstrap] resolves
+/// Plays the launch animation (`assets/Splash.lottie`) over a plain brand
+/// ground while [bootstrap] runs, looping its draw-in (frames 0 to 89 of 132)
+/// until the app is ready, then cross-fades to the widget [bootstrap] resolves
 /// to.
 ///
 /// ## One continuous splash
 ///
-/// The OS launch screens cannot play a `.lottie`: Android's system splash is a
-/// static icon on a colour and an iOS launch storyboard cannot run code. So
-/// the native launch screens show only the ground — the app's welcome /
+/// The native launch surfaces show only the ground — the app's welcome /
 /// first-screen background in the device's light or dark appearance
-/// ([groundFor]) — which is the animation's own start frame (the mark is a
-/// stroke that draws in from nothing) — and this widget then plays the
-/// animation once on the same ground. There is no second route, no replay and no added delay.
+/// ([groundFor]) — which is the animation's own start frame. On iOS a native
+/// lottie-ios overlay (see `AppDelegate.swift`) plays the same animation from
+/// the first native frame; when this widget has painted its own first frame it
+/// calls [nativeHandoff], which returns the overlay's loop phase and removes
+/// it, and the loop continues here from that phase, so there is no restart.
+/// Android's system splash cannot play a `.lottie`, so Android shows the ground
+/// until this widget's first frame.
 ///
 /// It is not a route: nothing here touches the router, so the platform's
 /// initial location (a deep link or a web URL) is what the app's router reads
 /// when it is built after the splash.
 ///
-/// The app is shown when the animation has finished AND bootstrap is done. If
-/// bootstrap is slower, the animation holds its final frame (it never
-/// replays). The animation is abandoned immediately (bootstrap alone gates) if
-/// it fails to load or play, and is not waited on past its duration plus
-/// [SplashTiming.endedGrace]. Under reduced motion the mark is shown still,
-/// without waiting for playback.
+/// The app replaces the splash when [bootstrap] is done AND the animation has
+/// been shown for [SplashTiming.minDisplay]; there is no wait for a full play.
+/// If the animation fails to load, or under reduced motion (the mark is shown
+/// still), bootstrap alone gates.
 class StartupSplash extends StatefulWidget {
   const StartupSplash({
     super.key,
     required this.bootstrap,
     this.compositionLoader = defaultLoader,
+    this.nativeHandoff = defaultNativeHandoff,
   });
 
   /// Completes with the app to show once the splash is done. Must not fail;
   /// resolve to an error app instead.
   final Future<Widget> bootstrap;
   final SplashCompositionLoader compositionLoader;
+
+  /// Asks the native overlay (iOS) to hand over: returns its loop phase
+  /// (0..1 of the draw-in loop) and removes it, or null when there is none.
+  final Future<double?> Function() nativeHandoff;
 
   static const String asset = 'assets/Splash.lottie';
 
@@ -64,6 +72,19 @@ class StartupSplash extends StatefulWidget {
 
   static Future<LottieComposition> defaultLoader() => AssetLottie(asset).load();
 
+  static const MethodChannel _channel = MethodChannel('dabbler/startup');
+
+  /// The `dabbler/startup` channel's `handoff` (iOS only; null elsewhere or if
+  /// the native side has no overlay).
+  static Future<double?> defaultNativeHandoff() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) return null;
+    try {
+      return await _channel.invokeMethod<double>('handoff');
+    } catch (_) {
+      return null;
+    }
+  }
+
   @override
   State<StartupSplash> createState() => _StartupSplashState();
 }
@@ -71,10 +92,13 @@ class StartupSplash extends StatefulWidget {
 class _StartupSplashState extends State<StartupSplash>
     with SingleTickerProviderStateMixin, WidgetsBindingObserver {
   late final AnimationController _controller = AnimationController(vsync: this);
-  final Completer<void> _animationDone = Completer<void>();
-  Timer? _cap;
+  // Completes when the animation no longer holds the app: at once if it failed
+  // or is still (reduced motion), else minDisplay after its first painted frame.
+  final Completer<void> _animationGate = Completer<void>();
+  Timer? _minDisplay;
   LottieComposition? _composition;
   bool _started = false;
+  bool _handedOff = false;
   Widget? _app;
 
   late Brightness _brightness = _deviceBrightness;
@@ -110,52 +134,69 @@ class _StartupSplashState extends State<StartupSplash>
       final LottieComposition composition = await widget
           .compositionLoader()
           .timeout(SplashTiming.loadTimeout);
-      if (!mounted) return _finish();
+      if (!mounted) return _openGate();
       _controller.duration = composition.duration;
       setState(() => _composition = composition);
+      // The first painted frame of the animation: hand the native overlay over
+      // (continuing from its phase), then count the minimum display from here.
+      await WidgetsBinding.instance.endOfFrame;
+      if (!mounted) return _openGate();
+      final double? phase = await widget.nativeHandoff();
+      _handedOff = true;
+      if (!mounted) return _openGate();
       if (reduceMotion) {
         // The mark fully drawn, still, no playback. (The animation ends on
         // the bare ground, so its last frame is not a useful still.)
         _controller.value = StartupSplash.stillFrame;
-        return _finish();
+        return _openGate();
       }
-      _cap = Timer(composition.duration + SplashTiming.endedGrace, _finish);
-      // Once: the controller stops at its end and holds the last frame.
-      await _controller.forward().orCancel;
-      _finish();
+      // Loop only the draw-in, from where the native overlay was.
+      final double end = StartupSplash.stillFrame;
+      _controller.value = (phase ?? 0).clamp(0.0, 1.0) * end;
+      unawaited(
+        _controller
+            .repeat(min: 0, max: end, period: composition.duration * end)
+            .catchError((Object _) {}),
+      );
+      _minDisplay = Timer(SplashTiming.minDisplay, _openGate);
     } catch (_) {
       // Load or play failed (or the ticker was cancelled by dispose): bootstrap
-      // alone gates now.
-      _finish();
+      // alone gates now, and any native overlay goes.
+      _openGate();
+    } finally {
+      if (!_handedOff) {
+        _handedOff = true;
+        unawaited(widget.nativeHandoff());
+      }
     }
   }
 
-  void _finish() {
-    if (!_animationDone.isCompleted) _animationDone.complete();
+  void _openGate() {
+    if (!_animationGate.isCompleted) _animationGate.complete();
   }
 
   Future<void> _waitForBoth() async {
     final Widget app = await widget.bootstrap;
-    await _animationDone.future;
+    await _animationGate.future;
     if (!mounted) return;
-    _cap?.cancel();
+    _minDisplay?.cancel();
+    // Cross-fade from the splash frozen at its current frame.
+    _controller.stop();
     setState(() => _app = app);
   }
 
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    _cap?.cancel();
+    _minDisplay?.cancel();
     _controller.dispose();
     super.dispose();
   }
 
-  @override
-  Widget build(BuildContext context) {
-    final Widget? app = _app;
-    if (app != null) return app;
+  Widget _splash() {
     final LottieComposition? composition = _composition;
     return Directionality(
+      key: const ValueKey<String>('startup-splash'),
       textDirection: TextDirection.ltr,
       // Same colour as the native and web launch backgrounds, so launch ->
       // animation has no visible seam.
@@ -181,6 +222,20 @@ class _StartupSplashState extends State<StartupSplash>
                 ),
               ),
       ),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final Widget? app = _app;
+    return AnimatedSwitcher(
+      duration: SplashTiming.crossFade,
+      child: app == null
+          ? _splash()
+          : KeyedSubtree(
+              key: const ValueKey<String>('startup-app'),
+              child: app,
+            ),
     );
   }
 }

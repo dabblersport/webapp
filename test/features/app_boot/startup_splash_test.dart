@@ -25,6 +25,7 @@ Future<void> _pump(
   WidgetTester tester,
   Future<Widget> bootstrap, {
   SplashCompositionLoader? loader,
+  Future<double?> Function()? handoff,
 }) async {
   final LottieComposition composition = (await tester.runAsync(_real))!;
   _duration = composition.duration;
@@ -32,6 +33,7 @@ Future<void> _pump(
     StartupSplash(
       bootstrap: bootstrap,
       compositionLoader: loader ?? () async => composition,
+      nativeHandoff: handoff ?? () async => null,
     ),
   );
   await tester.pump();
@@ -41,6 +43,7 @@ double _progress(WidgetTester tester) =>
     tester.widget<Lottie>(find.byType(Lottie)).controller!.value;
 
 void main() {
+  final Duration minDisplay = SplashTiming.minDisplay;
   Color ground(WidgetTester tester) => tester
       .widget<ColoredBox>(
         find
@@ -74,8 +77,8 @@ void main() {
       expect(ground(tester), isNot(DabblerPalette.mainP600));
       // Finish the splash so no timer outlives the test.
       bootstrap.complete(_app);
-      await tester.pump(_duration + SplashTiming.endedGrace);
-      await tester.pump();
+      await tester.pump(SplashTiming.minDisplay);
+      await tester.pumpAndSettle();
     });
   }
 
@@ -89,72 +92,124 @@ void main() {
     await tester.pump();
     expect(ground(tester), const Color(0xFF141414));
     bootstrap.complete(_app);
-    await tester.pump(_duration + SplashTiming.endedGrace);
-    await tester.pump();
+    await tester.pump(minDisplay);
+    await tester.pumpAndSettle();
   });
 
-  testWidgets('animation plays once -> shows the app once bootstrap is done', (
+  testWidgets('the animation loops while loading, never stopping at its end', (
     tester,
   ) async {
-    await _pump(tester, Future.value(_app));
-    expect(
-      find.byKey(const ValueKey('startup-splash-animation')),
-      findsOneWidget,
-    );
+    final boot = Completer<Widget>();
+    await _pump(tester, boot.future);
     expect(find.byType(Lottie), findsOneWidget);
-    expect(find.byKey(_appKey), findsNothing);
-    expect(_progress(tester), lessThan(1));
-
-    await tester.pump(_duration ~/ 2);
-    expect(_progress(tester), inInclusiveRange(0.3, 0.7));
-    expect(find.byKey(_appKey), findsNothing);
-
-    await tester.pump(_duration);
-    await tester.pump();
+    // The loop covers the draw-in only: it wraps before the artwork's fade-out.
+    double maxSeen = 0;
+    int wraps = 0;
+    double last = _progress(tester);
+    for (var i = 0; i < 400; i++) {
+      await tester.pump(const Duration(milliseconds: 20));
+      final double p = _progress(tester);
+      if (p < last - 0.2) wraps++;
+      if (p > maxSeen) maxSeen = p;
+      last = p;
+    }
+    expect(wraps, greaterThanOrEqualTo(3), reason: 'looped for 8 s');
+    expect(maxSeen, lessThanOrEqualTo(StartupSplash.stillFrame + 1e-6));
+    expect(
+      find.byKey(_appKey),
+      findsNothing,
+      reason: 'bootstrap still loading',
+    );
+    boot.complete(_app);
+    await tester.pumpAndSettle();
     expect(find.byKey(_appKey), findsOneWidget);
   });
 
-  testWidgets('bootstrap slower than the animation -> holds the final frame, '
-      'no replay', (tester) async {
+  testWidgets('bootstrap faster than 0.8 s -> the app opens at the minimum '
+      'display, not after a full play', (tester) async {
+    await _pump(tester, Future.value(_app));
+    await tester.pump(minDisplay - const Duration(milliseconds: 100));
+    expect(find.byKey(_appKey), findsNothing, reason: 'minimum not reached');
+    await tester.pump(const Duration(milliseconds: 150));
+    await tester.pump();
+    expect(find.byKey(_appKey), findsOneWidget);
+    expect(
+      minDisplay,
+      lessThan(_duration),
+      reason: 'the full play (2.2 s) is no longer waited for',
+    );
+  });
+
+  testWidgets('bootstrap slower than 0.8 s -> opens as soon as it is ready', (
+    tester,
+  ) async {
     final boot = Completer<Widget>();
     await _pump(tester, boot.future);
-    await tester.pump(_duration + const Duration(milliseconds: 50));
-    expect(_progress(tester), 1);
-    // Ten more seconds: still the final frame, never restarted.
-    await tester.pump(const Duration(seconds: 5));
-    await tester.pump(const Duration(seconds: 5));
+    await tester.pump(const Duration(seconds: 3));
     expect(find.byKey(_appKey), findsNothing);
-    expect(find.byType(Lottie), findsOneWidget);
-    expect(_progress(tester), 1);
-
     boot.complete(_app);
     await tester.pump();
     await tester.pump();
-    expect(find.byKey(_appKey), findsOneWidget);
+    expect(find.byKey(_appKey), findsOneWidget, reason: 'no extra wait');
   });
 
-  testWidgets('bootstrap faster than the animation -> still waits for it', (
+  testWidgets('hand-off is a cross-fade from the splash held at its frame', (
     tester,
   ) async {
     await _pump(tester, Future.value(_app));
-    await tester.pump(_duration ~/ 3);
-    expect(find.byKey(_appKey), findsNothing);
-    await tester.pump(_duration);
+    await tester.pump(minDisplay + const Duration(milliseconds: 20));
     await tester.pump();
+    // Mid-fade: both the splash and the app are in the tree.
+    await tester.pump(SplashTiming.crossFade ~/ 2);
+    expect(find.byKey(_appKey), findsOneWidget);
+    expect(find.byType(Lottie), findsOneWidget);
+    expect(find.byType(FadeTransition), findsWidgets);
+    await tester.pumpAndSettle();
+    expect(find.byType(Lottie), findsNothing, reason: 'splash gone after fade');
     expect(find.byKey(_appKey), findsOneWidget);
   });
 
-  testWidgets('animation fails to load -> immediate fallback to bootstrap', (
-    tester,
-  ) async {
+  testWidgets('the native overlay is handed over once, and the loop continues '
+      'from its phase', (tester) async {
+    int calls = 0;
+    final boot = Completer<Widget>();
+    await _pump(
+      tester,
+      boot.future,
+      handoff: () async {
+        calls++;
+        return 0.5;
+      },
+    );
+    expect(calls, 1);
+    final double p0 = _progress(tester);
+    expect(
+      p0,
+      closeTo(0.5 * StartupSplash.stillFrame, 0.06),
+      reason: 'continues from the native phase, no restart at 0',
+    );
+    boot.complete(_app);
+    await tester.pumpAndSettle();
+    expect(calls, 1);
+  });
+
+  testWidgets('animation fails to load -> immediate fallback, native overlay '
+      'released', (tester) async {
+    int calls = 0;
     await _pump(
       tester,
       Future.value(_app),
       loader: () async => throw StateError('decode'),
+      handoff: () async {
+        calls++;
+        return null;
+      },
     );
     await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byKey(_appKey), findsOneWidget);
     expect(find.byType(Lottie), findsNothing);
+    expect(calls, 1);
   });
 
   testWidgets('animation load hangs -> abandoned after the load timeout', (
@@ -167,11 +222,11 @@ void main() {
     );
     expect(find.byKey(_appKey), findsNothing);
     await tester.pump(SplashTiming.loadTimeout);
-    await tester.pump();
+    await tester.pumpAndSettle();
     expect(find.byKey(_appKey), findsOneWidget);
   });
 
-  testWidgets('reduced motion -> mark still, not played, no waiting', (
+  testWidgets('reduced motion -> mark still, not played, no minimum wait', (
     tester,
   ) async {
     tester.platformDispatcher.accessibilityFeaturesTestValue =
@@ -184,8 +239,6 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(_progress(tester), StartupSplash.stillFrame, reason: 'not played');
 
-    // Bootstrap resolves long before the animation's 2.2 seconds: the app
-    // shows at once, not after full playback.
     boot.complete(_app);
     await tester.pump();
     await tester.pump();
@@ -208,7 +261,7 @@ void main() {
     );
     addTearDown(router.dispose);
     await _pump(tester, Future.value(MaterialApp.router(routerConfig: router)));
-    await tester.pump(_duration);
+    await tester.pump(SplashTiming.minDisplay);
     await tester.pumpAndSettle();
     expect(find.text('game 42'), findsOneWidget);
     expect(find.text('home'), findsNothing);
