@@ -9,7 +9,12 @@ abstract final class SplashTiming {
   /// and the app starts as soon as bootstrap is done.
   static const Duration loadTimeout = Duration(milliseconds: 1500);
 
-  /// Grace added to the animation's own duration before the splash stops
-  /// waiting for it to finish (a stalled or throttled ticker).
-  static const Duration endedGrace = Duration(milliseconds: 500);
+  /// The least time the animation is shown, counted from its first painted
+  /// frame, before the app may replace it. A bootstrap that finishes sooner
+  /// waits out the rest of this so the animation is seen, then the app opens.
+  /// Not applied when the animation failed to load or under reduced motion.
+  static const Duration minDisplay = Duration(milliseconds: 800);
+
+  /// The cross-fade from the splash (frozen at its current frame) to the app.
+  static const Duration crossFade = Duration(milliseconds: 200);
 }
