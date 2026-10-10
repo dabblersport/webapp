@@ -34,7 +34,12 @@ class OnboardingLoading extends StatelessWidget {
 
 /// Maps an app [Sport] row to the DS sport, or null when the system has no
 /// glyph for it. Tries `sport_key`, then the English name, kebab-cased.
-DabblerSport? onboardingDsSport(Sport sport) {
+DabblerSport? onboardingDsSport(Sport sport) =>
+    dsSportFromKeys(sport.sportKey, sport.nameEn);
+
+/// The same mapping from raw `sports` row values (a read-only `sport_key` and
+/// English name), for callers that hold no [Sport].
+DabblerSport? dsSportFromKeys(String? sportKey, String? nameEn) {
   String norm(String raw) =>
       raw.trim().toLowerCase().replaceAll(RegExp(r'[\s_]+'), '-');
   const aliases = <String, DabblerSport>{
@@ -45,7 +50,7 @@ DabblerSport? onboardingDsSport(Sport sport) {
     'field-hockey': DabblerSport.hockey,
     'ice-hockey': DabblerSport.hockey,
   };
-  for (final raw in <String?>[sport.sportKey, sport.nameEn]) {
+  for (final raw in <String?>[sportKey, nameEn]) {
     if (raw == null || raw.trim().isEmpty) continue;
     final key = norm(raw);
     final found = DabblerSport.fromKey(key) ?? aliases[key];

@@ -1,6 +1,7 @@
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
+import 'package:dabbler/features/auth_onboarding/presentation/welcome_sport_poster.dart';
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -23,6 +24,11 @@ class WelcomeScreen extends StatefulWidget {
   /// the design system has one.
   final String? primarySportKey;
 
+  /// Test seam: how the saved primary sport is read when the route carried
+  /// none (default: the signed-in user's profile).
+  @visibleForTesting
+  final WelcomeSavedSportLoader? savedSportLoader;
+
   const WelcomeScreen({
     super.key,
     required this.displayName,
@@ -30,6 +36,7 @@ class WelcomeScreen extends StatefulWidget {
     this.isFirstTime = true,
     this.isConversion = false,
     this.primarySportKey,
+    this.savedSportLoader,
   });
 
   @override
@@ -39,18 +46,38 @@ class WelcomeScreen extends StatefulWidget {
 class _WelcomeScreenState extends State<WelcomeScreen> {
   late final Future<Map<String, dynamic>?> _profileFuture;
 
+  /// The primary sport whose poster fills the page. Null until it is known, so
+  /// the normal background shows meanwhile and a wrong sport never flashes.
+  String? _posterSportKey;
+
   @override
   void initState() {
     super.initState();
-    // The page's artwork is the primary sport's bundled background; the
-    // registry needs the bundled PNGs registered once (idempotent).
-    DabblerSportBackgroundRegistry.registerConventionalMainArtwork(
-      DabblerSportBackgroundRegistry.mainPopulated,
-      DabblerSportBackgroundRegistry.assetPackage,
-    );
     _profileFuture = AuthService().getUserProfile(
       fields: const ['avatar_url', 'display_name'],
     );
+    _resolvePosterSport();
+  }
+
+  /// The sign-up's selected sport arrives with the route; otherwise (Welcome
+  /// Back, or extras missing) the saved primary sport is read from the
+  /// profile. Adding a persona keeps its previous look.
+  void _resolvePosterSport() {
+    final fromRoute = welcomePosterAsset(widget.primarySportKey) == null
+        ? null
+        : widget.primarySportKey;
+    if (fromRoute != null) {
+      _posterSportKey = fromRoute;
+      return;
+    }
+    if (widget.isConversion) return;
+    final load = widget.savedSportLoader ?? loadSavedPrimarySportKey;
+    load()
+        .then((key) {
+          if (!mounted || welcomePosterAsset(key) == null) return;
+          setState(() => _posterSportKey = key);
+        })
+        .catchError((_) {});
   }
 
   /// First word of the display name — presentation only.
@@ -87,12 +114,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     final l10n = AppLocalizations.of(context);
     final persona = _personaContent(widget.personaType);
     final returning = !widget.isFirstTime && !widget.isConversion;
-    final sport = widget.primarySportKey == null
-        ? null
-        : DabblerSport.fromKey(widget.primarySportKey!);
-    final Widget? background = sport == null
-        ? null
-        : DabblerSportBackground.maybe(sport);
+    final Widget? background = welcomePosterBackground(_posterSportKey);
 
     return FutureBuilder<Map<String, dynamic>?>(
       future: _profileFuture,
@@ -115,11 +137,29 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 size: DabblerAvatarSize.xl,
               ),
             ),
-            // The frame greets by first name only.
-            title: l10n.auth_welcome_back_title(_firstName(name)),
+            // The frame greets by first name only. Over a poster the greeting
+            // sits on a white card (same words and type) so it stays legible.
+            title: background == null
+                ? l10n.auth_welcome_back_title(_firstName(name))
+                : null,
             titleStyle: DabblerType.displayScreen,
             titleGap: DabblerSpacing.space3,
+            content: background == null
+                ? const <Widget>[]
+                : <Widget>[
+                    DabblerCard(
+                      variant: DabblerCardVariant.white,
+                      borderOutside: true,
+                      radius: DabblerRadius.xl,
+                      padding: DabblerInsets.card,
+                      child: DabblerText(
+                        l10n.auth_welcome_back_title(_firstName(name)),
+                        style: DabblerType.displayScreen,
+                      ),
+                    ),
+                  ],
             bodyGap: DabblerSpacing.space8,
+            background: background,
             primaryLabel: l10n.auth_welcome_continue,
             onPrimary: _continue,
             footerBottomPadding: DabblerSpacing.space9,
@@ -184,7 +224,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     String? avatarUrl, {
     required bool onArtwork,
   }) {
-    return Row(
+    final row = Row(
       children: [
         DabblerAvatar(
           size: DabblerAvatarSize.lg,
@@ -201,9 +241,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 name,
                 style: DabblerType.rowTitle,
                 weight: DabblerTextWeight.semibold,
-                tone: onArtwork
-                    ? DabblerTextTone.onBrand
-                    : DabblerTextTone.primary,
+                tone: DabblerTextTone.primary,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
               ),
@@ -221,6 +259,16 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ),
         ),
       ],
+    );
+    // Over a poster the header sits on a white card (like the cards below it)
+    // so the name stays legible on every artwork.
+    if (!onArtwork) return row;
+    return DabblerCard(
+      variant: DabblerCardVariant.white,
+      borderOutside: true,
+      radius: DabblerRadius.xl,
+      padding: DabblerInsets.card,
+      child: row,
     );
   }
 
