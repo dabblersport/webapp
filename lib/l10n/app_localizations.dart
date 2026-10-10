@@ -11164,6 +11164,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{n} went'**
   String fav_meta_went(int n);
+
+  /// No description provided for @location_intro_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'See what’s playing nearby.'**
+  String get location_intro_headline;
+
+  /// No description provided for @location_intro_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Your location is used to show nearby games and venues. Turn it on and we’ll keep things local.'**
+  String get location_intro_body;
+
+  /// No description provided for @location_intro_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my location'**
+  String get location_intro_cta;
+
+  /// No description provided for @location_intro_later.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe later'**
+  String get location_intro_later;
+
+  /// No description provided for @location_intro_denied.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is off for Dabbler. You can still choose your area yourself.'**
+  String get location_intro_denied;
+
+  /// No description provided for @location_intro_denied_forever.
+  ///
+  /// In en, this message translates to:
+  /// **'Location is blocked for Dabbler. Turn it on in Settings to see nearby games and venues.'**
+  String get location_intro_denied_forever;
+
+  /// No description provided for @location_intro_service_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services are off on this device. Turn them on in Settings, then come back.'**
+  String get location_intro_service_off;
+
+  /// No description provided for @location_intro_lookup_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t find you right now. You can choose your area yourself.'**
+  String get location_intro_lookup_failed;
+
+  /// No description provided for @location_intro_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open Settings'**
+  String get location_intro_open_settings;
+
+  /// No description provided for @location_intro_art.
+  ///
+  /// In en, this message translates to:
+  /// **'A map with a red location pin'**
+  String get location_intro_art;
 }
 
 class _AppLocalizationsDelegate

@@ -41,6 +41,9 @@ class RoutePaths {
   static const String setUsername = '/set-username';
   static const String authWelcome = '/auth-welcome';
   static const String welcome = '/welcome';
+
+  /// The location introduction that follows Welcome / Welcome Back.
+  static const String locationIntro = '/location-intro';
   static const String emailVerification = '/email-verification';
 
   // Onboarding Routes
@@ -169,6 +172,7 @@ class RouteNames {
   static const String meetupEdit = 'meetup-edit';
 
   // Game Creation Routes
+  static const String locationIntro = 'location-intro';
   static const String createGame = 'create-game';
   static const String editGame = 'edit-game';
   static const String createGameBasicInfo = 'create-game-basic-info';

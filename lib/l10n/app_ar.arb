@@ -2254,5 +2254,15 @@
   "fav_retry": "حاول مرة أخرى",
   "fav_meta_players": "{n}/{cap} لاعبين",
   "fav_meta_going": "{n} سيحضرون",
-  "fav_meta_went": "{n} حضروا"
+  "fav_meta_went": "{n} حضروا",
+  "location_intro_headline": "شاهد ما يُلعب بالقرب منك.",
+  "location_intro_body": "نستخدم موقعك لعرض المباريات والملاعب القريبة. فعّله وسنُبقي كل شيء محليًا.",
+  "location_intro_cta": "استخدم موقعي",
+  "location_intro_later": "ربما لاحقًا",
+  "location_intro_denied": "الموقع متوقف لتطبيق Dabbler. يمكنك اختيار منطقتك بنفسك.",
+  "location_intro_denied_forever": "الموقع محظور لتطبيق Dabbler. فعّله من الإعدادات لرؤية المباريات والملاعب القريبة.",
+  "location_intro_service_off": "خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.",
+  "location_intro_lookup_failed": "تعذّر تحديد موقعك الآن. يمكنك اختيار منطقتك بنفسك.",
+  "location_intro_open_settings": "فتح الإعدادات",
+  "location_intro_art": "خريطة عليها دبوس موقع أحمر"
 }

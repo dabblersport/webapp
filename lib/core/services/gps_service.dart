@@ -52,14 +52,23 @@ class LocationError extends LocationResult {
 /// 3. Fetch with [LocationAccuracy.high], 10 s timeout.
 /// 4. On timeout, retry once with [LocationAccuracy.medium], 6 s timeout.
 class GpsService {
-  Future<LocationResult> getCurrentLocation() async {
+  /// Reads the current position.
+  ///
+  /// With [requestPermission] true (the default; every explicit "use my
+  /// location" action) a denied permission is asked for. Background
+  /// initialisation passes false: it only reads what the user already allowed
+  /// and NEVER shows the system prompt (a denied permission is simply
+  /// [LocationDenied]).
+  Future<LocationResult> getCurrentLocation({
+    bool requestPermission = true,
+  }) async {
     // 1. Service enabled?
     final serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) return LocationServiceOff();
 
     // 2. Permission
     LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
+    if (permission == LocationPermission.denied && requestPermission) {
       permission = await Geolocator.requestPermission();
     }
     if (permission == LocationPermission.deniedForever) {

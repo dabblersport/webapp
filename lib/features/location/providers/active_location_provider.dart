@@ -64,7 +64,9 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     }
 
     // 2. No saved primary — try GPS now (user has to wait briefly).
-    final gpsResult = await _gps.getCurrentLocation();
+    // Background start-up: never asks the user for permission here (the
+    // location intro screen is where the system prompt is asked for).
+    final gpsResult = await _gps.getCurrentLocation(requestPermission: false);
     return _stateFromGpsResult(gpsResult);
   }
 
@@ -105,7 +107,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   /// closer/more accurate, upgrade to GPS source.
   void _backgroundGpsRefresh({ActiveLocation? currentSaved}) {
     Future.microtask(() async {
-      final result = await _gps.getCurrentLocation();
+      // Silent: only upgrades when permission was already granted.
+      final result = await _gps.getCurrentLocation(requestPermission: false);
       if (result is! LocationSuccess) return;
 
       final area = await _resolveArea(result.lat, result.lng);
