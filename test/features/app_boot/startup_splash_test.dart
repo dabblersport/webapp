@@ -214,6 +214,20 @@ void main() {
     expect(find.text('home'), findsNothing);
   });
 
+  test('Splash.lottie holds no solid #7328CE fill (no purple flash)', () async {
+    final LottieComposition c = await _real();
+    // Decoded JSON text of the archive's animation: no fill of the old purple
+    // (0.451, 0.1569, 0.8078) remains.
+    final String json = Process.runSync('unzip', <String>[
+      '-p',
+      'assets/Splash.lottie',
+      'a/Splash.json',
+    ]).stdout.toString();
+    expect(c.duration, const Duration(milliseconds: 2200));
+    expect(json.replaceAll(' ', '').contains('0.451,0.1569,0.8078'), isFalse);
+    expect(json.contains('0.5922'), isTrue, reason: 'strokes kept');
+  });
+
   test('startup no longer plays video; both assets are bundled unchanged', () {
     final String splash = File(
       'lib/features/app_boot/startup_splash.dart',
@@ -229,7 +243,7 @@ void main() {
     ]).stdout.toString().split(' ').first;
     expect(
       sha('assets/Splash.lottie'),
-      'd988e68d2781c64d15c7bb653b43fdcdc2d68a8b',
+      '926c0ebefbb7259caf28142526c566c94a305920',
     );
     expect(
       sha('assets/Splash.mp4'),
