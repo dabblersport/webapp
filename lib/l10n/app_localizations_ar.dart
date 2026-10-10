@@ -6254,4 +6254,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String fav_meta_went(int n) {
     return '$n حضروا';
   }
+
+  @override
+  String get location_intro_headline => 'شاهد ما يُلعب بالقرب منك.';
+
+  @override
+  String get location_intro_body =>
+      'نستخدم موقعك لعرض المباريات والملاعب القريبة. فعّله وسنُبقي كل شيء محليًا.';
+
+  @override
+  String get location_intro_cta => 'استخدم موقعي';
+
+  @override
+  String get location_intro_later => 'ربما لاحقًا';
+
+  @override
+  String get location_intro_denied =>
+      'الموقع متوقف لتطبيق Dabbler. يمكنك اختيار منطقتك بنفسك.';
+
+  @override
+  String get location_intro_denied_forever =>
+      'الموقع محظور لتطبيق Dabbler. فعّله من الإعدادات لرؤية المباريات والملاعب القريبة.';
+
+  @override
+  String get location_intro_service_off =>
+      'خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.';
+
+  @override
+  String get location_intro_lookup_failed =>
+      'تعذّر تحديد موقعك الآن. يمكنك اختيار منطقتك بنفسك.';
+
+  @override
+  String get location_intro_open_settings => 'فتح الإعدادات';
+
+  @override
+  String get location_intro_art => 'خريطة عليها دبوس موقع أحمر';
 }

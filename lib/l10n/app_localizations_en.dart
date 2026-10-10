@@ -6201,4 +6201,39 @@ class AppLocalizationsEn extends AppLocalizations {
   String fav_meta_went(int n) {
     return '$n went';
   }
+
+  @override
+  String get location_intro_headline => 'See what’s playing nearby.';
+
+  @override
+  String get location_intro_body =>
+      'Your location is used to show nearby games and venues. Turn it on and we’ll keep things local.';
+
+  @override
+  String get location_intro_cta => 'Use my location';
+
+  @override
+  String get location_intro_later => 'Maybe later';
+
+  @override
+  String get location_intro_denied =>
+      'Location is off for Dabbler. You can still choose your area yourself.';
+
+  @override
+  String get location_intro_denied_forever =>
+      'Location is blocked for Dabbler. Turn it on in Settings to see nearby games and venues.';
+
+  @override
+  String get location_intro_service_off =>
+      'Location services are off on this device. Turn them on in Settings, then come back.';
+
+  @override
+  String get location_intro_lookup_failed =>
+      'We couldn’t find you right now. You can choose your area yourself.';
+
+  @override
+  String get location_intro_open_settings => 'Open Settings';
+
+  @override
+  String get location_intro_art => 'A map with a red location pin';
 }

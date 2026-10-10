@@ -16,6 +16,9 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/intent_sel
 import 'package:dabbler/features/auth_onboarding/presentation/screens/interests_selection_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/set_username_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/screens/location_intro_screen.dart';
+import 'package:dabbler/features/location/location_intro/location_intro.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/email_verification_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/onboarding_scenarios/profile/onboarding_welcome_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/primary_sport_selection_screen.dart';
@@ -236,6 +239,23 @@ RouteBase get setUsernameRoute =>
           direction: SlideDirection.fromLeft,
         );
       },
+    );
+
+// Location introduction: follows Welcome / Welcome Back (KAN-489). It is a
+// normal authenticated route; the welcome guard is cleared before it opens, so
+// there is no redirect loop, and it continues to Home.
+RouteBase get locationIntroRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.locationIntro,
+      name: RouteNames.locationIntro,
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: Consumer(
+          builder: (context, ref, _) =>
+              LocationIntroScreen(userId: ref.read(locationIntroUserIdProvider)),
+        ),
+      ),
     );
 
 // Welcome route

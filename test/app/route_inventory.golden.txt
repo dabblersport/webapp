@@ -14,6 +14,7 @@
 /onboarding-persona-selection	onboarding-persona-selection	GoRoute
 /set-username	-	GoRoute
 /welcome	-	GoRoute
+/location-intro	location-intro	GoRoute
 /email-verification	-	GoRoute
 /onboarding-welcome	onboarding-welcome	GoRoute
 /onboarding-interests-selection	onboarding-interests-selection	GoRoute

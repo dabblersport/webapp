@@ -377,6 +377,7 @@ class AppRouter {
     onboardingPersonaSelectionRoute,
     setUsernameRoute,
     welcomeRoute,
+    locationIntroRoute,
     emailVerificationRoute,
     onboardingWelcomeRoute,
     onboardingInterestsSelectionRoute,

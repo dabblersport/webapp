@@ -1,10 +1,12 @@
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
+import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// The welcome that closes onboarding (and follows adding a persona): who the
@@ -58,9 +60,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     return space < 0 ? trimmed : trimmed.substring(0, space);
   }
 
-  void _continue() {
+  bool _continuing = false;
+
+  /// Continue from Welcome / Welcome Back: the location introduction first
+  /// (once per user on this device, never when the permission is already
+  /// granted; the check reads the permission without requesting it), else Home.
+  Future<void> _continue() async {
+    if (_continuing) return;
+    _continuing = true;
     routerRefreshNotifier.clearPostLoginWelcome();
-    context.go(RoutePaths.home);
+    final container = ProviderScope.containerOf(context, listen: false);
+    final show = await shouldShowLocationIntro(
+      userId: container.read(locationIntroUserIdProvider),
+      gateway: container.read(locationPermissionGatewayProvider),
+      store: container.read(locationIntroStoreProvider),
+    );
+    if (!mounted) return;
+    context.go(show ? RoutePaths.locationIntro : RoutePaths.home);
   }
 
   @override

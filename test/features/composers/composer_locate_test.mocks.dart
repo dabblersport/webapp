@@ -12,9 +12,11 @@ import 'package:mockito/mockito.dart' as _i1;
 
 class MockGpsService extends _i1.Mock implements _i2.GpsService {
   @override
-  _i3.Future<_i2.LocationResult> getCurrentLocation() =>
+  _i3.Future<_i2.LocationResult> getCurrentLocation({bool? requestPermission = true}) =>
       (super.noSuchMethod(
-            Invocation.method(#getCurrentLocation, []),
+            Invocation.method(#getCurrentLocation, [], {
+              #requestPermission: requestPermission,
+            }),
             returnValue: _i3.Future<_i2.LocationResult>.value(
               _i2.LocationError('unstubbed'),
             ),
