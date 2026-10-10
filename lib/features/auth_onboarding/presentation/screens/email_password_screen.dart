@@ -371,65 +371,79 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       ),
     ];
 
+    // Keyboard open: only the title, fields, Log in and the code link stay
+    // above it; the back row and the "or" group are out of the way.
+    final keyboard = authKeyboardOpen(context);
+    final tight = authKeyboardTight(context);
+    final Widget codeLink = Center(
+      child: DabblerTextLink(
+        label: l10n.auth_login_email_code,
+        style: authLinkStyle(context, DabblerType.copy),
+        inline: true,
+        underline: false,
+        onPressed: _isLoading || !_isEmailValid ? null : _handleSendEmailOtp,
+      ),
+    );
+
     return DabblerFlowPage(
-      onBack: () =>
-          context.canPop() ? context.pop() : context.go(RoutePaths.authWelcome),
+      onBack: keyboard
+          ? null
+          : () => context.canPop()
+                ? context.pop()
+                : context.go(RoutePaths.authWelcome),
       backLabel: l10n.auth_back,
       title: l10n.auth_login_title,
       titleStyle: DabblerType.displayScreen,
-      titleGap: DabblerSpacing.space3,
+      titleGap: keyboard ? DabblerSpacing.space2 : DabblerSpacing.space3,
       headerTopPadding: DabblerSpacing.space4,
-      subtitle: l10n.auth_login_subtitle,
+      bodyTopPadding: keyboard ? DabblerSpacing.space4 : DabblerSpacing.space6,
+      bodyGap: keyboard ? DabblerSpacing.space4 : DabblerSpacing.space6,
+      subtitle: tight ? null : l10n.auth_login_subtitle,
       subtitleStyle: DabblerType.lead,
       primaryLabel: l10n.auth_login_button,
       primaryLoading: _isLoading,
       onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
-      secondary: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Center(
-            child: DabblerTextLink(
-              label: l10n.auth_login_email_code,
-              style: authLinkStyle(context, DabblerType.copy),
-              inline: true,
-              underline: false,
-              onPressed: _isLoading || !_isEmailValid
-                  ? null
-                  : _handleSendEmailOtp,
+      footerBottomPadding: keyboard
+          ? DabblerSpacing.space4
+          : DabblerSpacing.space8,
+      secondary: keyboard
+          ? codeLink
+          : Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                codeLink,
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerDivider(label: l10n.auth_or),
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerButton(
+                  label: l10n.auth_entry_continue_google,
+                  tone: DabblerButtonTone.outlined,
+                  size: DabblerButtonSize.full,
+                  fullWidth: true,
+                  disabled: _isLoading,
+                  onPressed: _isLoading ? null : _handleGoogleSignIn,
+                ),
+                if (showApple) ...<Widget>[
+                  const DabblerGap.v(DabblerSpacing.space4),
+                  DabblerButton(
+                    label: l10n.auth_entry_continue_apple,
+                    tone: DabblerButtonTone.outlined,
+                    size: DabblerButtonSize.full,
+                    fullWidth: true,
+                    disabled: _isLoading,
+                    onPressed: _isLoading ? null : _handleAppleSignIn,
+                  ),
+                ],
+                const DabblerGap.v(DabblerSpacing.space4),
+                AuthAccountLine(
+                  prefix: l10n.auth_new_here,
+                  action: l10n.auth_create_account,
+                  onAction: _isLoading
+                      ? null
+                      : () => context.go(RoutePaths.emailInput),
+                ),
+              ],
             ),
-          ),
-          const DabblerGap.v(DabblerSpacing.space4),
-          DabblerDivider(label: l10n.auth_or),
-          const DabblerGap.v(DabblerSpacing.space4),
-          DabblerButton(
-            label: l10n.auth_entry_continue_google,
-            tone: DabblerButtonTone.outlined,
-            size: DabblerButtonSize.full,
-            fullWidth: true,
-            disabled: _isLoading,
-            onPressed: _isLoading ? null : _handleGoogleSignIn,
-          ),
-          if (showApple) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space4),
-            DabblerButton(
-              label: l10n.auth_entry_continue_apple,
-              tone: DabblerButtonTone.outlined,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              disabled: _isLoading,
-              onPressed: _isLoading ? null : _handleAppleSignIn,
-            ),
-          ],
-          const DabblerGap.v(DabblerSpacing.space4),
-          AuthAccountLine(
-            prefix: l10n.auth_new_here,
-            action: l10n.auth_create_account,
-            onAction: _isLoading
-                ? null
-                : () => context.go(RoutePaths.emailInput),
-          ),
-        ],
-      ),
       content: body,
     );
   }
