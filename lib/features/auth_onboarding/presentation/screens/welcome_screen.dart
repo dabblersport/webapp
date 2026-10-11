@@ -80,6 +80,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         .catchError((_) {});
   }
 
+  /// The active persona's existing principle line, or null for an unknown
+  /// persona (then the card shows the greeting alone).
+  String? _returningQuote(AppLocalizations l) {
+    switch (widget.personaType.trim().toLowerCase()) {
+      case 'socialiser':
+        return l.persona_socialiser_principle;
+      case 'player':
+        return l.persona_player_principle;
+      case 'organiser':
+        return l.persona_organiser_principle;
+      case 'host':
+        return l.persona_host_principle;
+      default:
+        return null;
+    }
+  }
+
   /// First word of the display name — presentation only.
   static String _firstName(String name) {
     final trimmed = name.trim();
@@ -127,8 +144,11 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
             : widget.displayName;
 
         if (returning) {
+          final quote = _returningQuote(l10n);
+          // Avatar at the top (start side), the greeting and the persona's
+          // line in one white card under it, Continue at the bottom; the
+          // poster (when there is one) fills the rest.
           return DabblerFlowPage(
-            centered: true,
             leading: Align(
               alignment: AlignmentDirectional.centerStart,
               child: DabblerAvatar(
@@ -137,28 +157,33 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
                 size: DabblerAvatarSize.xl,
               ),
             ),
-            // The frame greets by first name only. Over a poster the greeting
-            // sits on a white card (same words and type) so it stays legible.
-            title: background == null
-                ? l10n.auth_welcome_back_title(_firstName(name))
-                : null,
-            titleStyle: DabblerType.displayScreen,
-            titleGap: DabblerSpacing.space3,
-            content: background == null
-                ? const <Widget>[]
-                : <Widget>[
-                    DabblerCard(
-                      variant: DabblerCardVariant.white,
-                      borderOutside: true,
-                      radius: DabblerRadius.xl,
-                      padding: DabblerInsets.card,
-                      child: DabblerText(
-                        l10n.auth_welcome_back_title(_firstName(name)),
-                        style: DabblerType.displayScreen,
-                      ),
+            bodyTopPadding: DabblerSpacing.space6,
+            content: <Widget>[
+              DabblerCard(
+                variant: DabblerCardVariant.white,
+                borderOutside: true,
+                radius: DabblerRadius.xl,
+                padding: DabblerInsets.card,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    // The frame greets by first name only.
+                    DabblerText(
+                      l10n.auth_welcome_back_title(_firstName(name)),
+                      style: DabblerType.displayScreen,
                     ),
+                    if (quote != null) ...<Widget>[
+                      const DabblerGap.v(DabblerSpacing.space4),
+                      DabblerText(
+                        quote,
+                        style: DabblerType.leadLarge,
+                        weight: DabblerTextWeight.semibold,
+                      ),
+                    ],
                   ],
-            bodyGap: DabblerSpacing.space8,
+                ),
+              ),
+            ],
             background: background,
             primaryLabel: l10n.auth_welcome_continue,
             onPrimary: _continue,
