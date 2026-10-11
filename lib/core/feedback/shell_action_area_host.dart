@@ -88,6 +88,30 @@ DabblerToastAction? _action(FeedbackAction? a) => a == null
     ? null
     : DabblerToastAction(label: a.label, onPressed: a.onPressed);
 
+/// The height the shell's floating bottom bar covers at the bottom of the
+/// branch page, for a scroll list to clear with its last item.
+///
+/// The shell lets the page run behind the bar (the strip around the pill and
+/// the "+" is transparent), so a branch page's own SafeArea no longer lifts its
+/// content above the bar. Zero outside the shell.
+class ShellOverlayInset extends InheritedWidget {
+  const ShellOverlayInset({
+    super.key,
+    required this.inset,
+    required super.child,
+  });
+
+  final double inset;
+
+  /// The inset below [context], zero when there is no shell bar.
+  static double of(BuildContext context) =>
+      context.dependOnInheritedWidgetOfExactType<ShellOverlayInset>()?.inset ??
+      0;
+
+  @override
+  bool updateShouldNotify(ShellOverlayInset old) => inset != old.inset;
+}
+
 /// The shell's Action Area: the real bottom bar under one persistent
 /// [DabblerNavigationStatus] surface, driven by [feedbackCenterProvider].
 ///

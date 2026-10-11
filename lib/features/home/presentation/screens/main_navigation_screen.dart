@@ -409,7 +409,21 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
             end: DabblerSpacing.space6,
             bottom: overlayBottom,
           ),
-          body: widget.navigationShell,
+          // The page raised the body's bottom padding by the bar's height. The
+          // branch pages' own SafeArea would turn that into a solid page-colour
+          // strip with the feed cut off above it, so the padding is taken off
+          // and handed down as [ShellOverlayInset]: the list runs behind the
+          // bar and clears it with its own bottom padding.
+          body: Builder(
+            builder: (BuildContext context) => ShellOverlayInset(
+              inset: MediaQuery.paddingOf(context).bottom,
+              child: MediaQuery.removePadding(
+                context: context,
+                removeBottom: true,
+                child: widget.navigationShell,
+              ),
+            ),
+          ),
           // The bar sits under the shell's one Action Area surface, which
           // presents the feedback center's shell entries (Action Area plan
           // §3). With nothing to present it is the bar alone.
