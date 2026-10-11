@@ -98,9 +98,6 @@ Future<GoRouter> _pump(
       overrides: [
         locationPermissionGatewayProvider.overrideWithValue(gateway),
         locationIntroUserIdProvider.overrideWithValue('web-user-1'),
-        locationIntroControllerProvider.overrideWith(
-          (ref) => LocationIntroController(gateway, () async => true),
-        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,

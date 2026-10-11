@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:geocoding/geocoding.dart';
 
+import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/models/mapbox_place.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_picker_row.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
@@ -173,7 +174,9 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition(
+        timeLimit: GpsService.fixCap,
+      );
       String name = 'Current location';
 
       try {

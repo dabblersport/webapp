@@ -11207,12 +11207,6 @@ abstract class AppLocalizations {
   /// **'Location services are off on this device. Turn them on in Settings, then come back.'**
   String get location_intro_service_off;
 
-  /// No description provided for @location_intro_lookup_failed.
-  ///
-  /// In en, this message translates to:
-  /// **'We couldn’t find you right now. You can choose your area yourself.'**
-  String get location_intro_lookup_failed;
-
   /// No description provided for @location_intro_open_settings.
   ///
   /// In en, this message translates to:

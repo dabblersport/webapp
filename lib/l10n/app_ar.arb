@@ -2262,7 +2262,6 @@
   "location_intro_denied": "الموقع متوقف لتطبيق Dabbler. يمكنك اختيار منطقتك بنفسك.",
   "location_intro_denied_forever": "الموقع محظور لتطبيق Dabbler. فعّله من الإعدادات لرؤية المباريات والملاعب القريبة.",
   "location_intro_service_off": "خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.",
-  "location_intro_lookup_failed": "تعذّر تحديد موقعك الآن. يمكنك اختيار منطقتك بنفسك.",
   "location_intro_open_settings": "فتح الإعدادات",
   "location_intro_art": "خريطة عليها دبوس موقع أحمر"
 }
