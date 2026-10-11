@@ -232,7 +232,9 @@ jobs:
         run: flutter analyze --no-fatal-infos
 
       - name: Test
-        run: flutter test
+        # Render tests write screenshots under SHOTS_ROOT, whose default is a path on a
+        # developer machine (test/support/render_mode.dart); point it at the runner's temp dir.
+        run: flutter test --dart-define=SHOTS_ROOT="$RUNNER_TEMP/shots"
 
       - name: Reconstruct the signing keystore (runner only)
         env:
