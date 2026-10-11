@@ -1,12 +1,9 @@
-// KAN-492: the feed row's place line shows the saved place name; it falls
-// back to the area name only when that area resolves to a real name, and
-// shows nothing (never a placeholder) otherwise. EN and AR.
-import 'dart:async';
-
+// The feed row's place line shows the post's saved place name only. The area
+// name is never rendered as a place; a null, blank or whitespace name shows
+// no place. EN and AR.
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
-import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -38,8 +35,7 @@ Post _post({String? locationName, String? areaId}) => Post(
 
 Future<void> _pump(
   WidgetTester tester,
-  Post post,
-  Future<String?> Function() areaName, {
+  Post post, {
   Locale locale = const Locale('en'),
 }) async {
   tester.view.physicalSize = const Size(393, 852);
@@ -65,7 +61,6 @@ Future<void> _pump(
         myProfileIdProvider.overrideWith((ref) async => 'someone-else'),
         sportsProvider.overrideWith((ref) async => []),
         vibesProvider.overrideWith((ref) async => []),
-        postAreaNameProvider.overrideWith((ref, id) => areaName()),
       ],
       child: MaterialApp.router(
         builder: (context, child) => DabblerToastProvider(child: child!),
@@ -84,7 +79,7 @@ Future<void> _pump(
   await tester.pump(const Duration(milliseconds: 50));
 }
 
-void _noFabricatedPlace() {
+void _noAreaAsPlace() {
   expect(find.textContaining('Nad Al Sheba'), findsNothing);
   expect(find.textContaining('Unknown area'), findsNothing);
 }
@@ -96,65 +91,44 @@ void main() {
   for (final locale in const [Locale('en'), Locale('ar')]) {
     final tag = locale.languageCode;
 
-    testWidgets('[$tag] saved place name is shown first', (tester) async {
+    testWidgets('[$tag] saved place name is shown', (tester) async {
       await _pump(
         tester,
         _post(locationName: 'Marina Padel Club', areaId: 'area-nas'),
-        () async => 'Nad Al Sheba',
         locale: locale,
       );
       expect(find.textContaining('Marina Padel Club'), findsWidgets);
-      _noFabricatedPlace();
+      _noAreaAsPlace();
     });
 
-    testWidgets('[$tag] area fallback when the area resolves', (tester) async {
-      await _pump(
-        tester,
-        _post(areaId: 'area-marina'),
-        () async => 'Dubai Marina',
-        locale: locale,
-      );
-      expect(find.textContaining('Dubai Marina'), findsWidgets);
+    testWidgets('[$tag] area name is never shown as the place', (tester) async {
+      await _pump(tester, _post(areaId: 'area-nas'), locale: locale);
+      _noAreaAsPlace();
     });
 
-    testWidgets('[$tag] nothing while the area is loading', (tester) async {
-      final never = Completer<String?>();
-      await _pump(
+    for (final name in <String?>[null, '', '   ']) {
+      testWidgets('[$tag] no place line when the name is "${name ?? 'null'}"', (
         tester,
-        _post(areaId: 'area-nas'),
-        () => never.future,
-        locale: locale,
-      );
-      _noFabricatedPlace();
-    });
+      ) async {
+        await _pump(
+          tester,
+          _post(locationName: name, areaId: 'area-nas'),
+          locale: locale,
+        );
+        _noAreaAsPlace();
+        final row = tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
+        expect(row.place, isEmpty);
+      });
+    }
 
-    testWidgets('[$tag] nothing when the area lookup fails or is unknown', (
-      tester,
-    ) async {
+    testWidgets('[$tag] a padded saved name is trimmed', (tester) async {
       await _pump(
         tester,
-        _post(areaId: 'area-x'),
-        () async => null,
+        _post(locationName: '  Marina Padel Club '),
         locale: locale,
       );
-      _noFabricatedPlace();
-      await _pump(
-        tester,
-        _post(areaId: 'area-x'),
-        () async => throw StateError('lookup failed'),
-        locale: locale,
-      );
-      _noFabricatedPlace();
-    });
-
-    testWidgets('[$tag] nothing when the post has no area id', (tester) async {
-      var asked = false;
-      await _pump(tester, _post(), () async {
-        asked = true;
-        return 'Nad Al Sheba';
-      }, locale: locale);
-      expect(asked, isFalse);
-      _noFabricatedPlace();
+      final row = tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
+      expect(row.place, 'Marina Padel Club');
     });
   }
 }

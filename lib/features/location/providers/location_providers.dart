@@ -102,17 +102,3 @@ final areaFeedProvider = FutureProvider.autoDispose.family<List<Post>, int>((
   );
   return result.fold((_) => <Post>[], (posts) => posts);
 });
-
-/// KAN-492: a post's area name for the place line, or null when the area
-/// cannot be resolved to a real name (lookup failed, missing, blank). Unlike
-/// [areaNameProvider] it never yields a placeholder, so a post is never shown
-/// with a fabricated place.
-final postAreaNameProvider = FutureProvider.autoDispose.family<String?, String>(
-  (ref, areaId) async {
-    final result = await ref.watch(areaRepositoryProvider).getArea(areaId);
-    return result.fold((_) => null, (area) {
-      final name = area.name.trim();
-      return name.isEmpty ? null : name;
-    });
-  },
-);
