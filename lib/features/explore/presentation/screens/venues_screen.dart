@@ -1,3 +1,4 @@
+import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
@@ -342,6 +343,7 @@ class _AllVenuesList extends ConsumerWidget {
                 ),
               )
             : _cards(
+                context,
                 ref,
                 venues
                     .map(
@@ -413,6 +415,7 @@ class _AllVenuesList extends ConsumerWidget {
         }
         if (venues.isEmpty) return _empty(context, ref);
         return _cards(
+          context,
           ref,
           venues.map((v) {
             final m = metres(v);
@@ -505,14 +508,20 @@ class _AllVenuesList extends ConsumerWidget {
     ref.read(venueMinRatingFilterProvider.notifier).state = null;
   }
 
-  Widget _cards(WidgetRef ref, List<_VenueCardData> venues) {
+  Widget _cards(
+    BuildContext context,
+    WidgetRef ref,
+    List<_VenueCardData> venues,
+  ) {
     return DabblerRefresh(
       onRefresh: () async {
         ref.invalidate(nearbyVenuesProvider);
         ref.invalidate(venuesBySportWithFiltersProvider);
       },
       child: ListView(
-        padding: ListingLayout.listPadding,
+        padding: ListingLayout.listPadding.add(
+          EdgeInsetsDirectional.only(bottom: ShellOverlayInset.of(context)),
+        ),
         physics: const AlwaysScrollableScrollPhysics(),
         children: [
           for (var i = 0; i < venues.length; i++) ...[

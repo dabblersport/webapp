@@ -2,6 +2,7 @@ import 'dart:io';
 import 'dart:typed_data';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
@@ -214,11 +215,16 @@ void main() {
             locale: locale,
             brightness: b,
             inset: inset,
-            feed: () => ListView.builder(
-              itemCount: 30,
-              itemBuilder: (_, i) => SizedBox(
-                height: 80,
-                child: Text('row-$i', key: ValueKey<int>(i)),
+            // A branch list clears the bar with ShellOverlayInset (the page no
+            // longer lifts it: it runs behind the transparent strip).
+            feed: () => Builder(
+              builder: (BuildContext context) => ListView.builder(
+                padding: EdgeInsets.only(bottom: ShellOverlayInset.of(context)),
+                itemCount: 30,
+                itemBuilder: (_, i) => SizedBox(
+                  height: 80,
+                  child: Text('row-$i', key: ValueKey<int>(i)),
+                ),
               ),
             ),
           );
@@ -238,6 +244,87 @@ void main() {
       }
     }
   }
+
+  // The branch pages are DabblerPages of their own (Home, Venues, ...), with
+  // their own SafeArea over an opaque page ground. A bare feed (above) did not
+  // exercise that: the page cut its list off above the bar over a solid
+  // strip (CEO 2026-10-11, second report). These pump the real nesting.
+  for (final double inset in <double>[0, 34]) {
+    testWidgets('a branch DabblerPage feed shows through the bottom area; '
+        'only the pill and the "+" are solid, inset $inset', (tester) async {
+      await _pump(
+        tester,
+        locale: const Locale('en'),
+        brightness: Brightness.light,
+        inset: inset,
+        feed: () => DabblerPage(
+          topBar: const SizedBox(height: 56),
+          body: ListView.builder(
+            padding: DabblerInsets.feedBottom,
+            itemCount: 40,
+            itemBuilder: (_, i) =>
+                const SizedBox(height: 120, child: ColoredBox(color: _feedRed)),
+          ),
+        ),
+      );
+      final ScrollableState s = tester.state(find.byType(Scrollable).first);
+      s.position.jumpTo(300);
+      await tester.pump();
+      final Rect bar = tester.getRect(find.byType(DabblerNavigationBottomBar));
+      final ui.Image image = await _image(tester);
+      final double mid = bar.center.dy;
+      for (final Offset p in <Offset>[
+        Offset(8, bar.top - 6), // above the pill, left of it
+        Offset(196, bar.top - 4), // strip just above the pill
+        Offset(8, mid), // beside the pill
+        Offset(300, mid), // gap between the pill and the "+"
+        Offset(385, mid), // beside the "+"
+        Offset(196, bar.bottom + 2), // below the pill
+        Offset(196, 852 - 1), // the very bottom, under the home indicator
+      ]) {
+        final Color c = await _pixel(tester, image, p);
+        expect(_near(c, _feedRed), isTrue, reason: '$p is $c, not the feed');
+      }
+      // The pill and the "+" stay solid: not the feed behind them.
+      for (final Offset p in <Offset>[Offset(150, mid), Offset(347, mid)]) {
+        final Color c = await _pixel(tester, image, p);
+        expect(_near(c, _feedRed), isFalse, reason: '$p shows the feed: $c');
+        expect(c.a, 1);
+      }
+      expect(tester.takeException(), isNull);
+    });
+  }
+
+  testWidgets('a listing page clears the bar with its own bottom padding', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      locale: const Locale('en'),
+      brightness: Brightness.light,
+      inset: 34,
+      feed: () => DabblerPage(
+        body: Builder(
+          builder: (BuildContext context) => ListView.builder(
+            padding: EdgeInsetsDirectional.only(
+              bottom: DabblerSpacing.space8 + ShellOverlayInset.of(context),
+            ),
+            itemCount: 30,
+            itemBuilder: (_, i) => SizedBox(
+              height: 80,
+              child: Text('row-$i', key: ValueKey<int>(i)),
+            ),
+          ),
+        ),
+      ),
+    );
+    final ScrollableState s = tester.state(find.byType(Scrollable).first);
+    s.position.jumpTo(s.position.maxScrollExtent);
+    await tester.pump();
+    final Rect bar = tester.getRect(find.byType(DabblerNavigationBottomBar));
+    final Rect last = tester.getRect(find.byKey(const ValueKey<int>(29)));
+    expect(last.bottom, lessThanOrEqualTo(bar.top + 0.5));
+  });
 
   testWidgets('a small phone (360 x 640) keeps the same offsets', (
     tester,

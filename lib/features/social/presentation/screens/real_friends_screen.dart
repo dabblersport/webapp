@@ -1,3 +1,4 @@
+import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -128,10 +129,10 @@ class _RealFriendsScreenState extends ConsumerState<RealFriendsScreen> {
           ),
           SliverToBoxAdapter(
             child: Padding(
-              padding: const EdgeInsetsDirectional.only(
+              padding: EdgeInsetsDirectional.only(
                 start: DabblerSpacing.space6,
                 end: DabblerSpacing.space6,
-                bottom: DabblerSpacing.space8,
+                bottom: DabblerSpacing.space8 + ShellOverlayInset.of(context),
               ),
               child: _buildBottomSection(),
             ),

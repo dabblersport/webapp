@@ -1,3 +1,4 @@
+import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
@@ -289,9 +290,9 @@ class _MeetupsBody extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             // The Upcoming rail bleeds to the screen edge, so the gutter is
             // per row (`Listings.dc.html:453`).
-            padding: const EdgeInsetsDirectional.only(
+            padding: EdgeInsetsDirectional.only(
               top: ListingLayout.listTop,
-              bottom: ListingLayout.listBottom,
+              bottom: ListingLayout.listBottom + ShellOverlayInset.of(context),
             ),
             children: <Widget>[
               if (mine.isNotEmpty) ...<Widget>[

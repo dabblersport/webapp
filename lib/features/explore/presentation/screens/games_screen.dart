@@ -1,3 +1,4 @@
+import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'dart:async';
 
@@ -468,9 +469,9 @@ class _GameTabBody extends ConsumerWidget {
             physics: const AlwaysScrollableScrollPhysics(),
             // The rail bleeds to the screen edge (`margin: 0 -18px`), so the
             // gutter is per row rather than on the list.
-            padding: const EdgeInsetsDirectional.only(
+            padding: EdgeInsetsDirectional.only(
               top: ListingLayout.listTop,
-              bottom: ListingLayout.listBottom,
+              bottom: ListingLayout.listBottom + ShellOverlayInset.of(context),
             ),
             children: [
               if (pinned.isNotEmpty) ...[
