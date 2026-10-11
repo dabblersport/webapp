@@ -18,6 +18,7 @@ class PostCreateRequest {
     this.sportId,
     this.venueId,
     this.locationTagId,
+    this.areaId,
     this.locationName,
     this.geoLat,
     this.geoLng,
@@ -66,6 +67,10 @@ class PostCreateRequest {
 
   /// Location tag UUID (optional).
   final String? locationTagId;
+
+  /// KAN-492: the chosen place's area. Sent as `area_id` only when known;
+  /// with no place (or an unknown area) the key is ABSENT, never a default.
+  final String? areaId;
 
   /// Free-text or resolved location name.
   final String? locationName;
@@ -138,6 +143,7 @@ class PostCreateRequest {
       if (sportId != null) 'sport_id': sportId,
       if (venueId != null) 'venue_id': venueId,
       if (locationTagId != null) 'location_tag_id': locationTagId,
+      if (areaId != null) 'area_id': areaId,
       if (locationName != null) 'location_name': locationName,
       if (geoLat != null) 'geo_lat': geoLat,
       if (geoLng != null) 'geo_lng': geoLng,
@@ -162,6 +168,7 @@ class PostCreateRequest {
     String? sportId,
     String? venueId,
     String? locationTagId,
+    String? areaId,
     String? locationName,
     double? geoLat,
     double? geoLng,
@@ -188,6 +195,7 @@ class PostCreateRequest {
       sportId: sportId ?? this.sportId,
       venueId: venueId ?? this.venueId,
       locationTagId: locationTagId ?? this.locationTagId,
+      areaId: areaId ?? this.areaId,
       locationName: locationName ?? this.locationName,
       geoLat: geoLat ?? this.geoLat,
       geoLng: geoLng ?? this.geoLng,

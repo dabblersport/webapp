@@ -17,12 +17,19 @@ class ComposerPlacePick {
     this.venueId,
     this.lat,
     this.lng,
+    this.areaId,
+    this.locationTagId,
   });
 
   final String name;
   final String? venueId;
   final double? lat;
   final double? lng;
+
+  /// KAN-492: the place's area when known (venue row, resolved current
+  /// location); null when unknown.
+  final String? areaId;
+  final String? locationTagId;
 
   RecentPlace toRecent() =>
       RecentPlace(name: name, venueId: venueId, lat: lat, lng: lng);
@@ -50,6 +57,8 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
             venueId: state.venueId,
             lat: state.geoLat,
             lng: state.geoLng,
+            areaId: state.areaId,
+            locationTagId: state.locationTagId,
           ),
   );
   final l = AppLocalizations.of(context);
@@ -69,9 +78,16 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
             name: pick.name,
             lat: pick.lat,
             lng: pick.lng,
+            areaId: pick.areaId,
           );
         } else {
-          notifier.setRawLocation(name: pick.name);
+          notifier.setRawLocation(
+            name: pick.name,
+            lat: pick.lat,
+            lng: pick.lng,
+            areaId: pick.areaId,
+            locationTagId: pick.locationTagId,
+          );
         }
       }
       Navigator.of(context).maybePop();
@@ -146,6 +162,8 @@ class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
       name: s.locationName ?? l.composer_place_current_location,
       lat: s.geoLat,
       lng: s.geoLng,
+      areaId: s.areaId,
+      locationTagId: s.locationTagId,
     );
     setState(() => _locating = false);
     Navigator.of(context).maybePop();
@@ -280,6 +298,7 @@ class _ComposerPlaceSheetState extends ConsumerState<ComposerPlaceSheet> {
                                   venueId: venue['id'] as String,
                                   lat: venue['geo_lat'] as double?,
                                   lng: venue['geo_lng'] as double?,
+                                  areaId: venue['area_id'] as String?,
                                 ),
                           ),
                         if (rows.isEmpty)
