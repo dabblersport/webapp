@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:dabbler/core/feedback/feedback_center.dart';
@@ -384,8 +385,30 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
         child: DabblerPage(
           maxContentWidth: DabblerPage.readableWidth,
           // The page raises the body's bottom padding by the floating bar's
-          // height, so branch pages scroll their last item clear of it. The
-          // fade behind the bar washes the content out to the page colour.
+          // height, so branch pages scroll their last item clear of it.
+          //
+          // The strip around the bar is transparent: the feed shows and
+          // scrolls behind it, and only the pill and the "+" are opaque. The
+          // DS fade (`overlayFade`, on by default) painted the page colour
+          // solid across the bottom 62% of the strip (CEO 2026-10-11).
+          //
+          // The bar's bottom offset is the design's 24 (`0 18px 24px`), but
+          // never below the device's home-indicator inset: the Action Area
+          // already pads that inset under the bar, so the overlay adds only
+          // what is left of the 24 (nothing on a phone with a home indicator,
+          // the full 24 where there is no inset). It added 24 on top of the
+          // inset: 24 + 34 = 58 pt on an iPhone.
+          overlayFade: false,
+          overlayPadding: EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space6,
+            0,
+            DabblerSpacing.space6,
+            math.max(
+              0,
+              DabblerFadeTokens.bottomInset -
+                  MediaQuery.paddingOf(context).bottom,
+            ),
+          ),
           body: widget.navigationShell,
           // The bar sits under the shell's one Action Area surface, which
           // presents the feedback center's shell entries (Action Area plan

@@ -393,11 +393,23 @@ Rect? _d(Map<String, List<double>> m, String k) =>
     m[k] == null ? null : _r(m[k]![0], m[k]![1], m[k]![2], m[k]![3]);
 
 /// The app's closed bar, keyed like the design table.
+/// The design's bar wrapper (`0 18px 24px`). The shell no longer paints the
+/// design's page-colour gradient on it (CEO 2026-10-11: the strip is
+/// transparent, `overlayFade: false`), so there is no DabblerFade to find; the
+/// wrapper box itself — the overlay's padding around the bar — keeps the
+/// measured geometry.
+Finder _overlayWrapper() => find
+    .ancestor(
+      of: find.byType(DabblerNavigationStatus),
+      matching: find.byType(Padding),
+    )
+    .first;
+
 Map<String, Rect?> _appClosed(WidgetTester t, {required String active}) {
   final List<Rect> hits = _hits(t);
   final List<Rect> icons = _icons(t);
   return <String, Rect?>{
-    'fade wrapper': _rect(t, find.byType(DabblerFade)),
+    'fade wrapper': _rect(t, _overlayWrapper()),
     'pill': _pill(t),
     'item Feeds (active)': hits[0],
     'glyph Feeds (bold 24)': icons[0],
@@ -419,7 +431,7 @@ Map<String, Rect?> _appOpen(WidgetTester t, {required String caption}) {
   final List<Rect> hits = _hits(t);
   final List<Rect> plates = _plates(t);
   return <String, Rect?>{
-    'fade wrapper (open)': _rect(t, find.byType(DabblerFade)),
+    'fade wrapper (open)': _rect(t, _overlayWrapper()),
     'create menu card': _menuCard(t),
     'menu item 1 Create post': hits[0],
     'plate 1 (83x62)': plates[0],
@@ -770,10 +782,7 @@ void _openFacts(WidgetTester t, String dir, bool rtl, String caption) {
 
 Map<String, _Exception> _pillExceptions(bool rtl) => rtl
     ? <String, _Exception>{
-        'pill': _Exception(
-          _kArabicType,
-          _r(18, 772, 280.16, 56),
-        ),
+        'pill': _Exception(_kArabicType, _r(18, 772, 280.16, 56)),
         'item Feeds (active)': _Exception(
           _kArabicType,
           _r(27, 778, 112.16, 44),
