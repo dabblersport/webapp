@@ -8,14 +8,21 @@ import 'dart:async' as _i3;
 import 'package:dabbler/core/services/gps_service.dart' as _i2;
 import 'package:dabbler/data/models/area.dart' as _i5;
 import 'package:dabbler/data/repositories/area_repository_v2.dart' as _i4;
+import 'package:geolocator/geolocator.dart' as _i6;
 import 'package:mockito/mockito.dart' as _i1;
 
 class MockGpsService extends _i1.Mock implements _i2.GpsService {
   @override
-  _i3.Future<_i2.LocationResult> getCurrentLocation({bool? requestPermission = true}) =>
+  _i3.Future<_i2.LocationResult> getCurrentLocation({
+    bool? requestPermission = true,
+    Duration? cap,
+    _i6.LocationAccuracy? accuracy = _i6.LocationAccuracy.high,
+  }) =>
       (super.noSuchMethod(
             Invocation.method(#getCurrentLocation, [], {
               #requestPermission: requestPermission,
+              #cap: cap,
+              #accuracy: accuracy,
             }),
             returnValue: _i3.Future<_i2.LocationResult>.value(
               _i2.LocationError('unstubbed'),
@@ -25,6 +32,15 @@ class MockGpsService extends _i1.Mock implements _i2.GpsService {
             ),
           )
           as _i3.Future<_i2.LocationResult>);
+
+  @override
+  _i3.Future<_i2.LocationSuccess?> getLastKnownLocation() =>
+      (super.noSuchMethod(
+            Invocation.method(#getLastKnownLocation, []),
+            returnValue: _i3.Future<_i2.LocationSuccess?>.value(),
+            returnValueForMissingStub: _i3.Future<_i2.LocationSuccess?>.value(),
+          )
+          as _i3.Future<_i2.LocationSuccess?>);
 }
 
 class MockAreaRepository extends _i1.Mock implements _i4.AreaRepository {

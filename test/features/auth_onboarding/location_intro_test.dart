@@ -1,7 +1,16 @@
+import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/core/services/gps_service.dart';
+import 'package:dabbler/data/models/active_location.dart';
+import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/data/models/profile_location.dart';
+import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/location_intro_screen.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/profile_location_providers.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -35,10 +44,12 @@ class FakeGateway implements LocationPermissionGateway {
   int checks = 0;
   int appSettings = 0;
   int locationSettings = 0;
+  bool failChecks = false;
 
   @override
   Future<LocationPermission> check() async {
     checks++;
+    if (failChecks) throw StateError('unreadable');
     return current;
   }
 
@@ -65,14 +76,60 @@ class FakeGateway implements LocationPermissionGateway {
   }
 }
 
+const Area _area = Area(
+  id: 'area-1',
+  name: 'Test Area',
+  district: 'Test District',
+  city: 'Test City',
+  country: 'TC',
+  centerLat: 1,
+  centerLng: 2,
+);
+
+/// A GPS whose fixes the test controls. Records how it was called.
+class FakeGps extends GpsService {
+  FakeGps({this.lastKnown});
+
+  LocationSuccess? lastKnown;
+
+  /// Completes the pending fresh fix; never completed = a GPS that hangs.
+  Completer<LocationResult> fresh = Completer<LocationResult>();
+  final List<({bool requestPermission, Duration? cap})> calls = [];
+
+  @override
+  Future<LocationResult> getCurrentLocation({
+    bool requestPermission = true,
+    Duration? cap,
+    LocationAccuracy accuracy = LocationAccuracy.high,
+  }) {
+    calls.add((requestPermission: requestPermission, cap: cap));
+    return fresh.future;
+  }
+
+  @override
+  Future<LocationSuccess?> getLastKnownLocation() async => lastKnown;
+}
+
+class FakeAreas implements AreaRepository {
+  @override
+  Future<List<Area>> loadAll() async => const [_area];
+
+  @override
+  Future<Area?> resolveNearest(double lat, double lng) async => _area;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+class NoSavedLocations extends ProfileLocationNotifier {
+  @override
+  Future<List<ProfileLocation>> build() async => const [];
+}
+
 LocationIntroController _controller(
   FakeGateway g, {
-  bool lookupOk = true,
   void Function()? onLookup,
-}) => LocationIntroController(g, () async {
-  onLookup?.call();
-  return lookupOk;
-});
+}) => LocationIntroController(g, () => onLookup?.call());
 
 Future<void> _shoot(WidgetTester tester, String name) async {
   if (_dir.isEmpty) return;
@@ -93,6 +150,7 @@ Future<void> _pump(
   Locale locale, {
   VoidCallback? onFinish,
   String? userId = 'user-1',
+  FakeGps? gps,
 }) async {
   tester.view.physicalSize = const Size(402, 874);
   tester.view.devicePixelRatio = 1;
@@ -101,14 +159,16 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         locationPermissionGatewayProvider.overrideWithValue(gateway),
-        locationIntroControllerProvider.overrideWith(
-          (ref) => LocationIntroController(gateway, () async => true),
-        ),
+        gpsServiceProvider.overrideWithValue(gps ?? FakeGps()),
+        areaRepositoryV2Provider.overrideWithValue(FakeAreas()),
+        profileLocationNotifierProvider.overrideWith(NoSavedLocations.new),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
-        builder: (context, child) =>
-            RepaintBoundary(key: const Key('shot'), child: child!),
+        builder: (context, child) => RepaintBoundary(
+          key: const Key('shot'),
+          child: DabblerToastProvider(child: child!),
+        ),
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -195,7 +255,7 @@ void main() {
     });
   });
 
-  group('controller', () {
+  group('controller (answers at once, never waits for GPS)', () {
     test('starts idle and asks nothing', () {
       final g = FakeGateway();
       final c = _controller(g);
@@ -203,67 +263,66 @@ void main() {
       expect(g.requests, 0);
     });
 
-    test('Use my location: prompts once, then looks up and finishes', () async {
+    test('granted: prompts once, starts the background lookup, done', () async {
       final g = FakeGateway();
-      var looked = 0;
-      final c = _controller(g, onLookup: () => looked++);
+      var started = 0;
+      final c = _controller(g, onLookup: () => started++);
       await c.useMyLocation();
       expect(g.requests, 1);
-      expect(looked, 1);
+      expect(started, 1);
       expect(c.state.phase, LocationIntroPhase.done);
+      expect(c.state.outcome, LocationIntroOutcome.granted);
     });
 
-    test('denied at the prompt: guidance, no second prompt', () async {
-      final g = FakeGateway(afterRequest: LocationPermission.denied);
-      final c = _controller(g);
-      await c.useMyLocation();
-      expect(c.state.phase, LocationIntroPhase.denied);
-      expect(g.requests, 1);
-    });
+    test(
+      'denied at the prompt: done at once, no lookup, no 2nd prompt',
+      () async {
+        final g = FakeGateway(afterRequest: LocationPermission.denied);
+        var started = 0;
+        final c = _controller(g, onLookup: () => started++);
+        await c.useMyLocation();
+        expect(c.state.phase, LocationIntroPhase.done);
+        expect(c.state.outcome, LocationIntroOutcome.denied);
+        expect(g.requests, 1);
+        expect(started, 0);
+      },
+    );
 
-    test('permanently denied: no prompt, settings offered', () async {
+    test('permanently denied: done at once, no prompt', () async {
       final g = FakeGateway(current: LocationPermission.deniedForever);
       final c = _controller(g);
       await c.useMyLocation();
-      expect(c.state.phase, LocationIntroPhase.deniedForever);
-      expect(c.state.canOpenSettings, isTrue);
+      expect(c.state.phase, LocationIntroPhase.done);
+      expect(c.state.outcome, LocationIntroOutcome.deniedForever);
       expect(g.requests, 0);
-      await c.openSettings();
-      expect(g.appSettings, 1);
     });
 
-    test('services off: no prompt, location settings offered', () async {
+    test('services off: done at once, no prompt, no lookup', () async {
       final g = FakeGateway(services: false);
-      final c = _controller(g);
+      var started = 0;
+      final c = _controller(g, onLookup: () => started++);
       await c.useMyLocation();
-      expect(c.state.phase, LocationIntroPhase.serviceOff);
-      expect(g.requests, 0);
-      await c.openSettings();
-      expect(g.locationSettings, 1);
-    });
-
-    test('granted but no position: guidance, user can still skip', () async {
-      final g = FakeGateway();
-      final c = _controller(g, lookupOk: false);
-      await c.useMyLocation();
-      expect(c.state.phase, LocationIntroPhase.lookupFailed);
-    });
-
-    test('returning from settings re-checks without requesting', () async {
-      final g = FakeGateway(current: LocationPermission.deniedForever);
-      final c = _controller(g);
-      await c.useMyLocation();
-      // Still blocked: guidance stays.
-      await c.recheckAfterSettings();
-      expect(c.state.phase, LocationIntroPhase.deniedForever);
-      // Enabled in settings: finishes.
-      g.current = LocationPermission.whileInUse;
-      await c.recheckAfterSettings();
       expect(c.state.phase, LocationIntroPhase.done);
+      expect(c.state.outcome, LocationIntroOutcome.serviceOff);
       expect(g.requests, 0);
+      expect(started, 0);
     });
 
-    test('a second tap while working is ignored', () async {
+    test('an unreadable permission still finishes (never traps)', () async {
+      final g = FakeGateway()..failChecks = true;
+      final c = _controller(g);
+      await c.useMyLocation();
+      expect(c.state.phase, LocationIntroPhase.done);
+      expect(c.state.outcome, LocationIntroOutcome.unavailable);
+    });
+
+    test('a lookup that throws never blocks the hand-off', () async {
+      final c = LocationIntroController(FakeGateway(), () => throw 'boom');
+      await c.useMyLocation();
+      expect(c.state.phase, LocationIntroPhase.done);
+    });
+
+    test('a second tap while the prompt is up is ignored', () async {
       final g = FakeGateway();
       final c = _controller(g);
       await Future.wait([c.useMyLocation(), c.useMyLocation()]);
@@ -301,63 +360,173 @@ void main() {
       expect(g.requests, 0, reason: 'Maybe later must not prompt');
     });
 
-    testWidgets(
-      'intro screen: Use my location prompts, then continues - $dir',
-      (tester) async {
-        final g = FakeGateway();
+    testWidgets('Use my location, GPS never answers: Home at once, nothing '
+        'blocking - $dir', (tester) async {
+      final g = FakeGateway();
+      final gps = FakeGps(); // its fix never completes
+      var finished = 0;
+      await _pump(tester, g, locale, onFinish: () => finished++, gps: gps);
+      await tester.tap(find.text(l.location_intro_cta));
+      await tester.pump(); // one frame, no waiting
+      await tester.pump();
+      expect(g.requests, 1);
+      expect(finished, 1, reason: 'continued with a GPS that never answers');
+      expect(find.byType(DabblerBanner), findsNothing);
+      expect(find.byType(DabblerSpinner), findsNothing);
+      // No toast hint for an allowed permission.
+      expect(find.text(l.location_intro_denied), findsNothing);
+      await tester.pump(const Duration(seconds: 1)); // flush zero timers
+    });
+
+    for (final c
+        in <(String, FakeGateway, String Function(AppLocalizations), bool)>[
+          (
+            'denied',
+            FakeGateway(afterRequest: LocationPermission.denied),
+            (l) => l.location_intro_denied,
+            false,
+          ),
+          (
+            'permanently denied',
+            FakeGateway(current: LocationPermission.deniedForever),
+            (l) => l.location_intro_denied_forever,
+            true,
+          ),
+          (
+            'services off',
+            FakeGateway(services: false),
+            (l) => l.location_intro_service_off,
+            true,
+          ),
+        ]) {
+      testWidgets('${c.$1}: Home at once with a one-time toast hint, no '
+          'banner on the page - $dir', (tester) async {
         var finished = 0;
-        await _pump(tester, g, locale, onFinish: () => finished++);
+        await _pump(tester, c.$2, locale, onFinish: () => finished++);
         await tester.tap(find.text(l.location_intro_cta));
         await tester.pump();
-        await tester.pump(const Duration(milliseconds: 100));
-        expect(g.requests, 1);
+        await tester.pump(const Duration(milliseconds: 50));
         expect(finished, 1);
+        expect(find.byType(DabblerBanner), findsNothing);
+        expect(find.text(c.$3(l)), findsOneWidget, reason: 'toast hint');
+        // Settings action only where the platform has settings.
+        expect(
+          find.text(l.location_intro_open_settings),
+          c.$4 ? findsOneWidget : findsNothing,
+        );
+        await _shoot(tester, 'hint-${c.$1.replaceAll(' ', '-')}-$dir-$mode');
+      });
+    }
+  }
+
+  group('active location in the background (KAN-489 follow-up)', () {
+    ProviderContainer make(FakeGps gps) {
+      final c = ProviderContainer(
+        overrides: [
+          gpsServiceProvider.overrideWithValue(gps),
+          areaRepositoryV2Provider.overrideWithValue(FakeAreas()),
+          profileLocationNotifierProvider.overrideWith(NoSavedLocations.new),
+        ],
+      );
+      addTearDown(c.dispose);
+      return c;
+    }
+
+    LocationSuccess fix(double lat) =>
+        LocationSuccess(lat: lat, lng: 55, accuracyMeters: 20);
+
+    test('first paint never waits for GPS: a hanging GPS leaves the build '
+        'immediate', () async {
+      final gps = FakeGps();
+      final c = make(gps);
+      final state = await c
+          .read(activeLocationProvider.future)
+          .timeout(const Duration(seconds: 2));
+      expect(state, isNot(isA<ActiveLocationReady>()));
+      // The silent attempt never prompts and is capped.
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      expect(gps.calls, isNotEmpty);
+      expect(gps.calls.every((x) => !x.requestPermission), isTrue);
+      expect(gps.calls.every((x) => x.cap == GpsService.fixCap), isTrue);
+    });
+
+    test('a late position updates the active location (last known first, '
+        'then the fresh fix)', () async {
+      final gps = FakeGps(lastKnown: fix(10));
+      final c = make(gps);
+      await c.read(activeLocationProvider.future);
+      final adopt = c
+          .read(activeLocationProvider.notifier)
+          .adoptDeviceLocation();
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      var s = c.read(activeLocationProvider).valueOrNull;
+      expect(s, isA<ActiveLocationReady>(), reason: 'last known is applied');
+      expect((s as ActiveLocationReady).location.lat, 10);
+      expect(s.location.source, ActiveLocationSource.gps);
+      gps.fresh.complete(fix(11));
+      await adopt;
+      s = c.read(activeLocationProvider).valueOrNull;
+      expect((s as ActiveLocationReady).location.lat, 11);
+      expect(gps.calls.last.requestPermission, isFalse, reason: 'no prompt');
+      expect(gps.calls.last.cap, GpsService.fixCap);
+    });
+
+    test(
+      'a fresh fix that fails or times out changes nothing visible',
+      () async {
+        final gps = FakeGps(lastKnown: fix(10));
+        final c = make(gps);
+        await c.read(activeLocationProvider.future);
+        final adopt = c
+            .read(activeLocationProvider.notifier)
+            .adoptDeviceLocation();
+        gps.fresh.complete(LocationTimeout());
+        await adopt;
+        final s = c.read(activeLocationProvider).valueOrNull;
+        expect((s as ActiveLocationReady).location.lat, 10);
       },
     );
 
-    testWidgets('intro screen: denied guidance keeps Maybe later - $dir', (
-      tester,
-    ) async {
-      final g = FakeGateway(afterRequest: LocationPermission.denied);
-      var finished = 0;
-      await _pump(tester, g, locale, onFinish: () => finished++);
-      await tester.tap(find.text(l.location_intro_cta));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text(l.location_intro_denied), findsOneWidget);
-      expect(finished, 0);
-      await _shoot(tester, 'denied-$dir-$mode');
-      await tester.tap(find.text(l.location_intro_later));
-      await tester.pump();
-      expect(finished, 1);
-      expect(g.requests, 1);
+    test('no last known and a failed fix: the location stays unset', () async {
+      final gps = FakeGps();
+      final c = make(gps);
+      await c.read(activeLocationProvider.future);
+      final adopt = c
+          .read(activeLocationProvider.notifier)
+          .adoptDeviceLocation();
+      gps.fresh.complete(LocationError('gps off'));
+      await adopt;
+      expect(
+        c.read(activeLocationProvider).valueOrNull,
+        isNot(isA<ActiveLocationReady>()),
+      );
     });
 
-    testWidgets('intro screen: blocked offers settings - $dir', (tester) async {
-      final g = FakeGateway(current: LocationPermission.deniedForever);
-      await _pump(tester, g, locale, onFinish: () {});
-      await tester.tap(find.text(l.location_intro_cta));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text(l.location_intro_denied_forever), findsOneWidget);
-      expect(find.text(l.location_intro_open_settings), findsOneWidget);
-      await _shoot(tester, 'blocked-$dir-$mode');
-      await tester.tap(find.text(l.location_intro_open_settings));
-      await tester.pump();
-      expect(g.appSettings, 1);
-      expect(g.requests, 0);
+    test('adopting does not await GPS for the caller: the call returns a '
+        'future the UI path never awaits', () async {
+      final gps = FakeGps(); // fresh never completes
+      final c = make(gps);
+      await c.read(activeLocationProvider.future);
+      var completed = false;
+      c
+          .read(activeLocationProvider.notifier)
+          .adoptDeviceLocation()
+          .then((_) => completed = true);
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+      expect(completed, isFalse, reason: 'still waiting in the background');
     });
 
-    testWidgets('intro screen: services off - $dir', (tester) async {
-      final g = FakeGateway(services: false);
-      await _pump(tester, g, locale, onFinish: () {});
-      await tester.tap(find.text(l.location_intro_cta));
-      await tester.pump();
-      await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text(l.location_intro_service_off), findsOneWidget);
-      await _shoot(tester, 'service-off-$dir-$mode');
+    test('explicit actions are capped too', () async {
+      final gps = FakeGps();
+      final c = make(gps);
+      await c.read(activeLocationProvider.future);
+      c.read(activeLocationProvider.notifier).useGpsLocation();
+      await Future<void>.delayed(const Duration(milliseconds: 20));
+      final explicit = gps.calls.where((x) => x.requestPermission);
+      expect(explicit, hasLength(1));
+      expect(explicit.single.cap, GpsService.fixCap);
     });
-  }
+  });
 
   test('copy matches the approved English text exactly', () {
     final l = lookupAppLocalizations(const Locale('en'));
@@ -401,11 +570,6 @@ void main() {
     final s = File(
       'lib/features/location/providers/active_location_provider.dart',
     ).readAsStringSync();
-    expect(
-      RegExp(
-        r'getCurrentLocation\(requestPermission: false\)',
-      ).allMatches(s).length,
-      2,
-    );
+    expect('requestPermission: false'.allMatches(s).length, 2);
   });
 }

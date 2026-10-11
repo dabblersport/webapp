@@ -1,4 +1,6 @@
-import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
+import 'dart:async';
+
+import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -140,139 +142,96 @@ enum LocationIntroPhase {
   /// The introduction, waiting for the user.
   idle,
 
-  /// A permission / lookup call is in flight (the CTA is busy).
-  working,
+  /// The system permission prompt is up (the user is answering it). Nothing is
+  /// shown: no spinner, no banner.
+  requesting,
 
-  /// Permission was refused at the prompt (it can still be asked later).
+  /// The user answered (or the permission could not be read): continue to the
+  /// destination now. Carries the [LocationIntroOutcome].
+  done,
+}
+
+/// How the permission question ended.
+enum LocationIntroOutcome {
+  /// Allowed: the position is read afterwards, in the background.
+  granted,
+
+  /// Refused at the prompt (it can still be asked for later).
   denied,
 
-  /// Permission is blocked: only the app / browser settings can change it.
+  /// Blocked: only the app / browser settings can change it.
   deniedForever,
 
   /// The device's location services are off.
   serviceOff,
 
-  /// Permission was granted but the position could not be read in time.
-  lookupFailed,
-
-  /// Done: continue to the destination.
-  done,
+  /// The permission could not be read or asked for.
+  unavailable,
 }
 
 class LocationIntroState {
-  const LocationIntroState(this.phase, {this.canOpenSettings = false});
+  const LocationIntroState(this.phase, {this.outcome});
   final LocationIntroPhase phase;
-
-  /// Whether a settings action is offered (the platform has one).
-  final bool canOpenSettings;
+  final LocationIntroOutcome? outcome;
 }
 
-typedef LocationLookup = Future<bool> Function();
+/// Starts the background position lookup (fire and forget: it must never be
+/// awaited on the navigation path).
+typedef LocationBackgroundLookup = void Function();
 
 class LocationIntroController extends StateNotifier<LocationIntroState> {
-  LocationIntroController(this._gateway, this._lookup)
+  LocationIntroController(this._gateway, this._startBackgroundLookup)
     : super(const LocationIntroState(LocationIntroPhase.idle));
 
   final LocationPermissionGateway _gateway;
 
-  /// Reads the position and applies it to the active location; true when it
-  /// worked. Runs only after the permission was granted by the user.
-  final LocationLookup _lookup;
+  /// Called once, only when the permission is granted.
+  final LocationBackgroundLookup _startBackgroundLookup;
 
   bool _busy = false;
 
-  /// The primary action: the only place the system prompt is requested.
+  /// The primary action: the only place the system prompt is requested. As
+  /// soon as the OS answers (any answer) the state is [LocationIntroPhase.done]
+  /// so the screen continues at once; a granted permission starts the position
+  /// lookup in the background and never waits for it.
   Future<void> useMyLocation() async {
     if (_busy) return;
     _busy = true;
-    state = const LocationIntroState(LocationIntroPhase.working);
+    state = const LocationIntroState(LocationIntroPhase.requesting);
+    var outcome = LocationIntroOutcome.unavailable;
     try {
       if (!await _gateway.servicesEnabled()) {
-        state = const LocationIntroState(
-          LocationIntroPhase.serviceOff,
-          canOpenSettings: !kIsWeb,
-        );
-        return;
-      }
-      var permission = await _gateway.check();
-      if (permission == LocationPermission.denied) {
-        permission = await _gateway.request();
-      }
-      if (permission == LocationPermission.deniedForever) {
-        state = const LocationIntroState(
-          LocationIntroPhase.deniedForever,
-          canOpenSettings: !kIsWeb,
-        );
-        return;
-      }
-      if (!locationPermissionGranted(permission)) {
-        state = const LocationIntroState(LocationIntroPhase.denied);
-        return;
-      }
-      await _locate();
-    } catch (_) {
-      // Never block access: carry on without a position.
-      state = const LocationIntroState(LocationIntroPhase.lookupFailed);
-    } finally {
-      _busy = false;
-    }
-  }
-
-  Future<void> _locate() async {
-    final ok = await _lookup();
-    state = LocationIntroState(
-      ok ? LocationIntroPhase.done : LocationIntroPhase.lookupFailed,
-    );
-  }
-
-  /// The user came back from the settings app: re-check WITHOUT requesting.
-  /// Granted now -> read the position and finish; otherwise the guidance
-  /// stays (and nothing is asked again automatically).
-  Future<void> recheckAfterSettings() async {
-    if (_busy) return;
-    final phase = state.phase;
-    if (phase != LocationIntroPhase.deniedForever &&
-        phase != LocationIntroPhase.serviceOff) {
-      return;
-    }
-    _busy = true;
-    try {
-      final enabled = await _gateway.servicesEnabled();
-      final permission = await _gateway.check();
-      if (enabled && locationPermissionGranted(permission)) {
-        state = const LocationIntroState(LocationIntroPhase.working);
-        await _locate();
-      } else if (!enabled) {
-        state = const LocationIntroState(
-          LocationIntroPhase.serviceOff,
-          canOpenSettings: !kIsWeb,
-        );
-      } else if (permission == LocationPermission.deniedForever) {
-        state = const LocationIntroState(
-          LocationIntroPhase.deniedForever,
-          canOpenSettings: !kIsWeb,
-        );
+        outcome = LocationIntroOutcome.serviceOff;
+      } else {
+        var permission = await _gateway.check();
+        if (permission == LocationPermission.denied) {
+          permission = await _gateway.request();
+        }
+        if (locationPermissionGranted(permission)) {
+          outcome = LocationIntroOutcome.granted;
+        } else if (permission == LocationPermission.deniedForever) {
+          outcome = LocationIntroOutcome.deniedForever;
+        } else if (permission == LocationPermission.denied) {
+          outcome = LocationIntroOutcome.denied;
+        }
       }
     } catch (_) {
-      // Keep the guidance on screen.
-    } finally {
-      _busy = false;
+      outcome = LocationIntroOutcome.unavailable;
     }
-  }
-
-  /// Opens the settings the guidance points at (app / browser settings for a
-  /// blocked permission, the device's location settings when services are off).
-  Future<void> openSettings() async {
-    if (state.phase == LocationIntroPhase.serviceOff) {
-      await _gateway.openLocationSettings();
-    } else {
-      await _gateway.openAppSettings();
+    if (outcome == LocationIntroOutcome.granted) {
+      try {
+        _startBackgroundLookup();
+      } catch (_) {
+        // The lookup is an extra: never block or fail the hand-off.
+      }
     }
+    state = LocationIntroState(LocationIntroPhase.done, outcome: outcome);
+    _busy = false;
   }
 }
 
-/// The controller as the screen uses it: a successful position is applied to
-/// the active location through the existing notifier.
+/// The controller as the screen uses it. A granted permission hands the lookup
+/// to the active-location notifier, which lives on after this screen.
 final locationIntroControllerProvider =
     StateNotifierProvider.autoDispose<
       LocationIntroController,
@@ -280,11 +239,10 @@ final locationIntroControllerProvider =
     >((ref) {
       return LocationIntroController(
         ref.watch(locationPermissionGatewayProvider),
-        () async {
-          final notifier = ref.read(activeLocationProvider.notifier);
-          await notifier.useGpsLocation();
-          return ref.read(activeLocationProvider).valueOrNull
-              is ActiveLocationReady;
+        () {
+          unawaited(
+            ref.read(activeLocationProvider.notifier).adoptDeviceLocation(),
+          );
         },
       );
     });

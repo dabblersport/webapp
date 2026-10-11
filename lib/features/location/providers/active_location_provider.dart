@@ -1,4 +1,7 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart' show LocationAccuracy;
 
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/models/active_location.dart';
@@ -50,10 +53,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
 
   // ── Initialisation ────────────────────────────────────────────────────────
 
-  /// Degradation order:
+  /// Degradation order (nothing here waits for GPS: first paint never does):
   /// 1. Saved primary location (instant, no GPS wait)
-  /// 2. Silent GPS attempt in background (upgrades state if it wins)
-  /// 3. If no saved AND GPS denied → ActiveLocationDenied
+  /// 2. Silent GPS attempt in the background (upgrades the state if it wins)
+  /// 3. No saved location: [ActiveLocationLoading] now, and the background
+  ///    attempt settles it (a position, or denied / error).
   Future<ActiveLocationState> _initialise() async {
     // 1. Try saved primary location first.
     final savedState = await _trySavedPrimary();
@@ -63,11 +67,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       return savedState;
     }
 
-    // 2. No saved primary — try GPS now (user has to wait briefly).
-    // Background start-up: never asks the user for permission here (the
-    // location intro screen is where the system prompt is asked for).
-    final gpsResult = await _gps.getCurrentLocation(requestPermission: false);
-    return _stateFromGpsResult(gpsResult);
+    // 2. No saved primary: look in the background, never on the UI path.
+    // Background start-up never asks the user for permission (the location
+    // intro screen is where the system prompt is asked for).
+    _backgroundGpsRefresh(settleWhenUnsaved: true);
+    return ActiveLocationLoading();
   }
 
   Future<ActiveLocationReady?> _trySavedPrimary() async {
@@ -104,32 +108,105 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   }
 
   /// Silently attempt GPS without blocking the UI. If it succeeds and is
-  /// closer/more accurate, upgrade to GPS source.
-  void _backgroundGpsRefresh({ActiveLocation? currentSaved}) {
-    Future.microtask(() async {
-      // Silent: only upgrades when permission was already granted.
-      final result = await _gps.getCurrentLocation(requestPermission: false);
-      if (result is! LocationSuccess) return;
+  /// closer/more accurate, upgrade to GPS source. With [settleWhenUnsaved]
+  /// (no saved location) a miss settles the state to denied / error instead of
+  /// leaving it loading.
+  void _backgroundGpsRefresh({
+    ActiveLocation? currentSaved,
+    bool settleWhenUnsaved = false,
+  }) {
+    // On the event queue, after the build that started it has completed.
+    Future<void>(() async {
+      try {
+        // Silent: only upgrades when permission was already granted.
+        final result = await _gps.getCurrentLocation(
+          requestPermission: false,
+          cap: GpsService.fixCap,
+        );
+        if (result is! LocationSuccess) {
+          if (settleWhenUnsaved && state.valueOrNull is ActiveLocationLoading) {
+            state = AsyncData(await _stateFromGpsResult(result));
+          }
+          return;
+        }
 
-      final area = await _resolveArea(result.lat, result.lng);
-      if (area == null) return;
+        final area = await _resolveArea(result.lat, result.lng);
+        if (area == null) {
+          if (settleWhenUnsaved && state.valueOrNull is ActiveLocationLoading) {
+            state = AsyncData(
+              ActiveLocationError('Could not resolve your area'),
+            );
+          }
+          return;
+        }
 
-      // Only upgrade if more accurate or saved location is missing.
-      final gpsLoc = ActiveLocation(
-        lat: result.lat,
-        lng: result.lng,
-        area: area,
-        nearbyRadiusMeters:
-            _radiusOverride ?? currentSaved?.nearbyRadiusMeters ?? 10000,
-        defaultRadiusMeters: currentSaved?.nearbyRadiusMeters ?? 10000,
-        source: ActiveLocationSource.gps,
-      );
+        // Only upgrade if more accurate or saved location is missing.
+        final gpsLoc = ActiveLocation(
+          lat: result.lat,
+          lng: result.lng,
+          area: area,
+          nearbyRadiusMeters:
+              _radiusOverride ?? currentSaved?.nearbyRadiusMeters ?? 10000,
+          defaultRadiusMeters: currentSaved?.nearbyRadiusMeters ?? 10000,
+          source: ActiveLocationSource.gps,
+        );
 
-      // Prefer GPS when accuracy ≤ 100 m or no saved location exists.
-      if (currentSaved == null || result.accuracyMeters <= 100) {
-        state = AsyncData(ActiveLocationReady(gpsLoc));
+        // Prefer GPS when accuracy ≤ 100 m or no saved location exists.
+        if (currentSaved == null || result.accuracyMeters <= 100) {
+          state = AsyncData(ActiveLocationReady(gpsLoc));
+        }
+      } catch (_) {
+        // Best effort: a lookup must never surface an error.
       }
     });
+  }
+
+  /// After the user allowed location on the introduction (and only then):
+  /// reads the device location in the BACKGROUND, never on a UI path and never
+  /// asking for permission. The last known position goes first (fast), then a
+  /// fresh fix capped at [GpsService.fixCap]; each one that works updates the
+  /// active location. A miss changes nothing: the chip stays "Set location" and
+  /// manual selection stays available.
+  Future<void> adoptDeviceLocation() async {
+    try {
+      // Let the initial build settle so its result cannot overwrite ours.
+      try {
+        await future.timeout(DabblerMotion.timeoutNetwork);
+      } catch (_) {}
+
+      final last = await _gps.getLastKnownLocation();
+      if (last != null) await _applyDeviceFix(last);
+
+      final fresh = await _gps.getCurrentLocation(
+        requestPermission: false,
+        cap: GpsService.fixCap,
+        accuracy: LocationAccuracy.medium,
+      );
+      if (fresh is LocationSuccess) await _applyDeviceFix(fresh);
+    } catch (_) {
+      // Decoration of the experience only: nothing visible on failure.
+    }
+  }
+
+  Future<void> _applyDeviceFix(LocationSuccess fix) async {
+    final area = await _resolveArea(fix.lat, fix.lng);
+    if (area == null) return;
+    final current = state.valueOrNull;
+    final defaultRadius = current is ActiveLocationReady
+        ? current.location.defaultRadiusMeters
+        : 10000;
+    state = AsyncData(
+      ActiveLocationReady(
+        ActiveLocation(
+          lat: fix.lat,
+          lng: fix.lng,
+          area: area,
+          nearbyRadiusMeters: _radiusOverride ?? 10000,
+          defaultRadiusMeters: defaultRadius,
+          source: ActiveLocationSource.gps,
+        ),
+      ),
+    );
   }
 
   Future<ActiveLocationState> _stateFromGpsResult(LocationResult result) async {
@@ -166,7 +243,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   /// Switch to live GPS.
   Future<void> useGpsLocation() async {
     state = AsyncData(ActiveLocationLoading());
-    final result = await _gps.getCurrentLocation();
+    final result = await _gps.getCurrentLocation(cap: GpsService.fixCap);
     state = AsyncData(await _stateFromGpsResult(result));
   }
 
@@ -220,7 +297,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   Future<void> refresh() async {
     final current = state.valueOrNull;
     state = AsyncData(ActiveLocationLoading());
-    final result = await _gps.getCurrentLocation();
+    final result = await _gps.getCurrentLocation(cap: GpsService.fixCap);
     final next = await _stateFromGpsResult(result);
     // If refresh fails, restore previous state rather than showing error.
     state = AsyncData(

@@ -69,6 +69,13 @@ const _domainDurationReason =
 
 const List<GateAllow> allowList = [
   GateAllow(
+    'lib/core/services/gps_service.dart',
+    ['Duration literal'],
+    'Hard cap (8 s) on waiting for a position fix so no location flow can '
+        'hang; a domain timeout, not design timing.',
+    match: 'static const Duration fixCap',
+  ),
+  GateAllow(
     'lib/features/auth_onboarding/presentation/screens/location_intro_screen.dart',
     ['Image.'],
     'Bundled full-bleed illustration (KAN-489): DabblerImage loads network '

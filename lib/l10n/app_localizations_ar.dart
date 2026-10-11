@@ -6281,10 +6281,6 @@ class AppLocalizationsAr extends AppLocalizations {
       'خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.';
 
   @override
-  String get location_intro_lookup_failed =>
-      'تعذّر تحديد موقعك الآن. يمكنك اختيار منطقتك بنفسك.';
-
-  @override
   String get location_intro_open_settings => 'فتح الإعدادات';
 
   @override

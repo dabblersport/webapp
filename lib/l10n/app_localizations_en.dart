@@ -6228,10 +6228,6 @@ class AppLocalizationsEn extends AppLocalizations {
       'Location services are off on this device. Turn them on in Settings, then come back.';
 
   @override
-  String get location_intro_lookup_failed =>
-      'We couldn’t find you right now. You can choose your area yourself.';
-
-  @override
   String get location_intro_open_settings => 'Open Settings';
 
   @override

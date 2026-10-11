@@ -2,6 +2,7 @@ import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -27,14 +28,12 @@ class LocationIntroScreen extends ConsumerStatefulWidget {
       _LocationIntroScreenState();
 }
 
-class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen>
-    with WidgetsBindingObserver {
+class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
   bool _finished = false;
 
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addObserver(this);
     // Presented: never show it to this user on this device again.
     final id = widget.userId;
     if (id != null) {
@@ -42,23 +41,49 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen>
     }
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
+  /// Tells the user, once and without holding them here, why nearby games may
+  /// be missing. Never shown for an allowed permission.
+  void _hint(LocationIntroOutcome? outcome) {
+    final l = AppLocalizations.of(context);
+    final gateway = ref.read(locationPermissionGatewayProvider);
+    final (String message, bool serviceSettings)? hint = switch (outcome) {
+      LocationIntroOutcome.denied => (l.location_intro_denied, false),
+      LocationIntroOutcome.deniedForever => (
+        l.location_intro_denied_forever,
+        false,
+      ),
+      LocationIntroOutcome.serviceOff => (l.location_intro_service_off, true),
+      _ => null,
+    };
+    if (hint == null) return;
+    final canOpen =
+        !kIsWeb &&
+        (outcome == LocationIntroOutcome.deniedForever ||
+            outcome == LocationIntroOutcome.serviceOff);
+    DabblerToasts.show(
+      DabblerToastSpec(
+        message: hint.$1,
+        tone: DabblerToastTone.info,
+        action: canOpen
+            ? DabblerToastAction(
+                label: l.location_intro_open_settings,
+                onPressed: () {
+                  if (hint.$2) {
+                    gateway.openLocationSettings();
+                  } else {
+                    gateway.openAppSettings();
+                  }
+                },
+              )
+            : null,
+      ),
+    );
   }
 
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    // Back from the settings app: re-check without asking again.
-    if (state == AppLifecycleState.resumed) {
-      ref.read(locationIntroControllerProvider.notifier).recheckAfterSettings();
-    }
-  }
-
-  void _finish() {
+  void _finish([LocationIntroOutcome? outcome]) {
     if (_finished) return;
     _finished = true;
+    _hint(outcome);
     final go = widget.onFinish;
     if (go != null) {
       go();
@@ -70,23 +95,10 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen>
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final state = ref.watch(locationIntroControllerProvider);
     ref.listen<LocationIntroState>(locationIntroControllerProvider, (_, next) {
-      if (next.phase == LocationIntroPhase.done) _finish();
+      // The OS answered (any answer): on to the destination at once.
+      if (next.phase == LocationIntroPhase.done) _finish(next.outcome);
     });
-
-    final phase = state.phase;
-    final guidance = switch (phase) {
-      LocationIntroPhase.denied => l.location_intro_denied,
-      LocationIntroPhase.deniedForever => l.location_intro_denied_forever,
-      LocationIntroPhase.serviceOff => l.location_intro_service_off,
-      LocationIntroPhase.lookupFailed => l.location_intro_lookup_failed,
-      _ => null,
-    };
-    final settingsAction =
-        state.canOpenSettings &&
-        (phase == LocationIntroPhase.deniedForever ||
-            phase == LocationIntroPhase.serviceOff);
     final controller = ref.read(locationIntroControllerProvider.notifier);
 
     return PopScope(
@@ -129,26 +141,12 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen>
                   style: DabblerType.lead,
                   tone: DabblerTextTone.secondary,
                 ),
-                if (guidance != null) ...<Widget>[
-                  const DabblerGap.v(DabblerSpacing.space4),
-                  DabblerBanner(
-                    tone: DabblerBannerTone.warning,
-                    message: guidance,
-                  ),
-                ],
               ],
             ),
           ),
         ],
-        primaryLabel: settingsAction
-            ? l.location_intro_open_settings
-            : l.location_intro_cta,
-        primaryLoading: phase == LocationIntroPhase.working,
-        onPrimary: phase == LocationIntroPhase.working
-            ? null
-            : settingsAction
-            ? controller.openSettings
-            : controller.useMyLocation,
+        primaryLabel: l.location_intro_cta,
+        onPrimary: controller.useMyLocation,
         // On a white pill so it stays readable over the artwork.
         secondary: Center(
           child: DabblerCard(
@@ -166,7 +164,7 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen>
                   .copyWith(fontWeight: DabblerType.medium),
               inline: true,
               underline: false,
-              onPressed: phase == LocationIntroPhase.working ? null : _finish,
+              onPressed: _finish,
             ),
           ),
         ),

@@ -84,7 +84,7 @@ class SavedLocationsScreen extends ConsumerWidget {
 
   Future<void> _addLocation(BuildContext context, WidgetRef ref) async {
     final gps = ref.read(gpsServiceProvider);
-    final result = await gps.getCurrentLocation();
+    final result = await gps.getCurrentLocation(cap: GpsService.fixCap);
 
     if (!context.mounted) return;
 

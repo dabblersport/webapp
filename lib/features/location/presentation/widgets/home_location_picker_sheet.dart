@@ -243,7 +243,9 @@ class _HomeLocationPickerSheetState
 
   Future<void> _useGps() async {
     setState(() => _gpsLoading = true);
-    final result = await ref.read(gpsServiceProvider).getCurrentLocation();
+    final result = await ref
+        .read(gpsServiceProvider)
+        .getCurrentLocation(cap: GpsService.fixCap);
     if (!mounted) return;
     setState(() => _gpsLoading = false);
 
