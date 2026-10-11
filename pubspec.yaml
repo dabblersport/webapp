@@ -208,6 +208,9 @@ flutter:
     - assets/images/sport_welcome/
     - assets/images/logoTypo.svg
     - assets/images/undraw/
+    # Local client configuration for plain `flutter run` (docs/LOCAL_RUN.md): the
+    # folder always exists in git; assets/config/local.env is gitignored.
+    - assets/config/
     - assets/Avatar/
     - assets/elements/
     - assets/icons/
