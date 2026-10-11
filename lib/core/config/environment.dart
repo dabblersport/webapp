@@ -1,6 +1,38 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 
+/// Thrown by [Environment.load] when required client configuration is absent.
+/// Its message is shown on the start-up error screen, so it says what to do.
+class EnvironmentConfigException implements Exception {
+  EnvironmentConfigException(this.missing);
+
+  /// The names of the missing keys (never values).
+  final List<String> missing;
+
+  @override
+  String toString() =>
+      'Missing configuration: ${missing.join(', ')}.\n\n'
+      'One-time local setup: from Dabbler/dabbler-code run '
+      '`scripts/setup_local_env.sh` (it reads your local .env, or '
+      '`--from <file>`), then run `flutter run -d <device-id>` again. '
+      'See docs/LOCAL_RUN.md. Release and CI builds must pass '
+      '--dart-define values instead.';
+}
+
 class Environment {
+  /// The gitignored local client configuration, written by
+  /// `scripts/setup_local_env.sh` and bundled only through the
+  /// `assets/config/` asset directory. Read in non-release builds when the
+  /// build did not supply the required `--dart-define` values.
+  static const String localConfigAsset = 'assets/config/local.env';
+
+  /// A compile-time value wins; else the local value; else empty. This is the
+  /// precedence for every key.
+  @visibleForTesting
+  static String resolve(String compileTime, String? local) =>
+      compileTime.isNotEmpty ? compileTime : (local ?? '');
+
   // Prefer compile-time values when present (e.g. web deployments).
   // These are provided via `--dart-define=KEY=value` at build time.
   static const String _supabaseUrlDefine = String.fromEnvironment(
@@ -40,37 +72,43 @@ class Environment {
     defaultValue: '',
   );
 
-  static Future<void> load() async {
-    // Secrets are provided at build time via --dart-define (see README).
-    // `.env` is intentionally NOT bundled as a Flutter asset, so it never
-    // ships inside the APK/IPA. We still attempt a best-effort load for
-    // local developer convenience, but the app must run fine without it.
-    //
-    // Run locally with:  flutter run --dart-define-from-file=.env
-    try {
-      await dotenv.load(fileName: '.env');
-    } catch (_) {
-      // No `.env` asset present (the normal case for release/CI builds).
-      // Initialize an empty map so dotenv.env[...] lookups don't throw;
-      // all values then come from --dart-define.
-      dotenv.testLoad(fileInput: '');
+  static bool get _definesComplete =>
+      _supabaseUrlDefine.isNotEmpty &&
+      _supabaseAnonKeyDefine.isNotEmpty &&
+      _appNameDefine.isNotEmpty;
+
+  /// Resolves the configuration. Explicit `--dart-define` values (CI, release,
+  /// `--dart-define-from-file`) take precedence and, when complete, nothing is
+  /// read. Otherwise, outside release builds, the gitignored local file
+  /// ([localConfigAsset]) is read. [assetLoader] is a seam for tests.
+  ///
+  /// Throws [EnvironmentConfigException] when a required key is still missing.
+  static Future<void> load({
+    Future<String> Function(String path)? assetLoader,
+  }) async {
+    String content = '';
+    if (!_definesComplete && !kReleaseMode) {
+      try {
+        content = await (assetLoader ?? rootBundle.loadString)(
+          localConfigAsset,
+        );
+      } catch (_) {
+        // No local setup: the diagnostic below says how to create it.
+      }
     }
+    dotenv.testLoad(fileInput: content);
     _validate();
   }
 
-  static String get supabaseUrl => _supabaseUrlDefine.isNotEmpty
-      ? _supabaseUrlDefine
-      : (dotenv.env['SUPABASE_URL'] ?? '');
-  static String get supabaseAnonKey => _supabaseAnonKeyDefine.isNotEmpty
-      ? _supabaseAnonKeyDefine
-      : (dotenv.env['SUPABASE_ANON_KEY'] ?? '');
-  static String get supabasePublishableKey =>
-      _supabasePublishableKeyDefine.isNotEmpty
-      ? _supabasePublishableKeyDefine
-      : (dotenv.env['SUPABASE_PUBLISHABLE_KEY'] ?? '');
-  static String get appName => _appNameDefine.isNotEmpty
-      ? _appNameDefine
-      : (dotenv.env['APP_NAME'] ?? '');
+  static String get supabaseUrl =>
+      resolve(_supabaseUrlDefine, dotenv.env['SUPABASE_URL']);
+  static String get supabaseAnonKey =>
+      resolve(_supabaseAnonKeyDefine, dotenv.env['SUPABASE_ANON_KEY']);
+  static String get supabasePublishableKey => resolve(
+    _supabasePublishableKeyDefine,
+    dotenv.env['SUPABASE_PUBLISHABLE_KEY'],
+  );
+  static String get appName => resolve(_appNameDefine, dotenv.env['APP_NAME']);
   static String get environment => _environmentDefine.isNotEmpty
       ? _environmentDefine
       : (dotenv.env['ENVIRONMENT'] ?? 'production');
@@ -78,24 +116,20 @@ class Environment {
   // Optional: Google Sign-In configuration
   // - Web: required for google_sign_in on Flutter web
   // - Mobile: usually configured via google-services.json / GoogleService-Info.plist
-  static String get googleWebClientId => _googleWebClientIdDefine.isNotEmpty
-      ? _googleWebClientIdDefine
-      : (dotenv.env['GOOGLE_WEB_CLIENT_ID'] ?? '');
+  static String get googleWebClientId =>
+      resolve(_googleWebClientIdDefine, dotenv.env['GOOGLE_WEB_CLIENT_ID']);
 
   /// Mapbox public access token for Search / Geocoding APIs.
-  static String get mapboxAccessToken => _mapboxAccessTokenDefine.isNotEmpty
-      ? _mapboxAccessTokenDefine
-      : (dotenv.env['MAPBOX_ACCESS_TOKEN'] ?? '');
+  static String get mapboxAccessToken =>
+      resolve(_mapboxAccessTokenDefine, dotenv.env['MAPBOX_ACCESS_TOKEN']);
 
   /// Tenor GIF API key (Google Cloud) — deprecated, Tenor shut down Jan 2026.
-  static String get tenorApiKey => _tenorApiKeyDefine.isNotEmpty
-      ? _tenorApiKeyDefine
-      : (dotenv.env['TENOR_API_KEY'] ?? '');
+  static String get tenorApiKey =>
+      resolve(_tenorApiKeyDefine, dotenv.env['TENOR_API_KEY']);
 
   /// GIPHY API key — used for GIF search in the post composer.
-  static String get giphyApiKey => _giphyApiKeyDefine.isNotEmpty
-      ? _giphyApiKeyDefine
-      : (dotenv.env['GIPHY_API_KEY'] ?? '');
+  static String get giphyApiKey =>
+      resolve(_giphyApiKeyDefine, dotenv.env['GIPHY_API_KEY']);
 
   static void _validate() {
     final missing = <String>[];
@@ -104,9 +138,7 @@ class Environment {
     if (appName.isEmpty) missing.add('APP_NAME');
     if (environment.isEmpty) missing.add('ENVIRONMENT');
 
-    if (missing.isNotEmpty) {
-      throw Exception('Missing environment variables: ${missing.join(', ')}');
-    }
+    if (missing.isNotEmpty) throw EnvironmentConfigException(missing);
   }
 
   static bool get isProduction => environment == 'production';

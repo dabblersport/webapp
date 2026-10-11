@@ -4,6 +4,8 @@
 # Environment files
 .env
 !.env.example
+# Local client configuration written by scripts/setup_local_env.sh
+assets/config/local.env
 
 # Agent-held local credentials — never committed (e.g. QA test-account password)
 .claude/agent-memory/*/credentials.local.md

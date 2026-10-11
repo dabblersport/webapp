@@ -1,6 +1,9 @@
 #!/bin/sh
 set -eu
 
+# A local client-config selection must never ship in a deployed build.
+bash scripts/check_no_local_env.sh
+
 # Fail fast if required env vars are missing
 test -n "${SUPABASE_URL:-}" || { echo "ERROR: Missing SUPABASE_URL"; exit 1; }
 test -n "${SUPABASE_ANON_KEY:-}" || { echo "ERROR: Missing SUPABASE_ANON_KEY"; exit 1; }

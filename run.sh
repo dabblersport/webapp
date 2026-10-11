@@ -2,12 +2,12 @@
 #
 # Launch the Dabbler app with the required environment injected.
 #
-# The app reads SUPABASE_URL / SUPABASE_ANON_KEY / APP_NAME (and other keys)
-# from --dart-define. `.env` is intentionally NOT bundled as a Flutter asset
-# (it holds real secrets), so a plain `flutter run` boots with empty values,
-# Environment.load() throws, and the app hangs on the native splash screen.
+# OPTIONAL. After the one-time setup in docs/LOCAL_RUN.md
+# (scripts/setup_local_env.sh), plain `flutter run -d <device-id>` works and
+# this wrapper is not needed. It still passes the values explicitly via
+# --dart-define-from-file, which takes precedence over the local selection.
 #
-# Use this instead of `flutter run`. Any extra args are passed through, e.g.:
+# Any extra args are passed through, e.g.:
 #   ./run.sh                       # default device picker
 #   ./run.sh -d <device-id>        # specific device
 #   ./run.sh --profile             # profile mode
