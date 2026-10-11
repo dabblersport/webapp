@@ -6,7 +6,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
-import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
@@ -449,15 +448,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         ? null
         : (matchedSport?.localizedName(context) ?? post.sport!);
 
-    // The place line: the post's own location name, else the area's name
-    // only when it resolves to a real name (KAN-492: no placeholder, nothing
-    // while loading or on error).
-    final areaName = post.areaId == null
-        ? null
-        : ref.watch(postAreaNameProvider(post.areaId!)).valueOrNull;
-    final place = (post.locationName != null && post.locationName!.isNotEmpty)
-        ? post.locationName!
-        : (areaName ?? '');
+    // The place line: the post's saved place name only. A post with no name
+    // shows no place; the area name is never used as a place.
+    final place = (post.locationName ?? '').trim();
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,

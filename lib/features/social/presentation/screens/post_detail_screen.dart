@@ -13,8 +13,6 @@ import 'package:dabbler/data/models/social/comment.dart';
 import 'package:dabbler/data/models/place.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_feed_parts.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
-import 'package:dabbler/features/location/providers/location_providers.dart'
-    show postAreaNameProvider;
 import 'package:dabbler/features/home/presentation/widgets/home_reaction_sheet.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/social/block_providers.dart';
@@ -606,13 +604,10 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
       sportLabel: post.sport?.isNotEmpty == true
           ? resolvePostSportLabel(context, ref, post)
           : null,
-      // KAN-492: same rule as the feed row: the saved place name, else a
-      // real area name, else nothing.
-      placeLabel: (post.locationName ?? '').isNotEmpty
-          ? post.locationName
-          : (post.areaId == null
-                ? null
-                : ref.watch(postAreaNameProvider(post.areaId!)).valueOrNull),
+      // The saved place name only; never the area name.
+      placeLabel: (post.locationName ?? '').trim().isEmpty
+          ? null
+          : post.locationName!.trim(),
       timeLabel: DateFormat.jm().format(post.createdAt),
       dateLabel: DateFormat.yMMMd().format(post.createdAt),
       viewsLabel: post.viewCount > 0
