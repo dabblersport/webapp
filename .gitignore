@@ -123,6 +123,13 @@ unlinked_spec.ds
 **/android/gradlew.bat
 **/android/**/GeneratedPluginRegistrant.java
 **/android/key.properties
+# Android release credentials (KAN-493): never committed, only GitHub Actions secrets
+*.keystore
+*.pem
+android/app/*.jks
+**/play-sa*.json
+**/*service-account*.json
+**/signing-credentials*.json
 *.jks
 local.properties
 **/.cxx/
