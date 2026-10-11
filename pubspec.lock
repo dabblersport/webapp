@@ -262,7 +262,7 @@ packages:
     description:
       path: "."
       ref: alpha-ds
-      resolved-ref: "48bff0bc4ddabcfdaed6b1dd7b1f31222a889ec4"
+      resolved-ref: "393f94647d03ac9d4b4776de8f0e89acb843d497"
       url: "https://github.com/dabblersport/dabbler-design-system.git"
     source: git
     version: "0.1.0+1"
