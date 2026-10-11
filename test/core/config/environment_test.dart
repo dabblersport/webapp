@@ -141,12 +141,87 @@ void main() {
       expect(target.existsSync(), isFalse);
     });
 
+    test('only client-safe keys are copied; any other key is dropped', () {
+      final File src = File('${tmp.path}/mixed.env')
+        ..writeAsStringSync(
+          '$all'
+          'GOOGLE_WEB_CLIENT_ID=fake-google\n'
+          'SECRET_KEY=fake-secret-value\n'
+          'SUPABASE_SERVICE_ROLE_KEY=fake-service-role\n'
+          'export DB_PASSWORD=fake-password\n',
+        );
+      final ProcessResult r = run(<String>['--from', src.path]);
+      expect(r.exitCode, 0, reason: '${r.stdout}${r.stderr}');
+      final String copied = target.readAsStringSync();
+      expect(copied, contains('SUPABASE_URL='));
+      expect(copied, contains('GOOGLE_WEB_CLIENT_ID=fake-google'));
+      for (final String leaked in <String>[
+        'SECRET_KEY',
+        'fake-secret-value',
+        'SUPABASE_SERVICE_ROLE_KEY',
+        'fake-service-role',
+        'DB_PASSWORD',
+        'fake-password',
+      ]) {
+        expect(copied.contains(leaked), isFalse, reason: leaked);
+      }
+      final String out = '${r.stdout}';
+      expect(out, contains('Dropped (not copied):'));
+      expect(out, contains('SECRET_KEY'));
+      expect(out, contains('DB_PASSWORD'));
+      // Names only: never a value.
+      expect(out.contains('fake-'), isFalse);
+    });
+
     test('--clear removes the selection', () {
       File('${tmp.path}/sel.env').writeAsStringSync(all);
       run(<String>['--from', '${tmp.path}/sel.env']);
       expect(run(<String>['--clear']).exitCode, 0);
       expect(target.existsSync(), isFalse);
       expect(run(<String>['--check']).exitCode, isNot(0));
+    });
+  });
+
+  group('scripts/check_no_local_env.sh (release/CI guard)', () {
+    final File target = File('assets/config/local.env');
+    late Directory tmp;
+    File? aside;
+    setUp(() {
+      tmp = Directory.systemTemp.createTempSync('guard_env_');
+      if (target.existsSync()) {
+        aside = File('${tmp.path}/aside')
+          ..writeAsBytesSync(target.readAsBytesSync());
+        target.deleteSync();
+      }
+    });
+    tearDown(() {
+      if (target.existsSync()) target.deleteSync();
+      if (aside != null) target.writeAsBytesSync(aside!.readAsBytesSync());
+      aside = null;
+      tmp.deleteSync(recursive: true);
+    });
+
+    test('passes on a clean tree and fails when local.env exists', () {
+      ProcessResult guard() =>
+          Process.runSync('bash', <String>['scripts/check_no_local_env.sh']);
+      expect(guard().exitCode, 0);
+      target.writeAsStringSync('SUPABASE_URL=https://example.invalid\n');
+      final ProcessResult r = guard();
+      expect(r.exitCode, isNot(0));
+      expect('${r.stderr}', contains('assets/config/local.env'));
+      expect('${r.stderr}', contains('--dart-define'));
+      expect('${r.stderr}'.contains('example.invalid'), isFalse);
+    });
+
+    test('the Cloudflare build runs the guard first', () {
+      final String build = File(
+        'scripts/cloudflare-build.sh',
+      ).readAsStringSync();
+      expect(build, contains('scripts/check_no_local_env.sh'));
+      expect(
+        build.indexOf('check_no_local_env'),
+        lessThan(build.indexOf('flutter build web')),
+      );
     });
   });
 }

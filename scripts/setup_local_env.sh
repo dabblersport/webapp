@@ -10,8 +10,8 @@
 #   scripts/setup_local_env.sh --check          # report key NAMES present/missing
 #   scripts/setup_local_env.sh --clear          # remove the local selection
 #
-# Only key names are ever printed, never values. Client-safe values only: never
-# a service-role key or server secret.
+# Only an allowlist of client-safe keys is copied; every other key is dropped.
+# Only key names are ever printed, never values.
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -19,6 +19,8 @@ TARGET="assets/config/local.env"
 SOURCE=".env"
 MODE="write"
 REQUIRED=(SUPABASE_URL SUPABASE_ANON_KEY APP_NAME ENVIRONMENT)
+# The only keys ever copied into assets/config/local.env (client-safe).
+ALLOWED=(SUPABASE_URL SUPABASE_ANON_KEY SUPABASE_PUBLISHABLE_KEY APP_NAME ENVIRONMENT GOOGLE_WEB_CLIENT_ID)
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -59,6 +61,23 @@ if ! report "$SOURCE"; then
   exit 1
 fi
 mkdir -p "$(dirname "$TARGET")"
-cp "$SOURCE" "$TARGET"
+: > "$TARGET"
+kept=() dropped=()
+while IFS= read -r line || [[ -n "$line" ]]; do
+  line="${line%$'\r'}"
+  [[ -z "$line" || "$line" == \#* ]] && continue
+  line="${line#export }"
+  [[ "$line" != *"="* ]] && continue
+  key="${line%%=*}"; key="${key//[[:space:]]/}"
+  allowed=0
+  for a in "${ALLOWED[@]}"; do [[ "$key" == "$a" ]] && allowed=1; done
+  if [[ $allowed -eq 1 ]]; then
+    printf '%s\n' "$line" >> "$TARGET"; kept+=("$key")
+  else
+    dropped+=("$key")
+  fi
+done < "$SOURCE"
 chmod 600 "$TARGET"
+echo "Kept (client-safe):  ${kept[*]:-none}"
+echo "Dropped (not copied): ${dropped[*]:-none}"
 echo "Wrote $TARGET. Now run: flutter run -d <device-id>"
