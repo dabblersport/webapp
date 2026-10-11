@@ -374,6 +374,11 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     // holds the active branch and the bottom bar, and on a window wider than
     // a phone it keeps the frame's phone column (bar included, `0 18px 24px`
     // inside it) centred rather than stretching the bar across the window.
+    final double overlayBottom = math.max(
+      0,
+      DabblerFadeTokens.bottomInset - MediaQuery.paddingOf(context).bottom,
+    );
+
     return PopScope(
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
@@ -399,15 +404,10 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
           // the full 24 where there is no inset). It added 24 on top of the
           // inset: 24 + 34 = 58 pt on an iPhone.
           overlayFade: false,
-          overlayPadding: EdgeInsetsDirectional.fromSTEB(
-            DabblerSpacing.space6,
-            0,
-            DabblerSpacing.space6,
-            math.max(
-              0,
-              DabblerFadeTokens.bottomInset -
-                  MediaQuery.paddingOf(context).bottom,
-            ),
+          overlayPadding: EdgeInsetsDirectional.only(
+            start: DabblerSpacing.space6,
+            end: DabblerSpacing.space6,
+            bottom: overlayBottom,
           ),
           body: widget.navigationShell,
           // The bar sits under the shell's one Action Area surface, which
