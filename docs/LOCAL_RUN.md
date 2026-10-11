@@ -24,9 +24,12 @@ environment). It is read from `.env`, which is gitignored and never committed.
    scripts/setup_local_env.sh
    ```
 
-   This checks the required key **names** (never printing values) and copies the
-   file to `assets/config/local.env` (gitignored), which debug and profile runs
-   read when no `--dart-define` values are supplied.
+   This checks the required key **names** (never printing values) and writes
+   `assets/config/local.env` (gitignored), which debug and profile runs read when
+   no `--dart-define` values are supplied. **Only an allowlist of client-safe keys
+   is copied** (`SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_PUBLISHABLE_KEY`,
+   `APP_NAME`, `ENVIRONMENT`, `GOOGLE_WEB_CLIENT_ID`); every other key in your
+   `.env` is dropped, and the script prints the **names** it kept and dropped.
 
 That is the only setup. Repeated `flutter run` commands keep using it.
 
@@ -55,8 +58,13 @@ For every key, in this order:
 
 Release builds never read `assets/config/local.env`. Build releases and web
 deployments with `--dart-define` values (see `scripts/cloudflare-build.sh`).
-`assets/config/local.env` holds client-safe values only, but build releases from
-CI, not from a machine with a local selection.
+
+**Release/CI guard.** The file would otherwise be bundled into (and, on web,
+served from) a release built on a machine that has a local selection. So
+`scripts/check_no_local_env.sh` **fails the build** if `assets/config/local.env`
+exists; `scripts/cloudflare-build.sh` runs it first. Run it at the start of any
+other release or CI build too (iOS/Android archive scripts, CI jobs), or remove
+the file first with `scripts/setup_local_env.sh --clear`.
 
 ## Targets
 
