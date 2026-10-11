@@ -1268,11 +1268,25 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   ) => guard(() async {
     final rows = await _db
         .from(SupabaseConfig.venuesTable)
-        .select('id, name_en, city, latitude, longitude')
+        .select('id, name_en, area, area_id, lat, lng')
         .ilike('name_en', '%$query%')
         .limit(20)
         .order('name_en');
-    return rows.cast<Map<String, dynamic>>();
+    // KAN-492: the venues table has `name_en`/`area`/`lat`/`lng` (baseline
+    // schema), not `city`/`latitude`/`longitude`; map to the keys the
+    // composer place sheet reads, including the venue's own `area_id`.
+    return [
+      for (final r in rows.cast<Map<String, dynamic>>())
+        {
+          'id': r['id'],
+          'name': r['name_en'],
+          'name_en': r['name_en'],
+          'city': r['area'],
+          'area_id': r['area_id'],
+          'geo_lat': (r['lat'] as num?)?.toDouble(),
+          'geo_lng': (r['lng'] as num?)?.toDouble(),
+        },
+    ];
   });
 
   @override

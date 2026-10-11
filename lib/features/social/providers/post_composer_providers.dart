@@ -12,7 +12,6 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
-import 'package:dabbler/features/location/presentation/widgets/location_picker_sheet.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart'
     show userUpcomingGamesProvider;
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
@@ -39,6 +38,7 @@ class PostComposerState {
     this.venueName,
     this.locationName,
     this.locationTagId,
+    this.areaId,
     this.geoLat,
     this.geoLng,
     this.media = const [],
@@ -77,6 +77,11 @@ class PostComposerState {
   final String? venueName;
   final String? locationName;
   final String? locationTagId;
+
+  /// KAN-492: the area the chosen place belongs to (the venue's area, or the
+  /// area resolved for "Use current location"). Null when no place is
+  /// chosen or the place's area is unknown; never a default area.
+  final String? areaId;
   final double? geoLat;
   final double? geoLng;
 
@@ -142,6 +147,7 @@ class PostComposerState {
     String? venueName,
     String? locationName,
     String? locationTagId,
+    String? areaId,
     double? geoLat,
     double? geoLng,
     List<dynamic>? media,
@@ -174,6 +180,7 @@ class PostComposerState {
       venueName: venueName ?? this.venueName,
       locationName: locationName ?? this.locationName,
       locationTagId: locationTagId ?? this.locationTagId,
+      areaId: areaId ?? this.areaId,
       geoLat: geoLat ?? this.geoLat,
       geoLng: geoLng ?? this.geoLng,
       media: media ?? this.media,
@@ -234,6 +241,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       venueName: state.venueName,
       locationName: state.locationName,
       locationTagId: state.locationTagId,
+      areaId: state.areaId,
       geoLat: state.geoLat,
       geoLng: state.geoLng,
       media: state.media,
@@ -268,6 +276,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       venueName: state.venueName,
       locationName: state.locationName,
       locationTagId: state.locationTagId,
+      areaId: state.areaId,
       geoLat: state.geoLat,
       geoLng: state.geoLng,
       media: state.media,
@@ -291,17 +300,24 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     required String name,
     double? lat,
     double? lng,
+    String? areaId,
   }) {
-    state = state.copyWith(
-      venueId: id,
-      venueName: name,
-      locationName: name,
-      geoLat: lat,
-      geoLng: lng,
-    );
+    // KAN-492: rebuild the location fields so a previous place's area or tag
+    // never survives a new venue pick.
+    setRawLocation(name: name, lat: lat, lng: lng, areaId: areaId);
+    state = state.copyWith(venueId: id, venueName: name);
   }
 
-  void setRawLocation({required String name, double? lat, double? lng}) {
+  /// Sets a place that is not a DB venue (typed, recent, current location).
+  /// [areaId] and [locationTagId] are taken here, not by later setters,
+  /// because this rebuilds the state and would drop them (KAN-492).
+  void setRawLocation({
+    required String name,
+    double? lat,
+    double? lng,
+    String? areaId,
+    String? locationTagId,
+  }) {
     // Clear venue-specific fields but set location_name/geo.
     state = PostComposerState(
       visibility: state.visibility,
@@ -314,6 +330,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       sportName: state.sportName,
       sportEmoji: state.sportEmoji,
       locationName: name,
+      locationTagId: locationTagId,
+      areaId: areaId,
       geoLat: lat,
       geoLng: lng,
       media: state.media,
@@ -419,6 +437,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       venueName: state.venueName,
       locationName: state.locationName,
       locationTagId: state.locationTagId,
+      areaId: state.areaId,
       geoLat: state.geoLat,
       geoLng: state.geoLng,
       media: state.media,
@@ -584,6 +603,24 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       } catch (_) {}
     }
 
+    // 6b. KAN-492: a venue whose area is not known client-side gets the area
+    // its own coordinates resolve to. Without coordinates it stays unknown
+    // (null), never a default or the viewer's active area.
+    var areaId = s.areaId;
+    if (areaId == null &&
+        s.venueId != null &&
+        s.geoLat != null &&
+        s.geoLng != null) {
+      try {
+        final area = await _ref
+            .read(areaRepositoryV2Provider)
+            .resolveNearest(s.geoLat!, s.geoLng!);
+        areaId = area?.id;
+      } catch (_) {
+        areaId = null;
+      }
+    }
+
     // 7. Construct request
     final request = PostCreateRequest(
       visibility: s.visibility,
@@ -596,6 +633,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       sportId: s.sportId,
       venueId: s.venueId,
       locationTagId: s.locationTagId,
+      areaId: areaId,
       locationName: s.locationName,
       geoLat: s.geoLat,
       geoLng: s.geoLng,
@@ -653,9 +691,13 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
               .resolveNearest(lat, lng);
           if (!mounted) return ComposerLocateOutcome.unavailable;
           if (area != null) {
-            // setRawLocation rebuilds the state, so the tag id goes last.
-            setRawLocation(name: area.name, lat: lat, lng: lng);
-            setLocationTagId(area.id);
+            setRawLocation(
+              name: area.name,
+              lat: lat,
+              lng: lng,
+              areaId: area.id,
+              locationTagId: area.id,
+            );
             return ComposerLocateOutcome.area;
           }
           setRawLocation(name: fallbackName, lat: lat, lng: lng);
@@ -669,29 +711,6 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       }
     } catch (_) {
       return ComposerLocateOutcome.unavailable;
-    }
-  }
-
-  /// Applies a [LocationPickerResult] to the composer state.
-  void setLocationFromPickerResult(LocationPickerResult result) {
-    switch (result.type) {
-      case LocationPickerType.venue:
-        setVenue(
-          id: result.venueId!,
-          name: result.displayName ?? 'Venue',
-          lat: result.lat,
-          lng: result.lng,
-        );
-      case LocationPickerType.area:
-        setLocationTagId(result.areaId);
-        setRawLocation(name: result.displayName ?? 'Area');
-      case LocationPickerType.currentLocation:
-      case LocationPickerType.mapboxPlace:
-        setRawLocation(
-          name: result.displayName ?? 'Location',
-          lat: result.lat,
-          lng: result.lng,
-        );
     }
   }
 }

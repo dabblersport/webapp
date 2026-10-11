@@ -449,10 +449,12 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         ? null
         : (matchedSport?.localizedName(context) ?? post.sport!);
 
-    // The place line: the post's own location name, else the area's name.
+    // The place line: the post's own location name, else the area's name
+    // only when it resolves to a real name (KAN-492: no placeholder, nothing
+    // while loading or on error).
     final areaName = post.areaId == null
         ? null
-        : ref.watch(areaNameProvider(post.areaId!)).valueOrNull;
+        : ref.watch(postAreaNameProvider(post.areaId!)).valueOrNull;
     final place = (post.locationName != null && post.locationName!.isNotEmpty)
         ? post.locationName!
         : (areaName ?? '');
