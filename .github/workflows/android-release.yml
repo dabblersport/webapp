@@ -1,0 +1,478 @@
+# Android release: build, sign, verify and (deliberately) publish to Google Play. KAN-493.
+#
+# THE ONE ENTRY POINT is "Run workflow" on this workflow (workflow_dispatch). Nothing else
+# publishes: no push to Alpha, Canary or main, no pull request, no schedule. See
+# docs/ANDROID_RELEASE.md for the sequence, the credential names and recovery.
+#
+#   mode=release  build + verify (+ publish when track is internal or production)
+#   mode=status   read-only: report where an already uploaded versionCode stands
+#
+# Credentials are repository secrets, used only by the steps that need them, never echoed:
+#   ANDROID_KEYSTORE_BASE64  ANDROID_KEYSTORE_PASSWORD  ANDROID_KEY_ALIAS  ANDROID_KEY_PASSWORD
+#   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
+# App configuration comes from the client-safe allowlist only:
+#   SUPABASE_URL  SUPABASE_ANON_KEY  SUPABASE_PUBLISHABLE_KEY  APP_NAME  GOOGLE_WEB_CLIENT_ID
+# (+ ENVIRONMENT from the app_environment input). Backend-only secrets (for example
+# SUPABASE_DB_URL) are never referenced by this workflow.
+name: Android release
+
+run-name: >-
+  Android ${{ inputs.mode || 'validate' }}
+  ${{ inputs.version_name }}${{ inputs.version_code && format('+{0}', inputs.version_code) || '' }}
+  ${{ inputs.track && format('to {0}', inputs.track) || '' }}
+  (${{ inputs.ref || github.ref_name }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "release = build, verify and publish if a track is chosen; status = read-only report"
+        type: choice
+        options: [release, status]
+        default: release
+      ref:
+        description: "Branch, tag or commit to build. Resolved to a commit and recorded. Production needs the full 40-character commit."
+        type: string
+        required: true
+        default: Alpha
+      version_name:
+        description: "versionName, for example 1.7.9"
+        type: string
+        required: true
+      version_code:
+        description: "versionCode, an integer higher than every code already in Play"
+        type: string
+        required: true
+      track:
+        description: "none = build and verify only; internal = Play internal testing; production = Play production"
+        type: choice
+        options: [none, internal, production]
+        default: none
+      release_status:
+        description: "Play release status. completed = release it; draft = leave it for a person to finish (use if Play rejects completed on a not-yet-published app)"
+        type: choice
+        options: [completed, draft]
+        default: completed
+      app_environment:
+        description: "Value of the app's ENVIRONMENT define"
+        type: choice
+        options: [production, development]
+        default: production
+      production_approval:
+        description: "Production only. Must be exactly: APPROVE <40-character commit> <versionName>+<versionCode>"
+        type: string
+        required: false
+  # Validation rail ONLY: pushing a ref to this branch name builds, signs and verifies an AAB
+  # and never publishes (track is forced to none). It exists because GitHub only lets
+  # workflow_dispatch run a workflow that is on the repository's default branch.
+  push:
+    branches:
+      - android-build-validate
+
+permissions:
+  contents: read
+
+# One release run at a time, queued not cancelled (GitHub keeps one pending run: a newer
+# pending run replaces an older pending one, visibly). Duplicate versionCodes are also
+# refused against Play itself in the publish job.
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+env:
+  ANDROID_PACKAGE: com.dabbler.dabblerapp
+  # Recorded toolchain. Change deliberately and re-run the validation rail.
+  FLUTTER_VERSION: "3.47.5"
+  JAVA_VERSION: "17"
+  BUNDLETOOL_VERSION: "1.18.3"
+  BUNDLETOOL_SHA256: a099cfa1543f55593bc2ed16a70a7c67fe54b1747bb7301f37fdfd6d91028e29
+
+jobs:
+  # ---------------------------------------------------------------------------------------
+  prepare:
+    name: Resolve and validate the request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      mode: ${{ steps.resolve.outputs.mode }}
+      track: ${{ steps.resolve.outputs.track }}
+      version_name: ${{ steps.resolve.outputs.version_name }}
+      version_code: ${{ steps.resolve.outputs.version_code }}
+      release_status: ${{ steps.resolve.outputs.release_status }}
+      app_environment: ${{ steps.resolve.outputs.app_environment }}
+    steps:
+      - name: Checkout the requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 0
+
+      - name: Resolve to a commit and check the request
+        id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          IN_MODE: ${{ inputs.mode }}
+          IN_REF: ${{ inputs.ref }}
+          IN_VNAME: ${{ inputs.version_name }}
+          IN_VCODE: ${{ inputs.version_code }}
+          IN_TRACK: ${{ inputs.track }}
+          IN_STATUS: ${{ inputs.release_status }}
+          IN_ENV: ${{ inputs.app_environment }}
+          IN_APPROVAL: ${{ inputs.production_approval }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          if [[ "$EVENT" == "push" ]]; then
+            # Validation rail: build-only, version taken from pubspec, never publishes.
+            MODE=release; TRACK=none; STATUS=completed; APPENV=production
+            VNAME="$(sed -n 's/^version:[[:space:]]*\([0-9][0-9.]*\)+.*/\1/p' pubspec.yaml | head -1)"
+            VCODE="$(sed -n 's/^version:[[:space:]]*[0-9][0-9.]*+\([0-9][0-9]*\).*/\1/p' pubspec.yaml | head -1)"
+          else
+            MODE="$IN_MODE"; TRACK="$IN_TRACK"; STATUS="$IN_STATUS"; APPENV="$IN_ENV"
+            VNAME="$IN_VNAME"; VCODE="$IN_VCODE"
+          fi
+
+          fail() { echo "::error::$1"; exit 1; }
+          [[ "$MODE" == "release" || "$MODE" == "status" ]] || fail "mode must be release or status"
+          [[ "$VNAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "version_name must look like 1.7.9"
+          [[ "$VCODE" =~ ^[1-9][0-9]{0,9}$ ]] && (( VCODE <= 2100000000 )) || fail "version_code must be an integer from 1 to 2100000000"
+          [[ "$TRACK" == "none" || "$TRACK" == "internal" || "$TRACK" == "production" ]] || fail "track must be none, internal or production"
+          [[ "$STATUS" == "completed" || "$STATUS" == "draft" ]] || fail "release_status must be completed or draft"
+          [[ "$APPENV" == "production" || "$APPENV" == "development" ]] || fail "app_environment must be production or development"
+
+          # A store release may only be built from a commit that is on a recorded branch of
+          # this repository (Alpha, Canary or main), never from an arbitrary ref.
+          reachable=""
+          for b in Alpha Canary main; do
+            if git rev-parse --verify -q "origin/$b" >/dev/null && git merge-base --is-ancestor "$SHA" "origin/$b"; then
+              reachable="$reachable $b"
+            fi
+          done
+          if [[ "$MODE" == "release" && "$TRACK" != "none" ]]; then
+            [[ -n "$reachable" ]] || fail "commit $SHA is not on Alpha, Canary or main"
+          fi
+
+          if [[ "$MODE" == "release" && "$TRACK" == "production" ]]; then
+            [[ "$IN_REF" =~ ^[0-9a-f]{40}$ ]] || fail "production needs the full 40-character commit as ref"
+            [[ "$IN_REF" == "$SHA" ]] || fail "ref did not resolve to itself"
+            [[ "$IN_APPROVAL" == "APPROVE $SHA $VNAME+$VCODE" ]] || fail "production_approval must be exactly: APPROVE $SHA $VNAME+$VCODE"
+          fi
+
+          {
+            echo "sha=$SHA"; echo "mode=$MODE"; echo "track=$TRACK"
+            echo "version_name=$VNAME"; echo "version_code=$VCODE"
+            echo "release_status=$STATUS"; echo "app_environment=$APPENV"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Release request"
+            echo "| | |"; echo "|---|---|"
+            echo "| Event | \`$EVENT\` |"
+            echo "| Mode | \`$MODE\` |"
+            echo "| Requested ref | \`${IN_REF:-$GITHUB_REF_NAME}\` |"
+            echo "| **Resolved commit** | \`$SHA\` |"
+            echo "| On branches |${reachable:- none of Alpha, Canary, main} |"
+            echo "| versionName / versionCode | \`$VNAME\` / \`$VCODE\` |"
+            echo "| Target track | \`$TRACK\` |"
+            echo "| Release status | \`$STATUS\` |"
+            echo "| App ENVIRONMENT | \`$APPENV\` |"
+            echo "| Requested by | \`$GITHUB_ACTOR\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------------------
+  build:
+    name: Build, sign and verify the AAB
+    needs: prepare
+    if: needs.prepare.outputs.mode == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    outputs:
+      aab_sha256: ${{ steps.verify.outputs.aab_sha256 }}
+      aab_name: ${{ steps.verify.outputs.aab_name }}
+      cert_sha256: ${{ steps.verify.outputs.cert_sha256 }}
+    steps:
+      - name: Checkout the resolved commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Set up Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: ${{ env.JAVA_VERSION }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Record the toolchain
+        run: |
+          set -euo pipefail
+          {
+            echo "### Toolchain"
+            echo '```'
+            flutter --version
+            java -version 2>&1 | head -1
+            echo "runner: $ImageOS $ImageVersion"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: A local config selection must never ship
+        run: bash scripts/check_no_local_env.sh
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test
+
+      - name: Reconstruct the signing keystore (runner only)
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KS_PASS: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS_IN: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASS: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for n in KS_B64 KS_PASS KEY_ALIAS_IN KEY_PASS; do
+            [[ -n "${!n}" ]] || { echo "::error::a required Android signing secret is empty (see docs/ANDROID_RELEASE.md for the secret names)"; exit 1; }
+          done
+          KS="$RUNNER_TEMP/release-keystore.jks"
+          printf '%s' "$KS_B64" | base64 -d > "$KS"
+          esc() { local v="$1"; v="${v//\\/\\\\}"; printf '%s' "$v"; }   # .properties escaping
+          {
+            echo "storePassword=$(esc "$KS_PASS")"
+            echo "keyPassword=$(esc "$KEY_PASS")"
+            echo "keyAlias=$(esc "$KEY_ALIAS_IN")"
+            echo "storeFile=$(esc "$KS")"
+          } > android/key.properties
+          echo "KEYSTORE_PATH=$KS" >> "$GITHUB_ENV"
+
+      - name: Build the signed App Bundle
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          APP_ENVIRONMENT: ${{ needs.prepare.outputs.app_environment }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          VCODE: ${{ needs.prepare.outputs.version_code }}
+        run: |
+          set -euo pipefail
+          # Client-safe allowlist only. These five are the same values the web build and
+          # a local run use; no database URL, service key or other backend secret is read.
+          for n in SUPABASE_URL SUPABASE_ANON_KEY APP_NAME; do
+            [[ -n "${!n}" ]] || { echo "::error::required app config $n is empty"; exit 1; }
+          done
+          flutter build appbundle --release \
+            --build-name="$VNAME" --build-number="$VCODE" \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
+            --dart-define=APP_NAME="$APP_NAME" \
+            --dart-define=ENVIRONMENT="$APP_ENVIRONMENT" \
+            --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}"
+
+      - name: Verify package, versions and signing certificate
+        id: verify
+        env:
+          BUNDLETOOL_URL: https://github.com/google/bundletool/releases/download/${{ env.BUNDLETOOL_VERSION }}/bundletool-all-${{ env.BUNDLETOOL_VERSION }}.jar
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          # The recorded (public) upload-certificate fingerprint. A renewed upload key is a
+          # deliberate change of this repository variable (docs/ANDROID_RELEASE.md).
+          EXPECTED_UPLOAD_CERT_SHA256: ${{ vars.ANDROID_UPLOAD_CERT_SHA256 || '3D:3A:63:C9:DA:82:E3:41:D7:0F:3A:E2:E4:98:54:70:C9:91:C3:9B:42:F7:13:69:11:77:28:BC:61:B9:6F:CE' }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          VCODE: ${{ needs.prepare.outputs.version_code }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+        run: |
+          set -euo pipefail
+          JAR="$RUNNER_TEMP/bundletool.jar"
+          curl -fsSL -o "$JAR" "$BUNDLETOOL_URL"
+          echo "$BUNDLETOOL_SHA256  $JAR" | sha256sum -c -
+          export BUNDLETOOL_JAR="$JAR"
+          SRC="build/app/outputs/bundle/release/app-release.aab"
+          test -f "$SRC" || { echo "::error::no app-release.aab was produced"; exit 1; }
+          OUT="$RUNNER_TEMP/out"; mkdir -p "$OUT"
+          NAME="dabbler-${VNAME}+${VCODE}-${SHA:0:8}.aab"
+          cp "$SRC" "$OUT/$NAME"
+          scripts/android/verify_aab.sh "$OUT/$NAME" "$ANDROID_PACKAGE" "$VNAME" "$VCODE" "$OUT/metadata.json"
+          ASHA="$(sha256sum "$OUT/$NAME" | cut -d' ' -f1)"
+          CERT="$(sed -n 's/.*"signingCertSha256": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
+          {
+            echo "aab_sha256=$ASHA"; echo "aab_name=$NAME"; echo "cert_sha256=$CERT"
+            echo "out_dir=$OUT"
+          } >> "$GITHUB_OUTPUT"
+          {
+            echo "### Signed AAB (verified)"
+            echo "| | |"; echo "|---|---|"
+            echo "| File | \`$NAME\` |"
+            echo "| Commit | \`$SHA\` |"
+            echo "| Package | \`$ANDROID_PACKAGE\` |"
+            echo "| versionName / versionCode | \`$VNAME\` / \`$VCODE\` |"
+            echo "| AAB SHA-256 | \`$ASHA\` |"
+            echo "| Signing certificate SHA-256 | \`$CERT\` |"
+            echo "| Matches the release keystore and the recorded upload certificate | yes (the step fails otherwise) |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the verified bundle for the publish job
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-aab
+          path: |
+            ${{ runner.temp }}/out/*.aab
+            ${{ runner.temp }}/out/metadata.json
+          retention-days: 14
+          if-no-files-found: error
+
+      - name: Remove signing material from the runner
+        if: always()
+        run: |
+          rm -f android/key.properties "$RUNNER_TEMP/release-keystore.jks" || true
+
+  # ---------------------------------------------------------------------------------------
+  publish:
+    name: Publish to Google Play (${{ needs.prepare.outputs.track }})
+    needs: [prepare, build]
+    if: needs.prepare.outputs.mode == 'release' && needs.prepare.outputs.track != 'none'
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    # A GitHub Environment named android-internal / android-production. Required reviewers
+    # on android-production (set in repository settings) put a person between "run" and
+    # "publish to production"; see docs/ANDROID_RELEASE.md.
+    environment: android-${{ needs.prepare.outputs.track }}
+    steps:
+      - name: Checkout the resolved commit (release tooling)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Download the verified bundle
+        uses: actions/download-artifact@v4
+        with:
+          name: android-aab
+          path: ${{ runner.temp }}/in
+
+      - name: The bundle is exactly the one that was verified
+        env:
+          EXPECTED: ${{ needs.build.outputs.aab_sha256 }}
+          NAME: ${{ needs.build.outputs.aab_name }}
+        run: |
+          set -euo pipefail
+          echo "$EXPECTED  $RUNNER_TEMP/in/$NAME" | sha256sum -c -
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the Play API client
+        run: python -m pip install --disable-pip-version-check -r scripts/android/requirements.txt
+
+      - name: Offline checks of the publishing logic
+        run: python scripts/android/test_play_publish.py
+
+      - name: Write the service-account file (runner only)
+        env:
+          SA_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ -n "$SA_JSON" ]] || { echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is empty"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/play-sa.json"
+          echo "PLAY_CREDENTIALS=$RUNNER_TEMP/play-sa.json" >> "$GITHUB_ENV"
+
+      - name: Refuse a duplicate or older versionCode
+        env:
+          VCODE: ${{ needs.prepare.outputs.version_code }}
+        run: python scripts/android/play_publish.py check --package "$ANDROID_PACKAGE" --version-code "$VCODE" --credentials "$PLAY_CREDENTIALS"
+
+      - name: Upload to the Play track and read it back
+        id: upload
+        env:
+          VCODE: ${{ needs.prepare.outputs.version_code }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          TRACK: ${{ needs.prepare.outputs.track }}
+          STATUS: ${{ needs.prepare.outputs.release_status }}
+          NAME: ${{ needs.build.outputs.aab_name }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+        run: |
+          set -euo pipefail
+          python scripts/android/play_publish.py upload \
+            --package "$ANDROID_PACKAGE" --version-code "$VCODE" --version-name "$VNAME" \
+            --aab "$RUNNER_TEMP/in/$NAME" --track "$TRACK" --status "$STATUS" \
+            --release-name "$VNAME ($VCODE) ${SHA:0:8}" \
+            --credentials "$PLAY_CREDENTIALS" | tee "$RUNNER_TEMP/play-readback.json"
+          {
+            echo "### Google Play read-back (${TRACK})"
+            echo '```json'
+            cat "$RUNNER_TEMP/play-readback.json"
+            echo '```'
+            echo "Upload and track assignment are distinct from store review and availability. Review is not exposed by the Play API; \`available\` stays \`unconfirmed\` until an independent signal confirms it. Follow it with mode=status (docs/ANDROID_RELEASE.md)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the service-account file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/play-sa.json" || true
+
+  # ---------------------------------------------------------------------------------------
+  status:
+    name: Report release status (read-only)
+    needs: prepare
+    if: needs.prepare.outputs.mode == 'status'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (release tooling)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the Play API client
+        run: python -m pip install --disable-pip-version-check -r scripts/android/requirements.txt
+
+      - name: Write the service-account file (runner only)
+        env:
+          SA_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ -n "$SA_JSON" ]] || { echo "::error::GOOGLE_PLAY_SERVICE_ACCOUNT_JSON is empty"; exit 1; }
+          printf '%s' "$SA_JSON" > "$RUNNER_TEMP/play-sa.json"
+          echo "PLAY_CREDENTIALS=$RUNNER_TEMP/play-sa.json" >> "$GITHUB_ENV"
+
+      - name: Read the stages from Google Play
+        env:
+          VCODE: ${{ needs.prepare.outputs.version_code }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          TRACK: ${{ needs.prepare.outputs.track }}
+        run: |
+          set -euo pipefail
+          ARGS=(--package "$ANDROID_PACKAGE" --version-code "$VCODE" --version-name "$VNAME" --credentials "$PLAY_CREDENTIALS")
+          [[ "$TRACK" == "none" ]] || ARGS+=(--track "$TRACK")
+          python scripts/android/play_publish.py status "${ARGS[@]}" | tee "$RUNNER_TEMP/play-status.json"
+          {
+            echo "### Google Play status for $VNAME ($VCODE)"
+            echo '```json'
+            cat "$RUNNER_TEMP/play-status.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the service-account file
+        if: always()
+        run: rm -f "$RUNNER_TEMP/play-sa.json" || true

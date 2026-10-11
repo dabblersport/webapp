@@ -1,0 +1,4 @@
+# Release tooling only (KAN-493). Pinned so a release run is reproducible.
+google-api-python-client==2.151.0
+google-auth==2.35.0
+google-auth-httplib2==0.2.0
