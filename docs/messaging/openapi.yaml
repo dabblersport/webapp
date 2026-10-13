@@ -1,0 +1,384 @@
+openapi: 3.0.3
+info:
+  title: Dabbler messaging API (phase P2: game chat, text)
+  version: 0.1.0-draft
+  description: |
+    The contract the messaging Worker implements and the Dart `MessagingRepository`
+    (`lib/features/messaging/domain/messaging_repository.dart`) calls. Contract only:
+    nothing here is deployed, nothing is implemented, and `FeatureFlags.messaging` stays false.
+
+    Scope is exactly the P2 operations: get a game conversation, list messages by `seq` cursor,
+    send text, report a message, mute, unmute. Nothing else is part of this contract.
+
+    Authentication (report recommendation D24, NOT YET CEO-approved): the client sends the user's
+    bearer token unchanged; the Worker forwards it unchanged to `rpc/msg_authorize` and trusts ONLY
+    the `user_id` that call returns. See `README.md`.
+
+    Every failure carries a typed reason in the error body (`components.schemas.ErrorBody`). A client
+    that does not recognise a reason must treat it as unknown and must not crash. The reason named
+    `offline` is produced by the client when the request cannot be made; the server never sends it.
+servers:
+  - url: https://messaging.invalid/v1
+    description: Placeholder. The real Worker address is decided when the Worker exists.
+security:
+  - bearerAuth: []
+tags:
+  - name: conversations
+  - name: messages
+paths:
+  /games/{gameId}/conversation:
+    get:
+      operationId: getGameConversation
+      tags: [conversations]
+      summary: Get the conversation of a game (state, writability, view boundary, mute flag).
+      description: |
+        Returns the single chat of a game for a member who may view it. `writable` is derived at
+        request time: true iff the game is not cancelled and its `end_at` has not passed. A member who
+        left the game still gets the conversation, with `read_only_reason = left_read_only` and a
+        `boundary`.
+      x-reasons: [not_in_pilot, not_a_member, removed, suspended, rate_limited, not_found, invalid_request]
+      parameters:
+        - $ref: '#/components/parameters/GameId'
+      responses:
+        '200':
+          description: The conversation.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Conversation'
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '5XX': { $ref: '#/components/responses/Error' }
+  /conversations/{conversationId}/messages:
+    get:
+      operationId: listMessages
+      tags: [messages]
+      summary: List messages, paged by seq cursor, older or newer.
+      description: |
+        Pages are ordered by ascending `seq`. Without `cursor` the newest `limit` messages come back.
+        With `direction=older` the page holds messages whose `seq` is below `cursor`; with
+        `direction=newer`, above it. The server never returns a message past `boundary.seq`
+        when the conversation has a boundary (a member who left sees history up to that point only);
+        the client applies no rule of its own.
+      x-reasons: [not_in_pilot, not_a_member, removed, suspended, rate_limited, not_found, invalid_request]
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - name: cursor
+          in: query
+          required: false
+          description: A message `seq`. Omit for the newest page.
+          schema: { type: integer, format: int64, minimum: 1 }
+        - name: direction
+          in: query
+          required: false
+          description: Which side of `cursor` to page. Default `older`.
+          schema:
+            type: string
+            enum: [older, newer]
+            default: older
+        - name: limit
+          in: query
+          required: false
+          description: Page size. Default 30, maximum 50.
+          schema: { type: integer, minimum: 1, maximum: 50, default: 30 }
+      responses:
+        '200':
+          description: One page.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessagePage'
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '5XX': { $ref: '#/components/responses/Error' }
+    post:
+      operationId: sendTextMessage
+      tags: [messages]
+      summary: Send a text message (idempotent by key).
+      description: |
+        The client generates the `Idempotency-Key` (a random UUID) once per message and reuses it on
+        every retry of that message. A duplicate send with the same key by the same user in the same
+        conversation returns the SAME message (same `id`, same `seq`) with status 200 and creates no
+        second row; the first send returns 201. A retry never produces a duplicate.
+      x-reasons: [not_in_pilot, not_a_member, removed, left_read_only, game_ended, game_cancelled, blocked, suspended, rate_limited, not_found, invalid_request]
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+        - name: Idempotency-Key
+          in: header
+          required: true
+          description: Client-generated UUID, one per message, reused on retry.
+          schema: { type: string, format: uuid }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SendTextRequest'
+      responses:
+        '201':
+          description: The message was created.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '200':
+          description: Duplicate of an earlier send with the same key. The earlier message, unchanged.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Message'
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '5XX': { $ref: '#/components/responses/Error' }
+  /messages/{messageId}/report:
+    post:
+      operationId: reportMessage
+      tags: [messages]
+      summary: Report a message to moderation.
+      description: |
+        Records a report against the message for the CEO's moderation queue. The response promises no
+        review time. The report carries no copy of the message text.
+      x-reasons: [not_in_pilot, not_a_member, removed, suspended, rate_limited, not_found, invalid_request]
+      parameters:
+        - $ref: '#/components/parameters/MessageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReportRequest'
+      responses:
+        '202':
+          description: The report was accepted.
+        '400': { $ref: '#/components/responses/Error' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '5XX': { $ref: '#/components/responses/Error' }
+  /conversations/{conversationId}/mute:
+    put:
+      operationId: muteConversation
+      tags: [conversations]
+      summary: Mute the conversation for the caller (there is no leave).
+      x-reasons: [not_in_pilot, not_a_member, removed, suspended, rate_limited, not_found]
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '204':
+          description: Muted (also when it already was).
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '5XX': { $ref: '#/components/responses/Error' }
+    delete:
+      operationId: unmuteConversation
+      tags: [conversations]
+      summary: Unmute the conversation for the caller.
+      x-reasons: [not_in_pilot, not_a_member, removed, suspended, rate_limited, not_found]
+      parameters:
+        - $ref: '#/components/parameters/ConversationId'
+      responses:
+        '204':
+          description: Unmuted (also when it already was not muted).
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '404': { $ref: '#/components/responses/Error' }
+        '429': { $ref: '#/components/responses/Error' }
+        '5XX': { $ref: '#/components/responses/Error' }
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      description: |
+        The signed-in user's own access token, sent unchanged. Not a secret of this document: it is the
+        caller's session token. The Worker never decodes claims for itself.
+  parameters:
+    GameId:
+      name: gameId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    ConversationId:
+      name: conversationId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    MessageId:
+      name: messageId
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+  responses:
+    Error:
+      description: |
+        A failure. `error.reason` is the typed reason when the server has one. A 401 (token missing or
+        rejected) and a 5XX carry no reason; the client maps them to its unknown reason.
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorBody'
+  schemas:
+    Reason:
+      type: string
+      description: |
+        The typed reasons the server can return. HTTP status per reason: not_in_pilot 403, not_a_member 403,
+        removed 403, left_read_only 403, game_ended 409, game_cancelled 409, blocked 403, suspended 403,
+        rate_limited 429, not_found 404, invalid_request 400. The list is open: a client must treat a reason
+        it does not know as unknown. Which operation can return which reasons is in each operation's
+        `x-reasons`. The reason `offline` is produced by the client and never sent by the server.
+      enum:
+        - not_in_pilot
+        - not_a_member
+        - removed
+        - left_read_only
+        - game_ended
+        - game_cancelled
+        - blocked
+        - suspended
+        - rate_limited
+        - not_found
+        - invalid_request
+    ErrorBody:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: []
+          properties:
+            reason:
+              $ref: '#/components/schemas/Reason'
+            message:
+              type: string
+              description: Developer text. Never shown to users; the app shows its own localized copy per reason.
+            retry_after_seconds:
+              type: integer
+              minimum: 1
+              description: Present with `rate_limited`.
+    ViewBoundary:
+      type: object
+      description: |
+        A typed limit on what the caller may view. Today the only kind is `left_at_seq`: the caller left the
+        game and may view history up to and including `seq`. Enforced by the server; clients apply no rule.
+      required: [kind, seq]
+      properties:
+        kind:
+          type: string
+          enum: [left_at_seq]
+        seq:
+          type: integer
+          format: int64
+          minimum: 0
+    Conversation:
+      type: object
+      required: [id, kind, game_id, writable, muted, last_seq]
+      properties:
+        id: { type: string, format: uuid }
+        kind:
+          type: string
+          enum: [game]
+        game_id: { type: string, format: uuid }
+        writable:
+          type: boolean
+          description: True iff the caller may send now (not cancelled, `end_at` not passed, caller still an active member).
+        read_only_reason:
+          nullable: true
+          description: Why `writable` is false. Null when writable.
+          allOf:
+            - $ref: '#/components/schemas/Reason'
+          x-allowed: [left_read_only, game_ended, game_cancelled]
+        boundary:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ViewBoundary'
+        muted: { type: boolean }
+        last_seq:
+          type: integer
+          format: int64
+          minimum: 0
+          description: The highest `seq` in the conversation the caller may view (0 when none).
+    Message:
+      type: object
+      required: [id, conversation_id, seq, kind, body, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        conversation_id: { type: string, format: uuid }
+        seq:
+          type: integer
+          format: int64
+          minimum: 1
+          description: Position in the conversation, strictly increasing, no gaps for a viewer.
+        sender_user_id:
+          type: string
+          format: uuid
+          nullable: true
+          description: Null for a system line.
+        kind:
+          type: string
+          enum: [text, system]
+        body: { type: string }
+        client_key:
+          type: string
+          format: uuid
+          nullable: true
+          description: The idempotency key it was sent with (null for system lines and other senders' messages).
+        created_at: { type: string, format: date-time }
+    MessagePage:
+      type: object
+      required: [messages, has_older, has_newer, page_size]
+      properties:
+        messages:
+          type: array
+          description: Ascending by `seq`.
+          items:
+            $ref: '#/components/schemas/Message'
+        older_cursor:
+          type: integer
+          format: int64
+          nullable: true
+          description: Pass as `cursor` with `direction=older` for the next older page. Null when `has_older` is false.
+        newer_cursor:
+          type: integer
+          format: int64
+          nullable: true
+          description: Pass as `cursor` with `direction=newer` for the next newer page. Null when `has_newer` is false.
+        has_older: { type: boolean }
+        has_newer: { type: boolean }
+        page_size: { type: integer, minimum: 1, maximum: 50 }
+        boundary:
+          nullable: true
+          allOf:
+            - $ref: '#/components/schemas/ViewBoundary'
+    SendTextRequest:
+      type: object
+      required: [body]
+      properties:
+        body:
+          type: string
+          minLength: 1
+          maxLength: 2000
+          description: Plain text. Proposed limit, to be confirmed with the Worker owner before the Worker is built.
+    ReportRequest:
+      type: object
+      required: [category]
+      properties:
+        category:
+          type: string
+          enum: [spam, harassment, inappropriate, other]
+          description: Proposed categories, to be confirmed with the moderation owner.
+        note:
+          type: string
+          maxLength: 500
