@@ -70,22 +70,21 @@ void main() {
   });
 
   group('order', () {
-    test('both files sort after every other migration with a timestamp', () {
-      final others =
-          Directory(_dir)
-              .listSync()
-              .map((e) => e.uri.pathSegments.last)
-              .where(
-                (n) =>
-                    n.endsWith('.sql') &&
-                    RegExp(r'^\d{14}_').hasMatch(n) &&
-                    n != _narrowName &&
-                    n != _revokeName,
-              )
-              .toList()
-            ..sort();
-      expect(_narrowName.compareTo(others.last), greaterThan(0));
-      expect(_revokeName.compareTo(others.last), greaterThan(0));
+    test('both files sort after the migrations that existed when authored', () {
+      // Later migrations (KAN-499 and on) may sort after these two by design.
+      const existedWhenAuthored = <String>[
+        '20260829080500_baseline_schema.sql',
+        '20261008180000_revoke_legacy_and_anon_update_game.sql',
+      ];
+      for (final earlier in existedWhenAuthored) {
+        expect(
+          File('$_dir/$earlier').existsSync(),
+          isTrue,
+          reason: '$earlier must still exist',
+        );
+        expect(_narrowName.compareTo(earlier), greaterThan(0));
+        expect(_revokeName.compareTo(earlier), greaterThan(0));
+      }
     });
 
     test('the narrowing sorts strictly before the revoke', () {
