@@ -5,6 +5,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
@@ -197,33 +198,33 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
             : null;
       }),
     );
-    return _buildNearbyNotifier(repo, coords);
+    return _buildNearbyNotifier(repo, coords, ref.watch(gpsServiceProvider));
   },
 );
 
 TabFeedNotifier _buildNearbyNotifier(
   PostRepository repo,
   ({double lat, double lng})? appLocation,
+  GpsService gps,
 ) {
   return TabFeedNotifier(({required limit, required offset}) async {
     // Prefer the app-level location selection (GPS / saved / manual area).
     double? lat = appLocation?.lat;
     double? lng = appLocation?.lng;
 
-    // Fallback: raw GPS, resolved lazily inside the fetcher so permission
-    // dialogs don't fire on app launch.
+    // Fallback: raw GPS, read-only (it never raises the OS permission prompt:
+    // only the location intro or an explicit user action asks for it).
     if (lat == null || lng == null) {
       try {
-        final permission = await Geolocator.checkPermission();
-        if (permission == LocationPermission.denied) {
-          await Geolocator.requestPermission();
-        }
-        final pos = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.low,
-          timeLimit: DabblerMotion.timeoutShort,
+        final result = await gps.getCurrentLocation(
+          requestPermission: false,
+          cap: DabblerMotion.timeoutShort,
+          accuracy: LocationAccuracy.low,
         );
-        lat = pos.latitude;
-        lng = pos.longitude;
+        if (result is LocationSuccess) {
+          lat = result.lat;
+          lng = result.lng;
+        }
       } catch (_) {
         // Location unavailable — backend will fall back to recency.
       }

@@ -80,7 +80,7 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
     setState(() => _isLoading = true);
 
     try {
-      await _locationService.fetchLocation();
+      await _locationService.fetchLocation(requestPermission: true);
 
       if (mounted) {
         Navigator.pop(context);

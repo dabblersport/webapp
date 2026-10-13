@@ -1,8 +1,9 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart'
     show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
+import 'package:geolocator/geolocator.dart' show LocationAccuracy;
 
+import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/models/feed/feed_post.dart';
 import 'package:dabbler/data/repositories/feed_repository.dart';
 import 'package:dabbler/data/repositories/feed_repository_impl.dart';
@@ -58,9 +59,12 @@ class NearbyFeedState {
 // ==========================================================================
 
 class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
-  NearbyFeedNotifier(this._repo) : super(const NearbyFeedState());
+  NearbyFeedNotifier(this._repo, [GpsService? gps])
+    : _gps = gps ?? GpsService(),
+      super(const NearbyFeedState());
 
   final FeedRepository _repo;
+  final GpsService _gps;
 
   /// Loads only if not previously loaded (cache-friendly across tab switches).
   Future<void> ensureLoaded() async {
@@ -77,16 +81,17 @@ class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
     double? lng;
 
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
-      final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.low,
-        timeLimit: DabblerMotion.timeoutShort,
+      // Read-only: the OS permission prompt is never raised from here (only
+      // the location intro or an explicit user action asks for it).
+      final result = await _gps.getCurrentLocation(
+        requestPermission: false,
+        cap: DabblerMotion.timeoutShort,
+        accuracy: LocationAccuracy.low,
       );
-      lat = pos.latitude;
-      lng = pos.longitude;
+      if (result is LocationSuccess) {
+        lat = result.lat;
+        lng = result.lng;
+      }
     } catch (_) {
       // Location unavailable — use fallback.
     }
@@ -114,5 +119,5 @@ class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
 final nearbyRpcFeedProvider =
     StateNotifierProvider<NearbyFeedNotifier, NearbyFeedState>((ref) {
       final repo = ref.watch(feedRepositoryProvider);
-      return NearbyFeedNotifier(repo);
+      return NearbyFeedNotifier(repo, ref.watch(gpsServiceProvider));
     });

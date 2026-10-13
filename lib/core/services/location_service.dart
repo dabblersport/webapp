@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'package:geolocator/geolocator.dart';
+import 'package:dabbler/core/services/location_permission_state.dart';
 import 'package:geocoding/geocoding.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter/foundation.dart';
@@ -50,14 +51,20 @@ class LocationService extends ChangeNotifier {
     super.dispose();
   }
 
-  Future<void> fetchLocation() async {
+  /// Reads the position. With [requestPermission] false (the default, used by
+  /// [init] and the periodic timer) an undecided permission is only READ and
+  /// never asked for; an explicit user action passes true to show the prompt.
+  Future<void> fetchLocation({bool requestPermission = false}) async {
     _isLoading = true;
     notifyListeners();
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       debugPrint('Location permission status: $permission');
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied && requestPermission) {
+        permission = await LocationPermissionState.requestOnce(
+          request: () => Geolocator.requestPermission(),
+          current: () => Geolocator.checkPermission(),
+        );
         debugPrint('Permission after request: $permission');
       }
       if (permission == LocationPermission.denied ||

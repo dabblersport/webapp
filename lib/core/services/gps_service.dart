@@ -3,6 +3,8 @@ import 'package:dabbler_design_system/dabbler_design_system.dart'
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 
+import 'package:dabbler/core/services/location_permission_state.dart';
+
 // =============================================================================
 // RESULT TYPES
 // =============================================================================
@@ -80,7 +82,10 @@ class GpsService {
     // 2. Permission
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied && requestPermission) {
-      permission = await Geolocator.requestPermission();
+      permission = await LocationPermissionState.requestOnce(
+        request: () => Geolocator.requestPermission(),
+        current: () => Geolocator.checkPermission(),
+      );
     }
     if (permission == LocationPermission.deniedForever) {
       return LocationDeniedForever();
