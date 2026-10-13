@@ -38,6 +38,10 @@ Catalog evidence supplied by the KAN-496 report (`LIVE_EVIDENCE.md` E1 and E2, r
 here, so "no caller in the database" rests on the repo reading above; probe A3 in `probes.sql` reads the
 dependents at apply time and must return no row.
 
+## Live catalog evidence: NOT obtained by this team (needs-ops)
+
+The repo map above is complete, but the live catalog read (dependents of the 2-argument overload in `pg_depend`, function bodies, views, policies and triggers that mention it, and the row counts) has NOT been measured for this ticket: the ops guard refuses `execute_sql` for team Karnak (D-042), and a read-only catalog SELECT was attempted and refused. **needs-ops: Memphis runs probes.sql block A3 (read-only) and A4 on project wtncuzcskpigqpmnxwws and records the output here.** Expected: A3 returns no row from any of its four queries; A4 shows user_blocks 3, restrictions 0 (KAN-496 E2, 2026-10-13). Until Memphis records it, "no live caller" is an inference from the repo, not a measurement. If A3 returns a row the migration must not be applied until that caller is migrated.
+
 ## Callers of `rpc_block_user(uuid, boolean)`
 
 | # | Caller | Kind | Evidence | Result |
