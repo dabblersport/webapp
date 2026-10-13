@@ -760,6 +760,17 @@ callers need it). Caller map, probes, rollback and the held decision: `supabase/
 **This block below is unchanged.** If the revoke is applied, the four RPC lines become stale; the gate does
 not fail on a stale line, and removing them is a separate change.
 
+**KAN-499 baseline note (2026-10-13, AUTHORED, NOT APPLIED).** `rpc_block_user(p_peer uuid, p_block boolean)` (listed in
+the block below) is the second block entry point: it writes `restrictions` (`type = 'blocked'`), a store that nothing reads, while
+the app and the 1-argument `rpc_block_user(p_peer uuid)` use `user_blocks`. The app never calls the 2-argument form. Authored fix,
+not applied anywhere: `supabase/migrations/20261013120000_kan499_collapse_rpc_block_user_overload.sql` renames it to
+`rpc_block_user_legacy_v1`, revokes ALL from `PUBLIC`, `anon` and `authenticated`, and copies `restrictions` `blocked` rows into
+`user_blocks` (no DROP, nothing written to `restrictions`). It is written to apply after KAN-497's two migrations. Caller map,
+probes, rollback and the residual finding (`rpc_restrict_set`/`rpc_restrict_clear` still accept `'blocked'`):
+`supabase/tests/block_overload_collapse/`. **This block below is unchanged.** If the migration is applied, the
+`rpc_block_user(p_peer uuid, p_block boolean)` line becomes stale; the gate does not fail on a stale line, and removing it is a
+separate change.
+
 **Adding a name here needs a written justification in the PR**, exactly as §2f requires — that
 reviewable diff is the whole mechanism. Do not add one to make the gate pass without
 establishing why a new function needs an unguarded caller-supplied identity.
