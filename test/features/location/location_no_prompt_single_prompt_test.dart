@@ -162,6 +162,39 @@ void main() {
     },
   );
 
+  group('concurrent first requests', () {
+    test(
+      'overlapping requestOnce calls reach the platform exactly once',
+      () async {
+        final fake = _SlowPlatform();
+        GeolocatorPlatform.instance = fake;
+        final results = await Future.wait([
+          for (var i = 0; i < 6; i++) LocationPermissionState.requestOnce(),
+        ]);
+        expect(fake.requestCalls, 1);
+        expect(results.toSet().length, 1);
+        // later (sequential) calls, also after a restart, still never ask again
+        await LocationPermissionState.requestOnce();
+        await _restart();
+        await LocationPermissionState.requestOnce();
+        expect(fake.requestCalls, 1);
+      },
+    );
+
+    test('overlapping calls from different paths (intro gateway, GpsService, '
+        'LocationService) make one platform request', () async {
+      final fake = _SlowPlatform();
+      GeolocatorPlatform.instance = fake;
+      await Future.wait([
+        const GeolocatorPermissionGateway().request(),
+        GpsService().getCurrentLocation(),
+        LocationService().fetchLocation(requestPermission: true),
+        const GeolocatorPermissionGateway().request(),
+      ]);
+      expect(fake.requestCalls, 1);
+    });
+  });
+
   group('location picker sheet "Use my current location"', () {
     Future<void> pump(WidgetTester tester) async {
       await tester.pumpWidget(
@@ -251,6 +284,18 @@ class _ObservingPlatform extends _FakePlatform {
   @override
   Future<LocationPermission> requestPermission() async {
     await onRequest();
+    return super.requestPermission();
+  }
+}
+
+/// A platform whose permission prompt takes a while to be answered, so that
+/// overlapping callers really overlap.
+class _SlowPlatform extends _FakePlatform {
+  _SlowPlatform() : super(LocationPermission.denied);
+
+  @override
+  Future<LocationPermission> requestPermission() async {
+    await Future<void>.delayed(const Duration(milliseconds: 50));
     return super.requestPermission();
   }
 }

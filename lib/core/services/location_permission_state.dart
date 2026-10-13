@@ -35,7 +35,15 @@ abstract final class LocationPermissionState {
   /// This is the ONLY place in the app that calls the platform's
   /// `requestPermission`; every prompt path (the location intro, `GpsService`,
   /// `LocationService`, the location picker sheet) goes through it.
-  static Future<LocationPermission> requestOnce() async {
+  static Future<LocationPermission> requestOnce() {
+    // Overlapping callers share ONE in-flight request: two first calls cannot
+    // both read "not asked" and both reach the platform.
+    return _inFlight ??= _run().whenComplete(() => _inFlight = null);
+  }
+
+  static Future<LocationPermission>? _inFlight;
+
+  static Future<LocationPermission> _run() async {
     if (await asked()) return Geolocator.checkPermission();
     await markAsked();
     return Geolocator.requestPermission();
