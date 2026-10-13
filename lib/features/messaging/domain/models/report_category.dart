@@ -1,9 +1,16 @@
 /// Why a message is reported (`components.schemas.ReportRequest.category`).
-/// Proposed categories, to be confirmed with the moderation owner.
+/// These are the ten values of the existing `report_reason` enum of
+/// `moderation_reports`; none is added here.
 enum ReportCategory {
   spam('spam'),
+  abuse('abuse'),
+  hate('hate'),
   harassment('harassment'),
-  inappropriate('inappropriate'),
+  nudity('nudity'),
+  illegal('illegal'),
+  danger('danger'),
+  scam('scam'),
+  impersonation('impersonation'),
   other('other');
 
   const ReportCategory(this.wireName);

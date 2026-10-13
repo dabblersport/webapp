@@ -12,7 +12,7 @@ Files:
 | `docs/messaging/openapi.yaml` | The wire contract the Worker implements (OpenAPI 3.0.3). |
 | `lib/features/messaging/domain/messaging_repository.dart` | The Dart interface the app calls. |
 | `lib/features/messaging/domain/typed_reason.dart` | `MessagingReason` (typed reasons, `unknown` fallback) and `MessagingFailure`. |
-| `lib/features/messaging/domain/models/` | `Conversation`, `Message`, `MessagePage`, `ViewBoundary`, `ReportCategory`. |
+| `lib/features/messaging/domain/models/` | `Conversation`, `Message`, `MessagePage`, `ViewBoundary`, `ReportCategory` (the ten values of the existing `report_reason` enum). |
 | `test/features/messaging/domain/` | Tests that keep the yaml and the Dart in agreement. |
 
 ## Status of the rulings this contract rests on

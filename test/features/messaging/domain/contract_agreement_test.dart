@@ -346,6 +346,24 @@ void main() {
       );
     });
 
+    test(
+      'the report categories are exactly the existing report_reason enum',
+      () {
+        final baseline = File(
+          'supabase/migrations/20260829080500_baseline_schema.sql',
+        ).readAsStringSync();
+        final block = RegExp(
+          r'CREATE TYPE "public"\."report_reason" AS ENUM \((.*?)\);',
+          dotAll: true,
+        ).firstMatch(baseline)!.group(1)!;
+        final existing = RegExp(
+          r"'(\w+)'",
+        ).allMatches(block).map((m) => m.group(1)).toList();
+        expect(existing.length, 10);
+        expect(ReportCategory.values.map((c) => c.wireName).toList(), existing);
+      },
+    );
+
     test('the report categories agree with the contract', () {
       final cats = ReportCategory.values.map((c) => c.wireName).join(', ');
       expect(yaml, contains('enum: [$cats]'));
