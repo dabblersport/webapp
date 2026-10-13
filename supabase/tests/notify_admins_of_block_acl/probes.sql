@@ -65,9 +65,12 @@ begin
   perform set_config('k523.b', b::text, true);
 end $$;
 do $$
-declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid; admins int; n0 int; n1 int;
+declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid; admins int; n0 int; n1 int; wrong int;
 begin
   select count(*) into admins from public.app_admins;
+  if admins < 1 then raise exception 'SETUP FAIL: app_admins is empty, so no notification can be expected; use a database with at least one test admin'; end if;
+  if a = b or not exists (select 1 from public.profiles where user_id = a and is_active) or not exists (select 1 from public.profiles where user_id = b and is_active) then
+    raise exception 'SETUP FAIL: the blocker and the blocked user must be two distinct active test users'; end if;
   select count(*) into n0 from public.notifications where kind_key = 'moderation.user_blocked'
      and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k523.a'), 'role', 'authenticated')::text, true); set local role authenticated;
@@ -76,7 +79,19 @@ begin
   select count(*) into n1 from public.notifications where kind_key = 'moderation.user_blocked'
      and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
   if n1 - n0 <> admins then raise exception 'A3 FAIL: expected % notifications, got %', admins, n1 - n0; end if;
-  raise notice 'A3 PASS (admins=%)', admins;
+  select count(*) into wrong from (
+    (select user_id as u from public.app_admins
+     except
+     select to_user_id from public.notifications where kind_key = 'moderation.user_blocked'
+        and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text)
+    union all
+    (select to_user_id from public.notifications where kind_key = 'moderation.user_blocked'
+        and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text
+     except
+     select user_id from public.app_admins)
+  ) d;
+  if wrong <> 0 then raise exception 'A3 FAIL: the notification recipients are not exactly the app_admins'; end if;
+  raise notice 'A3 PASS (admins=%, one notification each, recipients = app_admins)', admins;
 end $$;
 rollback;
 
@@ -132,11 +147,14 @@ begin
   perform set_config('k523.b', b::text, true);
 end $$;
 do $$
-declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid; admins int; n0 int; n1 int;
+declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid; admins int; n0 int; n1 int; wrong int;
 begin
   if not exists (select 1 from pg_trigger where tgname = 'trg_notify_admins_of_block' and tgenabled = 'O') then
     raise exception 'B3 FAIL: trg_notify_admins_of_block missing or disabled'; end if;
   select count(*) into admins from public.app_admins;
+  if admins < 1 then raise exception 'SETUP FAIL: app_admins is empty, so no notification can be expected; use a database with at least one test admin'; end if;
+  if a = b or not exists (select 1 from public.profiles where user_id = a and is_active) or not exists (select 1 from public.profiles where user_id = b and is_active) then
+    raise exception 'SETUP FAIL: the blocker and the blocked user must be two distinct active test users'; end if;
   select count(*) into n0 from public.notifications where kind_key = 'moderation.user_blocked'
      and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k523.a'), 'role', 'authenticated')::text, true); set local role authenticated;
@@ -145,6 +163,18 @@ begin
   select count(*) into n1 from public.notifications where kind_key = 'moderation.user_blocked'
      and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
   if n1 - n0 <> admins then raise exception 'B3 FAIL (STOP): expected % notifications, got %', admins, n1 - n0; end if;
-  raise notice 'B3 PASS (admins=%)', admins;
+  select count(*) into wrong from (
+    (select user_id as u from public.app_admins
+     except
+     select to_user_id from public.notifications where kind_key = 'moderation.user_blocked'
+        and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text)
+    union all
+    (select to_user_id from public.notifications where kind_key = 'moderation.user_blocked'
+        and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text
+     except
+     select user_id from public.app_admins)
+  ) d;
+  if wrong <> 0 then raise exception 'B3 FAIL: the notification recipients are not exactly the app_admins'; end if;
+  raise notice 'B3 PASS (admins=%, one notification each, recipients = app_admins)', admins;
 end $$;
 rollback;

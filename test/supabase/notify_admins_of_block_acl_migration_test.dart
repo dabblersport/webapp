@@ -138,6 +138,26 @@ void main() {
     });
   });
 
+  group('notification probes are not vacuous', () {
+    test('A3 and B3 fail setup without an admin and assert the recipients', () {
+      expect(
+        RegExp(
+          'if admins < 1 then raise exception \'SETUP FAIL',
+        ).allMatches(probes).length,
+        2,
+      );
+      expect(
+        RegExp(
+          'recipients are not exactly the app_admins',
+        ).allMatches(probes).length,
+        2,
+      );
+      expect(probes, contains('distinct active test users'));
+      expect(probes, contains('except'));
+      expect(readme, contains('not vacuous'));
+    });
+  });
+
   group('rollback, README, callers', () {
     test('rollback re-grants PUBLIC and service_role, no DROP', () {
       expect(

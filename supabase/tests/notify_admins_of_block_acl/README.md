@@ -24,4 +24,4 @@
 
 * `notify_admins_of_block` is the only function this migration touches; `notify_admins_of_report` has the same shape and is not in scope.
 * No schema note was added to `docs/SCHEMA.md` (forbidden by the ticket).
-* B3 is vacuous when `app_admins` is empty (0 expected, 0 seen); Memphis should note the admin count it printed.
+* A3 and B3 are not vacuous: they raise `SETUP FAIL` unless `app_admins` has at least one test admin and the blocker and blocked user are two distinct active test users, and they assert that the new notifications' recipients are exactly the `app_admins` rows (one each) before the revoke (A3) and after it (B3). Memphis records the admin count they print.
