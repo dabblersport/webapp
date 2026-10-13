@@ -72,8 +72,7 @@ class _InMemoryMessaging implements MessagingRepository {
   @override
   Future<Result<void, Failure>> reportMessage({
     required String messageId,
-    required ReportCategory category,
-    String? note,
+    required ReportCategory reason,
   }) async => const Ok(null);
 
   @override
@@ -340,10 +339,6 @@ void main() {
     test('limits agree with the contract', () {
       expect(yaml, contains('maximum: 50, default: 30'));
       expect(yaml, contains('maxLength: ${MessagingLimits.maxBodyLength}'));
-      expect(
-        yaml,
-        contains('maxLength: ${MessagingLimits.maxReportNoteLength}'),
-      );
     });
 
     test(
@@ -363,6 +358,69 @@ void main() {
         expect(ReportCategory.values.map((c) => c.wireName).toList(), existing);
       },
     );
+
+    test('the report operation carries no free-text field', () {
+      // Contract: ReportRequest has exactly one property, the reason enum.
+      final props = _yamlSchemaProperties(yaml, 'ReportRequest');
+      expect(props, {'reason'});
+      final block = yaml.substring(yaml.indexOf('    ReportRequest:'));
+      expect(block, contains('required: [reason]'));
+      expect(block, contains('enum: ['));
+      for (final bad in [
+        'note',
+        'details',
+        'comment',
+        'text',
+        'message',
+        'body',
+      ]) {
+        expect(props.contains(bad), isFalse, reason: bad);
+      }
+      // The operation sends only that schema as its request body.
+      final op = yaml.substring(
+        yaml.indexOf('operationId: reportMessage'),
+        yaml.indexOf('operationId: muteConversation'),
+      );
+      expect(op, contains(r"$ref: '#/components/schemas/ReportRequest'"));
+      expect(
+        RegExp(
+          r'type: string(?!\s*\n\s*(format|enum))',
+        ).hasMatch(op.replaceAll(RegExp(r'#.*'), '')),
+        isFalse,
+      );
+      // Interface: reportMessage takes the message id and the reason, nothing else.
+      final sig = RegExp(
+        r'Future<Result<void, Failure>> reportMessage\(\{(.*?)\}\);',
+        dotAll: true,
+      ).firstMatch(repoSource)!.group(1)!;
+      final params = RegExp(
+        r'(\w+)\s*,',
+      ).allMatches(sig).map((m) => m.group(1)).toList();
+      expect(params, ['messageId', 'reason']);
+      expect(sig, isNot(contains('String?')));
+      expect(sig, isNot(contains('note')));
+      // Models and limits: no report note limit.
+      expect(
+        File(
+          'lib/features/messaging/domain/models/message_page.dart',
+        ).readAsStringSync(),
+        isNot(contains('ReportNote')),
+      );
+      for (final f in Directory(
+        'lib/features/messaging/domain',
+      ).listSync(recursive: true).whereType<File>()) {
+        expect(f.readAsStringSync(), isNot(contains('maxReportNoteLength')));
+      }
+    });
+
+    test('the README states why there is no free-text note', () {
+      expect(
+        readme,
+        contains(
+          'no free-text note (D13, D21; revisit only with a CEO decision)',
+        ),
+      );
+    });
 
     test('the report categories agree with the contract', () {
       final cats = ReportCategory.values.map((c) => c.wireName).join(', ');

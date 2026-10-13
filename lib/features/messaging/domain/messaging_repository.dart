@@ -56,13 +56,13 @@ abstract class MessagingRepository {
     required String idempotencyKey,
   });
 
-  /// Reports [messageId] to moderation. No review time is promised.
+  /// Reports [messageId] to moderation with one of the ten reasons. There is no
+  /// free-text note (D13, D21). No review time is promised.
   /// Reasons: not_in_pilot, not_a_member, removed, suspended, rate_limited,
   /// not_found, invalid_request (+ offline).
   Future<Result<void, Failure>> reportMessage({
     required String messageId,
-    required ReportCategory category,
-    String? note,
+    required ReportCategory reason,
   });
 
   /// Mutes the conversation for the caller (there is no leave).

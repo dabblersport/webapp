@@ -373,12 +373,12 @@ components:
           description: Plain text. Proposed limit, to be confirmed with the Worker owner before the Worker is built.
     ReportRequest:
       type: object
-      required: [category]
+      description: |
+        The ten reasons only. There is no free-text field: the CEO is the first reviewer (D13) and the report
+        stores no message content (D21).
+      required: [reason]
       properties:
-        category:
+        reason:
           type: string
           enum: [spam, abuse, hate, harassment, nudity, illegal, danger, scam, impersonation, other]
           description: The existing ten-value `report_reason` enum of `moderation_reports` (KAN-496 report 2.1 row 10, CPO 6.1 row i2); it feeds the report sheet. No new values.
-        note:
-          type: string
-          maxLength: 500

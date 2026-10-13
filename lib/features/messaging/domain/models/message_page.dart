@@ -20,7 +20,6 @@ abstract final class MessagingLimits {
   static const int defaultPageSize = 30;
   static const int maxPageSize = 50;
   static const int maxBodyLength = 2000;
-  static const int maxReportNoteLength = 500;
 }
 
 /// One page of messages, ascending by `seq` (`components.schemas.MessagePage`).

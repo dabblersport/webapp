@@ -108,7 +108,7 @@ none and the app maps it to `unknown` with an unauthorized category.
 * **D8:** the message payload carries no delivery or view state. "sending" and "failed" are local states of the app for a
   message that has not come back yet.
 * **D16:** the contract has no previews.
-* **D13:** the report response promises no review time and the report carries no copy of the message text.
+* **D13 / D21 report:** the report is **the ten `report_reason` reasons only: no free-text note (D13, D21; revisit only with a CEO decision)**. The CEO is the first reviewer and no agent reads message content (D13); a free-text field would carry message content into the reports table, which D21 keeps out (`content_snapshot` stays NULL), and no details column has been approved. The response promises no review time and the report carries no copy of the message text. (This matches the KAN-503 report-reason sheet spec, which has no free-text field.)
 
 ## What is not here, and the tests that will exist later
 

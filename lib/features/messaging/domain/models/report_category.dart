@@ -1,4 +1,4 @@
-/// Why a message is reported (`components.schemas.ReportRequest.category`).
+/// Why a message is reported (`components.schemas.ReportRequest.reason`).
 /// These are the ten values of the existing `report_reason` enum of
 /// `moderation_reports`; none is added here.
 enum ReportCategory {
