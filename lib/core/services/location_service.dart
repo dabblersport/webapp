@@ -61,10 +61,7 @@ class LocationService extends ChangeNotifier {
       LocationPermission permission = await Geolocator.checkPermission();
       debugPrint('Location permission status: $permission');
       if (permission == LocationPermission.denied && requestPermission) {
-        permission = await LocationPermissionState.requestOnce(
-          request: () => Geolocator.requestPermission(),
-          current: () => Geolocator.checkPermission(),
-        );
+        permission = await LocationPermissionState.requestOnce();
         debugPrint('Permission after request: $permission');
       }
       if (permission == LocationPermission.denied ||

@@ -82,10 +82,7 @@ class GpsService {
     // 2. Permission
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied && requestPermission) {
-      permission = await LocationPermissionState.requestOnce(
-        request: () => Geolocator.requestPermission(),
-        current: () => Geolocator.checkPermission(),
-      );
+      permission = await LocationPermissionState.requestOnce();
     }
     if (permission == LocationPermission.deniedForever) {
       return LocationDeniedForever();

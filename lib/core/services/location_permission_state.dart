@@ -1,5 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart' show LocationPermission;
+import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// The one-prompt rule for location (CEO, 2026-10-13): the app asks the OS for
@@ -32,14 +32,13 @@ abstract final class LocationPermissionState {
   /// Asks the OS at most once per device. If the prompt was already requested
   /// the platform is NOT called and the current permission is returned.
   ///
-  /// [request] is the platform request; [current] reads the permission.
-  static Future<LocationPermission> requestOnce({
-    required Future<LocationPermission> Function() request,
-    required Future<LocationPermission> Function() current,
-  }) async {
-    if (await asked()) return current();
+  /// This is the ONLY place in the app that calls the platform's
+  /// `requestPermission`; every prompt path (the location intro, `GpsService`,
+  /// `LocationService`, the location picker sheet) goes through it.
+  static Future<LocationPermission> requestOnce() async {
+    if (await asked()) return Geolocator.checkPermission();
     await markAsked();
-    return request();
+    return Geolocator.requestPermission();
   }
 }
 

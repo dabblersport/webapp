@@ -34,10 +34,7 @@ class GeolocatorPermissionGateway implements LocationPermissionGateway {
   Future<LocationPermission> check() => Geolocator.checkPermission();
 
   @override
-  Future<LocationPermission> request() => LocationPermissionState.requestOnce(
-    request: () => Geolocator.requestPermission(),
-    current: () => Geolocator.checkPermission(),
-  );
+  Future<LocationPermission> request() => LocationPermissionState.requestOnce();
 
   @override
   Future<bool> servicesEnabled() => Geolocator.isLocationServiceEnabled();
