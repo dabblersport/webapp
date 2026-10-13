@@ -11,6 +11,7 @@ class FakeSettingsRepository implements SettingsRepository {
 
   PrivacySettings stored;
   final List<int> writtenMessagePreference = [];
+  final List<int> writtenGameInvitePreference = [];
 
   @override
   Future<Either<Failure, PrivacySettings>> getPrivacySettings(
@@ -24,6 +25,7 @@ class FakeSettingsRepository implements SettingsRepository {
   ) async {
     final payload = PrivacySettingsModel.fromEntity(privacySettings).toJson();
     writtenMessagePreference.add(payload['message_preference'] as int);
+    writtenGameInvitePreference.add(payload['game_invite_preference'] as int);
     stored = PrivacySettingsModel.fromJson(payload);
     return Right(stored);
   }
