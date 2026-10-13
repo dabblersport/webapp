@@ -12,7 +12,14 @@ class ManagePrivacyParams {
   final bool? showLocation;
   final bool? showAge;
   final bool? showStatistics;
+
+  /// Legacy bool form of message_preference: true = anyone, false = none.
+  /// Ignored when [messagePreference] is set.
   final bool? allowDirectMessages;
+
+  /// Full message_preference (KAN-500). Takes precedence over
+  /// [allowDirectMessages] so friendsOnly / organizersOnly survive the save.
+  final CommunicationPreference? messagePreference;
   final bool? allowGameInvitations;
   final bool? shareDataWithPartners;
   final bool? allowAnalytics;
@@ -28,12 +35,22 @@ class ManagePrivacyParams {
     this.showAge,
     this.showStatistics,
     this.allowDirectMessages,
+    this.messagePreference,
     this.allowGameInvitations,
     this.shareDataWithPartners,
     this.allowAnalytics,
     this.blockedUsers,
     this.allowedContactsOnly,
   });
+
+  /// The message_preference this request resolves to, or null when unchanged.
+  CommunicationPreference? get resolvedMessagePreference =>
+      messagePreference ??
+      (allowDirectMessages == null
+          ? null
+          : (allowDirectMessages!
+                ? CommunicationPreference.anyone
+                : CommunicationPreference.none));
 
   bool get hasUpdates =>
       profileVisibility != null ||
@@ -43,6 +60,7 @@ class ManagePrivacyParams {
       showAge != null ||
       showStatistics != null ||
       allowDirectMessages != null ||
+      messagePreference != null ||
       allowGameInvitations != null ||
       shareDataWithPartners != null ||
       allowAnalytics != null ||
@@ -110,11 +128,7 @@ class ManagePrivacyUseCase {
         showLocation: finalParams.showLocation,
         showAge: finalParams.showAge,
         showStats: finalParams.showStatistics,
-        messagePreference: finalParams.allowDirectMessages != null
-            ? (finalParams.allowDirectMessages!
-                  ? CommunicationPreference.anyone
-                  : CommunicationPreference.none)
-            : null,
+        messagePreference: finalParams.resolvedMessagePreference,
         gameInvitePreference: finalParams.allowGameInvitations != null
             ? (finalParams.allowGameInvitations!
                   ? CommunicationPreference.anyone
@@ -208,6 +222,7 @@ class ManagePrivacyUseCase {
         showAge: params.showAge ?? false,
         showStatistics: params.showStatistics ?? false,
         allowDirectMessages: params.allowDirectMessages ?? false,
+        messagePreference: params.messagePreference,
         allowGameInvitations:
             params.allowGameInvitations ??
             true, // Keep game invitations enabled
@@ -230,6 +245,7 @@ class ManagePrivacyUseCase {
         showAge: processedParams.showAge,
         showStatistics: processedParams.showStatistics,
         allowDirectMessages: processedParams.allowDirectMessages,
+        messagePreference: processedParams.messagePreference,
         allowGameInvitations: processedParams.allowGameInvitations,
         shareDataWithPartners: false,
         allowAnalytics: false,
