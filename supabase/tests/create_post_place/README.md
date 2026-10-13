@@ -24,6 +24,12 @@ The trigger runs BEFORE INSERT OR UPDATE and the first matching path wins:
 
 Consequences: the trigger never rejects a supplied `area_id`; it ignores it on every path. So `p_area_id` is accepted and stored by the INSERT but the trigger rewrites it; a circle post with a venue gets the venue's area, a post with a point gets the nearest area. `p_location_name` and `p_venue_id` survive. Probes B3 and B4 record what actually happens on a real database.
 
+## What the follow-up app ticket (KAN-525) should send
+
+* `p_venue_id` and `p_location_name` always when the user picked a place (they survive the trigger).
+* `p_geo_lat` and `p_geo_lng` ONLY for a real picked coordinate, and always as a pair (half a pair raises `geo_incomplete`). With a venue the coordinates are replaced by the venue's anyway.
+* `p_area_id` is ignored by the geo trigger on every path (it is stored by the INSERT and then replaced), so the app need not send it.
+
 ## Backward compatibility
 
 A call naming only the old parameters resolves to the new function (the defaulted trailing parameters are omitted) and inserts NULL for the five new columns, which is what the omitted columns were before, so the trigger takes the same path as before. The legacy function is callable by `service_role` only. There is exactly one `create_post`, so named-argument calls stay unambiguous.

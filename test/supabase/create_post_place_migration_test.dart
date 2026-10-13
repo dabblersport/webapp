@@ -101,20 +101,16 @@ void main() {
   });
 
   group('order', () {
-    test('sorts after 20261013120000 and every other migration', () {
-      final others =
-          Directory(_dir)
-              .listSync()
-              .map((e) => e.uri.pathSegments.last)
-              .where(
-                (n) =>
-                    n.endsWith('.sql') &&
-                    RegExp(r'^\d{14}_').hasMatch(n) &&
-                    n != _name,
-              )
-              .toList()
-            ..sort();
-      expect(_orderProblems(_name, ['20261013120000_', others.last]), isEmpty);
+    test('sorts after KAN-497 and KAN-499 (20261013120000); not required to '
+        'stay the newest migration', () {
+      expect(
+        _orderProblems(_name, [
+          '20261013100000_',
+          '20261013110000_',
+          '20261013120000_',
+        ]),
+        isEmpty,
+      );
     });
 
     test('the order check fails when the order is reversed', () {
