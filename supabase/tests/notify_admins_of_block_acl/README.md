@@ -24,4 +24,4 @@
 
 * `notify_admins_of_block` is the only function this migration touches; `notify_admins_of_report` has the same shape and is not in scope.
 * No schema note was added to `docs/SCHEMA.md` (forbidden by the ticket).
-* A3 and B3 are not vacuous: they raise `SETUP FAIL` unless `app_admins` has at least one test admin and the blocker and blocked user are two distinct active test users, and they assert that the new notifications' recipients are exactly the `app_admins` rows (one each) before the revoke (A3) and after it (B3). Memphis records the admin count they print.
+* A3 and B3 are not vacuous: they raise `SETUP FAIL` unless `app_admins` has at least one test admin and the blocker and blocked user are two distinct active test users, and they snapshot the existing notification ids for the pair before the block, then assert that the NEW rows (ids not in the snapshot) number exactly one per admin, reach every admin exactly once, and reach nobody else, before the revoke (A3) and after it (B3). Old rows for the same pair cannot satisfy the check. Memphis records the admin count they print.

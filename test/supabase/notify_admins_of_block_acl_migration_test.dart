@@ -139,22 +139,45 @@ void main() {
   });
 
   group('notification probes are not vacuous', () {
-    test('A3 and B3 fail setup without an admin and assert the recipients', () {
+    test('A3 and B3 judge only NEW rows, one per admin, no extras', () {
+      for (final tag in ['A3', 'B3']) {
+        expect(
+          RegExp("'$tag FAIL: expected % NEW notifications").hasMatch(probes),
+          isTrue,
+          reason: tag,
+        );
+        expect(
+          probes,
+          contains("'$tag FAIL: the % new notifications reach only"),
+        );
+        expect(
+          probes,
+          contains("'$tag FAIL: % new notifications went to someone"),
+        );
+        expect(
+          probes,
+          contains("'$tag FAIL: % admins did not get exactly one new"),
+        );
+        expect(
+          probes,
+          contains("'$tag fixture: blocker=% blocked=% admins=%'"),
+        );
+      }
       expect(
         RegExp(
-          'if admins < 1 then raise exception \'SETUP FAIL',
+          "if admins < 1 then raise exception 'SETUP FAIL",
         ).allMatches(probes).length,
         2,
       );
       expect(
         RegExp(
-          'recipients are not exactly the app_admins',
+          r'not \(n\.id::text = any \(before_ids\)\)',
         ).allMatches(probes).length,
         2,
       );
       expect(probes, contains('distinct active test users'));
-      expect(probes, contains('except'));
       expect(readme, contains('not vacuous'));
+      expect(readme, contains('Old rows for the same pair cannot satisfy'));
     });
   });
 
