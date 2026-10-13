@@ -281,7 +281,7 @@ void main() {
     ) async {
       final gps = MockGpsService();
       final areas = MockAreaRepository();
-      when(gps.getCurrentLocation()).thenAnswer(
+      when(gps.getCurrentLocation(cap: GpsService.fixCap)).thenAnswer(
         (_) async => LocationSuccess(lat: 25.2, lng: 55.3, accuracyMeters: 5),
       );
       when(areas.resolveNearest(25.2, 55.3)).thenAnswer(
@@ -322,7 +322,9 @@ void main() {
     ) async {
       final gps = MockGpsService();
       final areas = MockAreaRepository();
-      when(gps.getCurrentLocation()).thenAnswer((_) async => LocationDenied());
+      when(
+        gps.getCurrentLocation(cap: GpsService.fixCap),
+      ).thenAnswer((_) async => LocationDenied());
       final c = await _host(
         tester,
         locale,

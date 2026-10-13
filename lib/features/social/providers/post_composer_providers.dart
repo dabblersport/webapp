@@ -683,7 +683,9 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     required String fallbackName,
   }) async {
     try {
-      final result = await _ref.read(gpsServiceProvider).getCurrentLocation();
+      final result = await _ref
+          .read(gpsServiceProvider)
+          .getCurrentLocation(cap: GpsService.fixCap);
       switch (result) {
         case LocationSuccess(:final lat, :final lng):
           final area = await _ref
