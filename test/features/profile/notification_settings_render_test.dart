@@ -82,8 +82,9 @@ class _FakeRepo implements NotificationSettingsRepository {
   @override
   Future<Result<NotificationSettings, Failure>> load() {
     final s = settings;
-    if (s == null)
+    if (s == null) {
       return Completer<Result<NotificationSettings, Failure>>().future;
+    }
     return Future.value(Ok(s));
   }
 
