@@ -177,8 +177,9 @@ class PrivacyController extends StateNotifier<PrivacyState> {
         messagePreference:
             state.pendingChanges['messagePreference']
                 as CommunicationPreference?,
-        allowGameInvitations:
-            state.pendingChanges['gameInvitePreference'] as bool?,
+        gameInvitePreference:
+            state.pendingChanges['gameInvitePreference']
+                as CommunicationPreference?,
         shareDataWithPartners:
             state.pendingChanges['dataSharingLevel'] as bool?,
         allowAnalytics: state.pendingChanges['allowDataAnalytics'] as bool?,
