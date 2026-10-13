@@ -46,7 +46,7 @@ class _FakeCountry extends StateNotifier<AsyncValue<String>>
 }
 
 class _FakePersona extends PersonaServiceNotifier {
-  _FakePersona(SupabaseClient client) : super(client) {
+  _FakePersona(super.client) {
     state = const PersonaState(
       activeProfiles: [
         ActivePersonaProfile(
