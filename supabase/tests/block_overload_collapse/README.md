@@ -43,12 +43,12 @@ whoever applies. Only project `wtncuzcskpigqpmnxwws` is referenced. No `apply_mi
 * Not changed: the body and ACL of `rpc_block_user(uuid)` and `rpc_unblock_user(uuid)`; the `restrictions` table
   (its retirement is a separate ticket); every other function.
 
-## Residual finding (reported, not changed): a second way to write `restrictions` `blocked`
+## Second block store: closed by KAN-522, migration 20261013130000
 
-`rpc_restrict_set(p_target uuid, p_type text)` and `rpc_restrict_clear(...)` still accept `'blocked'` and write
-`restrictions`. The app does not call them. After this ticket they are the only API path that can create a block
-nothing enforces. **AC3 ("blocking through the API can only write user_blocks") holds for the block RPCs; it does
-not hold for these two** until a separate ticket makes them refuse `'blocked'`. Decision for the CEO/PM.
+`rpc_restrict_set` and `rpc_restrict_clear` accepted `'blocked'` and wrote `restrictions`. That is KAN-522's ticket (migration
+`20261013130000_restrict_rpcs_reject_blocked.sql`, which makes both refuse `blocked`). **AC3 ("blocking through the API can only
+write user_blocks") is satisfied by KAN-499 and KAN-522 together, applied in that order (20261013120000, then 20261013130000).**
+This ticket changes `rpc_block_user(uuid, boolean)` only.
 
 ## Rollback
 
