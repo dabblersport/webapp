@@ -3,6 +3,17 @@
 -- Covers:  supabase/migrations/20261013100000_kan497_is_blocked_narrow_to_caller.sql
 --          supabase/migrations/20261013110000_kan497_revoke_anon_block_rpcs.sql
 --
+-- B5 FIXTURE CORRECTION (2026-10-13, CEO approval supabase-messaging-approval). The first
+-- version of B5 chose its viewer with `select user_id from profiles where is_active and
+-- user_id <> host limit 1`, an unordered pick. On the live project all three existing
+-- user_blocks rows touch the game's host, and that pick returned one of those users, so the
+-- "unblocked authenticated viewer" saw 0 rows and the probe failed on the UNTOUCHED baseline
+-- body as well as on the narrowed one (measured: baseline body 0 rows, narrowed body 0 rows
+-- with that fixture; with a clean viewer baseline 1 row, narrowed 1 row, and 0 rows after the
+-- viewer blocks the host, anon 1 row). The fixture was wrong, not the migration. B5 now picks
+-- the viewer deterministically (ORDER BY created_at, user_id) among active profiles with no
+-- block relation to the host in either direction.
+--
 -- STATUS: AUTHORED, NOT RUN.  Nothing in this file was executed against any
 -- database while writing it, and this ticket does not claim it was. It is to be
 -- run later by whoever applies the migrations, on a CEO-APPROVED NON-PRODUCTION
@@ -332,7 +343,15 @@ declare g record; v uuid; r int; n_anon int;
 begin
   select * into g from public.games where listing_visibility = 'public' and not is_cancelled and start_at > now() limit 1;
   if g.id is null then raise notice 'B5 SKIPPED: no future public game on this database'; return; end if;
-  select user_id into v from public.profiles where is_active and user_id <> g.creator_user_id limit 1;
+  -- viewer: an active profile with NO block relation to the host in either direction,
+  -- picked deterministically (the earlier fixture used an unordered LIMIT 1, see the header note).
+  select p.user_id into v from public.profiles p
+   where p.is_active and p.user_id <> g.creator_user_id
+     and not exists (select 1 from public.user_blocks x
+                      where (x.blocker_user_id = g.creator_user_id and x.blocked_user_id = p.user_id)
+                         or (x.blocker_user_id = p.user_id and x.blocked_user_id = g.creator_user_id))
+   order by p.created_at, p.user_id limit 1;
+  if v is null then raise exception 'B5 SETUP FAIL: no active viewer without a block relation to the host'; end if;
   select count(*) into n_anon from public.v_game_card where id = g.id;
   -- anon
   perform set_config('request.jwt.claims', json_build_object('role','anon')::text, true); set local role anon;
