@@ -1,0 +1,15 @@
+{
+  "name": "dabbler-messaging-worker",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "KAN-506 (T10): messaging Worker skeleton, local D1 schema and load script. Nothing deployed.",
+  "scripts": {
+    "ci": "npm ci",
+    "test": "vitest run"
+  },
+  "devDependencies": {
+    "miniflare": "4.20260730.0",
+    "vitest": "5.0.4"
+  }
+}

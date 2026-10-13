@@ -1,0 +1,17 @@
+# KAN-506 (T10) messaging Worker skeleton. LOCAL ONLY: nothing is created or deployed in KAN-506.
+# No account id, no routes, no R2, no secrets in this file.
+name = "dabbler-messaging-skeleton"
+main = "src/index.ts"
+compatibility_date = "2026-07-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "messaging-local"
+migrations_dir = "migrations"
+# database_id intentionally absent: nothing is created or deployed in KAN-506
+
+[vars]
+# Placeholder only. The real Supabase URL is supplied by the environment, never committed.
+SUPABASE_URL = "https://example.invalid"
+# SUPABASE_ANON_KEY: variable NAME only. Supply it from the local environment (e.g. .dev.vars, gitignored
+# by the developer); no value is ever written in this repository.
