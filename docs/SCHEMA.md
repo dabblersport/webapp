@@ -747,6 +747,19 @@ channels, and is now closed for `postgres`.** `pg_default_acl` for schema `publi
 grantor only. Whatever creates functions as `supabase_admin` remains exposed until a future ticket
 with its own authorized ruling addresses that half.
 
+**KAN-497 baseline note (2026-10-13, AUTHORED, NOT APPLIED).** Five allowlisted functions below are the
+subject of an authored-only change: `is_blocked(user_a uuid, user_b uuid)`, `rpc_block_user(p_peer uuid)`,
+`rpc_block_user(p_peer uuid, p_block boolean)`, `rpc_unblock_user(p_peer uuid)` and
+`rpc_unfollow_user(p_target_profile_id uuid)`. State per the KAN-496 live check of 2026-10-13: each is
+`SECURITY DEFINER`, holds a `PUBLIC` grant **and** an explicit `anon` grant, so `anon` can execute all five
+(`is_blocked` was a disclosure: anyone with the anon key could ask whether one user blocked another).
+Authored fix, not applied anywhere: `supabase/migrations/20261013100000_kan497_is_blocked_narrow_to_caller.sql`
+(answers only for the caller's own pairs) and, later, `20261013110000_kan497_revoke_anon_block_rpcs.sql`
+(revokes `PUBLIC` and `anon` on the four RPCs; `is_blocked` is held back because anon-reachable invoker
+callers need it). Caller map, probes, rollback and the held decision: `supabase/tests/anon_block_grants/`.
+**This block below is unchanged.** If the revoke is applied, the four RPC lines become stale; the gate does
+not fail on a stale line, and removing them is a separate change.
+
 **Adding a name here needs a written justification in the PR**, exactly as §2f requires — that
 reviewable diff is the whole mechanism. Do not add one to make the gate pass without
 establishing why a new function needs an unguarded caller-supplied identity.
