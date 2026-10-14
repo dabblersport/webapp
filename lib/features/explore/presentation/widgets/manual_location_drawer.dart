@@ -1,20 +1,23 @@
 import 'package:dabbler/core/constants/uae_locations.dart';
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter/widgets.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The manual location picker: use the current location, or search and pick
 /// from the UAE list. Hosted in a design-system sheet, which owns the surface,
 /// the handle and the scrolling; this widget is the sheet's content.
-class ManualLocationDrawer extends StatefulWidget {
+class ManualLocationDrawer extends ConsumerStatefulWidget {
   const ManualLocationDrawer({super.key});
 
   @override
-  State<ManualLocationDrawer> createState() => _ManualLocationDrawerState();
+  ConsumerState<ManualLocationDrawer> createState() =>
+      _ManualLocationDrawerState();
 }
 
-class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
+class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
   final _searchController = TextEditingController();
   final _locationService = LocationService();
   bool _isLoading = false;
@@ -49,6 +52,11 @@ class _ManualLocationDrawerState extends State<ManualLocationDrawer> {
         latitude: location.lat,
         longitude: location.lng,
       );
+      // KAN-526: the app's active location too (Games, Meetups, Venues, Home
+      // read it), persisted so the choice survives a restart.
+      await ref
+          .read(activeLocationProvider.notifier)
+          .useManualPoint(location.lat, location.lng, location.displayName);
 
       if (mounted) {
         Navigator.pop(context);

@@ -2,6 +2,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart'
     show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart' show LocationAccuracy;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/models/active_location.dart';
@@ -66,6 +67,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       _backgroundGpsRefresh(currentSaved: savedState.location);
       return savedState;
     }
+
+    // 1b. A manual point the user chose in the "Set location" drawer (KAN-526)
+    // survives a restart: no GPS, no permission call.
+    final manual = await _tryManualPoint();
+    if (manual != null) return manual;
 
     // 2. No saved primary: look in the background, never on the UI path.
     // Background start-up never asks the user for permission (the location
@@ -289,6 +295,63 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           nearbyRadiusMeters: _radiusOverride ?? 10000,
           source: ActiveLocationSource.manual,
         ),
+      ),
+    );
+  }
+
+  // ── Persisted manual point (KAN-526) ─────────────────────────────────────
+
+  static const String manualLatKey = 'active_location_manual_lat';
+  static const String manualLngKey = 'active_location_manual_lng';
+  static const String manualLabelKey = 'active_location_manual_label';
+
+  /// Switch to a point the user picked in the "Set location" drawer, and
+  /// persist it so it is the active location after a restart. Never asks for
+  /// permission and never reads GPS.
+  Future<void> useManualPoint(double lat, double lng, String label) async {
+    state = AsyncData(_manualReady(lat, lng, label));
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setDouble(manualLatKey, lat);
+      await prefs.setDouble(manualLngKey, lng);
+      await prefs.setString(manualLabelKey, label);
+    } catch (_) {
+      // Persistence is best effort; the in-memory choice already applies.
+    }
+  }
+
+  Future<ActiveLocationReady?> _tryManualPoint() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final lat = prefs.getDouble(manualLatKey);
+      final lng = prefs.getDouble(manualLngKey);
+      final label = prefs.getString(manualLabelKey);
+      if (lat == null || lng == null || label == null) return null;
+      return _manualReady(lat, lng, label);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  ActiveLocationReady _manualReady(double lat, double lng, String label) {
+    // A local area named after the picked place: no server lookup, so the
+    // choice works offline and on restart.
+    return ActiveLocationReady(
+      ActiveLocation(
+        lat: lat,
+        lng: lng,
+        area: Area(
+          id: 'manual',
+          name: label,
+          district: label,
+          city: label,
+          country: 'AE',
+          centerLat: lat,
+          centerLng: lng,
+        ),
+        nearbyRadiusMeters: _radiusOverride ?? 10000,
+        source: ActiveLocationSource.manual,
+        savedLocationLabel: label,
       ),
     );
   }

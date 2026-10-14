@@ -1,4 +1,5 @@
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
+import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'dart:async';
 
@@ -192,61 +193,67 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
         ),
     ];
 
-    return DabblerPage(
-      body: ListingScaffold(
-        // The design's default header is plain (`gamesHead: 'none'`,
-        // `Listings.2026-10-08.dc.html:2085-2088`); the tint is its variant.
-        head: DabblerListingHead.none,
-        header: DabblerPageHeader(
-          safeArea: false,
-          contentPadding: DabblerPageHeader.listingPadding,
-          title: AppLocalizations.of(context).nav_games,
-          locationLabel: locState is ActiveLocationReady
-              ? locState.location.area.name
-              : l.listing_set_location,
-          onLocationPressed: () => HomeLocationPickerSheet.show(context),
-          actions: <DabblerPageHeaderAction>[
-            // The Favourites entry (`Listings.2026-10-08b.dc.html:96-98`).
-            DabblerPageHeaderAction(
-              icon: 'heart',
-              semanticLabel: l.fav_title,
-              onPressed: () => context.push(
-                '${RoutePaths.favourites}?tab=${FavouriteKind.game.name}',
+    final denied = locState is ActiveLocationDenied;
+
+    return SetLocationWhenDenied(
+      child: DabblerPage(
+        body: ListingScaffold(
+          // The design's default header is plain (`gamesHead: 'none'`,
+          // `Listings.2026-10-08.dc.html:2085-2088`); the tint is its variant.
+          head: DabblerListingHead.none,
+          header: DabblerPageHeader(
+            safeArea: false,
+            contentPadding: DabblerPageHeader.listingPadding,
+            title: AppLocalizations.of(context).nav_games,
+            locationLabel: locState is ActiveLocationReady
+                ? locState.location.area.name
+                : l.listing_set_location,
+            onLocationPressed: () => denied
+                ? showSetLocationDrawer(context)
+                : HomeLocationPickerSheet.show(context),
+            actions: <DabblerPageHeaderAction>[
+              // The Favourites entry (`Listings.2026-10-08b.dc.html:96-98`).
+              DabblerPageHeaderAction(
+                icon: 'heart',
+                semanticLabel: l.fav_title,
+                onPressed: () => context.push(
+                  '${RoutePaths.favourites}?tab=${FavouriteKind.game.name}',
+                ),
               ),
-            ),
-            DabblerPageHeaderAction(
-              icon: 'search-normal',
-              semanticLabel: l.listing_search,
-              onPressed: () => context.push(RoutePaths.socialSearch),
-            ),
-            DabblerPageHeaderAction(
-              icon: 'filter',
-              semanticLabel: l.listing_filters,
-              onPressed: _openFilters,
-              count: active.length,
-            ),
+              DabblerPageHeaderAction(
+                icon: 'search-normal',
+                semanticLabel: l.listing_search,
+                onPressed: () => context.push(RoutePaths.socialSearch),
+              ),
+              DabblerPageHeaderAction(
+                icon: 'filter',
+                semanticLabel: l.listing_filters,
+                onPressed: _openFilters,
+                count: active.length,
+              ),
+            ],
+          ),
+          tabs: <DabblerTabItem>[
+            DabblerTabItem(id: 'all', label: l.listing_all_sports),
+            for (final sport in widget.sports)
+              DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
           ],
-        ),
-        tabs: <DabblerTabItem>[
-          DabblerTabItem(id: 'all', label: l.listing_all_sports),
-          for (final sport in widget.sports)
-            DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
-        ],
-        filters: active,
-        clearAllLabel: l.listing_clear_all,
-        onClearAll: _resetFilters,
-        // The whole rail opens the sheet (`Listings.2026-10-08.dc.html:111`).
-        onFiltersTap: _openFilters,
-        filtersTapSemanticLabel: l.listing_filters_open,
-        pages: List.generate(
-          _tabCount,
-          (i) => _GameTabBody(
-            sports: widget.sports,
-            sportId: _sportIdForTab(i),
-            scrollController: _scrollControllers[i],
-            onRefresh: _handleRefresh,
-            onRetry: () => ref.invalidate(nearbyGamesProvider),
-            onChangeFilters: _openFilters,
+          filters: active,
+          clearAllLabel: l.listing_clear_all,
+          onClearAll: _resetFilters,
+          // The whole rail opens the sheet (`Listings.2026-10-08.dc.html:111`).
+          onFiltersTap: _openFilters,
+          filtersTapSemanticLabel: l.listing_filters_open,
+          pages: List.generate(
+            _tabCount,
+            (i) => _GameTabBody(
+              sports: widget.sports,
+              sportId: _sportIdForTab(i),
+              scrollController: _scrollControllers[i],
+              onRefresh: _handleRefresh,
+              onRetry: () => ref.invalidate(nearbyGamesProvider),
+              onChangeFilters: _openFilters,
+            ),
           ),
         ),
       ),

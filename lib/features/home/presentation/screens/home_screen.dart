@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
 
@@ -1112,7 +1113,8 @@ class _HomeHeader extends ConsumerWidget {
     final locState = ref.watch(activeLocationProvider).valueOrNull;
     final locationName = locState is ActiveLocationReady
         ? locState.location.area.name
-        : 'Set location';
+        : AppLocalizations.of(context).listing_set_location;
+    final denied = locState is ActiveLocationDenied;
 
     final leading = Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -1125,7 +1127,9 @@ class _HomeHeader extends ConsumerWidget {
         const SizedBox(height: DabblerHomeFrame.logoToLocation),
         GestureDetector(
           behavior: HitTestBehavior.opaque,
-          onTap: () => _openLocationPicker(context),
+          onTap: () => denied
+              ? showSetLocationDrawer(context)
+              : _openLocationPicker(context),
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
@@ -1157,27 +1161,29 @@ class _HomeHeader extends ConsumerWidget {
       ],
     );
 
-    return DabblerNavigationTopBar(
-      metrics: DabblerFeedMetrics.drawn,
-      leading: leading,
-      actions: [
-        DabblerNavigationAction(
-          icon: 'search-normal',
-          label: AppLocalizations.of(context).listing_search,
-          onPressed: () => context.push(RoutePaths.socialSearch),
-        ),
-        DabblerNavigationAction(
-          icon: 'notification-bing',
-          label: AppLocalizations.of(context).notif_title_notifications,
-          unread: unread > 0,
-          unreadLabel: unread > 0 ? '$unread unread' : null,
-          onPressed: () => context.push(RoutePaths.notifications),
-        ),
-      ],
-      avatarSeed: name,
-      avatarImageUrl: avatarUrl ?? profile?.avatarUrl,
-      avatarLabel: name,
-      onAvatarPressed: () => context.push(RoutePaths.profile),
+    return SetLocationWhenDenied(
+      child: DabblerNavigationTopBar(
+        metrics: DabblerFeedMetrics.drawn,
+        leading: leading,
+        actions: [
+          DabblerNavigationAction(
+            icon: 'search-normal',
+            label: AppLocalizations.of(context).listing_search,
+            onPressed: () => context.push(RoutePaths.socialSearch),
+          ),
+          DabblerNavigationAction(
+            icon: 'notification-bing',
+            label: AppLocalizations.of(context).notif_title_notifications,
+            unread: unread > 0,
+            unreadLabel: unread > 0 ? '$unread unread' : null,
+            onPressed: () => context.push(RoutePaths.notifications),
+          ),
+        ],
+        avatarSeed: name,
+        avatarImageUrl: avatarUrl ?? profile?.avatarUrl,
+        avatarLabel: name,
+        onAvatarPressed: () => context.push(RoutePaths.profile),
+      ),
     );
   }
 

@@ -1,4 +1,5 @@
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
+import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
@@ -100,57 +101,63 @@ class _MeetupsTabs extends ConsumerWidget {
               ref.read(meetupSortProvider.notifier).state = MeetupSort.soonest,
         ),
     ];
-    return DabblerPage(
-      body: ListingScaffold(
-        head: DabblerListingHead.accent,
-        header: DabblerPageHeader(
-          safeArea: false,
-          contentPadding: DabblerPageHeader.listingPadding,
-          title: l.nav_meetups,
-          locationLabel: loc is ActiveLocationReady
-              ? loc.location.area.name
-              : l.listing_set_location,
-          onLocationPressed:
-              onPickLocation ?? () => HomeLocationPickerSheet.show(context),
-          actions: <DabblerPageHeaderAction>[
-            // The Favourites entry (`Listings.2026-10-08b.dc.html:403-405`).
-            DabblerPageHeaderAction(
-              icon: 'heart',
-              semanticLabel: l.fav_title,
-              onPressed: () => context.push(
-                '${RoutePaths.favourites}?tab=${FavouriteKind.meetup.name}',
+    final denied = loc is ActiveLocationDenied;
+    return SetLocationWhenDenied(
+      child: DabblerPage(
+        body: ListingScaffold(
+          head: DabblerListingHead.accent,
+          header: DabblerPageHeader(
+            safeArea: false,
+            contentPadding: DabblerPageHeader.listingPadding,
+            title: l.nav_meetups,
+            locationLabel: loc is ActiveLocationReady
+                ? loc.location.area.name
+                : l.listing_set_location,
+            onLocationPressed:
+                onPickLocation ??
+                () => denied
+                    ? showSetLocationDrawer(context)
+                    : HomeLocationPickerSheet.show(context),
+            actions: <DabblerPageHeaderAction>[
+              // The Favourites entry (`Listings.2026-10-08b.dc.html:403-405`).
+              DabblerPageHeaderAction(
+                icon: 'heart',
+                semanticLabel: l.fav_title,
+                onPressed: () => context.push(
+                  '${RoutePaths.favourites}?tab=${FavouriteKind.meetup.name}',
+                ),
               ),
-            ),
-            DabblerPageHeaderAction(
-              icon: 'search-normal',
-              semanticLabel: l.listing_search,
-              onPressed: () => context.push(RoutePaths.socialSearch),
-            ),
-            DabblerPageHeaderAction(
-              icon: 'filter',
-              semanticLabel: l.listing_filters,
-              count: active.length,
-              onPressed: () => showListingFilterSheet(
-                context,
-                onReset: reset,
-                builder: (_) => const _MeetupFilterBody(),
-                footerBuilder: (_) => const _ShowMeetupsButton(),
+              DabblerPageHeaderAction(
+                icon: 'search-normal',
+                semanticLabel: l.listing_search,
+                onPressed: () => context.push(RoutePaths.socialSearch),
               ),
-            ),
+              DabblerPageHeaderAction(
+                icon: 'filter',
+                semanticLabel: l.listing_filters,
+                count: active.length,
+                onPressed: () => showListingFilterSheet(
+                  context,
+                  onReset: reset,
+                  builder: (_) => const _MeetupFilterBody(),
+                  footerBuilder: (_) => const _ShowMeetupsButton(),
+                ),
+              ),
+            ],
+          ),
+          tabs: <DabblerTabItem>[
+            DabblerTabItem(id: 'all', label: l.meetups_tab_all),
+            for (final s in sports)
+              DabblerTabItem(id: s.id, label: meetupSportName(context, s)),
+          ],
+          filters: active,
+          clearAllLabel: l.listing_clear_all,
+          onClearAll: reset,
+          pages: <Widget>[
+            for (final id in <String?>[null, for (final s in sports) s.id])
+              _MeetupsBody(sportId: id, onOpen: onOpen),
           ],
         ),
-        tabs: <DabblerTabItem>[
-          DabblerTabItem(id: 'all', label: l.meetups_tab_all),
-          for (final s in sports)
-            DabblerTabItem(id: s.id, label: meetupSportName(context, s)),
-        ],
-        filters: active,
-        clearAllLabel: l.listing_clear_all,
-        onClearAll: reset,
-        pages: <Widget>[
-          for (final id in <String?>[null, for (final s in sports) s.id])
-            _MeetupsBody(sportId: id, onOpen: onOpen),
-        ],
       ),
     );
   }
