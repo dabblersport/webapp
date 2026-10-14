@@ -9,6 +9,7 @@ import 'package:dabbler/features/messaging/presentation/controllers/game_chat_co
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access_state.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -21,7 +22,8 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// game_cancelled the composer is replaced by the DS composer notice (reads
 /// still work); conversation-level mute/unmute in the top bar (no Leave, D6);
 /// another member's message opens Report and Block sheets. The
-/// unavailable/removed handling is part c (the route redirect is unchanged).
+/// Part c (KAN-518, T16c): typed reason not_in_pilot shows the unavailable
+/// state and removed the removed state ([GameChatAccessState]).
 class GameChatScreen extends ConsumerStatefulWidget {
   const GameChatScreen({super.key, required this.gameId, this.gameEndAt});
 
@@ -100,6 +102,14 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
     final l10n = AppLocalizations.of(context);
     final async = ref.watch(gameChatControllerProvider(widget.gameId));
     final view = async.valueOrNull;
+    // T6 (KAN-518): unavailable and removed replace the whole screen, thread,
+    // composer and title included; nothing about the conversation shows.
+    if (view?.status == GameChatStatus.unavailable) {
+      return const GameChatAccessState(kind: GameChatAccessKind.unavailable);
+    }
+    if (view?.status == GameChatStatus.removed) {
+      return const GameChatAccessState(kind: GameChatAccessKind.removed);
+    }
     final Widget body;
     Widget? composer;
     if (view == null) {
@@ -147,6 +157,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
           }
         case GameChatStatus.unavailable:
         case GameChatStatus.removed:
+        // Handled above; unreachable here.
         case GameChatStatus.error:
           body = DabblerEmptyState.error(
             key: GameChatScreen.errorKey,

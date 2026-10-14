@@ -11566,6 +11566,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t block this player.'**
   String get messaging_block_failed;
+
+  /// No description provided for @messaging_chat_unavailable_line.
+  ///
+  /// In en, this message translates to:
+  /// **'This chat isn\'t available right now.'**
+  String get messaging_chat_unavailable_line;
+
+  /// No description provided for @messaging_chat_unavailable_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get messaging_chat_unavailable_action;
+
+  /// No description provided for @messaging_chat_removed_line.
+  ///
+  /// In en, this message translates to:
+  /// **'You can no longer view this chat.'**
+  String get messaging_chat_removed_line;
+
+  /// No description provided for @messaging_chat_removed_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Go back'**
+  String get messaging_chat_removed_action;
 }
 
 class _AppLocalizationsDelegate

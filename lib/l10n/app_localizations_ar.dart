@@ -6470,4 +6470,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_block_failed => 'تعذّر حظر هذا اللاعب.';
+
+  @override
+  String get messaging_chat_unavailable_line =>
+      'هذه المحادثة غير متاحة حاليًا.';
+
+  @override
+  String get messaging_chat_unavailable_action => 'رجوع';
+
+  @override
+  String get messaging_chat_removed_line => 'لم يعد بإمكانك عرض هذه المحادثة.';
+
+  @override
+  String get messaging_chat_removed_action => 'رجوع';
 }
