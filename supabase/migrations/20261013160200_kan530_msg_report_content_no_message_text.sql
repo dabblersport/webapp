@@ -19,7 +19,42 @@
 --   select count(*) from public.moderation_reports where target_type = 'message' and details is not null;
 -- A later UPDATE of such an old row (for example a moderator resolving it) fails under the CHECK until
 -- its details is cleared, so a count above zero needs a decision first.
--- ROLLBACK: supabase/tests/messaging/rollback.sql, section KAN-530.
+-- ROLLBACK (run alone, needs the same explicit approval; restores the baseline body verbatim and removes
+-- only the new CHECK):
+--   begin;
+--   CREATE OR REPLACE FUNCTION "public"."report_content"("p_target_type" "public"."mod_target", "p_target_id" "uuid", "p_reason" "public"."report_reason", "p_details" "text" DEFAULT NULL::"text", "p_snapshot" "jsonb" DEFAULT NULL::"jsonb") RETURNS "public"."moderation_reports"
+--       LANGUAGE "plpgsql" SECURITY DEFINER
+--       SET "search_path" TO 'public'
+--       AS $$
+--   declare
+--     me  uuid := auth.uid();
+--     row public.moderation_reports;
+--   begin
+--     if me is null then
+--       raise exception using errcode = 'P0001', message = 'auth_required';
+--     end if;
+--
+--     insert into public.moderation_reports(
+--       reporter_user_id, target_type, target_id, reason, details, content_snapshot
+--     )
+--     values (
+--       me, p_target_type, p_target_id, p_reason, p_details, p_snapshot
+--     )
+--     returning * into row;
+--
+--     perform public.audit_log(
+--       'mod.report',
+--       p_target_type,
+--       p_target_id,
+--       null,
+--       jsonb_build_object('reason', p_reason, 'details', p_details)
+--     );
+--
+--     return row;
+--   end;
+--   $$;
+--   alter table public.moderation_reports drop constraint if exists moderation_reports_message_no_details_check;
+--   commit;
 
 CREATE OR REPLACE FUNCTION "public"."report_content"("p_target_type" "public"."mod_target", "p_target_id" "uuid", "p_reason" "public"."report_reason", "p_details" "text" DEFAULT NULL::"text", "p_snapshot" "jsonb" DEFAULT NULL::"jsonb") RETURNS "public"."moderation_reports"
     LANGUAGE "plpgsql" SECURITY DEFINER

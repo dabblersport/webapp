@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// authored and NOT applied; these tests pin its text. They run no SQL. They never assert that it
 /// is the newest migration, only that it sorts after a fixed earlier cut-off.
 const _dir = 'supabase/migrations';
-const _name = '20261013160200_kan530_report_content_no_message_text.sql';
+const _name = '20261013160200_kan530_msg_report_content_no_message_text.sql';
 const _baseline = '$_dir/20260829080500_baseline_schema.sql';
 const _pack = 'supabase/tests/messaging';
 
@@ -77,11 +77,14 @@ void main() {
   );
 
   test('only the details value differs from the baseline function body', () {
-    String body(String s) {
+    String body(String full) {
+      final s = _strip(
+        full,
+      ); // the rollback in the header comment is not the live body
       final a = s.indexOf(
         'CREATE OR REPLACE FUNCTION "public"."report_content"(',
       );
-      return _squash(_strip(s.substring(a, s.indexOf(r'$$;', a) + 3)));
+      return _squash(s.substring(a, s.indexOf(r'$$;', a) + 3));
     }
 
     const pin =
@@ -108,7 +111,10 @@ void main() {
   });
 
   test('the forward migration contains no DROP', () {
-    expect(_hasDrop(raw), isFalse);
+    expect(
+      _hasDrop(_strip(raw)),
+      isFalse,
+    ); // the rollback in the header comment is the only mention
   });
 
   test(
@@ -134,37 +140,45 @@ void main() {
     },
   );
 
-  test('rollback restores the baseline body and removes only the new CHECK', () {
-    final rb = File('$_pack/rollback.sql').readAsStringSync();
-    final tail = rb.substring(rb.indexOf('KAN-530 rollback'));
-    String fn(String s) {
-      final a = s.indexOf(
-        'CREATE OR REPLACE FUNCTION "public"."report_content"(',
-      );
-      return s.substring(a, s.indexOf(r'$$;', a) + 3);
-    }
+  test(
+    'rollback (header comment) restores the baseline body, removes only the new CHECK',
+    () {
+      final lines = raw
+          .split('\n')
+          .where((l) => l.startsWith('--   '))
+          .map((l) => l.substring(5))
+          .join('\n');
+      String fn(String t) {
+        final a = t.indexOf(
+          'CREATE OR REPLACE FUNCTION "public"."report_content"(',
+        );
+        return _squash(t.substring(a, t.indexOf(r'$$;', a) + 3));
+      }
 
-    expect(fn(tail), fn(baseline));
-    final drops = RegExp(
-      r'\bdrop\b[^;]*;',
-      caseSensitive: false,
-    ).allMatches(tail).map((m) => _squash(m.group(0)!)).toList();
-    expect(drops, [
-      'drop constraint if exists moderation_reports_message_no_details_check;',
-    ]);
-  });
+      expect(fn(lines), fn(baseline));
+      final drops = RegExp(
+        r'\bdrop\b[^;]*;',
+        caseSensitive: false,
+      ).allMatches(lines).map((m) => _squash(m.group(0)!)).toList();
+      expect(drops, [
+        'drop constraint if exists moderation_reports_message_no_details_check;',
+      ]);
+      // rollback.sql is untouched by this ticket and stays free of DROP
+      expect(_hasDrop(File('$_pack/rollback.sql').readAsStringSync()), isFalse);
+    },
+  );
 
   test(
     'probes P11-P15 are marked, wrapped in begin/rollback and assert the five cases',
     () {
       final p = File('$_pack/probes.sql').readAsStringSync();
       for (final tag in ['P11', 'P12', 'P13', 'P14', 'P15']) {
-        final a = p.indexOf('-- $tag [');
+        final a = p.indexOf('-- KAN-530 probe $tag [');
         expect(a, greaterThanOrEqualTo(0), reason: tag);
-        final end = p.indexOf('\nrollback;', a);
+        final end = p.indexOf('\nROLLBACK;', a);
         final block = p.substring(a, end + 10);
         expect(block, contains('AUTHORED, NOT RUN'), reason: tag);
-        expect(block, contains('\nbegin;'), reason: tag);
+        expect(block, contains('\nBEGIN;'), reason: tag);
         expect(block, isNot(contains('commit;')), reason: tag);
       }
       for (final c in [

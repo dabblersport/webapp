@@ -73,5 +73,5 @@ with a null reason.
 target type `message` (details stored and audited as NULL) and adds one `NOT VALID` CHECK on
 `moderation_reports` (`target_type <> 'message' OR details IS NULL`) so a direct insert or update cannot
 carry details either. Other report types are unchanged. AUTHORED, NOT APPLIED; probes P11-P15 are
-AUTHORED, NOT RUN; rollback is the KAN-530 block at the end of `rollback.sql`. Before apply the executor
+AUTHORED, NOT RUN; rollback is the block in the migration's header comment. Before apply the executor
 runs the SELECT-only count in the migration header.

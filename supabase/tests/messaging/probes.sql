@@ -161,25 +161,25 @@ select set_config('realtime.topic', 'user:' || :'user_a', true);
 select (realtime.topic() = 'user:' || auth.uid()::text) as pass_policy_expr_true_for_own;
 rollback;
 
--- P11 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: report_content drops free text for a message.
+-- KAN-530 probe P11 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: report_content drops free text for a message.
 -- :user_a is a test user acting as the reporter; :msg_target and :post_target are any uuids.
-begin;
+BEGIN;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select (r.details is null) as pass_message_details_pinned_null
   from public.report_content('message', :'msg_target', 'spam', 'free text', null) r;
-rollback;
+ROLLBACK;
 
--- P12 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: any other type keeps its details unchanged.
-begin;
+-- KAN-530 probe P12 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: any other type keeps its details unchanged.
+BEGIN;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select (r.details = 'free text') as pass_post_details_unchanged
   from public.report_content('post', :'post_target', 'spam', 'free text', null) r;
-rollback;
+ROLLBACK;
 
--- P13 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert of a message report with details is refused (23514).
-begin;
+-- KAN-530 probe P13 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert of a message report with details is refused (23514).
+BEGIN;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 do $$
@@ -191,10 +191,10 @@ exception when check_violation then
   raise notice 'pass_direct_message_with_details_refused = true (23514)';
 end;
 $$;
-rollback;
+ROLLBACK;
 
--- P14 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert for a post with details succeeds.
-begin;
+-- KAN-530 probe P14 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert for a post with details succeeds.
+BEGIN;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 with ins as (
@@ -202,10 +202,10 @@ with ins as (
   values (auth.uid(), 'post', gen_random_uuid(), 'spam', 'free text')
   returning details)
 select (details = 'free text') as pass_direct_post_with_details_ok from ins;
-rollback;
+ROLLBACK;
 
--- P15 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert of a message report with details NULL succeeds.
-begin;
+-- KAN-530 probe P15 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert of a message report with details NULL succeeds.
+BEGIN;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 with ins as (
@@ -213,4 +213,4 @@ with ins as (
   values (auth.uid(), 'message', gen_random_uuid(), 'spam', null)
   returning details)
 select (details is null) as pass_direct_message_null_details_ok from ins;
-rollback;
+ROLLBACK;
