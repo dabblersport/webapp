@@ -1,0 +1,15 @@
+{
+  "name": "dabbler-messaging-realtime-runner",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "description": "KAN-545 (Realtime R5): live proof runner for the Realtime wake-ups on staging. Authored, not run in CI. Not part of the app.",
+  "scripts": {
+    "ci": "npm ci",
+    "test": "node --test test/*.test.mjs",
+    "run-live": "node run.mjs"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "2.117.3"
+  }
+}

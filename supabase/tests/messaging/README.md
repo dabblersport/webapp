@@ -96,3 +96,5 @@ sender, not leavers, not removed) gets a metadata-only wake-up on their private 
 `realtime.send(..., 'msg', topic, true)`. Payload: `type`, `conversation_id`, `seq`, nothing else. AUTHORED, NOT
 APPLIED. `notify_realtime_send_check.sql` is a read-only check for Memphis (signature, owner and privileges of
 `realtime.send`), `notify_probes.sql` N1-N6 are AUTHORED, NOT RUN, and `notify_rollback.sql` only revokes.
+
+KAN-545 (Realtime R5): the live proof runner and its unit tests are in `realtime/` (see `realtime/README.md`).
