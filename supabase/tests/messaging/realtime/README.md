@@ -26,8 +26,9 @@ Preconditions the runner **prints and never changes**:
 1. The messaging Worker has `MESSAGING_ACCESS_MODE = "allowlist"` for this run.
 2. Both test accounts are in `public.msg_access_allowlist`.
 3. User A (Keychain service `dabbler-test-user`) is the **host** of the fixture game
-   `16223736-0ebb-4088-b823-91f3f9ef5643` and user B (`dabbler-test-user-b`) is an active player on it. Neither is
-   active on any other game.
+   `16223736-0ebb-4088-b823-91f3f9ef5643` and user B (`dabbler-test-user-b`) is an active player on it. **B must be
+   active on no other game** (the runner refuses otherwise). **A may be active on other games** (for example
+   older seed games): that is not a blocker; the runner prints only their count and never touches them.
 4. `MESSAGING_CONVERSATION_ID` is the `msg_conversations.id` of that game (clients cannot read that table).
 5. For T-A4: KAN-542's SQL (and the Vault secret) is applied. Otherwise T-A4 reports `NOT RUN`.
 

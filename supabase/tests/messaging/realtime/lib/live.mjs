@@ -17,7 +17,7 @@ const POLL_MS = 50;
 export const PRECONDITIONS = [
   "Worker MESSAGING_ACCESS_MODE is \"allowlist\" for this run (the runner does not deploy; set it back to \"off\" afterwards).",
   "Both test accounts are in public.msg_access_allowlist.",
-  "A (Keychain dabbler-test-user) is the HOST of the fixture game and B (dabbler-test-user-b) is an active player on it.",
+  "A (Keychain dabbler-test-user) is the HOST of the fixture game and B (dabbler-test-user-b) is an active player on it. B must be on no other game; A may be (only the count is printed, those games are never touched).",
   "MESSAGING_CONVERSATION_ID is the msg_conversations id of the fixture game (clients cannot read that table).",
   "T-A4 needs KAN-542's SQL (and the Vault secret) applied; without it that test reports NOT RUN.",
 ];
