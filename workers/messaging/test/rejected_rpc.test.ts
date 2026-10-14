@@ -16,8 +16,9 @@ const cases: { name: string; reply: RpcReply; status: number; reason?: string; r
   { name: "403 from PostgREST", reply: rpcJson({ message: "permission denied" }, 403), status: 401 },
   { name: "500 from PostgREST", reply: rpcJson({ message: "boom" }, 500), status: 502 },
   { name: "denied not_a_member", reply: deny("not_member"), status: 403, reason: "not_a_member" },
-  // read_only is an allowed READ in the real function, so it denies only a send (reads: closed_game.test.ts).
-  { name: "denied game_ended", reply: rpcJson([authRow({ allowed_action: "read", reason: "read_only" })]), status: 409, reason: "game_ended", routes: SENDS },
+  // game_ended / game_cancelled are allowed READs in the real function, so it denies only a send (reads: closed_game.test.ts).
+  { name: "denied game_ended", reply: rpcJson([authRow({ allowed_action: "read", reason: "game_ended" })]), status: 409, reason: "game_ended", routes: SENDS },
+  { name: "denied game_cancelled", reply: rpcJson([authRow({ allowed_action: "read", reason: "game_cancelled" })]), status: 409, reason: "game_cancelled", routes: SENDS },
   { name: "denied not_in_pilot", reply: deny("not_in_pilot"), status: 403, reason: "not_in_pilot" },
   { name: "denied not_authenticated", reply: rpcJson([authRow({ user_id: null, allowed_action: null, reason: "not_authenticated" })]), status: 401 },
   { name: "denied with unknown reason", reply: deny("made_up"), status: 403 },

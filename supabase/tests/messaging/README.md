@@ -26,7 +26,7 @@ this ticket.
   `off` → `messaging_off` (fails closed).
 - **Reasons:** the T7 contract was not found in the repo; names follow the KAN-496 report:
   `not_authenticated`, `messaging_off`, `not_in_pilot`, `not_member` (also for guessed ids),
-  `removed` (kicked / other non-active), and on allowed reads `read_only` (ended/cancelled)
+  `removed` (kicked / other non-active), and on allowed reads `game_ended` / `game_cancelled`
   and `left` (read up to `left_at_seq`; a missing value means 0).
 - **Lifecycle (D5):** derived from `games.end_at` / `games.is_cancelled` at call time. No
   timer, no trigger.
@@ -60,7 +60,8 @@ on the exact string; renaming one is a breaking change. Meanings as implemented 
 | `not_in_pilot` | Mode is `allowlist` and the caller is not in `msg_access_allowlist`; denied. |
 | `not_member` | Unknown conversation id, or the caller has no roster row for its game (includes spectators and guessed ids); denied. |
 | `removed` | Roster status is `kicked` or any other status that is neither `active` nor `left`; denied. |
-| `read_only` | Active member, but the game has ended (`end_at` passed) or is cancelled; allowed action `read`. |
+| `game_ended` | Active member, the game has ended (`end_at` passed) and is not cancelled; allowed action `read`. |
+| `game_cancelled` | Active member, the game is cancelled (even if also past `end_at`: cancelled wins); allowed action `read`. |
 | `left` | Member with roster status `left`; allowed action `read` up to `left_at_seq` (missing means 0). |
 
 An active member of a game that is neither ended nor cancelled gets allowed action `send`
