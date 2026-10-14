@@ -438,7 +438,6 @@ class AppRouter {
     socialFriendsRoute,
     followingProfileIdRoute,
     followersProfileIdRoute,
-    socialChatListRoute,
     socialNotificationsRoute,
     socialMessagesRoute,
     socialChatConversationIdRoute,

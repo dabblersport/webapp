@@ -10,6 +10,7 @@ import 'package:dabbler/features/messaging/presentation/providers/messaging_prov
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access_state.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -154,6 +155,8 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
             composer = _composer(l10n, view);
           } else if (view.isClosedByGame) {
             composer = _closedNotice(l10n, view);
+          } else if (view.reason == MessagingReason.leftReadOnly) {
+            composer = _leftNotice(l10n);
           }
         case GameChatStatus.unavailable:
         case GameChatStatus.removed:
@@ -161,7 +164,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
         case GameChatStatus.error:
           body = DabblerEmptyState.error(
             key: GameChatScreen.errorKey,
-            title: l10n.messaging_chat_error,
+            // A typed reason shows its own line; anything else the generic one.
+            title:
+                gameChatReasonText(
+                  l10n,
+                  view.reason ?? MessagingReason.unknown,
+                ) ??
+                l10n.messaging_chat_error,
             retryLabel: l10n.messaging_chat_offline_retry,
             onRetry: _reload,
           );
@@ -267,6 +276,17 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
               : l10n.messaging_chat_closed_ended,
         ),
       );
+
+  /// The member left the game: the existing left_read_only line takes the
+  /// composer's place; earlier messages stay readable above it.
+  Widget _leftNotice(AppLocalizations l10n) => DabblerChatComposer(
+    key: GameChatScreen.closedNoticeKey,
+    value: '',
+    notice: DabblerComposerNotice(
+      icon: 'lock',
+      text: l10n.messaging_reason_left_read_only,
+    ),
+  );
 
   Widget _composer(AppLocalizations l10n, GameChatViewState view) =>
       DabblerChatComposer(

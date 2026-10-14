@@ -40,12 +40,7 @@ export 'games/venue_model.dart';
 
 // Social models
 export 'social/block_record_model.dart';
-export 'social/chat_message.dart';
-export 'social/chat_message_model.dart';
 export 'social/comment.dart';
-export 'social/conversation.dart';
-export 'social/conversation_model.dart';
-export 'social/conversation_type.dart';
 export 'social/friend.dart';
 export 'social/friend_model.dart';
 export 'social/friend_request.dart';
