@@ -54,18 +54,21 @@ select p.oid::regprocedure as signature,
  order by 1;
 rollback;
 
--- A3 [READ-ONLY] dependents and textual callers of the 2-argument overload. EXPECT NO ROW from
---    either query (the caller map in CALLERS.md was read from the repo; this is the live check).
+-- A3 [READ-ONLY] dependents and callers of the 2-argument overload. EXPECT NO ROW from the dependency,
+--    view and policy queries and from the "function body: real call" query. The last query lists TEXT
+--    MATCHES separately (a name inside a string literal, such as the 'use_rpc_block_user' error message of
+--    rpc_restrict_set from KAN-522): a text match is reported, it is not a caller and does not fail the probe.
 begin read only;
 select 'pg_depend' as via, d.classid::regclass::text as dependent_catalog, d.objid
   from pg_depend d
  where d.refclassid = 'pg_proc'::regclass
    and d.refobjid = 'public.rpc_block_user(uuid, boolean)'::regprocedure
    and d.deptype = 'n';
-select 'function body' as via, p.oid::regprocedure as caller
+-- real call syntax only: the name followed by "(" , not inside a quoted literal such as 'use_rpc_block_user'
+select 'function body: real call' as via, p.oid::regprocedure as caller
   from pg_proc p join pg_namespace n on n.oid = p.pronamespace
  where n.nspname not in ('pg_catalog', 'information_schema')
-   and p.prosrc ilike '%rpc_block_user%'
+   and p.prosrc ~* '(^|[^_a-z0-9''])rpc_block_user\s*\('
    and p.oid <> 'public.rpc_block_user(uuid, boolean)'::regprocedure
    and p.oid <> 'public.rpc_block_user(uuid)'::regprocedure;
 select 'view' as via, c.oid::regclass as caller
@@ -75,6 +78,14 @@ select 'view' as via, c.oid::regclass as caller
 select 'policy' as via, (schemaname || '.' || tablename || ' ' || policyname) as caller
   from pg_policies
  where coalesce(qual, '') ilike '%rpc_block_user%' or coalesce(with_check, '') ilike '%rpc_block_user%';
+-- text matches, reported separately (live 2026-10-14: exactly one, rpc_restrict_set(uuid,text), error-message literal)
+select 'function body: text match only' as via, p.oid::regprocedure as caller,
+       (p.prosrc ~* '(^|[^_a-z0-9''])rpc_block_user\s*\(') as has_call_syntax
+  from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+ where n.nspname not in ('pg_catalog', 'information_schema')
+   and p.prosrc ilike '%rpc_block_user%'
+   and p.oid <> 'public.rpc_block_user(uuid, boolean)'::regprocedure
+   and p.oid <> 'public.rpc_block_user(uuid)'::regprocedure;
 rollback;
 
 -- A4 [READ-ONLY] the two stores BEFORE, and the number of rows the migration will carry. Save the
