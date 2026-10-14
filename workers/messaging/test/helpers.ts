@@ -69,3 +69,16 @@ export function rpcJson(body: unknown, status = 200) {
 export function env(db: D1Database, extra: Record<string, string> = {}) {
   return { DB: db, SUPABASE_URL, SUPABASE_ANON_KEY: "test-placeholder-not-a-key", ...extra };
 }
+
+/** One msg_authorize row in the real function's shape (KAN-505). */
+export function authRow(over: Record<string, unknown> = {}) {
+  return {
+    user_id: "real-user",
+    allowed_action: "send",
+    reason: null,
+    left_at_seq: null,
+    member_user_ids: [],
+    hidden_sender_ids: [],
+    ...over,
+  };
+}
