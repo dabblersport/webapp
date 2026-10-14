@@ -21,6 +21,7 @@ abstract final class GameChatSafetyKeys {
   static const reportFailed = ValueKey<String>('messaging-report-failed');
   static const reportRetry = ValueKey<String>('messaging-report-retry');
   static const reportCancel = ValueKey<String>('messaging-report-cancel');
+  static const reasonList = ValueKey<String>('messaging-report-reason-list');
   static const blockSheet = ValueKey<String>('messaging-block-sheet');
   static const blockConfirm = ValueKey<String>('messaging-block-confirm');
   static const blockDone = ValueKey<String>('messaging-block-done');
@@ -90,12 +91,7 @@ Future<void> showGameChatMessageOptions(
   if (!context.mounted || choice == null) return;
   switch (choice) {
     case _Choice.report:
-      await showDabblerSheet<void>(
-        context: context,
-        detent: DabblerSheetDetent.content,
-        title: l10n.messaging_report_title,
-        builder: (_) => GameChatReportSheet(onSubmit: onReport),
-      );
+      await showGameChatReportSheet(context, onSubmit: onReport);
     case _Choice.block:
       await showDabblerSheet<void>(
         context: context,
@@ -108,62 +104,149 @@ Future<void> showGameChatMessageOptions(
 
 enum _Phase { choosing, submitting, submitted, failed }
 
-/// Chooses one of the ten report reasons and submits it. Shows submitted and
-/// failed states; a failure keeps the choice so it can be retried.
-class GameChatReportSheet extends StatefulWidget {
-  const GameChatReportSheet({super.key, required this.onSubmit});
+/// Opens the report sheet (KAN-503 `01-report-reason-sheet`): the ten reasons
+/// sit in a [DabblerSheetList] capped at half the viewport and scrolling
+/// inside itself, while Send and Cancel live in the sheet's PINNED footer so
+/// they stay on screen at any text scale.
+Future<void> showGameChatReportSheet(
+  BuildContext context, {
+  required Future<bool> Function(ReportCategory reason) onSubmit,
+}) async {
+  final l10n = AppLocalizations.of(context);
+  final controller = GameChatReportController(onSubmit: onSubmit);
+  try {
+    await showDabblerSheet<void>(
+      context: context,
+      detent: DabblerSheetDetent.content,
+      title: l10n.messaging_report_title,
+      builder: (_) => GameChatReportSheet(controller: controller),
+      footerBuilder: (_) => GameChatReportActions(controller: controller),
+    );
+  } finally {
+    controller.dispose();
+  }
+}
+
+/// Shared state of the report sheet's body and its pinned footer.
+class GameChatReportController extends ChangeNotifier {
+  GameChatReportController({required this.onSubmit});
 
   final Future<bool> Function(ReportCategory reason) onSubmit;
 
-  @override
-  State<GameChatReportSheet> createState() => _GameChatReportSheetState();
-}
-
-class _GameChatReportSheetState extends State<GameChatReportSheet> {
   ReportCategory? _reason;
   _Phase _phase = _Phase.choosing;
+  bool _disposed = false;
 
-  Future<void> _submit() async {
-    final reason = _reason;
-    if (reason == null) return;
-    setState(() => _phase = _Phase.submitting);
-    final ok = await widget.onSubmit(reason);
-    if (!mounted) return;
-    setState(() => _phase = ok ? _Phase.submitted : _Phase.failed);
+  ReportCategory? get reason => _reason;
+  bool get busy => _phase == _Phase.submitting;
+  bool get failed => _phase == _Phase.failed;
+  bool get submitted => _phase == _Phase.submitted;
+
+  void choose(ReportCategory c) {
+    _reason = c;
+    notifyListeners();
   }
+
+  Future<void> submit() async {
+    final reason = _reason;
+    if (reason == null || busy) return;
+    _set(_Phase.submitting);
+    final ok = await onSubmit(reason);
+    _set(ok ? _Phase.submitted : _Phase.failed);
+  }
+
+  void _set(_Phase p) {
+    if (_disposed) return;
+    _phase = p;
+    notifyListeners();
+  }
+
+  @override
+  void dispose() {
+    _disposed = true;
+    super.dispose();
+  }
+}
+
+/// The report sheet's body: prompt, bounded reason list, failure message; or
+/// the submitted confirmation.
+class GameChatReportSheet extends StatelessWidget {
+  const GameChatReportSheet({super.key, required this.controller});
+
+  final GameChatReportController controller;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    if (_phase == _Phase.submitted) {
-      return SingleChildScrollView(
-        child: DabblerSheetBody(
-          key: GameChatSafetyKeys.reportSheet,
-          actions: DabblerSheetActions(
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        if (controller.submitted) {
+          return DabblerSheetBody(
+            key: GameChatSafetyKeys.reportSheet,
             children: [
-              DabblerButton(
-                label: l10n.messaging_report_done,
-                fullWidth: true,
-                onPressed: () => Navigator.of(context).pop(),
+              DabblerInlineMessage(
+                l10n.messaging_report_submitted,
+                key: GameChatSafetyKeys.reportSubmitted,
+                tone: DabblerInlineMessageTone.success,
               ),
             ],
-          ),
+          );
+        }
+        const reasons = ReportCategory.values;
+        return DabblerSheetBody(
+          key: GameChatSafetyKeys.reportSheet,
           children: [
-            DabblerInlineMessage(
-              l10n.messaging_report_submitted,
-              key: GameChatSafetyKeys.reportSubmitted,
-              tone: DabblerInlineMessageTone.success,
+            DabblerText(l10n.messaging_report_prompt),
+            DabblerSheetList(
+              key: GameChatSafetyKeys.reasonList,
+              itemCount: reasons.length,
+              itemBuilder: (_, i) => DabblerRadio(
+                key: GameChatSafetyKeys.reason(reasons[i]),
+                selected: controller.reason == reasons[i],
+                disabled: controller.busy,
+                label: reportCategoryLabel(l10n, reasons[i]),
+                onChanged: (_) => controller.choose(reasons[i]),
+              ),
             ),
+            if (controller.failed)
+              DabblerInlineMessage(
+                l10n.messaging_report_failed,
+                key: GameChatSafetyKeys.reportFailed,
+              ),
           ],
-        ),
-      );
-    }
-    final busy = _phase == _Phase.submitting;
-    final failed = _phase == _Phase.failed;
-    return SingleChildScrollView(
-      child: DabblerSheetBody(
-        key: GameChatSafetyKeys.reportSheet,
-        actions: DabblerSheetActions(
+        );
+      },
+    );
+  }
+}
+
+/// The report sheet's pinned footer: Send (or Retry) and Cancel; Done once
+/// submitted.
+class GameChatReportActions extends StatelessWidget {
+  const GameChatReportActions({super.key, required this.controller});
+
+  final GameChatReportController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return ListenableBuilder(
+      listenable: controller,
+      builder: (context, _) {
+        if (controller.submitted) {
+          return DabblerButton(
+            label: l10n.messaging_report_done,
+            fullWidth: true,
+            onPressed: () => Navigator.of(context).pop(),
+          );
+        }
+        final busy = controller.busy;
+        final failed = controller.failed;
+        return Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: DabblerSpacing.space3,
           children: [
             DabblerButton(
               key: failed
@@ -174,8 +257,8 @@ class _GameChatReportSheetState extends State<GameChatReportSheet> {
                   : l10n.messaging_report_submit,
               fullWidth: true,
               loading: busy,
-              disabled: _reason == null || busy,
-              onPressed: _submit,
+              disabled: controller.reason == null || busy,
+              onPressed: controller.submit,
             ),
             DabblerButton(
               key: GameChatSafetyKeys.reportCancel,
@@ -186,24 +269,8 @@ class _GameChatReportSheetState extends State<GameChatReportSheet> {
               onPressed: () => Navigator.of(context).pop(),
             ),
           ],
-        ),
-        children: [
-          DabblerText(l10n.messaging_report_prompt),
-          for (final c in ReportCategory.values)
-            DabblerRadio(
-              key: GameChatSafetyKeys.reason(c),
-              selected: _reason == c,
-              disabled: busy,
-              label: reportCategoryLabel(l10n, c),
-              onChanged: (_) => setState(() => _reason = c),
-            ),
-          if (failed)
-            DabblerInlineMessage(
-              l10n.messaging_report_failed,
-              key: GameChatSafetyKeys.reportFailed,
-            ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

@@ -308,9 +308,22 @@ void main() {
         _expectNothingForbidden(tester, l10n);
         await _tap(tester, find.byKey(GameChatSafetyKeys.reportAction));
         expect(find.byKey(GameChatSafetyKeys.reportSheet), findsOneWidget);
+        // All ten reasons are present; the list is lazy and height-capped
+        // (KAN-503), so a row below the fold is reached by scrolling it.
+        final reasonScroll = find.descendant(
+          of: find.byKey(GameChatSafetyKeys.reasonList),
+          matching: find.byType(Scrollable),
+        );
         for (final c in ReportCategory.values) {
+          await tester.pump();
+          await tester.scrollUntilVisible(
+            find.byKey(GameChatSafetyKeys.reason(c)),
+            80,
+            scrollable: reasonScroll,
+          );
           expect(find.byKey(GameChatSafetyKeys.reason(c)), findsOneWidget);
         }
+        await _settle(tester);
         expect(find.byKey(GameChatSafetyKeys.reportSubmit), findsOneWidget);
         expect(find.byKey(GameChatSafetyKeys.reportCancel), findsOneWidget);
         expect(find.text(l10n.messaging_report_cancel), findsOneWidget);
@@ -349,6 +362,68 @@ void main() {
         expect(repo.wasReported(id), isFalse);
         _expectNothingForbidden(tester, l10n);
       });
+
+      testWidgets(
+        'report: Send and Cancel pinned on screen, reason list capped and '
+        'scrolls inside itself',
+        (tester) async {
+          final repo = _Repo()..seedGameConversation('g1', messageCount: 2);
+          await tester.pumpWidget(_app(repo, _Block(), v));
+          await _settle(tester);
+          await _tap(tester, find.text('m1'));
+          await _tap(tester, find.byKey(GameChatSafetyKeys.reportAction));
+          final viewport = tester.getRect(find.byType(MaterialApp));
+          void expectOnScreen(Finder f) {
+            expect(f, findsOneWidget);
+            final r = tester.getRect(f);
+            expect(
+              viewport.contains(r.topLeft) && viewport.contains(r.bottomRight),
+              isTrue,
+              reason: '$f at $r outside $viewport',
+            );
+            // Hittable without scrolling: the hit test lands on it.
+            f.hitTestable().evaluate();
+            expect(f.hitTestable(), findsOneWidget);
+          }
+
+          // No scroll performed: both actions visible and hittable.
+          expectOnScreen(find.byKey(GameChatSafetyKeys.reportSubmit));
+          expectOnScreen(find.byKey(GameChatSafetyKeys.reportCancel));
+          // The reason list is height-capped at half the viewport.
+          final list = find.byKey(GameChatSafetyKeys.reasonList);
+          expect(
+            tester.getSize(list).height,
+            lessThanOrEqualTo(viewport.height / 2 + 0.01),
+          );
+          // The last reason is reachable by scrolling the LIST itself.
+          final listView = find.descendant(
+            of: list,
+            matching: find.byType(Scrollable),
+          );
+          final last = find.byKey(
+            GameChatSafetyKeys.reason(ReportCategory.values.last),
+          );
+          await tester.scrollUntilVisible(last, 80, scrollable: listView);
+          await _settle(tester);
+          expect(last.hitTestable(), findsOneWidget);
+          // Actions are still on screen after the list scrolled.
+          expectOnScreen(find.byKey(GameChatSafetyKeys.reportSubmit));
+          expectOnScreen(find.byKey(GameChatSafetyKeys.reportCancel));
+          // Selecting a reason enables Send.
+          final submit = find.byKey(GameChatSafetyKeys.reportSubmit);
+          expect(tester.widget<DabblerButton>(submit).disabled, isTrue);
+          await tester.tap(last);
+          await _settle(tester);
+          expect(tester.widget<DabblerButton>(submit).disabled, isFalse);
+          await _shot(tester, 'report-pinned-${v.name}');
+          // Cancel closes without a repository call.
+          await tester.tap(find.byKey(GameChatSafetyKeys.reportCancel));
+          await _settle(tester);
+          expect(find.byKey(GameChatSafetyKeys.reportSheet), findsNothing);
+          expect(repo.reports, isEmpty);
+          _expectNothingForbidden(tester, l10n);
+        },
+      );
 
       testWidgets('report: failure shows the failed state and retries', (
         tester,
