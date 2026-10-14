@@ -3,6 +3,7 @@ import 'package:intl/intl.dart';
 
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Maps the controller's rows to design-system thread rows (KAN-516):
@@ -90,6 +91,15 @@ List<DabblerThreadItem> gameChatThreadItems({
             : null,
       ),
     );
+    // A rejected send says why, with the existing line for its typed reason.
+    final why = item.state == OutgoingState.failed && item.failureReason != null
+        ? gameChatReasonText(l10n, item.failureReason!)
+        : null;
+    if (why != null) {
+      out.add(
+        DabblerThreadNotice(tone: DabblerNoticeTone.error, description: why),
+      );
+    }
   }
   if (!finishedDrawn) finishedRow();
   return out;
