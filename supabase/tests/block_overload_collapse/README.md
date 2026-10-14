@@ -28,6 +28,10 @@ whoever applies. Only project `wtncuzcskpigqpmnxwws` is referenced. No `apply_mi
 4. Production: only with the CEO's explicit approval of the exact migration text, the G-002 backend owner plus PEER
    review (`schema_change` forces PEER), and devops for the push.
 
+## Live evidence
+
+Read-only catalog results (Memphis, 2026-10-14 ~04:29 UTC) are recorded in `CALLERS.md`: no live caller, dependent, view or policy; `user_blocks` 3, `restrictions` 0; ACL unchanged since KAN-497.
+
 ## Result of the caller map
 
 * The app's only call is `lib/data/repositories/block_repository_impl.dart:24` with `{'p_peer': ...}`, which resolves to
@@ -43,11 +47,11 @@ whoever applies. Only project `wtncuzcskpigqpmnxwws` is referenced. No `apply_mi
 * Not changed: the body and ACL of `rpc_block_user(uuid)` and `rpc_unblock_user(uuid)`; the `restrictions` table
   (its retirement is a separate ticket); every other function.
 
-## Second block store: closed by KAN-522, migration 20261013130000
+## Second block store: closed by KAN-522, migration 20261013130000, APPLIED 2026-10-14
 
 `rpc_restrict_set` and `rpc_restrict_clear` accepted `'blocked'` and wrote `restrictions`. That is KAN-522's ticket (migration
 `20261013130000_restrict_rpcs_reject_blocked.sql`, which makes both refuse `blocked`). **AC3 ("blocking through the API can only
-write user_blocks") is satisfied by KAN-499 and KAN-522 together, applied in that order (20261013120000, then 20261013130000).**
+write user_blocks") is satisfied by KAN-499 and KAN-522 together.** KAN-522's migration 20261013130000 is **APPLIED (2026-10-14)**; KAN-499's 20261013120000 is applied by Memphis after review.
 This ticket changes `rpc_block_user(uuid, boolean)` only.
 
 ## Rollback
