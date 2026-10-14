@@ -6296,7 +6296,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_chat_offline_retry => 'Try again';
 
   @override
-  String get messaging_chat_error => 'Couldn\'t load this chat.';
+  String get messaging_chat_error => 'Couldn\'t load this chat. Try again.';
 
   @override
   String get messaging_chat_older_load => 'Load earlier messages';
@@ -6305,7 +6305,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_chat_older_loading => 'Loading earlier messages';
 
   @override
-  String get messaging_chat_older_error => 'Couldn\'t load earlier messages.';
+  String get messaging_chat_older_error =>
+      'Couldn\'t load earlier messages. Try again.';
 
   @override
   String get messaging_chat_today => 'Today';
@@ -6318,11 +6319,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_chat_closed_ended =>
-      'This game has ended. The chat is read-only.';
+      'This game has ended. You can read the chat but not send messages.';
 
   @override
   String get messaging_chat_closed_cancelled =>
-      'This game was cancelled. The chat is read-only.';
+      'This game was cancelled. You can read the chat but not send messages.';
 
   @override
   String get messaging_chat_mute => 'Mute chat';
@@ -6334,7 +6335,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_chat_muted => 'Chat muted';
 
   @override
-  String get messaging_chat_mute_failed => 'Couldn\'t change mute. Try again.';
+  String get messaging_chat_mute_failed =>
+      'Couldn\'t update the mute setting. Try again.';
 
   @override
   String get messaging_chat_message_options => 'Message options';
@@ -6382,11 +6384,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_report_submit => 'Send report';
 
   @override
-  String get messaging_report_submitted =>
-      'Thanks. Your report was sent to our moderation team.';
+  String get messaging_report_submitted => 'Thanks. We received your report.';
 
   @override
-  String get messaging_report_failed => 'Couldn\'t send your report.';
+  String get messaging_report_failed =>
+      'Couldn\'t send your report. Try again.';
 
   @override
   String get messaging_report_retry => 'Try again';
@@ -6405,7 +6407,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_block_body =>
-      'You can unblock them later from your settings.';
+      'You won\'t see this player\'s messages in game chats. You can unblock them later in your settings.';
 
   @override
   String get messaging_block_confirm => 'Block';
@@ -6417,7 +6419,8 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_block_done => 'Player blocked.';
 
   @override
-  String get messaging_block_failed => 'Couldn\'t block this player.';
+  String get messaging_block_failed =>
+      'Couldn\'t block this player. Try again.';
 
   @override
   String get messaging_chat_unavailable_line =>
@@ -6431,4 +6434,35 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_chat_removed_action => 'Go back';
+
+  @override
+  String get messaging_reason_not_a_member =>
+      'Only players in this game can use this chat. Go back.';
+
+  @override
+  String get messaging_reason_left_read_only =>
+      'You left this game. You can read earlier messages but can\'t send new ones.';
+
+  @override
+  String get messaging_reason_blocked =>
+      'You can\'t send messages in this chat. Go back.';
+
+  @override
+  String get messaging_reason_suspended =>
+      'Chat is turned off for your account. Contact support if you think this is a mistake.';
+
+  @override
+  String get messaging_reason_rate_limited =>
+      'You\'re sending messages too fast. Wait a moment, then try again.';
+
+  @override
+  String get messaging_reason_not_found =>
+      'We couldn\'t find this chat. Go back and open it again.';
+
+  @override
+  String get messaging_reason_invalid_request =>
+      'Your message couldn\'t be sent. Check it and try again.';
+
+  @override
+  String get messaging_reason_unknown => 'Something went wrong. Try again.';
 }
