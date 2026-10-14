@@ -92,20 +92,32 @@ class GameChatViewState extends Equatable {
   /// True while any own message is being sent.
   bool get isSending => items.any((i) => i.state == OutgoingState.sending);
 
+  /// True when the chat is closed because the game ended or was cancelled
+  /// (the typed reason from the repository, never a client rule).
+  bool get isClosedByGame =>
+      status == GameChatStatus.readOnly &&
+      (reason == MessagingReason.gameEnded ||
+          reason == MessagingReason.gameCancelled);
+
+  /// Whether the conversation is muted for the caller.
+  bool get isMuted => conversation?.muted ?? false;
+
   /// The l10n key for [reason], or null.
   String? get reasonKey =>
       reason == null ? null : MessagingL10nKeys.of(reason!);
 
   GameChatViewState copyWith({
     GameChatStatus? status,
+    Conversation? conversation,
     List<ChatItem>? items,
+    MessagingReason? reason,
     bool? hasOlder,
     int? olderCursor,
   }) => GameChatViewState(
     status: status ?? this.status,
-    conversation: conversation,
+    conversation: conversation ?? this.conversation,
     items: items ?? this.items,
-    reason: reason,
+    reason: reason ?? this.reason,
     hasOlder: hasOlder ?? this.hasOlder,
     olderCursor: olderCursor ?? this.olderCursor,
   );

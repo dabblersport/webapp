@@ -6315,4 +6315,104 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_chat_game_finished => 'Game finished';
+
+  @override
+  String get messaging_chat_closed_ended =>
+      'This game has ended. The chat is read-only.';
+
+  @override
+  String get messaging_chat_closed_cancelled =>
+      'This game was cancelled. The chat is read-only.';
+
+  @override
+  String get messaging_chat_mute => 'Mute chat';
+
+  @override
+  String get messaging_chat_unmute => 'Unmute chat';
+
+  @override
+  String get messaging_chat_muted => 'Chat muted';
+
+  @override
+  String get messaging_chat_mute_failed => 'Couldn\'t change mute. Try again.';
+
+  @override
+  String get messaging_chat_message_options => 'Message options';
+
+  @override
+  String get messaging_report_action => 'Report message';
+
+  @override
+  String get messaging_report_title => 'Report message';
+
+  @override
+  String get messaging_report_prompt => 'Why are you reporting this message?';
+
+  @override
+  String get messaging_report_reason_spam => 'Spam';
+
+  @override
+  String get messaging_report_reason_abuse => 'Abuse';
+
+  @override
+  String get messaging_report_reason_hate => 'Hate speech';
+
+  @override
+  String get messaging_report_reason_harassment => 'Harassment';
+
+  @override
+  String get messaging_report_reason_nudity => 'Nudity or sexual content';
+
+  @override
+  String get messaging_report_reason_illegal => 'Illegal activity';
+
+  @override
+  String get messaging_report_reason_danger => 'Danger to someone\'s safety';
+
+  @override
+  String get messaging_report_reason_scam => 'Scam or fraud';
+
+  @override
+  String get messaging_report_reason_impersonation => 'Impersonation';
+
+  @override
+  String get messaging_report_reason_other => 'Something else';
+
+  @override
+  String get messaging_report_submit => 'Send report';
+
+  @override
+  String get messaging_report_submitted =>
+      'Thanks. Your report was sent to our moderation team.';
+
+  @override
+  String get messaging_report_failed => 'Couldn\'t send your report.';
+
+  @override
+  String get messaging_report_retry => 'Try again';
+
+  @override
+  String get messaging_report_done => 'Done';
+
+  @override
+  String get messaging_block_action => 'Block player';
+
+  @override
+  String get messaging_block_title => 'Block this player?';
+
+  @override
+  String get messaging_block_body =>
+      'You can unblock them later from your settings.';
+
+  @override
+  String get messaging_block_confirm => 'Block';
+
+  @override
+  String get messaging_block_cancel => 'Cancel';
+
+  @override
+  String get messaging_block_done => 'Player blocked.';
+
+  @override
+  String get messaging_block_failed => 'Couldn\'t block this player.';
 }
