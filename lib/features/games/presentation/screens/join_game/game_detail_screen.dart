@@ -13,6 +13,7 @@ import 'package:dabbler/features/games/presentation/controllers/game_view_contro
 import 'package:dabbler/features/games/presentation/controllers/join_action_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_content.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/game_chat_entry.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -189,6 +190,13 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       bottomBar: _actionBar(state, ctrl),
       children: [
         gameHeadcount(state),
+        // KAN-516: the one flag-gated game-chat entry; absent while any
+        // messaging flag is false.
+        GameChatEntry(
+          gameId: game.id,
+          allowed: ctrl.isHost || ctrl.isOnRoster,
+          gameEndAt: game.endAt,
+        ),
         gameFactTiles(context, game),
         gameHostCard(context, game),
         ...gameSquadSections(
