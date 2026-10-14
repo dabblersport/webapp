@@ -6262,4 +6262,57 @@ class AppLocalizationsEn extends AppLocalizations {
   String manual_location_fetch_failed(String error) {
     return 'Failed to get location: $error';
   }
+
+  @override
+  String get messaging_chat_title => 'Game chat';
+
+  @override
+  String get messaging_chat_open => 'Open game chat';
+
+  @override
+  String get messaging_chat_loading => 'Loading messages';
+
+  @override
+  String get messaging_chat_empty_title => 'No messages yet';
+
+  @override
+  String get messaging_chat_empty_body =>
+      'Say hello to the players in this game.';
+
+  @override
+  String get messaging_chat_composer_hint => 'Write a message';
+
+  @override
+  String get messaging_chat_send => 'Send';
+
+  @override
+  String get messaging_chat_retry => 'Retry';
+
+  @override
+  String get messaging_chat_offline =>
+      'You\'re offline. Messages will load when you reconnect.';
+
+  @override
+  String get messaging_chat_offline_retry => 'Try again';
+
+  @override
+  String get messaging_chat_error => 'Couldn\'t load this chat.';
+
+  @override
+  String get messaging_chat_older_load => 'Load earlier messages';
+
+  @override
+  String get messaging_chat_older_loading => 'Loading earlier messages';
+
+  @override
+  String get messaging_chat_older_error => 'Couldn\'t load earlier messages.';
+
+  @override
+  String get messaging_chat_today => 'Today';
+
+  @override
+  String get messaging_chat_yesterday => 'Yesterday';
+
+  @override
+  String get messaging_chat_game_finished => 'Game finished';
 }

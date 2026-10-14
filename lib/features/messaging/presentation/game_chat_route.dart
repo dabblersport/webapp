@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/messaging/presentation/screens/game_chat_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 
@@ -28,8 +29,8 @@ String? gameChatRedirect({
     ? null
     : RoutePaths.home;
 
-/// The game chat skeleton route. Its body is an empty placeholder; the screen
-/// is T16.
+/// The game chat route. Its body is the game chat screen (KAN-516, T16a);
+/// `extra` may carry the game's `end_at`.
 GoRoute gameChatRoute({GlobalKey<NavigatorState>? parentNavigatorKey}) =>
     GoRoute(
       parentNavigatorKey: parentNavigatorKey,
@@ -38,11 +39,15 @@ GoRoute gameChatRoute({GlobalKey<NavigatorState>? parentNavigatorKey}) =>
       redirect: (context, state) => gameChatRedirect(),
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
-        child: const GameChatPlaceholder(),
+        child: GameChatScreen(
+          gameId: state.pathParameters['gameId'] ?? '',
+          gameEndAt: state.extra is DateTime ? state.extra as DateTime : null,
+        ),
       ),
     );
 
-/// Empty placeholder body: no copy, identified by key only.
+/// Empty placeholder body (KAN-507): no copy, identified by key only. No longer
+/// the route body; kept for its existing tests.
 class GameChatPlaceholder extends StatelessWidget {
   const GameChatPlaceholder({super.key});
 

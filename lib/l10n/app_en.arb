@@ -2241,5 +2241,22 @@
   "@manual_location_set_failed": { "placeholders": { "error": { "type": "String" } } },
   "manual_location_updated_toast": "Location updated",
   "manual_location_fetch_failed": "Failed to get location: {error}",
-  "@manual_location_fetch_failed": { "placeholders": { "error": { "type": "String" } } }
+  "@manual_location_fetch_failed": { "placeholders": { "error": { "type": "String" } } },
+  "messaging_chat_title": "Game chat",
+  "messaging_chat_open": "Open game chat",
+  "messaging_chat_loading": "Loading messages",
+  "messaging_chat_empty_title": "No messages yet",
+  "messaging_chat_empty_body": "Say hello to the players in this game.",
+  "messaging_chat_composer_hint": "Write a message",
+  "messaging_chat_send": "Send",
+  "messaging_chat_retry": "Retry",
+  "messaging_chat_offline": "You're offline. Messages will load when you reconnect.",
+  "messaging_chat_offline_retry": "Try again",
+  "messaging_chat_error": "Couldn't load this chat.",
+  "messaging_chat_older_load": "Load earlier messages",
+  "messaging_chat_older_loading": "Loading earlier messages",
+  "messaging_chat_older_error": "Couldn't load earlier messages.",
+  "messaging_chat_today": "Today",
+  "messaging_chat_yesterday": "Yesterday",
+  "messaging_chat_game_finished": "Game finished"
 }

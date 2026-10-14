@@ -134,25 +134,78 @@ class GameChatController
     );
   }
 
-  /// Loads the page below the oldest loaded message.
-  Future<void> loadOlder() async {
+  /// Loads the page below the oldest loaded message. Returns false when the
+  /// page could not be loaded (the pager shows its error state).
+  Future<bool> loadOlder() async {
     final current = state.valueOrNull;
     final conversation = current?.conversation;
-    if (current == null || conversation == null || !current.hasOlder) return;
+    if (current == null || conversation == null || !current.hasOlder) {
+      return true;
+    }
     final result = await _repo.listMessages(
       conversationId: conversation.id,
       cursor: current.olderCursor,
     );
-    if (result is Err) return;
+    if (result is Err) return false;
     final page = result.requireValue;
+    final latest = state.valueOrNull ?? current;
     state = AsyncData(
       GameChatViewState(
-        status: current.status,
-        conversation: conversation,
-        reason: current.reason,
-        items: [for (final m in page.messages) _sent(m), ...current.items],
+        status: latest.status,
+        conversation: latest.conversation ?? conversation,
+        reason: latest.reason,
+        items: [for (final m in page.messages) _sent(m), ...latest.items],
         hasOlder: page.hasOlder,
         olderCursor: page.olderCursor,
+      ),
+    );
+    return true;
+  }
+
+  /// Polling refresh (no Realtime): fetches the newest page and adds the
+  /// messages not yet shown, by `seq`. Own messages still in flight or failed
+  /// are kept at the end. A failed poll changes nothing.
+  Future<void> refreshNewest() async {
+    final current = state.valueOrNull;
+    final conversation = current?.conversation;
+    if (current == null || conversation == null) return;
+    final result = await _repo.listMessages(conversationId: conversation.id);
+    if (result is Err) return;
+    final latest = state.valueOrNull;
+    if (latest == null) return;
+    final known = <String>{
+      for (final i in latest.items)
+        if (i.message != null) i.message!.id,
+    };
+    final fresh = [
+      for (final m in result.requireValue.messages)
+        if (!known.contains(m.id)) m,
+    ];
+    if (fresh.isEmpty) return;
+    final delivered = [
+      for (final i in latest.items)
+        if (i.message != null) i,
+      for (final m in fresh)
+        // A message that is the server copy of a pending own send replaces
+        // that pending row instead of duplicating it.
+        if (!latest.items.any(
+          (i) =>
+              i.message == null &&
+              i.clientKey != null &&
+              i.clientKey == m.clientKey,
+        ))
+          _sent(m),
+    ]..sort((a, b) => a.message!.seq.compareTo(b.message!.seq));
+    final pending = [
+      for (final i in latest.items)
+        if (i.message == null) i,
+    ];
+    state = AsyncData(
+      latest.copyWith(
+        status: latest.status == GameChatStatus.empty
+            ? GameChatStatus.ready
+            : latest.status,
+        items: [...delivered, ...pending],
       ),
     );
   }

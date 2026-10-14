@@ -11266,6 +11266,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to get location: {error}'**
   String manual_location_fetch_failed(String error);
+
+  /// No description provided for @messaging_chat_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game chat'**
+  String get messaging_chat_title;
+
+  /// No description provided for @messaging_chat_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open game chat'**
+  String get messaging_chat_open;
+
+  /// No description provided for @messaging_chat_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading messages'**
+  String get messaging_chat_loading;
+
+  /// No description provided for @messaging_chat_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get messaging_chat_empty_title;
+
+  /// No description provided for @messaging_chat_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Say hello to the players in this game.'**
+  String get messaging_chat_empty_body;
+
+  /// No description provided for @messaging_chat_composer_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Write a message'**
+  String get messaging_chat_composer_hint;
+
+  /// No description provided for @messaging_chat_send.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get messaging_chat_send;
+
+  /// No description provided for @messaging_chat_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get messaging_chat_retry;
+
+  /// No description provided for @messaging_chat_offline.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Messages will load when you reconnect.'**
+  String get messaging_chat_offline;
+
+  /// No description provided for @messaging_chat_offline_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get messaging_chat_offline_retry;
+
+  /// No description provided for @messaging_chat_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this chat.'**
+  String get messaging_chat_error;
+
+  /// No description provided for @messaging_chat_older_load.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier messages'**
+  String get messaging_chat_older_load;
+
+  /// No description provided for @messaging_chat_older_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading earlier messages'**
+  String get messaging_chat_older_loading;
+
+  /// No description provided for @messaging_chat_older_error.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load earlier messages.'**
+  String get messaging_chat_older_error;
+
+  /// No description provided for @messaging_chat_today.
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get messaging_chat_today;
+
+  /// No description provided for @messaging_chat_yesterday.
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get messaging_chat_yesterday;
+
+  /// No description provided for @messaging_chat_game_finished.
+  ///
+  /// In en, this message translates to:
+  /// **'Game finished'**
+  String get messaging_chat_game_finished;
 }
 
 class _AppLocalizationsDelegate

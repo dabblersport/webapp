@@ -2275,5 +2275,22 @@
   "@manual_location_set_failed": { "placeholders": { "error": { "type": "String" } } },
   "manual_location_updated_toast": "تم تحديث الموقع",
   "manual_location_fetch_failed": "تعذّر الحصول على الموقع: {error}",
-  "@manual_location_fetch_failed": { "placeholders": { "error": { "type": "String" } } }
+  "@manual_location_fetch_failed": { "placeholders": { "error": { "type": "String" } } },
+  "messaging_chat_title": "دردشة المباراة",
+  "messaging_chat_open": "افتح دردشة المباراة",
+  "messaging_chat_loading": "جارٍ تحميل الرسائل",
+  "messaging_chat_empty_title": "لا توجد رسائل بعد",
+  "messaging_chat_empty_body": "ألقِ التحية على اللاعبين في هذه المباراة.",
+  "messaging_chat_composer_hint": "اكتب رسالة",
+  "messaging_chat_send": "إرسال",
+  "messaging_chat_retry": "أعد المحاولة",
+  "messaging_chat_offline": "أنت غير متصل. ستظهر الرسائل عند عودة الاتصال.",
+  "messaging_chat_offline_retry": "حاول مجددًا",
+  "messaging_chat_error": "تعذّر تحميل هذه الدردشة.",
+  "messaging_chat_older_load": "حمّل الرسائل السابقة",
+  "messaging_chat_older_loading": "جارٍ تحميل الرسائل السابقة",
+  "messaging_chat_older_error": "تعذّر تحميل الرسائل السابقة.",
+  "messaging_chat_today": "اليوم",
+  "messaging_chat_yesterday": "أمس",
+  "messaging_chat_game_finished": "انتهت المباراة"
 }
