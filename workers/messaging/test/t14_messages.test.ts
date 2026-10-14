@@ -39,8 +39,12 @@ describe("reason mapping (one table, one test per reason)", () => {
   it("not_member -> not_a_member", () => expect(mapAuthorizeReason("not_member")).toEqual({ kind: "deny", reason: "not_a_member" }));
   it("removed -> removed", () => expect(mapAuthorizeReason("removed")).toEqual({ kind: "deny", reason: "removed" }));
   it("left -> read-only left_read_only", () => expect(mapAuthorizeReason("left")).toEqual({ kind: "readOnly", reason: "left_read_only" }));
-  it("read_only -> read-only game_ended (gap: cancelled not distinguishable yet)", () =>
-    expect(mapAuthorizeReason("read_only")).toEqual({ kind: "readOnly", reason: "game_ended" }));
+  it("game_ended -> read-only game_ended", () =>
+    expect(mapAuthorizeReason("game_ended")).toEqual({ kind: "readOnly", reason: "game_ended" }));
+  it("game_cancelled -> read-only game_cancelled", () =>
+    expect(mapAuthorizeReason("game_cancelled")).toEqual({ kind: "readOnly", reason: "game_cancelled" }));
+  it("the retired single closed-game reason is unknown -> 403 with no reason", () =>
+    expect(mapAuthorizeReason(["read", "only"].join("_"))).toEqual({ kind: "deny", status: 403 }));
   it("unknown -> 403, no reason", () => expect(mapAuthorizeReason("whatever")).toEqual({ kind: "deny", status: 403 }));
 
   it("messaging_off end to end: 403 with no reason, zero DB", async () => {
@@ -154,17 +158,17 @@ describe("roster statuses", () => {
   });
 });
 
-describe("closed game (msg_authorize read_only covers BOTH ended and cancelled)", () => {
-  for (const which of ["ended", "cancelled"]) {
-    it(`${which}: send refused 409 game_ended, no row; list still allowed`, async () => {
+describe("closed game (msg_authorize returns game_ended or game_cancelled)", () => {
+  for (const which of ["game_ended", "game_cancelled"]) {
+    it(`${which}: send refused 409 ${which}, no row; list still allowed`, async () => {
       const { state } = rpc();
       const { mf, db } = await localD1();
       try {
         await seed(db, 2);
-        state.row = authRow({ allowed_action: "read", reason: "read_only" });
+        state.row = authRow({ allowed_action: "read", reason: which });
         const res = await send(db, KEY(77));
         expect(res.status).toBe(409);
-        expect(((await res.json()) as any).error.reason).toBe("game_ended");
+        expect(((await res.json()) as any).error.reason).toBe(which);
         const p = await list(db);
         expect(p.status).toBe(200);
         expect(((await p.json()) as any).messages.map((x: any) => x.seq)).toEqual([1, 2]);

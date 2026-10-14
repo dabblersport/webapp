@@ -2,7 +2,7 @@
 //
 // There is no deletion or expiry feature in the product today (D5: nothing deleted). These helpers exist so any
 // future path has a single guarded entry: every removal statement carries `legal_hold = 0`, and the D1 triggers in
-// migrations/0002_legal_hold_guard.sql abort a removal of a held row even if a statement forgot the predicate.
+// migrations/0003_legal_hold_guard.sql abort a removal of a held row even if a statement forgot the predicate.
 // test/t17_report.test.ts asserts no other file in src/ removes message rows.
 
 /** Mark a message as held. Idempotent. A hold is never released (the D1 trigger refuses it). */

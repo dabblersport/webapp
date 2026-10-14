@@ -13,6 +13,9 @@ export const REASON_STATUS = {
   rate_limited: 429,
   not_found: 404,
   invalid_request: 400,
+  // KAN-513 (T18): the moderator read refuses a caller the existing admin check rejects. The contract's reason
+  // list is open (openapi.yaml, Reason); this reason belongs to the moderator endpoint, not the chat client.
+  not_a_moderator: 403,
 } as const;
 
 export type Reason = keyof typeof REASON_STATUS;

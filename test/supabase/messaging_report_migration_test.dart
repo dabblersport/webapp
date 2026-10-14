@@ -6,8 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 /// migrations are authored and NOT applied; these tests pin their shape. They run no SQL.
 const _dir = 'supabase/migrations';
 const _packDir = 'supabase/tests/messaging';
-const _check = '20261013160000_kan512_msg_report_no_snapshot_check.sql';
-const _function = '20261013160100_kan512_msg_report_function.sql';
+const _check = '20261013160200_kan512_msg_report_no_snapshot_check.sql';
+const _function = '20261013160300_kan512_msg_report_function.sql';
 const _mine = [_check, _function];
 const _sig =
     'public.msg_report_message(uuid, uuid, bigint, public.report_reason, text)';

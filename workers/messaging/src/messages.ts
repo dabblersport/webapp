@@ -1,17 +1,18 @@
 // KAN-509 (T14): API shapes and seq-cursor pagination over the local D1 messages table.
-// Text only. No system lines (T15), no read state.
+// Text plus T15 system lines (sender "system"). No read state.
 // KAN-512 (T17): group block filter. Senders in `hidden` (the viewer's own blocks, from msg_authorize) are excluded
 // in SQL from the page AND from the other-side existence check, so cursors and has_X flags describe the filtered
 // stream and the invariant has_X === (X_cursor !== null) holds unchanged.
 
 import { MessageRow } from "./db";
+import { SYSTEM_SENDER } from "./system_line";
 
 export interface ApiMessage {
   id: string;
   conversation_id: string;
   seq: number;
-  sender_user_id: string;
-  kind: "text";
+  sender_user_id: string | null;
+  kind: "text" | "system";
   body: string;
   client_key: string | null;
   created_at: string;
@@ -19,6 +20,19 @@ export interface ApiMessage {
 
 /** client_key is shown only to its own sender (contract: null for other senders' messages). */
 export function toApiMessage(row: MessageRow, viewerId: string): ApiMessage {
+  if (row.sender_id === SYSTEM_SENDER) {
+    // T15 system line: no sender, no client_key. Body is the structured event the client localises.
+    return {
+      id: row.id,
+      conversation_id: row.conversation_id,
+      seq: row.seq,
+      sender_user_id: null,
+      kind: "system",
+      body: row.body,
+      client_key: null,
+      created_at: row.created_at,
+    };
+  }
   return {
     id: row.id,
     conversation_id: row.conversation_id,

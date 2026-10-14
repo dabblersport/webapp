@@ -1,6 +1,6 @@
 -- KAN-512 (Messaging T17) 2/2: public.msg_report_message, the report RPC the Worker relays to.
 -- AUTHORED, NOT APPLIED. Team Habu. Project wtncuzcskpigqpmnxwws, non-prod branch first.
--- Requires the KAN-505 functions (msg_evaluate) and 20261013160000_kan512_msg_report_no_snapshot_check.sql.
+-- Requires the KAN-505 functions (msg_evaluate) and 20261013160200_kan512_msg_report_no_snapshot_check.sql.
 --
 -- What it writes: ONE public.moderation_reports row with target_type 'message', target_id the
 -- message id, reason from the EXISTING public.report_reason enum, content_snapshot NULL and

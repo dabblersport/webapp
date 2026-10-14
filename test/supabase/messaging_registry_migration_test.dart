@@ -72,17 +72,23 @@ void main() {
       expect(sql[_realtime], isNot(contains('FUNCTION')));
     });
 
-    test('timestamps are newer than the migrations that existed when authored', () {
-      // Later migrations may sort after these files by design.
-      const newestWhenAuthored =
-          '20261013140000_revoke_public_notify_admins_of_block.sql';
-      expect(
-        File('$_dir/$newestWhenAuthored').existsSync(),
-        isTrue,
-        reason: '$newestWhenAuthored must still exist',
-      );
+    test('timestamps are newer than every pre-existing migration', () {
+      final others =
+          Directory(_dir)
+              .listSync()
+              .map((e) => e.uri.pathSegments.last)
+              .where(
+                (n) =>
+                    RegExp(r'^\d{14}_').hasMatch(n) &&
+                    !_mine.contains(n) &&
+                    !n.contains(
+                      '_msg_',
+                    ), // later messaging migrations (KAN-510, KAN-529)
+              )
+              .toList()
+            ..sort();
       for (final n in _mine) {
-        expect(n.compareTo(newestWhenAuthored), greaterThan(0), reason: n);
+        expect(n.compareTo(others.last), greaterThan(0), reason: n);
       }
     });
 
@@ -312,10 +318,10 @@ void main() {
     test('probes are marked AUTHORED, NOT RUN at the top and per block', () {
       expect(probes.split('\n').first, contains('AUTHORED, NOT RUN'));
       final heads = RegExp(
-        r'^-- P\d+ \[(READ-ONLY|WRITE-IN-TRANSACTION-ROLLBACK)\] AUTHORED, NOT RUN\.',
+        r'^-- P\d+b? \[(READ-ONLY|WRITE-IN-TRANSACTION-ROLLBACK)\] AUTHORED, NOT RUN\.',
         multiLine: true,
       ).allMatches(probes).length;
-      expect(heads, 10);
+      expect(heads, 11); // P1-P10 plus P6b (KAN-529)
       expect(
         RegExp(r'^begin;$', multiLine: true).allMatches(probes).length,
         heads,
@@ -333,8 +339,8 @@ void main() {
         'pass_guessed_id',
         'pass_kicked',
         'pass_left_reads_to_seq',
-        'pass_ended_read_only',
-        'pass_cancelled_read_only',
+        'pass_ended_game_ended',
+        'pass_cancelled_game_cancelled',
         'pass_blocker_hides_blocked',
         'pass_not_in_pilot',
         'pass_no_uid',
