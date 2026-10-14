@@ -7,12 +7,16 @@
 //   POST /v1/conversations/{id}/messages  send text, idempotent on (sender, conversation, Idempotency-Key) (T14).
 //   POST /internal/system-line  signed (HMAC) roster/cancel event from the database trigger; stores one system line (T15).
 //   GET  /v1/moderation/reports/{reportId}/message  audited moderator read of one reported message (T18, src/moderation.ts).
-// Block filtering (T17), realtime, attachments, reactions, receipts: NOT built here.
-// Per request: at most 1 subrequest (msg_authorize) + 1 D1 batch.
+//   POST /v1/messages/{id}/report  report a message (T17, KAN-512): ids + reason relayed, legal hold set.
+// List applies the D4 group block filter from msg_authorize's hidden_sender_ids (T17).
+// Realtime, attachments, reactions, receipts: NOT built here.
+// Per request: at most 1 subrequest (msg_authorize) + 1 D1 batch, except report: msg_authorize + msg_report_message
+// and two single-statement D1 calls (seq lookup, hold).
 
-import { Env, authorize } from "./auth";
+import { Env, authorize, hasBearer } from "./auth";
 import { insertMessage } from "./db";
-import { ok, reasonError } from "./errors";
+import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
+import { setLegalHold } from "./retention";
 import { listPage, toApiMessage } from "./messages";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
@@ -23,6 +27,9 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CLIENT_KEY = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_BODY = 2000;
 const MESSAGES_PATH = /^\/v1\/conversations\/([^/]+)\/messages$/;
+const REPORT_PATH = /^\/v1\/messages\/([^/]+)\/report$/;
+// The existing ten-value public.report_reason enum (docs/messaging/openapi.yaml ReportRequest). No new values.
+export const REPORT_REASONS = ["spam", "abuse", "hate", "harassment", "nudity", "illegal", "danger", "scam", "impersonation", "other"] as const;
 const POS_INT = /^[1-9][0-9]{0,15}$/;
 const DEFAULT_LIMIT = 30;
 const MAX_LIMIT = 50;
@@ -81,6 +88,9 @@ export default {
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
     if (m && request.method === "POST") return sendMessage(request, env, m[1]);
 
+    const rp = REPORT_PATH.exec(url.pathname);
+    if (rp && request.method === "POST") return reportMessage(request, env, rp[1]);
+
     return reasonError("not_found");
   },
 };
@@ -105,6 +115,7 @@ async function listMessages(request: Request, env: Env, url: URL, conversationId
     direction: directionRaw,
     limit,
     cap: auth.grant.leftAtSeq, // set only for a member who left; the RPC computed it
+    hidden: auth.grant.hiddenSenderIds, // the caller's own blocks (user_blocks); nobody else's view changes
   });
   return ok(page);
 }
@@ -134,4 +145,62 @@ async function sendMessage(request: Request, env: Env, conversationId: string): 
     clientKey: key.toLowerCase(),
   });
   return json(created ? 201 : 200, toApiMessage(row, auth.grant.userId));
+}
+
+/**
+ * Report a message (T17). The ONLY data relayed to Supabase is ids + reason: the D1 lookup reads conversation_id and
+ * seq, never the body. Order: bearer shape -> request -> seq lookup -> msg_authorize -> visibility (left_at_seq) ->
+ * msg_report_message (same bearer; it re-checks membership and is idempotent per reporter+message) -> legal hold.
+ */
+async function reportMessage(request: Request, env: Env, messageId: string): Promise<Response> {
+  if (!UUID.test(messageId)) return reasonError("invalid_request", "messageId");
+  if (!hasBearer(request)) return unauthenticated();
+  let input: { reason?: unknown };
+  try {
+    input = await request.json();
+  } catch {
+    return reasonError("invalid_request", "body");
+  }
+  const reason = input !== null && typeof input === "object" ? input.reason : undefined;
+  if (typeof reason !== "string" || !(REPORT_REASONS as readonly string[]).includes(reason)) {
+    return reasonError("invalid_request", "reason");
+  }
+
+  const target = await env.DB.prepare("SELECT conversation_id, seq FROM messages WHERE id = ?1")
+    .bind(messageId.toLowerCase())
+    .first<{ conversation_id: string; seq: number }>();
+  if (!target) return reasonError("not_found");
+
+  const auth = await authorize(request, env, target.conversation_id);
+  if (!auth.ok) return auth.response;
+  // A member who left may report only what they can still read.
+  if (auth.grant.leftAtSeq !== null && target.seq > auth.grant.leftAtSeq) return reasonError("not_a_member");
+
+  let res: Response;
+  try {
+    res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_report_message`, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: request.headers.get("Authorization") as string,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        p_conversation_id: target.conversation_id,
+        p_message_id: messageId.toLowerCase(),
+        p_message_seq: target.seq,
+        p_reason: reason,
+        p_access_mode: env.MESSAGING_ACCESS_MODE || "allowlist",
+      }),
+    });
+  } catch {
+    return upstreamError(502, "report unavailable");
+  }
+  if (res.status === 401) return unauthenticated("token rejected");
+  if (res.status === 403) return reasonError("not_a_member");
+  if (!res.ok) return upstreamError(502, "report failed");
+
+  await setLegalHold(env.DB, messageId.toLowerCase());
+  return new Response(null, { status: 202 });
 }
