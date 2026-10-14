@@ -178,14 +178,14 @@ select (r.details = 'free text') as pass_post_details_unchanged
   from public.report_content('post', :'post_target', 'spam', 'free text', null) r;
 ROLLBACK;
 
--- KAN-530 probe P13 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert of a message report with details is refused (23514).
+-- KAN-530 probe P13 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert (service_role) of a message report with details is refused (23514).
+-- Live fact (Alpha f171cd63): `authenticated` holds SELECT only on moderation_reports; only postgres and service_role insert directly.
 BEGIN;
-set local role authenticated;
-select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+set local role service_role;
 do $$
 begin
   insert into public.moderation_reports (reporter_user_id, target_type, target_id, reason, details)
-  values (auth.uid(), 'message', gen_random_uuid(), 'spam', 'free text');
+  values (:'user_a', 'message', gen_random_uuid(), 'spam', 'free text');
   raise exception 'FAIL pass_direct_message_with_details_refused: insert was accepted';
 exception when check_violation then
   raise notice 'pass_direct_message_with_details_refused = true (23514)';
@@ -193,24 +193,52 @@ end;
 $$;
 ROLLBACK;
 
--- KAN-530 probe P14 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert for a post with details succeeds.
+-- KAN-530 probe P14 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert (service_role) for a post with details succeeds.
 BEGIN;
-set local role authenticated;
-select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+set local role service_role;
 with ins as (
   insert into public.moderation_reports (reporter_user_id, target_type, target_id, reason, details)
-  values (auth.uid(), 'post', gen_random_uuid(), 'spam', 'free text')
+  values (:'user_a', 'post', gen_random_uuid(), 'spam', 'free text')
   returning details)
 select (details = 'free text') as pass_direct_post_with_details_ok from ins;
 ROLLBACK;
 
--- KAN-530 probe P15 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert of a message report with details NULL succeeds.
+-- KAN-530 probe P15 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert (service_role) of a message report with details NULL succeeds.
+BEGIN;
+set local role service_role;
+with ins as (
+  insert into public.moderation_reports (reporter_user_id, target_type, target_id, reason, details)
+  values (:'user_a', 'message', gen_random_uuid(), 'spam', null)
+  returning details)
+select (details is null) as pass_direct_message_null_details_ok from ins;
+ROLLBACK;
+
+-- KAN-530 probe P16 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: an UPDATE adding details to a message report is refused (23514).
+BEGIN;
+set local role service_role;
+insert into public.moderation_reports (id, reporter_user_id, target_type, target_id, reason, details)
+values ('00000000-0000-4000-8000-00000000e530', :'user_a', 'message', gen_random_uuid(), 'spam', null);
+do $$
+begin
+  update public.moderation_reports set details = 'free text' where id = '00000000-0000-4000-8000-00000000e530';
+  raise exception 'FAIL pass_update_message_details_refused: update was accepted';
+exception when check_violation then
+  raise notice 'pass_update_message_details_refused = true (23514)';
+end;
+$$;
+ROLLBACK;
+
+-- KAN-530 probe P17 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: authenticated cannot insert into moderation_reports directly (42501); reports go through report_content.
 BEGIN;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
-with ins as (
+do $$
+begin
   insert into public.moderation_reports (reporter_user_id, target_type, target_id, reason, details)
-  values (auth.uid(), 'message', gen_random_uuid(), 'spam', null)
-  returning details)
-select (details is null) as pass_direct_message_null_details_ok from ins;
+  values (auth.uid(), 'post', gen_random_uuid(), 'spam', null);
+  raise exception 'FAIL pass_authenticated_direct_insert_refused: insert was accepted';
+exception when insufficient_privilege then
+  raise notice 'pass_authenticated_direct_insert_refused = true (42501)';
+end;
+$$;
 ROLLBACK;

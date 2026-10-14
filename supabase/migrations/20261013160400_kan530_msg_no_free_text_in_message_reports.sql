@@ -1,9 +1,10 @@
--- KAN-530 (Messaging): a message report carries no free text. AUTHORED, NOT APPLIED (operations applies it).
+-- KAN-530 (Messaging): a message report carries no free text. Applied by operations (Alpha f171cd63).
 --
--- KAN-512 made a message report carry no message text in content_snapshot. Two baseline paths still
--- let a client store free text for target_type 'message' in moderation_reports.details:
+-- KAN-512 made a message report carry no message text in content_snapshot. Baseline paths still
+-- let free text for target_type 'message' reach moderation_reports.details:
 --   1. public.report_content inserted p_details unchanged (and copied it into the audit payload);
---   2. the policy mr_self_insert accepts any column values, so a direct insert needs no function.
+--   2. any other writer of the table (live: only postgres and service_role can insert directly,
+--      because authenticated holds SELECT only; client reports go through report_content).
 -- This migration closes both with the narrowest change:
 --   - report_content PINS details to NULL when p_target_type = 'message' (it does not raise, so an
 --     older client that still sends details keeps working; the text is discarded). The audit payload

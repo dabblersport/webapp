@@ -72,6 +72,18 @@ with a null reason.
 `20261013160400_kan530_msg_no_free_text_in_message_reports.sql` makes `report_content` discard `p_details` for
 target type `message` (details stored and audited as NULL) and adds one `NOT VALID` CHECK on
 `moderation_reports` (`target_type <> 'message' OR details IS NULL`) so a direct insert or update cannot
-carry details either. Other report types are unchanged. AUTHORED, NOT APPLIED; probes P11-P15 are
-AUTHORED, NOT RUN; rollback is the block in the migration's header comment. Before apply the executor
-runs the SELECT-only count in the migration header.
+carry details either. Other report types are unchanged. Rollback is the block in the migration's header
+comment. Before apply the executor ran the SELECT-only count in the migration header.
+
+Status: the migration is APPLIED live (Alpha f171cd63, operations report
+`cdispatch-f03cefc8-3727-41bb-84b9-1bae89007851`). P11 and P12 passed there. The direct-insert checks
+passed when run as `service_role`, and an UPDATE adding details to a message report was refused with
+23514. The probes P13-P17 in `probes.sql` were corrected afterwards to match and are AUTHORED, NOT RUN
+in their corrected form.
+
+Who can write: `authenticated` holds SELECT only on `moderation_reports` (an insert fails with 42501);
+only `postgres` and `service_role` insert directly. Client reports go through `report_content`
+(P17 asserts the refusal). The `mr_self_insert` policy is not the reachable path and was not changed.
+
+Open observation (not changed here): `report_content` stays executable by `anon` and PUBLIC. It refuses
+a NULL `auth.uid()` with `auth_required`, so an anonymous call fails, but the grant itself is unchanged.
