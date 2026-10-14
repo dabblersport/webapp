@@ -18,6 +18,7 @@ import { insertMessage } from "./db";
 import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
 import { setLegalHold } from "./retention";
 import { listPage, toApiMessage } from "./messages";
+import { preflightResponse, withCors } from "./cors";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
 
@@ -38,7 +39,7 @@ function json(status: number, body: unknown): Response {
   return new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } });
 }
 
-export default {
+const router = {
   async fetch(request: Request, env: Env): Promise<Response> {
     const url = new URL(request.url);
 
@@ -92,6 +93,16 @@ export default {
     if (rp && request.method === "POST") return reportMessage(request, env, rp[1]);
 
     return reasonError("not_found");
+  },
+};
+
+// KAN-538: CORS wraps the router for the public /v1/ routes only (src/cors.ts); /health and /internal/* are untouched.
+export default {
+  async fetch(request: Request, env: Env): Promise<Response> {
+    const pathname = new URL(request.url).pathname;
+    const preflight = preflightResponse(request, pathname);
+    if (preflight !== null) return preflight;
+    return withCors(request, pathname, await router.fetch(request, env));
   },
 };
 
