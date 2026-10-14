@@ -26,7 +26,7 @@ export interface Grant {
   userId: string;
   action: "send" | "read";
   /** Set when action is 'read': the typed reason a send is refused with. */
-  readOnlyReason: "left_read_only" | "game_ended" | null;
+  readOnlyReason: "left_read_only" | "game_ended" | "game_cancelled" | null;
   /** Set when the caller left: history is visible up to and including this seq only. */
   leftAtSeq: number | null;
 }
@@ -39,14 +39,12 @@ export type AuthOutcome = { ok: true; grant: Grant } | { ok: false; response: Re
  *   deny + status only -> that status with NO reason (client maps to unknown)
  *   readOnly           -> the RPC ALLOWED a read; a send is refused with this typed reason
  *
- * GAP (KAN-509, decision c): msg_authorize returns 'read_only' for BOTH an ended and a cancelled game, so the
- * Worker cannot tell them apart and maps both to game_ended. game_cancelled stays in the API contract.
- * Pending KAN follow-up: msg_authorize distinguishes cancelled; then only the read_only row changes.
+ * msg_authorize now distinguishes an ended game (game_ended) from a cancelled one (game_cancelled), so both pass through unchanged.
  */
 export type ReasonMapping =
   | { kind: "deny"; reason: Reason }
   | { kind: "deny"; status: 401 | 403 }
-  | { kind: "readOnly"; reason: "left_read_only" | "game_ended" };
+  | { kind: "readOnly"; reason: "left_read_only" | "game_ended" | "game_cancelled" };
 
 const RPC_REASONS: Record<string, ReasonMapping> = {
   not_authenticated: { kind: "deny", status: 401 },
@@ -55,7 +53,8 @@ const RPC_REASONS: Record<string, ReasonMapping> = {
   not_member: { kind: "deny", reason: "not_a_member" },
   removed: { kind: "deny", reason: "removed" },
   left: { kind: "readOnly", reason: "left_read_only" },
-  read_only: { kind: "readOnly", reason: "game_ended" },
+  game_ended: { kind: "readOnly", reason: "game_ended" },
+  game_cancelled: { kind: "readOnly", reason: "game_cancelled" },
 };
 
 /** Unknown reason strings deny with 403 and no reason. */

@@ -75,24 +75,41 @@ select (r.allowed_action = 'read' and r.reason = 'left' and r.left_at_seq = 42
   from public.msg_authorize('00000000-0000-4000-8000-00000000c505', 'allowlist') r;
 rollback;
 
--- P5 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Ended game not writable (D5).
+-- P5 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Ended game not writable (D5); reason is exactly game_ended.
 begin;
 insert into public.msg_access_allowlist (user_id) values (:'user_a');
 insert into public.msg_conversations (id, game_id) values ('00000000-0000-4000-8000-00000000c505', :'game_id');
 select (public.msg_can_send('00000000-0000-4000-8000-00000000c505', :'user_a', 'allowlist')) as pass_writable_before;
 update public.games set start_at = now() - interval '3 hours', end_at = now() - interval '1 minute' where id = :'game_id';
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+select (r.allowed_action = 'read' and r.reason = 'game_ended') as pass_ended_game_ended
+  from public.msg_authorize('00000000-0000-4000-8000-00000000c505', 'allowlist') r;
+reset role;
 select (not public.msg_can_send('00000000-0000-4000-8000-00000000c505', :'user_a', 'allowlist')
-        and public.msg_can_read('00000000-0000-4000-8000-00000000c505', :'user_a', 'allowlist')) as pass_ended_read_only;
+        and public.msg_can_read('00000000-0000-4000-8000-00000000c505', :'user_a', 'allowlist')) as pass_ended_still_readable;
 rollback;
 
--- P6 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Cancelled game not writable (D5).
+-- P6 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Cancelled game not writable (D5); reason is exactly game_cancelled.
 begin;
 insert into public.msg_access_allowlist (user_id) values (:'user_a');
 insert into public.msg_conversations (id, game_id) values ('00000000-0000-4000-8000-00000000c505', :'game_id');
 update public.games set is_cancelled = true, cancelled_at = now() where id = :'game_id';
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
-select (r.allowed_action = 'read' and r.reason = 'read_only') as pass_cancelled_read_only
+select (r.allowed_action = 'read' and r.reason = 'game_cancelled') as pass_cancelled_game_cancelled
+  from public.msg_authorize('00000000-0000-4000-8000-00000000c505', 'allowlist') r;
+rollback;
+
+-- P6b [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Cancelled AND past its end: cancelled wins.
+begin;
+insert into public.msg_access_allowlist (user_id) values (:'user_a');
+insert into public.msg_conversations (id, game_id) values ('00000000-0000-4000-8000-00000000c505', :'game_id');
+update public.games set is_cancelled = true, cancelled_at = now(),
+       start_at = now() - interval '3 hours', end_at = now() - interval '1 minute' where id = :'game_id';
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+select (r.allowed_action = 'read' and r.reason = 'game_cancelled') as pass_cancelled_and_ended_game_cancelled
   from public.msg_authorize('00000000-0000-4000-8000-00000000c505', 'allowlist') r;
 rollback;
 
