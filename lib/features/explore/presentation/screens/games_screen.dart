@@ -198,9 +198,10 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     return SetLocationWhenDenied(
       child: DabblerPage(
         body: ListingScaffold(
-          // The design's default header is plain (`gamesHead: 'none'`,
-          // `Listings.2026-10-08.dc.html:2085-2088`); the tint is its variant.
-          head: DabblerListingHead.none,
+          // The header block is the section brand tinted over the card colour
+          // (`gamesHead: 'tint'` with `sectionThemes`, `Listings.dc.html:2085-2088`);
+          // under the sport theme that is the sport pastel green, dark-resolved by the DS.
+          head: DabblerListingHead.tint,
           header: DabblerPageHeader(
             safeArea: false,
             contentPadding: DabblerPageHeader.listingPadding,
