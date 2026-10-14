@@ -8,6 +8,7 @@ import 'package:dabbler/data/models/feed/feed_post.dart';
 import 'package:dabbler/data/repositories/feed_repository.dart';
 import 'package:dabbler/data/repositories/feed_repository_impl.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 
 // ---------------------------------------------------------------------------
 // Repository DI
@@ -58,13 +59,22 @@ class NearbyFeedState {
 // Nearby feed notifier
 // ==========================================================================
 
+/// Reads the app's active location point (e.g. the persisted manual point),
+/// or null when none is ready. Must never ask for permission.
+typedef ActivePointReader = ({double lat, double lng})? Function();
+
 class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
-  NearbyFeedNotifier(this._repo, [GpsService? gps])
-    : _gps = gps ?? GpsService(),
-      super(const NearbyFeedState());
+  NearbyFeedNotifier(
+    this._repo, [
+    GpsService? gps,
+    ActivePointReader? activePoint,
+  ]) : _gps = gps ?? GpsService(),
+       _activePoint = activePoint,
+       super(const NearbyFeedState());
 
   final FeedRepository _repo;
   final GpsService _gps;
+  final ActivePointReader? _activePoint;
 
   /// Loads only if not previously loaded (cache-friendly across tab switches).
   Future<void> ensureLoaded() async {
@@ -80,20 +90,34 @@ class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
     double? lat;
     double? lng;
 
+    // 1. The active location (a manual point when permission is denied).
     try {
-      // Read-only: the OS permission prompt is never raised from here (only
-      // the location intro or an explicit user action asks for it).
-      final result = await _gps.getCurrentLocation(
-        requestPermission: false,
-        cap: DabblerMotion.timeoutShort,
-        accuracy: LocationAccuracy.low,
-      );
-      if (result is LocationSuccess) {
-        lat = result.lat;
-        lng = result.lng;
+      final point = _activePoint?.call();
+      if (point != null) {
+        lat = point.lat;
+        lng = point.lng;
       }
     } catch (_) {
-      // Location unavailable — use fallback.
+      // No active location — fall through to the read-only GPS attempt.
+    }
+
+    // 2. Read-only GPS, only when no active location point is available.
+    if (lat == null || lng == null) {
+      try {
+        // Read-only: the OS permission prompt is never raised from here (only
+        // the location intro or an explicit user action asks for it).
+        final result = await _gps.getCurrentLocation(
+          requestPermission: false,
+          cap: DabblerMotion.timeoutShort,
+          accuracy: LocationAccuracy.low,
+        );
+        if (result is LocationSuccess) {
+          lat = result.lat;
+          lng = result.lng;
+        }
+      } catch (_) {
+        // Location unavailable — use fallback.
+      }
     }
 
     final result = await _repo.getNearbyFeed(
@@ -119,5 +143,34 @@ class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
 final nearbyRpcFeedProvider =
     StateNotifierProvider<NearbyFeedNotifier, NearbyFeedState>((ref) {
       final repo = ref.watch(feedRepositoryProvider);
-      return NearbyFeedNotifier(repo, ref.watch(gpsServiceProvider));
+      ({double lat, double lng})? readPoint() {
+        final loc = ref.read(activeLocationProvider).valueOrNull;
+        if (loc is ActiveLocationReady) {
+          return (lat: loc.location.lat, lng: loc.location.lng);
+        }
+        return null;
+      }
+
+      final notifier = NearbyFeedNotifier(
+        repo,
+        ref.watch(gpsServiceProvider),
+        readPoint,
+      );
+      // Reload once when the active point actually moves (e.g. the user picks
+      // a manual point). load() never writes the active location: no loop.
+      ref.listen<AsyncValue<ActiveLocationState>>(activeLocationProvider, (
+        prev,
+        next,
+      ) {
+        final a = prev?.valueOrNull;
+        final b = next.valueOrNull;
+        if (b is! ActiveLocationReady) return;
+        if (a is ActiveLocationReady &&
+            a.location.lat == b.location.lat &&
+            a.location.lng == b.location.lng) {
+          return;
+        }
+        if (notifier.mounted && notifier.state.loaded) notifier.load();
+      });
+      return notifier;
     });
