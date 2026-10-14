@@ -52,6 +52,17 @@ class GameChatController
     return GameChatViewState(status: status, reason: reason);
   }
 
+  /// A later call refused with `removed` ends access: the thread, composer
+  /// and any cached messages are dropped (T6 spec 03). Returns whether it did.
+  bool _endIfRemoved(Failure failure) {
+    if (failure is! MessagingFailure ||
+        failure.reason != MessagingReason.removed) {
+      return false;
+    }
+    state = AsyncData(failureState(failure));
+    return true;
+  }
+
   static GameChatStatus _openStatus(Conversation c, List<ChatItem> items) {
     if (!c.writable) return GameChatStatus.readOnly;
     return items.isEmpty ? GameChatStatus.empty : GameChatStatus.ready;
@@ -107,6 +118,7 @@ class GameChatController
     if (item == null) return;
     result.fold(
       (failure) {
+        if (_endIfRemoved(failure)) return;
         final reason = failure is MessagingFailure
             ? failure.reason
             : MessagingReason.unknown;
@@ -207,7 +219,10 @@ class GameChatController
       conversationId: conversation.id,
       cursor: current.olderCursor,
     );
-    if (result is Err) return false;
+    if (result is Err) {
+      _endIfRemoved(result.requireError);
+      return false;
+    }
     final page = result.requireValue;
     final latest = state.valueOrNull ?? current;
     state = AsyncData(
@@ -231,7 +246,10 @@ class GameChatController
     final conversation = current?.conversation;
     if (current == null || conversation == null) return;
     final result = await _repo.listMessages(conversationId: conversation.id);
-    if (result is Err) return;
+    if (result is Err) {
+      _endIfRemoved(result.requireError);
+      return;
+    }
     final latest = state.valueOrNull;
     if (latest == null) return;
     final known = <String>{

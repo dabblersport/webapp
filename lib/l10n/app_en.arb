@@ -2291,5 +2291,9 @@
   "messaging_block_confirm": "Block",
   "messaging_block_cancel": "Cancel",
   "messaging_block_done": "Player blocked.",
-  "messaging_block_failed": "Couldn't block this player."
+  "messaging_block_failed": "Couldn't block this player.",
+  "messaging_chat_unavailable_line": "This chat isn't available right now.",
+  "messaging_chat_unavailable_action": "Go back",
+  "messaging_chat_removed_line": "You can no longer view this chat.",
+  "messaging_chat_removed_action": "Go back"
 }

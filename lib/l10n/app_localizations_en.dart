@@ -6418,4 +6418,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_block_failed => 'Couldn\'t block this player.';
+
+  @override
+  String get messaging_chat_unavailable_line =>
+      'This chat isn\'t available right now.';
+
+  @override
+  String get messaging_chat_unavailable_action => 'Go back';
+
+  @override
+  String get messaging_chat_removed_line => 'You can no longer view this chat.';
+
+  @override
+  String get messaging_chat_removed_action => 'Go back';
 }

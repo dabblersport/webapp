@@ -3,7 +3,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/messaging/presentation/screens/game_chat_screen.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access_state.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 
 /// Path of the game chat skeleton route (KAN-507). Kept here because
@@ -19,32 +19,39 @@ bool gameChatRouteEnabled({
   bool gameChat = FeatureFlags.enableMessagingGameChat,
 }) => messaging && gameChat;
 
-/// The redirect of the game chat route: when disabled it does exactly what the
-/// existing disabled messaging routes do (`socialMessagesRoute`,
-/// `socialChatConversationIdRoute`: redirect to home); otherwise none.
-String? gameChatRedirect({
+/// The body of the game chat route. When the route is disabled a deep link
+/// shows the T6 unavailable state (D19, KAN-518) and fetches nothing;
+/// otherwise the game chat screen (KAN-516, T16a), which itself shows
+/// unavailable / removed from the repository's typed reason.
+Widget gameChatRouteBody({
+  required String gameId,
+  DateTime? gameEndAt,
   bool messaging = FeatureFlags.messaging,
   bool gameChat = FeatureFlags.enableMessagingGameChat,
 }) => gameChatRouteEnabled(messaging: messaging, gameChat: gameChat)
-    ? null
-    : RoutePaths.home;
+    ? GameChatScreen(gameId: gameId, gameEndAt: gameEndAt)
+    : const GameChatAccessState(kind: GameChatAccessKind.unavailable);
 
-/// The game chat route. Its body is the game chat screen (KAN-516, T16a);
-/// `extra` may carry the game's `end_at`.
-GoRoute gameChatRoute({GlobalKey<NavigatorState>? parentNavigatorKey}) =>
-    GoRoute(
-      parentNavigatorKey: parentNavigatorKey,
-      path: gameChatRoutePath,
-      name: gameChatRouteName,
-      redirect: (context, state) => gameChatRedirect(),
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: GameChatScreen(
-          gameId: state.pathParameters['gameId'] ?? '',
-          gameEndAt: state.extra is DateTime ? state.extra as DateTime : null,
-        ),
-      ),
-    );
+/// The game chat route; `extra` may carry the game's `end_at`. No redirect:
+/// a disabled deep link lands on the unavailable state (KAN-518).
+GoRoute gameChatRoute({
+  GlobalKey<NavigatorState>? parentNavigatorKey,
+  bool messaging = FeatureFlags.messaging,
+  bool gameChat = FeatureFlags.enableMessagingGameChat,
+}) => GoRoute(
+  parentNavigatorKey: parentNavigatorKey,
+  path: gameChatRoutePath,
+  name: gameChatRouteName,
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: gameChatRouteBody(
+      gameId: state.pathParameters['gameId'] ?? '',
+      gameEndAt: state.extra is DateTime ? state.extra as DateTime : null,
+      messaging: messaging,
+      gameChat: gameChat,
+    ),
+  ),
+);
 
 /// Empty placeholder body (KAN-507): no copy, identified by key only. No longer
 /// the route body; kept for its existing tests.

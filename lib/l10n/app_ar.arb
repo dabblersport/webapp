@@ -2325,5 +2325,9 @@
   "messaging_block_confirm": "حظر",
   "messaging_block_cancel": "إلغاء",
   "messaging_block_done": "تم حظر اللاعب.",
-  "messaging_block_failed": "تعذّر حظر هذا اللاعب."
+  "messaging_block_failed": "تعذّر حظر هذا اللاعب.",
+  "messaging_chat_unavailable_line": "هذه المحادثة غير متاحة حاليًا.",
+  "messaging_chat_unavailable_action": "رجوع",
+  "messaging_chat_removed_line": "لم يعد بإمكانك عرض هذه المحادثة.",
+  "messaging_chat_removed_action": "رجوع"
 }
