@@ -81,9 +81,10 @@ void main() {
                 (n) =>
                     RegExp(r'^\d{14}_').hasMatch(n) &&
                     !_mine.contains(n) &&
+                    !n.contains('_msg_') &&
                     !n.contains(
-                      '_msg_',
-                    ), // later messaging migrations (KAN-510, KAN-529)
+                      '_kan530_',
+                    ), // later messaging migrations (KAN-510, KAN-529, KAN-530)
               )
               .toList()
             ..sort();
@@ -104,7 +105,16 @@ void main() {
         expect(_hasDrop(raw[n]!), isFalse, reason: n);
       }
       expect(_hasDrop(probes), isFalse);
-      expect(_hasDrop(rollback), isFalse);
+      // the one place DROP CONSTRAINT is allowed: the KAN-530 rollback of its own new CHECK
+      expect(
+        _hasDrop(
+          rollback.replaceAll(
+            'drop constraint if exists moderation_reports_message_no_details_check',
+            '',
+          ),
+        ),
+        isFalse,
+      );
       expect(_hasDrop(readme), isFalse);
     });
 
@@ -321,7 +331,7 @@ void main() {
         r'^-- P\d+b? \[(READ-ONLY|WRITE-IN-TRANSACTION-ROLLBACK)\] AUTHORED, NOT RUN\.',
         multiLine: true,
       ).allMatches(probes).length;
-      expect(heads, 11); // P1-P10 plus P6b (KAN-529)
+      expect(heads, 16); // P1-P10, P6b (KAN-529), P11-P15 (KAN-530)
       expect(
         RegExp(r'^begin;$', multiLine: true).allMatches(probes).length,
         heads,

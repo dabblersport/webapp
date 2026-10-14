@@ -66,3 +66,12 @@ on the exact string; renaming one is a breaking change. Meanings as implemented 
 
 An active member of a game that is neither ended nor cancelled gets allowed action `send`
 with a null reason.
+
+## KAN-530: no free text in a message report
+
+`20261013160200_kan530_report_content_no_message_text.sql` makes `report_content` discard `p_details` for
+target type `message` (details stored and audited as NULL) and adds one `NOT VALID` CHECK on
+`moderation_reports` (`target_type <> 'message' OR details IS NULL`) so a direct insert or update cannot
+carry details either. Other report types are unchanged. AUTHORED, NOT APPLIED; probes P11-P15 are
+AUTHORED, NOT RUN; rollback is the KAN-530 block at the end of `rollback.sql`. Before apply the executor
+runs the SELECT-only count in the migration header.
