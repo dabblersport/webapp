@@ -19,6 +19,7 @@ import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
 import { setLegalHold } from "./retention";
 import { listPage, toApiMessage } from "./messages";
 import { preflightResponse, withCors } from "./cors";
+import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
 
@@ -40,7 +41,7 @@ function json(status: number, body: unknown): Response {
 }
 
 const router = {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: WaitUntilContext): Promise<Response> {
     const url = new URL(request.url);
 
     if (request.method === "GET" && url.pathname === "/health") {
@@ -87,7 +88,7 @@ const router = {
 
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
-    if (m && request.method === "POST") return sendMessage(request, env, m[1]);
+    if (m && request.method === "POST") return sendMessage(request, env, m[1], ctx);
 
     const rp = REPORT_PATH.exec(url.pathname);
     if (rp && request.method === "POST") return reportMessage(request, env, rp[1]);
@@ -98,11 +99,11 @@ const router = {
 
 // KAN-538: CORS wraps the router for the public /v1/ routes only (src/cors.ts); /health and /internal/* are untouched.
 export default {
-  async fetch(request: Request, env: Env): Promise<Response> {
+  async fetch(request: Request, env: Env, ctx?: WaitUntilContext): Promise<Response> {
     const pathname = new URL(request.url).pathname;
     const preflight = preflightResponse(request, pathname);
     if (preflight !== null) return preflight;
-    return withCors(request, pathname, await router.fetch(request, env));
+    return withCors(request, pathname, await router.fetch(request, env, ctx));
   },
 };
 
@@ -131,7 +132,7 @@ async function listMessages(request: Request, env: Env, url: URL, conversationId
   return ok(page);
 }
 
-async function sendMessage(request: Request, env: Env, conversationId: string): Promise<Response> {
+async function sendMessage(request: Request, env: Env, conversationId: string, ctx?: WaitUntilContext): Promise<Response> {
   if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
   const key = request.headers.get("Idempotency-Key") ?? "";
   if (!UUID.test(key)) return reasonError("invalid_request", "Idempotency-Key");
@@ -155,6 +156,9 @@ async function sendMessage(request: Request, env: Env, conversationId: string): 
     body,
     clientKey: key.toLowerCase(),
   });
+  // KAN-543: wake the members only for a NEW message (201), never for an idempotent repeat (200). Scheduled after the
+  // response with ctx.waitUntil; it never delays or changes the send result.
+  if (created) scheduleNotify(ctx, env, request.headers.get("Authorization"), conversationId, row.seq);
   return json(created ? 201 : 200, toApiMessage(row, auth.grant.userId));
 }
 

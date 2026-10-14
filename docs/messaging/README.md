@@ -115,3 +115,22 @@ none and the app maps it to `unknown` with an unauthorized category.
 Backend conformance is checked in T8 (registry, `msg_can_*`, `msg_authorize`), T10 (Worker) and T14. Any of those tests
 that need a database are **AUTHORED, NOT RUN** until the CEO approves a non-production database; none exists today, and
 no document here claims any such test was run. The tests in this ticket are static: they run no SQL and no network.
+
+## Realtime wake-up (KAN-541, KAN-543): a hint, polling stays the truth
+
+After the Worker stores a NEW message (status 201, never an idempotent 200 repeat) it asks Supabase to wake the
+game's current members. The wake carries no message text; the app answers it by fetching `GET .../messages` with its
+`seq` cursor, exactly as polling does.
+
+- Topic: private, `user:<uid>`. A user may receive only on their own topic (policy `msg_user_topic_receive`).
+- Event name: `msg`.
+- Payload: `type` (always `"msg"`), `conversation_id`, `seq`, plus the platform's own `id` field. Nothing else:
+  no text, no sender, no media, no member list.
+- Recipients: the current active members of the game, the sender included. A member who blocked the sender, a member
+  who left and a removed member are not woken.
+- It is best effort. The Worker sends it through `ctx.waitUntil` after the response, forwarding the caller's own
+  `Authorization` header to `rpc/msg_notify` (the Worker holds no elevated key); a failure is swallowed and never
+  changes the send response. A missed wake is harmless: polling still returns every message, and the wake is never
+  the source of truth.
+- System lines (roster changes, cancellation) are woken by their own database trigger, not by this call.
+
