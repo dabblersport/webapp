@@ -209,7 +209,7 @@ void main() {
       () {
         for (final s in [
           'prosecdef',
-          "search_path=",
+          "array['search_path=\"\"']",
           'vault.decrypted_secrets',
           'msg_hmac_secret',
           'net.http_request_queue',
@@ -221,6 +221,33 @@ void main() {
         ]) {
           expect(probes, contains(s), reason: s);
         }
+      },
+    );
+
+    test(
+      'V1 compares search_path as Postgres stores it; V3 filters by the constant URL',
+      () {
+        expect(probes, contains("proconfig @> array['search_path=\"\"']"));
+        expect(probes, isNot(contains("array['search_path=']")));
+        final v3 = probes.substring(
+          probes.indexOf('-- V3 '),
+          probes.indexOf('-- V4 '),
+        );
+        final filtered = "where url = '$_url'";
+        expect(
+          RegExp(RegExp.escape(filtered)).allMatches(v3).length,
+          5,
+          reason:
+              'queue_before, the count, headers, url and body are all filtered',
+        );
+        expect(
+          v3,
+          isNot(
+            matches(
+              RegExp(r'from net\.http_request_queue\s*(\\gset|\)|order)'),
+            ),
+          ),
+        );
       },
     );
 

@@ -16,7 +16,7 @@
 begin read only;
 select
   (select prosecdef from pg_proc where oid = 'public.msg_system_notify(text,uuid,uuid)'::regprocedure) as pass_definer,
-  (select proconfig @> array['search_path='] from pg_proc where oid = 'public.msg_system_notify(text,uuid,uuid)'::regprocedure) as pass_empty_search_path,
+  (select proconfig @> array['search_path=""'] from pg_proc where oid = 'public.msg_system_notify(text,uuid,uuid)'::regprocedure) as pass_empty_search_path,
   (select pg_get_userbyid(proowner) = 'postgres' from pg_proc where oid = 'public.msg_system_notify(text,uuid,uuid)'::regprocedure) as pass_owner_postgres,
   (select prosrc ~ 'vault\.decrypted_secrets' and prosrc ~ 'msg_hmac_secret' and prosrc !~ 'app\.msg_' from pg_proc where oid = 'public.msg_system_notify(text,uuid,uuid)'::regprocedure) as pass_reads_vault_not_settings,
   (select prosrc ~ 'dabbler-messaging-staging\.dabbler-sport\.workers\.dev/internal/system-line' from pg_proc where oid = 'public.msg_system_notify(text,uuid,uuid)'::regprocedure) as pass_constant_url,
@@ -30,20 +30,21 @@ begin read only;
 select exists (select 1 from vault.decrypted_secrets where name = 'msg_hmac_secret' and decrypted_secret is not null and decrypted_secret <> '') as pass_secret_present;
 rollback;
 
--- V3 [WRITE-IN-TRANSACTION-ROLLBACK] With the secret present, a join and a removal each queue
+-- V3 [WRITE-IN-TRANSACTION-ROLLBACK] With the secret present (the queue is filtered by the system-line URL: the
+-- roster change also queues an unrelated push-notification request from another trigger), a join and a removal each queue
 -- exactly one signed request; the signature header has the expected shape (value not printed).
 begin;
-select count(*) as queue_before from net.http_request_queue \gset
+select count(*) as queue_before from net.http_request_queue where url = 'https://dabbler-messaging-staging.dabbler-sport.workers.dev/internal/system-line' \gset
 insert into public.game_roster (game_id, profile_id, user_id, role, status) values (:'game_id', :'profile_x', :'user_x', 'player', 'active');
 update public.game_roster set status = 'kicked' where game_id = :'game_id' and user_id = :'user_x';
 select
-  (select count(*) from net.http_request_queue) - :queue_before = 2 as pass_two_requests,
+  (select count(*) from net.http_request_queue where url = 'https://dabbler-messaging-staging.dabbler-sport.workers.dev/internal/system-line') - :queue_before = 2 as pass_two_requests,
   (select bool_and(headers ->> 'X-Msg-Signature' ~ '^sha256=[0-9a-f]{64}$')
-     from (select headers from net.http_request_queue order by id desc limit 2) q) as pass_signature_header_present_and_well_formed,
+     from (select headers from net.http_request_queue where url = 'https://dabbler-messaging-staging.dabbler-sport.workers.dev/internal/system-line' order by id desc limit 2) q) as pass_signature_header_present_and_well_formed,
   (select bool_and(url = 'https://dabbler-messaging-staging.dabbler-sport.workers.dev/internal/system-line')
-     from (select url from net.http_request_queue order by id desc limit 2) q) as pass_constant_url_used,
+     from (select url from net.http_request_queue where url = 'https://dabbler-messaging-staging.dabbler-sport.workers.dev/internal/system-line' order by id desc limit 2) q) as pass_constant_url_used,
   (select bool_and(convert_from(body, 'utf8')::jsonb ->> 'event' in ('joined','removed'))
-     from (select body from net.http_request_queue order by id desc limit 2) q) as pass_events;
+     from (select body from net.http_request_queue where url = 'https://dabbler-messaging-staging.dabbler-sport.workers.dev/internal/system-line' order by id desc limit 2) q) as pass_events;
 rollback;
 
 -- V4 [WRITE-IN-TRANSACTION-ROLLBACK] A cancellation queues one request; nothing else does.
