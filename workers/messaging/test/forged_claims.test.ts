@@ -1,7 +1,7 @@
 // (b) C4 / AC1: a token with forged claims still makes the Worker act ONLY on the msg_authorize result.
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
-import { CONV_A, RPC_URL, env, localD1, mockFetch, rpcJson } from "./helpers";
+import { CONV_A, RPC_URL, authRow, env, localD1, mockFetch, rpcJson } from "./helpers";
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -18,7 +18,7 @@ function forgedToken(): string {
 describe("(b) forged claims", () => {
   it("whoami returns only the RPC's user_id and forwards the header byte-identically", async () => {
     const authorization = `Bearer ${forgedToken()}`;
-    const { calls, unmocked } = mockFetch(rpcJson({ user_id: "real-user", allowed: true }));
+    const { calls, unmocked } = mockFetch(rpcJson([authRow()]));
     const { mf, db } = await localD1();
     try {
       const res = await worker.fetch(
@@ -42,7 +42,7 @@ describe("(b) forged claims", () => {
 
   it("the DB row written through the probe uses real-user; victim-user appears nowhere in D1", async () => {
     const authorization = `Bearer ${forgedToken()}`;
-    const { calls, unmocked } = mockFetch(rpcJson([{ user_id: "real-user", allowed: true }]));
+    const { calls, unmocked } = mockFetch(rpcJson([authRow()]));
     const { mf, db } = await localD1();
     try {
       const res = await worker.fetch(

@@ -79,7 +79,7 @@ Every failure body is `{ "error": { "reason", "message", "retry_after_seconds" }
 | `removed` | 403 | Removed by the organiser (`kicked` or another non-active status): nothing may be viewed. |
 | `left_read_only` | 403 | The member left: history only, up to the boundary; sending refused. |
 | `game_ended` | 409 | `end_at` has passed: read-only. |
-| `game_cancelled` | 409 | The game is cancelled: read-only. |
+| `game_cancelled` | 409 | The game is cancelled: read-only. pending KAN follow-up: msg_authorize distinguishes cancelled |
 | `blocked` | 403 | A direct block between the two users (reserved: game chat does not return it in P2). |
 | `suspended` | 403 | The user's account is suspended. |
 | `rate_limited` | 429 | Too many requests; `retry_after_seconds` says when. |

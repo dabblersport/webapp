@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker, { VERSION } from "../src/index";
-import { CONV_A, RPC_URL, env, localD1, mockFetch, rpcJson, spyDb } from "./helpers";
+import { CONV_A, RPC_URL, authRow, env, localD1, mockFetch, rpcJson, spyDb } from "./helpers";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -30,7 +30,7 @@ describe("(e) missing or malformed Authorization", () => {
     ["bearer without token", { Authorization: "Bearer " }],
   ] as const) {
     it(`${name}: 401 with no reason, zero RPC calls, zero DB access`, async () => {
-      const { calls, unmocked } = mockFetch(rpcJson({ user_id: "x", allowed: true }));
+      const { calls, unmocked } = mockFetch(rpcJson([authRow({ user_id: "x" })]));
       const { db, touched } = spyDb();
       const res = await worker.fetch(whoami(headers as Record<string, string>), env(db));
       expect(res.status).toBe(401);
@@ -45,7 +45,7 @@ describe("(e) missing or malformed Authorization", () => {
 
 describe("(d) no authorisation cache (AC2)", () => {
   it("two requests with the same token call msg_authorize twice, exactly once each", async () => {
-    const { calls, unmocked } = mockFetch(rpcJson({ user_id: "real-user", allowed: true }));
+    const { calls, unmocked } = mockFetch(rpcJson([authRow()]));
     const { db } = spyDb();
     const h = { Authorization: "Bearer same.token.value" };
     const r1 = await worker.fetch(whoami(h), env(db));
@@ -61,7 +61,7 @@ describe("(d) no authorisation cache (AC2)", () => {
   it("a revocation between two requests takes effect on the second", async () => {
     let allowed = true;
     const { calls } = mockFetch(() =>
-      new Response(JSON.stringify({ user_id: "real-user", allowed, reason: allowed ? undefined : "removed" }), {
+      new Response(JSON.stringify([authRow(allowed ? {} : { allowed_action: null, reason: "removed" })]), {
         status: 200,
       }),
     );
