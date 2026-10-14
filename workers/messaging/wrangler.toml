@@ -15,3 +15,21 @@ migrations_dir = "migrations"
 SUPABASE_URL = "https://example.invalid"
 # SUPABASE_ANON_KEY: variable NAME only. Supply it from the local environment (e.g. .dev.vars, gitignored
 # by the developer); no value is ever written in this repository.
+
+# KAN-534: staging. FREE tier only. Nothing is deployed by this file; no route, no custom domain, no R2, no cron.
+# The account id comes from the environment (CLOUDFLARE_ACCOUNT_ID), never from this file.
+# Reached only at https://dabbler-messaging-staging.dabbler-sport.workers.dev (workers_dev). SKELETON_PROBE is not set.
+[env.staging]
+name = "dabbler-messaging-staging"
+workers_dev = true
+
+[[env.staging.d1_databases]]
+binding = "DB"
+database_name = "dabbler-messaging-staging"
+database_id = "299ff24f-f413-4a54-a032-33d81f438a3f"
+migrations_dir = "migrations"
+
+[env.staging.vars]
+# The public Supabase project URL (not a secret). The anon key is a secret binding: name only, supplied outside the repo.
+SUPABASE_URL = "https://wtncuzcskpigqpmnxwws.supabase.co"
+MESSAGING_ACCESS_MODE = "off"
