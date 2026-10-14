@@ -164,13 +164,6 @@ const List<GateAllow> allowList = [
     _pickerReason,
     match: '1200',
   ),
-  GateAllow(
-    'lib/data/models/social/chat_message_model.dart',
-    ['numeric named arg'],
-    'Attachment byte size parsed from JSON; a data field named size, not a '
-        'visual size.',
-    match: '?? 0',
-  ),
   GateAllow('lib/core/config/supabase_config.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
@@ -211,9 +204,6 @@ const List<GateAllow> allowList = [
     'Domain duration literal',
   ], _domainDurationReason),
   GateAllow('lib/data/models/profile/sports_profile.dart', [
-    'Domain duration literal',
-  ], _domainDurationReason),
-  GateAllow('lib/data/models/social/chat_message_model.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
   GateAllow(
@@ -274,11 +264,6 @@ const List<GateAllow> allowList = [
   GateAllow('lib/features/profile/services/data_retention_service.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
-  GateAllow(
-    'lib/features/social/presentation/controllers/chat_controller.dart',
-    ['Domain duration literal'],
-    _domainDurationReason,
-  ),
   GateAllow(
     'lib/features/social/presentation/controllers/friend_requests_controller.dart',
     ['Domain duration literal'],
