@@ -5,6 +5,7 @@
 //   POST /v1/_probe  skeleton-only, OFF unless SKELETON_PROBE = "1"; writes one row via src/db.ts as the RPC's user_id.
 //   GET  /v1/conversations/{id}/messages  list, seq cursor both directions, cut at left_at_seq (T14).
 //   POST /v1/conversations/{id}/messages  send text, idempotent on (sender, conversation, Idempotency-Key) (T14).
+//   GET  /v1/moderation/reports/{reportId}/message  audited moderator read of one reported message (T18, src/moderation.ts).
 // System lines (T15), block filtering (T17), realtime, attachments, reactions, receipts: NOT built here.
 // Per request: at most 1 subrequest (msg_authorize) + 1 D1 batch.
 
@@ -12,6 +13,7 @@ import { Env, authorize } from "./auth";
 import { insertMessage } from "./db";
 import { ok, reasonError } from "./errors";
 import { listPage, toApiMessage } from "./messages";
+import { MODERATION_PATH, readReportedMessage } from "./moderation";
 
 export const VERSION = "messaging-skeleton/0.0.1";
 
@@ -67,6 +69,10 @@ export default {
       });
       return ok({ created, message: row });
     }
+
+    // KAN-513 (T18): the single moderator read of one reported message. GET only; no list variant exists.
+    const mod = MODERATION_PATH.exec(url.pathname);
+    if (mod && request.method === "GET") return readReportedMessage(request, env, mod[1]);
 
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
