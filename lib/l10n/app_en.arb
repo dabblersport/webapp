@@ -2284,6 +2284,7 @@
   "messaging_report_failed": "Couldn't send your report.",
   "messaging_report_retry": "Try again",
   "messaging_report_done": "Done",
+  "messaging_report_cancel": "Cancel",
   "messaging_block_action": "Block player",
   "messaging_block_title": "Block this player?",
   "messaging_block_body": "You can unblock them later from your settings.",

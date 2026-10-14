@@ -6395,6 +6395,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_report_done => 'Done';
 
   @override
+  String get messaging_report_cancel => 'Cancel';
+
+  @override
   String get messaging_block_action => 'Block player';
 
   @override

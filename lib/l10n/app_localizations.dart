@@ -11519,6 +11519,12 @@ abstract class AppLocalizations {
   /// **'Done'**
   String get messaging_report_done;
 
+  /// No description provided for @messaging_report_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get messaging_report_cancel;
+
   /// No description provided for @messaging_block_action.
   ///
   /// In en, this message translates to:

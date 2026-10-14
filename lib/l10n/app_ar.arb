@@ -2318,6 +2318,7 @@
   "messaging_report_failed": "تعذّر إرسال بلاغك.",
   "messaging_report_retry": "حاول مرة أخرى",
   "messaging_report_done": "تم",
+  "messaging_report_cancel": "إلغاء",
   "messaging_block_action": "حظر اللاعب",
   "messaging_block_title": "حظر هذا اللاعب؟",
   "messaging_block_body": "يمكنك إلغاء الحظر لاحقًا من الإعدادات.",

@@ -311,6 +311,9 @@ void main() {
         for (final c in ReportCategory.values) {
           expect(find.byKey(GameChatSafetyKeys.reason(c)), findsOneWidget);
         }
+        expect(find.byKey(GameChatSafetyKeys.reportSubmit), findsOneWidget);
+        expect(find.byKey(GameChatSafetyKeys.reportCancel), findsOneWidget);
+        expect(find.text(l10n.messaging_report_cancel), findsOneWidget);
         await _shot(tester, 'report-${v.name}');
         await _tap(
           tester,
@@ -322,6 +325,28 @@ void main() {
         expect(repo.reports, [(id, ReportCategory.harassment)]);
         expect(repo.wasReported(id), isTrue);
         await _shot(tester, 'report-submitted-${v.name}');
+        _expectNothingForbidden(tester, l10n);
+      });
+
+      testWidgets('report: cancel closes without a repository call', (
+        tester,
+      ) async {
+        final repo = _Repo()..seedGameConversation('g1', messageCount: 2);
+        await tester.pumpWidget(_app(repo, _Block(), v));
+        await _settle(tester);
+        await _tap(tester, find.text('m1'));
+        await _tap(tester, find.byKey(GameChatSafetyKeys.reportAction));
+        expect(find.byKey(GameChatSafetyKeys.reportSubmit), findsOneWidget);
+        expect(find.byKey(GameChatSafetyKeys.reportCancel), findsOneWidget);
+        await _tap(
+          tester,
+          find.byKey(GameChatSafetyKeys.reason(ReportCategory.spam)),
+        );
+        await _tap(tester, find.byKey(GameChatSafetyKeys.reportCancel));
+        expect(find.byKey(GameChatSafetyKeys.reportSheet), findsNothing);
+        expect(repo.reports, isEmpty);
+        final id = repo.storedMessages('conv-g1').first.id;
+        expect(repo.wasReported(id), isFalse);
         _expectNothingForbidden(tester, l10n);
       });
 

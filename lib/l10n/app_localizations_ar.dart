@@ -6448,6 +6448,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messaging_report_done => 'تم';
 
   @override
+  String get messaging_report_cancel => 'إلغاء';
+
+  @override
   String get messaging_block_action => 'حظر اللاعب';
 
   @override

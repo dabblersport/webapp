@@ -20,6 +20,7 @@ abstract final class GameChatSafetyKeys {
   static const reportSubmitted = ValueKey<String>('messaging-report-submitted');
   static const reportFailed = ValueKey<String>('messaging-report-failed');
   static const reportRetry = ValueKey<String>('messaging-report-retry');
+  static const reportCancel = ValueKey<String>('messaging-report-cancel');
   static const blockSheet = ValueKey<String>('messaging-block-sheet');
   static const blockConfirm = ValueKey<String>('messaging-block-confirm');
   static const blockDone = ValueKey<String>('messaging-block-done');
@@ -175,6 +176,14 @@ class _GameChatReportSheetState extends State<GameChatReportSheet> {
               loading: busy,
               disabled: _reason == null || busy,
               onPressed: _submit,
+            ),
+            DabblerButton(
+              key: GameChatSafetyKeys.reportCancel,
+              label: l10n.messaging_report_cancel,
+              tone: DabblerButtonTone.text,
+              fullWidth: true,
+              disabled: busy,
+              onPressed: () => Navigator.of(context).pop(),
             ),
           ],
         ),
