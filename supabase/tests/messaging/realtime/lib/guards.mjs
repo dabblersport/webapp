@@ -82,18 +82,40 @@ export function assertOnlyFixtureGame(label, rosterRows, fixtureGameId = FIXTURE
   }
 }
 
+/** How many games OTHER than the fixture game the account is active on. A number only: no id, no name. */
+export function countForeignActive(rosterRows, fixtureGameId = FIXTURE_GAME_ID) {
+  return (rosterRows ?? []).filter((r) => r.status === "active" && r.game_id !== fixtureGameId).length;
+}
+
+/**
+ * The block of A by B removes only the follows between the two test accounts. It is safe only when B hosts no
+ * game and B has no follow with anybody but A. `counts` are numbers (read-only facts); nothing else is accepted.
+ */
+export function assertBlockSafe({ hostedGames, followsWithOthers }) {
+  if (!Number.isInteger(hostedGames) || !Number.isInteger(followsWithOthers)) {
+    throw new GuardError("block-unsafe", "B: could not establish that the block affects nothing else");
+  }
+  if (hostedGames > 0) throw new GuardError("block-unsafe", "B hosts a game: a block could affect it");
+  if (followsWithOthers > 0) throw new GuardError("block-unsafe", "B has follows with someone other than A: a block would remove them");
+}
+
 /** The runner needs both accounts active on the fixture game to start. */
 export function assertOnFixtureGame(label, rosterRows, fixtureGameId = FIXTURE_GAME_ID) {
   const on = (rosterRows ?? []).some((r) => r.status === "active" && r.game_id === fixtureGameId);
   if (!on) throw new GuardError("not-on-fixture", `${label}: not an active member of the fixture game`);
 }
 
-/** All guards in the order the runner applies them. `facts` is {A: {profiles, roster}, B: {...}}. */
+/**
+ * All guards in the order the runner applies them. `facts` is {A: {profiles, roster}, B: {...}}.
+ * B (who performs the roster changes and the block) must be on NO game but the fixture game. A may be on other
+ * games: only their COUNT is returned (never an id or a name) and the runner never targets them (lib/actions.mjs).
+ */
 export function runGuards({ supabaseUrl, facts }) {
   assertProjectUrl(supabaseUrl);
   for (const label of ["A", "B"]) {
     assertTestProfiles(label, facts[label].profiles);
-    assertOnlyFixtureGame(label, facts[label].roster);
     assertOnFixtureGame(label, facts[label].roster);
   }
+  assertOnlyFixtureGame("B", facts.B.roster);
+  return { aOtherGames: countForeignActive(facts.A.roster) };
 }

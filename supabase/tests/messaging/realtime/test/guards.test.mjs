@@ -84,7 +84,7 @@ test("guard refuses an account active on a foreign game, ignores history", () =>
 test("runGuards requires both accounts on the fixture game", () => {
   const ok = { profiles: [{ username: "t_test", display_name: "T" }], roster: [{ game_id: FIXTURE_GAME_ID, status: "active" }] };
   const url = "https://wtncuzcskpigqpmnxwws.supabase.co";
-  assert.doesNotThrow(() => runGuards({ supabaseUrl: url, facts: { A: ok, B: ok } }));
+  assert.deepEqual(runGuards({ supabaseUrl: url, facts: { A: ok, B: ok } }), { aOtherGames: 0 });
   assert.throws(
     () => runGuards({ supabaseUrl: url, facts: { A: ok, B: { ...ok, roster: [] } } }),
     (e) => e.code === "not-on-fixture",
