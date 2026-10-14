@@ -217,7 +217,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           onAllowLocation: () async {
             Navigator.pop(context);
             await _locationService.saveLocationPreference('allow');
-            await _locationService.fetchLocation();
+            await _locationService.fetchLocation(requestPermission: true);
           },
           onRemindLater: () async {
             Navigator.pop(context);

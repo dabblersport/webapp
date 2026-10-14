@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:dabbler/core/services/location_permission_state.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -33,7 +34,7 @@ class GeolocatorPermissionGateway implements LocationPermissionGateway {
   Future<LocationPermission> check() => Geolocator.checkPermission();
 
   @override
-  Future<LocationPermission> request() => Geolocator.requestPermission();
+  Future<LocationPermission> request() => LocationPermissionState.requestOnce();
 
   @override
   Future<bool> servicesEnabled() => Geolocator.isLocationServiceEnabled();
