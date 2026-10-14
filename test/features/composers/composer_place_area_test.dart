@@ -53,7 +53,7 @@ PostComposerNotifier _setUp() {
   _repo = _Repo();
   final gps = MockGpsService();
   final areas = MockAreaRepository();
-  when(gps.getCurrentLocation()).thenAnswer(
+  when(gps.getCurrentLocation(cap: GpsService.fixCap)).thenAnswer(
     (_) async => LocationSuccess(lat: 25.08, lng: 55.14, accuracyMeters: 5),
   );
   when(areas.resolveNearest(25.08, 55.14)).thenAnswer((_) async => _marina);

@@ -90,7 +90,7 @@ void main() {
   });
 
   test('area resolved sets name and area id', () async {
-    when(gps.getCurrentLocation()).thenAnswer(
+    when(gps.getCurrentLocation(cap: GpsService.fixCap)).thenAnswer(
       (_) async => LocationSuccess(lat: lat, lng: lng, accuracyMeters: 5),
     );
     when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => marina);
@@ -117,7 +117,7 @@ void main() {
     test(
       'no area sets fallback label and coordinates (${l.localeName})',
       () async {
-        when(gps.getCurrentLocation()).thenAnswer(
+        when(gps.getCurrentLocation(cap: GpsService.fixCap)).thenAnswer(
           (_) async => LocationSuccess(lat: lat, lng: lng, accuracyMeters: 5),
         );
         when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => null);
@@ -151,7 +151,9 @@ void main() {
   };
   for (final e in failures.entries) {
     test('denied leaves state untouched (${e.key})', () async {
-      when(gps.getCurrentLocation()).thenAnswer((_) async => e.value());
+      when(
+        gps.getCurrentLocation(cap: GpsService.fixCap),
+      ).thenAnswer((_) async => e.value());
       final c = containerFor(gps, areas);
       final n = c.read(postComposerProvider.notifier);
       n.setRawLocation(name: 'Kept', lat: 1, lng: 2);
@@ -172,7 +174,7 @@ void main() {
 
   test('denied leaves state untouched (gps throws)', () async {
     when(
-      gps.getCurrentLocation(),
+      gps.getCurrentLocation(cap: GpsService.fixCap),
     ).thenAnswer((_) async => throw StateError('x'));
     final c = containerFor(gps, areas);
     final before = c.read(postComposerProvider);
@@ -190,7 +192,7 @@ void main() {
   });
 
   test('active location is never written', () async {
-    when(gps.getCurrentLocation()).thenAnswer(
+    when(gps.getCurrentLocation(cap: GpsService.fixCap)).thenAnswer(
       (_) async => LocationSuccess(lat: lat, lng: lng, accuracyMeters: 5),
     );
     when(areas.resolveNearest(lat, lng)).thenAnswer((_) async => marina);
@@ -202,6 +204,29 @@ void main() {
           .useCurrentLocation(fallbackName: en.composer_place_current_location),
     );
     // The composer asked the GPS once, itself — not via the active location.
-    verify(gps.getCurrentLocation()).called(1);
+    verify(gps.getCurrentLocation(cap: GpsService.fixCap)).called(1);
+  });
+
+  test('the fix wait is capped at GpsService.fixCap', () async {
+    when(
+      gps.getCurrentLocation(cap: GpsService.fixCap),
+    ).thenAnswer((_) async => LocationTimeout());
+    final c = containerFor(gps, areas);
+    final n = c.read(postComposerProvider.notifier);
+    n.setRawLocation(name: 'Kept', lat: 1, lng: 2);
+    final before = c.read(postComposerProvider);
+
+    final outcome = await n.useCurrentLocation(
+      fallbackName: en.composer_place_current_location,
+    );
+
+    expect(outcome, ComposerLocateOutcome.unavailable);
+    expect(identical(c.read(postComposerProvider), before), isTrue);
+    final cap = verify(
+      gps.getCurrentLocation(cap: captureAnyNamed('cap')),
+    ).captured;
+    expect(cap, [GpsService.fixCap]);
+    verifyNever(gps.getCurrentLocation());
+    verifyNever(areas.resolveNearest(any, any));
   });
 }

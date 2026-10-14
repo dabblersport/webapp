@@ -65,18 +65,33 @@ begin
   perform set_config('k523.b', b::text, true);
 end $$;
 do $$
-declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid; admins int; n0 int; n1 int;
+declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid;
+        admins int; before_ids text[]; new_rows int; new_distinct int; per_admin_bad int; stray int;
 begin
   select count(*) into admins from public.app_admins;
-  select count(*) into n0 from public.notifications where kind_key = 'moderation.user_blocked'
-     and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
+  if admins < 1 then raise exception 'SETUP FAIL: app_admins is empty, so no notification can be expected; use a database with at least one test admin'; end if;
+  if a = b or not exists (select 1 from public.profiles where user_id = a and is_active) or not exists (select 1 from public.profiles where user_id = b and is_active) then
+    raise exception 'SETUP FAIL: the blocker and the blocked user must be two distinct active test users'; end if;
+  raise notice 'A3 fixture: blocker=% blocked=% admins=%', a, b, admins;
+  -- snapshot the ids that exist BEFORE the block, so only NEW rows are judged
+  select coalesce(array_agg(id::text), '{}') into before_ids from public.notifications
+   where kind_key = 'moderation.user_blocked' and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k523.a'), 'role', 'authenticated')::text, true); set local role authenticated;
   perform public.rpc_block_user(b);
   reset role;
-  select count(*) into n1 from public.notifications where kind_key = 'moderation.user_blocked'
-     and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
-  if n1 - n0 <> admins then raise exception 'A3 FAIL: expected % notifications, got %', admins, n1 - n0; end if;
-  raise notice 'A3 PASS (admins=%)', admins;
+  create temp table k523_new on commit drop as
+    select n.id::text as id, n.to_user_id from public.notifications n
+     where n.kind_key = 'moderation.user_blocked' and n.context->>'blocker_user_id' = a::text and n.context->>'blocked_user_id' = b::text
+       and not (n.id::text = any (before_ids));
+  select count(*), count(distinct to_user_id) into new_rows, new_distinct from k523_new;
+  if new_rows <> admins then raise exception 'A3 FAIL: expected % NEW notifications (one per admin), got %', admins, new_rows; end if;
+  if new_distinct <> admins then raise exception 'A3 FAIL: the % new notifications reach only % distinct recipients', new_rows, new_distinct; end if;
+  select count(*) into stray from k523_new where to_user_id not in (select user_id from public.app_admins);
+  if stray <> 0 then raise exception 'A3 FAIL: % new notifications went to someone who is not an admin', stray; end if;
+  select count(*) into per_admin_bad from public.app_admins ad
+   where (select count(*) from k523_new k where k.to_user_id = ad.user_id) <> 1;
+  if per_admin_bad <> 0 then raise exception 'A3 FAIL: % admins did not get exactly one new notification', per_admin_bad; end if;
+  raise notice 'A3 PASS (admins=%, exactly one NEW notification per admin, no extras)', admins;
 end $$;
 rollback;
 
@@ -132,19 +147,34 @@ begin
   perform set_config('k523.b', b::text, true);
 end $$;
 do $$
-declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid; admins int; n0 int; n1 int;
+declare a uuid := current_setting('k523.a')::uuid; b uuid := current_setting('k523.b')::uuid;
+        admins int; before_ids text[]; new_rows int; new_distinct int; per_admin_bad int; stray int;
 begin
   if not exists (select 1 from pg_trigger where tgname = 'trg_notify_admins_of_block' and tgenabled = 'O') then
     raise exception 'B3 FAIL: trg_notify_admins_of_block missing or disabled'; end if;
   select count(*) into admins from public.app_admins;
-  select count(*) into n0 from public.notifications where kind_key = 'moderation.user_blocked'
-     and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
+  if admins < 1 then raise exception 'SETUP FAIL: app_admins is empty, so no notification can be expected; use a database with at least one test admin'; end if;
+  if a = b or not exists (select 1 from public.profiles where user_id = a and is_active) or not exists (select 1 from public.profiles where user_id = b and is_active) then
+    raise exception 'SETUP FAIL: the blocker and the blocked user must be two distinct active test users'; end if;
+  raise notice 'B3 fixture: blocker=% blocked=% admins=%', a, b, admins;
+  -- snapshot the ids that exist BEFORE the block, so only NEW rows are judged
+  select coalesce(array_agg(id::text), '{}') into before_ids from public.notifications
+   where kind_key = 'moderation.user_blocked' and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k523.a'), 'role', 'authenticated')::text, true); set local role authenticated;
   perform public.rpc_block_user(b);
   reset role;
-  select count(*) into n1 from public.notifications where kind_key = 'moderation.user_blocked'
-     and context->>'blocker_user_id' = a::text and context->>'blocked_user_id' = b::text;
-  if n1 - n0 <> admins then raise exception 'B3 FAIL (STOP): expected % notifications, got %', admins, n1 - n0; end if;
-  raise notice 'B3 PASS (admins=%)', admins;
+  create temp table k523_new on commit drop as
+    select n.id::text as id, n.to_user_id from public.notifications n
+     where n.kind_key = 'moderation.user_blocked' and n.context->>'blocker_user_id' = a::text and n.context->>'blocked_user_id' = b::text
+       and not (n.id::text = any (before_ids));
+  select count(*), count(distinct to_user_id) into new_rows, new_distinct from k523_new;
+  if new_rows <> admins then raise exception 'B3 FAIL: expected % NEW notifications (one per admin), got %', admins, new_rows; end if;
+  if new_distinct <> admins then raise exception 'B3 FAIL: the % new notifications reach only % distinct recipients', new_rows, new_distinct; end if;
+  select count(*) into stray from k523_new where to_user_id not in (select user_id from public.app_admins);
+  if stray <> 0 then raise exception 'B3 FAIL: % new notifications went to someone who is not an admin', stray; end if;
+  select count(*) into per_admin_bad from public.app_admins ad
+   where (select count(*) from k523_new k where k.to_user_id = ad.user_id) <> 1;
+  if per_admin_bad <> 0 then raise exception 'B3 FAIL: % admins did not get exactly one new notification', per_admin_bad; end if;
+  raise notice 'B3 PASS (admins=%, exactly one NEW notification per admin, no extras)', admins;
 end $$;
 rollback;

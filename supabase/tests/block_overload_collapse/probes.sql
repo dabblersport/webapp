@@ -202,10 +202,13 @@ rollback;
 
 -- B4 [WRITE-IN-TRANSACTION-ROLLBACK] AC3/AC5: as authenticated, block and unblock through the
 --    1-argument form still work: block writes user_blocks (one row), writes NOTHING to restrictions,
---    fires trg_notify_admins_of_block (one notification per admin), unblock removes the row.
+--    fires trg_notify_admins_of_block (a notification row for the fixture admin), unblock removes the row.
+--    Fixtures (all rolled back): three distinct active users: a (blocker), b (blocked), adm (a test admin
+--    row inserted into app_admins inside this transaction). Setup FAILS if the fixtures cannot be built, so
+--    the trigger assertion is never skipped.
 begin;
 do $$
-declare a uuid; b uuid; u0 int; u1 int; u2 int; r0 int; r1 int; n0 int; n1 int; admins int;
+declare a uuid; b uuid; adm uuid; u0 int; u1 int; u2 int; r0 int; r1 int; n0 int; n1 int; admins int;
 begin
   select p.user_id into a from public.profiles p where p.is_active order by p.created_at limit 1;
   select p.user_id into b from public.profiles p
@@ -214,27 +217,34 @@ begin
                       where (x.blocker_user_id = a and x.blocked_user_id = p.user_id)
                          or (x.blocker_user_id = p.user_id and x.blocked_user_id = a))
    order by p.created_at limit 1;
-  if a is null or b is null then raise exception 'SETUP FAIL: need two active users with no block between them'; end if;
+  select p.user_id into adm from public.profiles p
+   where p.is_active and p.user_id not in (a, b) order by p.created_at limit 1;
+  if a is null or b is null or adm is null then
+    raise exception 'SETUP FAIL: need three distinct active users (blocker, blocked, admin fixture), a and b with no block between them';
+  end if;
+  insert into public.app_admins (user_id) select adm where not exists (select 1 from public.app_admins where user_id = adm);
   select count(*) into admins from public.app_admins;
+  if admins < 1 or not exists (select 1 from public.app_admins where user_id = adm) then
+    raise exception 'SETUP FAIL: the admin fixture was not created';
+  end if;
   select count(*) into u0 from public.user_blocks;
   select count(*) into r0 from public.restrictions;
-  select count(*) into n0 from public.notifications where kind_key = 'moderation.user_blocked';
+  select count(*) into n0 from public.notifications where kind_key = 'moderation.user_blocked' and to_user_id = adm;
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true); set local role authenticated;
   perform public.rpc_block_user(b);
   reset role;
   select count(*) into u1 from public.user_blocks;
   select count(*) into r1 from public.restrictions;
-  select count(*) into n1 from public.notifications where kind_key = 'moderation.user_blocked';
+  select count(*) into n1 from public.notifications where kind_key = 'moderation.user_blocked' and to_user_id = adm;
   if u1 <> u0 + 1 then raise exception 'B4 FAIL: block did not write one user_blocks row (% -> %)', u0, u1; end if;
   if r1 <> r0 then raise exception 'B4 FAIL: block wrote restrictions (% -> %)', r0, r1; end if;
-  if admins > 0 and n1 <> n0 + admins then raise exception 'B4 FAIL: trg_notify_admins_of_block did not fire (% -> %, admins %)', n0, n1, admins; end if;
-  if admins = 0 then raise notice 'B4 NOTE: no app_admins on this database, so the notification count could not be asserted'; end if;
+  if n1 <> n0 + 1 then raise exception 'B4 FAIL: trg_notify_admins_of_block did not notify the admin fixture (% -> %)', n0, n1; end if;
   perform set_config('request.jwt.claims', json_build_object('sub', a, 'role', 'authenticated')::text, true); set local role authenticated;
   perform public.rpc_unblock_user(b);
   reset role;
   select count(*) into u2 from public.user_blocks;
   if u2 <> u0 then raise exception 'B4 FAIL: unblock left % rows (expected %)', u2, u0; end if;
-  raise notice 'B4 PASS';
+  raise notice 'B4 PASS (block wrote user_blocks only, the admin fixture was notified, unblock removed the row)';
 end $$;
 rollback;
 

@@ -17,7 +17,7 @@ live for this ticket and nothing was run against any database. Project `wtncuzcs
   executable by anon, authenticated and service_role in the baseline, and the app does not call it (0 hits in
   `lib/` and `supabase/functions/`). It is not a caller of this overload, but after this ticket the API can still
   create a `blocked` row in `restrictions` through it. The ticket changes one function only, so it is reported,
-  not touched. See "Residual second block store" below.
+  not touched. See "Second block store: closed by KAN-522" below.
 
 ## Evidence recorded (commands run on Alpha `3879a977`)
 
@@ -37,6 +37,10 @@ Catalog evidence supplied by the KAN-496 report (`LIVE_EVIDENCE.md` E1 and E2, r
 **Not measured live:** the dependents of the 2-argument overload (`pg_depend`) were not queried by KAN-496 or
 here, so "no caller in the database" rests on the repo reading above; probe A3 in `probes.sql` reads the
 dependents at apply time and must return no row.
+
+## Live catalog evidence: NOT obtained by this team (needs-ops)
+
+The repo map above is complete, but the live catalog read (dependents of the 2-argument overload in `pg_depend`, function bodies, views, policies and triggers that mention it, and the row counts) has NOT been measured for this ticket: the ops guard refuses `execute_sql` for team Karnak (D-042), and a read-only catalog SELECT was attempted and refused. **needs-ops: Memphis runs probes.sql block A3 (read-only) and A4 on project wtncuzcskpigqpmnxwws and records the output here.** Expected: A3 returns no row from any of its four queries; A4 shows user_blocks 3, restrictions 0 (KAN-496 E2, 2026-10-13). Until Memphis records it, "no live caller" is an inference from the repo, not a measurement. If A3 returns a row the migration must not be applied until that caller is migrated.
 
 ## Callers of `rpc_block_user(uuid, boolean)`
 
@@ -62,17 +66,13 @@ dependents at apply time and must return no row.
 So a client that called the 2-argument overload would record a block that no guard reads: it would **look**
 blocked to that client and be enforced nowhere. Removing it from the callable API is the safe direction.
 
-## Residual second block store (reported, not changed)
+## Second block store: closed by KAN-522, migration 20261013130000
 
-`public.rpc_restrict_set(p_target uuid, p_type text)` (SECURITY DEFINER; `p_type in ('hidden','blocked')`) and
-`public.rpc_restrict_clear(p_target uuid, p_type text)` write and delete `restrictions` rows, including
-`blocked`. No function, view or policy in the repo reads `blocked` rows from `restrictions`, so a block made that way is not enforced. The app
-does not call either (0 hits). After this ticket these two are the only API path that can still create a
-`restrictions` `blocked` row; the carry-over in the migration copies existing rows once, it does not prevent
-new ones. Closing it needs a separate ticket (the ticket's DECISIONS name `rpc_block_user(uuid, boolean)` as the
-only function to change and retire the table separately). **Decision for the CEO/PM:** raise a ticket to make
-`rpc_restrict_set` / `rpc_restrict_clear` refuse `'blocked'` (or revoke them), before relying on AC3 as "the
-API can only write user_blocks".
+`public.rpc_restrict_set(p_target uuid, p_type text)` and `public.rpc_restrict_clear(p_target uuid, p_type text)` could
+write and delete `restrictions` rows of type `blocked`; the app does not call either (0 hits). That path has its own ticket,
+**KAN-522** (migration `20261013130000_restrict_rpcs_reject_blocked.sql`, reviewed), which makes both refuse the type `blocked`.
+**AC3 ("blocking through the API can only write user_blocks") is satisfied by KAN-499 (20261013120000) and KAN-522
+(20261013130000) together, applied in that order.** This ticket stays limited to `rpc_block_user(uuid, boolean)`.
 
 ## Dependency on KAN-497
 
