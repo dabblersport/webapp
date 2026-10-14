@@ -17,6 +17,8 @@ import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1", "[::1]"]);
+// eslint-disable-next-line no-control-regex
+const SAFE_PATH = /^\/(?!\/)[^\\\s\x00-\x1f\x7f@]*$/;
 
 function num(env, name, dflt, { required = false, min = 0 } = {}) {
   const raw = env[name];
@@ -47,12 +49,22 @@ export function validateConfig(env) {
   }
   const path = env.MESSAGING_LOAD_PATH || "/health";
   if (!path.startsWith("/")) throw new Error("REFUSED: MESSAGING_LOAD_PATH must start with /");
+  // A plain absolute path only: one leading "/", never "//" (network-path reference), no backslash,
+  // whitespace, control characters or "@" -- any of which can make new URL() resolve to another host.
+  if (!SAFE_PATH.test(path)) throw new Error("REFUSED: MESSAGING_LOAD_PATH must be a plain absolute path");
   const token = env.MESSAGING_LOAD_TOKEN;
   if (path !== "/health" && !token) throw new Error("REFUSED: MESSAGING_LOAD_TOKEN is required for a protected path");
 
+  // Defence in depth: validate the RESOLVED target, not only the base.
+  const resolved = new URL(path, url);
+  if (resolved.origin !== url.origin) throw new Error(`REFUSED: resolved target origin ${resolved.origin} differs from ${url.origin}`);
+  if (!LOCAL_HOSTS.has(resolved.hostname) && !allowed.includes(resolved.hostname)) {
+    throw new Error(`REFUSED: resolved target host ${resolved.hostname} is not approved`);
+  }
+
   const pilotPeak = num(env, "PILOT_PEAK_RPS", undefined, { required: true });
   return {
-    target: new URL(path, url).href,
+    target: resolved.href,
     host,
     hasToken: Boolean(token),
     token,
@@ -100,9 +112,10 @@ async function runPhase(cfg, phase, doFetch) {
       doFetch(cfg.target, {
         headers: cfg.token ? { Authorization: `Bearer ${cfg.token}` } : {},
         signal: AbortSignal.timeout(cfg.timeoutMs),
+        redirect: "manual", // never follow a redirect off the approved host; a redirect counts as a failure
       })
         .then((r) => {
-          if (!r.ok) errors++;
+          if (!r.ok || r.type === "opaqueredirect" || (r.status >= 300 && r.status < 400)) errors++;
           return r.arrayBuffer();
         })
         .catch(() => errors++)

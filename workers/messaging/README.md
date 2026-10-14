@@ -71,7 +71,8 @@ SQLite, was exercised. A real-D1 check belongs to a later ticket with a non-prod
 
 ## Load script (D26)
 Refuses unless `MESSAGING_LOAD_BASE_URL` is set and its host is localhost/127.0.0.1/::1 or listed exactly in
-`MESSAGING_LOAD_ALLOW_HOST`; never defaults to a host. Phase 1 sustains `2 × PILOT_PEAK_RPS` for `DURATION_S`, then
+`MESSAGING_LOAD_ALLOW_HOST`; never defaults to a host. Host AND path are validated (`MESSAGING_LOAD_PATH` must be a plain
+absolute path), the resolved target is re-checked against the base origin, and redirects are never followed. Phase 1 sustains `2 × PILOT_PEAK_RPS` for `DURATION_S`, then
 steps up by `STEP_PCT` until the error-rate or p95 budget is breached and records the ceiling. Results go to
 `scripts/load/results/` (gitignored). `--dry-run` validates and prints the plan without sending.
 

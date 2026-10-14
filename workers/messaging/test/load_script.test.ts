@@ -51,3 +51,69 @@ describe("load script dry run", () => {
     expect(doFetch).not.toHaveBeenCalled();
   });
 });
+
+describe("load script path / resolved-target guard (KAN-506 QA fix)", () => {
+  const local = { ...base, MESSAGING_LOAD_BASE_URL: "http://127.0.0.1:8787", MESSAGING_LOAD_TOKEN: "t" };
+  const refused: [string, string][] = [
+    ["network-path //host", "//evil.example/x"],
+    ["triple slash", "///evil.example"],
+    ["slash-backslash", "/\\evil.example/x"],
+    ["leading backslashes", "\\\\evil.example"],
+    ["tab", "/\tevil"],
+    ["tab then slash", "/\t/evil.example"],
+    ["newline then slash", "/\n/evil.example"],
+    ["absolute http URL", "http://evil.example/x"],
+    ["scheme-relative other port", "//127.0.0.1:9999/x"],
+    ["bare host", "evil.example/x"],
+    ["space", "/a b"],
+    ["userinfo @", "/@evil.example"],
+  ];
+  it.each(refused)("refuses %s", (_name, path) => {
+    expect(() => validateConfig({ ...local, MESSAGING_LOAD_PATH: path })).toThrow(/^REFUSED:/);
+  });
+  it("the QA repro //evil.example/x is refused in dry run and sends nothing", async () => {
+    const doFetch = vi.fn();
+    await expect(
+      run({ ...base, MESSAGING_LOAD_BASE_URL: "http://127.0.0.1:8787", MESSAGING_LOAD_PATH: "//evil.example/x" }, { dryRun: true, doFetch, out: vi.fn() }),
+    ).rejects.toThrow(/^REFUSED:/);
+    expect(doFetch).not.toHaveBeenCalled();
+  });
+  it("refuses an allow-listed base whose path would switch protocol/port", () => {
+    const b = { ...base, MESSAGING_LOAD_TOKEN: "t", MESSAGING_LOAD_BASE_URL: "https://staging.example.invalid", MESSAGING_LOAD_ALLOW_HOST: "staging.example.invalid" };
+    expect(() => validateConfig({ ...b, MESSAGING_LOAD_PATH: "//staging.example.invalid:8443/x" })).toThrow(/^REFUSED:/);
+    expect(() => validateConfig({ ...b, MESSAGING_LOAD_PATH: "http://staging.example.invalid/x" })).toThrow(/^REFUSED:/);
+  });
+  const accepted: [string, string][] = [
+    ["default /health", "/health"],
+    ["plain path", "/v1/conversations/abc/messages"],
+    ["encoded %2F%2F is a literal segment", "/%2F%2Fevil.example"],
+    ["query string", "/v1/x?limit=5"],
+  ];
+  it.each(accepted)("accepts %s and keeps the base origin", (_name, path) => {
+    const cfg = validateConfig({ ...local, MESSAGING_LOAD_PATH: path });
+    expect(new URL(cfg.target).origin).toBe(new URL(local.MESSAGING_LOAD_BASE_URL).origin);
+  });
+});
+
+describe("load script never follows a redirect", () => {
+  it("sends only to cfg.target with redirect: manual and counts a 302 to another host as an error", async () => {
+    const doFetch = vi.fn(async () => ({
+      ok: false,
+      status: 302,
+      type: "basic",
+      headers: new Headers({ location: "http://evil.example/x" }),
+      arrayBuffer: async () => new ArrayBuffer(0),
+    }));
+    const report = await run(
+      { ...base, PILOT_PEAK_RPS: "20", MESSAGING_LOAD_BASE_URL: "http://127.0.0.1:8787", DURATION_S: "0.05", STEP_DURATION_S: "0.05", MAX_STEPS: "1" },
+      { dryRun: false, doFetch, out: vi.fn() },
+    );
+    expect(doFetch).toHaveBeenCalled();
+    for (const [u, init] of doFetch.mock.calls as unknown as [string, RequestInit][]) {
+      expect(u).toBe("http://127.0.0.1:8787/health");
+      expect(init.redirect).toBe("manual");
+    }
+    expect(report.results[0].errors).toBe(report.results[0].sent);
+    expect(report.sustainPassed).toBe(false);
+  });
+});
