@@ -1,6 +1,6 @@
 -- KAN-524 probe pack: create_post keeps the place
 --
--- Covers: supabase/migrations/20261013150000_create_post_keeps_place.sql
+-- Covers: supabase/migrations/20261013125000_create_post_keeps_place.sql
 --
 -- STATUS: AUTHORED, NOT RUN. Nothing in this file was executed against any database while writing it, and
 -- this ticket does not claim it was. Memphis runs it under the CEO approval of 2026-10-13 (execute_sql only,
@@ -66,7 +66,7 @@ end $$;
 rollback;
 
 -- ===========================================================================
--- B. POST-APPLY -- run AFTER 20261013150000_create_post_keeps_place.sql
+-- B. POST-APPLY -- run AFTER 20261013125000_create_post_keeps_place.sql
 -- ===========================================================================
 
 -- B1 [READ-ONLY] AC2/AC4: exactly one callable create_post (20 arguments, the first 15 unchanged); the legacy
