@@ -5,8 +5,11 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/features/messaging/presentation/controllers/game_chat_controller.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
+import 'package:dabbler/features/messaging/domain/typed_reason.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -14,7 +17,10 @@ import 'package:dabbler/l10n/app_localizations.dart';
 ///
 /// States: loading (skeleton), empty, populated, sending, failed (Retry
 /// resends with the same idempotency key), offline. Polling refresh only.
-/// Closed/read-only banners, mute, report and block are part b; the
+/// Part b (KAN-517, T16b): when the repository reports game_ended or
+/// game_cancelled the composer is replaced by the DS composer notice (reads
+/// still work); conversation-level mute/unmute in the top bar (no Leave, D6);
+/// another member's message opens Report and Block sheets. The
 /// unavailable/removed handling is part c (the route redirect is unchanged).
 class GameChatScreen extends ConsumerStatefulWidget {
   const GameChatScreen({super.key, required this.gameId, this.gameEndAt});
@@ -32,6 +38,7 @@ class GameChatScreen extends ConsumerStatefulWidget {
   static const offlineKey = ValueKey<String>('messaging-chat-offline');
   static const errorKey = ValueKey<String>('messaging-chat-error');
   static const pagerKey = ValueKey<String>('messaging-chat-older-pager');
+  static const closedNoticeKey = ValueKey<String>('messaging-chat-closed');
 
   @override
   ConsumerState<GameChatScreen> createState() => _GameChatScreenState();
@@ -135,6 +142,8 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
           body = _thread(context, l10n, view);
           if (view.status == GameChatStatus.ready) {
             composer = _composer(l10n, view);
+          } else if (view.isClosedByGame) {
+            composer = _closedNotice(l10n, view);
           }
         case GameChatStatus.unavailable:
         case GameChatStatus.removed:
@@ -152,6 +161,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
         title: l10n.messaging_chat_title,
         backLabel: l10n.auth_back,
         onBack: () => context.canPop() ? context.pop() : null,
+        actions: [if (view?.conversation != null) _muteAction(l10n, view!)],
       ),
       body: body,
       bottomBar: composer,
@@ -176,6 +186,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
       key: GameChatScreen.threadKey,
       context: DabblerMessageContext.group,
       items: items,
+      onMessagePress: (m) => _openOptions(view, m),
       header: view.hasOlder
           ? DabblerOlderMessagesPager(
               key: GameChatScreen.pagerKey,
@@ -190,6 +201,61 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
           : null,
     );
   }
+
+  GameChatController get _controller =>
+      ref.read(gameChatControllerProvider(widget.gameId).notifier);
+
+  DabblerNavigationAction _muteAction(
+    AppLocalizations l10n,
+    GameChatViewState view,
+  ) {
+    final muted = view.isMuted;
+    return DabblerNavigationAction(
+      icon: muted ? 'volume-slash' : 'volume-high',
+      label: muted ? l10n.messaging_chat_unmute : l10n.messaging_chat_mute,
+      loading: _muting,
+      onPressed: _muting ? null : () => _toggleMute(!muted),
+    );
+  }
+
+  bool _muting = false;
+
+  Future<void> _toggleMute(bool muted) async {
+    setState(() => _muting = true);
+    await _controller.setMuted(muted);
+    if (mounted) setState(() => _muting = false);
+  }
+
+  /// Another member's text message opens Report and Block. Own messages,
+  /// pending sends and system lines open nothing.
+  void _openOptions(GameChatViewState view, DabblerThreadMessage m) {
+    if (m.direction != DabblerMessageDirection.incoming || m.id == null) {
+      return;
+    }
+    final item = view.items.where((i) => i.message?.id == m.id).firstOrNull;
+    final message = item?.message;
+    final sender = message?.senderUserId;
+    if (message == null || sender == null) return;
+    showGameChatMessageOptions(
+      context,
+      senderUserId: sender,
+      onReport: (reason) => _controller.report(message.id, reason),
+    );
+  }
+
+  /// The DS composer notice that replaces the input row once the game ended
+  /// or was cancelled (typed reason from the repository).
+  Widget _closedNotice(AppLocalizations l10n, GameChatViewState view) =>
+      DabblerChatComposer(
+        key: GameChatScreen.closedNoticeKey,
+        value: '',
+        notice: DabblerComposerNotice(
+          icon: 'lock',
+          text: view.reason == MessagingReason.gameCancelled
+              ? l10n.messaging_chat_closed_cancelled
+              : l10n.messaging_chat_closed_ended,
+        ),
+      );
 
   Widget _composer(AppLocalizations l10n, GameChatViewState view) =>
       DabblerChatComposer(

@@ -5,6 +5,7 @@ import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
+import 'package:dabbler/features/messaging/domain/models/report_category.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
@@ -105,20 +106,80 @@ class GameChatController
         .firstOrNull;
     if (item == null) return;
     result.fold(
-      (failure) => _replace(
-        key,
-        item.copyWith(
-          state: OutgoingState.failed,
-          failureReason: failure is MessagingFailure
-              ? failure.reason
-              : MessagingReason.unknown,
-        ),
-      ),
+      (failure) {
+        final reason = failure is MessagingFailure
+            ? failure.reason
+            : MessagingReason.unknown;
+        _replace(
+          key,
+          item.copyWith(state: OutgoingState.failed, failureReason: reason),
+        );
+        // A send refused because the game ended or was cancelled closes the
+        // chat: the repository's typed reason decides, not a client rule.
+        if (reason == MessagingReason.gameEnded ||
+            reason == MessagingReason.gameCancelled) {
+          _close(reason);
+        }
+      },
       (message) => _replace(
         key,
         item.copyWith(message: message, state: OutgoingState.sent),
       ),
     );
+  }
+
+  void _close(MessagingReason reason) {
+    final current = state.valueOrNull;
+    final c = current?.conversation;
+    if (current == null || c == null) return;
+    state = AsyncData(
+      current.copyWith(
+        status: GameChatStatus.readOnly,
+        reason: reason,
+        conversation: _with(c, writable: false, readOnlyReason: reason),
+      ),
+    );
+  }
+
+  static Conversation _with(
+    Conversation c, {
+    bool? writable,
+    bool? muted,
+    MessagingReason? readOnlyReason,
+  }) => Conversation(
+    id: c.id,
+    gameId: c.gameId,
+    writable: writable ?? c.writable,
+    muted: muted ?? c.muted,
+    lastSeq: c.lastSeq,
+    readOnlyReason: readOnlyReason ?? c.readOnlyReason,
+    boundary: c.boundary,
+  );
+
+  /// Mutes or unmutes the conversation (conversation-level; there is no
+  /// leave, D6). Returns false when the repository refused; the state is
+  /// unchanged then.
+  Future<bool> setMuted(bool muted) async {
+    final c = state.valueOrNull?.conversation;
+    if (c == null) return false;
+    final result = muted
+        ? await _repo.muteConversation(c.id)
+        : await _repo.unmuteConversation(c.id);
+    if (result is Err) return false;
+    final latest = state.valueOrNull;
+    final lc = latest?.conversation;
+    if (latest == null || lc == null) return true;
+    state = AsyncData(latest.copyWith(conversation: _with(lc, muted: muted)));
+    return true;
+  }
+
+  /// Reports [messageId] with [reason]. Returns whether it was accepted.
+  Future<bool> report(String messageId, ReportCategory reason) async {
+    final result = await _repo.reportMessage(
+      messageId: messageId,
+      reason: reason,
+    );
+    return result is! Err;
   }
 
   void _replace(String key, ChatItem replacement) {

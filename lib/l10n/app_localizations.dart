@@ -11368,6 +11368,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Game finished'**
   String get messaging_chat_game_finished;
+
+  /// No description provided for @messaging_chat_closed_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'This game has ended. The chat is read-only.'**
+  String get messaging_chat_closed_ended;
+
+  /// No description provided for @messaging_chat_closed_cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'This game was cancelled. The chat is read-only.'**
+  String get messaging_chat_closed_cancelled;
+
+  /// No description provided for @messaging_chat_mute.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute chat'**
+  String get messaging_chat_mute;
+
+  /// No description provided for @messaging_chat_unmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute chat'**
+  String get messaging_chat_unmute;
+
+  /// No description provided for @messaging_chat_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat muted'**
+  String get messaging_chat_muted;
+
+  /// No description provided for @messaging_chat_mute_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change mute. Try again.'**
+  String get messaging_chat_mute_failed;
+
+  /// No description provided for @messaging_chat_message_options.
+  ///
+  /// In en, this message translates to:
+  /// **'Message options'**
+  String get messaging_chat_message_options;
+
+  /// No description provided for @messaging_report_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Report message'**
+  String get messaging_report_action;
+
+  /// No description provided for @messaging_report_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Report message'**
+  String get messaging_report_title;
+
+  /// No description provided for @messaging_report_prompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Why are you reporting this message?'**
+  String get messaging_report_prompt;
+
+  /// No description provided for @messaging_report_reason_spam.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get messaging_report_reason_spam;
+
+  /// No description provided for @messaging_report_reason_abuse.
+  ///
+  /// In en, this message translates to:
+  /// **'Abuse'**
+  String get messaging_report_reason_abuse;
+
+  /// No description provided for @messaging_report_reason_hate.
+  ///
+  /// In en, this message translates to:
+  /// **'Hate speech'**
+  String get messaging_report_reason_hate;
+
+  /// No description provided for @messaging_report_reason_harassment.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get messaging_report_reason_harassment;
+
+  /// No description provided for @messaging_report_reason_nudity.
+  ///
+  /// In en, this message translates to:
+  /// **'Nudity or sexual content'**
+  String get messaging_report_reason_nudity;
+
+  /// No description provided for @messaging_report_reason_illegal.
+  ///
+  /// In en, this message translates to:
+  /// **'Illegal activity'**
+  String get messaging_report_reason_illegal;
+
+  /// No description provided for @messaging_report_reason_danger.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger to someone\'s safety'**
+  String get messaging_report_reason_danger;
+
+  /// No description provided for @messaging_report_reason_scam.
+  ///
+  /// In en, this message translates to:
+  /// **'Scam or fraud'**
+  String get messaging_report_reason_scam;
+
+  /// No description provided for @messaging_report_reason_impersonation.
+  ///
+  /// In en, this message translates to:
+  /// **'Impersonation'**
+  String get messaging_report_reason_impersonation;
+
+  /// No description provided for @messaging_report_reason_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Something else'**
+  String get messaging_report_reason_other;
+
+  /// No description provided for @messaging_report_submit.
+  ///
+  /// In en, this message translates to:
+  /// **'Send report'**
+  String get messaging_report_submit;
+
+  /// No description provided for @messaging_report_submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks. Your report was sent to our moderation team.'**
+  String get messaging_report_submitted;
+
+  /// No description provided for @messaging_report_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your report.'**
+  String get messaging_report_failed;
+
+  /// No description provided for @messaging_report_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get messaging_report_retry;
+
+  /// No description provided for @messaging_report_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Done'**
+  String get messaging_report_done;
+
+  /// No description provided for @messaging_report_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get messaging_report_cancel;
+
+  /// No description provided for @messaging_block_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Block player'**
+  String get messaging_block_action;
+
+  /// No description provided for @messaging_block_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Block this player?'**
+  String get messaging_block_title;
+
+  /// No description provided for @messaging_block_body.
+  ///
+  /// In en, this message translates to:
+  /// **'You can unblock them later from your settings.'**
+  String get messaging_block_body;
+
+  /// No description provided for @messaging_block_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Block'**
+  String get messaging_block_confirm;
+
+  /// No description provided for @messaging_block_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get messaging_block_cancel;
+
+  /// No description provided for @messaging_block_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Player blocked.'**
+  String get messaging_block_done;
+
+  /// No description provided for @messaging_block_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t block this player.'**
+  String get messaging_block_failed;
 }
 
 class _AppLocalizationsDelegate

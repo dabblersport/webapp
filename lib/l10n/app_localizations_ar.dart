@@ -6368,4 +6368,106 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_chat_game_finished => 'انتهت المباراة';
+
+  @override
+  String get messaging_chat_closed_ended =>
+      'انتهت هذه المباراة. الدردشة للقراءة فقط.';
+
+  @override
+  String get messaging_chat_closed_cancelled =>
+      'أُلغيت هذه المباراة. الدردشة للقراءة فقط.';
+
+  @override
+  String get messaging_chat_mute => 'كتم الدردشة';
+
+  @override
+  String get messaging_chat_unmute => 'إلغاء كتم الدردشة';
+
+  @override
+  String get messaging_chat_muted => 'الدردشة مكتومة';
+
+  @override
+  String get messaging_chat_mute_failed => 'تعذّر تغيير الكتم. حاول مرة أخرى.';
+
+  @override
+  String get messaging_chat_message_options => 'خيارات الرسالة';
+
+  @override
+  String get messaging_report_action => 'الإبلاغ عن الرسالة';
+
+  @override
+  String get messaging_report_title => 'الإبلاغ عن رسالة';
+
+  @override
+  String get messaging_report_prompt => 'لماذا تبلّغ عن هذه الرسالة؟';
+
+  @override
+  String get messaging_report_reason_spam => 'رسائل مزعجة';
+
+  @override
+  String get messaging_report_reason_abuse => 'إساءة';
+
+  @override
+  String get messaging_report_reason_hate => 'خطاب كراهية';
+
+  @override
+  String get messaging_report_reason_harassment => 'تحرّش';
+
+  @override
+  String get messaging_report_reason_nudity => 'عُري أو محتوى جنسي';
+
+  @override
+  String get messaging_report_reason_illegal => 'نشاط غير قانوني';
+
+  @override
+  String get messaging_report_reason_danger => 'خطر على سلامة أحد';
+
+  @override
+  String get messaging_report_reason_scam => 'احتيال';
+
+  @override
+  String get messaging_report_reason_impersonation => 'انتحال شخصية';
+
+  @override
+  String get messaging_report_reason_other => 'سبب آخر';
+
+  @override
+  String get messaging_report_submit => 'إرسال البلاغ';
+
+  @override
+  String get messaging_report_submitted =>
+      'شكرًا. أُرسل بلاغك إلى فريق الإشراف.';
+
+  @override
+  String get messaging_report_failed => 'تعذّر إرسال بلاغك.';
+
+  @override
+  String get messaging_report_retry => 'حاول مرة أخرى';
+
+  @override
+  String get messaging_report_done => 'تم';
+
+  @override
+  String get messaging_report_cancel => 'إلغاء';
+
+  @override
+  String get messaging_block_action => 'حظر اللاعب';
+
+  @override
+  String get messaging_block_title => 'حظر هذا اللاعب؟';
+
+  @override
+  String get messaging_block_body => 'يمكنك إلغاء الحظر لاحقًا من الإعدادات.';
+
+  @override
+  String get messaging_block_confirm => 'حظر';
+
+  @override
+  String get messaging_block_cancel => 'إلغاء';
+
+  @override
+  String get messaging_block_done => 'تم حظر اللاعب.';
+
+  @override
+  String get messaging_block_failed => 'تعذّر حظر هذا اللاعب.';
 }
