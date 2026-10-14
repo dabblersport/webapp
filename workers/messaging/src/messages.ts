@@ -1,5 +1,8 @@
 // KAN-509 (T14): API shapes and seq-cursor pagination over the local D1 messages table.
-// Text only. No system lines (T15), no group block filtering (T17), no read state.
+// Text only. No system lines (T15), no read state.
+// KAN-512 (T17): group block filter. Senders in `hidden` (the viewer's own blocks, from msg_authorize) are excluded
+// in SQL from the page AND from the other-side existence check, so cursors and has_X flags describe the filtered
+// stream and the invariant has_X === (X_cursor !== null) holds unchanged.
 
 import { MessageRow } from "./db";
 
@@ -36,6 +39,8 @@ export interface PageQuery {
   limit: number;
   /** Highest seq the viewer may see (left_at_seq), or null for no boundary. */
   cap: number | null;
+  /** Sender ids the viewer blocked; their messages are omitted from this viewer's list only. */
+  hidden?: string[];
 }
 
 const COLS = "id, conversation_id, seq, sender_id, body, created_at, client_key, legal_hold";
@@ -45,28 +50,30 @@ const NO_CAP = Number.MAX_SAFE_INTEGER;
 export async function listPage(db: D1Database, q: PageQuery) {
   const cap = q.cap ?? NO_CAP;
   const take = q.limit + 1;
+  const hidden = JSON.stringify(q.hidden ?? []);
+  const notHidden = (n: number) => `sender_id NOT IN (SELECT value FROM json_each(?${n}))`;
   let page: D1PreparedStatement;
   let other: D1PreparedStatement;
 
   if (q.cursor === null) {
     page = db
-      .prepare(`SELECT ${COLS} FROM messages WHERE conversation_id = ?1 AND seq <= ?2 ORDER BY seq DESC LIMIT ?3`)
-      .bind(q.conversationId, cap, take);
+      .prepare(`SELECT ${COLS} FROM messages WHERE conversation_id = ?1 AND seq <= ?2 AND ${notHidden(4)} ORDER BY seq DESC LIMIT ?3`)
+      .bind(q.conversationId, cap, take, hidden);
     other = db.prepare("SELECT 0 AS x").bind(); // newest page: nothing newer by definition
   } else if (q.direction === "older") {
     page = db
-      .prepare(`SELECT ${COLS} FROM messages WHERE conversation_id = ?1 AND seq < ?2 AND seq <= ?3 ORDER BY seq DESC LIMIT ?4`)
-      .bind(q.conversationId, q.cursor, cap, take);
+      .prepare(`SELECT ${COLS} FROM messages WHERE conversation_id = ?1 AND seq < ?2 AND seq <= ?3 AND ${notHidden(5)} ORDER BY seq DESC LIMIT ?4`)
+      .bind(q.conversationId, q.cursor, cap, take, hidden);
     other = db
-      .prepare("SELECT EXISTS (SELECT 1 FROM messages WHERE conversation_id = ?1 AND seq >= ?2 AND seq <= ?3) AS x")
-      .bind(q.conversationId, q.cursor, cap);
+      .prepare(`SELECT EXISTS (SELECT 1 FROM messages WHERE conversation_id = ?1 AND seq >= ?2 AND seq <= ?3 AND ${notHidden(4)}) AS x`)
+      .bind(q.conversationId, q.cursor, cap, hidden);
   } else {
     page = db
-      .prepare(`SELECT ${COLS} FROM messages WHERE conversation_id = ?1 AND seq > ?2 AND seq <= ?3 ORDER BY seq ASC LIMIT ?4`)
-      .bind(q.conversationId, q.cursor, cap, take);
+      .prepare(`SELECT ${COLS} FROM messages WHERE conversation_id = ?1 AND seq > ?2 AND seq <= ?3 AND ${notHidden(5)} ORDER BY seq ASC LIMIT ?4`)
+      .bind(q.conversationId, q.cursor, cap, take, hidden);
     other = db
-      .prepare("SELECT EXISTS (SELECT 1 FROM messages WHERE conversation_id = ?1 AND seq <= ?2 AND seq <= ?3) AS x")
-      .bind(q.conversationId, q.cursor, cap);
+      .prepare(`SELECT EXISTS (SELECT 1 FROM messages WHERE conversation_id = ?1 AND seq <= ?2 AND seq <= ?3 AND ${notHidden(4)}) AS x`)
+      .bind(q.conversationId, q.cursor, cap, hidden);
   }
 
   const [pageRes, otherRes] = await db.batch([page, other]);

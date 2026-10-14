@@ -72,18 +72,17 @@ void main() {
       expect(sql[_realtime], isNot(contains('FUNCTION')));
     });
 
-    test('timestamps are newer than every pre-existing migration', () {
-      final others =
-          Directory(_dir)
-              .listSync()
-              .map((e) => e.uri.pathSegments.last)
-              .where(
-                (n) => RegExp(r'^\d{14}_').hasMatch(n) && !_mine.contains(n),
-              )
-              .toList()
-            ..sort();
+    test('timestamps are newer than the migrations that existed when authored', () {
+      // Later migrations may sort after these files by design.
+      const newestWhenAuthored =
+          '20261013140000_revoke_public_notify_admins_of_block.sql';
+      expect(
+        File('$_dir/$newestWhenAuthored').existsSync(),
+        isTrue,
+        reason: '$newestWhenAuthored must still exist',
+      );
       for (final n in _mine) {
-        expect(n.compareTo(others.last), greaterThan(0), reason: n);
+        expect(n.compareTo(newestWhenAuthored), greaterThan(0), reason: n);
       }
     });
 
