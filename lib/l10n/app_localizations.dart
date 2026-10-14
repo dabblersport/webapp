@@ -11330,7 +11330,7 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_chat_error.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t load this chat.'**
+  /// **'Couldn\'t load this chat. Try again.'**
   String get messaging_chat_error;
 
   /// No description provided for @messaging_chat_older_load.
@@ -11348,7 +11348,7 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_chat_older_error.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t load earlier messages.'**
+  /// **'Couldn\'t load earlier messages. Try again.'**
   String get messaging_chat_older_error;
 
   /// No description provided for @messaging_chat_today.
@@ -11372,13 +11372,13 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_chat_closed_ended.
   ///
   /// In en, this message translates to:
-  /// **'This game has ended. The chat is read-only.'**
+  /// **'This game has ended. You can read the chat but not send messages.'**
   String get messaging_chat_closed_ended;
 
   /// No description provided for @messaging_chat_closed_cancelled.
   ///
   /// In en, this message translates to:
-  /// **'This game was cancelled. The chat is read-only.'**
+  /// **'This game was cancelled. You can read the chat but not send messages.'**
   String get messaging_chat_closed_cancelled;
 
   /// No description provided for @messaging_chat_mute.
@@ -11402,7 +11402,7 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_chat_mute_failed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t change mute. Try again.'**
+  /// **'Couldn\'t update the mute setting. Try again.'**
   String get messaging_chat_mute_failed;
 
   /// No description provided for @messaging_chat_message_options.
@@ -11498,13 +11498,13 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_report_submitted.
   ///
   /// In en, this message translates to:
-  /// **'Thanks. Your report was sent to our moderation team.'**
+  /// **'Thanks. We received your report.'**
   String get messaging_report_submitted;
 
   /// No description provided for @messaging_report_failed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t send your report.'**
+  /// **'Couldn\'t send your report. Try again.'**
   String get messaging_report_failed;
 
   /// No description provided for @messaging_report_retry.
@@ -11540,7 +11540,7 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_block_body.
   ///
   /// In en, this message translates to:
-  /// **'You can unblock them later from your settings.'**
+  /// **'You won\'t see this player\'s messages in game chats. You can unblock them later in your settings.'**
   String get messaging_block_body;
 
   /// No description provided for @messaging_block_confirm.
@@ -11564,7 +11564,7 @@ abstract class AppLocalizations {
   /// No description provided for @messaging_block_failed.
   ///
   /// In en, this message translates to:
-  /// **'Couldn\'t block this player.'**
+  /// **'Couldn\'t block this player. Try again.'**
   String get messaging_block_failed;
 
   /// No description provided for @messaging_chat_unavailable_line.
@@ -11590,6 +11590,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Go back'**
   String get messaging_chat_removed_action;
+
+  /// No description provided for @messaging_reason_not_a_member.
+  ///
+  /// In en, this message translates to:
+  /// **'Only players in this game can use this chat. Go back.'**
+  String get messaging_reason_not_a_member;
+
+  /// No description provided for @messaging_reason_left_read_only.
+  ///
+  /// In en, this message translates to:
+  /// **'You left this game. You can read earlier messages but can\'t send new ones.'**
+  String get messaging_reason_left_read_only;
+
+  /// No description provided for @messaging_reason_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t send messages in this chat. Go back.'**
+  String get messaging_reason_blocked;
+
+  /// No description provided for @messaging_reason_suspended.
+  ///
+  /// In en, this message translates to:
+  /// **'Chat is turned off for your account. Contact support if you think this is a mistake.'**
+  String get messaging_reason_suspended;
+
+  /// No description provided for @messaging_reason_rate_limited.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re sending messages too fast. Wait a moment, then try again.'**
+  String get messaging_reason_rate_limited;
+
+  /// No description provided for @messaging_reason_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find this chat. Go back and open it again.'**
+  String get messaging_reason_not_found;
+
+  /// No description provided for @messaging_reason_invalid_request.
+  ///
+  /// In en, this message translates to:
+  /// **'Your message couldn\'t be sent. Check it and try again.'**
+  String get messaging_reason_invalid_request;
+
+  /// No description provided for @messaging_reason_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Try again.'**
+  String get messaging_reason_unknown;
 }
 
 class _AppLocalizationsDelegate
