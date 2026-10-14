@@ -4,8 +4,9 @@
 // payload value is stored or printed; wakes are reduced to key names and booleans by lib/capture.mjs.
 
 import { randomUUID } from "node:crypto";
-import { FIXTURE_GAME_ID, GuardError, assertProjectUrl, decodeExp, decodeExpMinusIat, keysAllowed, runGuards } from "./guards.mjs";
+import { FIXTURE_GAME_ID, GuardError, assertBlockSafe, assertProjectUrl, decodeExp, decodeExpMinusIat, keysAllowed, runGuards } from "./guards.mjs";
 import { makeCapture } from "./capture.mjs";
+import { makeGuardedActions } from "./actions.mjs";
 
 const WAKE_WAIT_MS = 3000; // T-A1: a wake must arrive within 3 s
 const QUIET_WINDOW_MS = 3000; // how long "receives nothing" is observed
@@ -43,6 +44,21 @@ export async function readFacts(client, uid) {
   const roster = await client.from("game_roster").select("game_id, status").eq("user_id", uid);
   if (prof.error || roster.error) throw new GuardError("facts-unreadable", "could not read the account's own profile or roster");
   return { profiles: prof.data ?? [], roster: roster.data ?? [] };
+}
+
+/** Read-only facts that show a block of A by B affects nothing else. Numbers only. */
+export async function readBlockFacts(client, bUid, bProfileIds, aProfileIds) {
+  const hosted = await client.from("games").select("id").eq("creator_user_id", bUid);
+  const asFollower = await client.from("profile_follows").select("follower_profile_id, following_profile_id").in("follower_profile_id", bProfileIds);
+  const asFollowed = await client.from("profile_follows").select("follower_profile_id, following_profile_id").in("following_profile_id", bProfileIds);
+  if (hosted.error || asFollower.error || asFollowed.error) return { hostedGames: null, followsWithOthers: null };
+  const mine = new Set(bProfileIds);
+  const theirs = new Set(aProfileIds);
+  const others = [...(asFollower.data ?? []), ...(asFollowed.data ?? [])].filter((r) => {
+    const peer = mine.has(r.follower_profile_id) ? r.following_profile_id : r.follower_profile_id;
+    return !theirs.has(peer);
+  });
+  return { hostedGames: (hosted.data ?? []).length, followsWithOthers: others.length };
 }
 
 export async function runLive(deps) {
@@ -121,13 +137,20 @@ export async function runLive(deps) {
     const A = await sessionFor("A", deps.serviceA);
     const B = await sessionFor("B", deps.serviceB);
     const facts = { A: await readFacts(A.client, A.uid), B: await readFacts(B.client, B.uid) };
-    runGuards({ supabaseUrl: cfg.supabaseUrl, facts });
-    reporter.note("Guards passed: project, test profiles, fixture game only.");
+    const { aOtherGames } = runGuards({ supabaseUrl: cfg.supabaseUrl, facts });
+    reporter.note("Guards passed: project, test profiles, B on the fixture game only.");
+    if (aOtherGames > 0) reporter.note(`Account A is also active on ${aOtherGames} other game(s); the runner never targets them.`);
     const bProfileId = facts.B.profiles[0].id;
+    const block = await readBlockFacts(B.client, B.uid, facts.B.profiles.map((p) => p.id), facts.A.profiles.map((p) => p.id));
+    assertBlockSafe(block);
+    reporter.note(`Block check: B hosts ${block.hostedGames} game(s) and has ${block.followsWithOthers} follow(s) with anyone but A.`);
+    // Every roster change and every block goes through this wrapper (lib/actions.mjs).
+    const guardedAct = makeGuardedActions({ fixtureGameId: FIXTURE_GAME_ID, uidA: A.uid, profileIdB: bProfileId });
+    const act = (actor, name, params) => guardedAct(actor, actor === "A" ? A.client : B.client, name, params);
     // Registered BEFORE the first roster change (T-A4 leave, removal): whatever throws later, finally rejoins B.
     // rpc_join_game is idempotent for an already-active member.
     cleanup.push(async () => {
-      await B.client.rpc("rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
+      await act("B", "rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
     });
 
     // ---- T1 ---------------------------------------------------------------------------------------------
@@ -174,8 +197,8 @@ export async function runLive(deps) {
 
     // ---- T-A3: B blocks A ----------------------------------------------------------------------------------
     {
-      const blocked = await B.client.rpc("rpc_block_user", { p_peer: A.uid });
-      cleanup.push(() => B.client.rpc("rpc_unblock_user", { p_peer: A.uid }));
+      const blocked = await act("B", "rpc_block_user", { p_peer: A.uid });
+      cleanup.push(() => act("B", "rpc_unblock_user", { p_peer: A.uid }));
       if (blocked.error) {
         reporter.line("T-A3", "FAIL", "B could not block A", { blockOk: false });
       } else {
@@ -185,16 +208,16 @@ export async function runLive(deps) {
         const n = lB.cap.count() - m;
         reporter.line("T-A3", n === 0 ? "PASS" : "FAIL", "after B blocks A, B gets no wake from A's next message", { wakes: n });
       }
-      await B.client.rpc("rpc_unblock_user", { p_peer: A.uid });
+      await act("B", "rpc_unblock_user", { p_peer: A.uid });
     }
 
     // ---- T-A4: B leaves and rejoins; A gets a sync wake (needs KAN-542 applied) --------------------------------
     {
       const m = lA.cap.count();
-      await B.client.rpc("rpc_leave_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
+      await act("B", "rpc_leave_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
       await waitFor(() => lA.cap.since(m).some((w) => w.isSync), SYNC_WAIT_MS);
       const afterLeave = lA.cap.since(m).filter((w) => w.isSync).length;
-      await B.client.rpc("rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
+      await act("B", "rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
       await waitFor(() => lA.cap.since(m).filter((w) => w.isSync).length > afterLeave, SYNC_WAIT_MS);
       const total = lA.cap.since(m).filter((w) => w.isSync).length;
       if (total === 0) {
@@ -206,7 +229,7 @@ export async function runLive(deps) {
 
     // ---- removal: T3, T5, T6 -------------------------------------------------------------------------------
     {
-      const removed = await A.client.rpc("rpc_remove_player", { p_game_id: FIXTURE_GAME_ID, p_profile_id: bProfileId });
+      const removed = await act("A", "rpc_remove_player", { p_game_id: FIXTURE_GAME_ID, p_profile_id: bProfileId });
       if (removed.error) {
         for (const id of ["T3", "T5", "T6"]) reporter.line(id, "FAIL", "A could not remove B from the fixture game", { removeOk: false });
       } else {
@@ -241,7 +264,7 @@ export async function runLive(deps) {
         });
       }
       // restore B's membership now (also registered in cleanup in case something threw above)
-      await B.client.rpc("rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
+      await act("B", "rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
       const back = await readFacts(B.client, B.uid);
       const restored = back.roster.some((r) => r.game_id === FIXTURE_GAME_ID && r.status === "active");
       reporter.line("RESTORE", restored ? "PASS" : "FAIL", "B is an active member of the fixture game again", { restored });

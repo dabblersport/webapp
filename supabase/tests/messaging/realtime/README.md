@@ -48,10 +48,18 @@ Exit code: 0 no FAIL, 1 a FAIL, 2 refused or errored.
 
 ## Guards (the run is refused before any write)
 
-- `SUPABASE_URL` must be `https://wtncuzcskpigqpmnxwws.supabase.co`.
-- Every profile of each account must have "test" in its username or display name.
-- Each account must be active on the fixture game only (left/kicked history is ignored) and on it now.
-- It reads each account's own profile and roster only (RLS), and writes only through the app's normal APIs.
+1. `SUPABASE_URL` must be `https://wtncuzcskpigqpmnxwws.supabase.co`; checked before any credential is read.
+2. Every profile of each account must have "test" in its username or display name.
+3. **B** (the account that is the acting user for leave, join and the block) must be active on **no game but the
+   fixture game**. **A** must be active on the fixture game and **may** be active on other games: the runner prints
+   only their **count**, never an id or a name, and never targets them.
+4. Every roster change and block goes through one wrapper (`lib/actions.mjs`). It refuses, before any request, a
+   call whose game id is not the fixture game or whose user is not the other test account (leave/join: B, fixture
+   game, `player`; remove: A, fixture game, B's profile only; block/unblock: B, A's user id only).
+5. Before the block, read-only: B must host no game and have no follow with anyone but A (counts printed, refused
+   otherwise), so the block can remove nothing but follows between the two test accounts.
+
+It reads each account's own profile and roster only (RLS), and writes only through the app's normal APIs.
 
 ## What it does to data, and how it is undone
 

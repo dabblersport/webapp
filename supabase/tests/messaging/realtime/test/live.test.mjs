@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { FIXTURE_GAME_ID } from "../lib/guards.mjs";
 import { makeReporter } from "../lib/report.mjs";
 import { runLive } from "../lib/live.mjs";
@@ -7,9 +8,11 @@ import { runLive } from "../lib/live.mjs";
 const jwt = (claims) => ["x", Buffer.from(JSON.stringify(claims)).toString("base64url"), "sig"].join(".");
 const URL_OK = "https://wtncuzcskpigqpmnxwws.supabase.co";
 const CONV = "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa";
+const FOREIGN_IDS = ["01010101-0101-4101-8101-010101010101", "02020202-0202-4202-8202-020202020202"];
+const STOP = "STOP-AFTER-GUARDS";
 
-// A fake client that records every write (rpc), channel and worker call. No network.
-function fakeWorld({ profilesByUid, rosterByUid }) {
+// A fake world: every rpc, channel and Worker call is recorded. No network.
+function fakeWorld({ profilesByUid, rosterByUid, hostedByUid = {}, follows = [] }) {
   const writes = [];
   const channels = [];
   const fetches = [];
@@ -28,9 +31,10 @@ function fakeWorld({ profilesByUid, rosterByUid }) {
       from: (table) => ({
         select: () => ({
           eq: async () => ({
-            data: table === "profiles" ? profilesByUid[uid] : rosterByUid[uid],
+            data: table === "profiles" ? profilesByUid[uid] : table === "games" ? hostedByUid[uid] ?? [] : rosterByUid[uid],
             error: null,
           }),
+          in: async (col, ids) => ({ data: follows.filter((f) => ids.includes(f[col])), error: null }),
         }),
       }),
       rpc: async (name) => {
@@ -39,7 +43,7 @@ function fakeWorld({ profilesByUid, rosterByUid }) {
       },
       channel: (t) => {
         channels.push(t);
-        throw new Error("a channel must not be opened before the guards pass");
+        throw new Error(STOP);
       },
       removeChannel: async () => {},
       removeAllChannels: () => {},
@@ -77,13 +81,21 @@ function deps(world, overrides = {}) {
   };
 }
 
-const testProfile = [{ id: "p", username: "dabbler_test", display_name: "Test" }];
+const testProfile = (id) => [{ id, username: "dabbler_test", display_name: "Test" }];
 const onFixture = [{ game_id: FIXTURE_GAME_ID, status: "active" }];
-const goodWorld = () =>
+const goodWorld = (extra = {}) =>
   fakeWorld({
-    profilesByUid: { "uid-a": testProfile, "uid-b": testProfile },
+    profilesByUid: { "uid-a": testProfile("pa"), "uid-b": testProfile("pb") },
     rosterByUid: { "uid-a": onFixture, "uid-b": onFixture },
+    ...extra,
   });
+
+function assertQuiet(lines) {
+  const out = lines.join("\n");
+  assert.ok(!out.includes("PASSWORD"), "no credential printed");
+  assert.ok(!out.includes("eyJ"), "no token printed");
+  for (const id of FOREIGN_IDS) assert.ok(!out.includes(id), "no foreign game id printed");
+}
 
 async function refused(world, overrides, code) {
   const { d, lines } = deps(world, overrides);
@@ -91,16 +103,13 @@ async function refused(world, overrides, code) {
   assert.deepEqual(world.writes, [], "no write before the guards pass");
   assert.deepEqual(world.channels, [], "no channel before the guards pass");
   assert.deepEqual(world.fetches, [], "no Worker call before the guards pass");
-  const out = lines.join("\n");
-  assert.ok(!out.includes("PASSWORD"), "no credential printed");
-  assert.ok(!out.includes("eyJ"), "no token printed");
+  assertQuiet(lines);
 }
 
 test("refuses a wrong project URL before any credential is read", async () => {
-  const w = goodWorld();
   let credentialReads = 0;
   await refused(
-    w,
+    goodWorld(),
     {
       env: { SUPABASE_URL: "https://someother.supabase.co", SUPABASE_ANON_KEY: "k", MESSAGING_WORKER_URL: "https://w.workers.dev", MESSAGING_CONVERSATION_ID: CONV },
       readCredential: async () => {
@@ -114,19 +123,52 @@ test("refuses a wrong project URL before any credential is read", async () => {
 });
 
 test("refuses a non-test profile", async () => {
-  const w = fakeWorld({
-    profilesByUid: { "uid-a": testProfile, "uid-b": [{ id: "p", username: "real_user", display_name: "Real Person" }] },
-    rosterByUid: { "uid-a": onFixture, "uid-b": onFixture },
-  });
-  await refused(w, {}, "not-a-test-profile");
+  await refused(
+    fakeWorld({
+      profilesByUid: { "uid-a": testProfile("pa"), "uid-b": [{ id: "pb", username: "real_user", display_name: "Real Person" }] },
+      rosterByUid: { "uid-a": onFixture, "uid-b": onFixture },
+    }),
+    {},
+    "not-a-test-profile",
+  );
 });
 
-test("refuses an account on a foreign game", async () => {
-  const w = fakeWorld({
-    profilesByUid: { "uid-a": testProfile, "uid-b": testProfile },
-    rosterByUid: { "uid-a": onFixture, "uid-b": [...onFixture, { game_id: "99999999-9999-4999-8999-999999999999", status: "active" }] },
+test("refuses B on another game, never printing its id", async () => {
+  await refused(
+    fakeWorld({
+      profilesByUid: { "uid-a": testProfile("pa"), "uid-b": testProfile("pb") },
+      rosterByUid: { "uid-a": onFixture, "uid-b": [...onFixture, { game_id: FOREIGN_IDS[0], status: "active" }] },
+    }),
+    {},
+    "foreign-game",
+  );
+});
+
+test("refuses a block when B hosts a game", async () => {
+  await refused(goodWorld({ hostedByUid: { "uid-b": [{ id: "g" }] } }), {}, "block-unsafe");
+});
+
+test("refuses a block when B follows or is followed by someone but A", async () => {
+  await refused(goodWorld({ follows: [{ follower_profile_id: "pb", following_profile_id: "p-third" }] }), {}, "block-unsafe");
+  await refused(goodWorld({ follows: [{ follower_profile_id: "p-third", following_profile_id: "pb" }] }), {}, "block-unsafe");
+});
+
+test("A on other games is allowed: only the count is printed, then the run continues", async () => {
+  const world = fakeWorld({
+    profilesByUid: { "uid-a": testProfile("pa"), "uid-b": testProfile("pb") },
+    rosterByUid: {
+      "uid-a": [...onFixture, ...FOREIGN_IDS.map((game_id) => ({ game_id, status: "active" })), { game_id: "left-one", status: "left" }],
+      "uid-b": onFixture,
+    },
+    follows: [{ follower_profile_id: "pa", following_profile_id: "pb" }, { follower_profile_id: "pb", following_profile_id: "pa" }],
   });
-  await refused(w, {}, "foreign-game");
+  const { d, lines } = deps(world);
+  await assert.rejects(runLive(d), (e) => e.message === STOP, "stopped by the fake at the first channel, i.e. past all guards");
+  const out = lines.join("\n");
+  assert.match(out, /Account A is also active on 2 other game\(s\)/);
+  assert.match(out, /Block check: B hosts 0 game\(s\) and has 0 follow\(s\) with anyone but A/);
+  assertQuiet(lines);
+  assert.deepEqual(world.writes, ["rpc_join_game"], "only the guarded, fixture-scoped rejoin cleanup wrote");
 });
 
 test("refuses when the environment is incomplete or malformed", async () => {
@@ -137,13 +179,21 @@ test("refuses when the environment is incomplete or malformed", async () => {
   await assert.rejects(runLive(d2), (e) => e.code === "bad-env");
 });
 
-test("B's rejoin cleanup is registered before the first roster change", async () => {
-  const { readFileSync } = await import("node:fs");
+test("B's rejoin cleanup is registered once, before the first roster change", () => {
   const src = readFileSync(new URL("../lib/live.mjs", import.meta.url), "utf8");
-  const reg = src.indexOf('cleanup.push(async () => {\n      await B.client.rpc("rpc_join_game"');
+  const needle = 'cleanup.push(async () => {\n      await act("B", "rpc_join_game"';
+  const reg = src.indexOf(needle);
   assert.ok(reg > 0, "a rejoin cleanup callback is registered");
-  assert.equal(src.split('cleanup.push(async () => {\n      await B.client.rpc("rpc_join_game"').length - 1, 1, "registered once");
-  for (const change of ['B.client.rpc("rpc_leave_game"', 'A.client.rpc("rpc_remove_player"']) {
+  assert.equal(src.split(needle).length - 1, 1, "registered once");
+  for (const change of ['await act("B", "rpc_leave_game"', 'await act("A", "rpc_remove_player"', 'act("B", "rpc_block_user"']) {
     assert.ok(src.indexOf(change) > reg, `${change} comes after the rejoin registration`);
   }
+});
+
+test("every roster change and block in the runner goes through the wrapper", () => {
+  const src = readFileSync(new URL("../lib/live.mjs", import.meta.url), "utf8");
+  assert.ok(!/\.rpc\(/.test(src), "live.mjs never calls client.rpc directly");
+  const calls = [...src.matchAll(/\bact\("([AB])", "(rpc_[a-z_]+)"/g)].map((m) => m[2]);
+  assert.ok(calls.length >= 6);
+  for (const c of calls) assert.ok(["rpc_join_game", "rpc_leave_game", "rpc_remove_player", "rpc_block_user", "rpc_unblock_user"].includes(c));
 });
