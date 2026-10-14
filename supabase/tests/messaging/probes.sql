@@ -179,13 +179,15 @@ select (r.details = 'free text') as pass_post_details_unchanged
 ROLLBACK;
 
 -- KAN-530 probe P13 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: a direct insert (service_role) of a message report with details is refused (23514).
+-- Live result (operations, Alpha f171cd63): the same checks run as service_role passed (their P13b-P15b); the text below is the corrected form and is itself NOT RUN here.
 -- Live fact (Alpha f171cd63): `authenticated` holds SELECT only on moderation_reports; only postgres and service_role insert directly.
 BEGIN;
+select set_config('kan530.user_a', :'user_a', true); -- psql does not substitute variables inside $$ bodies
 set local role service_role;
 do $$
 begin
   insert into public.moderation_reports (reporter_user_id, target_type, target_id, reason, details)
-  values (:'user_a', 'message', gen_random_uuid(), 'spam', 'free text');
+  values (current_setting('kan530.user_a')::uuid, 'message', gen_random_uuid(), 'spam', 'free text');
   raise exception 'FAIL pass_direct_message_with_details_refused: insert was accepted';
 exception when check_violation then
   raise notice 'pass_direct_message_with_details_refused = true (23514)';
@@ -216,6 +218,7 @@ ROLLBACK;
 -- KAN-530 probe P16 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. KAN-530: an UPDATE adding details to a message report is refused (23514).
 BEGIN;
 set local role service_role;
+-- (this statement is outside the $$ body, so :'user_a' is substituted by psql)
 insert into public.moderation_reports (id, reporter_user_id, target_type, target_id, reason, details)
 values ('00000000-0000-4000-8000-00000000e530', :'user_a', 'message', gen_random_uuid(), 'spam', null);
 do $$
