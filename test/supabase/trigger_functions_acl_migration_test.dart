@@ -198,6 +198,57 @@ void main() {
     );
   });
 
+  group('live evidence and list consistency (C6)', () {
+    test('probes, rollback, doc table and live evidence name the same 173', () {
+      final migration = revoked.toSet();
+      final probeList = RegExp(r"^    '(\w+)',?$", multiLine: true)
+          .allMatches(
+            probes.substring(
+              probes.indexOf('A2 [READ-ONLY]'),
+              probes.indexOf('A3 [READ-ONLY]'),
+            ),
+          )
+          .map((m) => 'public.${m.group(1)}()')
+          .toSet();
+      final docList = RegExp(
+        r'^\| \d+ \| `(public\.\w+\(\))`',
+        multiLine: true,
+      ).allMatches(doc).map((m) => m.group(1)!).toSet();
+      final rollbackList = RegExp(
+        r'^GRANT EXECUTE ON FUNCTION (public\.\w+\(\)) TO PUBLIC;$',
+        multiLine: true,
+      ).allMatches(rollback).map((m) => m.group(1)!).toSet();
+      final evidence = File(
+        '$_pack/LIVE_PROACL_EVIDENCE.md',
+      ).readAsStringSync();
+      final live = RegExp(
+        r'^\| \d+ \| `(public\.\w+\(\))` \|',
+        multiLine: true,
+      ).allMatches(evidence).map((m) => m.group(1)!).toSet();
+      expect(migration.length, 173);
+      expect(probeList, migration);
+      expect(docList, migration);
+      expect(rollbackList, migration);
+      expect(live, migration);
+    });
+
+    test('TRIGGER_FUNCTIONS.md records the live read and the exclusions', () {
+      for (final s in [
+        'LIVE_PROACL_EVIDENCE.md',
+        '2026-10-14',
+        'wtncuzcskpigqpmnxwws',
+        '173 of 173',
+        '0 differences',
+        'checkauthtrigger',
+        'postgis_cache_bbox',
+        'realtime',
+        'storage',
+      ]) {
+        expect(doc, contains(s), reason: s);
+      }
+    });
+  });
+
   group('rollback and README', () {
     test('rollback re-grants PUBLIC on exactly the listed functions', () {
       final granted = RegExp(

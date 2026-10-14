@@ -21,7 +21,14 @@ Status: AUTHORED from the KAN-498 sweep and the repo. Nothing was measured live 
 
 ## Current ACL
 
-Per-function `proacl` below is the **expected current ACL**, derived from two sources: the sweep's grant source for each function (live, 2026-10-13) and the committed baseline's explicit grants, with owner `postgres` for all 173 (checked against the baseline `ALTER FUNCTION ... OWNER TO "postgres"`). The pattern matches the sweep's own live print for `notify_admins_of_block()` (`{=X/postgres,postgres=X/postgres,service_role=X/postgres}`). It is not a raw live read: this team has no database access, so probe A2 re-reads the real `proacl` and Memphis compares it row for row with the column below before applying; a difference is recorded (rollback.sql follows the grant source, not this column).
+**Live read recorded.** Memphis read the live `proacl` of all 173 functions, read-only, on 2026-10-14 against project `wtncuzcskpigqpmnxwws` (every statement `begin read only; select ...; rollback;`; nothing written, migration not applied). Evidence file beside this one: `LIVE_PROACL_EVIDENCE.md` (a verbatim copy of `/Users/moataz/Desktop/Dabbler-Alpha-Plan/kan-grant-sweep/KAN-527_live_proacl.md`, which also holds the 173 live rows). Result:
+
+* **173 of 173 listed functions exist live**; none missing; none is not `RETURNS trigger`; no same-name function with another arity.
+* **0 differences** between the live `proacl` and the "Expected current proacl" column below. Owner `postgres` for all 173; 49 SECURITY DEFINER (matches the Type column: 49 DEFINER, 124 INVOKER).
+* Live groups: 172 PUBLIC only, 1 (`trg_welcome_notify`) PUBLIC plus explicit anon, authenticated, service_role; `anon_exec`, `authenticated_exec`, `service_exec` true for all 173 through the PUBLIC grant.
+* **Known exclusions, not revoked, out of scope:** `public.checkauthtrigger()` and `public.postgis_cache_bbox()` (PostGIS extension functions owned by `supabase_admin`, which `postgres` may not revoke), `realtime.subscription_check_filters()` (Supabase-managed), and the `storage` trigger functions (`enforce_bucket_lifecycle_service_role`, `enforce_bucket_name_length`, `protect_bucket_control_columns`, `protect_delete`, `update_updated_at_column`; Supabase-managed). Live `public` has 180 trigger functions = 173 listed + 2 PostGIS + 5 already closed to anon (`notify_admins_of_block()`, applied by KAN-523, `fn_activity_favorites_sync_legacy_v1`, `trg_meetup_rsvps_notify`, `trg_meetups_cancel_notify`, `trgfn_charges_immutable`).
+
+The per-function column below keeps the expected ACL (sweep grant source plus baseline grants); the live read confirmed every row. The sweep's 174th, `notify_admins_of_block()`, is closed live by KAN-523.
 
 * PUBLIC only: `{=X/postgres,postgres=X/postgres,service_role=X/postgres}` (172)
 * PUBLIC and explicit anon, authenticated, service_role: `{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}` (1: `public.trg_welcome_notify()`)
