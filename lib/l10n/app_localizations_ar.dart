@@ -6315,4 +6315,57 @@ class AppLocalizationsAr extends AppLocalizations {
   String manual_location_fetch_failed(String error) {
     return 'تعذّر الحصول على الموقع: $error';
   }
+
+  @override
+  String get messaging_chat_title => 'دردشة المباراة';
+
+  @override
+  String get messaging_chat_open => 'افتح دردشة المباراة';
+
+  @override
+  String get messaging_chat_loading => 'جارٍ تحميل الرسائل';
+
+  @override
+  String get messaging_chat_empty_title => 'لا توجد رسائل بعد';
+
+  @override
+  String get messaging_chat_empty_body =>
+      'ألقِ التحية على اللاعبين في هذه المباراة.';
+
+  @override
+  String get messaging_chat_composer_hint => 'اكتب رسالة';
+
+  @override
+  String get messaging_chat_send => 'إرسال';
+
+  @override
+  String get messaging_chat_retry => 'أعد المحاولة';
+
+  @override
+  String get messaging_chat_offline =>
+      'أنت غير متصل. ستظهر الرسائل عند عودة الاتصال.';
+
+  @override
+  String get messaging_chat_offline_retry => 'حاول مجددًا';
+
+  @override
+  String get messaging_chat_error => 'تعذّر تحميل هذه الدردشة.';
+
+  @override
+  String get messaging_chat_older_load => 'حمّل الرسائل السابقة';
+
+  @override
+  String get messaging_chat_older_loading => 'جارٍ تحميل الرسائل السابقة';
+
+  @override
+  String get messaging_chat_older_error => 'تعذّر تحميل الرسائل السابقة.';
+
+  @override
+  String get messaging_chat_today => 'اليوم';
+
+  @override
+  String get messaging_chat_yesterday => 'أمس';
+
+  @override
+  String get messaging_chat_game_finished => 'انتهت المباراة';
 }

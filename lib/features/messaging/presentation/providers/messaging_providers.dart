@@ -30,3 +30,17 @@ final gameChatControllerProvider =
     AsyncNotifierProvider.family<GameChatController, GameChatViewState, String>(
       GameChatController.new,
     );
+
+/// How often the open game chat refreshes its newest page (polling only, no
+/// Realtime). Null disables polling (tests).
+/// A network refresh cadence, not a visual duration.
+const int gameChatPollSeconds = 15;
+
+final gameChatPollIntervalProvider = Provider<Duration?>(
+  (ref) => const Duration(seconds: gameChatPollSeconds),
+);
+
+/// The clock the chat uses for date separators and the "game finished" line.
+final messagingClockProvider = Provider<DateTime Function()>(
+  (ref) => DateTime.now,
+);
