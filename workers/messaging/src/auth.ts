@@ -13,6 +13,8 @@ export interface Env {
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
   SKELETON_PROBE?: string;
+  /** KAN-510: shared HMAC key for POST /internal/system-line. Binding name only; no value in the repo. */
+  MSG_SYSTEM_HMAC_SECRET?: string;
   /** off | allowlist | all. Code default 'allowlist'; the RPC denies any other value (fails closed). */
   MESSAGING_ACCESS_MODE?: string;
 }

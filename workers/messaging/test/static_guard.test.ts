@@ -31,7 +31,10 @@ describe("(g) static guard over src/", () => {
   it("found source files", () => expect(files.length).toBeGreaterThan(0));
   for (const [name, re] of FORBIDDEN) {
     it(`no ${name}`, () => {
-      const hits = files.filter(({ text }) => re.test(text)).map(({ f }) => f);
+      // KAN-510: the HMAC check of the signed internal endpoint is the one legitimate crypto.subtle user.
+      // It never touches a bearer token; every other file stays under the ban.
+      const exempt = name === "crypto.subtle" ? "system_line.ts" : null;
+      const hits = files.filter(({ f, text }) => f !== exempt && re.test(text)).map(({ f }) => f);
       expect(hits).toEqual([]);
     });
   }
