@@ -13,7 +13,8 @@ import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler/core/utils/sport_id_mapping.dart';
 import 'package:dabbler/features/explore/presentation/screens/sports_library_screen.dart';
 import 'package:dabbler/features/explore/presentation/widgets/location_permission_drawer.dart';
-import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
+import 'package:dabbler/core/services/location_permission_state.dart';
+import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/explore/presentation/widgets/sport_specific_filters.dart';
 import 'package:dabbler/features/games/presentation/controllers/venues_controller.dart'
     as vc;
@@ -188,23 +189,38 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
     await _checkLocationPermission();
   }
 
-  Future<void> _checkLocationPermission() async {
-    final shouldShow = await _locationService.shouldShowLocationPrompt();
+  /// The "Set location" drawer opens at most once per visit (KAN-526).
+  bool _setLocationShown = false;
 
+  Future<void> _checkLocationPermission() async {
+    final permission = await _locationService.checkPermissionStatus();
+    if (!mounted) return;
+    final denied =
+        permission == LocationPermission.denied ||
+        permission == LocationPermission.deniedForever;
+    if (!denied) return;
+
+    // KAN-521: the OS was already asked once on this device, so asking again
+    // is not possible. Offer the manual drawer instead (KAN-526).
+    if (await LocationPermissionState.asked()) {
+      if (!mounted || _setLocationShown || _locationService.hasLocation) {
+        return;
+      }
+      _setLocationShown = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) showSetLocationDrawer(context);
+      });
+      return;
+    }
+
+    final shouldShow = await _locationService.shouldShowLocationPrompt();
     if (!shouldShow || !mounted) return;
 
-    final permission = await _locationService.checkPermissionStatus();
-
-    // Only show drawer if permission is not already granted
-    if (permission == LocationPermission.denied ||
-        permission == LocationPermission.deniedForever) {
-      // Wait for first frame to ensure context is available
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (mounted) {
-          _showLocationDrawer();
-        }
-      });
-    }
+    // Not asked yet: the old prompt drawer, whose Allow goes through
+    // LocationPermissionState.requestOnce (asks the OS at most once).
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _showLocationDrawer();
+    });
   }
 
   void _showLocationDrawer() {
@@ -760,14 +776,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
                       ).location_change_title,
                       tone: DabblerButtonTone.text,
                       size: DabblerButtonSize.small,
-                      onPressed: () {
-                        showDabblerSheet<void>(
-                          context: context,
-                          title: 'Select Location',
-                          detent: DabblerSheetDetent.content,
-                          builder: (context) => const ManualLocationDrawer(),
-                        );
-                      },
+                      onPressed: () => showSetLocationDrawer(context),
                     ),
                   ],
                 ),
