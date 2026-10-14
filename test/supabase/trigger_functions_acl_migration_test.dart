@@ -4,7 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 /// Static checks over the KAN-527 migration and its probe pack. The migration is
 /// authored and NOT applied. No test here asserts that it is the newest migration.
-const _name = '20261014090000_revoke_public_anon_trigger_functions.sql';
+const _name = '20261013135000_revoke_public_anon_trigger_functions.sql';
 const _path = 'supabase/migrations/$_name';
 const _pack = 'supabase/tests/trigger_functions_acl';
 
@@ -39,15 +39,16 @@ void main() {
   });
 
   group('migration', () {
-    test('sorts after 20261013130000, 20261013125000 and 20261013140000', () {
-      for (final other in [
-        '20261013125000',
-        '20261013130000',
-        '20261013140000',
-      ]) {
-        expect(_name.compareTo(other), greaterThan(0), reason: other);
-      }
-    });
+    test(
+      'sorts after 20261013125000 and 20261013130000, not after 20261013140000',
+      () {
+        for (final other in ['20261013125000', '20261013130000']) {
+          expect(_name.compareTo(other), greaterThan(0), reason: other);
+        }
+        // KAN-523's migration stays the newest and is not collided with.
+        expect(_name.compareTo('20261013140000'), lessThan(0));
+      },
+    );
 
     test(
       'is only explicit REVOKE EXECUTE ... FROM PUBLIC, anon statements',
@@ -113,6 +114,13 @@ void main() {
       expect(doc, contains('174'));
       expect(doc, contains('notify_admins_of_block'));
       expect(doc, contains('Granted via'));
+      expect(doc, contains('Expected current proacl'));
+      expect(
+        RegExp(
+          r'\{=X/postgres,postgres=X/postgres,service_role=X/postgres\}',
+        ).allMatches(doc).length,
+        greaterThanOrEqualTo(172),
+      );
       expect(doc, contains('git grep'));
       for (final s in ['lib', 'supabase/functions', 'workers']) {
         expect(doc, contains(s), reason: s);
@@ -180,6 +188,8 @@ void main() {
           'profile_locations',
           'trg_posts_updated_at',
           'fn_likes_sync',
+          'trg_posts_set_geo',
+          'geo_location_id',
           'do not grant',
         ]) {
           expect(probes, contains(s), reason: s);

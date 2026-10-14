@@ -1,6 +1,6 @@
 -- KAN-527 probe pack: PUBLIC and anon EXECUTE on trigger functions
 --
--- Covers: supabase/migrations/20261014090000_revoke_public_anon_trigger_functions.sql
+-- Covers: supabase/migrations/20261013135000_revoke_public_anon_trigger_functions.sql
 --
 -- STATUS: AUTHORED, NOT RUN. Nothing in this file was executed against any
 -- database while writing it and this ticket does not claim it was. Memphis runs
@@ -855,9 +855,9 @@ rollback;
 
 -- B3 [WRITE-IN-TRANSACTION-ROLLBACK] trigger sample (b), geo: an authenticated
 --    insert into profile_locations fires fn_sync_geo_fields (trg_profile_locations_sync_geo):
---    lat, lng and area_id are filled from the chosen geo_locations row. (The posts
---    table has no geo trigger in the catalog: fn_sync_geo_fields is attached to games,
---    meetups, profile_locations and venues.)
+--    lat, lng and area_id are filled from the chosen geo_locations row. (fn_sync_geo_fields
+--    is attached to games, meetups, profile_locations and venues; the posts geo
+--    trigger is trgfn_posts_set_geo, covered in B4.)
 begin;
 do $$
 declare a uuid; c uuid; pa uuid;
@@ -889,10 +889,13 @@ end $$;
 rollback;
 
 -- B4 [WRITE-IN-TRANSACTION-ROLLBACK] trigger sample (c), posts: an authenticated
---    insert and then update of a test post; trg_posts_updated_at (_set_updated_at)
---    must advance updated_at. The insert supplies only the columns without defaults
---    known from the baseline; if the live table has more NOT NULL columns the
---    block fails with a not-null error: that is a fixture problem, not a trigger one.
+--    insert of a test post with manual lat/lng fires trg_posts_set_geo
+--    (trgfn_posts_set_geo, BEFORE INSERT OR UPDATE on posts): geo_location_id and
+--    area_id must be populated; a following update must advance updated_at
+--    (trg_posts_updated_at / _set_updated_at). The insert supplies only the
+--    columns without defaults known from the baseline; if the live table has more
+--    NOT NULL columns the block fails with a not-null error: a fixture problem,
+--    not a trigger one.
 begin;
 do $$
 declare a uuid; c uuid; pa uuid;
@@ -908,17 +911,20 @@ begin
 end $$;
 do $$
 declare a uuid := current_setting('k527.a')::uuid; pa uuid := current_setting('k527.pa')::uuid;
-        pid uuid; u0 timestamptz; u1 timestamptz; nm text;
+        pid uuid; g uuid; ar uuid; u0 timestamptz; u1 timestamptz; nm text;
 begin
   select coalesce(display_name, 'test') into nm from public.profiles where id = pa;
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k527.a'), 'role', 'authenticated')::text, true); set local role authenticated;
   insert into public.posts(author_profile_id, author_user_id, kind, visibility, geo_lat, geo_lng, author_display_name)
-  values (pa, a, (enum_range(null::public.post_kind))[1], 'private', 0, 0, nm) returning id, updated_at into pid, u0;
+  values (pa, a, (enum_range(null::public.post_kind))[1], 'private', 25.2, 55.27, nm)
+  returning id, geo_location_id, area_id, updated_at into pid, g, ar, u0;
+  if g is null or ar is null then
+    raise exception 'B4 FAIL (STOP, do not grant): trg_posts_set_geo did not populate geo_location_id / area_id (%, %)', g, ar; end if;
   perform pg_sleep(0.01);
   update public.posts set body = 'kan527 probe' where id = pid returning updated_at into u1;
   reset role;
   if u1 is null or u1 <= u0 then raise exception 'B4 FAIL (STOP, do not grant): trg_posts_updated_at did not advance updated_at (% -> %)', u0, u1; end if;
-  raise notice 'B4 PASS (posts updated_at trigger fired)';
+  raise notice 'B4 PASS (trg_posts_set_geo populated geo_location_id and area_id; updated_at trigger fired)';
 end $$;
 rollback;
 

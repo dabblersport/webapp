@@ -4,7 +4,7 @@
 
 | File | Purpose |
 |---|---|
-| `supabase/migrations/20261014090000_revoke_public_anon_trigger_functions.sql` | 173 statements `REVOKE EXECUTE ON FUNCTION public.<name>() FROM PUBLIC, anon;`. No GRANT, no body change, nothing removed. |
+| `supabase/migrations/20261013135000_revoke_public_anon_trigger_functions.sql` | 173 statements `REVOKE EXECUTE ON FUNCTION public.<name>() FROM PUBLIC, anon;`. No GRANT, no body change, nothing removed. |
 | `TRIGGER_FUNCTIONS.md` | Source (KAN-498 sweep), count, each function with its grant source, caller evidence. |
 | `probes.sql` | Pre-apply (A1-A3) and post-apply (B1-B5) probes inside `BEGIN ... ROLLBACK`. |
 | `rollback.sql` | Re-grants EXECUTE to PUBLIC on exactly the 173, and to anon where explicit. |
@@ -30,6 +30,6 @@ Explicit grants to `authenticated` and `service_role` are untouched. A function 
 
 ## Notes
 
-* The posts table has no geo trigger in the catalog (`fn_sync_geo_fields` is on games, meetups, profile_locations, venues), so B3 uses `profile_locations`; posts are covered by the `updated_at` trigger in B4.
+* B4 covers posts: an authenticated post insert must fire `trg_posts_set_geo` (`trgfn_posts_set_geo`, populating `geo_location_id` and `area_id`) and an update must fire the `updated_at` trigger. B3 covers `fn_sync_geo_fields` through `profile_locations`.
 * B2 uses a temporary admin fixture inserted inside the transaction; it judges only the new notification rows (one per admin, fixture included).
 * B4/B5 insert only baseline-known columns; extra live NOT NULL columns surface as a fixture error, not a trigger failure.
