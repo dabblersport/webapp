@@ -891,8 +891,9 @@ rollback;
 -- B4 [WRITE-IN-TRANSACTION-ROLLBACK] trigger sample (c), posts: an authenticated
 --    insert of a test post with manual lat/lng fires trg_posts_set_geo
 --    (trgfn_posts_set_geo, BEFORE INSERT OR UPDATE on posts): geo_location_id and
---    area_id must be populated; a following update must advance updated_at
---    (trg_posts_updated_at / _set_updated_at). The insert supplies only the
+--    area_id must be populated; an update that stamps updated_at to 2000-01-01
+--    must be reset to the current time by trg_posts_updated_at (_set_updated_at).
+--    kind 'original' with post_type 'moment' satisfies posts_content_model_check. The insert supplies only the
 --    columns without defaults known from the baseline; if the live table has more
 --    NOT NULL columns the block fails with a not-null error: a fixture problem,
 --    not a trigger one.
@@ -915,16 +916,18 @@ declare a uuid := current_setting('k527.a')::uuid; pa uuid := current_setting('k
 begin
   select coalesce(display_name, 'test') into nm from public.profiles where id = pa;
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k527.a'), 'role', 'authenticated')::text, true); set local role authenticated;
-  insert into public.posts(author_profile_id, author_user_id, kind, visibility, geo_lat, geo_lng, author_display_name)
-  values (pa, a, (enum_range(null::public.post_kind))[1], 'private', 25.2, 55.27, nm)
+  insert into public.posts(author_profile_id, author_user_id, kind, post_type, visibility, geo_lat, geo_lng, author_display_name)
+  values (pa, a, 'original', 'moment', 'private', 25.2, 55.27, nm)
   returning id, geo_location_id, area_id, updated_at into pid, g, ar, u0;
   if g is null or ar is null then
     raise exception 'B4 FAIL (STOP, do not grant): trg_posts_set_geo did not populate geo_location_id / area_id (%, %)', g, ar; end if;
-  perform pg_sleep(0.01);
-  update public.posts set body = 'kan527 probe' where id = pid returning updated_at into u1;
+  -- now() is frozen inside one transaction, so updated_at cannot grow between the
+  -- insert and the update. Instead the update stamps a fixed old value; if the
+  -- updated_at trigger fires it resets the column to the current time.
+  update public.posts set body = 'kan527 probe', updated_at = timestamptz '2000-01-01 00:00:00+00' where id = pid returning updated_at into u1;
   reset role;
-  if u1 is null or u1 <= u0 then raise exception 'B4 FAIL (STOP, do not grant): trg_posts_updated_at did not advance updated_at (% -> %)', u0, u1; end if;
-  raise notice 'B4 PASS (trg_posts_set_geo populated geo_location_id and area_id; updated_at trigger fired)';
+  if u1 is null or u1 <= timestamptz '2000-01-02 00:00:00+00' then raise exception 'B4 FAIL (STOP, do not grant): trg_posts_updated_at did not reset the old updated_at (got %)', u1; end if;
+  raise notice 'B4 PASS (trg_posts_set_geo populated geo_location_id and area_id; updated_at trigger reset 2000-01-01 to %)', u1;
 end $$;
 rollback;
 
