@@ -34,21 +34,9 @@ void main() {
   });
 
   group('migration', () {
-    test('sorts after 20261013120000 and after every other migration', () {
+    test('sorts after 20261013120000 (KAN-499)', () {
+      // Later migrations sort after this one by design; not asserted newest.
       expect(_name.compareTo('20261013120000'), greaterThan(0));
-      final others =
-          Directory('supabase/migrations')
-              .listSync()
-              .map((e) => e.uri.pathSegments.last)
-              .where(
-                (n) =>
-                    RegExp(r'^\d{14}_').hasMatch(n) &&
-                    n != _name &&
-                    n.endsWith('.sql'),
-              )
-              .toList()
-            ..sort();
-      expect(_name.compareTo(others.last), greaterThan(0));
     });
 
     test('is exactly one REVOKE and one GRANT on the function', () {

@@ -4,7 +4,7 @@
 
 | File | Purpose |
 |---|---|
-| `supabase/migrations/20261014090000_revoke_public_anon_trigger_functions.sql` | 173 statements `REVOKE EXECUTE ON FUNCTION public.<name>() FROM PUBLIC, anon;`. No GRANT, DROP or body change. |
+| `supabase/migrations/20261014090000_revoke_public_anon_trigger_functions.sql` | 173 statements `REVOKE EXECUTE ON FUNCTION public.<name>() FROM PUBLIC, anon;`. No GRANT, no body change, nothing removed. |
 | `TRIGGER_FUNCTIONS.md` | Source (KAN-498 sweep), count, each function with its grant source, caller evidence. |
 | `probes.sql` | Pre-apply (A1-A3) and post-apply (B1-B5) probes inside `BEGIN ... ROLLBACK`. |
 | `rollback.sql` | Re-grants EXECUTE to PUBLIC on exactly the 173, and to anon where explicit. |

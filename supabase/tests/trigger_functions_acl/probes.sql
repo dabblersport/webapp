@@ -840,7 +840,7 @@ begin
   perform set_config('request.jwt.claims', json_build_object('sub', current_setting('k527.a'), 'role', 'authenticated')::text, true); set local role authenticated;
   perform public.rpc_block_user(b);
   reset role;
-  create temp table k527_new on commit drop as
+  create temp table k527_new as
     select n.id::text as id, n.to_user_id from public.notifications n
      where n.kind_key = 'moderation.user_blocked' and n.context->>'blocker_user_id' = a::text and n.context->>'blocked_user_id' = b::text
        and not (n.id::text = any (before_ids));
