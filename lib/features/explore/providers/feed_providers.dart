@@ -82,6 +82,13 @@ class NearbyFeedNotifier extends StateNotifier<NearbyFeedState> {
     await load();
   }
 
+  /// Reloads only when a previous load completed (used when the active
+  /// location moves, e.g. a manual point is picked).
+  Future<void> reloadIfLoaded() async {
+    if (!mounted || !state.loaded) return;
+    await load();
+  }
+
   /// Force-load / refresh. Resolves device location, then calls the RPC.
   Future<void> load() async {
     if (!mounted) return;
@@ -170,7 +177,7 @@ final nearbyRpcFeedProvider =
             a.location.lng == b.location.lng) {
           return;
         }
-        if (notifier.mounted && notifier.state.loaded) notifier.load();
+        notifier.reloadIfLoaded();
       });
       return notifier;
     });
