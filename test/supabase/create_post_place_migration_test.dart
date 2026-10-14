@@ -361,11 +361,52 @@ void main() {
         final src = File(
           'lib/data/repositories/post_repository_impl.dart',
         ).readAsStringSync();
-        final calls = RegExp(
+        // Every rpc('create_post' ...) call, however its params are built.
+        final all = RegExp(r"rpc\(\s*'create_post'").allMatches(src).length;
+        // Path 1: the non-circle createPost call with an inline map.
+        final inline = RegExp(
           r"rpc\(\s*'create_post',\s*params:\s*\{",
-        ).allMatches(src).length;
-        expect(calls, 3);
+        ).allMatches(src).toList();
+        // Paths 2 and 3: the two circle calls through the KAN-525 helper.
+        final helper = RegExp(
+          r"rpc\(\s*'create_post',\s*params:\s*buildCreatePostRpcParams\(",
+        ).allMatches(src).toList();
+        expect(inline.length, 1);
+        expect(helper.length, 2);
+        expect(all, 3, reason: 'no create_post call outside the three paths');
         expect(RegExp(r"rpc\(\s*'create_post'\s*\)").hasMatch(src), isFalse);
+
+        // The place reaches the RPC on every path.
+        final inlineBody = src.substring(
+          inline.single.end,
+          src.indexOf('},', inline.single.end),
+        );
+        expect(inlineBody, contains("'p_location_tag_id'"));
+        for (final m in helper) {
+          final args = src.substring(m.end, src.indexOf('),', m.end));
+          for (final a in [
+            'venueId:',
+            'locationName:',
+            'geoLat:',
+            'geoLng:',
+            'locationTagId:',
+          ]) {
+            expect(args, contains(a), reason: 'circle call at ${m.start}: $a');
+          }
+        }
+        final def = src.substring(
+          src.indexOf('Map<String, dynamic> buildCreatePostRpcParams('),
+        );
+        for (final k in [
+          'p_venue_id',
+          'p_location_name',
+          'p_geo_lat',
+          'p_geo_lng',
+          'p_location_tag_id',
+          'p_area_id',
+        ]) {
+          expect(def, contains("'$k'"), reason: 'helper sends $k');
+        }
       },
     );
   });
