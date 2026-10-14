@@ -69,7 +69,7 @@ with a null reason.
 
 ## KAN-530: no free text in a message report
 
-`20261013160400_kan530_report_content_no_message_text.sql` makes `report_content` discard `p_details` for
+`20261013160400_kan530_msg_no_free_text_in_message_reports.sql` makes `report_content` discard `p_details` for
 target type `message` (details stored and audited as NULL) and adds one `NOT VALID` CHECK on
 `moderation_reports` (`target_type <> 'message' OR details IS NULL`) so a direct insert or update cannot
 carry details either. Other report types are unchanged. AUTHORED, NOT APPLIED; probes P11-P15 are
