@@ -29,6 +29,9 @@ export interface Grant {
   readOnlyReason: "left_read_only" | "game_ended" | "game_cancelled" | null;
   /** Set when the caller left: history is visible up to and including this seq only. */
   leftAtSeq: number | null;
+  /** D4 group rule (KAN-512): senders the CALLER blocked (user_blocks only). Their messages are omitted from the
+   *  caller's own list. Empty when the caller blocked nobody. Never another user's blocks. */
+  hiddenSenderIds: string[];
 }
 
 export type AuthOutcome = { ok: true; grant: Grant } | { ok: false; response: Response };
@@ -72,6 +75,12 @@ function denial(m: ReasonMapping): Response {
 
 // Opaque shape check only: "Bearer <non-empty, no whitespace>". The token itself is never parsed.
 const BEARER = /^Bearer [^\s]+$/;
+
+/** Opaque shape check only, for routes that must reject an unauthenticated call before touching D1. */
+export function hasBearer(request: Request): boolean {
+  const a = request.headers.get("Authorization");
+  return a !== null && BEARER.test(a);
+}
 
 const malformed = (): AuthOutcome => ({ ok: false, response: upstreamError(502, "authorisation result malformed") });
 
@@ -124,7 +133,13 @@ export async function authorize(request: Request, env: Env, conversationId: stri
   }
   const result = Array.isArray(parsed) ? (parsed.length === 1 ? parsed[0] : undefined) : parsed;
   if (result === null || typeof result !== "object") return malformed();
-  const r = result as { user_id?: unknown; allowed_action?: unknown; reason?: unknown; left_at_seq?: unknown };
+  const r = result as {
+    user_id?: unknown;
+    allowed_action?: unknown;
+    reason?: unknown;
+    left_at_seq?: unknown;
+    hidden_sender_ids?: unknown;
+  };
 
   if (r.allowed_action === null || r.allowed_action === undefined) {
     if (typeof r.reason !== "string") return malformed();
@@ -134,10 +149,16 @@ export async function authorize(request: Request, env: Env, conversationId: stri
   }
 
   if (typeof r.user_id !== "string" || r.user_id.length === 0) return malformed();
+  // null/absent means "blocked nobody"; anything else that is not a string array is incoherent (fails closed).
+  let hiddenSenderIds: string[] = [];
+  if (r.hidden_sender_ids !== null && r.hidden_sender_ids !== undefined) {
+    if (!Array.isArray(r.hidden_sender_ids) || !r.hidden_sender_ids.every((x) => typeof x === "string")) return malformed();
+    hiddenSenderIds = r.hidden_sender_ids as string[];
+  }
 
   if (r.allowed_action === "send") {
     if (r.reason !== null && r.reason !== undefined) return malformed();
-    return { ok: true, grant: { userId: r.user_id, action: "send", readOnlyReason: null, leftAtSeq: null } };
+    return { ok: true, grant: { userId: r.user_id, action: "send", readOnlyReason: null, leftAtSeq: null, hiddenSenderIds } };
   }
 
   if (r.allowed_action === "read") {
@@ -149,7 +170,7 @@ export async function authorize(request: Request, env: Env, conversationId: stri
       if (typeof r.left_at_seq !== "number" || !Number.isInteger(r.left_at_seq) || r.left_at_seq < 0) return malformed();
       leftAtSeq = r.left_at_seq;
     }
-    return { ok: true, grant: { userId: r.user_id, action: "read", readOnlyReason: m.reason, leftAtSeq } };
+    return { ok: true, grant: { userId: r.user_id, action: "read", readOnlyReason: m.reason, leftAtSeq, hiddenSenderIds } };
   }
 
   return malformed();
