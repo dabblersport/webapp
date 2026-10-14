@@ -136,3 +136,14 @@ test("refuses when the environment is incomplete or malformed", async () => {
   const { d: d2 } = deps(w, { env: { SUPABASE_URL: URL_OK, SUPABASE_ANON_KEY: "k", MESSAGING_WORKER_URL: "http://insecure", MESSAGING_CONVERSATION_ID: CONV } });
   await assert.rejects(runLive(d2), (e) => e.code === "bad-env");
 });
+
+test("B's rejoin cleanup is registered before the first roster change", async () => {
+  const { readFileSync } = await import("node:fs");
+  const src = readFileSync(new URL("../lib/live.mjs", import.meta.url), "utf8");
+  const reg = src.indexOf('cleanup.push(async () => {\n      await B.client.rpc("rpc_join_game"');
+  assert.ok(reg > 0, "a rejoin cleanup callback is registered");
+  assert.equal(src.split('cleanup.push(async () => {\n      await B.client.rpc("rpc_join_game"').length - 1, 1, "registered once");
+  for (const change of ['B.client.rpc("rpc_leave_game"', 'A.client.rpc("rpc_remove_player"']) {
+    assert.ok(src.indexOf(change) > reg, `${change} comes after the rejoin registration`);
+  }
+});

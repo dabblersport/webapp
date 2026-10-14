@@ -124,6 +124,11 @@ export async function runLive(deps) {
     runGuards({ supabaseUrl: cfg.supabaseUrl, facts });
     reporter.note("Guards passed: project, test profiles, fixture game only.");
     const bProfileId = facts.B.profiles[0].id;
+    // Registered BEFORE the first roster change (T-A4 leave, removal): whatever throws later, finally rejoins B.
+    // rpc_join_game is idempotent for an already-active member.
+    cleanup.push(async () => {
+      await B.client.rpc("rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
+    });
 
     // ---- T1 ---------------------------------------------------------------------------------------------
     const life = decodeExpMinusIat(A.token());
@@ -202,9 +207,6 @@ export async function runLive(deps) {
     // ---- removal: T3, T5, T6 -------------------------------------------------------------------------------
     {
       const removed = await A.client.rpc("rpc_remove_player", { p_game_id: FIXTURE_GAME_ID, p_profile_id: bProfileId });
-      cleanup.push(async () => {
-        await B.client.rpc("rpc_join_game", { p_actor_type: "player", p_game_id: FIXTURE_GAME_ID });
-      });
       if (removed.error) {
         for (const id of ["T3", "T5", "T6"]) reporter.line(id, "FAIL", "A could not remove B from the fixture game", { removeOk: false });
       } else {
