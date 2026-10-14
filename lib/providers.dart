@@ -41,6 +41,7 @@ export 'features/news/providers/news_comments_provider.dart';
 
 // Messaging (KAN-507; repository defaults to the in-memory fake)
 export 'features/messaging/presentation/providers/messaging_providers.dart';
+export 'features/messaging/presentation/providers/messaging_realtime_providers.dart';
 
 // Feedback (Action Area semantic layer)
 export 'core/feedback/feedback_center.dart';

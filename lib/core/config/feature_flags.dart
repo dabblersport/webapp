@@ -42,6 +42,14 @@ class FeatureFlags {
   /// [enableMessagingGameChat]) is true — chat never ships without a way to
   /// report it. It may be true on its own. Keep false until the pilot.
   static const bool enableMessagingReporting = false;
+
+  /// Realtime wake-ups for the game chat (KAN-544, Realtime R4). A sub-flag
+  /// of [messaging] and [enableMessagingGameChat]: it only means something
+  /// when both are on (see [messagingRealtimeConsistent]). When true the app
+  /// listens on the user's private Realtime topic and fetches new messages as
+  /// soon as a wake arrives; polling stays as the fallback. When false the
+  /// chat polls exactly as before. Keep false until the pilot.
+  static const bool messagingRealtime = false;
   static const bool notifications = true;
 
   // Gates the 3-tier "Early Bird" check-in surface only (rewards tab route,
@@ -270,6 +278,7 @@ class FeatureFlags {
       if (messaging) 'messaging',
       if (enableMessagingGameChat) 'messaging_game_chat',
       if (enableMessagingReporting) 'messaging_reporting',
+      if (messagingRealtime) 'messaging_realtime',
       if (notifications) 'notifications',
       if (enablePayments) 'payments',
       if (enableEarlyBirdCheckIn) 'rewards',
@@ -293,6 +302,8 @@ class FeatureFlags {
         return enableMessagingGameChat;
       case 'messaging_reporting':
         return enableMessagingReporting;
+      case 'messaging_realtime':
+        return messagingRealtime;
       case 'notifications':
         return notifications;
       case 'payments':
@@ -315,6 +326,16 @@ class FeatureFlags {
     if (messaging || gameChat) return reporting;
     return true;
   }
+
+  /// The realtime flag is only valid together with the master chat flag and
+  /// the game-chat flag: realtime on while either is off is inconsistent
+  /// (KAN-544). All-false is consistent. Pure, so a test can check every
+  /// combination.
+  static bool messagingRealtimeConsistent(
+    bool messaging,
+    bool gameChat,
+    bool realtime,
+  ) => !realtime || (messaging && gameChat);
 
   /// MVP readiness check
   static bool isMvpReady() {

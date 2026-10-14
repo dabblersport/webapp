@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/features/messaging/presentation/controllers/game_chat_controller.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access_state.dart';
@@ -47,29 +48,55 @@ class GameChatScreen extends ConsumerStatefulWidget {
   ConsumerState<GameChatScreen> createState() => _GameChatScreenState();
 }
 
-class _GameChatScreenState extends ConsumerState<GameChatScreen> {
+class _GameChatScreenState extends ConsumerState<GameChatScreen>
+    with WidgetsBindingObserver {
   String _draft = '';
   DabblerOlderMessagesState _older = DabblerOlderMessagesState.idle;
   Timer? _poll;
+  GameChatController? _controllerRef;
 
   @override
   void initState() {
     super.initState();
-    final interval = ref.read(gameChatPollIntervalProvider);
-    if (interval != null) {
-      _poll = Timer.periodic(interval, (_) {
-        if (!mounted) return;
-        ref
-            .read(gameChatControllerProvider(widget.gameId).notifier)
-            .refreshNewest();
-      });
-    }
+    WidgetsBinding.instance.addObserver(this);
+    final controller = ref.read(
+      gameChatControllerProvider(widget.gameId).notifier,
+    );
+    _controllerRef = controller;
+    controller.setOpen(true);
+    _startPoll(ref.read(gameChatEffectivePollProvider));
   }
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    _controllerRef?.setOpen(false);
     _poll?.cancel();
     super.dispose();
+  }
+
+  /// One catch-up fetch when the app comes back to the foreground (KAN-544).
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed || !mounted) return;
+    ref
+        .read(gameChatControllerProvider(widget.gameId).notifier)
+        .refreshNewest();
+  }
+
+  /// (Re)starts the poll at [interval]; null means no polling. The interval is
+  /// the normal one until a Realtime channel is SUBSCRIBED, then the 60 s
+  /// safety poll (see [gameChatEffectivePollProvider]).
+  void _startPoll(Duration? interval) {
+    _poll?.cancel();
+    _poll = null;
+    if (interval == null) return;
+    _poll = Timer.periodic(interval, (_) {
+      if (!mounted) return;
+      ref
+          .read(gameChatControllerProvider(widget.gameId).notifier)
+          .refreshNewest();
+    });
   }
 
   Future<void> _loadOlder() async {
@@ -101,6 +128,9 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    ref.listen<Duration?>(gameChatEffectivePollProvider, (_, next) {
+      _startPoll(next);
+    });
     final async = ref.watch(gameChatControllerProvider(widget.gameId));
     final view = async.valueOrNull;
     // T6 (KAN-518): unavailable and removed replace the whole screen, thread,
