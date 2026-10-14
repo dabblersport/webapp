@@ -38,9 +38,15 @@ Catalog evidence supplied by the KAN-496 report (`LIVE_EVIDENCE.md` E1 and E2, r
 here, so "no caller in the database" rests on the repo reading above; probe A3 in `probes.sql` reads the
 dependents at apply time and must return no row.
 
-## Live catalog evidence: NOT obtained by this team (needs-ops)
+## Live catalog evidence (read-only, Memphis, 2026-10-14 ~04:29 UTC, project wtncuzcskpigqpmnxwws)
 
-The repo map above is complete, but the live catalog read (dependents of the 2-argument overload in `pg_depend`, function bodies, views, policies and triggers that mention it, and the row counts) has NOT been measured for this ticket: the ops guard refuses `execute_sql` for team Karnak (D-042), and a read-only catalog SELECT was attempted and refused. **needs-ops: Memphis runs probes.sql block A3 (read-only) and A4 on project wtncuzcskpigqpmnxwws and records the output here.** Expected: A3 returns no row from any of its four queries; A4 shows user_blocks 3, restrictions 0 (KAN-496 E2, 2026-10-13). Until Memphis records it, "no live caller" is an inference from the repo, not a measurement. If A3 returns a row the migration must not be applied until that caller is migrated.
+Read by Memphis with the A3 and A4 queries of `probes.sql` (this team has no database access). Results:
+
+* **A3, catalog callers of `public.rpc_block_user(uuid, boolean)`:** `pg_depend` EMPTY; views EMPTY; policies EMPTY; triggers none. The `function body` query returned ONE row, `rpc_restrict_set(uuid, text)`: **text match only, error-message literal in `rpc_restrict_set` (KAN-522, applied 2026-10-14 04:04 UTC), not a caller.** The string occurs once, inside the literal `'use_rpc_block_user'` of the KAN-522 body; `has_call_syntax = false`. **Net: no live caller, dependent, view or policy uses the 2-argument overload.**
+* **A4, the two stores:** `user_blocks` 3, `restrictions` 0, `restrictions_blocked_rows` 0, rows the migration will carry 0, admins notified per carried row 0.
+* **Live ACL (unchanged since KAN-497):** `rpc_block_user(uuid, boolean)`, `rpc_block_user(uuid)`, `rpc_unblock_user(uuid)` and `rpc_unfollow_user(uuid)` are all `{postgres, authenticated, service_role}`; anon false. Body md5 (unchanged from the baseline): `8ea879d4...`, `e7681cfd...`, `61318e1c...`, `2a72380e...`.
+
+The repo map below and this live read agree: the app calls only the 1-argument overload and nothing calls the 2-argument one.
 
 ## Callers of `rpc_block_user(uuid, boolean)`
 
@@ -66,13 +72,13 @@ The repo map above is complete, but the live catalog read (dependents of the 2-a
 So a client that called the 2-argument overload would record a block that no guard reads: it would **look**
 blocked to that client and be enforced nowhere. Removing it from the callable API is the safe direction.
 
-## Second block store: closed by KAN-522, migration 20261013130000
+## Second block store: closed by KAN-522, migration 20261013130000, APPLIED 2026-10-14
 
 `public.rpc_restrict_set(p_target uuid, p_type text)` and `public.rpc_restrict_clear(p_target uuid, p_type text)` could
 write and delete `restrictions` rows of type `blocked`; the app does not call either (0 hits). That path has its own ticket,
 **KAN-522** (migration `20261013130000_restrict_rpcs_reject_blocked.sql`, reviewed), which makes both refuse the type `blocked`.
-**AC3 ("blocking through the API can only write user_blocks") is satisfied by KAN-499 (20261013120000) and KAN-522
-(20261013130000) together, applied in that order.** This ticket stays limited to `rpc_block_user(uuid, boolean)`.
+**AC3 ("blocking through the API can only write user_blocks") holds with KAN-499 (20261013120000) and KAN-522
+(20261013130000, APPLIED 2026-10-14) together.** This ticket stays limited to `rpc_block_user(uuid, boolean)`.
 
 ## Dependency on KAN-497
 
