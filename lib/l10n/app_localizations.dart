@@ -11218,6 +11218,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'A map with a red location pin'**
   String get location_intro_art;
+
+  /// No description provided for @manual_location_divider.
+  ///
+  /// In en, this message translates to:
+  /// **'or choose from list'**
+  String get manual_location_divider;
+
+  /// No description provided for @manual_location_search_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'Search locations...'**
+  String get manual_location_search_placeholder;
+
+  /// No description provided for @manual_location_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No locations found'**
+  String get manual_location_empty_title;
+
+  /// No description provided for @manual_location_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'Try a different search term'**
+  String get manual_location_empty_text;
+
+  /// No description provided for @manual_location_set_toast.
+  ///
+  /// In en, this message translates to:
+  /// **'Location set to {name}'**
+  String manual_location_set_toast(String name);
+
+  /// No description provided for @manual_location_set_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to update location: {error}'**
+  String manual_location_set_failed(String error);
+
+  /// No description provided for @manual_location_updated_toast.
+  ///
+  /// In en, this message translates to:
+  /// **'Location updated'**
+  String get manual_location_updated_toast;
+
+  /// No description provided for @manual_location_fetch_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to get location: {error}'**
+  String manual_location_fetch_failed(String error);
 }
 
 class _AppLocalizationsDelegate

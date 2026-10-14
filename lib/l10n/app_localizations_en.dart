@@ -6232,4 +6232,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_intro_art => 'A map with a red location pin';
+
+  @override
+  String get manual_location_divider => 'or choose from list';
+
+  @override
+  String get manual_location_search_placeholder => 'Search locations...';
+
+  @override
+  String get manual_location_empty_title => 'No locations found';
+
+  @override
+  String get manual_location_empty_text => 'Try a different search term';
+
+  @override
+  String manual_location_set_toast(String name) {
+    return 'Location set to $name';
+  }
+
+  @override
+  String manual_location_set_failed(String error) {
+    return 'Failed to update location: $error';
+  }
+
+  @override
+  String get manual_location_updated_toast => 'Location updated';
+
+  @override
+  String manual_location_fetch_failed(String error) {
+    return 'Failed to get location: $error';
+  }
 }

@@ -2263,5 +2263,17 @@
   "location_intro_denied_forever": "الموقع محظور لتطبيق Dabbler. فعّله من الإعدادات لرؤية المباريات والملاعب القريبة.",
   "location_intro_service_off": "خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.",
   "location_intro_open_settings": "فتح الإعدادات",
-  "location_intro_art": "خريطة عليها دبوس موقع أحمر"
+  "location_intro_art": "خريطة عليها دبوس موقع أحمر",
+
+  "manual_location_divider": "أو اختر من القائمة",
+  "manual_location_search_placeholder": "ابحث عن موقع...",
+  "manual_location_empty_title": "لم يتم العثور على مواقع",
+  "manual_location_empty_text": "جرّب كلمة بحث مختلفة",
+  "manual_location_set_toast": "تم تعيين الموقع إلى {name}",
+  "@manual_location_set_toast": { "placeholders": { "name": { "type": "String" } } },
+  "manual_location_set_failed": "تعذّر تحديث الموقع: {error}",
+  "@manual_location_set_failed": { "placeholders": { "error": { "type": "String" } } },
+  "manual_location_updated_toast": "تم تحديث الموقع",
+  "manual_location_fetch_failed": "تعذّر الحصول على الموقع: {error}",
+  "@manual_location_fetch_failed": { "placeholders": { "error": { "type": "String" } } }
 }

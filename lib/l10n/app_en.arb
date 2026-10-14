@@ -2229,5 +2229,17 @@
   "location_intro_denied_forever": "Location is blocked for Dabbler. Turn it on in Settings to see nearby games and venues.",
   "location_intro_service_off": "Location services are off on this device. Turn them on in Settings, then come back.",
   "location_intro_open_settings": "Open Settings",
-  "location_intro_art": "A map with a red location pin"
+  "location_intro_art": "A map with a red location pin",
+
+  "manual_location_divider": "or choose from list",
+  "manual_location_search_placeholder": "Search locations...",
+  "manual_location_empty_title": "No locations found",
+  "manual_location_empty_text": "Try a different search term",
+  "manual_location_set_toast": "Location set to {name}",
+  "@manual_location_set_toast": { "placeholders": { "name": { "type": "String" } } },
+  "manual_location_set_failed": "Failed to update location: {error}",
+  "@manual_location_set_failed": { "placeholders": { "error": { "type": "String" } } },
+  "manual_location_updated_toast": "Location updated",
+  "manual_location_fetch_failed": "Failed to get location: {error}",
+  "@manual_location_fetch_failed": { "placeholders": { "error": { "type": "String" } } }
 }
