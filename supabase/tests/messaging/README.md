@@ -87,3 +87,12 @@ only `postgres` and `service_role` insert directly. Client reports go through `r
 
 Open observation (not changed here): `report_content` stays executable by `anon` and PUBLIC. It refuses
 a NULL `auth.uid()` with `auth_required`, so an anonymous call fails, but the grant itself is unchanged.
+
+## KAN-541: msg_notify (Realtime R1)
+
+`20261013160600_kan541_msg_notify.sql` adds `public.msg_notify(conversation, seq, mode default 'allowlist')`:
+after the Worker stores a message, the sender calls it and each current active member (not blockers of the
+sender, not leavers, not removed) gets a metadata-only wake-up on their private `user:<uid>` topic through
+`realtime.send(..., 'msg', topic, true)`. Payload: `type`, `conversation_id`, `seq`, nothing else. AUTHORED, NOT
+APPLIED. `notify_realtime_send_check.sql` is a read-only check for Memphis (signature, owner and privileges of
+`realtime.send`), `notify_probes.sql` N1-N6 are AUTHORED, NOT RUN, and `notify_rollback.sql` only revokes.
