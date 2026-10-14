@@ -29,6 +29,19 @@ class FeatureFlags {
   // socialMessages routes only reach a "Coming Soon" placeholder. Keep this
   // false until a real chat screen backs those routes.
   static const bool messaging = false;
+
+  /// Messaging P2 game chat (KAN-507, KAN-496 report 5.1). Compile-time; a
+  /// sub-flag of [messaging], which stays the master kill switch: the game
+  /// chat surface is reachable only when both are true. INVARIANT:
+  /// [enableMessagingReporting] must be true whenever this or [messaging] is
+  /// true (see [messagingFlagsConsistent]). Keep false until the pilot.
+  static const bool enableMessagingGameChat = false;
+
+  /// Reporting of messages to moderation (KAN-507, KAN-496 report 5.1).
+  /// INVARIANT: must be true whenever any chat flag ([messaging],
+  /// [enableMessagingGameChat]) is true — chat never ships without a way to
+  /// report it. It may be true on its own. Keep false until the pilot.
+  static const bool enableMessagingReporting = false;
   static const bool notifications = true;
 
   // Gates the 3-tier "Early Bird" check-in surface only (rewards tab route,
@@ -255,6 +268,8 @@ class FeatureFlags {
       if (enableOrganiserGameCreation) 'organiser_game_creation',
       if (socialFeed) 'social_feed',
       if (messaging) 'messaging',
+      if (enableMessagingGameChat) 'messaging_game_chat',
+      if (enableMessagingReporting) 'messaging_reporting',
       if (notifications) 'notifications',
       if (enablePayments) 'payments',
       if (enableEarlyBirdCheckIn) 'rewards',
@@ -274,6 +289,10 @@ class FeatureFlags {
         return socialFeed;
       case 'messaging':
         return messaging;
+      case 'messaging_game_chat':
+        return enableMessagingGameChat;
+      case 'messaging_reporting':
+        return enableMessagingReporting;
       case 'notifications':
         return notifications;
       case 'payments':
@@ -283,6 +302,18 @@ class FeatureFlags {
       default:
         return false;
     }
+  }
+
+  /// The messaging flag invariant (KAN-507): reporting must be on whenever
+  /// any chat flag is on. All-false is consistent; reporting on by itself is
+  /// consistent. Pure, so a test can check every combination.
+  static bool messagingFlagsConsistent(
+    bool messaging,
+    bool gameChat,
+    bool reporting,
+  ) {
+    if (messaging || gameChat) return reporting;
+    return true;
   }
 
   /// MVP readiness check
