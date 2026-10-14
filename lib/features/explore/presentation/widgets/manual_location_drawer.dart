@@ -44,6 +44,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
 
   Future<void> _selectLocation(LocationData location) async {
     final toast = DabblerToastProvider.of(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
 
     try {
@@ -62,7 +63,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
         Navigator.pop(context);
         toast.show(
           DabblerToastSpec(
-            message: 'Location set to ${location.displayName}',
+            message: l10n.manual_location_set_toast(location.displayName),
             tone: DabblerToastTone.success,
           ),
         );
@@ -71,7 +72,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
       if (mounted) {
         toast.show(
           DabblerToastSpec(
-            message: 'Failed to update location: $e',
+            message: l10n.manual_location_set_failed('$e'),
             tone: DabblerToastTone.error,
           ),
         );
@@ -85,6 +86,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
 
   Future<void> _useCurrentLocation() async {
     final toast = DabblerToastProvider.of(context);
+    final l10n = AppLocalizations.of(context);
     setState(() => _isLoading = true);
 
     try {
@@ -93,8 +95,8 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
       if (mounted) {
         Navigator.pop(context);
         toast.show(
-          const DabblerToastSpec(
-            message: 'Location updated',
+          DabblerToastSpec(
+            message: l10n.manual_location_updated_toast,
             tone: DabblerToastTone.success,
           ),
         );
@@ -103,7 +105,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
       if (mounted) {
         toast.show(
           DabblerToastSpec(
-            message: 'Failed to get location: $e',
+            message: l10n.manual_location_fetch_failed('$e'),
             tone: DabblerToastTone.error,
           ),
         );
@@ -131,11 +133,15 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
           onPressed: _useCurrentLocation,
         ),
         const DabblerGap.v(DabblerSpacing.space6),
-        const DabblerDivider(label: 'or choose from list'),
+        DabblerDivider(
+          label: AppLocalizations.of(context).manual_location_divider,
+        ),
         const DabblerGap.v(DabblerSpacing.space6),
         DabblerSearchField(
           controller: _searchController,
-          placeholder: 'Search locations...',
+          placeholder: AppLocalizations.of(
+            context,
+          ).manual_location_search_placeholder,
         ),
         const DabblerGap.v(DabblerSpacing.space4),
         if (_isLoading)
@@ -144,12 +150,12 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
             child: Center(child: DabblerSpinner()),
           )
         else if (_filteredLocations.isEmpty)
-          const Padding(
-            padding: EdgeInsets.all(DabblerSpacing.space8),
+          Padding(
+            padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(
               icon: 'location-slash',
-              title: 'No locations found',
-              text: 'Try a different search term',
+              title: AppLocalizations.of(context).manual_location_empty_title,
+              text: AppLocalizations.of(context).manual_location_empty_text,
             ),
           )
         else

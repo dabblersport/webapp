@@ -6285,4 +6285,34 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_intro_art => 'خريطة عليها دبوس موقع أحمر';
+
+  @override
+  String get manual_location_divider => 'أو اختر من القائمة';
+
+  @override
+  String get manual_location_search_placeholder => 'ابحث عن موقع...';
+
+  @override
+  String get manual_location_empty_title => 'لم يتم العثور على مواقع';
+
+  @override
+  String get manual_location_empty_text => 'جرّب كلمة بحث مختلفة';
+
+  @override
+  String manual_location_set_toast(String name) {
+    return 'تم تعيين الموقع إلى $name';
+  }
+
+  @override
+  String manual_location_set_failed(String error) {
+    return 'تعذّر تحديث الموقع: $error';
+  }
+
+  @override
+  String get manual_location_updated_toast => 'تم تحديث الموقع';
+
+  @override
+  String manual_location_fetch_failed(String error) {
+    return 'تعذّر الحصول على الموقع: $error';
+  }
 }
