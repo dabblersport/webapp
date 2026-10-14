@@ -77,24 +77,25 @@ export async function listPage(db: D1Database, q: PageQuery) {
 
   const newerPaging = q.cursor !== null && q.direction === "newer";
   if (!newerPaging) rows.reverse(); // always ascending by seq
-  const hasOlder = newerPaging ? otherSide : more;
-  const hasNewer = newerPaging ? more : otherSide;
+  const olderExists = newerPaging ? otherSide : more;
+  const newerExists = newerPaging ? more : otherSide;
 
   const minSeq = rows.length ? rows[0].seq : null;
   const maxSeq = rows.length ? rows[rows.length - 1].seq : null;
   // Empty page: the cursor itself is the edge to continue from.
-  const olderCursor = hasOlder ? (minSeq ?? (q.cursor as number) + 1) : null;
-  // Edge: an empty older page at cursor=1 has no valid newer cursor (contract minimum is 1); null, and the
-  // client reloads the newest page. Reported to the contract owner rather than loosening the input rule.
+  const olderCursor = olderExists ? (minSeq ?? (q.cursor as number) + 1) : null;
+  // An empty older page at cursor=1 means the client already holds seq 1; there is no valid newer
+  // cursor (contract minimum is 1), so nothing is reported above the page.
   const edge = (q.cursor as number) - 1;
-  const newerCursor = hasNewer ? (maxSeq ?? (edge >= 1 ? edge : null)) : null;
+  const newerCursor = newerExists ? (maxSeq ?? (edge >= 1 ? edge : null)) : null;
 
+  // Contract rule (MessagePage): has_X === (X_cursor !== null), always. Flags are derived from cursors.
   return {
     messages: rows.map((r) => toApiMessage(r, q.viewerId)),
     older_cursor: olderCursor,
     newer_cursor: newerCursor,
-    has_older: hasOlder,
-    has_newer: hasNewer,
+    has_older: olderCursor !== null,
+    has_newer: newerCursor !== null,
     page_size: q.limit,
     boundary: q.cap === null ? null : { kind: "left_at_seq" as const, seq: q.cap },
   };

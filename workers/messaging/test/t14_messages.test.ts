@@ -303,8 +303,8 @@ describe("pagination by seq", () => {
       const back = (await (await list(db, `?cursor=${atEnd.older_cursor}&direction=older&limit=2`)).json()) as any;
       expect(back.messages.map((x: any) => x.seq)).toEqual([5, 6]);
       const atStart = (await (await list(db, "?cursor=1&direction=older")).json()) as any;
-      // cursor 0 is not a valid input (minimum 1), so no newer_cursor is emitted at this edge.
-      expect(atStart).toMatchObject({ messages: [], has_older: false, has_newer: true, newer_cursor: null });
+      // The client already holds seq 1; nothing above the page to continue from: has_newer false, cursor null.
+      expect(atStart).toMatchObject({ messages: [], has_older: false, has_newer: false, older_cursor: null, newer_cursor: null });
       const mid = (await (await list(db, "?cursor=3&direction=older&limit=1")).json()) as any;
       expect(mid).toMatchObject({ has_older: true, has_newer: true, older_cursor: 2, newer_cursor: 2 });
       const fwd = (await (await list(db, `?cursor=${mid.newer_cursor}&direction=newer&limit=2`)).json()) as any;
@@ -313,4 +313,40 @@ describe("pagination by seq", () => {
       await mf.dispose();
     }
   });
+});
+
+describe("invariant: has_X === (X_cursor !== null) on every response", () => {
+  const check = (p: any, label: string) => {
+    expect(p.has_older, `${label} older`).toBe(p.older_cursor !== null);
+    expect(p.has_newer, `${label} newer`).toBe(p.newer_cursor !== null);
+  };
+  const walk = async (db: D1Database, max: number, label: string) => {
+    for (const limit of [1, 2, 3, 6, 30]) {
+      const qs = [`?limit=${limit}`];
+      for (let c = 1; c <= max + 1; c++) for (const d of ["older", "newer"]) qs.push(`?limit=${limit}&cursor=${c}&direction=${d}`);
+      for (const q of qs) {
+        const res = await list(db, q);
+        expect(res.status, `${label} ${q}`).toBe(200);
+        check(await res.json(), `${label} ${q}`);
+      }
+    }
+  };
+
+  it("empty conversation, exact-limit, every cursor edge, both directions, with and without left_at_seq", async () => {
+    const { state } = rpc();
+    const { mf, db } = await localD1();
+    try {
+      await walk(db, 2, "empty");
+      await seed(db, 6);
+      await walk(db, 7, "six");
+      const atStart = (await (await list(db, "?cursor=1&direction=older")).json()) as any;
+      expect(atStart).toMatchObject({ has_newer: false, newer_cursor: null });
+      for (const cap of [0, 1, 3, 6]) {
+        state.row = authRow({ allowed_action: "read", reason: "left", left_at_seq: cap });
+        await walk(db, 7, `cap${cap}`);
+      }
+    } finally {
+      await mf.dispose();
+    }
+  }, 60_000);
 });
