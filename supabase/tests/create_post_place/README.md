@@ -7,7 +7,7 @@ Only project `wtncuzcskpigqpmnxwws` is referenced; no secret, key or connection 
 
 | File | Purpose |
 |---|---|
-| `supabase/migrations/20261013150000_create_post_keeps_place.sql` | Renames the 15-argument `create_post` to `create_post_legacy_v1` (revoked from PUBLIC, anon, authenticated), creates `create_post` with the 15 old parameters then `p_venue_id, p_location_name, p_geo_lat, p_geo_lng, p_area_id` (all `DEFAULT NULL`), stores them on the post, raises `geo_incomplete` for half a coordinate pair, restores the baseline ACL. Nothing is removed. |
+| `supabase/migrations/20261013125000_create_post_keeps_place.sql` | Renames the 15-argument `create_post` to `create_post_legacy_v1` (revoked from PUBLIC, anon, authenticated), creates `create_post` with the 15 old parameters then `p_venue_id, p_location_name, p_geo_lat, p_geo_lng, p_area_id` (all `DEFAULT NULL`), stores them on the post, raises `geo_incomplete` for half a coordinate pair, restores the baseline ACL. Nothing is removed. |
 | `CALLERS.md` | Caller map: three app calls, all named parameters. |
 | `probes.sql` | Pre-apply and post-apply probes; every block `BEGIN ... ROLLBACK`, marked READ-ONLY or WRITE-IN-TRANSACTION-ROLLBACK. AUTHORED, NOT RUN. |
 | `rollback.sql` | Undo (itself an apply by Memphis). |
