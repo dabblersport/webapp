@@ -189,6 +189,8 @@ void main() {
           'trg_posts_updated_at',
           'fn_likes_sync',
           'trg_posts_set_geo',
+          "updated_at = timestamptz '2000-01-01",
+          "'original', 'moment'",
           'geo_location_id',
           'do not grant',
         ]) {
@@ -196,6 +198,19 @@ void main() {
         }
       },
     );
+  });
+
+  test('B4 does not depend on now() advancing and has no DROP', () {
+    final b4 = probes.substring(
+      probes.indexOf('-- B4 [WRITE'),
+      probes.indexOf('-- B5 [WRITE'),
+    );
+    expect(b4, isNot(contains('pg_sleep')));
+    expect(b4, isNot(contains('enum_range')));
+    expect(b4, isNot(matches(RegExp('drop', caseSensitive: false))));
+    expect(b4, contains('begin;'));
+    expect(b4, contains('rollback;'));
+    expect(probes, isNot(matches(RegExp(r'\bdrop\b', caseSensitive: false))));
   });
 
   group('live evidence and list consistency (C6)', () {
