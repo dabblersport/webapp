@@ -982,19 +982,22 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
         final res = await _db.rpc(
           'create_post',
-          params: {
-            'p_kind': 'moment',
-            'p_visibility': 'circle',
-            'p_post_type': postType,
-            'p_origin_type': 'manual',
-            if (body != null) 'p_body': body,
-            if (sportKey != null) 'p_sport': sportKey,
-            'p_media': <dynamic>[],
-            'p_tags': extractedTags,
-            if (vibeId != null) 'p_primary_vibe_id': vibeId,
-            'p_vibe_ids': vibeId != null ? <String>[vibeId] : <String>[],
-            'p_circle_ids': <String>[circleId!],
-          },
+          params: buildCreatePostRpcParams(
+            kind: 'moment',
+            postType: postType,
+            originType: 'manual',
+            body: body,
+            sportKey: sportKey,
+            media: <dynamic>[],
+            tags: extractedTags,
+            primaryVibeId: vibeId,
+            circleId: circleId!,
+            venueId: venueId,
+            locationName: locationName,
+            geoLat: geoLat,
+            geoLng: geoLng,
+            locationTagId: locationTagId,
+          ),
         );
         final post = Post.fromJson(res as Map<String, dynamic>);
         if (extractedTags.isNotEmpty) {
@@ -1105,21 +1108,23 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
         final res = await _db.rpc(
           'create_post',
-          params: {
-            'p_kind': request.kind.name,
-            'p_visibility': 'circle',
-            'p_post_type': request.postType.dbValue,
-            'p_origin_type': request.originType.name,
-            if (request.body != null) 'p_body': request.body,
-            if (sportKey != null) 'p_sport': sportKey,
-            'p_media': request.media ?? <dynamic>[],
-            'p_tags': request.tags ?? <String>[],
-            if (request.vibeId != null) 'p_primary_vibe_id': request.vibeId,
-            'p_vibe_ids': request.vibeId != null
-                ? [request.vibeId!]
-                : <String>[],
-            'p_circle_ids': [request.circleId!],
-          },
+          params: buildCreatePostRpcParams(
+            kind: request.kind.name,
+            postType: request.postType.dbValue,
+            originType: request.originType.name,
+            body: request.body,
+            sportKey: sportKey,
+            media: request.media ?? <dynamic>[],
+            tags: request.tags ?? <String>[],
+            primaryVibeId: request.vibeId,
+            circleId: request.circleId!,
+            venueId: request.venueId,
+            locationName: request.locationName,
+            geoLat: request.geoLat,
+            geoLng: request.geoLng,
+            locationTagId: request.locationTagId,
+            areaId: request.areaId,
+          ),
         );
         final post = Post.fromJson(res as Map<String, dynamic>);
         // Link hashtags to public.hashtags / post_hashtags tables.
@@ -1630,3 +1635,44 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
   static double _toRad(double deg) => deg * math.pi / 180.0;
 }
+
+/// Builds the `create_post` RPC parameter map for a circle-visibility post.
+///
+/// Shared by both circle call sites so the place (venue, name, coordinates,
+/// location tag, area) reaches the RPC; each place key is sent only when
+/// non-null, so a placeless post sends exactly the previous map.
+Map<String, dynamic> buildCreatePostRpcParams({
+  required String kind,
+  required String postType,
+  required String originType,
+  String? body,
+  String? sportKey,
+  required List<dynamic> media,
+  required List<String> tags,
+  String? primaryVibeId,
+  required String circleId,
+  String? venueId,
+  String? locationName,
+  double? geoLat,
+  double? geoLng,
+  String? locationTagId,
+  String? areaId,
+}) => <String, dynamic>{
+  'p_kind': kind,
+  'p_visibility': 'circle',
+  'p_post_type': postType,
+  'p_origin_type': originType,
+  if (body != null) 'p_body': body,
+  if (sportKey != null) 'p_sport': sportKey,
+  'p_media': media,
+  'p_tags': tags,
+  if (primaryVibeId != null) 'p_primary_vibe_id': primaryVibeId,
+  'p_vibe_ids': primaryVibeId != null ? <String>[primaryVibeId] : <String>[],
+  'p_circle_ids': <String>[circleId],
+  if (venueId != null) 'p_venue_id': venueId,
+  if (locationName != null) 'p_location_name': locationName,
+  if (geoLat != null) 'p_geo_lat': geoLat,
+  if (geoLng != null) 'p_geo_lng': geoLng,
+  if (locationTagId != null) 'p_location_tag_id': locationTagId,
+  if (areaId != null) 'p_area_id': areaId,
+};
