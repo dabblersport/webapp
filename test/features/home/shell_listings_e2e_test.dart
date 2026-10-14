@@ -295,9 +295,9 @@ void main() {
           (
             route: RoutePaths.gamesTab,
             name: 'games',
-            // The sport palette (KAN-454). Plain header kept: no band.
+            // The sport palette (KAN-454); the header is the tinted band (KAN-531).
             theme: DabblerTheme.sport,
-            band: null,
+            band: tint(DabblerTheme.sport),
           ),
           (
             route: RoutePaths.meetups,
@@ -411,10 +411,10 @@ void main() {
     // bar and the Action Area to its own palette, with no sport left over on
     // Venues or Meetups and no stale band under the status bar.
     final hops = <(String, DabblerTheme, Color)>[
-      (RoutePaths.gamesTab, DabblerTheme.sport, page),
+      (RoutePaths.gamesTab, DabblerTheme.sport, sportBand),
       (RoutePaths.venuesTab, DabblerTheme.main, tint(DabblerTheme.main)),
       (RoutePaths.meetups, DabblerTheme.active, accent),
-      (RoutePaths.gamesTab, DabblerTheme.sport, page),
+      (RoutePaths.gamesTab, DabblerTheme.sport, sportBand),
     ];
     for (final (route, theme, band) in hops) {
       router.go(route);
