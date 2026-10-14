@@ -442,10 +442,9 @@ class AppRouter {
     socialNotificationsRoute,
     socialMessagesRoute,
     socialChatConversationIdRoute,
-    // KAN-507: game chat skeleton; registered only when messaging AND
-    // enableMessagingGameChat are on (both false today).
-    if (gameChatRouteEnabled())
-      gameChatRoute(parentNavigatorKey: rootNavigatorKey),
+    // KAN-507: game chat skeleton; always registered, its redirect sends
+    // to home unless messaging AND enableMessagingGameChat are on.
+    gameChatRoute(parentNavigatorKey: rootNavigatorKey),
     socialEditPostRoute,
     socialAnalyticsRoute,
     adminModerationQueueRoute,
