@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 /// authored and NOT applied; these tests pin its text. They run no SQL. They never assert that it
 /// is the newest migration, only that it sorts after a fixed earlier cut-off.
 const _dir = 'supabase/migrations';
-const _name = '20261013160200_kan530_msg_report_content_no_message_text.sql';
+const _name = '20261013160400_kan530_msg_no_free_text_in_message_reports.sql';
 const _baseline = '$_dir/20260829080500_baseline_schema.sql';
 const _pack = 'supabase/tests/messaging';
 
