@@ -87,6 +87,27 @@ Total deleted: see "Line count" below.
 | `FeatureFlags.messaging` / chat comment in `feature_flags.dart` | flags file | Forbidden to touch. |
 | `lib/data/models/social/*` other models (comment, post, friend, block_record …) | many | Not chat. |
 
+## (c) Changed but kept
+
+Two live files are edited, only on the lines that name the deleted files. Authorised for
+this ticket only; any other edit in them is out of scope.
+
+| File | Edit | Reason |
+|---|---|---|
+| `lib/data/models/models.dart` | 5 `export 'social/...'` lines removed | They export the five deleted social chat model files; left in place they would dangle (compile error). |
+| `test/design_system_gate_test.dart` | 3 `GateAllow` rows removed | Allowlist rows that name `chat_message_model.dart` (2) and `chat_controller.dart` (1), files that no longer exist; no rule is weakened. |
+
+## Post-deletion verification
+
+```bash
+grep -rn "socialChatList" lib test --include='*.dart' --include='*.txt'
+```
+
+Result after the deletions: **no output**. `socialChatListRoute` (the getter in
+`platform_routes.dart`), `RoutePaths.socialChatList` and `RouteNames.socialChatList` are
+referenced nowhere, and `flutter analyze --no-pub --no-fatal-infos` reports no dangling
+reference. `socialChat` (the live conversation route) is kept, see (b).
+
 ## Line count
 
 `git diff --shortstat` (tracked changes, before the manifest is added):
