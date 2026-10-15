@@ -2,7 +2,7 @@
 -- Needs KAN-560 (msg_dm_pairs). True when the caller (auth.uid()) and p_other_user already have a DM pair, including an
 -- EMPTY one the other user started and one older than any list cap. The Worker uses it so re-opening an existing pair is
 -- never charged to the hourly new-DM limit. Reads one UNIQUE-indexed row; returns a boolean only (no ids, no content).
--- Rollback: DROP FUNCTION public.msg_dm_exists(uuid);   (a rollback script is the operations team's to run)
+-- Rollback: supabase/tests/messaging/dm_exists_rollback.sql (revokes EXECUTE; nothing is dropped; the Worker then fails open).
 BEGIN;
 
 CREATE OR REPLACE FUNCTION public.msg_dm_exists(p_other_user uuid)

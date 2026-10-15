@@ -222,6 +222,7 @@ Game chats never return them.
   age, so every re-open passes without touching the limiter (the database applies every block, age and cap rule and does
   not count a re-open either). **Until operations applies that migration** (needs-ops), or when the call fails, the Worker
   does not charge the start (the second-line limiter fails open) and the database's daily cap of 20 is the only limit.
+  **The hourly 429 for new pairs is therefore proven only after the apply**, and not before it. The apply is an ordered execute_sql by the operations team, with `supabase/tests/messaging/dm_exists_rollback.sql` to undo it (EXECUTE revoked, nothing dropped).
   DM sends use the existing send limits (20 a minute per conversation, 120 an hour per user).
 - **Summary:** the readable set is the database's own list (limit 100, one call): an id that is not in it is omitted
   silently, and so is a conversation the caller has left. A **blocked counterpart is hidden from the blocker (D4)**: for a
