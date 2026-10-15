@@ -26,7 +26,7 @@ export interface Grant {
   userId: string;
   action: "send" | "read";
   /** Set when action is 'read': the typed reason a send is refused with. */
-  readOnlyReason: "left_read_only" | "game_ended" | "game_cancelled" | null;
+  readOnlyReason: "left_read_only" | "game_ended" | "game_cancelled" | "blocked" | "suspended" | null;
   /** Set when the caller left: history is visible up to and including this seq only. */
   leftAtSeq: number | null;
   /** D4 group rule (KAN-512): senders the CALLER blocked (user_blocks only). Their messages are omitted from the
@@ -47,7 +47,7 @@ export type AuthOutcome = { ok: true; grant: Grant } | { ok: false; response: Re
 export type ReasonMapping =
   | { kind: "deny"; reason: Reason }
   | { kind: "deny"; status: 401 | 403 }
-  | { kind: "readOnly"; reason: "left_read_only" | "game_ended" | "game_cancelled" };
+  | { kind: "readOnly"; reason: "left_read_only" | "game_ended" | "game_cancelled" | "blocked" | "suspended" };
 
 const RPC_REASONS: Record<string, ReasonMapping> = {
   not_authenticated: { kind: "deny", status: 401 },
@@ -58,6 +58,10 @@ const RPC_REASONS: Record<string, ReasonMapping> = {
   left: { kind: "readOnly", reason: "left_read_only" },
   game_ended: { kind: "readOnly", reason: "game_ended" },
   game_cancelled: { kind: "readOnly", reason: "game_cancelled" },
+  // KAN-561: a DM is read-only for BOTH users when either blocked the other (blocked) or the counterpart is deleted or
+  // banned (suspended). Game chats never return these.
+  blocked: { kind: "readOnly", reason: "blocked" },
+  suspended: { kind: "readOnly", reason: "suspended" },
 };
 
 /** Unknown reason strings deny with 403 and no reason. */
@@ -174,4 +178,60 @@ export async function authorize(request: Request, env: Env, conversationId: stri
   }
 
   return malformed();
+}
+
+
+/** A conversation id no row can have: msg_authorize answers it with the caller's verified id and not_member. */
+const NIL_CONVERSATION = "00000000-0000-0000-0000-000000000000";
+
+export type CallerOutcome = { ok: true; userId: string } | { ok: false; response: Response };
+
+/**
+ * KAN-561: the verified user id of the caller, for routes that have no conversation yet (start a DM). Same pass-through
+ * as authorize(): the bearer goes unchanged to msg_authorize, which derives the id from the verified token. The nil
+ * conversation yields the id with reason not_member; messaging_off and not_in_pilot are refused exactly as they are
+ * everywhere else. Nothing about the token is read here.
+ */
+export async function resolveCaller(request: Request, env: Env): Promise<CallerOutcome> {
+  const authorization = request.headers.get("Authorization");
+  if (authorization === null || !BEARER.test(authorization)) return { ok: false, response: unauthenticated() };
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) {
+    return { ok: false, response: upstreamError(500, "authorisation not configured") };
+  }
+  let res: Response;
+  try {
+    res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_authorize`, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: authorization,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({
+        p_conversation_id: NIL_CONVERSATION,
+        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+      }),
+    });
+  } catch {
+    return { ok: false, response: upstreamError(502, "authorisation unavailable") };
+  }
+  if (res.status === 401 || res.status === 403) return { ok: false, response: unauthenticated("token rejected") };
+  if (!res.ok) return { ok: false, response: upstreamError(502, "authorisation failed") };
+  let parsed: unknown;
+  try {
+    parsed = await res.json();
+  } catch {
+    return { ok: false, response: upstreamError(502, "authorisation result malformed") };
+  }
+  const result = Array.isArray(parsed) ? (parsed.length === 1 ? parsed[0] : undefined) : parsed;
+  if (result === null || typeof result !== "object") {
+    return { ok: false, response: upstreamError(502, "authorisation result malformed") };
+  }
+  const r = result as { user_id?: unknown; reason?: unknown };
+  if (r.reason === "messaging_off" || r.reason === "not_in_pilot" || r.reason === "not_authenticated") {
+    return { ok: false, response: denial(mapAuthorizeReason(r.reason)) };
+  }
+  if (typeof r.user_id !== "string" || r.user_id.length === 0) return { ok: false, response: unauthenticated() };
+  return { ok: true, userId: r.user_id };
 }
