@@ -1,13 +1,19 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/data/messaging_wake_channel.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
+import 'package:dabbler/features/messaging/domain/models/message_page.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 
 /// The game chat of one game (arg: game id). Loading is `AsyncLoading`; every
@@ -18,6 +24,7 @@ class GameChatController
 
   @override
   Future<GameChatViewState> build(String arg) async {
+    _listenForWakes();
     final conv = await _repo.getGameConversation(arg);
     if (conv is Err<Conversation, Failure>) return failureState(conv.error);
     final conversation = conv.requireValue;
@@ -238,9 +245,10 @@ class GameChatController
     return true;
   }
 
-  /// Polling refresh (no Realtime): fetches the newest page and adds the
-  /// messages not yet shown, by `seq`. Own messages still in flight or failed
-  /// are kept at the end. A failed poll changes nothing.
+  /// Polling refresh: fetches the newest page and adds the messages not yet
+  /// shown, by `seq`. Own messages still in flight or failed are kept at the
+  /// end. A failed poll changes nothing. Also the catch-up fetch on a
+  /// (re)subscribe and on app resume (KAN-544).
   Future<void> refreshNewest() async {
     final current = state.valueOrNull;
     final conversation = current?.conversation;
@@ -250,17 +258,146 @@ class GameChatController
       _endIfRemoved(result.requireError);
       return;
     }
+    _mergeFresh(result.requireValue.messages);
+  }
+
+  // ---------------------------------------------------------------- Realtime
+  // KAN-544. A wake is a HINT (conversation id and seq, never text); polling
+  // stays the source of truth. With Realtime off the channel is null and none
+  // of this runs.
+
+  Timer? _syncRetry;
+  Future<void> _fetching = Future<void>.value();
+  bool _open = false;
+
+  /// The screen tells the controller whether the chat is on screen. Wakes and
+  /// the catch-up on resubscribe act only while it is open: a closed chat
+  /// fetches nothing (the poll timer lives in the screen and stops with it).
+  void setOpen(bool open) {
+    _open = open;
+    if (!open) _syncRetry?.cancel();
+  }
+
+  StreamSubscription<MessagingWake>? _wakeSub;
+  StreamSubscription<WakeChannelStatus>? _statusSub;
+
+  /// Follows the user's channel without rebuilding the chat: when the channel
+  /// appears, changes (another user) or goes away (sign-out) only the
+  /// subscriptions move; the loaded messages stay.
+  void _listenForWakes() {
+    ref.listen<WakeChannel?>(
+      messagingWakeChannelProvider,
+      (_, channel) => _bind(channel),
+      fireImmediately: true,
+    );
+    ref.onDispose(() {
+      _wakeSub?.cancel();
+      _statusSub?.cancel();
+      _syncRetry?.cancel();
+    });
+  }
+
+  void _bind(WakeChannel? channel) {
+    _wakeSub?.cancel();
+    _statusSub?.cancel();
+    _wakeSub = null;
+    _statusSub = null;
+    if (channel == null) return;
+    var subscribed = channel.status == WakeChannelStatus.subscribed;
+    _wakeSub = channel.wakes.listen(_onWake);
+    _statusSub = channel.statuses.listen((status) {
+      final now = status == WakeChannelStatus.subscribed;
+      // One catch-up fetch on every (re)subscribe.
+      if (now && !subscribed && _open) unawaited(refreshNewest());
+      subscribed = now;
+    });
+  }
+
+  int get _maxSeq {
+    var max = 0;
+    for (final i in state.valueOrNull?.items ?? const <ChatItem>[]) {
+      final m = i.message;
+      if (m != null) max = math.max(max, m.seq);
+    }
+    return max;
+  }
+
+  void _onWake(MessagingWake wake) {
+    if (!_open) return; // the chat is closed: nothing to do
+    final conversation = state.valueOrNull?.conversation;
+    // Another conversation: nothing to do.
+    if (conversation == null || wake.conversationId != conversation.id) return;
+    final seq = wake.seq;
+    if (seq != null) {
+      if (seq <= _maxSeq) return; // already have it
+      _enqueue(() => _fetchNewer());
+      return;
+    }
+    // A seq-less (`sync`) wake: fetch now; if that found nothing, once more
+    // after a short delay.
+    _enqueue(() async {
+      final added = await _fetchNewer();
+      if (added > 0) return;
+      _syncRetry?.cancel();
+      _syncRetry = Timer(ref.read(messagingSyncRetryDelayProvider), () {
+        _enqueue(() => _fetchNewer());
+      });
+    });
+  }
+
+  /// Runs fetches one after another, so two wakes never overlap.
+  void _enqueue(Future<void> Function() job) {
+    _fetching = _fetching
+        .then<void>((_) => job())
+        .then<void>((_) {}, onError: (Object _) {});
+  }
+
+  /// Fetches what is newer than the client's highest seq through the existing
+  /// list call, into the existing merge path. Returns how many messages were
+  /// added.
+  Future<int> _fetchNewer() async {
+    final conversation = state.valueOrNull?.conversation;
+    if (conversation == null) return 0;
+    var cursor = _maxSeq;
+    var added = 0;
+    for (var page = 0; page < 5; page++) {
+      final Result<MessagePage, Failure> result;
+      if (cursor == 0) {
+        result = await _repo.listMessages(conversationId: conversation.id);
+      } else {
+        result = await _repo.listMessages(
+          conversationId: conversation.id,
+          cursor: cursor,
+          direction: MessageDirection.newer,
+        );
+      }
+      if (result is Err) {
+        _endIfRemoved(result.requireError);
+        return added;
+      }
+      final p = result.requireValue;
+      added += _mergeFresh(p.messages);
+      final next = p.newerCursor;
+      if (!p.hasNewer || next == null || next <= cursor) break;
+      cursor = next;
+    }
+    return added;
+  }
+
+  /// Adds the messages not yet shown, ordered by `seq`; returns how many were
+  /// new. The one merge path of polling and wakes.
+  int _mergeFresh(List<Message> messages) {
     final latest = state.valueOrNull;
-    if (latest == null) return;
+    if (latest == null) return 0;
     final known = <String>{
       for (final i in latest.items)
         if (i.message != null) i.message!.id,
     };
     final fresh = [
-      for (final m in result.requireValue.messages)
+      for (final m in messages)
         if (!known.contains(m.id)) m,
     ];
-    if (fresh.isEmpty) return;
+    if (fresh.isEmpty) return 0;
     final delivered = [
       for (final i in latest.items)
         if (i.message != null) i,
@@ -287,5 +424,6 @@ class GameChatController
         items: [...delivered, ...pending],
       ),
     );
+    return fresh.length;
   }
 }

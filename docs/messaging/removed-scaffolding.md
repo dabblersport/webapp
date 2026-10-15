@@ -81,11 +81,32 @@ Total deleted: see "Line count" below.
 
 | Item | Live reference | Reason |
 |---|---|---|
-| `socialChatConversationIdRoute`, `RoutePaths.socialChat`, `RouteNames.socialChat` | `lib/features/profile/presentation/screens/profile/user_profile_screen.dart:487` | Profile "Message" pushes it; with `FeatureFlags.messaging` false its redirect sends home. Removing it would turn that tap into a GoRouter error page (behaviour change) and fixing the caller is a forbidden profile edit. |
-| `socialMessagesRoute` | flag-gated route, `RoutePaths.socialMessages` | Not chat-conversation scaffolding in scope; gated by `FeatureFlags.messaging`. |
-| `gameChatRoute`, `lib/features/messaging/**` | `app_router.dart` | New game chat, read-only. |
-| `FeatureFlags.messaging` / chat comment in `feature_flags.dart` | flags file | Forbidden to touch. |
-| `lib/data/models/social/*` other models (comment, post, friend, block_record …) | many | Not chat. |
+| `socialChatConversationIdRoute`, `RoutePaths.socialChat`, `RouteNames.socialChat` | `lib/features/profile/presentation/screens/profile/user_profile_screen.dart:487` (push), `lib/app/app_router.dart:443` (registration), `lib/app/routes/platform_routes.dart:135` (definition) | Profile "Message" pushes it; with `FeatureFlags.messaging` false its redirect sends home. Removing it would turn that tap into a GoRouter error page (behaviour change) and fixing the caller is a forbidden profile edit. |
+| `socialMessagesRoute` | `lib/app/app_router.dart:442` (registration), `lib/app/routes/platform_routes.dart:120-123` (definition, `RoutePaths.socialMessages`) | Not chat-conversation scaffolding in scope; gated by `FeatureFlags.messaging`. |
+| `gameChatRoute`, `lib/features/messaging/**` | `lib/app/app_router.dart:446` (registration), `lib/features/messaging/presentation/game_chat_route.dart:37` (definition) | New game chat, read-only. |
+| `FeatureFlags.messaging` / chat comment in `lib/core/config/feature_flags.dart` | `lib/app/routes/platform_routes.dart:126,141` (route redirects), `lib/features/messaging/presentation/game_chat_route.dart:18,29,39`, `lib/features/messaging/presentation/widgets/game_chat_entry.dart:17`, `lib/features/profile/presentation/screens/profile/user_profile_screen.dart:363`, `lib/main.dart:91` (found with `grep -rn "FeatureFlags\.messaging\b" lib`) | Live kill switch for the new game chat and the profile Message action; the ticket forbids touching flags. |
+| `lib/data/models/social/*` other models (comment, post, friend, block_record …) | e.g. `lib/data/models/social/post.dart` is imported by `lib/core/feed/post_layout_resolver.dart:3`, `lib/features/home/presentation/providers/home_providers.dart:3`, `lib/features/home/presentation/screens/home_screen.dart:38` | Not chat. |
+
+## (c) Changed but kept
+
+Two live files are edited, only on the lines that name the deleted files. Authorised for
+this ticket only; any other edit in them is out of scope.
+
+| File | Edit | Reason |
+|---|---|---|
+| `lib/data/models/models.dart` | 5 `export 'social/...'` lines removed | They export the five deleted social chat model files; left in place they would dangle (compile error). |
+| `test/design_system_gate_test.dart` | 3 `GateAllow` rows removed | Allowlist rows that name `chat_message_model.dart` (2) and `chat_controller.dart` (1), files that no longer exist; no rule is weakened. |
+
+## Post-deletion verification
+
+```bash
+grep -rn "socialChatList" lib test --include='*.dart' --include='*.txt'
+```
+
+Result after the deletions: **no output**. `socialChatListRoute` (the getter in
+`platform_routes.dart`), `RoutePaths.socialChatList` and `RouteNames.socialChatList` are
+referenced nowhere, and `flutter analyze --no-pub --no-fatal-infos` reports no dangling
+reference. `socialChat` (the live conversation route) is kept, see (b).
 
 ## Line count
 
