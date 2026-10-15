@@ -289,7 +289,6 @@ The three operations of `docs/messaging/openapi.yaml` that were missing: `getGam
 - **needs-ops:** the game route needs `20261015130000_kan563_msg_game_conversation.sql` applied (after KAN-505/KAN-560); until then it
   answers `502` (no reason). The same migration holds `msg_mute_conversation`, so PUT/DELETE answer `502` until it is applied. Probes: `supabase/tests/messaging/game_conversation_probes.sql` (authored, not run); rollback:
   `game_conversation_rollback.sql` (revokes EXECUTE, nothing dropped). Both new functions need KAN-560's `muted_at` column applied.
-- **Contract notes (no contract change):** (1) an unknown conversation id on mute answers `403 not_a_member`, not `404`: `msg_authorize`
+- **Contract notes (no contract change):** (1) an unknown conversation id on mute answers `403 not_a_member`, not `404`: `msg_evaluate`
   deliberately returns one reason for a guessed id and a non-member; `not_found` is returned for an unknown GAME on the game route.
-  (2) The contract gives no numbers for `rate_limited`; the two limits above are this build's. (3) Mute makes two database calls, not
-  one, because the pilot rule and the limiter key both need the verified user before the write.
+  (2) The contract gives no numbers for `rate_limited`; the two limits above are this build's. (3) The mute limiter is checked after the single database call (it needs the verified id from it); the write is an idempotent flag.
