@@ -1,25 +1,36 @@
 import 'dart:async';
 
 import 'package:http/http.dart' as http;
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
+import 'package:dabbler/features/messaging/domain/message_reports_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
+import 'package:dabbler/features/messaging/domain/models/message_report.dart';
+import 'package:dabbler/features/messaging/domain/models/reported_message.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
+/// The admin report list RPC (KAN-551). Kept here because the shared
+/// `SupabaseConfig` names are outside this ticket's allowed paths.
+const String messageReportsRpc = 'msg_list_message_reports';
+
 /// The real messaging repository (KAN-550): the six contract operations over
 /// the Worker (`docs/messaging/openapi.yaml`) and the Messages list over the
 /// `msg_my_conversations` RPC. Never throws; never logs or stores message text.
 class WorkerMessagingRepository
-    implements MessagingRepository, MyConversationsRepository {
+    implements
+        MessagingRepository,
+        MyConversationsRepository,
+        MessageReportsRepository {
   WorkerMessagingRepository({
     required MessagingHttpClient http,
     required MessagingRpcCaller rpc,
@@ -113,6 +124,96 @@ class WorkerMessagingRepository
     } catch (e, st) {
       return Err(_thrown(e, st));
     }
+  }
+
+  @override
+  Future<Result<List<MessageReport>, Failure>> listMessageReports({
+    int? limit,
+  }) async {
+    try {
+      final rows = await _rpc(messageReportsRpc, {
+        if (limit != null) 'p_limit': limit,
+      });
+      return Ok(MessageReport.parseList(rows));
+    } on PostgrestException catch (e) {
+      // A non-admin gets P0001 'forbidden' (the admin_resolve_report pattern).
+      return Err(
+        MessageReportsFailure(
+          e.message == 'forbidden'
+              ? MessageReportsRefusal.notAModerator
+              : MessageReportsRefusal.failed,
+          category: FailureCode.unknown,
+        ),
+      );
+    } catch (e) {
+      return Err(_reportsFailure(e));
+    }
+  }
+
+  /// One audited read of one reported message. The body of the response is
+  /// parsed for the text only and never logged or stored.
+  @override
+  Future<Result<ReportedMessage, Failure>> readReportedMessage(
+    String reportId,
+  ) async {
+    final MessagingHttpResponse response;
+    try {
+      response = await _http.send(
+        'GET',
+        '/moderation/reports/${Uri.encodeComponent(reportId)}/message',
+      );
+    } catch (e) {
+      return Err(_reportsFailure(e));
+    }
+    if (response.status != 200) {
+      return Err(_reportsRefusal(response.status, response.body));
+    }
+    try {
+      final body = _map(response.body);
+      final message = body['message'];
+      final text = message is Map ? message['body'] : null;
+      if (text is! String) throw const FormatException('no text');
+      return Ok(ReportedMessage(reportId: reportId, text: text));
+    } catch (_) {
+      return Err(MessageReportsFailure(MessageReportsRefusal.failed));
+    }
+  }
+
+  static MessageReportsFailure _reportsFailure(Object e) =>
+      MessageReportsFailure(
+        MessageReportsRefusal.failed,
+        category: e is TimeoutException || e is http.ClientException
+            ? FailureCode.network
+            : FailureCode.unknown,
+      );
+
+  /// Maps an error response of the audited read to a refusal. `not_a_moderator`
+  /// is the moderation route's own reason (not in the chat contract), so it is
+  /// read from the body here.
+  static MessageReportsFailure _reportsRefusal(int status, Object? body) {
+    String? reason;
+    if (body is Map) {
+      final error = body['error'];
+      if (error is Map && error['reason'] is String) {
+        reason = error['reason'] as String;
+      }
+    }
+    final refusal = switch (reason) {
+      'not_a_moderator' => MessageReportsRefusal.notAModerator,
+      'not_found' => MessageReportsRefusal.notFound,
+      'rate_limited' => MessageReportsRefusal.rateLimited,
+      _ => MessageReportsRefusal.failed,
+    };
+    return MessageReportsFailure(
+      refusal,
+      category: switch (refusal) {
+        MessageReportsRefusal.notAModerator => FailureCode.forbidden,
+        MessageReportsRefusal.notFound => FailureCode.notFound,
+        MessageReportsRefusal.rateLimited => FailureCode.rateLimited,
+        MessageReportsRefusal.failed =>
+          status >= 500 ? FailureCode.server : FailureCode.unknown,
+      },
+    );
   }
 
   Future<Result<T, Failure>> _call<T>(

@@ -11716,6 +11716,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Game'**
   String get messaging_list_fallback_unknown_sport;
+
+  /// No description provided for @admin_message_reports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Message reports'**
+  String get admin_message_reports_title;
+
+  /// No description provided for @admin_message_reports_entry_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported messages, newest first'**
+  String get admin_message_reports_entry_subtitle;
+
+  /// No description provided for @admin_message_reports_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading reports'**
+  String get admin_message_reports_loading;
+
+  /// No description provided for @admin_message_reports_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No message reports'**
+  String get admin_message_reports_empty;
+
+  /// No description provided for @admin_message_reports_error_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load reports'**
+  String get admin_message_reports_error_title;
+
+  /// No description provided for @admin_message_reports_error_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get admin_message_reports_error_body;
+
+  /// No description provided for @admin_message_reports_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get admin_message_reports_retry;
+
+  /// KAN-552 admin Reports row title; id is the first eight characters of the report id.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {id}'**
+  String admin_message_reports_report_id(String id);
+
+  /// No description provided for @admin_message_reports_read_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Read this message'**
+  String get admin_message_reports_read_action;
+
+  /// No description provided for @admin_message_reports_reading.
+  ///
+  /// In en, this message translates to:
+  /// **'Reading'**
+  String get admin_message_reports_reading;
+
+  /// No description provided for @admin_message_reports_panel_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported message'**
+  String get admin_message_reports_panel_title;
+
+  /// No description provided for @admin_message_reports_panel_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this. It is cleared when you close it.'**
+  String get admin_message_reports_panel_note;
+
+  /// No description provided for @admin_message_reports_panel_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get admin_message_reports_panel_close;
+
+  /// No description provided for @admin_message_reports_refusal_not_moderator.
+  ///
+  /// In en, this message translates to:
+  /// **'Only administrators can read reported messages.'**
+  String get admin_message_reports_refusal_not_moderator;
+
+  /// No description provided for @admin_message_reports_refusal_not_found.
+  ///
+  /// In en, this message translates to:
+  /// **'This message is no longer available.'**
+  String get admin_message_reports_refusal_not_found;
+
+  /// No description provided for @admin_message_reports_refusal_rate_limited.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many attempts. Try again in a moment.'**
+  String get admin_message_reports_refusal_rate_limited;
+
+  /// No description provided for @admin_message_reports_refusal_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the message. Try again.'**
+  String get admin_message_reports_refusal_failed;
+
+  /// No description provided for @admin_message_reports_status_open.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get admin_message_reports_status_open;
+
+  /// No description provided for @admin_message_reports_status_triage.
+  ///
+  /// In en, this message translates to:
+  /// **'In triage'**
+  String get admin_message_reports_status_triage;
+
+  /// No description provided for @admin_message_reports_status_escalated.
+  ///
+  /// In en, this message translates to:
+  /// **'Escalated'**
+  String get admin_message_reports_status_escalated;
+
+  /// No description provided for @admin_message_reports_status_resolved.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get admin_message_reports_status_resolved;
+
+  /// No description provided for @admin_message_reports_status_dismissed.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get admin_message_reports_status_dismissed;
+
+  /// No description provided for @admin_message_reports_status_duplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get admin_message_reports_status_duplicate;
+
+  /// No description provided for @admin_message_reports_status_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get admin_message_reports_status_unknown;
+
+  /// No description provided for @admin_message_reports_reason_unknown.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get admin_message_reports_reason_unknown;
 }
 
 class _AppLocalizationsDelegate

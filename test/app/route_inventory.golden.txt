@@ -95,4 +95,5 @@
 /social-analytics	social-analytics	GoRoute
 /admin/moderation-queue	-	GoRoute
 /admin/safety-overview	-	GoRoute
+/admin/message-reports	-	GoRoute
 /error:message	error	GoRoute
