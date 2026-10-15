@@ -11,6 +11,8 @@ export const REASON_STATUS = {
   blocked: 403,
   suspended: 403,
   rate_limited: 429,
+  // KAN-561: the database's daily cap on NEW DM conversations (msg_start_dm 'rate_limited'); the app maps it in its own ticket.
+  dm_cap_reached: 429,
   not_found: 404,
   invalid_request: 400,
   // KAN-513 (T18): the moderator read refuses a caller the existing admin check rejects. The contract's reason

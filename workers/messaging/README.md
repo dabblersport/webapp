@@ -188,3 +188,55 @@ that is verified, do not rely on `keep_vars` for the kill switch. Recommended op
 remove `MESSAGING_ACCESS_MODE` from the committed vars and manage it only in the dashboard together with top-level
 `keep_vars = true`, or re-check the committed value before every deploy. `keep_vars` has not been added to
 `wrangler.toml`.
+
+## Direct messages (KAN-561)
+Authorisation stays the database's: a DM is a conversation id like any other, so `POST/GET .../messages` and the report
+route work unchanged (`msg_authorize` returns `kind dm` memberships; KAN-560). Route code changed in one place only:
+`src/auth.ts` now also maps the two read-only reasons a DM can return, `blocked` and `suspended` (a block in either
+direction, or a deleted or banned counterpart: sending is refused with that reason for BOTH users, history stays readable).
+Game chats never return them.
+
+| Route | What it does | Subrequests | D1 |
+|---|---|---|---|
+| `POST /v1/dm` `{other_user_id}` | verified id via `msg_authorize` (nil conversation), self check, new-DM limit, then `msg_start_dm` with the caller's own bearer; `200 {conversation_id}` (the existing id for an existing pair) | 2 | 1 write (the limiter row) |
+| `POST /v1/conversations/{id}/mute` `{muted}` | `msg_set_muted` with the caller's own bearer; `200 {muted}` | 1 | none |
+| `GET /v1/conversations/summary?ids=<up to 50>` | per readable id: `conversation_id`, `last_message_at`, `last_message_from_me` and nothing else | 2 (`msg_authorize`, `msg_my_conversations`) | 1 bounded read, no write |
+
+(The `/v1` prefix keeps them on the CORS allowlist and the public-API rules of KAN-538.)
+
+- **Identity** is the verified user id only (`resolveCaller` in `src/auth.ts`: the bearer goes unchanged to
+  `msg_authorize`, which derives the id from the verified token). The only client-supplied user id is `other_user_id`;
+  every other field of the body is ignored and never relayed. Starting a DM with yourself is `400 invalid_request`
+  before the database is asked.
+- **Typed reasons from the database** (the exception message of `msg_start_dm` / `msg_set_muted`): `blocked` -> 403
+  `blocked`; `age_restricted` -> 403 `not_in_pilot` (no existing reason names an age rule, and `not_in_pilot` is the
+  "unavailable" screen that tells nothing about age); `not_found` (target deleted or banned) -> 404 `not_found`;
+  `rate_limited` (the database's cap of 20 new DMs per rolling day) -> 429 **`dm_cap_reached`**, a NEW reason added to
+  `src/errors.ts` (the app maps it in its own ticket); `invalid_request` -> 400; `not_member` (mute) -> 403
+  `not_a_member`; anything else -> 502 with no reason.
+- **New-DM limit (second line):** `NEW_DM_PER_USER_PER_HOUR = 10` in `src/rate_limit.ts`, fixed 3600 s window, key = the
+  verified user, scope `new_dm_hour` in the existing `rate_limits` table (no new migration: `scope` is free text).
+  Refusal is `429 rate_limited` with `Retry-After`. The Worker cannot tell a new pair from an existing one before the
+  database call, so this limit counts START REQUESTS (re-opening an existing DM from a profile counts too); the
+  database's own cap counts only NEW conversations. DM sends use the existing send limits (20 a minute per conversation,
+  120 an hour per user).
+- **Summary:** the readable set is the database's own list (`msg_my_conversations`, limit 100, one call): an id that is
+  not in it is omitted silently, and so is a conversation the caller has left. `last_message_at` / `last_message_from_me`
+  come from one D1 statement over the newest USER message per conversation (system lines do not count);
+  `last_message_from_me` compares the stored sender with the verified id. A readable conversation with no message yet
+  has `last_message_at: null`. No text, no sender id, no counts, no previews. Known limit: the summary does not hide a
+  blocked counterpart's latest message time from the blocker (the message LIST does, by the D4 rule); it carries no
+  content, only a time and a boolean.
+- **No logging** anywhere in the new code (the KAN-513 guard forbids any console call in `src/`).
+
+**D1 rows written per request: start-DM = 1 (limiter, a refused start = 0), mute = 0, summary = 0.** **Free-tier
+arithmetic** (D1 free plan: 100,000 rows written and 5 million rows read per day, Workers Free: 50 subrequests per
+request; source: Cloudflare D1 pricing, https://developers.cloudflare.com/d1/platform/pricing/ as cited in the KAN-548
+section above, **not re-read for this ticket: unverified here**):
+- One account at the maximum the Worker limit allows: 10 start requests/hour x 24 = 240 limiter rows/day, 0.24% of the
+  allowance. Supabase, not D1, stores the conversation, the pair and the members.
+- A summary of 50 ids reads about 2 index entries and 1 row per conversation (the `UNIQUE (conversation_id, seq)` index
+  serves the `MAX(seq)` and the row lookup), so roughly 150 rows read per request against 5 million a day.
+- Subrequests per request: at most 2 of the 50 allowed.
+
+**Rollback:** revert the commit and redeploy the previous one; unused `new_dm_hour` counter rows are harmless.

@@ -17,6 +17,8 @@ import { reasonError } from "./errors";
 export const SEND_PER_USER_PER_CONVERSATION_PER_MINUTE = 20;
 export const SEND_PER_USER_PER_HOUR = 120;
 export const REPORT_PER_USER_PER_HOUR = 10;
+/** KAN-561: start-DM requests per user per hour; the second line behind the database's 20 new DMs per rolling day. */
+export const NEW_DM_PER_USER_PER_HOUR = 10;
 
 export const MINUTE_SECONDS = 60;
 export const HOUR_SECONDS = 3600;
@@ -103,5 +105,28 @@ export async function enforceSend(db: D1Database, userId: string, conversationId
 
 export async function enforceReport(db: D1Database, userId: string): Promise<Response | null> {
   const outcome = await checkReport(db, userId);
+  return outcome.ok ? null : rateLimited(outcome.retryAfterSeconds);
+}
+
+// KAN-561: start-DM, scope 'new_dm_hour', the same one-row upsert as the report limit (no migration: scope is free text).
+// The Worker cannot tell a new pair from an existing one before the database call, so it counts start requests; the
+// database's own cap (20 new DMs per rolling day) counts only new conversations.
+const ADMIT_NEW_DM = `INSERT INTO rate_limits (subject, scope, window_start, count) VALUES (?1, 'new_dm_hour', ?2, 1)
+  ON CONFLICT (subject, scope) DO UPDATE SET
+    count = CASE WHEN rate_limits.window_start < excluded.window_start THEN 1 ELSE rate_limits.count + 1 END,
+    window_start = MAX(rate_limits.window_start, excluded.window_start)
+  WHERE rate_limits.window_start < excluded.window_start OR rate_limits.count < ?3
+  RETURNING count`;
+
+/** One start-DM: at most 10 an hour per user. */
+export async function checkNewDm(db: D1Database, userId: string): Promise<RateOutcome> {
+  const now = Math.floor(Date.now() / 1000);
+  const start = windowStart(now, HOUR_SECONDS);
+  const admitted = await db.prepare(ADMIT_NEW_DM).bind(userId, start, NEW_DM_PER_USER_PER_HOUR).all();
+  return admitted.results.length > 0 ? { ok: true } : { ok: false, retryAfterSeconds: start + HOUR_SECONDS - now };
+}
+
+export async function enforceNewDm(db: D1Database, userId: string): Promise<Response | null> {
+  const outcome = await checkNewDm(db, userId);
   return outcome.ok ? null : rateLimited(outcome.retryAfterSeconds);
 }
