@@ -86,7 +86,6 @@
 /social-friends	social-friends	GoRoute
 /following/:profileId	following	GoRoute
 /followers/:profileId	followers	GoRoute
-/social-chat-list	social-chat-list	GoRoute
 /social-notifications	social-notifications	GoRoute
 /social-messages	social-messages	GoRoute
 /social-chat/:conversationId	social-chat	GoRoute

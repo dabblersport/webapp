@@ -6262,4 +6262,207 @@ class AppLocalizationsEn extends AppLocalizations {
   String manual_location_fetch_failed(String error) {
     return 'Failed to get location: $error';
   }
+
+  @override
+  String get messaging_chat_title => 'Game chat';
+
+  @override
+  String get messaging_chat_open => 'Open game chat';
+
+  @override
+  String get messaging_chat_loading => 'Loading messages';
+
+  @override
+  String get messaging_chat_empty_title => 'No messages yet';
+
+  @override
+  String get messaging_chat_empty_body =>
+      'Say hello to the players in this game.';
+
+  @override
+  String get messaging_chat_composer_hint => 'Write a message';
+
+  @override
+  String get messaging_chat_send => 'Send';
+
+  @override
+  String get messaging_chat_retry => 'Retry';
+
+  @override
+  String get messaging_chat_offline =>
+      'You\'re offline. Messages will load when you reconnect.';
+
+  @override
+  String get messaging_chat_offline_retry => 'Try again';
+
+  @override
+  String get messaging_chat_error => 'Couldn\'t load this chat. Try again.';
+
+  @override
+  String get messaging_chat_older_load => 'Load earlier messages';
+
+  @override
+  String get messaging_chat_older_loading => 'Loading earlier messages';
+
+  @override
+  String get messaging_chat_older_error =>
+      'Couldn\'t load earlier messages. Try again.';
+
+  @override
+  String get messaging_chat_today => 'Today';
+
+  @override
+  String get messaging_chat_yesterday => 'Yesterday';
+
+  @override
+  String get messaging_chat_game_finished => 'Game finished';
+
+  @override
+  String get messaging_chat_closed_ended =>
+      'This game has ended. You can read the chat but not send messages.';
+
+  @override
+  String get messaging_chat_closed_cancelled =>
+      'This game was cancelled. You can read the chat but not send messages.';
+
+  @override
+  String get messaging_chat_mute => 'Mute chat';
+
+  @override
+  String get messaging_chat_unmute => 'Unmute chat';
+
+  @override
+  String get messaging_chat_muted => 'Chat muted';
+
+  @override
+  String get messaging_chat_mute_failed =>
+      'Couldn\'t update the mute setting. Try again.';
+
+  @override
+  String get messaging_chat_message_options => 'Message options';
+
+  @override
+  String get messaging_report_action => 'Report message';
+
+  @override
+  String get messaging_report_title => 'Report message';
+
+  @override
+  String get messaging_report_prompt => 'Why are you reporting this message?';
+
+  @override
+  String get messaging_report_reason_spam => 'Spam';
+
+  @override
+  String get messaging_report_reason_abuse => 'Abuse';
+
+  @override
+  String get messaging_report_reason_hate => 'Hate speech';
+
+  @override
+  String get messaging_report_reason_harassment => 'Harassment';
+
+  @override
+  String get messaging_report_reason_nudity => 'Nudity or sexual content';
+
+  @override
+  String get messaging_report_reason_illegal => 'Illegal activity';
+
+  @override
+  String get messaging_report_reason_danger => 'Danger to someone\'s safety';
+
+  @override
+  String get messaging_report_reason_scam => 'Scam or fraud';
+
+  @override
+  String get messaging_report_reason_impersonation => 'Impersonation';
+
+  @override
+  String get messaging_report_reason_other => 'Something else';
+
+  @override
+  String get messaging_report_submit => 'Send report';
+
+  @override
+  String get messaging_report_submitted => 'Thanks. We received your report.';
+
+  @override
+  String get messaging_report_failed =>
+      'Couldn\'t send your report. Try again.';
+
+  @override
+  String get messaging_report_retry => 'Try again';
+
+  @override
+  String get messaging_report_done => 'Done';
+
+  @override
+  String get messaging_report_cancel => 'Cancel';
+
+  @override
+  String get messaging_block_action => 'Block player';
+
+  @override
+  String get messaging_block_title => 'Block this player?';
+
+  @override
+  String get messaging_block_body =>
+      'You won\'t see this player\'s messages in game chats. You can unblock them later in your settings.';
+
+  @override
+  String get messaging_block_confirm => 'Block';
+
+  @override
+  String get messaging_block_cancel => 'Cancel';
+
+  @override
+  String get messaging_block_done => 'Player blocked.';
+
+  @override
+  String get messaging_block_failed =>
+      'Couldn\'t block this player. Try again.';
+
+  @override
+  String get messaging_chat_unavailable_line =>
+      'This chat isn\'t available right now.';
+
+  @override
+  String get messaging_chat_unavailable_action => 'Go back';
+
+  @override
+  String get messaging_chat_removed_line => 'You can no longer view this chat.';
+
+  @override
+  String get messaging_chat_removed_action => 'Go back';
+
+  @override
+  String get messaging_reason_not_a_member =>
+      'Only players in this game can use this chat. Go back.';
+
+  @override
+  String get messaging_reason_left_read_only =>
+      'You left this game. You can read earlier messages but can\'t send new ones.';
+
+  @override
+  String get messaging_reason_blocked =>
+      'You can\'t send messages in this chat. Go back.';
+
+  @override
+  String get messaging_reason_suspended =>
+      'Chat is turned off for your account. Contact support if you think this is a mistake.';
+
+  @override
+  String get messaging_reason_rate_limited =>
+      'You\'re sending messages too fast. Wait a moment, then try again.';
+
+  @override
+  String get messaging_reason_not_found =>
+      'We couldn\'t find this chat. Go back and open it again.';
+
+  @override
+  String get messaging_reason_invalid_request =>
+      'Your message couldn\'t be sent. Check it and try again.';
+
+  @override
+  String get messaging_reason_unknown => 'Something went wrong. Try again.';
 }

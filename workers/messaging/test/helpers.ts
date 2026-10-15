@@ -1,4 +1,4 @@
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { Miniflare } from "miniflare";
 import { vi } from "vitest";
@@ -16,14 +16,25 @@ export async function localD1() {
     d1Databases: ["DB"],
   });
   const db = (await mf.getD1Database("DB")) as unknown as D1Database;
-  const sql = readFileSync(fileURLToPath(new URL("../migrations/0001_messages.sql", import.meta.url)), "utf8");
-  const statements = sql
-    .split("\n")
-    .filter((l) => !l.trim().startsWith("--"))
-    .join("\n")
-    .split(";")
-    .map((s) => s.trim())
-    .filter(Boolean);
+  // Every local migration in name order (0001, 0002, ...). A statement ends at a line ending in ";" unless that line
+  // is inside a trigger body (BEGIN ... END;).
+  const dir = fileURLToPath(new URL("../migrations/", import.meta.url));
+  const statements: string[] = [];
+  for (const f of readdirSync(dir).filter((n) => n.endsWith(".sql")).sort()) {
+    let cur: string[] = [];
+    let inBody = false;
+    for (const line of readFileSync(dir + f, "utf8").split("\n")) {
+      const t = line.trim();
+      if (t.startsWith("--") || t === "") continue;
+      cur.push(line);
+      if (t === "BEGIN") inBody = true;
+      if (t.endsWith(";") && (!inBody || t === "END;")) {
+        statements.push(cur.join("\n").trim().replace(/;$/, ""));
+        cur = [];
+        inBody = false;
+      }
+    }
+  }
   await db.batch(statements.map((s) => db.prepare(s)));
   return { mf, db, statements };
 }

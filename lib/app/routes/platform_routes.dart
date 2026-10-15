@@ -102,17 +102,6 @@ RouteBase get helpCenterRoute =>
     );
 
 // Placeholder Social Routes (for routes referenced in code but screens don't exist yet)
-RouteBase get socialChatListRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialChatList,
-      name: RouteNames.socialChatList,
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const PlaceholderScreen(title: 'Chat List'),
-      ),
-    );
-
 RouteBase get socialNotificationsRoute =>
     GoRoute(
       parentNavigatorKey: rootNavigatorKey,

@@ -1,12 +1,19 @@
+import 'dart:async';
+import 'dart:math' as math;
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/data/messaging_wake_channel.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
+import 'package:dabbler/features/messaging/domain/models/message_page.dart';
+import 'package:dabbler/features/messaging/domain/models/report_category.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 
 /// The game chat of one game (arg: game id). Loading is `AsyncLoading`; every
@@ -17,6 +24,7 @@ class GameChatController
 
   @override
   Future<GameChatViewState> build(String arg) async {
+    _listenForWakes();
     final conv = await _repo.getGameConversation(arg);
     if (conv is Err<Conversation, Failure>) return failureState(conv.error);
     final conversation = conv.requireValue;
@@ -49,6 +57,17 @@ class GameChatController
       _ => GameChatStatus.error,
     };
     return GameChatViewState(status: status, reason: reason);
+  }
+
+  /// A later call refused with `removed` ends access: the thread, composer
+  /// and any cached messages are dropped (T6 spec 03). Returns whether it did.
+  bool _endIfRemoved(Failure failure) {
+    if (failure is! MessagingFailure ||
+        failure.reason != MessagingReason.removed) {
+      return false;
+    }
+    state = AsyncData(failureState(failure));
+    return true;
   }
 
   static GameChatStatus _openStatus(Conversation c, List<ChatItem> items) {
@@ -105,20 +124,81 @@ class GameChatController
         .firstOrNull;
     if (item == null) return;
     result.fold(
-      (failure) => _replace(
-        key,
-        item.copyWith(
-          state: OutgoingState.failed,
-          failureReason: failure is MessagingFailure
-              ? failure.reason
-              : MessagingReason.unknown,
-        ),
-      ),
+      (failure) {
+        if (_endIfRemoved(failure)) return;
+        final reason = failure is MessagingFailure
+            ? failure.reason
+            : MessagingReason.unknown;
+        _replace(
+          key,
+          item.copyWith(state: OutgoingState.failed, failureReason: reason),
+        );
+        // A send refused because the game ended or was cancelled closes the
+        // chat: the repository's typed reason decides, not a client rule.
+        if (reason == MessagingReason.gameEnded ||
+            reason == MessagingReason.gameCancelled) {
+          _close(reason);
+        }
+      },
       (message) => _replace(
         key,
         item.copyWith(message: message, state: OutgoingState.sent),
       ),
     );
+  }
+
+  void _close(MessagingReason reason) {
+    final current = state.valueOrNull;
+    final c = current?.conversation;
+    if (current == null || c == null) return;
+    state = AsyncData(
+      current.copyWith(
+        status: GameChatStatus.readOnly,
+        reason: reason,
+        conversation: _with(c, writable: false, readOnlyReason: reason),
+      ),
+    );
+  }
+
+  static Conversation _with(
+    Conversation c, {
+    bool? writable,
+    bool? muted,
+    MessagingReason? readOnlyReason,
+  }) => Conversation(
+    id: c.id,
+    gameId: c.gameId,
+    writable: writable ?? c.writable,
+    muted: muted ?? c.muted,
+    lastSeq: c.lastSeq,
+    readOnlyReason: readOnlyReason ?? c.readOnlyReason,
+    boundary: c.boundary,
+  );
+
+  /// Mutes or unmutes the conversation (conversation-level; there is no
+  /// leave, D6). Returns false when the repository refused; the state is
+  /// unchanged then.
+  Future<bool> setMuted(bool muted) async {
+    final c = state.valueOrNull?.conversation;
+    if (c == null) return false;
+    final result = muted
+        ? await _repo.muteConversation(c.id)
+        : await _repo.unmuteConversation(c.id);
+    if (result is Err) return false;
+    final latest = state.valueOrNull;
+    final lc = latest?.conversation;
+    if (latest == null || lc == null) return true;
+    state = AsyncData(latest.copyWith(conversation: _with(lc, muted: muted)));
+    return true;
+  }
+
+  /// Reports [messageId] with [reason]. Returns whether it was accepted.
+  Future<bool> report(String messageId, ReportCategory reason) async {
+    final result = await _repo.reportMessage(
+      messageId: messageId,
+      reason: reason,
+    );
+    return result is! Err;
   }
 
   void _replace(String key, ChatItem replacement) {
@@ -134,26 +214,216 @@ class GameChatController
     );
   }
 
-  /// Loads the page below the oldest loaded message.
-  Future<void> loadOlder() async {
+  /// Loads the page below the oldest loaded message. Returns false when the
+  /// page could not be loaded (the pager shows its error state).
+  Future<bool> loadOlder() async {
     final current = state.valueOrNull;
     final conversation = current?.conversation;
-    if (current == null || conversation == null || !current.hasOlder) return;
+    if (current == null || conversation == null || !current.hasOlder) {
+      return true;
+    }
     final result = await _repo.listMessages(
       conversationId: conversation.id,
       cursor: current.olderCursor,
     );
-    if (result is Err) return;
+    if (result is Err) {
+      _endIfRemoved(result.requireError);
+      return false;
+    }
     final page = result.requireValue;
+    final latest = state.valueOrNull ?? current;
     state = AsyncData(
       GameChatViewState(
-        status: current.status,
-        conversation: conversation,
-        reason: current.reason,
-        items: [for (final m in page.messages) _sent(m), ...current.items],
+        status: latest.status,
+        conversation: latest.conversation ?? conversation,
+        reason: latest.reason,
+        items: [for (final m in page.messages) _sent(m), ...latest.items],
         hasOlder: page.hasOlder,
         olderCursor: page.olderCursor,
       ),
     );
+    return true;
+  }
+
+  /// Polling refresh: fetches the newest page and adds the messages not yet
+  /// shown, by `seq`. Own messages still in flight or failed are kept at the
+  /// end. A failed poll changes nothing. Also the catch-up fetch on a
+  /// (re)subscribe and on app resume (KAN-544).
+  Future<void> refreshNewest() async {
+    final current = state.valueOrNull;
+    final conversation = current?.conversation;
+    if (current == null || conversation == null) return;
+    final result = await _repo.listMessages(conversationId: conversation.id);
+    if (result is Err) {
+      _endIfRemoved(result.requireError);
+      return;
+    }
+    _mergeFresh(result.requireValue.messages);
+  }
+
+  // ---------------------------------------------------------------- Realtime
+  // KAN-544. A wake is a HINT (conversation id and seq, never text); polling
+  // stays the source of truth. With Realtime off the channel is null and none
+  // of this runs.
+
+  Timer? _syncRetry;
+  Future<void> _fetching = Future<void>.value();
+  bool _open = false;
+
+  /// The screen tells the controller whether the chat is on screen. Wakes and
+  /// the catch-up on resubscribe act only while it is open: a closed chat
+  /// fetches nothing (the poll timer lives in the screen and stops with it).
+  void setOpen(bool open) {
+    _open = open;
+    if (!open) _syncRetry?.cancel();
+  }
+
+  StreamSubscription<MessagingWake>? _wakeSub;
+  StreamSubscription<WakeChannelStatus>? _statusSub;
+
+  /// Follows the user's channel without rebuilding the chat: when the channel
+  /// appears, changes (another user) or goes away (sign-out) only the
+  /// subscriptions move; the loaded messages stay.
+  void _listenForWakes() {
+    ref.listen<WakeChannel?>(
+      messagingWakeChannelProvider,
+      (_, channel) => _bind(channel),
+      fireImmediately: true,
+    );
+    ref.onDispose(() {
+      _wakeSub?.cancel();
+      _statusSub?.cancel();
+      _syncRetry?.cancel();
+    });
+  }
+
+  void _bind(WakeChannel? channel) {
+    _wakeSub?.cancel();
+    _statusSub?.cancel();
+    _wakeSub = null;
+    _statusSub = null;
+    if (channel == null) return;
+    var subscribed = channel.status == WakeChannelStatus.subscribed;
+    _wakeSub = channel.wakes.listen(_onWake);
+    _statusSub = channel.statuses.listen((status) {
+      final now = status == WakeChannelStatus.subscribed;
+      // One catch-up fetch on every (re)subscribe.
+      if (now && !subscribed && _open) unawaited(refreshNewest());
+      subscribed = now;
+    });
+  }
+
+  int get _maxSeq {
+    var max = 0;
+    for (final i in state.valueOrNull?.items ?? const <ChatItem>[]) {
+      final m = i.message;
+      if (m != null) max = math.max(max, m.seq);
+    }
+    return max;
+  }
+
+  void _onWake(MessagingWake wake) {
+    if (!_open) return; // the chat is closed: nothing to do
+    final conversation = state.valueOrNull?.conversation;
+    // Another conversation: nothing to do.
+    if (conversation == null || wake.conversationId != conversation.id) return;
+    final seq = wake.seq;
+    if (seq != null) {
+      if (seq <= _maxSeq) return; // already have it
+      _enqueue(() => _fetchNewer());
+      return;
+    }
+    // A seq-less (`sync`) wake: fetch now; if that found nothing, once more
+    // after a short delay.
+    _enqueue(() async {
+      final added = await _fetchNewer();
+      if (added > 0) return;
+      _syncRetry?.cancel();
+      _syncRetry = Timer(ref.read(messagingSyncRetryDelayProvider), () {
+        _enqueue(() => _fetchNewer());
+      });
+    });
+  }
+
+  /// Runs fetches one after another, so two wakes never overlap.
+  void _enqueue(Future<void> Function() job) {
+    _fetching = _fetching
+        .then<void>((_) => job())
+        .then<void>((_) {}, onError: (Object _) {});
+  }
+
+  /// Fetches what is newer than the client's highest seq through the existing
+  /// list call, into the existing merge path. Returns how many messages were
+  /// added.
+  Future<int> _fetchNewer() async {
+    final conversation = state.valueOrNull?.conversation;
+    if (conversation == null) return 0;
+    var cursor = _maxSeq;
+    var added = 0;
+    for (var page = 0; page < 5; page++) {
+      final Result<MessagePage, Failure> result;
+      if (cursor == 0) {
+        result = await _repo.listMessages(conversationId: conversation.id);
+      } else {
+        result = await _repo.listMessages(
+          conversationId: conversation.id,
+          cursor: cursor,
+          direction: MessageDirection.newer,
+        );
+      }
+      if (result is Err) {
+        _endIfRemoved(result.requireError);
+        return added;
+      }
+      final p = result.requireValue;
+      added += _mergeFresh(p.messages);
+      final next = p.newerCursor;
+      if (!p.hasNewer || next == null || next <= cursor) break;
+      cursor = next;
+    }
+    return added;
+  }
+
+  /// Adds the messages not yet shown, ordered by `seq`; returns how many were
+  /// new. The one merge path of polling and wakes.
+  int _mergeFresh(List<Message> messages) {
+    final latest = state.valueOrNull;
+    if (latest == null) return 0;
+    final known = <String>{
+      for (final i in latest.items)
+        if (i.message != null) i.message!.id,
+    };
+    final fresh = [
+      for (final m in messages)
+        if (!known.contains(m.id)) m,
+    ];
+    if (fresh.isEmpty) return 0;
+    final delivered = [
+      for (final i in latest.items)
+        if (i.message != null) i,
+      for (final m in fresh)
+        // A message that is the server copy of a pending own send replaces
+        // that pending row instead of duplicating it.
+        if (!latest.items.any(
+          (i) =>
+              i.message == null &&
+              i.clientKey != null &&
+              i.clientKey == m.clientKey,
+        ))
+          _sent(m),
+    ]..sort((a, b) => a.message!.seq.compareTo(b.message!.seq));
+    final pending = [
+      for (final i in latest.items)
+        if (i.message == null) i,
+    ];
+    state = AsyncData(
+      latest.copyWith(
+        status: latest.status == GameChatStatus.empty
+            ? GameChatStatus.ready
+            : latest.status,
+        items: [...delivered, ...pending],
+      ),
+    );
+    return fresh.length;
   }
 }

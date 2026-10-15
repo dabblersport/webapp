@@ -6315,4 +6315,204 @@ class AppLocalizationsAr extends AppLocalizations {
   String manual_location_fetch_failed(String error) {
     return 'تعذّر الحصول على الموقع: $error';
   }
+
+  @override
+  String get messaging_chat_title => 'دردشة المباراة';
+
+  @override
+  String get messaging_chat_open => 'افتح دردشة المباراة';
+
+  @override
+  String get messaging_chat_loading => 'جارٍ تحميل الرسائل';
+
+  @override
+  String get messaging_chat_empty_title => 'لا توجد رسائل بعد';
+
+  @override
+  String get messaging_chat_empty_body =>
+      'ألقِ التحية على اللاعبين في هذه المباراة.';
+
+  @override
+  String get messaging_chat_composer_hint => 'اكتب رسالة';
+
+  @override
+  String get messaging_chat_send => 'إرسال';
+
+  @override
+  String get messaging_chat_retry => 'أعد المحاولة';
+
+  @override
+  String get messaging_chat_offline =>
+      'لا يوجد اتصال بالإنترنت. ستظهر الرسائل عند عودة الاتصال.';
+
+  @override
+  String get messaging_chat_offline_retry => 'حاول مرة أخرى';
+
+  @override
+  String get messaging_chat_error => 'تعذّر تحميل هذه الدردشة. حاول مرة أخرى.';
+
+  @override
+  String get messaging_chat_older_load => 'حمّل الرسائل السابقة';
+
+  @override
+  String get messaging_chat_older_loading => 'جارٍ تحميل الرسائل السابقة';
+
+  @override
+  String get messaging_chat_older_error =>
+      'تعذّر تحميل الرسائل السابقة. حاول مرة أخرى.';
+
+  @override
+  String get messaging_chat_today => 'اليوم';
+
+  @override
+  String get messaging_chat_yesterday => 'أمس';
+
+  @override
+  String get messaging_chat_game_finished => 'انتهت المباراة';
+
+  @override
+  String get messaging_chat_closed_ended =>
+      'انتهت هذه المباراة. يمكنك قراءة الدردشة فقط.';
+
+  @override
+  String get messaging_chat_closed_cancelled =>
+      'أُلغيت هذه المباراة. يمكنك قراءة الدردشة فقط.';
+
+  @override
+  String get messaging_chat_mute => 'كتم الدردشة';
+
+  @override
+  String get messaging_chat_unmute => 'إلغاء كتم الدردشة';
+
+  @override
+  String get messaging_chat_muted => 'الدردشة مكتومة';
+
+  @override
+  String get messaging_chat_mute_failed =>
+      'تعذّر تحديث إعداد الكتم. حاول مرة أخرى.';
+
+  @override
+  String get messaging_chat_message_options => 'خيارات الرسالة';
+
+  @override
+  String get messaging_report_action => 'الإبلاغ عن الرسالة';
+
+  @override
+  String get messaging_report_title => 'الإبلاغ عن رسالة';
+
+  @override
+  String get messaging_report_prompt => 'لماذا تبلّغ عن هذه الرسالة؟';
+
+  @override
+  String get messaging_report_reason_spam => 'رسائل مزعجة';
+
+  @override
+  String get messaging_report_reason_abuse => 'إساءة';
+
+  @override
+  String get messaging_report_reason_hate => 'خطاب كراهية';
+
+  @override
+  String get messaging_report_reason_harassment => 'مضايقة';
+
+  @override
+  String get messaging_report_reason_nudity => 'عُري أو محتوى جنسي';
+
+  @override
+  String get messaging_report_reason_illegal => 'نشاط غير قانوني';
+
+  @override
+  String get messaging_report_reason_danger => 'خطر على سلامة شخص ما';
+
+  @override
+  String get messaging_report_reason_scam => 'احتيال أو نصب';
+
+  @override
+  String get messaging_report_reason_impersonation => 'انتحال شخصية';
+
+  @override
+  String get messaging_report_reason_other => 'سبب آخر';
+
+  @override
+  String get messaging_report_submit => 'إرسال البلاغ';
+
+  @override
+  String get messaging_report_submitted => 'شكرًا لك، استلمنا بلاغك.';
+
+  @override
+  String get messaging_report_failed => 'تعذّر إرسال بلاغك. حاول مرة أخرى.';
+
+  @override
+  String get messaging_report_retry => 'حاول مرة أخرى';
+
+  @override
+  String get messaging_report_done => 'تم';
+
+  @override
+  String get messaging_report_cancel => 'إلغاء';
+
+  @override
+  String get messaging_block_action => 'حظر اللاعب';
+
+  @override
+  String get messaging_block_title => 'حظر هذا اللاعب؟';
+
+  @override
+  String get messaging_block_body =>
+      'لن ترى رسائل هذا اللاعب في دردشات المباريات. يمكنك إلغاء الحظر لاحقًا من الإعدادات.';
+
+  @override
+  String get messaging_block_confirm => 'حظر';
+
+  @override
+  String get messaging_block_cancel => 'إلغاء';
+
+  @override
+  String get messaging_block_done => 'تم حظر اللاعب.';
+
+  @override
+  String get messaging_block_failed => 'تعذّر حظر هذا اللاعب. حاول مرة أخرى.';
+
+  @override
+  String get messaging_chat_unavailable_line => 'هذه الدردشة غير متاحة حاليًا.';
+
+  @override
+  String get messaging_chat_unavailable_action => 'رجوع';
+
+  @override
+  String get messaging_chat_removed_line => 'لم يعد بإمكانك عرض هذه الدردشة.';
+
+  @override
+  String get messaging_chat_removed_action => 'رجوع';
+
+  @override
+  String get messaging_reason_not_a_member =>
+      'دردشة المباراة للاعبيها فقط. ارجع.';
+
+  @override
+  String get messaging_reason_left_read_only =>
+      'غادرت هذه المباراة. يمكنك قراءة الرسائل السابقة دون إرسال رسائل جديدة.';
+
+  @override
+  String get messaging_reason_blocked =>
+      'لا يمكنك إرسال رسائل في هذه الدردشة. ارجع.';
+
+  @override
+  String get messaging_reason_suspended =>
+      'تم إيقاف الدردشة في حسابك. إن كنت ترى أن هذا خطأ، تواصل مع الدعم.';
+
+  @override
+  String get messaging_reason_rate_limited =>
+      'ترسل الرسائل بسرعة كبيرة. انتظر قليلًا ثم حاول مرة أخرى.';
+
+  @override
+  String get messaging_reason_not_found =>
+      'لم نعثر على هذه الدردشة. ارجع وافتحها من جديد.';
+
+  @override
+  String get messaging_reason_invalid_request =>
+      'تعذّر إرسال رسالتك. راجعها وحاول مرة أخرى.';
+
+  @override
+  String get messaging_reason_unknown => 'حدث خطأ ما. حاول مرة أخرى.';
 }

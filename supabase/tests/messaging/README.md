@@ -66,3 +66,35 @@ on the exact string; renaming one is a breaking change. Meanings as implemented 
 
 An active member of a game that is neither ended nor cancelled gets allowed action `send`
 with a null reason.
+
+## KAN-530: no free text in a message report
+
+`20261013160400_kan530_msg_no_free_text_in_message_reports.sql` makes `report_content` discard `p_details` for
+target type `message` (details stored and audited as NULL) and adds one `NOT VALID` CHECK on
+`moderation_reports` (`target_type <> 'message' OR details IS NULL`) so a direct insert or update cannot
+carry details either. Other report types are unchanged. Rollback is the block in the migration's header
+comment. Before apply the executor ran the SELECT-only count in the migration header.
+
+Status: the migration is APPLIED live (Alpha f171cd63, operations report
+`cdispatch-f03cefc8-3727-41bb-84b9-1bae89007851`). P11 and P12 passed there. The direct-insert checks
+passed when run as `service_role`, and an UPDATE adding details to a message report was refused with
+23514. The probes P13-P17 in `probes.sql` were corrected afterwards to match and are AUTHORED, NOT RUN
+in their corrected form.
+
+Who can write: `authenticated` holds SELECT only on `moderation_reports` (an insert fails with 42501);
+only `postgres` and `service_role` insert directly. Client reports go through `report_content`
+(P17 asserts the refusal). The `mr_self_insert` policy is not the reachable path and was not changed.
+
+Open observation (not changed here): `report_content` stays executable by `anon` and PUBLIC. It refuses
+a NULL `auth.uid()` with `auth_required`, so an anonymous call fails, but the grant itself is unchanged.
+
+## KAN-541: msg_notify (Realtime R1)
+
+`20261013160600_kan541_msg_notify.sql` adds `public.msg_notify(conversation, seq, mode default 'allowlist')`:
+after the Worker stores a message, the sender calls it and each current active member (not blockers of the
+sender, not leavers, not removed) gets a metadata-only wake-up on their private `user:<uid>` topic through
+`realtime.send(..., 'msg', topic, true)`. Payload: `type`, `conversation_id`, `seq`, nothing else. AUTHORED, NOT
+APPLIED. `notify_realtime_send_check.sql` is a read-only check for Memphis (signature, owner and privileges of
+`realtime.send`), `notify_probes.sql` N1-N6 are AUTHORED, NOT RUN, and `notify_rollback.sql` only revokes.
+
+KAN-545 (Realtime R5): the live proof runner and its unit tests are in `realtime/` (see `realtime/README.md`).
