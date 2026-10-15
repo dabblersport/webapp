@@ -6515,4 +6515,46 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_reason_unknown => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String get messaging_list_title => 'الرسائل';
+
+  @override
+  String get messaging_list_home_icon_label => 'الرسائل';
+
+  @override
+  String get messaging_list_loading => 'جارٍ تحميل محادثاتك';
+
+  @override
+  String get messaging_list_empty_title => 'لا توجد محادثات بعد';
+
+  @override
+  String get messaging_list_empty_body =>
+      'ستظهر هنا محادثات مبارياتك. انضمّ إلى مباراة لتبدأ الحديث.';
+
+  @override
+  String get messaging_list_error_title => 'تعذّر تحميل محادثاتك';
+
+  @override
+  String get messaging_list_error_body => 'تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get messaging_list_error_retry => 'إعادة المحاولة';
+
+  @override
+  String get messaging_list_state_send => 'يمكنك الإرسال';
+
+  @override
+  String get messaging_list_state_read_only => 'للقراءة فقط';
+
+  @override
+  String get messaging_list_state_left => 'لقد غادرت';
+
+  @override
+  String messaging_list_fallback_title(String sport) {
+    return 'مباراة $sport';
+  }
+
+  @override
+  String get messaging_list_fallback_unknown_sport => 'مباراة';
 }

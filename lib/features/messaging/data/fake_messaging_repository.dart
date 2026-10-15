@@ -6,6 +6,8 @@ import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
+import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
+import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
 import 'package:dabbler/features/messaging/domain/models/view_boundary.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
@@ -33,7 +35,8 @@ enum FakeMessagingOp {
 ///
 /// Ids and time are deterministic through the injectable [clock] and
 /// [idGenerator].
-class FakeMessagingRepository implements MessagingRepository {
+class FakeMessagingRepository
+    implements MessagingRepository, MyConversationsRepository {
   FakeMessagingRepository({
     DateTime Function()? clock,
     String Function()? idGenerator,
@@ -57,6 +60,35 @@ class FakeMessagingRepository implements MessagingRepository {
   final Map<FakeMessagingOp, MessagingReason> _always = {};
   final Map<FakeMessagingOp, List<MessagingReason>> _next = {};
   final Set<String> _reported = {};
+
+  final List<MyConversation> _myConversations = [];
+
+  /// When set, [listMyConversations] waits this long before answering (the
+  /// Messages list's loading state).
+  Duration? myConversationsDelay;
+
+  /// How many times [listMyConversations] was called.
+  int myConversationsCalls = 0;
+
+  // Scripted failures of [listMyConversations]. Kept apart from
+  // [FakeMessagingOp], which enumerates the six contract operations only.
+  final List<MessagingReason> _myConversationsNext = [];
+
+  /// When set, every [listMyConversations] fails with it.
+  MessagingReason? myConversationsFailAlways;
+
+  /// The next [listMyConversations] fails with [reason]; later calls succeed.
+  void failNextMyConversations(MessagingReason reason) =>
+      _myConversationsNext.add(reason);
+
+  /// Replaces the user's game chats returned by [listMyConversations]. The
+  /// fake orders them as the RPC does: newest `lastActivityAt` first (nulls
+  /// last), ties by newest `startAt`.
+  void seedMyConversations(List<MyConversation> chats) {
+    _myConversations
+      ..clear()
+      ..addAll(chats);
+  }
 
   /// How many times [sendTextMessage] was called (including failed calls).
   int sendAttempts = 0;
@@ -307,5 +339,34 @@ class FakeMessagingRepository implements MessagingRepository {
     _byId[c.id] = updated;
     _byGame[c.gameId] = updated;
     return const Ok(null);
+  }
+
+  @override
+  Future<Result<List<MyConversation>, Failure>> listMyConversations({
+    int? limit,
+  }) async {
+    myConversationsCalls++;
+    final delay = myConversationsDelay;
+    if (delay != null) await Future<void>.delayed(delay);
+    if (offline) return _err(MessagingFailure.offline());
+    if (_myConversationsNext.isNotEmpty) {
+      return _err(_failure(_myConversationsNext.removeAt(0)));
+    }
+    final always = myConversationsFailAlways;
+    if (always != null) return _err(_failure(always));
+    final size = math.min(math.max(limit ?? 50, 1), 100);
+    int byTime(DateTime? a, DateTime? b) {
+      if (a == null && b == null) return 0;
+      if (a == null) return 1;
+      if (b == null) return -1;
+      return b.compareTo(a);
+    }
+
+    final sorted = [..._myConversations]
+      ..sort((a, b) {
+        final c = byTime(a.lastActivityAt, b.lastActivityAt);
+        return c != 0 ? c : byTime(a.startAt, b.startAt);
+      });
+    return Ok(List.unmodifiable(sorted.take(size)));
   }
 }

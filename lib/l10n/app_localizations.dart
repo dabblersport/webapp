@@ -11638,6 +11638,84 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Try again.'**
   String get messaging_reason_unknown;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messaging_list_title;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get messaging_list_home_icon_label;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading your chats'**
+  String get messaging_list_loading;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No chats yet'**
+  String get messaging_list_empty_title;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Chats for your games show up here. Join a game to start talking.'**
+  String get messaging_list_empty_body;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your chats'**
+  String get messaging_list_error_title;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get messaging_list_error_body;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get messaging_list_error_retry;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Can send'**
+  String get messaging_list_state_send;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Read-only'**
+  String get messaging_list_state_read_only;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You left'**
+  String get messaging_list_state_left;
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review. Row title when the game has no title; sport is the sport's name.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} game'**
+  String messaging_list_fallback_title(String sport);
+
+  /// KAN-549 Messages list. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Game'**
+  String get messaging_list_fallback_unknown_sport;
 }
 
 class _AppLocalizationsDelegate
