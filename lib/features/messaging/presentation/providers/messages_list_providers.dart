@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/data/unavailable_messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
@@ -23,10 +24,14 @@ final messagesListFlagsProvider = Provider<MessagesListFlags>(
 bool messagesListEnabled(MessagesListFlags flags) =>
     flags.messaging && flags.gameChat;
 
-/// The repository behind the list. DEFAULTS TO THE FAKE (no network code);
-/// the real-repository ticket overrides it.
+/// The repository behind the list, chosen like [messagingRepositoryProvider]
+/// (KAN-550): the fake unless messaging is flagged on.
 final myConversationsRepositoryProvider = Provider<MyConversationsRepository>(
-  (ref) => ref.watch(fakeMessagingRepositoryProvider),
+  (ref) => switch (ref.watch(messagingBackendKindProvider)) {
+    MessagingBackendKind.fake => ref.watch(fakeMessagingRepositoryProvider),
+    MessagingBackendKind.worker => ref.watch(workerMessagingRepositoryProvider),
+    MessagingBackendKind.unavailable => const UnavailableMessagingRepository(),
+  },
 );
 
 /// The user's game chats in the repository's order. The value is the
