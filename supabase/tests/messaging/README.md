@@ -98,3 +98,12 @@ APPLIED. `notify_realtime_send_check.sql` is a read-only check for Memphis (sign
 `realtime.send`), `notify_probes.sql` N1-N6 are AUTHORED, NOT RUN, and `notify_rollback.sql` only revokes.
 
 KAN-545 (Realtime R5): the live proof runner and its unit tests are in `realtime/` (see `realtime/README.md`).
+
+## KAN-547: the Messages list (msg_my_conversations, last_activity_at)
+
+`20261013160800_kan547_msg_my_conversations.sql` adds `msg_conversations.last_activity_at` (with an index), re-issues
+`msg_notify` with one added statement that stamps it, and adds `public.msg_my_conversations(p_limit int default 50)`:
+the signed-in user's own game chats, newest activity first, with game title, sport name, start and end time, the
+caller's state (send, read-only, left; kicked and removed are excluded) and `last_activity_at`. No content, no
+member lists. AUTHORED, NOT APPLIED. New files: `my_conversations_probes.sql` (M1-M10, AUTHORED, NOT RUN, all
+BEGIN..ROLLBACK) and `my_conversations_rollback.sql` (revoke plus the previous `msg_notify`).
