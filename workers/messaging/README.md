@@ -198,9 +198,9 @@ Game chats never return them.
 
 | Route | What it does | Subrequests | D1 |
 |---|---|---|---|
-| `POST /v1/dm` `{other_user_id}` | verified id via `msg_authorize` (nil conversation), self check, new-DM limit, then `msg_start_dm` with the caller's own bearer; `200 {conversation_id}` (the existing id for an existing pair) | 2 | 1 write (the limiter row) |
+| `POST /v1/dm` `{other_user_id}` | verified id via `msg_authorize` (nil conversation), self check, existing-pair check against the database's own list, the new-DM limit (new pairs only), then `msg_start_dm` with the caller's own bearer; `200 {conversation_id}` (the existing id for an existing pair) | 3 (2 refused earlier) | 1 write for a NEW pair, 0 for a re-open or a refusal |
 | `POST /v1/conversations/{id}/mute` `{muted}` | `msg_set_muted` with the caller's own bearer; `200 {muted}` | 1 | none |
-| `GET /v1/conversations/summary?ids=<up to 50>` | per readable id: `conversation_id`, `last_message_at`, `last_message_from_me` and nothing else | 2 (`msg_authorize`, `msg_my_conversations`) | 1 bounded read, no write |
+| `GET /v1/conversations/summary?ids=<up to 50>` | per readable id: `conversation_id`, `last_message_at`, `last_message_from_me` and nothing else | 2 + at most `MAX_BLOCK_LOOKUPS` (30) | 1 bounded read, no write |
 
 (The `/v1` prefix keeps them on the CORS allowlist and the public-API rules of KAN-538.)
 
@@ -216,27 +216,40 @@ Game chats never return them.
   `not_a_member`; anything else -> 502 with no reason.
 - **New-DM limit (second line):** `NEW_DM_PER_USER_PER_HOUR = 10` in `src/rate_limit.ts`, fixed 3600 s window, key = the
   verified user, scope `new_dm_hour` in the existing `rate_limits` table (no new migration: `scope` is free text).
-  Refusal is `429 rate_limited` with `Retry-After`. The Worker cannot tell a new pair from an existing one before the
-  database call, so this limit counts START REQUESTS (re-opening an existing DM from a profile counts too); the
-  database's own cap counts only NEW conversations. DM sends use the existing send limits (20 a minute per conversation,
-  120 an hour per user).
-- **Summary:** the readable set is the database's own list (`msg_my_conversations`, limit 100, one call): an id that is
-  not in it is omitted silently, and so is a conversation the caller has left. `last_message_at` / `last_message_from_me`
-  come from one D1 statement over the newest USER message per conversation (system lines do not count);
-  `last_message_from_me` compares the stored sender with the verified id. A readable conversation with no message yet
-  has `last_message_at: null`. No text, no sender id, no counts, no previews. Known limit: the summary does not hide a
-  blocked counterpart's latest message time from the blocker (the message LIST does, by the D4 rule); it carries no
-  content, only a time and a boolean.
+  Refusal is `429 rate_limited` with `Retry-After`. **Only a NEW pair counts**: before limiting, the Worker reads the
+  database's own list (`msg_my_conversations`, the caller's bearer, limit 100) and, if it already holds a DM with that
+  user, re-opens it without touching the limiter (the database still applies every block, age and cap rule, and does not
+  count a re-open either). Limits of that check: an empty DM that the OTHER user started is not in the recipient's list
+  until its first message, and a list that cannot be read or is past 100 rows does not show an old DM; in both cases the
+  start is counted (conservative). DM sends use the existing send limits (20 a minute per conversation, 120 an hour per user).
+- **Summary:** the readable set is the database's own list (limit 100, one call): an id that is not in it is omitted
+  silently, and so is a conversation the caller has left. A **blocked counterpart is hidden from the blocker (D4)**: for a
+  DM whose list state is `read_only` (a block in either direction, or an unavailable counterpart) the Worker asks
+  `msg_authorize` for the caller's `hidden_sender_ids` and, if the caller blocked the counterpart, leaves that person's
+  messages out of the conversation's "last message" (the blocker sees only their own last message, or null). At most 30
+  such lookups per request (the 50-subrequest limit of the Free plan); a read-only DM past the budget, or whose lookup
+  fails, is omitted. The blocked side and everyone else see the newest message. System lines never count.
+  `last_message_from_me` compares the stored sender with the verified id. No text, no sender id, no counts, no previews.
+- **Bounded read (`summarySql` in `src/conversations.ts`):** one statement. For each id it reads one `conversation_seq` row
+  (primary key: the newest seq) and then an index range scan on `UNIQUE (conversation_id, seq)` over only the newest
+  `LOOKBACK_MESSAGES` (100) sequence numbers, keeping the newest qualifying message. `EXPLAIN QUERY PLAN` is asserted in a
+  test: `SEARCH cs USING INDEX ... (conversation_id=?)` and `SEARCH m USING INDEX ... (conversation_id=? AND seq>?)`, no
+  `SCAN` of either table. So a request reads at most about 50 x 101 rows whatever the history length; a conversation with
+  nothing qualifying in the window has a null time. The ids and exclusions travel as two JSON parameters because D1 allows
+  100 bound parameters and only a few terms in a compound SELECT (a one-sub-select-per-id form failed at 30 ids in the
+  emulator and is not used).
 - **No logging** anywhere in the new code (the KAN-513 guard forbids any console call in `src/`).
 
-**D1 rows written per request: start-DM = 1 (limiter, a refused start = 0), mute = 0, summary = 0.** **Free-tier
-arithmetic** (D1 free plan: 100,000 rows written and 5 million rows read per day, Workers Free: 50 subrequests per
-request; source: Cloudflare D1 pricing, https://developers.cloudflare.com/d1/platform/pricing/ as cited in the KAN-548
-section above, **not re-read for this ticket: unverified here**):
-- One account at the maximum the Worker limit allows: 10 start requests/hour x 24 = 240 limiter rows/day, 0.24% of the
+**D1 rows written per request: start-DM = 1 for a new pair (0 for a re-open and for a refused start), mute = 0,
+summary = 0.** **Free-tier arithmetic** (D1 free plan: 100,000 rows written and 5 million rows read per day, Workers
+Free: 50 subrequests per request; source: Cloudflare D1 pricing, https://developers.cloudflare.com/d1/platform/pricing/ as
+cited in the KAN-548 section above, **not re-read for this ticket: unverified here**; the compound-SELECT and
+bound-parameter limits above were observed in the local emulator, also unverified against the live service):
+- One account at the maximum the Worker limit allows: 10 new DMs/hour x 24 = 240 limiter rows/day, 0.24% of the
   allowance. Supabase, not D1, stores the conversation, the pair and the members.
-- A summary of 50 ids reads about 2 index entries and 1 row per conversation (the `UNIQUE (conversation_id, seq)` index
-  serves the `MAX(seq)` and the row lookup), so roughly 150 rows read per request against 5 million a day.
-- Subrequests per request: at most 2 of the 50 allowed.
+- A summary of 50 ids reads at most about 50 x 101 = 5,050 rows (the look-back window), typically about 100 (the
+  newest message plus its sequence row per conversation): at the maximum it would take about 1,000 summaries a day to use
+  the 5 million read allowance.
+- Subrequests per request: start-DM 3, mute 1, summary at most 32 of the 50 allowed.
 
 **Rollback:** revert the commit and redeploy the previous one; unused `new_dm_hour` counter rows are harmless.

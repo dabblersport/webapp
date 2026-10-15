@@ -5,6 +5,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
 import { insertMessage } from "../src/db";
+import { LOOKBACK_MESSAGES, MAX_BLOCK_LOOKUPS, summarySql } from "../src/conversations";
 import { NEW_DM_PER_USER_PER_HOUR, SEND_PER_USER_PER_CONVERSATION_PER_MINUTE } from "../src/rate_limit";
 import { RPC_URL, SUPABASE_URL, authRow, env, localD1 } from "./helpers";
 
@@ -464,6 +465,189 @@ describe("summary (GET /v1/conversations/summary)", () => {
     try {
       const res = await worker.fetch(new Request(`https://worker.local/v1/conversations/summary?ids=${DM}`), env(db));
       expect(res.status).toBe(401);
+    } finally {
+      await mf.dispose();
+    }
+  });
+});
+
+describe("re-opening an existing DM is exempt from the new-DM limit", () => {
+  const dmRow = (other: string, conv = DM) => ({ conversation_id: conv, kind: "dm", state: "send", counterpart_user_id: other });
+
+  it("any number of re-opens passes and writes nothing; a new pair is still counted", async () => {
+    pin(T0);
+    const s = supabase({ list: () => [dmRow(B)] });
+    const { mf, db } = await localD1();
+    try {
+      for (let i = 0; i < NEW_DM_PER_USER_PER_HOUR + 5; i++) {
+        expect((await post("/v1/dm", A, { other_user_id: B }, db)).status).toBe(200);
+      }
+      const none = await db.prepare("SELECT COUNT(*) AS n FROM rate_limits").first<{ n: number }>();
+      expect(none?.n).toBe(0);
+      // the list was read with the caller's own bearer
+      expect(s.of(LIST_URL)[0].headers.Authorization).toBe(`Bearer ${A}`);
+      // new pairs (not in the list) are counted: 10 pass, the 11th is refused, re-opening B still works
+      for (let i = 0; i < NEW_DM_PER_USER_PER_HOUR; i++) expect((await post("/v1/dm", A, { other_user_id: C }, db)).status).toBe(200);
+      expect((await post("/v1/dm", A, { other_user_id: C }, db)).status).toBe(429);
+      expect((await post("/v1/dm", A, { other_user_id: B }, db)).status).toBe(200);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("the database still decides a re-open: a block refuses it", async () => {
+    supabase({ list: () => [dmRow(B)], start: () => dbError("blocked") });
+    const { mf, db } = await localD1();
+    try {
+      const res = await post("/v1/dm", A, { other_user_id: B }, db);
+      expect(res.status).toBe(403);
+      expect(await reasonOf(res)).toBe("blocked");
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("an unreadable list counts the start (conservative) and a game row never exempts", async () => {
+    supabase({ list: () => [{ conversation_id: GAME, kind: "game", state: "send", counterpart_user_id: null }] });
+    const { mf, db } = await localD1();
+    try {
+      expect((await post("/v1/dm", A, { other_user_id: B }, db)).status).toBe(200);
+      const row = await db.prepare("SELECT count FROM rate_limits WHERE subject = ?1 AND scope = 'new_dm_hour'").bind(A).first<{ count: number }>();
+      expect(row?.count).toBe(1);
+    } finally {
+      await mf.dispose();
+    }
+  });
+});
+
+describe("summary hides a blocked counterpart from the blocker (D4) and is a bounded read", () => {
+  const dmList = (state: string) => () => [{ conversation_id: DM, kind: "dm", state, counterpart_user_id: B }];
+
+  it("the blocker sees only their own last message; the blocked side and the unblocked see the newest", async () => {
+    const convs = {
+      [DM]: (u: string) => authRow({ user_id: u, allowed_action: "read", reason: "blocked", member_user_ids: [A, B], hidden_sender_ids: u === A ? [B] : [] }),
+    };
+    supabase({ convs, list: dmList("read_only") });
+    const { mf, db } = await localD1();
+    try {
+      await insertMessage(db, { conversationId: DM, senderId: A, body: "mine", clientKey: "k1" });
+      await insertMessage(db, { conversationId: DM, senderId: B, body: "theirs", clientKey: "k2" }); // newest, by the blocked one
+      const forBlocker = (await (await get(`/v1/conversations/summary?ids=${DM}`, A, db)).json()) as { summaries: Record<string, unknown>[] };
+      expect(forBlocker.summaries[0].last_message_from_me).toBe(true); // B's newer message does not count
+      const newest = await db.prepare("SELECT created_at FROM messages WHERE sender_id = ?1").bind(B).first<{ created_at: string }>();
+      const mine = await db.prepare("SELECT created_at FROM messages WHERE sender_id = ?1").bind(A).first<{ created_at: string }>();
+      expect(forBlocker.summaries[0].last_message_at).toBe(mine?.created_at);
+      expect(forBlocker.summaries[0].last_message_at).not.toBe(newest?.created_at === mine?.created_at ? "x" : newest?.created_at);
+      const forBlocked = (await (await get(`/v1/conversations/summary?ids=${DM}`, B, db)).json()) as { summaries: Record<string, unknown>[] };
+      expect(forBlocked.summaries[0].last_message_from_me).toBe(true); // B sees the newest, which is theirs
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("a blocker with only the blocked person's messages sees a null time", async () => {
+    supabase({
+      convs: { [DM]: (u) => authRow({ user_id: u, allowed_action: "read", reason: "blocked", member_user_ids: [A, B], hidden_sender_ids: [B] }) },
+      list: dmList("read_only"),
+    });
+    const { mf, db } = await localD1();
+    try {
+      await insertMessage(db, { conversationId: DM, senderId: B, body: "theirs", clientKey: "k1" });
+      const body = (await (await get(`/v1/conversations/summary?ids=${DM}`, A, db)).json()) as { summaries: Record<string, unknown>[] };
+      expect(body.summaries).toEqual([{ conversation_id: DM, last_message_at: null, last_message_from_me: false }]);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("a read-only DM that is NOT a block of the caller (counterpart banned) shows the newest message", async () => {
+    supabase({
+      convs: { [DM]: (u) => authRow({ user_id: u, allowed_action: "read", reason: "suspended", member_user_ids: [A, B], hidden_sender_ids: [] }) },
+      list: dmList("read_only"),
+    });
+    const { mf, db } = await localD1();
+    try {
+      await insertMessage(db, { conversationId: DM, senderId: B, body: "theirs", clientKey: "k1" });
+      const body = (await (await get(`/v1/conversations/summary?ids=${DM}`, A, db)).json()) as { summaries: Record<string, unknown>[] };
+      expect(body.summaries[0].last_message_at).not.toBeNull();
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("a read-only DM whose block lookup fails is omitted (fails closed)", async () => {
+    supabase({ convs: { [DM]: () => authRow({ allowed_action: null, reason: "not_in_pilot" }) }, list: dmList("read_only") });
+    const { mf, db } = await localD1();
+    try {
+      await insertMessage(db, { conversationId: DM, senderId: B, body: "theirs", clientKey: "k1" });
+      const body = (await (await get(`/v1/conversations/summary?ids=${DM}`, A, db)).json()) as { summaries: unknown[] };
+      expect(body.summaries).toEqual([]);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("block lookups are budgeted: at most MAX_BLOCK_LOOKUPS subrequests, the rest omitted", async () => {
+    const dmIds = Array.from({ length: 40 }, (_, i) => `dd000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`);
+    const convs = Object.fromEntries(dmIds.map((id) => [id, (u: string) => authRow({ user_id: u, allowed_action: "read", reason: "blocked", hidden_sender_ids: [] })]));
+    const s = supabase({ convs, list: () => dmIds.map((id) => ({ conversation_id: id, kind: "dm", state: "read_only", counterpart_user_id: B })) });
+    const { mf, db } = await localD1();
+    try {
+      const body = (await (await get(`/v1/conversations/summary?ids=${dmIds.slice(0, 40).join(",")}`, A, db)).json()) as { summaries: unknown[] };
+      expect(body.summaries).toHaveLength(MAX_BLOCK_LOOKUPS);
+      const authorizeCalls = s.calls.filter((c) => c.url === RPC_URL && c.body.p_conversation_id !== NIL);
+      expect(authorizeCalls).toHaveLength(MAX_BLOCK_LOOKUPS);
+      expect(s.calls.length).toBeLessThanOrEqual(2 + MAX_BLOCK_LOOKUPS); // the Workers Free limit is 50
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("the statement searches by primary key and by the (conversation_id, seq) index; it never scans messages", async () => {
+    const { mf, db } = await localD1();
+    try {
+      const { sql, binds } = summarySql([
+        { id: DM, exclude: null },
+        { id: DM2, exclude: B },
+        { id: GAME, exclude: null },
+      ]);
+      expect(binds).toHaveLength(2); // two JSON parameters, whatever the number of ids
+      expect(JSON.parse(binds[0])).toEqual([DM, DM2, GAME]);
+      expect(JSON.parse(binds[1])).toEqual([`${DM2}|${B}`]);
+      const plan = await db.prepare(`EXPLAIN QUERY PLAN ${sql}`).bind(...binds).all<{ detail: string }>();
+      const details = plan.results.map((r) => r.detail);
+      // cs = conversation_seq (primary key), m = messages (the UNIQUE (conversation_id, seq) index, with a seq range)
+      expect(details.some((d) => /^SEARCH cs USING INDEX sqlite_autoindex_conversation_seq_\d+ \(conversation_id=\?\)/.test(d))).toBe(true);
+      expect(details.some((d) => /^SEARCH m USING INDEX sqlite_autoindex_messages_\d+ \(conversation_id=\? AND seq>\?\)/.test(d))).toBe(true);
+      expect(details.filter((d) => /^SCAN (m|cs)\b/.test(d))).toEqual([]); // only the JSON lists and the result are scanned
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("50 ids work in one statement (D1 limits on parameters and compound terms are not hit)", async () => {
+    const { mf, db } = await localD1();
+    try {
+      const many = Array.from({ length: 50 }, (_, i) => ({ id: `00000000-0000-4000-8000-${String(i + 1).padStart(12, "0")}`, exclude: i % 2 ? B : null }));
+      const { sql, binds } = summarySql(many);
+      await insertMessage(db, { conversationId: many[0].id, senderId: A, body: "x", clientKey: "k1" });
+      const r = await db.prepare(sql).bind(...binds).all<{ conversation_id: string }>();
+      expect(r.results.map((x) => x.conversation_id)).toEqual([many[0].id]);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("looks back at most LOOKBACK_MESSAGES sequence numbers: older qualifying messages are not read", async () => {
+    supabase({ list: () => [{ conversation_id: DM, kind: "dm", state: "send", counterpart_user_id: B }] });
+    const { mf, db } = await localD1();
+    try {
+      await insertMessage(db, { conversationId: DM, senderId: B, body: "old", clientKey: "k0" });
+      for (let i = 1; i <= LOOKBACK_MESSAGES + 5; i++) {
+        await insertMessage(db, { conversationId: DM, senderId: "system", body: "{}", clientKey: `s${i}` });
+      }
+      const body = (await (await get(`/v1/conversations/summary?ids=${DM}`, A, db)).json()) as { summaries: Record<string, unknown>[] };
+      expect(body.summaries[0].last_message_at).toBeNull(); // the user message is beyond the window
     } finally {
       await mf.dispose();
     }

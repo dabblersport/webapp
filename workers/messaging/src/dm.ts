@@ -46,6 +46,38 @@ async function rpcFailure(res: Response): Promise<Response> {
   return databaseRefusal(message) ?? upstreamError(502, "request failed");
 }
 
+/**
+ * True when the caller already has a DM with `other` in the database's own list (msg_my_conversations, the caller's
+ * bearer). Re-opening an existing pair must not count toward the new-DM limit, and the database already exempts it
+ * from its cap. A list that cannot be read, or has no such row, counts as "not existing": the limiter then applies
+ * (conservative). Known gap: an empty DM that the OTHER user started is not in the recipient's list until the first
+ * message, so the recipient starting it back is counted once.
+ */
+async function hasExistingDm(request: Request, env: Env, other: string): Promise<boolean> {
+  try {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_my_conversations`, {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_ANON_KEY,
+        Authorization: request.headers.get("Authorization") as string,
+        "Content-Type": "application/json",
+        Accept: "application/json",
+      },
+      body: JSON.stringify({ p_limit: 100 }),
+    });
+    if (!res.ok) return false;
+    const rows = (await res.json()) as unknown;
+    if (!Array.isArray(rows)) return false;
+    return rows.some((r) => {
+      const row = r as { kind?: unknown; counterpart_user_id?: unknown };
+      return row !== null && typeof row === "object" && row.kind === "dm" &&
+        typeof row.counterpart_user_id === "string" && row.counterpart_user_id.toLowerCase() === other.toLowerCase();
+    });
+  } catch {
+    return false;
+  }
+}
+
 export async function startDm(request: Request, env: Env): Promise<Response> {
   let input: { other_user_id?: unknown };
   try {
@@ -60,8 +92,11 @@ export async function startDm(request: Request, env: Env): Promise<Response> {
   if (!caller.ok) return caller.response;
   if (other.toLowerCase() === caller.userId.toLowerCase()) return reasonError("invalid_request", "self");
 
-  const limited = await enforceNewDm(env.DB, caller.userId); // one small D1 write
-  if (limited !== null) return limited;
+  // Only a NEW pair counts: an existing one is re-opened freely (the database still applies every block/age rule).
+  if (!(await hasExistingDm(request, env, other))) {
+    const limited = await enforceNewDm(env.DB, caller.userId); // one small D1 write
+    if (limited !== null) return limited;
+  }
 
   let res: Response;
   try {
