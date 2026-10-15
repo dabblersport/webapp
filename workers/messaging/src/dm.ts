@@ -4,10 +4,11 @@
 //
 //   POST /v1/dm                          { other_user_id }  -> 200 { conversation_id }   (the existing id for an existing pair)
 //   POST /v1/conversations/{id}/mute     { muted }          -> 200 { muted }
+//   PUT / DELETE /v1/conversations/{id}/mute                -> 204 (KAN-563, the contract's mute / unmute)
 
-import { Env, resolveCaller } from "./auth";
+import { Env, authorize, resolveCaller } from "./auth";
 import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
-import { enforceNewDm } from "./rate_limit";
+import { enforceMute, enforceNewDm } from "./rate_limit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -117,20 +118,8 @@ export async function startDm(request: Request, env: Env): Promise<Response> {
   return ok({ conversation_id: id.toLowerCase() });
 }
 
-export async function setMuted(request: Request, env: Env, conversationId: string): Promise<Response> {
-  if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
-  let input: { muted?: unknown };
-  try {
-    input = await request.json();
-  } catch {
-    return reasonError("invalid_request", "body");
-  }
-  const muted = input !== null && typeof input === "object" ? input.muted : undefined;
-  if (typeof muted !== "boolean") return reasonError("invalid_request", "muted");
-  const authorization = request.headers.get("Authorization");
-  if (authorization === null || !/^Bearer [^\s]+$/.test(authorization)) return unauthenticated();
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
-
+/** msg_set_muted with the caller's own bearer. null on success, otherwise the typed failure response. */
+async function callSetMuted(authorization: string, env: Env, conversationId: string, muted: boolean): Promise<Response | null> {
   let res: Response;
   try {
     res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_set_muted`, {
@@ -146,7 +135,40 @@ export async function setMuted(request: Request, env: Env, conversationId: strin
   } catch {
     return upstreamError(502, "request unavailable");
   }
-  if (!res.ok) return rpcFailure(res);
+  return res.ok ? null : rpcFailure(res);
+}
+
+export async function setMuted(request: Request, env: Env, conversationId: string): Promise<Response> {
+  if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
+  let input: { muted?: unknown };
+  try {
+    input = await request.json();
+  } catch {
+    return reasonError("invalid_request", "body");
+  }
+  const muted = input !== null && typeof input === "object" ? input.muted : undefined;
+  if (typeof muted !== "boolean") return reasonError("invalid_request", "muted");
+  const authorization = request.headers.get("Authorization");
+  if (authorization === null || !/^Bearer [^\s]+$/.test(authorization)) return unauthenticated();
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
+
+  const failure = await callSetMuted(authorization, env, conversationId, muted);
+  if (failure !== null) return failure;
   return ok({ muted });
 }
 
+/**
+ * KAN-563: the contract's muteConversation (PUT) and unmuteConversation (DELETE): 204, no body, idempotent. The verified
+ * user and the typed reasons not_in_pilot / not_a_member / removed come from msg_authorize with the caller's bearer, so
+ * the rate limit is keyed by the verified id; the write is the same msg_set_muted call the POST route uses.
+ */
+export async function muteConversation(request: Request, env: Env, conversationId: string, muted: boolean): Promise<Response> {
+  if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
+  const auth = await authorize(request, env, conversationId);
+  if (!auth.ok) return auth.response;
+  const limited = await enforceMute(env.DB, auth.grant.userId);
+  if (limited !== null) return limited;
+  const failure = await callSetMuted(request.headers.get("Authorization") as string, env, conversationId, muted);
+  if (failure !== null) return failure;
+  return new Response(null, { status: 204 });
+}

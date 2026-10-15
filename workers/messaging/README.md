@@ -255,3 +255,39 @@ bound-parameter limits above were observed in the local emulator, also unverifie
 - Subrequests per request: start-DM 3, mute 1, summary at most 32 of the 50 allowed.
 
 **Rollback:** revert the commit and redeploy the previous one; unused `new_dm_hour` counter rows are harmless.
+
+## Game conversation, mute and unmute (KAN-563)
+The three operations of `docs/messaging/openapi.yaml` that were missing: `getGameConversation`, `muteConversation`,
+`unmuteConversation`. KAN-561's `POST /v1/conversations/{id}/mute` (`200 {muted}`) is unchanged and stays.
+
+| Route | Answer | Database calls | D1 |
+|---|---|---|---|
+| `GET /v1/games/{gameId}/conversation` | `200` the contract `Conversation`: `{id, kind:"game", game_id, writable, read_only_reason, boundary, muted, last_seq}` | 1 (`msg_game_conversation`) | 1 limiter write, 1 read of `conversation_seq` |
+| `PUT /v1/conversations/{id}/mute` | `204`, no body, idempotent | 2 (`msg_authorize`, `msg_set_muted`) | 1 limiter write |
+| `DELETE /v1/conversations/{id}/mute` | `204`, no body, idempotent | 2 (same) | 1 limiter write |
+
+- **Authorisation is the database's, with the caller's bearer unchanged.** The game route calls `msg_game_conversation(p_game_id,
+  p_access_mode)` (`supabase/migrations/20261015130000_kan563_msg_game_conversation.sql`): it resolves the game's conversation,
+  creates the `msg_conversations` row on first use for an eligible member only (mode/pilot gate and a host/player/sub roster row in
+  `active` or `left` first, so a stranger creates nothing), then answers with `msg_evaluate`, the evaluator `msg_authorize`
+  uses. The Worker maps the verdict: `send` -> `writable true`; `read` + `left` -> `left_read_only` with
+  `boundary {kind:"left_at_seq", seq}`; `game_ended` / `game_cancelled` -> `writable false` with that reason; denials ->
+  `not_in_pilot`, `not_a_member`, `removed` (403), `suspended` (403, passed through if the database ever says it), `not_found`
+  (404, unknown game). The user is `auth.uid()`; the only client value is the game id. A non-uuid id is `400 invalid_request`
+  before any call; no bearer is `401` before any call.
+- **`last_seq`** comes from D1 `conversation_seq` (0 when no message yet): the highest seq the caller may view, cut at
+  `left_at_seq` for a member who left. No message text is read.
+- **Mute/unmute** take the verified user and the typed reasons from `msg_authorize` (so the pilot rule applies, and the limiter is
+  keyed by the verified id), then write with the same `msg_set_muted` call the POST route uses. A read-only grant (ended game,
+  left member) may still mute.
+- **Rate limits (D1, same one-row upsert as report):** game conversation 60 a minute per user (scope `game_conv_minute`), mute
+  and unmute 30 a minute per user (scope `mute_minute`), `429 rate_limited` + `Retry-After`. A refusal by the database writes
+  nothing. No new table or migration on the D1 side.
+- **CORS:** the preflight now allows `GET, POST, PUT, DELETE, OPTIONS`.
+- **needs-ops:** the game route needs `20261015130000_kan563_msg_game_conversation.sql` applied (after KAN-505/KAN-560); until then it
+  answers `502` (no reason). Probes: `supabase/tests/messaging/game_conversation_probes.sql` (authored, not run); rollback:
+  `game_conversation_rollback.sql` (revokes EXECUTE, nothing dropped). Mute/unmute need KAN-560's `msg_set_muted` applied.
+- **Contract notes (no contract change):** (1) an unknown conversation id on mute answers `403 not_a_member`, not `404`: `msg_authorize`
+  deliberately returns one reason for a guessed id and a non-member; `not_found` is returned for an unknown GAME on the game route.
+  (2) The contract gives no numbers for `rate_limited`; the two limits above are this build's. (3) Mute makes two database calls, not
+  one, because the pilot rule and the limiter key both need the verified user before the write.
