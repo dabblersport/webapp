@@ -110,30 +110,31 @@ D1 allowance and the Worker would then fail closed for everyone. `src/rate_limit
   ends (also exposed through CORS so the web app can read it). The app already maps `messaging_reason_rate_limited`.
 - **Why D1, not isolate memory:** a Worker runs as many isolates at once and recycles them, so a memory counter is per
   isolate, can reset at any time and is bypassed by landing on another isolate. D1 serialises writes per database.
-- **Atomic check-and-increment:** one upsert per limit whose `DO UPDATE ... WHERE` is false once the window is full;
-  the request is admitted only if the statement returns a row. Two parallel requests at the limit cannot both pass
-  (tested), and a refused request performs no write at all. A new window overwrites the row in the same statement, so
-  there is no prune job and no stale-row growth (one row per subject and scope).
+- **One row, one write:** a user's send limits live in ONE row (scope `send`): the hour window in `window_start`/`count`
+  and the current minute window in `sub_window_start`/`sub_counts`, a small JSON object of per-conversation counts
+  (`{"<conversation id>": n}`, reset each minute). A report is its own row (scope `report_hour`). One row per subject and
+  scope, so no stale-row growth and no prune job.
+- **Atomic check-and-increment:** ONE upsert per request that tests and increments BOTH send limits together. Its
+  `DO UPDATE ... WHERE` is false once either window is full, and the request is admitted only if the statement returns a
+  row. Two parallel requests at the limit cannot both pass (tested), an admitted request counts against both windows
+  at once, and a refused request performs no write at all (tested with D1's `rows_written`: 1 admitted, 0 refused).
+  On a refusal only, one extra READ says which window is full, so `Retry-After` is the wait for the longer full window.
 - **Fixed windows:** a user can send up to the limit at the end of one window and again at the start of the next
   (up to 2x the limit across a boundary). A retry with the same `Idempotency-Key` counts as a request, because the
   counter runs before the insert can tell it is a repeat.
-- **One send, two counters:** if the minute counter admits and the hour counter refuses, the minute counter has already
-  counted that attempt (conservative, never lets extra through).
 
-**D1 rows written per request (limiter only):** send = **2** (the per-conversation minute row and the per-user hour
-row), report = **1**, a refused request = **0** from the refusing counter (a send refused by only one of its two
-counters still wrote the other, so 1). The table is `WITHOUT ROWID`, so one counter write is one written row, no
-index row. This is two per send rather than one because the two limits (per conversation per minute, per user per hour)
-need two independent counters; a single row cannot hold per-conversation counts for a user across conversations.
+**D1 rows written per request (limiter only): send = 1, report = 1, a refused request = 0.** The table is
+`WITHOUT ROWID`, so a counter write is exactly one written row (no separate index row), and a send's two limits share
+the user's single row. Refusals add one cheap read, not a write.
 
 **Free-tier arithmetic** (D1 free plan: **100,000 rows written per day**, 5 million rows read per day; index writes count
 as written rows. Source: Cloudflare D1 pricing, https://developers.cloudflare.com/d1/platform/pricing/, read 2026-10-15.
 The Workers Free daily request allowance was not re-read for this ticket: **unverified** here.)
 - Existing send writes, counted from the schema (migrations 0001 and 0003), not measured: 1 sequence row + 1 message
   row + 4 index rows (the `id` primary key, the two UNIQUE constraints, the `legal_hold` index) = 6. With the limiter's
-  2 a send is about 8 written rows, so the free tier carries roughly 100,000 / 8 = ~12,500 sends a day in total.
-- One account at the maximum the limits allow: 120 sends/hour x 24 = 2,880 sends/day x 8 rows = 23,040 rows/day, about
-  23% of the allowance. Reports at 10/hour = 240/day: 240 limiter rows + a legal-hold update (2 rows with its index)
+  1 a send is about 7 written rows, so the free tier carries roughly 100,000 / 7 = ~14,000 sends a day in total.
+- One account at the maximum the limits allow: 120 sends/hour x 24 = 2,880 sends/day x 7 rows = 20,160 rows/day, about
+  20% of the allowance. Reports at 10/hour = 240/day: 240 limiter rows + a legal-hold update (2 rows with its index)
   each = 720 rows/day, under 1%.
 - So the limits cap **one** account; about five accounts abusing at the maximum would still reach 100,000 rows in a day.
   The limiter is necessary but not sufficient on the Free plan; moving to Workers Paid is a CEO cost decision and is not

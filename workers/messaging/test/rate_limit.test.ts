@@ -11,7 +11,7 @@ import {
   REPORT_PER_USER_PER_HOUR,
   SEND_PER_USER_PER_CONVERSATION_PER_MINUTE,
   SEND_PER_USER_PER_HOUR,
-  checkRate,
+  checkSend,
 } from "../src/rate_limit";
 import { CONV_A, RPC_URL, SUPABASE_URL, authRow, env, localD1 } from "./helpers";
 
@@ -78,6 +78,41 @@ async function refusal(res: Response) {
   return Number(retry);
 }
 
+/** The user's hour count and one conversation's minute count, read back from the single 'send' row. */
+async function sendCounters(db: D1Database, user: string, conv: string) {
+  return db
+    .prepare("SELECT count AS hour, json_extract(sub_counts, ?2) AS minute FROM rate_limits WHERE subject = ?1 AND scope = 'send'")
+    .bind(user, `$."${conv}"`)
+    .first<{ hour: number; minute: number }>();
+}
+
+/** Wraps a D1 binding so every `INSERT INTO rate_limits` records the rows_written D1 reports for it. */
+function rateLimitWrites(db: D1Database) {
+  const rows: number[] = [];
+  const handler = {
+    get(target: any, prop: string | symbol) {
+      if (prop !== "prepare") return Reflect.get(target, prop);
+      return (sql: string) => {
+        const stmt = target.prepare(sql);
+        if (!sql.includes("INTO rate_limits")) return stmt;
+        return {
+          bind: (...args: unknown[]) => {
+            const bound = stmt.bind(...args);
+            return {
+              all: async () => {
+                const res = await bound.all();
+                rows.push(res.meta.rows_written as number);
+                return res;
+              },
+            };
+          },
+        };
+      };
+    },
+  };
+  return { db: new Proxy(db, handler) as D1Database, rows };
+}
+
 describe("send: 20 a minute per user per conversation", () => {
   it("the 21st send in a minute is refused: 429, rate_limited, numeric Retry-After, and nothing is written", async () => {
     pin(T0);
@@ -93,7 +128,7 @@ describe("send: 20 a minute per user per conversation", () => {
       expect(await messages(db)).toBe(before); // no message
       expect(await count(db, "SELECT COUNT(*) AS c FROM messages WHERE client_key = ?1", KEY(21).toLowerCase())).toBe(0);
       // the refused request did not advance the counter either (a false WHERE writes nothing)
-      expect(await count(db, "SELECT count AS c FROM rate_limits WHERE subject = 'u1' AND scope LIKE 'send_conv_min:%'")).toBe(20);
+      expect(await sendCounters(db, "u1", CONV_A)).toEqual({ hour: 20, minute: 20 });
     } finally {
       await mf.dispose();
     }
@@ -121,7 +156,7 @@ describe("send: 20 a minute per user per conversation", () => {
       await refusal(await send(db, "u1", CONV_A, 21));
       clock.mockReturnValue(T0 + (MINUTE_SECONDS - 10) * 1000); // the next minute window begins
       expect((await send(db, "u1", CONV_A, 22)).status).toBe(201);
-      expect(await count(db, "SELECT count AS c FROM rate_limits WHERE subject = 'u1' AND scope LIKE 'send_conv_min:%'")).toBe(1);
+      expect(await sendCounters(db, "u1", CONV_A)).toEqual({ hour: 21, minute: 1 }); // refused attempts never counted
     } finally {
       await mf.dispose();
     }
@@ -141,14 +176,43 @@ describe("send: 20 a minute per user per conversation", () => {
     }
   });
 
-  it("a flood of parallel requests admits exactly the limit (checkRate)", async () => {
+  it("a flood of parallel requests admits exactly the limit", async () => {
     pin(T0);
     const { mf, db } = await localD1();
     try {
-      const rule = { scope: "burst", windowSeconds: MINUTE_SECONDS, limit: 3 };
-      const outcomes = await Promise.all(Array.from({ length: 12 }, () => checkRate(db, "u1", [rule])));
-      expect(outcomes.filter((o) => o.ok)).toHaveLength(3);
-      expect(await count(db, "SELECT count AS c FROM rate_limits WHERE subject = 'u1' AND scope = 'burst'")).toBe(3);
+      const outcomes = await Promise.all(Array.from({ length: 30 }, () => checkSend(db, "u1", CONV_A)));
+      expect(outcomes.filter((o) => o.ok)).toHaveLength(SEND_PER_USER_PER_CONVERSATION_PER_MINUTE);
+      expect(await sendCounters(db, "u1", CONV_A)).toEqual({ hour: 20, minute: 20 });
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("an admitted send writes exactly ONE counter row, a refused one none, whatever the conversation", async () => {
+    pin(T0);
+    rpcs();
+    const { mf, db } = await localD1();
+    try {
+      const written = rateLimitWrites(db);
+      for (let c = 1; c <= 3; c++) expect((await send(written.db, "u1", CONV(c), c)).status).toBe(201);
+      expect(written.rows).toEqual([1, 1, 1]); // one written row per admitted send (rows_written)
+      expect(await count(db, "SELECT COUNT(*) AS c FROM rate_limits")).toBe(1); // both limits share the user's one row
+      for (let n = 4; n <= 22; n++) await send(written.db, "u1", CONV(1), n); // conversation 1 reaches its 20
+      written.rows.length = 0;
+      await refusal(await send(written.db, "u1", CONV(1), 99));
+      expect(written.rows).toEqual([0]); // refused: the conditional upsert performed no write
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("the minute limit refuses with the minute wait while the hour still has room", async () => {
+    pin(T0);
+    const { mf, db } = await localD1();
+    try {
+      for (let n = 0; n < SEND_PER_USER_PER_CONVERSATION_PER_MINUTE; n++) await checkSend(db, "u1", CONV_A);
+      expect(await checkSend(db, "u1", CONV_A)).toEqual({ ok: false, retryAfterSeconds: MINUTE_SECONDS - 10 });
+      expect(await checkSend(db, "u1", CONV(2))).toEqual({ ok: true }); // another conversation: its own minute
     } finally {
       await mf.dispose();
     }

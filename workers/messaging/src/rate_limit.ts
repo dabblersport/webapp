@@ -4,10 +4,13 @@
 // counter would be per isolate, resettable by the platform, and bypassable by landing requests on different isolates.
 // D1 serialises writes per database, so one table is the single shared counter.
 //
-// Check and increment are ONE statement per limit: an upsert whose DO UPDATE has a WHERE that is false once the
-// window is full. A request is admitted only if that statement returns a row. So two parallel requests at the limit
-// cannot both pass, and a refused request writes nothing (a false WHERE performs no update). The key is the verified
-// user id the Worker derives from msg_authorize, never a client-supplied value. No logging in this module.
+// ONE written row per admitted request. A send has two limits (per conversation per minute, per user per hour); both
+// live in the user's single 'send' row: the hour window in window_start/count, and the minute window in
+// sub_window_start/sub_counts, a small JSON object of per-conversation counts for the current minute. The check and the
+// increment of BOTH limits are one upsert statement whose DO UPDATE has a WHERE that is false once either window is
+// full. A request is admitted only if that statement returns a row, so two parallel requests at the limit cannot both
+// pass, an admitted request counts against both windows together, and a refused request writes nothing.
+// The key is the verified user id the Worker derives from msg_authorize, never a client-supplied value. No logging.
 
 import { reasonError } from "./errors";
 
@@ -18,55 +21,71 @@ export const REPORT_PER_USER_PER_HOUR = 10;
 export const MINUTE_SECONDS = 60;
 export const HOUR_SECONDS = 3600;
 
-export interface RateRule {
-  scope: string;
-  windowSeconds: number;
-  limit: number;
-}
-
-/** One send: at most 20 a minute in this conversation AND at most 120 an hour across conversations. */
-export function sendRules(conversationId: string): RateRule[] {
-  return [
-    {
-      scope: `send_conv_min:${conversationId.toLowerCase()}`,
-      windowSeconds: MINUTE_SECONDS,
-      limit: SEND_PER_USER_PER_CONVERSATION_PER_MINUTE,
-    },
-    { scope: "send_hour", windowSeconds: HOUR_SECONDS, limit: SEND_PER_USER_PER_HOUR },
-  ];
-}
-
-/** One report: at most 10 an hour per user. */
-export function reportRules(): RateRule[] {
-  return [{ scope: "report_hour", windowSeconds: HOUR_SECONDS, limit: REPORT_PER_USER_PER_HOUR }];
-}
-
 export type RateOutcome = { ok: true } | { ok: false; retryAfterSeconds: number };
 
-// ?1 subject, ?2 scope, ?3 this window's start, ?4 the limit. RETURNING yields a row only when the request was
-// admitted: a new row, a new window (count reset to 1) or a count below the limit (count + 1).
-const ADMIT = `INSERT INTO rate_limits (subject, scope, window_start, count) VALUES (?1, ?2, ?3, 1)
+const windowStart = (nowSeconds: number, windowSeconds: number) => Math.floor(nowSeconds / windowSeconds) * windowSeconds;
+
+// ?1 subject, ?2 hour window start, ?3 hour limit, ?4 minute window start, ?5 conversation id (the JSON key),
+// ?6 its JSON path, ?7 per-conversation minute limit. RETURNING yields a row only when the request was admitted.
+// In DO UPDATE SET every right-hand side reads the OLD row.
+const ADMIT_SEND = `INSERT INTO rate_limits (subject, scope, window_start, count, sub_window_start, sub_counts)
+  VALUES (?1, 'send', ?2, 1, ?4, json_object(?5, 1))
+  ON CONFLICT (subject, scope) DO UPDATE SET
+    count = CASE WHEN rate_limits.window_start < excluded.window_start THEN 1 ELSE rate_limits.count + 1 END,
+    window_start = MAX(rate_limits.window_start, excluded.window_start),
+    sub_counts = CASE
+      WHEN rate_limits.sub_window_start < excluded.sub_window_start THEN json_object(?5, 1)
+      ELSE json_set(rate_limits.sub_counts, ?6, COALESCE(json_extract(rate_limits.sub_counts, ?6), 0) + 1) END,
+    sub_window_start = MAX(rate_limits.sub_window_start, excluded.sub_window_start)
+  WHERE (rate_limits.window_start < excluded.window_start OR rate_limits.count < ?3)
+    AND (rate_limits.sub_window_start < excluded.sub_window_start
+         OR COALESCE(json_extract(rate_limits.sub_counts, ?6), 0) < ?7)
+  RETURNING count`;
+
+// Read only on a refusal, to tell which window is full (a read is not a written row).
+const READ_SEND = `SELECT window_start, count, sub_window_start, COALESCE(json_extract(sub_counts, ?2), 0) AS sub_count
+  FROM rate_limits WHERE subject = ?1 AND scope = 'send'`;
+
+/** One send: at most 20 a minute in this conversation AND at most 120 an hour across conversations. */
+export async function checkSend(db: D1Database, userId: string, conversationId: string): Promise<RateOutcome> {
+  const now = Math.floor(Date.now() / 1000);
+  const hourStart = windowStart(now, HOUR_SECONDS);
+  const minuteStart = windowStart(now, MINUTE_SECONDS);
+  const conv = conversationId.toLowerCase(); // a validated UUID: hex digits and hyphens only
+  const path = `$."${conv}"`;
+  const admitted = await db
+    .prepare(ADMIT_SEND)
+    .bind(userId, hourStart, SEND_PER_USER_PER_HOUR, minuteStart, conv, path, SEND_PER_USER_PER_CONVERSATION_PER_MINUTE)
+    .all();
+  if (admitted.results.length > 0) return { ok: true };
+
+  const row = await db
+    .prepare(READ_SEND)
+    .bind(userId, path)
+    .first<{ window_start: number; count: number; sub_window_start: number; sub_count: number }>();
+  const hourFull = row !== null && row.window_start >= hourStart && row.count >= SEND_PER_USER_PER_HOUR;
+  const minuteFull =
+    row !== null && row.sub_window_start >= minuteStart && row.sub_count >= SEND_PER_USER_PER_CONVERSATION_PER_MINUTE;
+  // The longest full window wins; if a concurrent request moved the window since, fall back to the shortest wait.
+  const waits: number[] = [];
+  if (hourFull) waits.push(hourStart + HOUR_SECONDS - now);
+  if (minuteFull) waits.push(minuteStart + MINUTE_SECONDS - now);
+  return { ok: false, retryAfterSeconds: waits.length > 0 ? Math.max(...waits) : minuteStart + MINUTE_SECONDS - now };
+}
+
+const ADMIT_REPORT = `INSERT INTO rate_limits (subject, scope, window_start, count) VALUES (?1, 'report_hour', ?2, 1)
   ON CONFLICT (subject, scope) DO UPDATE SET
     count = CASE WHEN rate_limits.window_start < excluded.window_start THEN 1 ELSE rate_limits.count + 1 END,
     window_start = MAX(rate_limits.window_start, excluded.window_start)
-  WHERE rate_limits.window_start < excluded.window_start OR rate_limits.count < ?4
+  WHERE rate_limits.window_start < excluded.window_start OR rate_limits.count < ?3
   RETURNING count`;
 
-/**
- * Admit or refuse one request for [subject] against every rule, in one D1 batch. A refusal carries the whole seconds
- * until the longest refused window ends. The caller must run this BEFORE it writes anything.
- */
-export async function checkRate(db: D1Database, subject: string, rules: RateRule[]): Promise<RateOutcome> {
-  const nowSeconds = Math.floor(Date.now() / 1000);
-  const starts = rules.map((r) => Math.floor(nowSeconds / r.windowSeconds) * r.windowSeconds);
-  const results = await db.batch(
-    rules.map((r, i) => db.prepare(ADMIT).bind(subject, r.scope, starts[i], r.limit)),
-  );
-  let retryAfter = 0;
-  results.forEach((res, i) => {
-    if (res.results.length === 0) retryAfter = Math.max(retryAfter, starts[i] + rules[i].windowSeconds - nowSeconds);
-  });
-  return retryAfter === 0 ? { ok: true } : { ok: false, retryAfterSeconds: retryAfter };
+/** One report: at most 10 an hour per user. */
+export async function checkReport(db: D1Database, userId: string): Promise<RateOutcome> {
+  const now = Math.floor(Date.now() / 1000);
+  const start = windowStart(now, HOUR_SECONDS);
+  const admitted = await db.prepare(ADMIT_REPORT).bind(userId, start, REPORT_PER_USER_PER_HOUR).all();
+  return admitted.results.length > 0 ? { ok: true } : { ok: false, retryAfterSeconds: start + HOUR_SECONDS - now };
 }
 
 /** 429, the typed reason rate_limited, and Retry-After in whole seconds. */
@@ -77,7 +96,12 @@ export function rateLimited(retryAfterSeconds: number): Response {
 }
 
 /** The call sites' one-liner: null to go on, or the 429 to return. */
-export async function enforceRate(db: D1Database, subject: string, rules: RateRule[]): Promise<Response | null> {
-  const outcome = await checkRate(db, subject, rules);
+export async function enforceSend(db: D1Database, userId: string, conversationId: string): Promise<Response | null> {
+  const outcome = await checkSend(db, userId, conversationId);
+  return outcome.ok ? null : rateLimited(outcome.retryAfterSeconds);
+}
+
+export async function enforceReport(db: D1Database, userId: string): Promise<Response | null> {
+  const outcome = await checkReport(db, userId);
   return outcome.ok ? null : rateLimited(outcome.retryAfterSeconds);
 }
