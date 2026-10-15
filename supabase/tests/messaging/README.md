@@ -120,3 +120,14 @@ is read-only for both (reason `blocked`), a banned or deleted counterpart makes 
 AUTHORED, NOT APPLIED. New files: `dm_probes.sql` (D1-D13, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `dm_rollback.sql`
 (refuses when any DM exists). The Worker's mapping of the two read-only reasons and listing DMs in the Messages list are
 later tickets.
+
+## KAN-555: DM rows in the Messages list (msg_my_conversations v2)
+
+`20261013161000_kan555_msg_my_conversations_dm.sql` makes `msg_my_conversations` return DM conversations together with
+game chats, newest activity first. It keeps every KAN-547 column and rule and adds `kind`, `counterpart_user_id`,
+`counterpart_name`, `counterpart_avatar` (public profile only, NULL for game rows) and `muted` (the caller's own flag).
+A DM is listed for its starter at once and for the other member only once a message exists; a block in either direction
+or a deleted or banned counterpart makes it read-only. Because PostgreSQL cannot change a function's result columns with
+CREATE OR REPLACE, v1 is renamed to `msg_my_conversations_v1` (EXECUTE revoked) and the new function takes the name; nothing
+is removed. AUTHORED, NOT APPLIED. New files: `my_conversations_dm_probes.sql` (L1-L8, AUTHORED, NOT RUN, all
+BEGIN..ROLLBACK) and `my_conversations_dm_rollback.sql` (swaps the names back).
