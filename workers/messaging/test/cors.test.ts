@@ -8,7 +8,7 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const ALLOWED = ["https://canary.dabbler.pro", "https://alpha.dabbler.pro"];
+const ALLOWED = ["https://canary.dabbler.pro", "https://alpha.dabbler.pro", "https://app.dabbler.pro"];
 const MESSAGES = `https://worker.local/v1/conversations/${CONV_A}/messages`;
 
 const preflight = (url: string, origin?: string) =>
@@ -24,7 +24,7 @@ const preflight = (url: string, origin?: string) =>
 const corsHeaders = (res: Response) => [...res.headers.keys()].filter((k) => k.startsWith("access-control-"));
 
 describe("allowlist", () => {
-  it("is exactly the two origins: no wildcard, no pattern", () => {
+  it("is exactly the three origins: no wildcard, no pattern", () => {
     expect([...CORS_ALLOWED_ORIGINS]).toEqual(ALLOWED);
     expect(CORS_ALLOWED_ORIGINS.some((o) => o.includes("*"))).toBe(false);
   });
@@ -152,5 +152,68 @@ describe("/health and /internal/system-line are excluded", () => {
     const { db } = spyDb();
     const res = await worker.fetch(preflight("https://worker.local/v1evil", ALLOWED[0]), env(db));
     expect(corsHeaders(res)).toEqual([]);
+  });
+});
+
+describe("KAN-546: https://app.dabbler.pro", () => {
+  const APP = "https://app.dabbler.pro";
+
+  it("preflight from the production origin gets the allow-origin header", async () => {
+    const { db } = spyDb();
+    const res = await worker.fetch(preflight(MESSAGES, APP), env(db));
+    expect(res.status).toBe(204);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(APP);
+    expect(res.headers.get("Vary")).toBe("Origin");
+  });
+
+  it("a normal /v1 response from the production origin gets the allow-origin header", async () => {
+    mockFetch(rpcJson([authRow({ user_id: "u1" })]));
+    const { db } = spyDb();
+    const res = await worker.fetch(
+      new Request(`https://worker.local/v1/whoami?conversation_id=${CONV_A}`, { headers: { Origin: APP, Authorization: "Bearer t" } }),
+      env(db),
+    );
+    expect(res.status).toBe(200);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe(APP);
+    expect(res.headers.get("Vary")).toContain("Origin");
+  });
+
+  for (const origin of [
+    "https://app.dabbler.pro.evil.example",
+    "http://app.dabbler.pro",
+    "https://APP.dabbler.pro",
+    "https://app.dabbler.pro/",
+    "https://app.dabbler.pro:8443",
+  ]) {
+    it(`look-alike ${origin}: no CORS headers on preflight or response`, async () => {
+      mockFetch(rpcJson([authRow({ user_id: "u1" })]));
+      const { db } = spyDb();
+      const pre = await worker.fetch(preflight(MESSAGES, origin), env(db));
+      expect(corsHeaders(pre)).toEqual([]);
+      expect(pre.status).not.toBe(204);
+      const res = await worker.fetch(
+        new Request(`https://worker.local/v1/whoami?conversation_id=${CONV_A}`, { headers: { Origin: origin, Authorization: "Bearer t" } }),
+        env(db),
+      );
+      expect(corsHeaders(res)).toEqual([]);
+    });
+  }
+
+  it("/health and /internal/system-line get no CORS handling for the production origin", async () => {
+    const { db } = spyDb();
+    const health = await worker.fetch(new Request("https://worker.local/health", { headers: { Origin: APP } }), env(db));
+    expect(corsHeaders(health)).toEqual([]);
+    expect(health.headers.get("Vary")).toBeNull();
+    const hpre = await worker.fetch(preflight("https://worker.local/health", APP), env(db));
+    expect(corsHeaders(hpre)).toEqual([]);
+    const post = await worker.fetch(
+      new Request("https://worker.local/internal/system-line", { method: "POST", headers: { Origin: APP }, body: "{}" }),
+      env(db),
+    );
+    expect(corsHeaders(post)).toEqual([]);
+    expect(post.headers.get("Vary")).toBeNull();
+    const ipre = await worker.fetch(preflight("https://worker.local/internal/system-line", APP), env(db));
+    expect(corsHeaders(ipre)).toEqual([]);
+    expect(ipre.status).not.toBe(204);
   });
 });
