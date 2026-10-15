@@ -42,3 +42,13 @@ final messagesListProvider =
       (ref) =>
           ref.watch(myConversationsRepositoryProvider).listMyConversations(),
     );
+
+/// Start a DM and mute (KAN-562), chosen exactly like
+/// [myConversationsRepositoryProvider].
+final dmRepositoryProvider = Provider<DmRepository>(
+  (ref) => switch (ref.watch(messagingBackendKindProvider)) {
+    MessagingBackendKind.fake => ref.watch(fakeMessagingRepositoryProvider),
+    MessagingBackendKind.worker => ref.watch(workerMessagingRepositoryProvider),
+    MessagingBackendKind.unavailable => const UnavailableMessagingRepository(),
+  },
+);

@@ -2329,5 +2329,19 @@
   "messaging_list_fallback_title": "{sport} game",
   "@messaging_list_fallback_title": {"description": "KAN-549 Messages list. Arabic is PROVISIONAL pending content review. Row title when the game has no title; sport is the sport's name.", "placeholders": {"sport": {"type": "String"}}},
   "messaging_list_fallback_unknown_sport": "Game",
-  "@messaging_list_fallback_unknown_sport": {"description": "KAN-549 Messages list. Arabic is PROVISIONAL pending content review."}
+  "@messaging_list_fallback_unknown_sport": {"description": "KAN-549 Messages list. Arabic is PROVISIONAL pending content review."},
+  "messaging_reason_dm_cap_reached": "You've started as many new conversations as you can today. Try again tomorrow.",
+  "@messaging_reason_dm_cap_reached": {"description": "KAN-562 Start-DM refusal: the daily cap on new direct messages (Worker reason dm_cap_reached, HTTP 429). Arabic is PROVISIONAL pending content review."},
+  "messaging_list_empty_dm_title": "No messages yet",
+  "@messaging_list_empty_dm_title": {"description": "KAN-562 Messages list empty state title (games and direct messages). Arabic is PROVISIONAL pending content review."},
+  "messaging_list_empty_dm_body": "Your game chats and direct messages show up here.",
+  "@messaging_list_empty_dm_body": {"description": "KAN-562 Messages list empty state body (games and direct messages). Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_fallback_name": "Dabbler user",
+  "@messaging_dm_fallback_name": {"description": "KAN-562 DM row name when the other person has no public name. Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_kind_label": "Direct message",
+  "@messaging_dm_kind_label": {"description": "KAN-562 DM row quiet label (no sport). Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_muted_label": "Muted",
+  "@messaging_dm_muted_label": {"description": "KAN-562 DM row: accessibility text for the muted mark. Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_read_only_label": "You can't reply",
+  "@messaging_dm_read_only_label": {"description": "KAN-562 DM row label when the conversation is read-only (blocked, or the other person is unavailable). Arabic is PROVISIONAL pending content review."}
 }

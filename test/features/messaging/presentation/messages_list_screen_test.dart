@@ -208,14 +208,13 @@ void main() {
         await _settle(tester);
         final l10n = _l10n(tester);
         expect(find.byKey(MessagesListScreen.emptyKey), findsOneWidget);
-        expect(find.text(l10n.messaging_list_empty_title), findsOneWidget);
-        expect(find.text(l10n.messaging_list_empty_body), findsOneWidget);
+        // KAN-562 switched the empty state to copy that names games and
+        // direct messages (new keys; the KAN-549 keys are unchanged).
+        expect(find.text(l10n.messaging_list_empty_dm_title), findsOneWidget);
+        expect(find.text(l10n.messaging_list_empty_dm_body), findsOneWidget);
         if (v.locale.languageCode == 'en') {
           expect(
-            find.text(
-              'Chats for your games show up here. '
-              'Join a game to start talking.',
-            ),
+            find.text('Your game chats and direct messages show up here.'),
             findsOneWidget,
           );
         }

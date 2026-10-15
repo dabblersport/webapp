@@ -6557,4 +6557,27 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_list_fallback_unknown_sport => 'مباراة';
+
+  @override
+  String get messaging_reason_dm_cap_reached =>
+      'وصلت إلى الحد اليومي لبدء محادثات جديدة. حاول مرة أخرى غدًا.';
+
+  @override
+  String get messaging_list_empty_dm_title => 'لا توجد رسائل بعد';
+
+  @override
+  String get messaging_list_empty_dm_body =>
+      'تظهر هنا محادثات مبارياتك ورسائلك المباشرة.';
+
+  @override
+  String get messaging_dm_fallback_name => 'مستخدم دابلر';
+
+  @override
+  String get messaging_dm_kind_label => 'رسالة مباشرة';
+
+  @override
+  String get messaging_dm_muted_label => 'مكتومة';
+
+  @override
+  String get messaging_dm_read_only_label => 'لا يمكنك الرد';
 }

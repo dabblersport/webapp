@@ -6508,4 +6508,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_list_fallback_unknown_sport => 'Game';
+
+  @override
+  String get messaging_reason_dm_cap_reached =>
+      'You\'ve started as many new conversations as you can today. Try again tomorrow.';
+
+  @override
+  String get messaging_list_empty_dm_title => 'No messages yet';
+
+  @override
+  String get messaging_list_empty_dm_body =>
+      'Your game chats and direct messages show up here.';
+
+  @override
+  String get messaging_dm_fallback_name => 'Dabbler user';
+
+  @override
+  String get messaging_dm_kind_label => 'Direct message';
+
+  @override
+  String get messaging_dm_muted_label => 'Muted';
+
+  @override
+  String get messaging_dm_read_only_label => 'You can\'t reply';
 }

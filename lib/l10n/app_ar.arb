@@ -2350,5 +2350,12 @@
   "messaging_list_state_read_only": "للقراءة فقط",
   "messaging_list_state_left": "لقد غادرت",
   "messaging_list_fallback_title": "مباراة {sport}",
-  "messaging_list_fallback_unknown_sport": "مباراة"
+  "messaging_list_fallback_unknown_sport": "مباراة",
+  "messaging_reason_dm_cap_reached": "وصلت إلى الحد اليومي لبدء محادثات جديدة. حاول مرة أخرى غدًا.",
+  "messaging_list_empty_dm_title": "لا توجد رسائل بعد",
+  "messaging_list_empty_dm_body": "تظهر هنا محادثات مبارياتك ورسائلك المباشرة.",
+  "messaging_dm_fallback_name": "مستخدم دابلر",
+  "messaging_dm_kind_label": "رسالة مباشرة",
+  "messaging_dm_muted_label": "مكتومة",
+  "messaging_dm_read_only_label": "لا يمكنك الرد"
 }
