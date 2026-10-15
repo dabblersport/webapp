@@ -2,7 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
+import 'package:dabbler/features/messaging/presentation/dm_thread_route.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/screens/messages_list_screen.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access_state.dart';
@@ -13,15 +13,12 @@ import 'package:dabbler/utils/transitions/page_transitions.dart';
 const String messagesListRoutePath = '/messaging';
 const String messagesListRouteName = 'messagingList';
 
-/// The route a DM row opens (KAN-562). The DM thread ticket owns the shared
-/// route name `messagingThread`, which does not exist in this codebase yet;
-/// until it lands this points at the existing chat route
-/// ([gameChatRouteName]) and the row passes the conversation id as its path
-/// parameter. Replace with the thread route when it exists.
-const String messagesListDmRouteName = gameChatRouteName;
+/// The route a DM row opens: the DM thread (KAN-556), with the conversation
+/// id as its path parameter.
+const String messagesListDmRouteName = dmThreadRouteName;
 
 /// The path parameter the DM row fills with the conversation id.
-const String messagesListDmRouteParam = 'gameId';
+const String messagesListDmRouteParam = dmThreadRouteParam;
 
 /// The route body: the list when both flags are on, otherwise the same
 /// unavailable state the game chat route shows (KAN-518). Fetches nothing

@@ -91,6 +91,7 @@
 /social-chat/:conversationId	social-chat	GoRoute
 /messaging/game/:gameId	messagingGameChat	GoRoute
 /messaging	messagingList	GoRoute
+/messaging/thread/:conversationId	messagingThread	GoRoute
 /social-edit-post	social-edit-post	GoRoute
 /social-analytics	social-analytics	GoRoute
 /admin/moderation-queue	-	GoRoute

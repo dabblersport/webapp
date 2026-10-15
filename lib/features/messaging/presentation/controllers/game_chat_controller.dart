@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -25,11 +26,26 @@ class GameChatController
   @override
   Future<GameChatViewState> build(String arg) async {
     _listenForWakes();
+    return open(arg);
+  }
+
+  /// Resolves the conversation for [arg] (here: the game id) and opens it.
+  /// The DM thread (KAN-556) overrides this to resolve a DM by its id.
+  @protected
+  Future<GameChatViewState> open(String arg) async {
     final conv = await _repo.getGameConversation(arg);
-    if (conv is Err<Conversation, Failure>) return failureState(conv.error);
-    final conversation = conv.requireValue;
+    if (conv is Err<Conversation, Failure>) return failureFor(conv.error);
+    return openConversation(conv.requireValue);
+  }
+
+  /// Loads the newest page of [conversation]; [dm] is carried for a DM.
+  @protected
+  Future<GameChatViewState> openConversation(
+    Conversation conversation, {
+    DmThreadInfo? dm,
+  }) async {
     final page = await _repo.listMessages(conversationId: conversation.id);
-    if (page is Err) return failureState(page.requireError);
+    if (page is Err) return failureFor(page.requireError);
     final p = page.requireValue;
     final items = [for (final m in p.messages) _sent(m)];
     return GameChatViewState(
@@ -39,8 +55,13 @@ class GameChatController
       reason: conversation.writable ? null : conversation.readOnlyReason,
       hasOlder: p.hasOlder,
       olderCursor: p.olderCursor,
+      dm: dm,
     );
   }
+
+  /// The screen state of a failed open; [failureState] for a game chat.
+  @protected
+  GameChatViewState failureFor(Failure failure) => failureState(failure);
 
   /// Maps a failure to its screen state.
   static GameChatViewState failureState(Failure failure) {
@@ -133,12 +154,7 @@ class GameChatController
           key,
           item.copyWith(state: OutgoingState.failed, failureReason: reason),
         );
-        // A send refused because the game ended or was cancelled closes the
-        // chat: the repository's typed reason decides, not a client rule.
-        if (reason == MessagingReason.gameEnded ||
-            reason == MessagingReason.gameCancelled) {
-          _close(reason);
-        }
+        onSendRefused(reason);
       },
       (message) => _replace(
         key,
@@ -147,7 +163,19 @@ class GameChatController
     );
   }
 
-  void _close(MessagingReason reason) {
+  /// A send refused because the game ended or was cancelled closes the
+  /// chat: the repository's typed reason decides, not a client rule.
+  @protected
+  void onSendRefused(MessagingReason reason) {
+    if (reason == MessagingReason.gameEnded ||
+        reason == MessagingReason.gameCancelled) {
+      closeChat(reason);
+    }
+  }
+
+  /// Makes the chat read-only for [reason]; reads keep working.
+  @protected
+  void closeChat(MessagingReason reason) {
     final current = state.valueOrNull;
     final c = current?.conversation;
     if (current == null || c == null) return;
@@ -155,12 +183,17 @@ class GameChatController
       current.copyWith(
         status: GameChatStatus.readOnly,
         reason: reason,
-        conversation: _with(c, writable: false, readOnlyReason: reason),
+        conversation: copyConversation(
+          c,
+          writable: false,
+          readOnlyReason: reason,
+        ),
       ),
     );
   }
 
-  static Conversation _with(
+  /// [c] with the given fields replaced.
+  static Conversation copyConversation(
     Conversation c, {
     bool? writable,
     bool? muted,
@@ -188,7 +221,9 @@ class GameChatController
     final latest = state.valueOrNull;
     final lc = latest?.conversation;
     if (latest == null || lc == null) return true;
-    state = AsyncData(latest.copyWith(conversation: _with(lc, muted: muted)));
+    state = AsyncData(
+      latest.copyWith(conversation: copyConversation(lc, muted: muted)),
+    );
     return true;
   }
 
@@ -240,6 +275,7 @@ class GameChatController
         items: [for (final m in page.messages) _sent(m), ...latest.items],
         hasOlder: page.hasOlder,
         olderCursor: page.olderCursor,
+        dm: latest.dm,
       ),
     );
     return true;

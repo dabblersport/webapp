@@ -6580,4 +6580,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_dm_read_only_label => 'لا يمكنك الرد';
+
+  @override
+  String get messaging_dm_options_title => 'خيارات المحادثة';
+
+  @override
+  String get messaging_dm_menu_mute => 'كتم المحادثة';
+
+  @override
+  String get messaging_dm_menu_unmute => 'إلغاء الكتم';
+
+  @override
+  String get messaging_dm_menu_block => 'حظر المستخدم';
+
+  @override
+  String get messaging_dm_menu_report => 'الإبلاغ عنه';
+
+  @override
+  String get messaging_dm_read_only_you_blocked =>
+      'لقد حظرت هذا الشخص، لذا لا يمكنك إرسال رسائل هنا.';
+
+  @override
+  String get messaging_dm_read_only_blocked_you => 'لا يمكنك مراسلة هذا الشخص.';
+
+  @override
+  String get messaging_dm_read_only_gone => 'هذا الحساب لم يعد متاحًا.';
+
+  @override
+  String get messaging_dm_mute_failed =>
+      'تعذّر تغيير إشعارات هذه المحادثة. حاول مرة أخرى.';
+
+  @override
+  String get messaging_dm_header_hint => 'يفتح ملفه الشخصي';
 }

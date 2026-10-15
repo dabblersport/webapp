@@ -55,6 +55,7 @@ Future<void> showGameChatMessageOptions(
   BuildContext context, {
   required Future<bool> Function(ReportCategory reason) onReport,
   required String senderUserId,
+  VoidCallback? onBlocked,
 }) async {
   final l10n = AppLocalizations.of(context);
   final choice = await showDabblerSheet<_Choice>(
@@ -97,7 +98,10 @@ Future<void> showGameChatMessageOptions(
         context: context,
         detent: DabblerSheetDetent.content,
         title: l10n.messaging_block_title,
-        builder: (_) => GameChatBlockSheet(targetUserId: senderUserId),
+        builder: (_) => GameChatBlockSheet(
+          targetUserId: senderUserId,
+          onBlocked: onBlocked,
+        ),
       );
   }
 }
@@ -277,9 +281,16 @@ class GameChatReportActions extends StatelessWidget {
 
 /// Confirms a block and calls the existing [blockRepositoryProvider].
 class GameChatBlockSheet extends ConsumerStatefulWidget {
-  const GameChatBlockSheet({super.key, required this.targetUserId});
+  const GameChatBlockSheet({
+    super.key,
+    required this.targetUserId,
+    this.onBlocked,
+  });
 
   final String targetUserId;
+
+  /// Called once the block succeeded (the DM thread turns read-only).
+  final VoidCallback? onBlocked;
 
   @override
   ConsumerState<GameChatBlockSheet> createState() => _GameChatBlockSheetState();
@@ -295,7 +306,10 @@ class _GameChatBlockSheetState extends ConsumerState<GameChatBlockSheet> {
         .blockUser(widget.targetUserId);
     if (!mounted) return;
     final ok = result.fold((_) => false, (_) => true);
-    if (ok) ref.invalidate(blockedUserIdsProvider);
+    if (ok) {
+      ref.invalidate(blockedUserIdsProvider);
+      widget.onBlocked?.call();
+    }
     setState(() => _phase = ok ? _Phase.submitted : _Phase.failed);
   }
 

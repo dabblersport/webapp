@@ -11758,6 +11758,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can\'t reply'**
   String get messaging_dm_read_only_label;
+
+  /// KAN-556 DM thread: overflow button label and options sheet title. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation options'**
+  String get messaging_dm_options_title;
+
+  /// KAN-556 DM overflow item: mute this conversation. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get messaging_dm_menu_mute;
+
+  /// KAN-556 DM overflow item: unmute this conversation. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get messaging_dm_menu_unmute;
+
+  /// KAN-556 DM overflow item: block the other person (opens the existing block confirmation). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Block user'**
+  String get messaging_dm_menu_block;
+
+  /// KAN-556 DM overflow item: report the other person's latest message (existing report flow). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Report user'**
+  String get messaging_dm_menu_report;
+
+  /// KAN-556 DM read-only line replacing the composer when the caller blocked the other person. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked this person, so you can\'t send messages here.'**
+  String get messaging_dm_read_only_you_blocked;
+
+  /// KAN-556 DM read-only line when the other person blocked the caller. Does not say who blocked. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t send messages to this person.'**
+  String get messaging_dm_read_only_blocked_you;
+
+  /// KAN-556 DM read-only line when the other person's account is deleted or banned. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is no longer available.'**
+  String get messaging_dm_read_only_gone;
+
+  /// KAN-556 DM: shown when mute/unmute was refused and the toggle went back. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change notifications for this chat. Try again.'**
+  String get messaging_dm_mute_failed;
+
+  /// KAN-556 DM header: accessibility hint on the name and avatar. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens their profile'**
+  String get messaging_dm_header_hint;
 }
 
 class _AppLocalizationsDelegate
