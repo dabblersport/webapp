@@ -131,3 +131,25 @@ or a deleted or banned counterpart makes it read-only. Because PostgreSQL cannot
 CREATE OR REPLACE, v1 is renamed to `msg_my_conversations_v1` (EXECUTE revoked) and the new function takes the name; nothing
 is removed. AUTHORED, NOT APPLIED. New files: `my_conversations_dm_probes.sql` (L1-L8, AUTHORED, NOT RUN, all
 BEGIN..ROLLBACK) and `my_conversations_dm_rollback.sql` (swaps the names back).
+
+## KAN-551: msg_list_message_reports (launch M1a)
+
+Status: **AUTHORED, NOT APPLIED, NOT RUN.** Nothing here was applied or executed.
+
+Apply order: after every file above, `supabase/migrations/20261013161100_kan551_msg_report_list.sql`
+(one function, `public.msg_list_message_reports(p_limit int default 50)`).
+
+- Admin only via `public.is_admin()`; a non-admin gets `P0001 forbidden` (the `admin_resolve_report`
+  pattern); anon has no EXECUTE. Returns report id, reason, created_at, status, target message id and
+  `conversation_id`, which is always NULL: reports persist only the message id and the registry holds no
+  messages. No details, snapshot, names or text. Clamp 1..100, newest first.
+- Notifications: `notify_admins_of_report` is read, not changed (ids, target type and enum reason only).
+- Probes: `msg_report_list_probes.sql` L1-L7. Rollback: `msg_report_list_rollback.sql` (revoke only; an
+  apply needing approval).
+
+Hold-back note: the function is independent of the Worker and can be held back alone; holding it back
+leaves the KAN-513 Worker read as the only moderation surface.
+
+**PR text needs the L7 counts-only comparison** (is_admin() users, app_admins rows, and the two
+differences). It was NOT run here; whoever runs the probe fills those four numbers in. A mismatch
+means some admins are notified but cannot list, or can list but are not notified.

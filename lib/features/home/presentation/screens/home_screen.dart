@@ -36,6 +36,8 @@ import 'package:dabbler/data/models/social/public_activity.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
+import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -1171,6 +1173,14 @@ class _HomeHeader extends ConsumerWidget {
             label: AppLocalizations.of(context).listing_search,
             onPressed: () => context.push(RoutePaths.socialSearch),
           ),
+          if (messagesListEnabled(ref.watch(messagesListFlagsProvider)))
+            DabblerNavigationAction(
+              icon: 'messages',
+              label: AppLocalizations.of(
+                context,
+              ).messaging_list_home_icon_label,
+              onPressed: () => context.push(messagesListRoutePath),
+            ),
           DabblerNavigationAction(
             icon: 'notification-bing',
             label: AppLocalizations.of(context).notif_title_notifications,

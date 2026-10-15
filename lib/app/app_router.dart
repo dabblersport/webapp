@@ -21,6 +21,7 @@ import 'routes/identity_routes.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'routes/meetups_routes.dart';
 import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
+import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
 import 'routes/notification_routes.dart';
 import 'routes/platform_routes.dart';
 import 'routes/play_places_routes.dart';
@@ -444,6 +445,9 @@ class AppRouter {
     // KAN-507: game chat skeleton; always registered, its redirect sends
     // to home unless messaging AND enableMessagingGameChat are on.
     gameChatRoute(parentNavigatorKey: rootNavigatorKey),
+    // KAN-549: Messages list; shows the unavailable state unless messaging
+    // AND enableMessagingGameChat are on.
+    messagesListRoute(parentNavigatorKey: rootNavigatorKey),
     socialEditPostRoute,
     socialAnalyticsRoute,
     adminModerationQueueRoute,

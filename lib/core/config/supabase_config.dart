@@ -23,8 +23,12 @@ class SupabaseConfig {
   // RPC function names
   static const String searchMatchesFunction = 'search_matches';
   static const String toggleFavoriteRpc = 'toggle_favorite';
+
   /// Per game, how many people the viewer follows are in it (count only).
   static const String gamesFollowingJoinedRpc = 'rpc_games_following_joined';
+
+  /// Messaging (KAN-547/KAN-550): the signed-in user's game chats.
+  static const String msgMyConversationsRpc = 'msg_my_conversations';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';
   static const String amenitiesCatalogTable = 'amenities_catalog';
 
@@ -157,7 +161,8 @@ class SupabaseConfig {
   static const String squadMembersTable = 'squad_members';
   static const String squadsTable = 'squads';
   static const String userBlocksTable = 'user_blocks';
-  static const String userReputationAggregateTable = 'user_reputation_aggregate';
+  static const String userReputationAggregateTable =
+      'user_reputation_aggregate';
   static const String vCircleTable = 'v_circle';
   static const String vFeedCircleTable = 'v_feed_circle';
   static const String vSquadCardTable = 'v_squad_card';
@@ -186,7 +191,8 @@ class SupabaseConfig {
   static const String rpcMeetupRemoveAttendeeFn = 'rpc_meetup_remove_attendee';
   static const String getNearbyMeetupsFn = 'getnearbymeetups';
   static const String canCreateMeetupFn = 'can_create_meetup';
-  static const String canCurrentUserRsvpMeetupFn = 'can_current_user_rsvp_meetup';
+  static const String canCurrentUserRsvpMeetupFn =
+      'can_current_user_rsvp_meetup';
   static const String rpcCircleListFn = 'rpc_circle_list';
   static const String rpcFriendRequestsInboxFn = 'rpc_friend_requests_inbox';
   static const String rpcFriendRequestsOutboxFn = 'rpc_friend_requests_outbox';
@@ -226,7 +232,8 @@ class SupabaseConfig {
   static const String refCountriesTable = 'ref_countries';
   static const String scheduledCleanupTasksTable = 'scheduled_cleanup_tasks';
   static const String sportProfileEventsTable = 'sport_profile_events';
-  static const String sportProfileProfileBadgesTable = 'sport_profile_profile_badges';
+  static const String sportProfileProfileBadgesTable =
+      'sport_profile_profile_badges';
   static const String sportProfileTiersTable = 'sport_profile_tiers';
   static const String sportProfilesTable = 'sport_profiles';
   static const String sportVariantsTable = 'sport_variants';

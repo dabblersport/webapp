@@ -6465,4 +6465,47 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_reason_unknown => 'Something went wrong. Try again.';
+
+  @override
+  String get messaging_list_title => 'Messages';
+
+  @override
+  String get messaging_list_home_icon_label => 'Messages';
+
+  @override
+  String get messaging_list_loading => 'Loading your chats';
+
+  @override
+  String get messaging_list_empty_title => 'No chats yet';
+
+  @override
+  String get messaging_list_empty_body =>
+      'Chats for your games show up here. Join a game to start talking.';
+
+  @override
+  String get messaging_list_error_title => 'Couldn\'t load your chats';
+
+  @override
+  String get messaging_list_error_body =>
+      'Check your connection and try again.';
+
+  @override
+  String get messaging_list_error_retry => 'Retry';
+
+  @override
+  String get messaging_list_state_send => 'Can send';
+
+  @override
+  String get messaging_list_state_read_only => 'Read-only';
+
+  @override
+  String get messaging_list_state_left => 'You left';
+
+  @override
+  String messaging_list_fallback_title(String sport) {
+    return '$sport game';
+  }
+
+  @override
+  String get messaging_list_fallback_unknown_sport => 'Game';
 }
