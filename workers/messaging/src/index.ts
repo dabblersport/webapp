@@ -7,6 +7,7 @@
 //   POST /v1/conversations/{id}/messages  send text, idempotent on (sender, conversation, Idempotency-Key) (T14).
 //   POST /internal/system-line  signed (HMAC) roster/cancel event from the database trigger; stores one system line (T15).
 //   GET  /v1/moderation/reports/{reportId}/message  audited moderator read of one reported message (T18, src/moderation.ts).
+//   POST /v1/dm  GET /v1/conversations/summary  POST /v1/conversations/{id}/mute  DMs (KAN-561, src/dm.ts, src/conversations.ts)
 //   POST /v1/messages/{id}/report  report a message (T17, KAN-512): ids + reason relayed, legal hold set.
 // List applies the D4 group block filter from msg_authorize's hidden_sender_ids (T17).
 // Realtime, attachments, reactions, receipts: NOT built here.
@@ -19,6 +20,8 @@ import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
 import { setLegalHold } from "./retention";
 import { listPage, toApiMessage } from "./messages";
 import { preflightResponse, withCors } from "./cors";
+import { conversationSummary } from "./conversations";
+import { setMuted, startDm } from "./dm";
 import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
@@ -30,6 +33,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const CLIENT_KEY = /^[A-Za-z0-9_-]{1,64}$/;
 const MAX_BODY = 2000;
 const MESSAGES_PATH = /^\/v1\/conversations\/([^/]+)\/messages$/;
+const MUTE_PATH = /^\/v1\/conversations\/([^/]+)\/mute$/;
 const REPORT_PATH = /^\/v1\/messages\/([^/]+)\/report$/;
 // The existing ten-value public.report_reason enum (docs/messaging/openapi.yaml ReportRequest). No new values.
 export const REPORT_REASONS = ["spam", "abuse", "hate", "harassment", "nudity", "illegal", "danger", "scam", "impersonation", "other"] as const;
@@ -86,6 +90,14 @@ const router = {
     // KAN-513 (T18): the single moderator read of one reported message. GET only; no list variant exists.
     const mod = MODERATION_PATH.exec(url.pathname);
     if (mod && request.method === "GET") return readReportedMessage(request, env, mod[1]);
+
+    // KAN-561: DMs. Start a DM, the Messages list summary, mute a conversation.
+    if (request.method === "POST" && url.pathname === "/v1/dm") return startDm(request, env);
+    if (request.method === "GET" && url.pathname === "/v1/conversations/summary") {
+      return conversationSummary(request, env, url);
+    }
+    const mute = MUTE_PATH.exec(url.pathname);
+    if (mute && request.method === "POST") return setMuted(request, env, mute[1]);
 
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
