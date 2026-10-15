@@ -17,6 +17,7 @@ import 'package:dabbler/features/misc/presentation/screens/help_center_screen.da
 import 'package:dabbler/features/misc/presentation/screens/transactions_screen.dart';
 import 'package:dabbler/features/admin/presentation/screens/moderation_queue_screen.dart';
 import 'package:dabbler/features/admin/presentation/screens/safety_overview_screen.dart';
+import 'package:dabbler/features/admin/presentation/admin_message_reports_route.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 import 'package:dabbler/app/app_router.dart';
@@ -229,6 +230,17 @@ RouteBase get adminSafetyOverviewRoute =>
         type: SharedAxisType.horizontal,
       ),
     );
+
+// KAN-552: admin Reports (message reports). Same gate as the admin routes
+// above (session, then the existing is_admin RPC) plus the two messaging flags.
+RouteBase get adminMessageReportsRouteDef => adminMessageReportsRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  hasSession: () => Supabase.instance.client.auth.currentSession != null,
+  enabled: () =>
+      FeatureFlags.messaging && FeatureFlags.enableMessagingReporting,
+  isAdmin: () async =>
+      await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn) == true,
+);
 
 // Error route
 RouteBase get errorMessageRoute =>

@@ -6,6 +6,8 @@ import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
+import 'package:dabbler/features/messaging/domain/models/report_row.dart';
+import 'package:dabbler/features/messaging/domain/moderation_reports_repository.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
@@ -13,7 +15,11 @@ import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 /// `MESSAGING_API_BASE_URL` (KAN-550). Calls nothing; every operation fails
 /// with not_in_pilot, which the chat renders as the unavailable state.
 class UnavailableMessagingRepository
-    implements MessagingRepository, MyConversationsRepository, DmRepository {
+    implements
+        MessagingRepository,
+        MyConversationsRepository,
+        DmRepository,
+        ModerationReportsRepository {
   const UnavailableMessagingRepository();
 
   static Err<T, Failure> _no<T>() => Err(
@@ -70,5 +76,15 @@ class UnavailableMessagingRepository
   Future<Result<void, Failure>> setMuted(
     String conversationId,
     bool muted,
+  ) async => _no();
+
+  @override
+  Future<Result<List<ReportRow>, Failure>> listMessageReports({
+    int? limit,
+  }) async => _no();
+
+  @override
+  Future<Result<ReportedMessage, Failure>> readReportedMessage(
+    String reportId,
   ) async => _no();
 }

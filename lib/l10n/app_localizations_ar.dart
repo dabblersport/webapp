@@ -6612,4 +6612,125 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_dm_header_hint => 'يفتح ملفه الشخصي';
+
+  @override
+  String get admin_message_reports_title => 'بلاغات الرسائل';
+
+  @override
+  String get admin_message_reports_overview_row => 'بلاغات الرسائل';
+
+  @override
+  String get admin_message_reports_overview_row_hint =>
+      'بلاغات عن رسائل المحادثات';
+
+  @override
+  String get admin_message_reports_loading => 'جارٍ تحميل البلاغات';
+
+  @override
+  String admin_message_reports_row_id(String id) {
+    return 'بلاغ $id';
+  }
+
+  @override
+  String get admin_message_reports_read_action => 'اقرأ هذه الرسالة';
+
+  @override
+  String get admin_message_reports_panel_title => 'الرسالة المُبلَّغ عنها';
+
+  @override
+  String get admin_message_reports_panel_close => 'إغلاق';
+
+  @override
+  String get admin_message_reports_panel_loading => 'جارٍ تحميل الرسالة';
+
+  @override
+  String get admin_message_reports_panel_note =>
+      'هذه الرسالة تظهر لك وحدك ولا تُحفَظ.';
+
+  @override
+  String get admin_message_reports_empty_title => 'لا توجد بلاغات عن رسائل';
+
+  @override
+  String get admin_message_reports_empty_body =>
+      'تظهر هنا البلاغات عن رسائل المحادثات.';
+
+  @override
+  String get admin_message_reports_error_title => 'تعذّر تحميل البلاغات';
+
+  @override
+  String get admin_message_reports_error_body =>
+      'تحقّق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get admin_message_reports_error_retry => 'إعادة المحاولة';
+
+  @override
+  String get admin_message_reports_refusal_not_a_moderator =>
+      'قراءة الرسائل المُبلَّغ عنها متاحة للمشرفين فقط.';
+
+  @override
+  String get admin_message_reports_refusal_not_found =>
+      'هذه الرسالة لم تعد متاحة.';
+
+  @override
+  String get admin_message_reports_refusal_rate_limited =>
+      'طلبات كثيرة. حاول لاحقًا.';
+
+  @override
+  String get admin_message_reports_refusal_other =>
+      'تعذّر تحميل هذه الرسالة. حاول مرة أخرى.';
+
+  @override
+  String get admin_message_reports_reason_spam => 'رسائل مزعجة';
+
+  @override
+  String get admin_message_reports_reason_abuse => 'إساءة';
+
+  @override
+  String get admin_message_reports_reason_hate => 'خطاب كراهية';
+
+  @override
+  String get admin_message_reports_reason_harassment => 'تحرّش';
+
+  @override
+  String get admin_message_reports_reason_nudity => 'محتوى عارٍ';
+
+  @override
+  String get admin_message_reports_reason_illegal => 'محتوى غير قانوني';
+
+  @override
+  String get admin_message_reports_reason_danger => 'خطر';
+
+  @override
+  String get admin_message_reports_reason_scam => 'احتيال';
+
+  @override
+  String get admin_message_reports_reason_impersonation => 'انتحال شخصية';
+
+  @override
+  String get admin_message_reports_reason_other => 'سبب آخر';
+
+  @override
+  String get admin_message_reports_reason_unknown => 'سبب غير محدد';
+
+  @override
+  String get admin_message_reports_status_open => 'مفتوح';
+
+  @override
+  String get admin_message_reports_status_triage => 'قيد المراجعة';
+
+  @override
+  String get admin_message_reports_status_escalated => 'مُصعَّد';
+
+  @override
+  String get admin_message_reports_status_resolved => 'تمّت المعالجة';
+
+  @override
+  String get admin_message_reports_status_dismissed => 'مرفوض';
+
+  @override
+  String get admin_message_reports_status_duplicate => 'مكرّر';
+
+  @override
+  String get admin_message_reports_status_unknown => 'حالة غير معروفة';
 }

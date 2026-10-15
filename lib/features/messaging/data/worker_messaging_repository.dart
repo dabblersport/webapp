@@ -13,6 +13,8 @@ import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
+import 'package:dabbler/features/messaging/domain/models/report_row.dart';
+import 'package:dabbler/features/messaging/domain/moderation_reports_repository.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
@@ -20,7 +22,11 @@ import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 /// the Worker (`docs/messaging/openapi.yaml`) and the Messages list over the
 /// `msg_my_conversations` RPC, plus the DM routes of KAN-561 (KAN-562). Never throws; never logs or stores message text.
 class WorkerMessagingRepository
-    implements MessagingRepository, MyConversationsRepository, DmRepository {
+    implements
+        MessagingRepository,
+        MyConversationsRepository,
+        DmRepository,
+        ModerationReportsRepository {
   WorkerMessagingRepository({
     required MessagingHttpClient http,
     required MessagingRpcCaller rpc,
@@ -145,6 +151,32 @@ class WorkerMessagingRepository
         },
       );
 
+  @override
+  Future<Result<List<ReportRow>, Failure>> listMessageReports({
+    int? limit,
+  }) async {
+    try {
+      final rows = await _rpc(SupabaseConfig.msgListMessageReportsRpc, {
+        if (limit != null) 'p_limit': limit,
+      });
+      return ReportRow.parseList(rows);
+    } catch (e, st) {
+      return Err(_thrown(e, st));
+    }
+  }
+
+  /// KAN-552: one audited read (KAN-513). The text stays in the returned
+  /// object only; nothing here logs or stores it.
+  @override
+  Future<Result<ReportedMessage, Failure>> readReportedMessage(
+    String reportId,
+  ) => _call(
+    'GET',
+    '/moderation/reports/${Uri.encodeComponent(reportId)}/message',
+    ok: const {200},
+    parse: ReportedMessage.fromJson,
+  );
+
   Future<Result<T, Failure>> _call<T>(
     String method,
     String path, {
@@ -186,6 +218,11 @@ class WorkerMessagingRepository
 
   /// Maps an error response through the typed-reason mapping.
   static MessagingFailure errorFailure(int status, Object? body) {
+    if (isNotAModeratorBody(body)) {
+      return NotAModeratorFailure(
+        message: MessagingFailure.fromErrorBody(status, body).message,
+      );
+    }
     if (isDmCapReachedBody(status, body)) {
       final f = MessagingFailure.fromErrorBody(status, body);
       return DmCapReachedFailure(

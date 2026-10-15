@@ -11818,6 +11818,228 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Opens their profile'**
   String get messaging_dm_header_hint;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Message reports'**
+  String get admin_message_reports_title;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Message reports'**
+  String get admin_message_reports_overview_row;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports on chat messages'**
+  String get admin_message_reports_overview_row_hint;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading reports'**
+  String get admin_message_reports_loading;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Report {id}'**
+  String admin_message_reports_row_id(String id);
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Read this message'**
+  String get admin_message_reports_read_action;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Reported message'**
+  String get admin_message_reports_panel_title;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get admin_message_reports_panel_close;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading message'**
+  String get admin_message_reports_panel_loading;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you can see this. It is not saved.'**
+  String get admin_message_reports_panel_note;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No message reports'**
+  String get admin_message_reports_empty_title;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Reports on chat messages appear here.'**
+  String get admin_message_reports_empty_body;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load reports'**
+  String get admin_message_reports_error_title;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get admin_message_reports_error_body;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get admin_message_reports_error_retry;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Only admins can read reported messages.'**
+  String get admin_message_reports_refusal_not_a_moderator;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'This message is no longer available.'**
+  String get admin_message_reports_refusal_not_found;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Too many requests. Try again later.'**
+  String get admin_message_reports_refusal_rate_limited;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this message. Try again.'**
+  String get admin_message_reports_refusal_other;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Spam'**
+  String get admin_message_reports_reason_spam;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Abuse'**
+  String get admin_message_reports_reason_abuse;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Hate'**
+  String get admin_message_reports_reason_hate;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Harassment'**
+  String get admin_message_reports_reason_harassment;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Nudity'**
+  String get admin_message_reports_reason_nudity;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Illegal'**
+  String get admin_message_reports_reason_illegal;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Danger'**
+  String get admin_message_reports_reason_danger;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Scam'**
+  String get admin_message_reports_reason_scam;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Impersonation'**
+  String get admin_message_reports_reason_impersonation;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Other'**
+  String get admin_message_reports_reason_other;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Unspecified reason'**
+  String get admin_message_reports_reason_unknown;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Open'**
+  String get admin_message_reports_status_open;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'In review'**
+  String get admin_message_reports_status_triage;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Escalated'**
+  String get admin_message_reports_status_escalated;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolved'**
+  String get admin_message_reports_status_resolved;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get admin_message_reports_status_dismissed;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicate'**
+  String get admin_message_reports_status_duplicate;
+
+  /// KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown status'**
+  String get admin_message_reports_status_unknown;
 }
 
 class _AppLocalizationsDelegate
