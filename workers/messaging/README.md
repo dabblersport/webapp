@@ -146,3 +146,45 @@ DROP). To loosen a limit that proves too tight, change only the constant and red
 ## Non-goals
 Send/list/paginate endpoints and the D5 lifecycle checks (T14), system lines (T15), Realtime broadcast/outbox (P3,
 T21), R2/attachments (P4), any deployment or Cloudflare resource.
+
+## Production environment (KAN-546)
+
+The wrangler environment formerly named `staging` (KAN-534) is now `production` (`[env.production]` in
+`wrangler.toml`). Only the environment key changed: the Worker name stays `dabbler-messaging-staging` (renaming it
+would orphan its secrets and change the app's base URL), and the D1 binding/database are unchanged.
+
+Deploy (run from `workers/messaging`; not run by KAN-546):
+
+```
+npx wrangler deploy --env production
+```
+
+### CORS allowlist
+
+Exactly three origins, exact string match only (no wildcard, pattern or subdomain rule), defined in `src/cors.ts`:
+
+- `https://canary.dabbler.pro`
+- `https://alpha.dabbler.pro`
+- `https://app.dabbler.pro`
+
+Only `/v1` and `/v1/*` get CORS handling. `/health` and `/internal/*` get none, from any origin.
+
+### Kill switch: dashboard edit vs redeploy (`MESSAGING_ACCESS_MODE`)
+
+Source read 2026-10-15: Wrangler configuration, https://developers.cloudflare.com/workers/wrangler/configuration/
+("Source of truth" and the `keep_vars` key):
+
+- "If you change your environment variables in the Cloudflare dashboard, Wrangler will override them the next time
+  you deploy." "If you want to disable this behavior, add `keep_vars = true` to your Wrangler configuration file."
+- `keep_vars` is a **top-level-only** key ("Whether Wrangler should keep variables configured in the dashboard on
+  deploy"); it cannot be set inside `[env.production]`. `vars` is **non-inheritable** and must be set per environment.
+
+What this means today: `keep_vars` is **not** set, so a dashboard edit of `MESSAGING_ACCESS_MODE` is **lost on the
+next `wrangler deploy --env production`**, which restores the committed value (`"off"`).
+
+Not settled by the docs: the page does not say whether `keep_vars = true` preserves a dashboard value for a
+variable that is **also** defined in the committed `[env.production.vars]` (it does not address that case). Until
+that is verified, do not rely on `keep_vars` for the kill switch. Recommended options (a decision, not made here):
+remove `MESSAGING_ACCESS_MODE` from the committed vars and manage it only in the dashboard together with top-level
+`keep_vars = true`, or re-check the committed value before every deploy. `keep_vars` has not been added to
+`wrangler.toml`.
