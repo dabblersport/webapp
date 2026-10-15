@@ -29,7 +29,9 @@ describe("(f) conversation seq on the local D1 emulator", () => {
     } finally {
       await mf.dispose();
     }
-  });
+    // KAN-548: headroom only. With more test files running in parallel this one exceeded the 5 s default (it passes
+    // alone); the assertions are unchanged.
+  }, 60000);
 
   it("a repeated client_key by the same sender+conversation is idempotent and consumes no seq", async () => {
     const { mf, db } = await localD1();
