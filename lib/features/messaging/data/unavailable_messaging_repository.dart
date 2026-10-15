@@ -13,7 +13,7 @@ import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 /// `MESSAGING_API_BASE_URL` (KAN-550). Calls nothing; every operation fails
 /// with not_in_pilot, which the chat renders as the unavailable state.
 class UnavailableMessagingRepository
-    implements MessagingRepository, MyConversationsRepository {
+    implements MessagingRepository, MyConversationsRepository, DmRepository {
   const UnavailableMessagingRepository();
 
   static Err<T, Failure> _no<T>() => Err(
@@ -62,4 +62,13 @@ class UnavailableMessagingRepository
   Future<Result<List<MyConversation>, Failure>> listMyConversations({
     int? limit,
   }) async => _no();
+
+  @override
+  Future<Result<String, Failure>> startDm(String otherUserId) async => _no();
+
+  @override
+  Future<Result<void, Failure>> setMuted(
+    String conversationId,
+    bool muted,
+  ) async => _no();
 }

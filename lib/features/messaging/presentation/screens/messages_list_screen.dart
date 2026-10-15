@@ -8,12 +8,17 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
+import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/messages_list_dm_row.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
-/// The Messages list (KAN-549): the user's game chats, newest activity first,
-/// each opening the existing game chat. Built from DS parts only.
+/// The Messages list (KAN-549, KAN-562): the user's game chats and direct
+/// messages in the server's order (newest activity first). A game row opens
+/// the game chat; a DM row ([MessagesListDmRow]) shows the other person's
+/// name and avatar and opens [messagesListDmRouteName]. Built from DS parts
+/// only.
 ///
 /// A row shows the game name, a sport mark, the game's date and time, the
 /// relative last-activity time and the state as a quiet label. It shows NO
@@ -29,6 +34,9 @@ class MessagesListScreen extends ConsumerWidget {
 
   static ValueKey<String> rowKey(String gameId) =>
       ValueKey<String>('messages-list-row-$gameId');
+
+  static ValueKey<String> dmRowKey(String conversationId) =>
+      ValueKey<String>('messages-list-dm-row-$conversationId');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -49,8 +57,8 @@ class MessagesListScreen extends ConsumerWidget {
                 child: DabblerEmptyState(
                   key: emptyKey,
                   icon: 'messages',
-                  title: l10n.messaging_list_empty_title,
-                  text: l10n.messaging_list_empty_body,
+                  title: l10n.messaging_list_empty_dm_title,
+                  text: l10n.messaging_list_empty_dm_body,
                   size: DabblerEmptyStateSize.page,
                 ),
               ),
@@ -92,11 +100,15 @@ class MessagesListScreen extends ConsumerWidget {
       itemCount: chats.length,
       itemBuilder: (context, i) {
         final c = chats[i];
+        if (c.isDm) {
+          return _dmRow(context, l10n, c, now, locale, i < chats.length - 1);
+        }
+        final gameId = c.gameId ?? '';
         return DabblerConversationRow(
-          key: rowKey(c.gameId),
+          key: rowKey(gameId),
           kind: DabblerConversationKind.game,
           sport: messagesListSport(c.sport),
-          seed: c.gameId,
+          seed: gameId,
           title: messagesListTitle(l10n, c),
           timestamp: messagesListRelative(c.lastActivityAt, now, locale),
           kindLabel: messagesListGameTime(c.startAt, locale),
@@ -106,13 +118,50 @@ class MessagesListScreen extends ConsumerWidget {
           divider: i < chats.length - 1,
           onTap: () => context.pushNamed(
             gameChatRouteName,
-            pathParameters: {'gameId': c.gameId},
+            pathParameters: {'gameId': gameId},
             extra: c.endAt,
           ),
         );
       },
     );
   }
+
+  Widget _dmRow(
+    BuildContext context,
+    AppLocalizations l10n,
+    MyConversation c,
+    DateTime now,
+    String locale,
+    bool divider,
+  ) {
+    final avatar = messagesListDmAvatar(
+      c.counterpartAvatar,
+      c.counterpartUserId ?? c.conversationId,
+    );
+    return MessagesListDmRow(
+      key: dmRowKey(c.conversationId),
+      name: messagesListDmName(l10n, c),
+      avatarSeed: avatar.seed,
+      timestamp: messagesListRelative(c.lastActivityAt, now, locale),
+      kindLabel: l10n.messaging_dm_kind_label,
+      mutedLabel: l10n.messaging_dm_muted_label,
+      muted: c.muted,
+      readOnlyLabel: c.isDmReadOnly ? l10n.messaging_dm_read_only_label : null,
+      divider: divider,
+      onTap: () => context.pushNamed(
+        messagesListDmRouteName,
+        pathParameters: {messagesListDmRouteParam: c.conversationId},
+      ),
+    );
+  }
+}
+
+/// A DM row's name: the counterpart's public name, else "Dabbler user".
+String messagesListDmName(AppLocalizations l10n, MyConversation c) {
+  final name = c.counterpartName?.trim();
+  return (name == null || name.isEmpty)
+      ? l10n.messaging_dm_fallback_name
+      : name;
 }
 
 /// The DS sport for the RPC's sport name (`sports.name_en`, e.g.

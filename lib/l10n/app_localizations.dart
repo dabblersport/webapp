@@ -11716,6 +11716,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Game'**
   String get messaging_list_fallback_unknown_sport;
+
+  /// KAN-562 Start-DM refusal: the daily cap on new direct messages (Worker reason dm_cap_reached, HTTP 429). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve started as many new conversations as you can today. Try again tomorrow.'**
+  String get messaging_reason_dm_cap_reached;
+
+  /// KAN-562 Messages list empty state title (games and direct messages). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get messaging_list_empty_dm_title;
+
+  /// KAN-562 Messages list empty state body (games and direct messages). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Your game chats and direct messages show up here.'**
+  String get messaging_list_empty_dm_body;
+
+  /// KAN-562 DM row name when the other person has no public name. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler user'**
+  String get messaging_dm_fallback_name;
+
+  /// KAN-562 DM row quiet label (no sport). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct message'**
+  String get messaging_dm_kind_label;
+
+  /// KAN-562 DM row: accessibility text for the muted mark. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get messaging_dm_muted_label;
+
+  /// KAN-562 DM row label when the conversation is read-only (blocked, or the other person is unavailable). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t reply'**
+  String get messaging_dm_read_only_label;
 }
 
 class _AppLocalizationsDelegate

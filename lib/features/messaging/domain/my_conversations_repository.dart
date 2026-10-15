@@ -18,3 +18,21 @@ abstract class MyConversationsRepository {
     int? limit,
   });
 }
+
+/// Direct messages (KAN-562): start a DM and mute a conversation, over the
+/// Worker routes KAN-561 added (`POST /v1/dm`,
+/// `POST /v1/conversations/{id}/mute`).
+///
+/// Beside `MessagingRepository`, not on it, for the same reason as
+/// [MyConversationsRepository]: that interface is pinned to the six
+/// operations of `docs/messaging/openapi.yaml`, and neither route is in it.
+/// Never throws: every failure is a `Failure` (a cap on new DMs is a
+/// `DmCapReachedFailure`).
+abstract class DmRepository {
+  /// Starts (or re-opens) the DM with [otherUserId] and returns its
+  /// conversation id; an existing pair returns the existing id.
+  Future<Result<String, Failure>> startDm(String otherUserId);
+
+  /// Mutes or unmutes [conversationId] for the caller.
+  Future<Result<void, Failure>> setMuted(String conversationId, bool muted);
+}
