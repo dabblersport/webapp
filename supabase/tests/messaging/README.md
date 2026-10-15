@@ -107,3 +107,16 @@ the signed-in user's own game chats, newest activity first, with game title, spo
 caller's state (send, read-only, left; kicked and removed are excluded) and `last_activity_at`. No content, no
 member lists. AUTHORED, NOT APPLIED. New files: `my_conversations_probes.sql` (M1-M10, AUTHORED, NOT RUN, all
 BEGIN..ROLLBACK) and `my_conversations_rollback.sql` (revoke plus the previous `msg_notify`).
+
+## KAN-560: direct messages (DMs), mute and the daily new-DM cap
+
+`20261013160900_kan560_msg_dm_conversations.sql` (one transaction) lets `msg_conversations` hold `kind = 'dm'` (the old
+kind check is re-added with `'game'` and `'dm'`, `game_id` becomes nullable, and a pairing check ties `game_id` to the
+kind), adds `msg_dm_pairs` (one row per pair, identifiers only) and `msg_conversation_members.muted_at`, and
+re-issues `msg_evaluate` (a DM branch only), `msg_authorize` (DM member list only) and `msg_notify` (muted members skipped,
+DM recipients). New app functions: `msg_start_dm(other)` and `msg_set_muted(conversation, muted)`; two internal helpers
+carry no grant. Age comes from `profiles.age`; deleted or banned from `auth.users`. A DM with a block in either direction
+is read-only for both (reason `blocked`), a banned or deleted counterpart makes it read-only (reason `suspended`).
+AUTHORED, NOT APPLIED. New files: `dm_probes.sql` (D1-D12, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `dm_rollback.sql`
+(refuses when any DM exists). The Worker's mapping of the two read-only reasons and listing DMs in the Messages list are
+later tickets.
