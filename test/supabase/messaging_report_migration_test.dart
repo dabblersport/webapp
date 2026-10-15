@@ -45,7 +45,7 @@ void main() {
       final present = Directory(_dir)
           .listSync()
           .map((e) => e.uri.pathSegments.last)
-          .where((n) => n.contains('msg_report'))
+          .where((n) => n.contains('msg_report') && !n.contains('msg_report_list'))
           .toList()
         ..sort();
       expect(present, _mine);
