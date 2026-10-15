@@ -6592,4 +6592,86 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get admin_message_reports_reason_unknown => 'Other';
+
+  @override
+  String get messaging_reason_dm_cap_reached =>
+      'You\'ve started as many new conversations as you can today. Try again tomorrow.';
+
+  @override
+  String get messaging_list_empty_dm_title => 'No messages yet';
+
+  @override
+  String get messaging_list_empty_dm_body =>
+      'Your game chats and direct messages show up here.';
+
+  @override
+  String get messaging_dm_fallback_name => 'Dabbler user';
+
+  @override
+  String get messaging_dm_kind_label => 'Direct message';
+
+  @override
+  String get messaging_dm_muted_label => 'Muted';
+
+  @override
+  String get messaging_dm_read_only_label => 'You can\'t reply';
+
+  @override
+  String get messaging_dm_options_title => 'Conversation options';
+
+  @override
+  String get messaging_dm_menu_mute => 'Mute';
+
+  @override
+  String get messaging_dm_menu_unmute => 'Unmute';
+
+  @override
+  String get messaging_dm_menu_block => 'Block user';
+
+  @override
+  String get messaging_dm_menu_report => 'Report user';
+
+  @override
+  String get messaging_dm_read_only_you_blocked =>
+      'You blocked this person, so you can\'t send messages here.';
+
+  @override
+  String get messaging_dm_read_only_blocked_you =>
+      'You can\'t send messages to this person.';
+
+  @override
+  String get messaging_dm_read_only_gone =>
+      'This account is no longer available.';
+
+  @override
+  String get messaging_dm_mute_failed =>
+      'Couldn\'t change notifications for this chat. Try again.';
+
+  @override
+  String get messaging_dm_header_hint => 'Opens their profile';
+
+  @override
+  String get messaging_dm_action_label => 'Message';
+
+  @override
+  String get messaging_dm_action_opening => 'Opening chat';
+
+  @override
+  String get messaging_dm_action_blocked => 'You can\'t message this person.';
+
+  @override
+  String get messaging_dm_action_under_age =>
+      'Direct messages aren\'t available for this account.';
+
+  @override
+  String get messaging_dm_action_rate_limited =>
+      'You\'re doing that too fast. Wait a moment, then try again.';
+
+  @override
+  String get messaging_dm_action_cap_reached =>
+      'You\'ve started as many new conversations as you can today. Try again tomorrow.';
+
+  @override
+  String get messaging_dm_action_failed =>
+      'Couldn\'t open the chat. Try again.';
 }

@@ -8,6 +8,8 @@ import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import '../../../../../utils/constants/route_constants.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_message_action_providers.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/profile_message_action.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
@@ -358,9 +360,14 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
                   targetProfileId: targetProfileId,
                 ),
         ),
+        // KAN-557: with the direct-message flag on, the Message action starts
+        // or reopens a DM. Otherwise the earlier KAN-45 button below stays
+        // exactly as it was.
+        if (profileMessageActionEnabled(ref.watch(profileMessageFlagsProvider)))
+          ProfileMessageAction(targetUserId: _targetAuthUserId())
         // KAN-45: chat isn't wired up (this route only reaches a
         // "Coming Soon" placeholder) — hide the button until it ships.
-        if (FeatureFlags.messaging) ...[
+        else if (FeatureFlags.messaging) ...[
           const DabblerGap.h(DabblerSpacing.space3),
           DabblerButton.icon(
             icon: 'sms',

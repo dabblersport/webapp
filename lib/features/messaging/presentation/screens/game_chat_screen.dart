@@ -6,15 +6,22 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/features/messaging/presentation/controllers/game_chat_controller.dart';
+import 'package:dabbler/features/messaging/domain/dm_failure.dart';
+import 'package:dabbler/features/messaging/presentation/controllers/dm_chat_controller.dart';
+import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
+import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/dm_reason_text.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/dm_thread_parts.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access_state.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// The game chat thread and composer (KAN-516, T16a).
 ///
@@ -26,10 +33,23 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// another member's message opens Report and Block sheets. The
 /// Part c (KAN-518, T16c): typed reason not_in_pilot shows the unavailable
 /// state and removed the removed state ([GameChatAccessState]).
+/// KAN-556: [GameChatScreen.dm] is the same screen for a direct message: the
+/// counterpart's header with an overflow (Mute/Unmute, Block user, Report
+/// user), a direct-context thread without system lines, and the DM read-only
+/// lines. The game chat path is unchanged.
 class GameChatScreen extends ConsumerStatefulWidget {
-  const GameChatScreen({super.key, required this.gameId, this.gameEndAt});
+  const GameChatScreen({super.key, required this.gameId, this.gameEndAt})
+    : conversationId = null;
+
+  /// The direct message [conversationId] (KAN-556).
+  const GameChatScreen.dm({super.key, required String this.conversationId})
+    : gameId = '',
+      gameEndAt = null;
 
   final String gameId;
+
+  /// Set for a direct message; null for a game chat.
+  final String? conversationId;
 
   /// The game's `end_at`; when it has passed, the thread draws a
   /// "game finished" line.
@@ -59,13 +79,19 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    final controller = ref.read(
-      gameChatControllerProvider(widget.gameId).notifier,
-    );
+    final controller = ref.read(_provider.notifier);
     _controllerRef = controller;
     controller.setOpen(true);
     _startPoll(ref.read(gameChatEffectivePollProvider));
   }
+
+  bool get _isDm => widget.conversationId != null;
+
+  /// The game chat's controller, or the DM's (a [GameChatController] too).
+  AsyncNotifierFamilyProvider<GameChatController, GameChatViewState, String>
+  get _provider => _isDm
+      ? dmChatControllerProvider(widget.conversationId!)
+      : gameChatControllerProvider(widget.gameId);
 
   @override
   void dispose() {
@@ -79,9 +105,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state != AppLifecycleState.resumed || !mounted) return;
-    ref
-        .read(gameChatControllerProvider(widget.gameId).notifier)
-        .refreshNewest();
+    ref.read(_provider.notifier).refreshNewest();
   }
 
   /// (Re)starts the poll at [interval]; null means no polling. The interval is
@@ -93,17 +117,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     if (interval == null) return;
     _poll = Timer.periodic(interval, (_) {
       if (!mounted) return;
-      ref
-          .read(gameChatControllerProvider(widget.gameId).notifier)
-          .refreshNewest();
+      ref.read(_provider.notifier).refreshNewest();
     });
   }
 
   Future<void> _loadOlder() async {
     setState(() => _older = DabblerOlderMessagesState.loading);
-    final ok = await ref
-        .read(gameChatControllerProvider(widget.gameId).notifier)
-        .loadOlder();
+    final ok = await ref.read(_provider.notifier).loadOlder();
     if (!mounted) return;
     setState(
       () => _older = ok
@@ -116,14 +136,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     final body = _draft.trim();
     if (body.isEmpty) return;
     setState(() => _draft = '');
-    ref.read(gameChatControllerProvider(widget.gameId).notifier).send(body);
+    ref.read(_provider.notifier).send(body);
   }
 
-  void _retry(String clientKey) => ref
-      .read(gameChatControllerProvider(widget.gameId).notifier)
-      .retry(clientKey);
+  void _retry(String clientKey) =>
+      ref.read(_provider.notifier).retry(clientKey);
 
-  void _reload() => ref.invalidate(gameChatControllerProvider(widget.gameId));
+  void _reload() => ref.invalidate(_provider);
 
   @override
   Widget build(BuildContext context) {
@@ -131,7 +150,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     ref.listen<Duration?>(gameChatEffectivePollProvider, (_, next) {
       _startPoll(next);
     });
-    final async = ref.watch(gameChatControllerProvider(widget.gameId));
+    final async = ref.watch(_provider);
     final view = async.valueOrNull;
     // T6 (KAN-518): unavailable and removed replace the whole screen, thread,
     // composer and title included; nothing about the conversation shows.
@@ -183,6 +202,8 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           body = _thread(context, l10n, view);
           if (view.status == GameChatStatus.ready) {
             composer = _composer(l10n, view);
+          } else if (view.dm?.readOnly != null) {
+            composer = dmReadOnlyNotice(l10n, view.dm!.readOnly!);
           } else if (view.isClosedByGame) {
             composer = _closedNotice(l10n, view);
           } else if (view.reason == MessagingReason.leftReadOnly) {
@@ -195,16 +216,45 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           body = DabblerEmptyState.error(
             key: GameChatScreen.errorKey,
             // A typed reason shows its own line; anything else the generic one.
-            title:
-                gameChatReasonText(
-                  l10n,
-                  view.reason ?? MessagingReason.unknown,
-                ) ??
-                l10n.messaging_chat_error,
+            title: view.dm?.capReached == true
+                ? dmReasonText(l10n, DmCapReachedFailure())!
+                : gameChatReasonText(
+                        l10n,
+                        view.reason ?? MessagingReason.unknown,
+                      ) ??
+                      l10n.messaging_chat_error,
             retryLabel: l10n.messaging_chat_offline_retry,
             onRetry: _reload,
           );
       }
+    }
+    final dm = view?.dm;
+    if (_isDm && dm != null && view?.conversation != null) {
+      return DabblerPage(
+        topBar: dmThreadHeader(
+          l10n: l10n,
+          dm: dm,
+          onBack: () => context.canPop() ? context.pop() : null,
+          onOverflow: () => _openDmOptions(view!),
+          onOpenProfile: dm.counterpartUserId == null
+              ? null
+              : () => context.push(
+                  '${RoutePaths.userProfile}/${dm.counterpartUserId}',
+                ),
+        ),
+        body: _muteFailed
+            ? Column(
+                children: [
+                  DabblerInlineMessage(
+                    l10n.messaging_dm_mute_failed,
+                    key: DmThreadKeys.muteFailed,
+                  ),
+                  Expanded(child: body),
+                ],
+              )
+            : body,
+        bottomBar: composer,
+      );
     }
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
@@ -231,10 +281,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
       now: ref.watch(messagingClockProvider)(),
       gameEndAt: widget.gameEndAt,
       onRetry: _retry,
+      includeSystem: !_isDm,
     );
     return DabblerMessageThread(
       key: GameChatScreen.threadKey,
-      context: DabblerMessageContext.group,
+      context: _isDm
+          ? DabblerMessageContext.direct
+          : DabblerMessageContext.group,
       items: items,
       onMessagePress: (m) => _openOptions(view, m),
       header: view.hasOlder
@@ -252,8 +305,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     );
   }
 
-  GameChatController get _controller =>
-      ref.read(gameChatControllerProvider(widget.gameId).notifier);
+  GameChatController get _controller => ref.read(_provider.notifier);
 
   DabblerNavigationAction _muteAction(
     AppLocalizations l10n,
@@ -290,7 +342,57 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
       context,
       senderUserId: sender,
       onReport: (reason) => _controller.report(message.id, reason),
+      onBlocked: _isDm ? _onBlocked : null,
     );
+  }
+
+  bool _muteFailed = false;
+
+  void _onBlocked() {
+    final c = _controller;
+    if (c is DmChatController) c.markBlockedByMe();
+  }
+
+  /// The DM overflow menu (KAN-556).
+  Future<void> _openDmOptions(GameChatViewState view) async {
+    final dm = view.dm;
+    if (dm == null) return;
+    // Report user reports their latest message, through the same flow as a
+    // message's own Report.
+    final latest = view.items
+        .map((i) => i.message)
+        .whereType<Message>()
+        .where((m) => m.senderUserId == dm.counterpartUserId)
+        .lastOrNull;
+    final action = await showDmThreadOptions(
+      context,
+      muted: view.isMuted,
+      canBlock: dm.readOnly == null && dm.counterpartUserId != null,
+      canReport: latest != null,
+    );
+    if (!mounted || action == null) return;
+    switch (action) {
+      case DmThreadAction.toggleMute:
+        setState(() => _muteFailed = false);
+        final ok = await _controller.setMuted(!view.isMuted);
+        if (mounted && !ok) setState(() => _muteFailed = true);
+      case DmThreadAction.block:
+        await showDabblerSheet<void>(
+          context: context,
+          detent: DabblerSheetDetent.content,
+          title: AppLocalizations.of(context).messaging_block_title,
+          builder: (_) => GameChatBlockSheet(
+            targetUserId: dm.counterpartUserId!,
+            onBlocked: _onBlocked,
+          ),
+        );
+      case DmThreadAction.report:
+        if (latest == null) return;
+        await showGameChatReportSheet(
+          context,
+          onSubmit: (reason) => _controller.report(latest.id, reason),
+        );
+    }
   }
 
   /// The DS composer notice that replaces the input row once the game ended

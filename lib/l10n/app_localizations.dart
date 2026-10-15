@@ -11866,6 +11866,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Other'**
   String get admin_message_reports_reason_unknown;
+
+  /// KAN-562 Start-DM refusal: the daily cap on new direct messages (Worker reason dm_cap_reached, HTTP 429). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve started as many new conversations as you can today. Try again tomorrow.'**
+  String get messaging_reason_dm_cap_reached;
+
+  /// KAN-562 Messages list empty state title (games and direct messages). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No messages yet'**
+  String get messaging_list_empty_dm_title;
+
+  /// KAN-562 Messages list empty state body (games and direct messages). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Your game chats and direct messages show up here.'**
+  String get messaging_list_empty_dm_body;
+
+  /// KAN-562 DM row name when the other person has no public name. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler user'**
+  String get messaging_dm_fallback_name;
+
+  /// KAN-562 DM row quiet label (no sport). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct message'**
+  String get messaging_dm_kind_label;
+
+  /// KAN-562 DM row: accessibility text for the muted mark. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get messaging_dm_muted_label;
+
+  /// KAN-562 DM row label when the conversation is read-only (blocked, or the other person is unavailable). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t reply'**
+  String get messaging_dm_read_only_label;
+
+  /// KAN-556 DM thread: overflow button label and options sheet title. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation options'**
+  String get messaging_dm_options_title;
+
+  /// KAN-556 DM overflow item: mute this conversation. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute'**
+  String get messaging_dm_menu_mute;
+
+  /// KAN-556 DM overflow item: unmute this conversation. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get messaging_dm_menu_unmute;
+
+  /// KAN-556 DM overflow item: block the other person (opens the existing block confirmation). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Block user'**
+  String get messaging_dm_menu_block;
+
+  /// KAN-556 DM overflow item: report the other person's latest message (existing report flow). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Report user'**
+  String get messaging_dm_menu_report;
+
+  /// KAN-556 DM read-only line replacing the composer when the caller blocked the other person. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You blocked this person, so you can\'t send messages here.'**
+  String get messaging_dm_read_only_you_blocked;
+
+  /// KAN-556 DM read-only line when the other person blocked the caller. Does not say who blocked. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t send messages to this person.'**
+  String get messaging_dm_read_only_blocked_you;
+
+  /// KAN-556 DM read-only line when the other person's account is deleted or banned. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'This account is no longer available.'**
+  String get messaging_dm_read_only_gone;
+
+  /// KAN-556 DM: shown when mute/unmute was refused and the toggle went back. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t change notifications for this chat. Try again.'**
+  String get messaging_dm_mute_failed;
+
+  /// KAN-556 DM header: accessibility hint on the name and avatar. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens their profile'**
+  String get messaging_dm_header_hint;
+
+  /// KAN-557 Message action on another user's profile: accessibility label of the button. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messaging_dm_action_label;
+
+  /// KAN-557 Accessibility label while the chat is being opened. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Opening chat'**
+  String get messaging_dm_action_opening;
+
+  /// KAN-557 Start-DM refusal (blocked, either direction) and the reason on the disabled action. Does not say who blocked whom. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t message this person.'**
+  String get messaging_dm_action_blocked;
+
+  /// KAN-557 Start-DM refusal for an under-age or not-yet-enabled account (the Worker answers both as not_in_pilot). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct messages aren\'t available for this account.'**
+  String get messaging_dm_action_under_age;
+
+  /// KAN-557 Start-DM refusal: rate_limited. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re doing that too fast. Wait a moment, then try again.'**
+  String get messaging_dm_action_rate_limited;
+
+  /// KAN-557 Start-DM refusal: dm_cap_reached (daily cap on new DMs). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve started as many new conversations as you can today. Try again tomorrow.'**
+  String get messaging_dm_action_cap_reached;
+
+  /// KAN-557 Start-DM refusal: any other failure. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open the chat. Try again.'**
+  String get messaging_dm_action_failed;
 }
 
 class _AppLocalizationsDelegate

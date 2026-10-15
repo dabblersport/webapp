@@ -4,6 +4,7 @@ import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
+import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 
 /// What the app calls for messaging (phase P2: game chat, text). It mirrors
 /// `docs/messaging/openapi.yaml` operation by operation:
@@ -22,7 +23,11 @@ import 'package:dabbler/features/messaging/domain/models/report_category.dart';
 /// `reason` is the typed reason; a request that cannot be made is
 /// `MessagingFailure.offline()`. Implementations belong to a later ticket; this
 /// is the interface only (no network code lives in the domain layer).
-abstract class MessagingRepository {
+///
+/// It also carries the DM operations (startDm, setMuted) through [DmRepository];
+/// those are not in openapi.yaml (Worker routes POST /v1/dm and
+/// POST /v1/conversations/{id}/mute, KAN-561).
+abstract class MessagingRepository implements DmRepository {
   /// The conversation of [gameId] for the signed-in user: state, whether it is
   /// writable, a `boundary` for a member who left, and the mute flag.
   /// Reasons: not_in_pilot, not_a_member, removed, suspended, rate_limited,

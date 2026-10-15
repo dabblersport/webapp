@@ -19,6 +19,7 @@ class UnavailableMessagingRepository
     implements
         MessagingRepository,
         MyConversationsRepository,
+        DmRepository,
         MessageReportsRepository {
   const UnavailableMessagingRepository();
 
@@ -78,4 +79,13 @@ class UnavailableMessagingRepository
   Future<Result<ReportedMessage, Failure>> readReportedMessage(
     String reportId,
   ) async => Err(MessageReportsFailure(MessageReportsRefusal.failed));
+
+  @override
+  Future<Result<String, Failure>> startDm(String otherUserId) async => _no();
+
+  @override
+  Future<Result<void, Failure>> setMuted(
+    String conversationId,
+    bool muted,
+  ) async => _no();
 }

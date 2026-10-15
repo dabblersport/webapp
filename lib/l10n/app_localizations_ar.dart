@@ -6641,4 +6641,83 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get admin_message_reports_reason_unknown => 'أخرى';
+
+  @override
+  String get messaging_reason_dm_cap_reached =>
+      'وصلت إلى الحد اليومي لبدء محادثات جديدة. حاول مرة أخرى غدًا.';
+
+  @override
+  String get messaging_list_empty_dm_title => 'لا توجد رسائل بعد';
+
+  @override
+  String get messaging_list_empty_dm_body =>
+      'تظهر هنا محادثات مبارياتك ورسائلك المباشرة.';
+
+  @override
+  String get messaging_dm_fallback_name => 'مستخدم دابلر';
+
+  @override
+  String get messaging_dm_kind_label => 'رسالة مباشرة';
+
+  @override
+  String get messaging_dm_muted_label => 'مكتومة';
+
+  @override
+  String get messaging_dm_read_only_label => 'لا يمكنك الرد';
+
+  @override
+  String get messaging_dm_options_title => 'خيارات المحادثة';
+
+  @override
+  String get messaging_dm_menu_mute => 'كتم المحادثة';
+
+  @override
+  String get messaging_dm_menu_unmute => 'إلغاء الكتم';
+
+  @override
+  String get messaging_dm_menu_block => 'حظر المستخدم';
+
+  @override
+  String get messaging_dm_menu_report => 'الإبلاغ عنه';
+
+  @override
+  String get messaging_dm_read_only_you_blocked =>
+      'لقد حظرت هذا الشخص، لذا لا يمكنك إرسال رسائل هنا.';
+
+  @override
+  String get messaging_dm_read_only_blocked_you => 'لا يمكنك مراسلة هذا الشخص.';
+
+  @override
+  String get messaging_dm_read_only_gone => 'هذا الحساب لم يعد متاحًا.';
+
+  @override
+  String get messaging_dm_mute_failed =>
+      'تعذّر تغيير إشعارات هذه المحادثة. حاول مرة أخرى.';
+
+  @override
+  String get messaging_dm_header_hint => 'يفتح ملفه الشخصي';
+
+  @override
+  String get messaging_dm_action_label => 'رسالة';
+
+  @override
+  String get messaging_dm_action_opening => 'جارٍ فتح المحادثة';
+
+  @override
+  String get messaging_dm_action_blocked => 'لا يمكنك مراسلة هذا الشخص.';
+
+  @override
+  String get messaging_dm_action_under_age =>
+      'الرسائل المباشرة غير متاحة لهذا الحساب.';
+
+  @override
+  String get messaging_dm_action_rate_limited =>
+      'أنت تفعل ذلك بسرعة كبيرة. انتظر قليلاً ثم حاول مرة أخرى.';
+
+  @override
+  String get messaging_dm_action_cap_reached =>
+      'لقد بدأت أقصى عدد من المحادثات الجديدة اليوم. حاول مرة أخرى غداً.';
+
+  @override
+  String get messaging_dm_action_failed => 'تعذّر فتح المحادثة. حاول مرة أخرى.';
 }

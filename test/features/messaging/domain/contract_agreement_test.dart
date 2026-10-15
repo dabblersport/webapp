@@ -35,6 +35,16 @@ class _InMemoryMessaging implements MessagingRepository {
   final List<Message> rows = [];
 
   @override
+  Future<Result<String, Failure>> startDm(String otherUserId) async =>
+      Err(MessagingFailure.offline());
+
+  @override
+  Future<Result<void, Failure>> setMuted(
+    String conversationId,
+    bool muted,
+  ) async => Err(MessagingFailure.offline());
+
+  @override
   Future<Result<Conversation, Failure>> getGameConversation(
     String gameId,
   ) async => Err(MessagingFailure.offline());

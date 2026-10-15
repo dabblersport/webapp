@@ -8,6 +8,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
 import 'package:dabbler/features/messaging/domain/message_reports_repository.dart';
+import 'package:dabbler/features/messaging/domain/dm_failure.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
@@ -25,11 +26,12 @@ const String messageReportsRpc = 'msg_list_message_reports';
 
 /// The real messaging repository (KAN-550): the six contract operations over
 /// the Worker (`docs/messaging/openapi.yaml`) and the Messages list over the
-/// `msg_my_conversations` RPC. Never throws; never logs or stores message text.
+/// `msg_my_conversations` RPC, plus the DM routes of KAN-561 (KAN-562). Never throws; never logs or stores message text.
 class WorkerMessagingRepository
     implements
         MessagingRepository,
         MyConversationsRepository,
+        DmRepository,
         MessageReportsRepository {
   WorkerMessagingRepository({
     required MessagingHttpClient http,
@@ -216,6 +218,35 @@ class WorkerMessagingRepository
     );
   }
 
+  @override
+  Future<Result<String, Failure>> startDm(String otherUserId) => _call(
+    'POST',
+    '/dm',
+    jsonBody: {'other_user_id': otherUserId},
+    ok: const {200},
+    parse: (b) {
+      final id = _map(b)['conversation_id'];
+      if (id is! String || id.isEmpty) {
+        throw const FormatException('Expected conversation_id');
+      }
+      return id;
+    },
+  );
+
+  @override
+  Future<Result<void, Failure>> setMuted(String conversationId, bool muted) =>
+      _call<void>(
+        'POST',
+        '/conversations/${Uri.encodeComponent(conversationId)}/mute',
+        jsonBody: {'muted': muted},
+        ok: const {200},
+        parse: (b) {
+          if (_map(b)['muted'] is! bool) {
+            throw const FormatException('Expected muted');
+          }
+        },
+      );
+
   Future<Result<T, Failure>> _call<T>(
     String method,
     String path, {
@@ -257,6 +288,13 @@ class WorkerMessagingRepository
 
   /// Maps an error response through the typed-reason mapping.
   static MessagingFailure errorFailure(int status, Object? body) {
+    if (isDmCapReachedBody(status, body)) {
+      final f = MessagingFailure.fromErrorBody(status, body);
+      return DmCapReachedFailure(
+        message: f.message,
+        retryAfterSeconds: f.retryAfterSeconds,
+      );
+    }
     final failure = MessagingFailure.fromErrorBody(status, body);
     // The Worker answers 403 with no reason for messaging_off and unknown
     // authorize reasons (auth.ts): treat it as not_in_pilot (unavailable).

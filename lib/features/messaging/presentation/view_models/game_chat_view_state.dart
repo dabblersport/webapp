@@ -80,9 +80,17 @@ class GameChatViewState extends Equatable {
     this.reason,
     this.hasOlder = false,
     this.olderCursor,
+    this.dm,
   });
 
   final GameChatStatus status;
+
+  /// Set only for a direct message (KAN-556): the counterpart and the DM's
+  /// read-only cause. Null for a game chat, whose state is unchanged.
+  final DmThreadInfo? dm;
+
+  /// Whether this is a direct message thread.
+  bool get isDm => dm != null;
   final Conversation? conversation;
   final List<ChatItem> items;
   final MessagingReason? reason;
@@ -113,6 +121,7 @@ class GameChatViewState extends Equatable {
     MessagingReason? reason,
     bool? hasOlder,
     int? olderCursor,
+    DmThreadInfo? dm,
   }) => GameChatViewState(
     status: status ?? this.status,
     conversation: conversation ?? this.conversation,
@@ -120,6 +129,7 @@ class GameChatViewState extends Equatable {
     reason: reason ?? this.reason,
     hasOlder: hasOlder ?? this.hasOlder,
     olderCursor: olderCursor ?? this.olderCursor,
+    dm: dm ?? this.dm,
   );
 
   @override
@@ -130,6 +140,56 @@ class GameChatViewState extends Equatable {
     reason,
     hasOlder,
     olderCursor,
+    dm,
+  ];
+}
+
+/// Why a direct message cannot be written to (KAN-556). The Worker answers
+/// `blocked` for a block in EITHER direction and `suspended` for a deleted or
+/// banned counterpart; the direction comes from the app's existing block
+/// lists (users I blocked vs blocked either way).
+enum DmReadOnlyKind { youBlocked, blockedYou, counterpartGone }
+
+/// The one-to-one part of a DM thread (KAN-556): who the other person is and,
+/// when the DM is read-only, why.
+class DmThreadInfo extends Equatable {
+  const DmThreadInfo({
+    this.counterpartUserId,
+    this.counterpartName,
+    this.counterpartAvatar,
+    this.readOnly,
+    this.capReached = false,
+  });
+
+  final String? counterpartUserId;
+
+  /// The public display name; null or blank means "use the fallback".
+  final String? counterpartName;
+
+  /// The avatar reference (`profiles.avatar_url`), may be null.
+  final String? counterpartAvatar;
+
+  /// Set when the DM is read-only.
+  final DmReadOnlyKind? readOnly;
+
+  /// The request was refused with `dm_cap_reached`.
+  final bool capReached;
+
+  DmThreadInfo withReadOnly(DmReadOnlyKind kind) => DmThreadInfo(
+    counterpartUserId: counterpartUserId,
+    counterpartName: counterpartName,
+    counterpartAvatar: counterpartAvatar,
+    readOnly: kind,
+    capReached: capReached,
+  );
+
+  @override
+  List<Object?> get props => [
+    counterpartUserId,
+    counterpartName,
+    counterpartAvatar,
+    readOnly,
+    capReached,
   ];
 }
 

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/domain/message_reports_repository.dart';
+import 'package:dabbler/features/messaging/domain/dm_failure.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
@@ -25,6 +26,10 @@ enum FakeMessagingOp {
   unmuteConversation,
 }
 
+/// The DM operations a scripted failure can target (KAN-562). Kept apart
+/// from [FakeMessagingOp], which enumerates the six contract operations only.
+enum FakeDmOp { startDm, setMuted }
+
 /// An in-memory [MessagingRepository] (KAN-507, T12). It has NO network and
 /// no database: every scenario T16 needs is scripted in memory.
 ///
@@ -42,6 +47,7 @@ class FakeMessagingRepository
     implements
         MessagingRepository,
         MyConversationsRepository,
+        DmRepository,
         MessageReportsRepository {
   FakeMessagingRepository({
     DateTime Function()? clock,
@@ -87,7 +93,8 @@ class FakeMessagingRepository
   void failNextMyConversations(MessagingReason reason) =>
       _myConversationsNext.add(reason);
 
-  /// Replaces the user's game chats returned by [listMyConversations]. The
+  /// Replaces the user's game chats and DMs (rows with
+  /// `kind: MyConversationKind.dm`) returned by [listMyConversations]. The
   /// fake orders them as the RPC does: newest `lastActivityAt` first (nulls
   /// last), ties by newest `startAt`.
   void seedMyConversations(List<MyConversation> chats) {
@@ -454,5 +461,85 @@ class FakeMessagingRepository
         return c != 0 ? c : byTime(a.startAt, b.startAt);
       });
     return Ok(List.unmodifiable(sorted.take(size)));
+  }
+
+  // ---- Direct messages (KAN-562) ----
+
+  /// How many times [startDm] / [setMuted] were called (including failures).
+  int startDmCalls = 0;
+  int setMutedCalls = 0;
+
+  final Map<FakeDmOp, List<MessagingFailure>> _dmNext = {};
+
+  /// The next call of [op] fails with [reason]; later calls succeed.
+  void failNextDm(FakeDmOp op, MessagingReason reason) =>
+      (_dmNext[op] ??= []).add(_failure(reason));
+
+  /// The next [startDm] fails with the daily cap on new DMs.
+  void failNextDmCapReached() =>
+      (_dmNext[FakeDmOp.startDm] ??= []).add(DmCapReachedFailure());
+
+  MessagingFailure? _dmScripted(FakeDmOp op) {
+    if (offline) return MessagingFailure.offline();
+    final queued = _dmNext[op];
+    if (queued != null && queued.isNotEmpty) return queued.removeAt(0);
+    return null;
+  }
+
+  @override
+  Future<Result<String, Failure>> startDm(String otherUserId) async {
+    startDmCalls++;
+    final scripted = _dmScripted(FakeDmOp.startDm);
+    if (scripted != null) return _err(scripted);
+    if (otherUserId.isEmpty || otherUserId == currentUserId) {
+      return _err(_failure(MessagingReason.invalidRequest));
+    }
+    for (final c in _myConversations) {
+      if (c.isDm && c.counterpartUserId == otherUserId) {
+        return Ok(c.conversationId);
+      }
+    }
+    final id = 'dm-${_idGenerator()}';
+    _myConversations.add(
+      MyConversation(
+        conversationId: id,
+        kind: MyConversationKind.dm,
+        state: MyConversationState.send,
+        counterpartUserId: otherUserId,
+        lastActivityAt: _clock(),
+      ),
+    );
+    return Ok(id);
+  }
+
+  @override
+  Future<Result<void, Failure>> setMuted(
+    String conversationId,
+    bool muted,
+  ) async {
+    setMutedCalls++;
+    final scripted = _dmScripted(FakeDmOp.setMuted);
+    if (scripted != null) return _err(scripted);
+    final i = _myConversations.indexWhere(
+      (c) => c.conversationId == conversationId,
+    );
+    if (i < 0) return _err(_failure(MessagingReason.notFound));
+    final c = _myConversations[i];
+    _myConversations[i] = MyConversation(
+      conversationId: c.conversationId,
+      kind: c.kind,
+      gameId: c.gameId,
+      state: c.state,
+      title: c.title,
+      sport: c.sport,
+      startAt: c.startAt,
+      endAt: c.endAt,
+      lastActivityAt: c.lastActivityAt,
+      counterpartUserId: c.counterpartUserId,
+      counterpartName: c.counterpartName,
+      counterpartAvatar: c.counterpartAvatar,
+      muted: muted,
+    );
+    return const Ok(null);
   }
 }

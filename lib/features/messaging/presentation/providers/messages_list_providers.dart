@@ -4,6 +4,8 @@ import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/data/unavailable_messaging_repository.dart';
+import 'package:dabbler/features/messaging/presentation/controllers/dm_chat_controller.dart';
+import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
@@ -41,4 +43,20 @@ final messagesListProvider =
     FutureProvider.autoDispose<Result<List<MyConversation>, Failure>>(
       (ref) =>
           ref.watch(myConversationsRepositoryProvider).listMyConversations(),
+    );
+
+/// Start a DM and mute (KAN-562), chosen exactly like
+/// [myConversationsRepositoryProvider].
+final dmRepositoryProvider = Provider<DmRepository>(
+  (ref) => switch (ref.watch(messagingBackendKindProvider)) {
+    MessagingBackendKind.fake => ref.watch(fakeMessagingRepositoryProvider),
+    MessagingBackendKind.worker => ref.watch(workerMessagingRepositoryProvider),
+    MessagingBackendKind.unavailable => const UnavailableMessagingRepository(),
+  },
+);
+
+/// The DM thread of one conversation, keyed by conversation id (KAN-556).
+final dmChatControllerProvider =
+    AsyncNotifierProvider.family<DmChatController, GameChatViewState, String>(
+      DmChatController.new,
     );
