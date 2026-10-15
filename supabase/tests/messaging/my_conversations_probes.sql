@@ -6,6 +6,7 @@
 -- Every fixture row is created inside the block and rolled back with it. Blocks print booleans and counts only:
 -- no title, no message content.
 --
+-- Setup is idempotent: allowlist rows use ON CONFLICT DO NOTHING, so existing pilot test identities work.
 -- Variables (supplied by the runner, no secrets): the caller :user_a with profile :profile_a, a user :user_e with
 -- no roster rows, and four test games with no msg_conversations row and on which :user_a has no roster row:
 --   :game_live   starts in the future, ends in the future, not cancelled
@@ -131,7 +132,8 @@ ROLLBACK;
 -- M8 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Stamping: a member's msg_notify moves the conversation up
 -- the list; a non-sender's call does not stamp.
 BEGIN;
-insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_e');
+insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_e')
+  on conflict (user_id) do nothing;
 insert into public.msg_conversations (id, game_id, last_activity_at) values
   ('00000000-0000-4000-8000-0000000d5470', :'game_live',  now() - interval '5 hours'),
   ('00000000-0000-4000-8000-0000000d5471', :'game_ended', now() - interval '1 hour');
@@ -152,7 +154,8 @@ ROLLBACK;
 
 -- M9 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. A failed stamp does not raise, and the wake-ups still go out.
 BEGIN;
-insert into public.msg_access_allowlist (user_id) values (:'user_a');
+insert into public.msg_access_allowlist (user_id) values (:'user_a')
+  on conflict (user_id) do nothing;
 insert into public.msg_conversations (id, game_id) values ('00000000-0000-4000-8000-0000000d5470', :'game_live');
 insert into public.game_roster (game_id, profile_id, user_id, role, status) values (:'game_live', :'profile_a', :'user_a', 'player', 'active');
 -- a test-only trigger that makes the stamp fail; it lives and dies with this transaction

@@ -723,4 +723,18 @@ void main() {
     expect(r, contains('dm_probes.sql'));
     expect(r, contains('dm_rollback.sql'));
   });
+
+  test(
+    'probe setup is idempotent: every allowlist insert is ON CONFLICT DO NOTHING',
+    () {
+      final p = File('$_pack/dm_probes.sql').readAsStringSync();
+      final inserts = RegExp(
+        r'insert into public\.msg_access_allowlist[^;]*;',
+      ).allMatches(p).toList();
+      expect(inserts, isNotEmpty);
+      for (final m in inserts) {
+        expect(m.group(0), contains('on conflict (user_id) do nothing'));
+      }
+    },
+  );
 }

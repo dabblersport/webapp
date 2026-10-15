@@ -175,7 +175,8 @@ ROLLBACK;
 -- D5 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Block AFTER start: sending is refused for BOTH, history stays
 -- readable (read, never deleted); unblocking restores sending.
 BEGIN;
-insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b');
+insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b')
+  on conflict (user_id) do nothing;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select public.msg_start_dm(:'user_b') as conv \gset
@@ -198,7 +199,8 @@ ROLLBACK;
 -- D6 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. A deleted or banned counterpart makes the DM read-only; a
 -- non-member of the DM gets not_member; msg_authorize lists the two members.
 BEGIN;
-insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b'), (:'user_e');
+insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b'), (:'user_e')
+  on conflict (user_id) do nothing;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select public.msg_start_dm(:'user_b') as conv \gset
@@ -261,7 +263,8 @@ ROLLBACK;
 -- for no token; the chat is not hidden.
 BEGIN;
 select set_config('kan560.user_a', :'user_a', true), set_config('kan560.user_b', :'user_b', true), set_config('kan560.user_c', :'user_c', true), set_config('kan560.user_d', :'user_d', true), set_config('kan560.user_e', :'user_e', true), set_config('kan560.user_f', :'user_f', true); -- psql does not substitute variables inside dollar-quoted bodies
-insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b');
+insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b')
+  on conflict (user_id) do nothing;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select public.msg_start_dm(:'user_b') as conv \gset
@@ -310,7 +313,8 @@ ROLLBACK;
 -- counterpart is skipped; it never raises. Wakes are the rows realtime.send leaves in realtime.messages; only counts.
 BEGIN;
 select set_config('kan560.user_a', :'user_a', true), set_config('kan560.user_b', :'user_b', true), set_config('kan560.user_c', :'user_c', true), set_config('kan560.user_d', :'user_d', true), set_config('kan560.user_e', :'user_e', true), set_config('kan560.user_f', :'user_f', true); -- psql does not substitute variables inside dollar-quoted bodies
-insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b');
+insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b')
+  on conflict (user_id) do nothing;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select public.msg_start_dm(:'user_b') as conv \gset
@@ -344,7 +348,8 @@ ROLLBACK;
 -- D10 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Reports work on a DM message exactly as on a game message
 -- (msg_report_message was not re-issued); a game chat is unchanged: its member still sends, the same mute applies.
 BEGIN;
-insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b');
+insert into public.msg_access_allowlist (user_id) values (:'user_a'), (:'user_b')
+  on conflict (user_id) do nothing;
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select public.msg_start_dm(:'user_b') as conv \gset

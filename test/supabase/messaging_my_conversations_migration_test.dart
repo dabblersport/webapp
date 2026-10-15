@@ -355,4 +355,18 @@ void main() {
       expect(r, contains('my_conversations_rollback.sql'));
     });
   });
+
+  test(
+    'probe setup is idempotent: every allowlist insert is ON CONFLICT DO NOTHING',
+    () {
+      final p = File('$_pack/my_conversations_probes.sql').readAsStringSync();
+      final inserts = RegExp(
+        r'insert into public\.msg_access_allowlist[^;]*;',
+      ).allMatches(p).toList();
+      expect(inserts, isNotEmpty);
+      for (final m in inserts) {
+        expect(m.group(0), contains('on conflict (user_id) do nothing'));
+      }
+    },
+  );
 }
