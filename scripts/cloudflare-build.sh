@@ -30,4 +30,5 @@ flutter build web --release \
   --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
   --dart-define=APP_NAME="$APP_NAME" \
   --dart-define=ENVIRONMENT="$ENVIRONMENT" \
-  --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}"
+  --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
+  --dart-define=MESSAGING_API_BASE_URL="${MESSAGING_API_BASE_URL:-}"

@@ -72,6 +72,11 @@ class Environment {
     defaultValue: '',
   );
 
+  static const String _messagingApiBaseUrlDefine = String.fromEnvironment(
+    'MESSAGING_API_BASE_URL',
+    defaultValue: '',
+  );
+
   static bool get _definesComplete =>
       _supabaseUrlDefine.isNotEmpty &&
       _supabaseAnonKeyDefine.isNotEmpty &&
@@ -112,6 +117,14 @@ class Environment {
   static String get environment => _environmentDefine.isNotEmpty
       ? _environmentDefine
       : (dotenv.env['ENVIRONMENT'] ?? 'production');
+
+  /// Optional: the messaging Worker origin (KAN-550). Empty by default; the
+  /// client appends `/v1/...`. A flag-on build without it shows the
+  /// unavailable state rather than calling anything.
+  static String get messagingApiBaseUrl => resolve(
+    _messagingApiBaseUrlDefine,
+    dotenv.isInitialized ? dotenv.env['MESSAGING_API_BASE_URL'] : null,
+  );
 
   // Optional: Google Sign-In configuration
   // - Web: required for google_sign_in on Flutter web
