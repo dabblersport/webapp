@@ -117,6 +117,6 @@ re-issues `msg_evaluate` (a DM branch only), `msg_authorize` (DM member list onl
 DM recipients). New app functions: `msg_start_dm(other)` and `msg_set_muted(conversation, muted)`; two internal helpers
 carry no grant. Age comes from `profiles.age`; deleted or banned from `auth.users`. A DM with a block in either direction
 is read-only for both (reason `blocked`), a banned or deleted counterpart makes it read-only (reason `suspended`).
-AUTHORED, NOT APPLIED. New files: `dm_probes.sql` (D1-D12, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `dm_rollback.sql`
+AUTHORED, NOT APPLIED. New files: `dm_probes.sql` (D1-D13, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `dm_rollback.sql`
 (refuses when any DM exists). The Worker's mapping of the two read-only reasons and listing DMs in the Messages list are
 later tickets.

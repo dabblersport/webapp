@@ -170,6 +170,22 @@ exception when others then
   end if;
 end;
 $$;
+reset role;
+update auth.users set banned_until = null, deleted_at = now() where id = :'user_f';
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+do $$
+begin
+  perform public.msg_start_dm(current_setting('kan560.user_f')::uuid);
+  raise exception 'FAIL pass_deleted_target_refused: the call was accepted';
+exception when others then
+  if sqlerrm = 'not_found' then
+    raise notice 'pass_deleted_target_refused = true';
+  else
+    raise exception 'FAIL pass_deleted_target_refused: got % (sqlstate %)', sqlerrm, sqlstate;
+  end if;
+end;
+$$;
 ROLLBACK;
 
 -- D5 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. Block AFTER start: sending is refused for BOTH, history stays
@@ -211,6 +227,11 @@ update auth.users set banned_until = now() + interval '1 day' where id = :'user_
 set local role authenticated;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
 select (select allowed_action || ':' || reason from public.msg_authorize(:'conv', 'allowlist')) = 'read:suspended' as pass_banned_counterpart_read_only;
+reset role;
+update auth.users set banned_until = null, deleted_at = now() where id = :'user_b';
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'user_a', 'role', 'authenticated')::text, true);
+select (select allowed_action || ':' || reason from public.msg_authorize(:'conv', 'allowlist')) = 'read:suspended' as pass_deleted_counterpart_read_only;
 select set_config('request.jwt.claims', json_build_object('sub', :'user_e', 'role', 'authenticated')::text, true);
 select (select reason from public.msg_authorize(:'conv', 'allowlist')) = 'not_member' as pass_non_member_refused;
 ROLLBACK;
@@ -396,4 +417,40 @@ select
   not has_function_privilege('anon', 'public.msg_set_muted(uuid,boolean)', 'EXECUTE') as pass_set_muted_anon_refused,
   (select bool_and(p.prosecdef and p.proconfig @> array['search_path=public, pg_temp'])
      from pg_proc p where p.oid in ('public.msg_start_dm(uuid)'::regprocedure, 'public.msg_set_muted(uuid,boolean)'::regprocedure)) as pass_definer_pinned_search_path;
+ROLLBACK;
+
+-- D13 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. The authenticated role with no usable token (no subject, so
+-- auth.uid() is null): msg_start_dm is refused with not_authenticated and creates nothing.
+BEGIN;
+select count(*) as before_count from public.msg_dm_pairs \gset
+select set_config('kan560.user_b', :'user_b', true);
+set local role authenticated;
+select set_config('request.jwt.claims', '', true);
+do $$
+begin
+  perform public.msg_start_dm(current_setting('kan560.user_b')::uuid);
+  raise exception 'FAIL pass_start_without_token_refused: the call was accepted';
+exception when others then
+  if sqlerrm = 'not_authenticated' then
+    raise notice 'pass_start_without_token_refused = true';
+  else
+    raise exception 'FAIL pass_start_without_token_refused: got % (sqlstate %)', sqlerrm, sqlstate;
+  end if;
+end;
+$$;
+select set_config('request.jwt.claims', json_build_object('role', 'authenticated')::text, true);
+do $$
+begin
+  perform public.msg_start_dm(current_setting('kan560.user_b')::uuid);
+  raise exception 'FAIL pass_start_without_subject_refused: the call was accepted';
+exception when others then
+  if sqlerrm = 'not_authenticated' then
+    raise notice 'pass_start_without_subject_refused = true';
+  else
+    raise exception 'FAIL pass_start_without_subject_refused: got % (sqlstate %)', sqlerrm, sqlstate;
+  end if;
+end;
+$$;
+reset role;
+select (select count(*) from public.msg_dm_pairs) = :before_count as pass_nothing_created_without_token;
 ROLLBACK;

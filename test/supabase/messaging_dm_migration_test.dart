@@ -583,7 +583,7 @@ void main() {
         r'^-- D\d+ \[(READ-ONLY|WRITE-IN-TRANSACTION-ROLLBACK)\] AUTHORED, NOT RUN\.',
         multiLine: true,
       ).allMatches(p).length;
-      expect(heads, 12);
+      expect(heads, 13);
       expect(RegExp(r'^BEGIN;$', multiLine: true).allMatches(p).length, heads);
       expect(
         RegExp(r'^ROLLBACK;$', multiLine: true).allMatches(p).length,
@@ -615,6 +615,10 @@ void main() {
         'pass_caller_blocked_target_refused',
         'pass_target_blocked_caller_refused',
         'pass_banned_target_refused',
+        'pass_deleted_target_refused',
+        'pass_deleted_counterpart_read_only',
+        'pass_start_without_token_refused',
+        'pass_start_without_subject_refused',
         'pass_blocked_side_read_only',
         'pass_blocker_side_read_only',
         'pass_conversation_kept',
