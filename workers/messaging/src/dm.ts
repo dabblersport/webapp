@@ -47,15 +47,14 @@ async function rpcFailure(res: Response): Promise<Response> {
 }
 
 /**
- * True when the caller already has a DM with `other` in the database's own list (msg_my_conversations, the caller's
- * bearer). Re-opening an existing pair must not count toward the new-DM limit, and the database already exempts it
- * from its cap. A list that cannot be read, or has no such row, counts as "not existing": the limiter then applies
- * (conservative). Known gap: an empty DM that the OTHER user started is not in the recipient's list until the first
- * message, so the recipient starting it back is counted once.
+ * True when the caller and `other` already have a DM pair, asked of the database itself (msg_dm_exists, KAN-561: it
+ * sees an EMPTY pair the other user started and a pair older than any list cap). Re-opening an existing pair must not
+ * count toward the new-DM limit. Fails OPEN for this second-line limiter: when the database cannot answer (for example
+ * the function is not applied yet) the start is not charged, and the database's own daily cap still decides.
  */
 async function hasExistingDm(request: Request, env: Env, other: string): Promise<boolean> {
   try {
-    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_my_conversations`, {
+    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_dm_exists`, {
       method: "POST",
       headers: {
         apikey: env.SUPABASE_ANON_KEY,
@@ -63,18 +62,12 @@ async function hasExistingDm(request: Request, env: Env, other: string): Promise
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ p_limit: 100 }),
+      body: JSON.stringify({ p_other_user: other.toLowerCase() }),
     });
-    if (!res.ok) return false;
-    const rows = (await res.json()) as unknown;
-    if (!Array.isArray(rows)) return false;
-    return rows.some((r) => {
-      const row = r as { kind?: unknown; counterpart_user_id?: unknown };
-      return row !== null && typeof row === "object" && row.kind === "dm" &&
-        typeof row.counterpart_user_id === "string" && row.counterpart_user_id.toLowerCase() === other.toLowerCase();
-    });
+    if (!res.ok) return true;
+    return (await res.json()) !== false;
   } catch {
-    return false;
+    return true;
   }
 }
 

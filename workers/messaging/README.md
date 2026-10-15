@@ -198,7 +198,7 @@ Game chats never return them.
 
 | Route | What it does | Subrequests | D1 |
 |---|---|---|---|
-| `POST /v1/dm` `{other_user_id}` | verified id via `msg_authorize` (nil conversation), self check, existing-pair check against the database's own list, the new-DM limit (new pairs only), then `msg_start_dm` with the caller's own bearer; `200 {conversation_id}` (the existing id for an existing pair) | 3 (2 refused earlier) | 1 write for a NEW pair, 0 for a re-open or a refusal |
+| `POST /v1/dm` `{other_user_id}` | verified id via `msg_authorize` (nil conversation), self check, existing-pair check (`msg_dm_exists`), the new-DM limit (new pairs only), then `msg_start_dm` with the caller's own bearer; `200 {conversation_id}` (the existing id for an existing pair) | 3 (`msg_authorize`, `msg_dm_exists`, `msg_start_dm`; 2 on an early refusal) | 1 write for a NEW pair, 0 for a re-open or a refusal |
 | `POST /v1/conversations/{id}/mute` `{muted}` | `msg_set_muted` with the caller's own bearer; `200 {muted}` | 1 | none |
 | `GET /v1/conversations/summary?ids=<up to 50>` | per readable id: `conversation_id`, `last_message_at`, `last_message_from_me` and nothing else | 2 + at most `MAX_BLOCK_LOOKUPS` (30) | 1 bounded read, no write |
 
@@ -216,12 +216,13 @@ Game chats never return them.
   `not_a_member`; anything else -> 502 with no reason.
 - **New-DM limit (second line):** `NEW_DM_PER_USER_PER_HOUR = 10` in `src/rate_limit.ts`, fixed 3600 s window, key = the
   verified user, scope `new_dm_hour` in the existing `rate_limits` table (no new migration: `scope` is free text).
-  Refusal is `429 rate_limited` with `Retry-After`. **Only a NEW pair counts**: before limiting, the Worker reads the
-  database's own list (`msg_my_conversations`, the caller's bearer, limit 100) and, if it already holds a DM with that
-  user, re-opens it without touching the limiter (the database still applies every block, age and cap rule, and does not
-  count a re-open either). Limits of that check: an empty DM that the OTHER user started is not in the recipient's list
-  until its first message, and a list that cannot be read or is past 100 rows does not show an old DM; in both cases the
-  start is counted (conservative). DM sends use the existing send limits (20 a minute per conversation, 120 an hour per user).
+  Refusal is `429 rate_limited` with `Retry-After`. **Only a NEW pair counts, with no exception**: before limiting, the
+  Worker asks the database itself, `msg_dm_exists(p_other_user)` (migration `20261015120000_kan561_msg_dm_exists.sql`,
+  the caller's bearer, a boolean from the UNIQUE pair row). It sees an empty pair the OTHER user started and a pair of any
+  age, so every re-open passes without touching the limiter (the database applies every block, age and cap rule and does
+  not count a re-open either). **Until operations applies that migration** (needs-ops), or when the call fails, the Worker
+  does not charge the start (the second-line limiter fails open) and the database's daily cap of 20 is the only limit.
+  DM sends use the existing send limits (20 a minute per conversation, 120 an hour per user).
 - **Summary:** the readable set is the database's own list (limit 100, one call): an id that is not in it is omitted
   silently, and so is a conversation the caller has left. A **blocked counterpart is hidden from the blocker (D4)**: for a
   DM whose list state is `read_only` (a block in either direction, or an unavailable counterpart) the Worker asks

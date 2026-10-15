@@ -24,6 +24,7 @@ const NIL = "00000000-0000-0000-0000-000000000000";
 const START_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_start_dm`;
 const MUTE_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_set_muted`;
 const LIST_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_my_conversations`;
+const EXISTS_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_dm_exists`;
 const KEY = (n: number) => `9b2f7c1e-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const T0 = Date.UTC(2026, 9, 15, 10, 0, 10);
 const pin = (ms: number) => vi.spyOn(Date, "now").mockReturnValue(ms);
@@ -40,6 +41,7 @@ function supabase(opts: {
   start?: (user: string, other: string) => Response;
   mute?: (user: string, conv: string, muted: boolean) => Response;
   list?: (user: string) => unknown[];
+  exists?: (user: string, other: string) => Response;
 } = {}) {
   const calls: Call[] = [];
   vi.stubGlobal(
@@ -63,6 +65,7 @@ function supabase(opts: {
       }
       if (url === START_URL) return (opts.start ?? ((_u, o) => new Response(JSON.stringify(o === B ? DM : DM2), { status: 200 })))(user, body.p_other_user as string);
       if (url === MUTE_URL) return (opts.mute ?? (() => new Response(null, { status: 204 })))(user, body.p_conversation_id as string, body.p_muted as boolean);
+      if (url === EXISTS_URL) return (opts.exists ?? (() => new Response("false", { status: 200 })))(user, body.p_other_user as string);
       if (url === LIST_URL) return new Response(JSON.stringify((opts.list ?? (() => []))(user)), { status: 200 });
       throw new Error(`unmocked host hit: ${url}`);
     }),
@@ -472,11 +475,12 @@ describe("summary (GET /v1/conversations/summary)", () => {
 });
 
 describe("re-opening an existing DM is exempt from the new-DM limit", () => {
-  const dmRow = (other: string, conv = DM) => ({ conversation_id: conv, kind: "dm", state: "send", counterpart_user_id: other });
+  const yes = () => new Response("true", { status: 200 });
+  const pair = (others: string[]) => (_u: string, other: string) => new Response(JSON.stringify(others.includes(other)), { status: 200 });
 
   it("any number of re-opens passes and writes nothing; a new pair is still counted", async () => {
     pin(T0);
-    const s = supabase({ list: () => [dmRow(B)] });
+    const s = supabase({ exists: pair([B]) });
     const { mf, db } = await localD1();
     try {
       for (let i = 0; i < NEW_DM_PER_USER_PER_HOUR + 5; i++) {
@@ -484,9 +488,10 @@ describe("re-opening an existing DM is exempt from the new-DM limit", () => {
       }
       const none = await db.prepare("SELECT COUNT(*) AS n FROM rate_limits").first<{ n: number }>();
       expect(none?.n).toBe(0);
-      // the list was read with the caller's own bearer
-      expect(s.of(LIST_URL)[0].headers.Authorization).toBe(`Bearer ${A}`);
-      // new pairs (not in the list) are counted: 10 pass, the 11th is refused, re-opening B still works
+      // asked of the database with the caller's own bearer, and no list is read
+      expect(s.of(EXISTS_URL)[0].headers.Authorization).toBe(`Bearer ${A}`);
+      expect(s.of(EXISTS_URL)[0].body).toEqual({ p_other_user: B });
+      expect(s.of(LIST_URL)).toHaveLength(0);
       for (let i = 0; i < NEW_DM_PER_USER_PER_HOUR; i++) expect((await post("/v1/dm", A, { other_user_id: C }, db)).status).toBe(200);
       expect((await post("/v1/dm", A, { other_user_id: C }, db)).status).toBe(429);
       expect((await post("/v1/dm", A, { other_user_id: B }, db)).status).toBe(200);
@@ -495,8 +500,20 @@ describe("re-opening an existing DM is exempt from the new-DM limit", () => {
     }
   });
 
+  it("an empty pair the other user started, or one beyond any list cap, is exempt too (the database answers, not a list)", async () => {
+    supabase({ exists: yes, list: () => [] });
+    const { mf, db } = await localD1();
+    try {
+      for (let i = 0; i < NEW_DM_PER_USER_PER_HOUR + 3; i++) expect((await post("/v1/dm", A, { other_user_id: B }, db)).status).toBe(200);
+      const none = await db.prepare("SELECT COUNT(*) AS n FROM rate_limits").first<{ n: number }>();
+      expect(none?.n).toBe(0);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
   it("the database still decides a re-open: a block refuses it", async () => {
-    supabase({ list: () => [dmRow(B)], start: () => dbError("blocked") });
+    supabase({ exists: yes, start: () => dbError("blocked") });
     const { mf, db } = await localD1();
     try {
       const res = await post("/v1/dm", A, { other_user_id: B }, db);
@@ -507,13 +524,13 @@ describe("re-opening an existing DM is exempt from the new-DM limit", () => {
     }
   });
 
-  it("an unreadable list counts the start (conservative) and a game row never exempts", async () => {
-    supabase({ list: () => [{ conversation_id: GAME, kind: "game", state: "send", counterpart_user_id: null }] });
+  it("when the database cannot answer, the second-line limiter does not charge (the database cap still decides)", async () => {
+    supabase({ exists: () => new Response("{}", { status: 404 }) });
     const { mf, db } = await localD1();
     try {
-      expect((await post("/v1/dm", A, { other_user_id: B }, db)).status).toBe(200);
-      const row = await db.prepare("SELECT count FROM rate_limits WHERE subject = ?1 AND scope = 'new_dm_hour'").bind(A).first<{ count: number }>();
-      expect(row?.count).toBe(1);
+      for (let i = 0; i < NEW_DM_PER_USER_PER_HOUR + 2; i++) expect((await post("/v1/dm", A, { other_user_id: C }, db)).status).toBe(200);
+      const none = await db.prepare("SELECT COUNT(*) AS n FROM rate_limits").first<{ n: number }>();
+      expect(none?.n).toBe(0);
     } finally {
       await mf.dispose();
     }
