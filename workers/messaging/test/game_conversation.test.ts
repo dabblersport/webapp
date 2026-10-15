@@ -4,7 +4,7 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
 import { insertMessage } from "../src/db";
 import { GAME_CONVERSATION_PER_USER_PER_MINUTE, MUTE_PER_USER_PER_MINUTE } from "../src/rate_limit";
-import { RPC_URL, SUPABASE_URL, authRow, env, localD1 } from "./helpers";
+import { SUPABASE_URL, env, localD1 } from "./helpers";
 
 afterEach(() => {
   vi.unstubAllGlobals();
@@ -16,6 +16,7 @@ const GAME = "11111111-1111-4111-8111-111111111111";
 const CONV = "dddddddd-dddd-4ddd-8ddd-dddddddddddd";
 const GAME_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_game_conversation`;
 const MUTE_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_set_muted`;
+const MUTE_CONV_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_mute_conversation`;
 const T0 = Date.UTC(2026, 9, 15, 10, 0, 10);
 const pin = (ms: number) => vi.spyOn(Date, "now").mockReturnValue(ms);
 
@@ -34,7 +35,7 @@ const gameRow = (over: Record<string, unknown> = {}) => ({
 });
 const denied = (reason: string) => gameRow({ conversation_id: null, allowed_action: null, reason, muted: false });
 
-function supabase(opts: { game?: (user: string) => unknown; auth?: (user: string) => Record<string, unknown>; mute?: () => Response } = {}) {
+function supabase(opts: { game?: (user: string) => unknown; muteConv?: (user: string) => Record<string, unknown>; mute?: () => Response } = {}) {
   const calls: Call[] = [];
   vi.stubGlobal(
     "fetch",
@@ -45,7 +46,7 @@ function supabase(opts: { game?: (user: string) => unknown; auth?: (user: string
       const user = (headers.Authorization ?? "").replace("Bearer ", "");
       calls.push({ url, headers, body });
       if (url === GAME_URL) return new Response(JSON.stringify([opts.game ? opts.game(user) : gameRow({ user_id: user })]), { status: 200 });
-      if (url === RPC_URL) return new Response(JSON.stringify([opts.auth ? opts.auth(user) : authRow({ user_id: user })]), { status: 200 });
+      if (url === MUTE_CONV_URL) return new Response(JSON.stringify([opts.muteConv ? opts.muteConv(user) : { user_id: user, reason: null }]), { status: 200 });
       if (url === MUTE_URL) return opts.mute ? opts.mute() : new Response(null, { status: 204 });
       throw new Error(`unmocked host hit: ${url}`);
     }),
@@ -240,7 +241,7 @@ describe("GET /v1/games/{gameId}/conversation", () => {
 describe("PUT / DELETE /v1/conversations/{id}/mute", () => {
   const mutePath = `/v1/conversations/${CONV}/mute`;
 
-  it("PUT mutes: 204 with no body, idempotent; the write is msg_set_muted with the caller's bearer", async () => {
+  it("PUT mutes: 204 with no body, idempotent; ONE database call per request, with the caller's bearer", async () => {
     const s = supabase();
     const { mf, db } = await localD1();
     try {
@@ -249,21 +250,23 @@ describe("PUT / DELETE /v1/conversations/{id}/mute", () => {
         expect(res.status).toBe(204);
         expect(await res.text()).toBe("");
       }
-      const writes = s.of(MUTE_URL);
+      expect(s.calls).toHaveLength(2); // one RPC per request, nothing else
+      const writes = s.of(MUTE_CONV_URL);
       expect(writes).toHaveLength(2);
       expect(writes[0].headers.Authorization).toBe(`Bearer ${U}`);
-      expect(writes[0].body).toEqual({ p_conversation_id: CONV, p_muted: true });
+      expect(writes[0].body).toEqual({ p_conversation_id: CONV, p_muted: true, p_access_mode: "allowlist" });
     } finally {
       await mf.dispose();
     }
   });
 
-  it("DELETE unmutes: 204, idempotent", async () => {
+  it("DELETE unmutes: 204, idempotent, one database call per request", async () => {
     const s = supabase();
     const { mf, db } = await localD1();
     try {
       for (let i = 0; i < 2; i++) expect((await call("DELETE", mutePath, db)).status).toBe(204);
-      expect(s.of(MUTE_URL)[0].body).toEqual({ p_conversation_id: CONV, p_muted: false });
+      expect(s.calls).toHaveLength(2);
+      expect(s.of(MUTE_CONV_URL)[0].body).toEqual({ p_conversation_id: CONV, p_muted: false, p_access_mode: "allowlist" });
     } finally {
       await mf.dispose();
     }
@@ -273,8 +276,10 @@ describe("PUT / DELETE /v1/conversations/{id}/mute", () => {
     ["not_member", 403, "not_a_member"],
     ["removed", 403, "removed"],
     ["not_in_pilot", 403, "not_in_pilot"],
-  ])("a caller the database refuses (%s) is %i %s and nothing is written", async (rpcReason, status, reason) => {
-    const s = supabase({ auth: (u) => authRow({ user_id: u, allowed_action: null, reason: rpcReason }) });
+    ["suspended", 403, "suspended"],
+    ["not_found", 404, "not_found"],
+  ])("a caller the database refuses (%s) is %i %s and no limiter write happens", async (rpcReason, status, reason) => {
+    supabase({ muteConv: (u) => ({ user_id: u, reason: rpcReason }) });
     const { mf, db } = await localD1();
     try {
       for (const method of ["PUT", "DELETE"]) {
@@ -282,14 +287,15 @@ describe("PUT / DELETE /v1/conversations/{id}/mute", () => {
         expect(res.status).toBe(status);
         expect(await reasonOf(res)).toBe(reason);
       }
-      expect(s.of(MUTE_URL)).toHaveLength(0);
+      const none = await db.prepare("SELECT COUNT(*) AS n FROM rate_limits").first<{ n: number }>();
+      expect(none?.n).toBe(0);
     } finally {
       await mf.dispose();
     }
   });
 
-  it("a member of an ended game may still mute (read-only grant)", async () => {
-    supabase({ auth: (u) => authRow({ user_id: u, allowed_action: "read", reason: "game_ended" }) });
+  it("a member of an ended game may still mute (the database applies it)", async () => {
+    supabase();
     const { mf, db } = await localD1();
     try {
       expect((await call("PUT", mutePath, db)).status).toBe(204);
@@ -298,13 +304,15 @@ describe("PUT / DELETE /v1/conversations/{id}/mute", () => {
     }
   });
 
-  it("the database's own not_member from msg_set_muted is 403 not_a_member", async () => {
-    supabase({ mute: () => new Response(JSON.stringify({ code: "42501", message: "not_member" }), { status: 403 }) });
+  it("a malformed row or an upstream failure fails closed (502); a rejected token is 401", async () => {
+    supabase({ muteConv: () => ({ reason: null }) });
     const { mf, db } = await localD1();
     try {
-      const res = await call("PUT", mutePath, db);
-      expect(res.status).toBe(403);
-      expect(await reasonOf(res)).toBe("not_a_member");
+      expect((await call("PUT", mutePath, db)).status).toBe(502);
+      vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 500 })));
+      expect((await call("PUT", mutePath, db)).status).toBe(502);
+      vi.stubGlobal("fetch", vi.fn(async () => new Response("{}", { status: 401 })));
+      expect((await call("PUT", mutePath, db)).status).toBe(401);
     } finally {
       await mf.dispose();
     }

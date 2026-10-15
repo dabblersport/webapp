@@ -33,3 +33,26 @@ BEGIN;
 set local role anon;
 select public.msg_game_conversation(:'game_live', 'all');   -- expect permission denied (no EXECUTE for anon)
 ROLLBACK;
+
+-- M1 an active member mutes and unmutes in one call, idempotently; the muted flag is what msg_game_conversation returns.
+BEGIN;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'host_user', 'role', 'authenticated')::text, true);
+select conversation_id as conv from public.msg_game_conversation(:'game_live', 'all') \gset
+select reason is null as applied from public.msg_mute_conversation(:'conv', true, 'all');
+select reason is null as applied_again from public.msg_mute_conversation(:'conv', true, 'all');
+select muted as is_muted from public.msg_game_conversation(:'game_live', 'all');
+select reason is null as unmuted from public.msg_mute_conversation(:'conv', false, 'all');
+select not muted as not_muted from public.msg_game_conversation(:'game_live', 'all');
+ROLLBACK;
+
+-- M2 a stranger is refused with not_member and nothing is written.
+BEGIN;
+set local role authenticated;
+select set_config('request.jwt.claims', json_build_object('sub', :'host_user', 'role', 'authenticated')::text, true);
+select conversation_id as conv from public.msg_game_conversation(:'game_live', 'all') \gset
+select set_config('request.jwt.claims', json_build_object('sub', :'stranger', 'role', 'authenticated')::text, true);
+select reason = 'not_member' as refused from public.msg_mute_conversation(:'conv', true, 'all');
+reset role;
+select not exists (select 1 from public.msg_conversation_members where conversation_id = :'conv' and user_id = :'stranger') as nothing_written;
+ROLLBACK;

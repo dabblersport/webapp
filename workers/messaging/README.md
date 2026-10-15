@@ -263,8 +263,8 @@ The three operations of `docs/messaging/openapi.yaml` that were missing: `getGam
 | Route | Answer | Database calls | D1 |
 |---|---|---|---|
 | `GET /v1/games/{gameId}/conversation` | `200` the contract `Conversation`: `{id, kind:"game", game_id, writable, read_only_reason, boundary, muted, last_seq}` | 1 (`msg_game_conversation`) | 1 limiter write, 1 read of `conversation_seq` |
-| `PUT /v1/conversations/{id}/mute` | `204`, no body, idempotent | 2 (`msg_authorize`, `msg_set_muted`) | 1 limiter write |
-| `DELETE /v1/conversations/{id}/mute` | `204`, no body, idempotent | 2 (same) | 1 limiter write |
+| `PUT /v1/conversations/{id}/mute` | `204`, no body, idempotent | 1 (`msg_mute_conversation`) | 1 limiter write |
+| `DELETE /v1/conversations/{id}/mute` | `204`, no body, idempotent | 1 (same) | 1 limiter write |
 
 - **Authorisation is the database's, with the caller's bearer unchanged.** The game route calls `msg_game_conversation(p_game_id,
   p_access_mode)` (`supabase/migrations/20261015130000_kan563_msg_game_conversation.sql`): it resolves the game's conversation,
@@ -277,16 +277,18 @@ The three operations of `docs/messaging/openapi.yaml` that were missing: `getGam
   before any call; no bearer is `401` before any call.
 - **`last_seq`** comes from D1 `conversation_seq` (0 when no message yet): the highest seq the caller may view, cut at
   `left_at_seq` for a member who left. No message text is read.
-- **Mute/unmute** take the verified user and the typed reasons from `msg_authorize` (so the pilot rule applies, and the limiter is
-  keyed by the verified id), then write with the same `msg_set_muted` call the POST route uses. A read-only grant (ended game,
-  left member) may still mute.
+- **Mute/unmute** make ONE database call: `msg_mute_conversation(p_conversation_id, p_muted, p_access_mode)` (same migration). It
+  takes the user from `auth.uid()` with the caller's bearer, applies `msg_evaluate`'s verdict (the pilot rule included) and writes the
+  flag exactly as `msg_set_muted` does (idempotent), returning the verified user id or the typed reason (`not_in_pilot`,
+  `not_a_member`, `removed`, `suspended`, `not_found`). A read-only grant (ended game, left member) may still mute. The limiter is keyed
+  by the returned id and checked after the call; the write is an idempotent flag, so a `429` that follows it leaves nothing harmful.
 - **Rate limits (D1, same one-row upsert as report):** game conversation 60 a minute per user (scope `game_conv_minute`), mute
   and unmute 30 a minute per user (scope `mute_minute`), `429 rate_limited` + `Retry-After`. A refusal by the database writes
   nothing. No new table or migration on the D1 side.
 - **CORS:** the preflight now allows `GET, POST, PUT, DELETE, OPTIONS`.
 - **needs-ops:** the game route needs `20261015130000_kan563_msg_game_conversation.sql` applied (after KAN-505/KAN-560); until then it
-  answers `502` (no reason). Probes: `supabase/tests/messaging/game_conversation_probes.sql` (authored, not run); rollback:
-  `game_conversation_rollback.sql` (revokes EXECUTE, nothing dropped). Mute/unmute need KAN-560's `msg_set_muted` applied.
+  answers `502` (no reason). The same migration holds `msg_mute_conversation`, so PUT/DELETE answer `502` until it is applied. Probes: `supabase/tests/messaging/game_conversation_probes.sql` (authored, not run); rollback:
+  `game_conversation_rollback.sql` (revokes EXECUTE, nothing dropped). Both new functions need KAN-560's `muted_at` column applied.
 - **Contract notes (no contract change):** (1) an unknown conversation id on mute answers `403 not_a_member`, not `404`: `msg_authorize`
   deliberately returns one reason for a guessed id and a non-member; `not_found` is returned for an unknown GAME on the game route.
   (2) The contract gives no numbers for `rate_limited`; the two limits above are this build's. (3) Mute makes two database calls, not

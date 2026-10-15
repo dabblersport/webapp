@@ -3,4 +3,5 @@
 -- 502 (no reason). Rows the function created in msg_conversations are ordinary game conversations and stay.
 BEGIN;
 REVOKE ALL ON FUNCTION public.msg_game_conversation(uuid, text) FROM PUBLIC, anon, authenticated;
+REVOKE ALL ON FUNCTION public.msg_mute_conversation(uuid, boolean, text) FROM PUBLIC, anon, authenticated;
 COMMIT;
