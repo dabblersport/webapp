@@ -22,6 +22,7 @@ import { preflightResponse, withCors } from "./cors";
 import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
+import { enforceReport, enforceSend } from "./rate_limit";
 
 export const VERSION = "messaging-skeleton/0.0.1";
 
@@ -149,6 +150,9 @@ async function sendMessage(request: Request, env: Env, conversationId: string, c
   if (!auth.ok) return auth.response; // no DB access before an allowed result
   // Closed game or a member who left: the RPC allowed only a read. Refuse with its typed reason.
   if (auth.grant.action !== "send") return reasonError(auth.grant.readOnlyReason ?? "invalid_request");
+  // KAN-548: per verified user, before anything is written. A refused send inserts nothing.
+  const limited = await enforceSend(env.DB, auth.grant.userId, conversationId);
+  if (limited !== null) return limited;
 
   const { row, created } = await insertMessage(env.DB, {
     conversationId,
@@ -190,6 +194,9 @@ async function reportMessage(request: Request, env: Env, messageId: string): Pro
   if (!auth.ok) return auth.response;
   // A member who left may report only what they can still read.
   if (auth.grant.leftAtSeq !== null && target.seq > auth.grant.leftAtSeq) return reasonError("not_a_member");
+  // KAN-548: per verified user, before the report is relayed or the hold is set. A refused report writes nothing.
+  const limited = await enforceReport(env.DB, auth.grant.userId);
+  if (limited !== null) return limited;
 
   let res: Response;
   try {

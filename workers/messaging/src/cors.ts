@@ -54,6 +54,10 @@ export function withCors(request: Request, pathname: string, response: Response)
   const out = new Response(response.body, response);
   out.headers.append("Vary", "Origin");
   const origin = allowedOrigin(request);
-  if (origin !== null) out.headers.set("Access-Control-Allow-Origin", origin);
+  if (origin !== null) {
+    out.headers.set("Access-Control-Allow-Origin", origin);
+    // KAN-548: a browser can read Retry-After on a 429 only if it is exposed.
+    out.headers.set("Access-Control-Expose-Headers", "Retry-After");
+  }
   return out;
 }
