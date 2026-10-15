@@ -2357,5 +2357,15 @@
   "messaging_dm_fallback_name": "مستخدم دابلر",
   "messaging_dm_kind_label": "رسالة مباشرة",
   "messaging_dm_muted_label": "مكتومة",
-  "messaging_dm_read_only_label": "لا يمكنك الرد"
+  "messaging_dm_read_only_label": "لا يمكنك الرد",
+  "messaging_dm_options_title": "خيارات المحادثة",
+  "messaging_dm_menu_mute": "كتم المحادثة",
+  "messaging_dm_menu_unmute": "إلغاء الكتم",
+  "messaging_dm_menu_block": "حظر المستخدم",
+  "messaging_dm_menu_report": "الإبلاغ عنه",
+  "messaging_dm_read_only_you_blocked": "لقد حظرت هذا الشخص، لذا لا يمكنك إرسال رسائل هنا.",
+  "messaging_dm_read_only_blocked_you": "لا يمكنك مراسلة هذا الشخص.",
+  "messaging_dm_read_only_gone": "هذا الحساب لم يعد متاحًا.",
+  "messaging_dm_mute_failed": "تعذّر تغيير إشعارات هذه المحادثة. حاول مرة أخرى.",
+  "messaging_dm_header_hint": "يفتح ملفه الشخصي"
 }

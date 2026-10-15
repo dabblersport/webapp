@@ -5,7 +5,7 @@ import 'package:dabbler/features/messaging/data/fake_messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
-import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
+import 'package:dabbler/features/messaging/presentation/dm_thread_route.dart';
 import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
@@ -108,8 +108,8 @@ Widget _app(FakeMessagingRepository repo, _Variant v, {_Nav? nav}) {
     routes: [
       GoRoute(path: '/', builder: (c, s) => const MessagesListScreen()),
       GoRoute(
-        path: gameChatRoutePath,
-        name: gameChatRouteName,
+        path: dmThreadRoutePath,
+        name: dmThreadRouteName,
         builder: (c, s) {
           nav?.param = s.pathParameters[messagesListDmRouteParam];
           return const SizedBox(key: ValueKey('thread'));

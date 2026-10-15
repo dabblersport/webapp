@@ -22,6 +22,7 @@ import 'package:dabbler/core/config/feature_flags.dart';
 import 'routes/meetups_routes.dart';
 import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
 import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
+import 'package:dabbler/features/messaging/presentation/dm_thread_route.dart';
 import 'routes/notification_routes.dart';
 import 'routes/platform_routes.dart';
 import 'routes/play_places_routes.dart';
@@ -448,6 +449,8 @@ class AppRouter {
     // KAN-549: Messages list; shows the unavailable state unless messaging
     // AND enableMessagingGameChat are on.
     messagesListRoute(parentNavigatorKey: rootNavigatorKey),
+    // KAN-556: the DM thread; same flags gate as the game chat route.
+    dmThreadRoute(parentNavigatorKey: rootNavigatorKey),
     socialEditPostRoute,
     socialAnalyticsRoute,
     adminModerationQueueRoute,

@@ -6531,4 +6531,38 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_dm_read_only_label => 'You can\'t reply';
+
+  @override
+  String get messaging_dm_options_title => 'Conversation options';
+
+  @override
+  String get messaging_dm_menu_mute => 'Mute';
+
+  @override
+  String get messaging_dm_menu_unmute => 'Unmute';
+
+  @override
+  String get messaging_dm_menu_block => 'Block user';
+
+  @override
+  String get messaging_dm_menu_report => 'Report user';
+
+  @override
+  String get messaging_dm_read_only_you_blocked =>
+      'You blocked this person, so you can\'t send messages here.';
+
+  @override
+  String get messaging_dm_read_only_blocked_you =>
+      'You can\'t send messages to this person.';
+
+  @override
+  String get messaging_dm_read_only_gone =>
+      'This account is no longer available.';
+
+  @override
+  String get messaging_dm_mute_failed =>
+      'Couldn\'t change notifications for this chat. Try again.';
+
+  @override
+  String get messaging_dm_header_hint => 'Opens their profile';
 }

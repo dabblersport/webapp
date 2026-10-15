@@ -21,6 +21,7 @@ List<DabblerThreadItem> gameChatThreadItems({
   required DateTime now,
   required void Function(String clientKey) onRetry,
   DateTime? gameEndAt,
+  bool includeSystem = true,
 }) {
   final out = <DabblerThreadItem>[];
   final today = _day(now.toLocal());
@@ -58,6 +59,8 @@ List<DabblerThreadItem> gameChatThreadItems({
 
   for (final item in items) {
     final m = item.message;
+    // A DM (KAN-556) draws no system lines.
+    if (!includeSystem && m != null && m.kind == MessageKind.system) continue;
     final at = (m?.createdAt ?? now).toLocal();
     if (!finishedDrawn && at.isAfter(endLocal!)) finishedRow();
     dateRow(at);
