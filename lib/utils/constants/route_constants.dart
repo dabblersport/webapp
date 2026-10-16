@@ -133,6 +133,7 @@ class RoutePaths {
   // Admin Routes
   static const String adminModerationQueue = '/admin/moderation-queue';
   static const String adminSafetyOverview = '/admin/safety-overview';
+  static const String adminMessageReports = '/admin/message-reports';
 
   // Error Routes
   static const String error = '/error';

@@ -6565,4 +6565,125 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_dm_header_hint => 'Opens their profile';
+
+  @override
+  String get admin_message_reports_title => 'Message reports';
+
+  @override
+  String get admin_message_reports_overview_row => 'Message reports';
+
+  @override
+  String get admin_message_reports_overview_row_hint =>
+      'Reports on chat messages';
+
+  @override
+  String get admin_message_reports_loading => 'Loading reports';
+
+  @override
+  String admin_message_reports_row_id(String id) {
+    return 'Report $id';
+  }
+
+  @override
+  String get admin_message_reports_read_action => 'Read this message';
+
+  @override
+  String get admin_message_reports_panel_title => 'Reported message';
+
+  @override
+  String get admin_message_reports_panel_close => 'Close';
+
+  @override
+  String get admin_message_reports_panel_loading => 'Loading message';
+
+  @override
+  String get admin_message_reports_panel_note =>
+      'Only you can see this. It is not saved.';
+
+  @override
+  String get admin_message_reports_empty_title => 'No message reports';
+
+  @override
+  String get admin_message_reports_empty_body =>
+      'Reports on chat messages appear here.';
+
+  @override
+  String get admin_message_reports_error_title => 'Couldn\'t load reports';
+
+  @override
+  String get admin_message_reports_error_body =>
+      'Check your connection and try again.';
+
+  @override
+  String get admin_message_reports_error_retry => 'Retry';
+
+  @override
+  String get admin_message_reports_refusal_not_a_moderator =>
+      'Only admins can read reported messages.';
+
+  @override
+  String get admin_message_reports_refusal_not_found =>
+      'This message is no longer available.';
+
+  @override
+  String get admin_message_reports_refusal_rate_limited =>
+      'Too many requests. Try again later.';
+
+  @override
+  String get admin_message_reports_refusal_other =>
+      'Couldn\'t load this message. Try again.';
+
+  @override
+  String get admin_message_reports_reason_spam => 'Spam';
+
+  @override
+  String get admin_message_reports_reason_abuse => 'Abuse';
+
+  @override
+  String get admin_message_reports_reason_hate => 'Hate';
+
+  @override
+  String get admin_message_reports_reason_harassment => 'Harassment';
+
+  @override
+  String get admin_message_reports_reason_nudity => 'Nudity';
+
+  @override
+  String get admin_message_reports_reason_illegal => 'Illegal';
+
+  @override
+  String get admin_message_reports_reason_danger => 'Danger';
+
+  @override
+  String get admin_message_reports_reason_scam => 'Scam';
+
+  @override
+  String get admin_message_reports_reason_impersonation => 'Impersonation';
+
+  @override
+  String get admin_message_reports_reason_other => 'Other';
+
+  @override
+  String get admin_message_reports_reason_unknown => 'Unspecified reason';
+
+  @override
+  String get admin_message_reports_status_open => 'Open';
+
+  @override
+  String get admin_message_reports_status_triage => 'In review';
+
+  @override
+  String get admin_message_reports_status_escalated => 'Escalated';
+
+  @override
+  String get admin_message_reports_status_resolved => 'Resolved';
+
+  @override
+  String get admin_message_reports_status_dismissed => 'Dismissed';
+
+  @override
+  String get admin_message_reports_status_duplicate => 'Duplicate';
+
+  @override
+  String get admin_message_reports_status_unknown => 'Unknown status';
 }
