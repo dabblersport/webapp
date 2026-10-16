@@ -12040,6 +12040,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Unknown status'**
   String get admin_message_reports_status_unknown;
+
+  /// KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Message'**
+  String get messaging_dm_action_label;
+
+  /// KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review. Screen-reader label of the icon button.
+  ///
+  /// In en, this message translates to:
+  /// **'Send a direct message'**
+  String get messaging_dm_action_semantic;
 }
 
 class _AppLocalizationsDelegate

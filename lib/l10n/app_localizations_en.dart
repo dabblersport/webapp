@@ -6686,4 +6686,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get admin_message_reports_status_unknown => 'Unknown status';
+
+  @override
+  String get messaging_dm_action_label => 'Message';
+
+  @override
+  String get messaging_dm_action_semantic => 'Send a direct message';
 }

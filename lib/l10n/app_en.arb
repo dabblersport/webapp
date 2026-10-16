@@ -2437,5 +2437,9 @@
   "admin_message_reports_status_duplicate": "Duplicate",
   "@admin_message_reports_status_duplicate": {"description": "KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review."},
   "admin_message_reports_status_unknown": "Unknown status",
-  "@admin_message_reports_status_unknown": {"description": "KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review."}
+  "@admin_message_reports_status_unknown": {"description": "KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_action_label": "Message",
+  "@messaging_dm_action_label": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_action_semantic": "Send a direct message",
+  "@messaging_dm_action_semantic": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review. Screen-reader label of the icon button."}
 }

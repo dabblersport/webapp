@@ -6733,4 +6733,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get admin_message_reports_status_unknown => 'حالة غير معروفة';
+
+  @override
+  String get messaging_dm_action_label => 'مراسلة';
+
+  @override
+  String get messaging_dm_action_semantic => 'إرسال رسالة مباشرة';
 }
