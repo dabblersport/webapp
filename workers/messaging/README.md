@@ -292,3 +292,13 @@ The three operations of `docs/messaging/openapi.yaml` that were missing: `getGam
 - **Contract notes (no contract change):** (1) an unknown conversation id on mute answers `403 not_a_member`, not `404`: `msg_evaluate`
   deliberately returns one reason for a guessed id and a non-member; `not_found` is returned for an unknown GAME on the game route.
   (2) The contract gives no numbers for `rate_limited`; the two limits above are this build's. (3) The mute limiter is checked after the single database call (it needs the verified id from it); the write is an idempotent flag.
+
+### Rate-limit order for game conversation and mute (KAN-563, orchestrator ruling 2026-10-16)
+The per-user limiter for `GET /v1/games/{gameId}/conversation` (`game_conv_minute`, 60 a minute) and for `PUT`/`DELETE .../mute`
+(`mute_minute`, 30 a minute) is checked **after** the database call, keyed by the **verified user id** the database returns. The Worker has
+no verified id before that call (it never reads the token), so a pre-call limit would need an unverified key (a token hash) or a limiter
+in the database; both were ruled out. This is safe because both operations are idempotent: the mute flag is an upsert, and the game
+conversation row is created once and read afterwards, so an over-limit call changes nothing a normal call would not. A refused request
+returns `429 rate_limited` with `Retry-After`; a request the database refuses writes no limiter row. The cost guard allows mute the
+two-call form (`msg_authorize` + `msg_set_muted`, as KAN-561's POST route); the build uses the single-call `msg_mute_conversation`
+from the same authored migration instead, which is cheaper and gives the same typed reasons.
