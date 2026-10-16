@@ -91,9 +91,12 @@ class _ProfileMessageActionState extends ConsumerState<ProfileMessageAction> {
     final blockedAsync = ref.watch(isUserBlockedProvider(targetId));
     final blocked = blockedAsync.maybeWhen(data: (v) => v, orElse: () => false);
 
-    final button = DabblerButton.icon(
+    final button = DabblerButton(
       key: ProfileMessageAction.buttonKey,
-      icon: 'sms',
+      // Text only: an icon beside the label overflows a half-width button on
+      // a 360dp screen.
+      label: l10n.messaging_dm_action_label,
+      fullWidth: true,
       semanticLabel: blocked
           ? l10n.user_profile_cannot_message_blocked
           : l10n.messaging_dm_action_semantic,
@@ -107,6 +110,47 @@ class _ProfileMessageActionState extends ConsumerState<ProfileMessageAction> {
     return DabblerTooltip(
       message: l10n.user_profile_cannot_message_blocked,
       child: button,
+    );
+  }
+}
+
+/// The Follow + Message row on another user's profile (KAN-557). Side by side
+/// with equal widths and a gap; stacked when the text scale is large enough
+/// that two labelled buttons would not fit on one line (200% text).
+class ProfileActionButtons extends StatelessWidget {
+  const ProfileActionButtons({
+    super.key,
+    required this.follow,
+    required this.message,
+  });
+
+  final Widget follow;
+
+  /// Null when the Message action is gated off.
+  final Widget? message;
+
+  /// Above this text scale the two buttons stack.
+  static const double stackAboveScale = 1.3;
+
+  @override
+  Widget build(BuildContext context) {
+    final message = this.message;
+    if (message == null) return follow;
+    final stacked =
+        MediaQuery.textScalerOf(context).scale(10) / 10 > stackAboveScale;
+    if (stacked) {
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [follow, const DabblerGap.v(DabblerSpacing.space3), message],
+      );
+    }
+    return Row(
+      children: [
+        Expanded(child: follow),
+        const DabblerGap.h(DabblerSpacing.space3),
+        Expanded(child: message),
+      ],
     );
   }
 }

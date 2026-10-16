@@ -6498,6 +6498,9 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا يمكنك إرسال رسائل في هذه الدردشة. ارجع.';
 
   @override
+  String get messaging_reason_under_age => 'المراسلة متاحة لمن بلغوا 16 عامًا.';
+
+  @override
   String get messaging_reason_suspended =>
       'تم إيقاف الدردشة في حسابك. إن كنت ترى أن هذا خطأ، تواصل مع الدعم.';
 

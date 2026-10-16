@@ -232,8 +232,10 @@ void main() {
         );
       }
       // ...and the Dart enum adds only the two client-side reasons.
+      // `under_age` is a DM reason from the Worker's start-DM call (KAN-557),
+      // outside this game-chat contract.
       final dartServer = MessagingReason.values
-          .where((r) => r.isServerReason)
+          .where((r) => r.isServerReason && r != MessagingReason.underAge)
           .map((r) => r.wireName)
           .toSet();
       expect(dartServer, contract.toSet());

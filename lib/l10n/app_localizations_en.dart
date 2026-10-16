@@ -6448,6 +6448,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can\'t send messages in this chat. Go back.';
 
   @override
+  String get messaging_reason_under_age =>
+      'Messaging is available from age 16.';
+
+  @override
   String get messaging_reason_suspended =>
       'Chat is turned off for your account. Contact support if you think this is a mistake.';
 

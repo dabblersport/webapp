@@ -68,16 +68,34 @@ Widget _app(
   String? target = _target,
   bool blocked = false,
   _Nav? nav,
+  bool inRow = false,
 }) {
   final router = GoRouter(
     initialLocation: '/',
     routes: [
       GoRoute(
         path: '/',
-        builder: (c, s) => Center(
-          key: _profileKey,
-          child: ProfileMessageAction(targetAuthUserId: target),
-        ),
+        builder: (c, s) => inRow
+            ? Padding(
+                key: _profileKey,
+                padding: const EdgeInsets.all(16),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ProfileActionButtons(
+                    follow: DabblerButton(
+                      key: _followKey,
+                      label: 'Follow',
+                      fullWidth: true,
+                      onPressed: () {},
+                    ),
+                    message: ProfileMessageAction(targetAuthUserId: target),
+                  ),
+                ),
+              )
+            : Center(
+                key: _profileKey,
+                child: ProfileMessageAction(targetAuthUserId: target),
+              ),
       ),
       GoRoute(
         path: dmThreadRoutePath,
@@ -125,6 +143,8 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
+const _followKey = ValueKey<String>('follow');
+
 Finder get _button => find.byKey(ProfileMessageAction.buttonKey);
 
 DabblerButton _btn(WidgetTester tester) =>
@@ -150,7 +170,46 @@ void main() {
         final b = _btn(tester);
         expect(b.disabled, isFalse);
         expect(b.semanticLabel, _l10n(tester).messaging_dm_action_semantic);
+        // A labelled button, as in the design: the visible text is the label.
+        expect(b.label, _l10n(tester).messaging_dm_action_label);
+        expect(
+          find.descendant(
+            of: _button,
+            matching: find.text(_l10n(tester).messaging_dm_action_label),
+          ),
+          findsOneWidget,
+        );
         expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('Follow and Message lay out without overflow', (
+        tester,
+      ) async {
+        final repo = FakeMessagingRepository(currentUserId: _viewer);
+        await tester.binding.setSurfaceSize(const Size(360, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          _app(v, repo: repo, toasts: toasts, inRow: true),
+        );
+        await _settle(tester);
+        expect(tester.takeException(), isNull);
+        final l10n = _l10n(tester);
+        expect(find.text(l10n.messaging_dm_action_label), findsOneWidget);
+        expect(find.text('Follow'), findsOneWidget);
+        final follow = tester.getRect(find.byKey(_followKey));
+        final message = tester.getRect(_button);
+        if (v.scale > ProfileActionButtons.stackAboveScale) {
+          expect(message.top, greaterThanOrEqualTo(follow.bottom));
+        } else {
+          expect(message.top, follow.top);
+          expect(message.width, closeTo(follow.width, 0.5));
+          // Message follows Follow in reading order.
+          final isRtl = v.locale.languageCode == 'ar';
+          expect(
+            isRtl ? message.right <= follow.left : message.left >= follow.right,
+            isTrue,
+          );
+        }
       });
 
       for (final c in [
@@ -242,11 +301,10 @@ void main() {
               text: (l) => l.messaging_reason_blocked,
             ),
             (
-              // `under_age` has no MessagingReason yet; it decodes as unknown.
-              name: 'under_age (decodes as unknown)',
+              name: 'under_age',
               arm: (r) =>
-                  r.failNextDm(FakeDmOp.startDm, MessagingReason.unknown),
-              text: (l) => l.messaging_reason_unknown,
+                  r.failNextDm(FakeDmOp.startDm, MessagingReason.underAge),
+              text: (l) => l.messaging_reason_under_age,
             ),
             (
               name: 'rate_limited',

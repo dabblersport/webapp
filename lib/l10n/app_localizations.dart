@@ -11609,6 +11609,12 @@ abstract class AppLocalizations {
   /// **'You can\'t send messages in this chat. Go back.'**
   String get messaging_reason_blocked;
 
+  /// KAN-557 Shown when starting a DM is refused with under_age. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Messaging is available from age 16.'**
+  String get messaging_reason_under_age;
+
   /// No description provided for @messaging_reason_suspended.
   ///
   /// In en, this message translates to:

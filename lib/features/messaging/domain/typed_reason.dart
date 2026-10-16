@@ -16,6 +16,9 @@ enum MessagingReason {
   gameCancelled('game_cancelled', FailureCode.conflict),
   blocked('blocked', FailureCode.forbidden),
   suspended('suspended', FailureCode.forbidden),
+  // Starting a DM below the messaging minimum age (KAN-557). A DM reason sent
+  // by the Worker; not in the game-chat `openapi.yaml` Reason enum.
+  underAge('under_age', FailureCode.forbidden),
   rateLimited('rate_limited', FailureCode.rateLimited),
   notFound('not_found', FailureCode.notFound),
   invalidRequest('invalid_request', FailureCode.validation),

@@ -347,29 +347,24 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         .profile
         ?.userId;
 
-    return Row(
-      children: [
-        Expanded(
-          child: (myProfileId == null || targetProfileId == null)
-              ? DabblerButton(
-                  label: AppLocalizations.of(context).user_profile_btn_loading,
-                  tone: DabblerButtonTone.outlined,
-                  loading: true,
-                  fullWidth: true,
-                )
-              : _buildFollowButton(
-                  context,
-                  myProfileId: myProfileId,
-                  targetProfileId: targetProfileId,
-                ),
-        ),
-        // KAN-557: the Message action draws nothing unless the messaging
-        // and direct-message flags are on, so the gap goes with it.
-        if (FeatureFlags.messaging && FeatureFlags.enableMessagingDirect) ...[
-          const DabblerGap.h(DabblerSpacing.space3),
-          ProfileMessageAction(targetAuthUserId: targetAuthUserId),
-        ],
-      ],
+    return ProfileActionButtons(
+      follow: (myProfileId == null || targetProfileId == null)
+          ? DabblerButton(
+              label: AppLocalizations.of(context).user_profile_btn_loading,
+              tone: DabblerButtonTone.outlined,
+              loading: true,
+              fullWidth: true,
+            )
+          : _buildFollowButton(
+              context,
+              myProfileId: myProfileId,
+              targetProfileId: targetProfileId,
+            ),
+      // KAN-557: the Message action draws nothing unless the messaging and
+      // direct-message flags are on, so the gap goes with it.
+      message: (FeatureFlags.messaging && FeatureFlags.enableMessagingDirect)
+          ? ProfileMessageAction(targetAuthUserId: targetAuthUserId)
+          : null,
     );
   }
 
