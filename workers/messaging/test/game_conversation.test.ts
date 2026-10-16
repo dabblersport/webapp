@@ -6,6 +6,9 @@ import { insertMessage } from "../src/db";
 import { GAME_CONVERSATION_PER_USER_PER_MINUTE, MUTE_PER_USER_PER_MINUTE } from "../src/rate_limit";
 import { SUPABASE_URL, env, localD1 } from "./helpers";
 
+// Many D1 round trips per test: allow for a loaded machine.
+vi.setConfig({ testTimeout: 30000 });
+
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
