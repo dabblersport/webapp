@@ -37,6 +37,12 @@ class FeatureFlags {
   /// true (see [messagingFlagsConsistent]). Keep false until the pilot.
   static const bool enableMessagingGameChat = false;
 
+  /// Messaging direct messages from a profile (KAN-557). Compile-time; a
+  /// sub-flag of [messaging], which stays the master kill switch: the
+  /// "Message" action on another user's profile is drawn only when both are
+  /// true. Keep false until the pilot.
+  static const bool enableMessagingDirect = false;
+
   /// Reporting of messages to moderation (KAN-507, KAN-496 report 5.1).
   /// INVARIANT: must be true whenever any chat flag ([messaging],
   /// [enableMessagingGameChat]) is true — chat never ships without a way to

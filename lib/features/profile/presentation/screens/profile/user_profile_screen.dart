@@ -16,6 +16,7 @@ import 'package:dabbler/data/models/profile/sports_profile.dart';
 import '../../models/sport_profile_route_args.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile_message_action.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show userPostsProvider, sportsProvider;
@@ -341,35 +342,29 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     // Use the same profile ID displayed on screen (from profileControllerProvider)
     // to ensure counters, follow state, and follow actions all reference the same profile.
     final targetProfileId = ref.watch(profileControllerProvider).profile?.id;
+    final targetAuthUserId = ref
+        .watch(profileControllerProvider)
+        .profile
+        ?.userId;
 
-    return Row(
-      children: [
-        Expanded(
-          child: (myProfileId == null || targetProfileId == null)
-              ? DabblerButton(
-                  label: AppLocalizations.of(context).user_profile_btn_loading,
-                  tone: DabblerButtonTone.outlined,
-                  loading: true,
-                  fullWidth: true,
-                )
-              : _buildFollowButton(
-                  context,
-                  myProfileId: myProfileId,
-                  targetProfileId: targetProfileId,
-                ),
-        ),
-        // KAN-45: chat isn't wired up (this route only reaches a
-        // "Coming Soon" placeholder) — hide the button until it ships.
-        if (FeatureFlags.messaging) ...[
-          const DabblerGap.h(DabblerSpacing.space3),
-          DabblerButton.icon(
-            icon: 'sms',
-            semanticLabel: AppLocalizations.of(context).contact_message,
-            tone: DabblerButtonTone.outlined,
-            onPressed: () => _sendMessage(context),
-          ),
-        ],
-      ],
+    return ProfileActionButtons(
+      follow: (myProfileId == null || targetProfileId == null)
+          ? DabblerButton(
+              label: AppLocalizations.of(context).user_profile_btn_loading,
+              tone: DabblerButtonTone.outlined,
+              loading: true,
+              fullWidth: true,
+            )
+          : _buildFollowButton(
+              context,
+              myProfileId: myProfileId,
+              targetProfileId: targetProfileId,
+            ),
+      // KAN-557: the Message action draws nothing unless the messaging and
+      // direct-message flags are on, so the gap goes with it.
+      message: (FeatureFlags.messaging && FeatureFlags.enableMessagingDirect)
+          ? ProfileMessageAction(targetAuthUserId: targetAuthUserId)
+          : null,
     );
   }
 
@@ -471,22 +466,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   /// to widget.userId.
   String? _targetAuthUserId() =>
       ref.read(profileControllerProvider).profile?.userId;
-
-  void _sendMessage(BuildContext context) {
-    final userId = _targetAuthUserId();
-    if (userId == null) return;
-    // Gate chat entry on block status
-    final isBlocked = ref.read(isUserBlockedProvider(userId));
-    isBlocked.whenData((blocked) {
-      if (blocked) {
-        _toast(
-          AppLocalizations.of(context).user_profile_cannot_message_blocked,
-        );
-        return;
-      }
-      context.push('${RoutePaths.socialChat}/$userId');
-    });
-  }
 
   Future<void> _toggleFollow(
     BuildContext context, {

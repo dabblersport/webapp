@@ -6448,6 +6448,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can\'t send messages in this chat. Go back.';
 
   @override
+  String get messaging_reason_under_age =>
+      'Messaging is available from age 16.';
+
+  @override
   String get messaging_reason_suspended =>
       'Chat is turned off for your account. Contact support if you think this is a mistake.';
 
@@ -6686,4 +6690,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get admin_message_reports_status_unknown => 'Unknown status';
+
+  @override
+  String get messaging_dm_action_label => 'Message';
+
+  @override
+  String get messaging_dm_action_semantic => 'Send a direct message';
 }

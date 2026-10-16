@@ -2299,6 +2299,8 @@
   "messaging_reason_not_a_member": "Only players in this game can use this chat. Go back.",
   "messaging_reason_left_read_only": "You left this game. You can read earlier messages but can't send new ones.",
   "messaging_reason_blocked": "You can't send messages in this chat. Go back.",
+  "messaging_reason_under_age": "Messaging is available from age 16.",
+  "@messaging_reason_under_age": {"description": "KAN-557 Shown when starting a DM is refused with under_age. Arabic is PROVISIONAL pending content review."},
   "messaging_reason_suspended": "Chat is turned off for your account. Contact support if you think this is a mistake.",
   "messaging_reason_rate_limited": "You're sending messages too fast. Wait a moment, then try again.",
   "messaging_reason_not_found": "We couldn't find this chat. Go back and open it again.",
@@ -2437,5 +2439,9 @@
   "admin_message_reports_status_duplicate": "Duplicate",
   "@admin_message_reports_status_duplicate": {"description": "KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review."},
   "admin_message_reports_status_unknown": "Unknown status",
-  "@admin_message_reports_status_unknown": {"description": "KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review."}
+  "@admin_message_reports_status_unknown": {"description": "KAN-552 admin Reports screen. Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_action_label": "Message",
+  "@messaging_dm_action_label": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review."},
+  "messaging_dm_action_semantic": "Send a direct message",
+  "@messaging_dm_action_semantic": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review. Screen-reader label of the icon button."}
 }

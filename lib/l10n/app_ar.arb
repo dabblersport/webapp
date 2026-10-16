@@ -2333,6 +2333,7 @@
   "messaging_reason_not_a_member": "دردشة المباراة للاعبيها فقط. ارجع.",
   "messaging_reason_left_read_only": "غادرت هذه المباراة. يمكنك قراءة الرسائل السابقة دون إرسال رسائل جديدة.",
   "messaging_reason_blocked": "لا يمكنك إرسال رسائل في هذه الدردشة. ارجع.",
+  "messaging_reason_under_age": "المراسلة متاحة لمن بلغوا 16 عامًا.",
   "messaging_reason_suspended": "تم إيقاف الدردشة في حسابك. إن كنت ترى أن هذا خطأ، تواصل مع الدعم.",
   "messaging_reason_rate_limited": "ترسل الرسائل بسرعة كبيرة. انتظر قليلًا ثم حاول مرة أخرى.",
   "messaging_reason_not_found": "لم نعثر على هذه الدردشة. ارجع وافتحها من جديد.",
@@ -2404,5 +2405,7 @@
   "admin_message_reports_status_resolved": "تمّت المعالجة",
   "admin_message_reports_status_dismissed": "مرفوض",
   "admin_message_reports_status_duplicate": "مكرّر",
-  "admin_message_reports_status_unknown": "حالة غير معروفة"
+  "admin_message_reports_status_unknown": "حالة غير معروفة",
+  "messaging_dm_action_label": "مراسلة",
+  "messaging_dm_action_semantic": "إرسال رسالة مباشرة"
 }
