@@ -37,6 +37,12 @@ class FeatureFlags {
   /// true (see [messagingFlagsConsistent]). Keep false until the pilot.
   static const bool enableMessagingGameChat = false;
 
+  /// One-to-one direct messages (KAN-557, CEO ruling 2026-10-15): the Message
+  /// action on another user's profile. A sub-flag of [messaging], which stays
+  /// the master kill switch: the action shows only when both are true. Keep
+  /// false; only the launch ticket may turn it true.
+  static const bool enableMessagingDirect = false;
+
   /// Reporting of messages to moderation (KAN-507, KAN-496 report 5.1).
   /// INVARIANT: must be true whenever any chat flag ([messaging],
   /// [enableMessagingGameChat]) is true — chat never ships without a way to
@@ -277,6 +283,7 @@ class FeatureFlags {
       if (socialFeed) 'social_feed',
       if (messaging) 'messaging',
       if (enableMessagingGameChat) 'messaging_game_chat',
+      if (enableMessagingDirect) 'messaging_direct',
       if (enableMessagingReporting) 'messaging_reporting',
       if (messagingRealtime) 'messaging_realtime',
       if (notifications) 'notifications',
@@ -300,6 +307,8 @@ class FeatureFlags {
         return messaging;
       case 'messaging_game_chat':
         return enableMessagingGameChat;
+      case 'messaging_direct':
+        return enableMessagingDirect;
       case 'messaging_reporting':
         return enableMessagingReporting;
       case 'messaging_realtime':

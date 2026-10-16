@@ -16,6 +16,8 @@ import 'package:dabbler/features/rewards/presentation/screens/rewards_screen.dar
 import 'package:dabbler/features/misc/presentation/screens/help_center_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/transactions_screen.dart';
 import 'package:dabbler/features/admin/presentation/screens/moderation_queue_screen.dart';
+import 'package:dabbler/features/admin/presentation/message_reports_route.dart';
+import 'package:dabbler/features/admin/presentation/screens/message_reports_screen.dart';
 import 'package:dabbler/features/admin/presentation/screens/safety_overview_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
@@ -243,4 +245,25 @@ RouteBase get errorMessageRoute =>
           child: ErrorPage(message: message),
         );
       },
+    );
+
+// KAN-552: admin-only message reports. Flags off, no session or a non-admin
+// land away from it (see messageReportsRedirect); the screen also draws
+// nothing for anyone else.
+RouteBase get adminMessageReportsRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.adminMessageReports,
+      redirect: (context, state) => messageReportsRedirect(
+        flagsOn: FeatureFlags.messaging && FeatureFlags.enableMessagingReporting,
+        hasSession: Supabase.instance.client.auth.currentSession != null,
+        isAdmin: () async =>
+            await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn) ==
+            true,
+      ),
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const MessageReportsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
     );

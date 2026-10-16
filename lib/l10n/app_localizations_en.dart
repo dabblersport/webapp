@@ -6510,6 +6510,90 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_list_fallback_unknown_sport => 'Game';
 
   @override
+  String get admin_message_reports_title => 'Message reports';
+
+  @override
+  String get admin_message_reports_entry_subtitle =>
+      'Reported messages, newest first';
+
+  @override
+  String get admin_message_reports_loading => 'Loading reports';
+
+  @override
+  String get admin_message_reports_empty => 'No message reports';
+
+  @override
+  String get admin_message_reports_error_title => 'Couldn\'t load reports';
+
+  @override
+  String get admin_message_reports_error_body =>
+      'Check your connection and try again.';
+
+  @override
+  String get admin_message_reports_retry => 'Retry';
+
+  @override
+  String admin_message_reports_report_id(String id) {
+    return 'Report $id';
+  }
+
+  @override
+  String get admin_message_reports_read_action => 'Read this message';
+
+  @override
+  String get admin_message_reports_reading => 'Reading';
+
+  @override
+  String get admin_message_reports_panel_title => 'Reported message';
+
+  @override
+  String get admin_message_reports_panel_note =>
+      'Only you can see this. It is cleared when you close it.';
+
+  @override
+  String get admin_message_reports_panel_close => 'Close';
+
+  @override
+  String get admin_message_reports_refusal_not_moderator =>
+      'Only administrators can read reported messages.';
+
+  @override
+  String get admin_message_reports_refusal_not_found =>
+      'This message is no longer available.';
+
+  @override
+  String get admin_message_reports_refusal_rate_limited =>
+      'Too many attempts. Try again in a moment.';
+
+  @override
+  String get admin_message_reports_refusal_failed =>
+      'Couldn\'t open the message. Try again.';
+
+  @override
+  String get admin_message_reports_status_open => 'Open';
+
+  @override
+  String get admin_message_reports_status_triage => 'In triage';
+
+  @override
+  String get admin_message_reports_status_escalated => 'Escalated';
+
+  @override
+  String get admin_message_reports_status_resolved => 'Resolved';
+
+  @override
+  String get admin_message_reports_status_dismissed => 'Dismissed';
+
+  @override
+  String get admin_message_reports_status_duplicate => 'Duplicate';
+
+  @override
+  String get admin_message_reports_status_unknown => 'Unknown';
+
+  @override
+  String get admin_message_reports_reason_unknown => 'Other';
+
+  @override
   String get messaging_reason_dm_cap_reached =>
       'You\'ve started as many new conversations as you can today. Try again tomorrow.';
 
@@ -6565,4 +6649,29 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_dm_header_hint => 'Opens their profile';
+
+  @override
+  String get messaging_dm_action_label => 'Message';
+
+  @override
+  String get messaging_dm_action_opening => 'Opening chat';
+
+  @override
+  String get messaging_dm_action_blocked => 'You can\'t message this person.';
+
+  @override
+  String get messaging_dm_action_under_age =>
+      'Direct messages aren\'t available for this account.';
+
+  @override
+  String get messaging_dm_action_rate_limited =>
+      'You\'re doing that too fast. Wait a moment, then try again.';
+
+  @override
+  String get messaging_dm_action_cap_reached =>
+      'You\'ve started as many new conversations as you can today. Try again tomorrow.';
+
+  @override
+  String get messaging_dm_action_failed =>
+      'Couldn\'t open the chat. Try again.';
 }

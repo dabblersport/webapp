@@ -2,11 +2,14 @@ import 'dart:math' as math;
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/domain/message_reports_repository.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
+import 'package:dabbler/features/messaging/domain/models/message_report.dart';
+import 'package:dabbler/features/messaging/domain/models/reported_message.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
@@ -41,7 +44,11 @@ enum FakeDmOp { startDm, setMuted }
 /// Ids and time are deterministic through the injectable [clock] and
 /// [idGenerator].
 class FakeMessagingRepository
-    implements MessagingRepository, MyConversationsRepository, DmRepository {
+    implements
+        MessagingRepository,
+        MyConversationsRepository,
+        DmRepository,
+        MessageReportsRepository {
   FakeMessagingRepository({
     DateTime Function()? clock,
     String Function()? idGenerator,
@@ -94,6 +101,86 @@ class FakeMessagingRepository
     _myConversations
       ..clear()
       ..addAll(chats);
+  }
+
+  // ---- Admin message reports (KAN-552) -------------------------------------
+
+  final List<MessageReport> _messageReports = [];
+  final Map<String, String> _reportedTexts = {};
+  final List<MessageReportsRefusal> _reportsListNext = [];
+  final List<MessageReportsRefusal> _reportsReadNext = [];
+
+  /// When set, [listMessageReports] waits this long before answering (the
+  /// Reports screen's loading state).
+  Duration? messageReportsDelay;
+
+  /// How many times [listMessageReports] was called.
+  int messageReportsListCalls = 0;
+
+  /// The report id of every [readReportedMessage] call, in order (one entry
+  /// per call, so a test can assert one read per tap).
+  final List<String> reportedMessageReads = [];
+
+  /// Replaces the reports returned by [listMessageReports] and the text each
+  /// report's message reads as. Test data only.
+  void seedMessageReports(
+    List<MessageReport> reports, {
+    Map<String, String> texts = const {},
+  }) {
+    _messageReports
+      ..clear()
+      ..addAll(reports);
+    _reportedTexts
+      ..clear()
+      ..addAll(texts);
+  }
+
+  /// The next [listMessageReports] fails with [refusal]; later calls succeed.
+  void failNextMessageReportsList(MessageReportsRefusal refusal) =>
+      _reportsListNext.add(refusal);
+
+  /// The next [readReportedMessage] fails with [refusal]; later calls succeed.
+  void failNextReportedMessageRead(MessageReportsRefusal refusal) =>
+      _reportsReadNext.add(refusal);
+
+  @override
+  Future<Result<List<MessageReport>, Failure>> listMessageReports({
+    int? limit,
+  }) async {
+    messageReportsListCalls++;
+    final delay = messageReportsDelay;
+    if (delay != null) await Future<void>.delayed(delay);
+    if (offline) {
+      return Err(MessageReportsFailure(MessageReportsRefusal.failed));
+    }
+    if (_reportsListNext.isNotEmpty) {
+      return Err(MessageReportsFailure(_reportsListNext.removeAt(0)));
+    }
+    final sorted = [..._messageReports]
+      ..sort((a, b) {
+        final c = b.createdAt.compareTo(a.createdAt);
+        return c != 0 ? c : b.reportId.compareTo(a.reportId);
+      });
+    final size = math.min(math.max(limit ?? 50, 1), 100);
+    return Ok(List.unmodifiable(sorted.take(size)));
+  }
+
+  @override
+  Future<Result<ReportedMessage, Failure>> readReportedMessage(
+    String reportId,
+  ) async {
+    reportedMessageReads.add(reportId);
+    if (offline) {
+      return Err(MessageReportsFailure(MessageReportsRefusal.failed));
+    }
+    if (_reportsReadNext.isNotEmpty) {
+      return Err(MessageReportsFailure(_reportsReadNext.removeAt(0)));
+    }
+    final text = _reportedTexts[reportId];
+    if (text == null) {
+      return Err(MessageReportsFailure(MessageReportsRefusal.notFound));
+    }
+    return Ok(ReportedMessage(reportId: reportId, text: text));
   }
 
   /// How many times [sendTextMessage] was called (including failed calls).

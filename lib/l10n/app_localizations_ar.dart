@@ -6559,6 +6559,90 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messaging_list_fallback_unknown_sport => 'مباراة';
 
   @override
+  String get admin_message_reports_title => 'بلاغات الرسائل';
+
+  @override
+  String get admin_message_reports_entry_subtitle =>
+      'الرسائل المبلّغ عنها، الأحدث أولاً';
+
+  @override
+  String get admin_message_reports_loading => 'جارٍ تحميل البلاغات';
+
+  @override
+  String get admin_message_reports_empty => 'لا توجد بلاغات عن رسائل';
+
+  @override
+  String get admin_message_reports_error_title => 'تعذّر تحميل البلاغات';
+
+  @override
+  String get admin_message_reports_error_body =>
+      'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get admin_message_reports_retry => 'إعادة المحاولة';
+
+  @override
+  String admin_message_reports_report_id(String id) {
+    return 'بلاغ $id';
+  }
+
+  @override
+  String get admin_message_reports_read_action => 'قراءة هذه الرسالة';
+
+  @override
+  String get admin_message_reports_reading => 'جارٍ القراءة';
+
+  @override
+  String get admin_message_reports_panel_title => 'الرسالة المبلّغ عنها';
+
+  @override
+  String get admin_message_reports_panel_note =>
+      'تظهر لك وحدك وتُمسح عند إغلاقها.';
+
+  @override
+  String get admin_message_reports_panel_close => 'إغلاق';
+
+  @override
+  String get admin_message_reports_refusal_not_moderator =>
+      'قراءة الرسائل المبلّغ عنها متاحة للمشرفين فقط.';
+
+  @override
+  String get admin_message_reports_refusal_not_found =>
+      'هذه الرسالة لم تعد متاحة.';
+
+  @override
+  String get admin_message_reports_refusal_rate_limited =>
+      'محاولات كثيرة. حاول بعد قليل.';
+
+  @override
+  String get admin_message_reports_refusal_failed =>
+      'تعذّر فتح الرسالة. حاول مرة أخرى.';
+
+  @override
+  String get admin_message_reports_status_open => 'مفتوح';
+
+  @override
+  String get admin_message_reports_status_triage => 'قيد الفرز';
+
+  @override
+  String get admin_message_reports_status_escalated => 'مُصعَّد';
+
+  @override
+  String get admin_message_reports_status_resolved => 'تم الحل';
+
+  @override
+  String get admin_message_reports_status_dismissed => 'مرفوض';
+
+  @override
+  String get admin_message_reports_status_duplicate => 'مكرر';
+
+  @override
+  String get admin_message_reports_status_unknown => 'غير معروف';
+
+  @override
+  String get admin_message_reports_reason_unknown => 'أخرى';
+
+  @override
   String get messaging_reason_dm_cap_reached =>
       'وصلت إلى الحد اليومي لبدء محادثات جديدة. حاول مرة أخرى غدًا.';
 
@@ -6612,4 +6696,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_dm_header_hint => 'يفتح ملفه الشخصي';
+
+  @override
+  String get messaging_dm_action_label => 'رسالة';
+
+  @override
+  String get messaging_dm_action_opening => 'جارٍ فتح المحادثة';
+
+  @override
+  String get messaging_dm_action_blocked => 'لا يمكنك مراسلة هذا الشخص.';
+
+  @override
+  String get messaging_dm_action_under_age =>
+      'الرسائل المباشرة غير متاحة لهذا الحساب.';
+
+  @override
+  String get messaging_dm_action_rate_limited =>
+      'أنت تفعل ذلك بسرعة كبيرة. انتظر قليلاً ثم حاول مرة أخرى.';
+
+  @override
+  String get messaging_dm_action_cap_reached =>
+      'لقد بدأت أقصى عدد من المحادثات الجديدة اليوم. حاول مرة أخرى غداً.';
+
+  @override
+  String get messaging_dm_action_failed => 'تعذّر فتح المحادثة. حاول مرة أخرى.';
 }
