@@ -230,3 +230,11 @@ ios/Runner */
 /tests/api/.results/
 /tests/perf/.results/
 pubspec_overrides.yaml
+
+# KAN-568: Apple signing and App Store Connect material never enters the repository.
+*.p12
+*.p8
+*.mobileprovision
+*.cer
+AuthKey_*.p8
+.release-credentials/
