@@ -20,13 +20,14 @@ account must have "test" in its profile names or the run is refused.
 ## What you see
 1. A start check (the Worker should answer `messaging_off`), then `>>> SET MESSAGING_ACCESS_MODE=allowlist NOW, then press Enter`.
    Edit the variable (Workers -> dabbler-messaging-staging -> Settings -> Variables), save, press Enter.
-2. Three trials, each: `>>> SET ...=off NOW` (GET and POST must return the typed reason `messaging_off`), then
+2. Three trials, each: `>>> SET ...=off NOW` (GET and POST must be refused: the Worker answers **403 with no reason** when the variable is off, which is the agreed
+   behaviour; a typed `messaging_off` would count too), then
    `>>> SET ...=allowlist NOW` (first accepted GET, first POST past the gate). One timing line per step.
 3. `>>> SET ...=off NOW (final value)`, confirmed refused. **Leave the variable at `off`.**
 4. A `SUMMARY` line, a `DRILL_RESULT {...}` line, and the same JSON in `kan553-drill-result.json` next to the script.
 
 If the fixture game is over (no open game), sends are refused with a typed `game_ended` instead of being stored: the
-script says so, treats a POST that gets past the access gate as "accepted", and reports that no round trip was possible.
+script says so, treats any answer from past the access gate (200/201, 409 `game_ended`, 429, ...) as "accepted", and reports that no round trip was possible.
 
 Note: a dashboard edit of a variable is lost on the next `wrangler deploy --env production` unless `keep_vars` is set
 (Worker README, kill-switch section). That is a finding for the launch tickets; this drill does not change `wrangler.toml`.

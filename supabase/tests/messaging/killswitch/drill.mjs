@@ -82,6 +82,23 @@ export async function call(fetchFn, cfg, session, method, path, { body, idempote
   return out;
 }
 
+/**
+ * The Worker refuses with 403 and NO reason when MESSAGING_ACCESS_MODE is off (KAN-509 ruling: messaging_off ->
+ * 403 without a reason; the app maps that to the unavailable state). A typed messaging_off is accepted too, in case
+ * it ever appears. Any other typed 403 (not_in_pilot, not_a_member, ...) is a different refusal and is NOT the kill switch.
+ */
+export function isOff(r) {
+  return r.status === 403 && (r.reason === null || r.reason === undefined || r.reason === "messaging_off");
+}
+
+/**
+ * The access gate is open when the request got past it: a 2xx, or a typed answer from further in (409 game_ended,
+ * 429 rate_limited, 400 invalid_request, 404 not_found). 401, 5xx, network errors and every 403 are not open.
+ */
+export function isOpen(r) {
+  return r.status >= 200 && r.status < 500 && r.status !== 401 && r.status !== 403;
+}
+
 const fmt = (ms) => (ms === null ? "NOT SEEN" : `${(ms / 1000).toFixed(1)} s`);
 const within = (ms) => ms !== null && ms <= WITHIN_MS;
 
@@ -96,10 +113,6 @@ export function makeDrill(deps) {
       body: { body: `${MARKER} ${uuid().slice(0, 8)}` },
       idempotencyKey: uuid(),
     });
-
-  // A POST has passed the access gate when it was created/ok, or refused for a reason that is not the kill switch
-  // (for example game_ended or rate_limited): the gate comes first, so any other typed answer means "on".
-  const postPassedGate = (r) => (r.status >= 200 && r.status < 300) || (r.reason !== null && r.reason !== "messaging_off" && r.reason !== "not_in_pilot");
 
   async function waitPhase(label, t0, targetGet, targetPost) {
     const res = { getMs: null, postMs: null, getReason: null, postReason: null, lastGetStatus: null, lastPostStatus: null };
@@ -124,15 +137,12 @@ export function makeDrill(deps) {
     return res;
   }
 
-  const refusedGet = (r) => r.reason === "messaging_off";
-  const refusedPost = (r) => r.reason === "messaging_off";
-  const acceptedGet = (r) => r.status >= 200 && r.status < 300;
 
   async function setup() {
     out("Step 0: the Worker should currently be \"off\". Checking that the kill switch is on before the drill starts.");
     const g0 = await getConv(A);
-    out(`  start state: GET game conversation as A -> status ${g0.status}, reason ${g0.reason ?? "none"}`);
-    if (g0.reason !== "messaging_off") out("  NOTE: the start value is not \"off\" (expected). Continuing; the final value must still be \"off\".");
+    out(`  start state: GET game conversation as A -> status ${g0.status}, reason ${g0.reason ?? "none"} (off = 403 with no reason)`);
+    if (!isOff(g0)) out("  NOTE: the start value is not \"off\" (expected). Continuing; the final value must still be \"off\".");
     await prompt("SET MESSAGING_ACCESS_MODE=allowlist NOW, then press Enter");
     const t0 = now();
     // First accepted request. The conversation id is only returned once allowed.
@@ -165,19 +175,19 @@ export function makeDrill(deps) {
   async function trial(i) {
     await prompt("SET MESSAGING_ACCESS_MODE=off NOW, then press Enter");
     const tOff = now();
-    const off = await waitPhase("off", tOff, refusedGet, refusedPost);
-    out(`Trial ${i} OFF: GET refused (messaging_off) after ${fmt(off.getMs)}; POST refused (messaging_off) after ${fmt(off.postMs)}; within 60 s: ${within(off.getMs) && within(off.postMs)}`);
+    const off = await waitPhase("off", tOff, isOff, isOff);
+    out(`Trial ${i} OFF: GET refused (403, the off signal) after ${fmt(off.getMs)}; POST refused (403, the off signal) after ${fmt(off.postMs)}; within 60 s: ${within(off.getMs) && within(off.postMs)}`);
     await prompt("SET MESSAGING_ACCESS_MODE=allowlist NOW, then press Enter");
     const tOn = now();
-    const on = await waitPhase("on", tOn, acceptedGet, postPassedGate);
-    out(`Trial ${i} RESTORE: first accepted GET after ${fmt(on.getMs)}; first POST past the gate after ${fmt(on.postMs)}; within 60 s: ${within(on.getMs) && within(on.postMs)}`);
+    const on = await waitPhase("on", tOn, isOpen, isOpen);
+    out(`Trial ${i} RESTORE: first accepted GET after ${fmt(on.getMs)}; first POST past the access gate after ${fmt(on.postMs)}; within 60 s: ${within(on.getMs) && within(on.postMs)}`);
     return { off, on };
   }
 
   async function finalOff() {
     await prompt("SET MESSAGING_ACCESS_MODE=off NOW (final value), then press Enter");
     const t = now();
-    const off = await waitPhase("final", t, refusedGet, refusedPost);
+    const off = await waitPhase("final", t, isOff, isOff);
     out(`FINAL OFF: GET refused after ${fmt(off.getMs)}; POST refused after ${fmt(off.postMs)}`);
     return off;
   }
@@ -196,5 +206,5 @@ export function makeDrill(deps) {
     return result;
   }
 
-  return { run, setup, trial, finalOff, postPassedGate };
+  return { run, setup, trial, finalOff };
 }
