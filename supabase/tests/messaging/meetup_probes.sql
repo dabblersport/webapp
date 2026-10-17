@@ -57,6 +57,11 @@ ROLLBACK;
 
 -- M3 [WRITE-IN-TRANSACTION-ROLLBACK] AUTHORED, NOT RUN. A cancelled RSVP is a voluntary leaver: read only, reason
 -- 'left', up to left_at_seq; with no recorded left_at_seq it reads up to 0 (fails closed). Not in the member list.
+-- left_at_seq is seeded by hand here exactly as the game probes seed it: no writer exists for games or meetups today
+-- (the newest seq lives only in D1; the registry says the Worker writes it, but the Worker only reads it). The writer
+-- for BOTH games and meetups (Worker records the seq on the 'left' system event via a narrow service_role RPC and
+-- clears it on rejoin; a meetup RSVP trigger sends left/joined through msg_system_notify, which must resolve a meetup
+-- conversation) is a pending follow-up ticket proposed by the orchestrator to the CEO, NOT part of KAN-558.
 BEGIN;
 update public.meetups set is_cancelled = false, start_at = now() + interval '1 day', end_at = now() + interval '1 day 2 hours'
  where id = :'meetup_id';

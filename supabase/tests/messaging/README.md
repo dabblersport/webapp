@@ -166,3 +166,10 @@ reused; a meetup without `end_at` ends at `start_at`). Game and DM behaviour is 
 (out of scope); `msg_notify` is not re-issued, so meetup chats get no Realtime wake-ups yet. AUTHORED, NOT APPLIED.
 New files: `meetup_probes.sql` (M1-M9, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `meetup_rollback.sql` (refuses when
 any meetup row exists; restores the KAN-560/KAN-555 checks and function texts).
+
+Leave boundary: the M3 probe seeds `msg_conversation_members.left_at_seq` by hand, exactly as the game probes do,
+because no writer exists for games or meetups today (the newest seq lives only in D1; the registry says the Worker
+writes it, but the Worker only reads it). Without a value it reads as 0 (fail-closed, D7). The writer for BOTH games
+and meetups is a pending follow-up ticket proposed by the orchestrator to the CEO, NOT part of KAN-558: the Worker
+records the seq on the 'left' system event through a narrow service_role RPC and clears it on rejoin; a meetup RSVP
+trigger sends left/joined events through `msg_system_notify`, which must resolve a meetup conversation.
