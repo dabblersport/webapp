@@ -255,3 +255,27 @@ bound-parameter limits above were observed in the local emulator, also unverifie
 - Subrequests per request: start-DM 3, mute 1, summary at most 32 of the 50 allowed.
 
 **Rollback:** revert the commit and redeploy the previous one; unused `new_dm_hour` counter rows are harmless.
+
+## Game conversation, mute and unmute (KAN-563)
+
+The contract's `getGameConversation`, `muteConversation` and `unmuteConversation` (`docs/messaging/openapi.yaml`).
+
+- **`GET /v1/games/{gameId}/conversation`** (`src/games.ts`). `gameId` not a uuid: 400 `invalid_request`. ONE database
+  call, `msg_game_conversation(p_game_id, p_access_mode)` (migration
+  `supabase/migrations/20261017120000_kan563_msg_game_conversation.sql`, **authored, not applied**; probes and rollback
+  under `supabase/tests/messaging/game_conversation_*.sql`), with the caller's bearer unchanged. It takes the user from
+  the verified token, resolves the game's conversation (creating the registry row only for a caller with a roster row:
+  nothing created this before), and returns `msg_evaluate`'s verdict unchanged; the Worker only maps it. `last_seq` is
+  the D1 `conversation_seq` row (primary key, no message read), cut at `left_at_seq` for a member who left.
+  Refusals: `not_in_pilot`, `not_a_member`, `removed`, `suspended` 403; `not_found` 404 (no such game); 401 for a
+  missing or rejected token.
+- **`PUT` / `DELETE /v1/conversations/{id}/mute`** (`src/dm.ts`, `putMuted`): 204, no body, idempotent.
+  `msg_authorize` (verified id, typed refusal) then `msg_set_muted`: the allowed two-call exception. A read-only grant
+  (left, ended, cancelled, blocked DM) may still mute. An id that is not a uuid is 404 `not_found` (the contract lists
+  no 400 for these). KAN-561's `POST /mute` (`{muted}` -> 200 `{muted}`) is unchanged.
+- **Rate limit (decision):** the three share ONE per-user fixed window, `CONVERSATION_OPS_PER_USER_PER_MINUTE` = 60,
+  D1 scope `conv_ops_minute` (same one-row upsert as reports; no D1 migration; no Supabase limiter; no token-hash key).
+  The check runs **after** the database call, keyed by the verified user id that call returned: all three operations
+  are idempotent (read-or-create, set a flag), so an over-limit call changes nothing a normal call would not, and it
+  still gets 429 `rate_limited` + `Retry-After`. No earlier "read scope" existed in `src/rate_limit.ts`; this one is new.
+- **CORS:** preflight now allows `GET, POST, PUT, DELETE, OPTIONS`.

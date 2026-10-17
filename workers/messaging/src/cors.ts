@@ -9,7 +9,7 @@ export const CORS_ALLOWED_ORIGINS: readonly string[] = [
   "https://app.dabbler.pro",
 ];
 
-export const CORS_ALLOWED_METHODS = "GET, POST, OPTIONS";
+export const CORS_ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";
 export const CORS_ALLOWED_HEADERS = "Authorization, Content-Type, Idempotency-Key";
 const PREFLIGHT_MAX_AGE_SECONDS = "86400";
 

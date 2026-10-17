@@ -4,10 +4,13 @@
 //
 //   POST /v1/dm                          { other_user_id }  -> 200 { conversation_id }   (the existing id for an existing pair)
 //   POST /v1/conversations/{id}/mute     { muted }          -> 200 { muted }
+// KAN-563 (the contract's operations, docs/messaging/openapi.yaml muteConversation / unmuteConversation):
+//   PUT    /v1/conversations/{id}/mute   (no body)          -> 204   idempotent
+//   DELETE /v1/conversations/{id}/mute   (no body)          -> 204   idempotent
 
-import { Env, resolveCaller } from "./auth";
+import { Env, authorize, resolveCaller } from "./auth";
 import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
-import { enforceNewDm } from "./rate_limit";
+import { enforceConversationOps, enforceNewDm } from "./rate_limit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -131,6 +134,14 @@ export async function setMuted(request: Request, env: Env, conversationId: strin
   if (authorization === null || !/^Bearer [^\s]+$/.test(authorization)) return unauthenticated();
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
 
+  const failure = await callSetMuted(env, authorization, conversationId, muted);
+  if (failure !== null) return failure;
+  return ok({ muted });
+}
+
+
+/** msg_set_muted with the caller's bearer unchanged; null on success, otherwise the response to return. */
+async function callSetMuted(env: Env, authorization: string, conversationId: string, muted: boolean): Promise<Response | null> {
   let res: Response;
   try {
     res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_set_muted`, {
@@ -146,7 +157,24 @@ export async function setMuted(request: Request, env: Env, conversationId: strin
   } catch {
     return upstreamError(502, "request unavailable");
   }
-  if (!res.ok) return rpcFailure(res);
-  return ok({ muted });
+  return res.ok ? null : rpcFailure(res);
 }
 
+/**
+ * KAN-563: PUT (mute) / DELETE (unmute) /v1/conversations/{id}/mute, 204 with no body, idempotent. msg_authorize first
+ * (the caller's bearer unchanged: the verified user id and the typed refusal not_in_pilot / not_a_member / removed),
+ * then msg_set_muted. A read-only grant (left, ended, cancelled, a blocked DM) may still mute. The per-user limit runs
+ * AFTER the database call, keyed by the verified id: mute and unmute are idempotent, so an over-limit call changes
+ * nothing a normal call would not (README, "Rate limits").
+ */
+export async function putMuted(request: Request, env: Env, conversationId: string, muted: boolean): Promise<Response> {
+  // The contract lists no invalid_request for these two operations: an id that cannot exist is not_found.
+  if (!UUID.test(conversationId)) return reasonError("not_found");
+  const auth = await authorize(request, env, conversationId.toLowerCase());
+  if (!auth.ok) return auth.response;
+  const failure = await callSetMuted(env, request.headers.get("Authorization") as string, conversationId, muted);
+  if (failure !== null) return failure;
+  const limited = await enforceConversationOps(env.DB, auth.grant.userId);
+  if (limited !== null) return limited;
+  return new Response(null, { status: 204 });
+}
