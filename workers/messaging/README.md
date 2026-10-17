@@ -179,15 +179,19 @@ Source read 2026-10-15: Wrangler configuration, https://developers.cloudflare.co
 - `keep_vars` is a **top-level-only** key ("Whether Wrangler should keep variables configured in the dashboard on
   deploy"); it cannot be set inside `[env.production]`. `vars` is **non-inheritable** and must be set per environment.
 
-What this means today: `keep_vars` is **not** set, so a dashboard edit of `MESSAGING_ACCESS_MODE` is **lost on the
-next `wrangler deploy --env production`**, which restores the committed value (`"off"`).
+What this meant before KAN-554: `keep_vars` was **not** set, so a dashboard edit of `MESSAGING_ACCESS_MODE` was **lost on
+the next `wrangler deploy --env production`**, which restored the committed value (`"off"`). The KAN-553 drill showed the
+dashboard edit takes effect in about 1 s and needs no release.
 
-Not settled by the docs: the page does not say whether `keep_vars = true` preserves a dashboard value for a
-variable that is **also** defined in the committed `[env.production.vars]` (it does not address that case). Until
-that is verified, do not rely on `keep_vars` for the kill switch. Recommended options (a decision, not made here):
-remove `MESSAGING_ACCESS_MODE` from the committed vars and manage it only in the dashboard together with top-level
-`keep_vars = true`, or re-check the committed value before every deploy. `keep_vars` has not been added to
-`wrangler.toml`.
+**KAN-554 decision: top-level `keep_vars = true` is now set in `wrangler.toml`**, so a dashboard value of
+`MESSAGING_ACCESS_MODE` is kept by later deploys and the kill switch (set it to `off` in the dashboard) survives a
+redeploy. The committed `[env.production.vars]` value stays `"off"` as the fail-safe starting value.
+
+Still not settled by the docs: the page does not say whether `keep_vars` preserves a dashboard value for a variable that
+is **also** defined in the committed `[env.production.vars]`. **Verify once, on the first deploy after this change:**
+read `MESSAGING_ACCESS_MODE` (Worker -> Settings -> Variables) before and after the deploy. If the dashboard value is
+reset anyway, remove `MESSAGING_ACCESS_MODE` from the committed vars and manage it only in the dashboard. Until that
+check is done, re-read the dashboard value after every deploy. No Worker deploy was made by KAN-554's flag commit.
 
 ## Direct messages (KAN-561)
 Authorisation stays the database's: a DM is a conversation id like any other, so `POST/GET .../messages` and the report
