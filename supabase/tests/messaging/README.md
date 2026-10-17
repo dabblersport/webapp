@@ -153,3 +153,23 @@ leaves the KAN-513 Worker read as the only moderation surface.
 **PR text needs the L7 counts-only comparison** (is_admin() users, app_admins rows, and the two
 differences). It was NOT run here; whoever runs the probe fills those four numbers in. A mismatch
 means some admins are notified but cannot list, or can list but are not notified.
+
+## KAN-558: meetup chat (kind 'meetup')
+
+`20261017130000_kan558_msg_meetup_chat.sql` (one transaction) lets `msg_conversations` hold `kind = 'meetup'` (the kind
+check and the shape check are replaced the way KAN-560 did; these are the only removals) and adds
+`meetup_id uuid NULL UNIQUE REFERENCES meetups(id)`. It re-issues `msg_evaluate` (a meetup block only), `msg_authorize`
+(meetup member list only) and `msg_my_conversations` (meetup rows only; same columns). Members: the organiser
+(`creator_user_id`) and RSVPs with status `going`; a `cancelled` RSVP is a leaver (`left`, read up to `left_at_seq`);
+a cancelled meetup is read-only with `game_cancelled`, an ended one with `game_ended` (the game reason strings are
+reused; a meetup without `end_at` ends at `start_at`). Game and DM behaviour is unchanged. No RPC creates a meetup row
+(out of scope); `msg_notify` is not re-issued, so meetup chats get no Realtime wake-ups yet. AUTHORED, NOT APPLIED.
+New files: `meetup_probes.sql` (M1-M9, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `meetup_rollback.sql` (refuses when
+any meetup row exists; restores the KAN-560/KAN-555 checks and function texts).
+
+Leave boundary: the M3 probe seeds `msg_conversation_members.left_at_seq` by hand, exactly as the game probes do,
+because no writer exists for games or meetups today (the newest seq lives only in D1; the registry says the Worker
+writes it, but the Worker only reads it). Without a value it reads as 0 (fail-closed, D7). The writer for BOTH games
+and meetups is a pending follow-up ticket proposed by the orchestrator to the CEO, NOT part of KAN-558: the Worker
+records the seq on the 'left' system event through a narrow service_role RPC and clears it on rejoin; a meetup RSVP
+trigger sends left/joined events through `msg_system_notify`, which must resolve a meetup conversation.
