@@ -153,3 +153,16 @@ leaves the KAN-513 Worker read as the only moderation surface.
 **PR text needs the L7 counts-only comparison** (is_admin() users, app_admins rows, and the two
 differences). It was NOT run here; whoever runs the probe fills those four numbers in. A mismatch
 means some admins are notified but cannot list, or can list but are not notified.
+
+## KAN-558: meetup chat (kind 'meetup')
+
+`20261017130000_kan558_msg_meetup_chat.sql` (one transaction) lets `msg_conversations` hold `kind = 'meetup'` (the kind
+check and the shape check are replaced the way KAN-560 did; these are the only removals) and adds
+`meetup_id uuid NULL UNIQUE REFERENCES meetups(id)`. It re-issues `msg_evaluate` (a meetup block only), `msg_authorize`
+(meetup member list only) and `msg_my_conversations` (meetup rows only; same columns). Members: the organiser
+(`creator_user_id`) and RSVPs with status `going`; a `cancelled` RSVP is a leaver (`left`, read up to `left_at_seq`);
+a cancelled meetup is read-only with `game_cancelled`, an ended one with `game_ended` (the game reason strings are
+reused; a meetup without `end_at` ends at `start_at`). Game and DM behaviour is unchanged. No RPC creates a meetup row
+(out of scope); `msg_notify` is not re-issued, so meetup chats get no Realtime wake-ups yet. AUTHORED, NOT APPLIED.
+New files: `meetup_probes.sql` (M1-M9, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and `meetup_rollback.sql` (refuses when
+any meetup row exists; restores the KAN-560/KAN-555 checks and function texts).
