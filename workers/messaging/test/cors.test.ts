@@ -39,7 +39,7 @@ describe("preflight on /v1/ routes", () => {
         const res = await worker.fetch(preflight(url, origin), env(db));
         expect(res.status).toBe(204);
         expect(res.headers.get("Access-Control-Allow-Origin")).toBe(origin);
-        expect(res.headers.get("Access-Control-Allow-Methods")).toBe("GET, POST, OPTIONS");
+        expect(res.headers.get("Access-Control-Allow-Methods")).toBe("GET, POST, PUT, DELETE, OPTIONS");
         expect(res.headers.get("Access-Control-Allow-Headers")).toBe("Authorization, Content-Type, Idempotency-Key");
         expect(res.headers.get("Access-Control-Max-Age")).toBe("86400");
         expect(res.headers.get("Vary")).toBe("Origin");
