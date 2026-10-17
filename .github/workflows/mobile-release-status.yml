@@ -12,10 +12,19 @@
 # ticket. With the variable unset or empty this workflow does nothing (green).
 name: Mobile release status
 
+# GitHub runs `schedule` triggers ONLY from the default branch (main). Until this file reaches
+# main (a release the CEO approves), the cron below does not fire: use workflow_dispatch (this
+# workflow is registered from Alpha through the read-only branch push rail below) or the
+# `mode=status` entry points of the two release workflows.
 on:
   schedule:
     - cron: "17 */6 * * *"
   workflow_dispatch:
+  # Read-only rail: a push to this branch name runs the watcher once. It also registers the
+  # workflow with GitHub so that workflow_dispatch works while the file is not on main.
+  push:
+    branches:
+      - mobile-status-validate
 
 permissions:
   contents: read

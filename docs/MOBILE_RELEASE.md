@@ -49,7 +49,7 @@ Normal pushes, pull requests and schedules never publish to a store; the status 
 | What | How |
 |---|---|
 | One build or version on demand | Run **Android release** or **iOS release** with `mode = status` |
-| Everything under observation, every 6 hours | **Mobile release status** (scheduled and `workflow_dispatch`), reading the repository variable `MOBILE_RELEASE_TRACKING` |
+| Everything under observation | **Mobile release status** (`workflow_dispatch`, plus a 6-hourly schedule), reading the repository variable `MOBILE_RELEASE_TRACKING`. **The schedule only fires once this workflow file is on the default branch (`main`)**; GitHub does not run `schedule` triggers from other branches, and main is released only by the CEO. Until then it is run on demand (`gh workflow run "Mobile release status" --repo dabblersport/webapp --ref Alpha`) by the operations dispatch |
 
 Start observing a release (no commit needed):
 
@@ -66,7 +66,7 @@ Stop observing: set it to `[]`. The watcher judges each entry as `available` (do
 This is a real, configured path, with two parts that are stated separately because only one is
 automatic:
 
-1. **GitHub side (automatic once the variable is set):** the scheduled **Mobile release status**
+1. **GitHub side (automatic once the variable is set and the file is on `main`):** the scheduled **Mobile release status**
    run is red on `rejected` or `blocked`, which GitHub emails to everyone watching the
    repository; every run leaves a summary table with the verdict per release.
 2. **Thebes side (by the operations dispatch, not by a daemon):** the operations team (Memphis)

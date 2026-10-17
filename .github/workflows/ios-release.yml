@@ -247,12 +247,13 @@ jobs:
       - name: Record the toolchain and enforce the Xcode floor
         run: |
           set -euo pipefail
-          XC="$(xcodebuild -version | head -1)"
-          MAJOR="$(sed -n 's/^Xcode \([0-9]*\).*/\1/p' <<<"$XC")"
+          # Capture first: piping xcodebuild straight into head makes xcodebuild crash on SIGPIPE.
+          XC_ALL="$(xcodebuild -version)"
+          MAJOR="$(sed -n 's/^Xcode \([0-9]*\).*/\1/p' <<<"$XC_ALL" | head -1)"
           {
             echo "### Toolchain"
             echo '```'
-            xcodebuild -version
+            echo "$XC_ALL"
             sw_vers
             echo "runner image: ${ImageOS:-unknown} ${ImageVersion:-unknown}"
             echo '```'
