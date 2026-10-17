@@ -6742,4 +6742,12 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_dm_action_semantic => 'إرسال رسالة مباشرة';
+
+  @override
+  String get messaging_meetup_mark_label => 'لقاء';
+
+  @override
+  String messaging_meetup_kind_time(String time) {
+    return 'لقاء · $time';
+  }
 }

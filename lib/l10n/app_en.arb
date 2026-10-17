@@ -2443,5 +2443,9 @@
   "messaging_dm_action_label": "Message",
   "@messaging_dm_action_label": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review."},
   "messaging_dm_action_semantic": "Send a direct message",
-  "@messaging_dm_action_semantic": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review. Screen-reader label of the icon button."}
+  "@messaging_dm_action_semantic": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review. Screen-reader label of the icon button."},
+  "messaging_meetup_mark_label": "Meetup",
+  "@messaging_meetup_mark_label": {"description": "KAN-559 Messages list: the meetup row's quiet kind label (the meetup mark). Arabic is PROVISIONAL pending content review."},
+  "messaging_meetup_kind_time": "Meetup · {time}",
+  "@messaging_meetup_kind_time": {"description": "KAN-559 Messages list: the meetup row's kind label with its start date and time. Arabic is PROVISIONAL pending content review.", "placeholders": {"time": {"type": "String"}}}
 }

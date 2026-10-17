@@ -6696,4 +6696,12 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_dm_action_semantic => 'Send a direct message';
+
+  @override
+  String get messaging_meetup_mark_label => 'Meetup';
+
+  @override
+  String messaging_meetup_kind_time(String time) {
+    return 'Meetup · $time';
+  }
 }

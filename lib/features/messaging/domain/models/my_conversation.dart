@@ -34,7 +34,11 @@ enum MyConversationState {
 /// `msg_my_conversations` v2 (KAN-555).
 enum MyConversationKind {
   game('game'),
-  dm('dm');
+  dm('dm'),
+
+  /// A meetup chat (KAN-558/KAN-559): title, sport and times come from the
+  /// meetup; there is no game id and no counterpart.
+  meetup('meetup');
 
   const MyConversationKind(this.wireName);
 
@@ -94,6 +98,9 @@ class MyConversation extends Equatable {
 
   bool get isDm => kind == MyConversationKind.dm;
 
+  /// A meetup chat row (KAN-559).
+  bool get isMeetup => kind == MyConversationKind.meetup;
+
   /// A DM that cannot be written to: either user blocked the other, or the
   /// counterpart is deleted or banned (the RPC's `read_only` for a DM).
   bool get isDmReadOnly => isDm && state == MyConversationState.readOnly;
@@ -131,6 +138,9 @@ class MyConversation extends Equatable {
         if (gameId is! String || gameId.isEmpty) return _malformed();
       case MyConversationKind.dm:
         if (counterpart is! String || counterpart.isEmpty) return _malformed();
+      case MyConversationKind.meetup:
+        // KAN-558's row carries no meetup id: the conversation id is the key.
+        break;
     }
     String? str(Object? v) => v is String ? v : null;
     return Ok(
