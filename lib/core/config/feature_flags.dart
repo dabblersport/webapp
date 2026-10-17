@@ -25,37 +25,40 @@ class FeatureFlags {
 
   /// Central MVP feature flags (UI gating only; do not delete code).
   static const bool socialFeed = true;
-  // KAN-45: direct messaging / chat is not wired up — the socialChat and
-  // socialMessages routes only reach a "Coming Soon" placeholder. Keep this
-  // false until a real chat screen backs those routes.
-  static const bool messaging = false;
+  // KAN-554: messaging launch. The master flag for game chat and direct
+  // messages. ROLLBACK: set the Worker variable MESSAGING_ACCESS_MODE to "off"
+  // (takes seconds, no release); to withdraw the app surfaces, revert the
+  // KAN-554 flag commit and redeploy.
+  static const bool messaging = true;
 
   /// Messaging P2 game chat (KAN-507, KAN-496 report 5.1). Compile-time; a
   /// sub-flag of [messaging], which stays the master kill switch: the game
   /// chat surface is reachable only when both are true. INVARIANT:
   /// [enableMessagingReporting] must be true whenever this or [messaging] is
-  /// true (see [messagingFlagsConsistent]). Keep false until the pilot.
-  static const bool enableMessagingGameChat = false;
+  /// true (see [messagingFlagsConsistent]). On at the KAN-554 launch.
+  static const bool enableMessagingGameChat = true;
 
   /// Messaging direct messages from a profile (KAN-557). Compile-time; a
   /// sub-flag of [messaging], which stays the master kill switch: the
   /// "Message" action on another user's profile is drawn only when both are
-  /// true. Keep false until the pilot.
-  static const bool enableMessagingDirect = false;
+  /// true. On at the KAN-554 launch (DMs and the Home list are in the launch
+  /// per the CEO ruling of 2026-10-15).
+  static const bool enableMessagingDirect = true;
 
   /// Reporting of messages to moderation (KAN-507, KAN-496 report 5.1).
   /// INVARIANT: must be true whenever any chat flag ([messaging],
   /// [enableMessagingGameChat]) is true — chat never ships without a way to
-  /// report it. It may be true on its own. Keep false until the pilot.
-  static const bool enableMessagingReporting = false;
+  /// report it. It may be true on its own. On at the KAN-554 launch.
+  static const bool enableMessagingReporting = true;
 
   /// Realtime wake-ups for the game chat (KAN-544, Realtime R4). A sub-flag
   /// of [messaging] and [enableMessagingGameChat]: it only means something
   /// when both are on (see [messagingRealtimeConsistent]). When true the app
   /// listens on the user's private Realtime topic and fetches new messages as
   /// soon as a wake arrives; polling stays as the fallback. When false the
-  /// chat polls exactly as before. Keep false until the pilot.
-  static const bool messagingRealtime = false;
+  /// chat polls exactly as before. On at the KAN-554 launch; its kill is the
+  /// same Worker switch (MESSAGING_ACCESS_MODE = "off").
+  static const bool messagingRealtime = true;
   static const bool notifications = true;
 
   // Gates the 3-tier "Early Bird" check-in surface only (rewards tab route,

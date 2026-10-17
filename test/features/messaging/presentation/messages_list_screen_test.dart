@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../support/render_mode.dart';
@@ -119,6 +120,7 @@ Widget _app(
   addTearDown(router.dispose);
   return ProviderScope(
     overrides: [
+      fakeMessagingBackend,
       fakeMessagingRepositoryProvider.overrideWithValue(repo),
       messagingClockProvider.overrideWithValue(() => _now),
       messagesListFlagsProvider.overrideWithValue((

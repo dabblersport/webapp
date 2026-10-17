@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 import 'package:go_router/go_router.dart';
 
 bool _hasPath(List<RouteBase> routes, String path) {
@@ -21,14 +22,18 @@ bool _hasPath(List<RouteBase> routes, String path) {
 
 void main() {
   test('gating: enabled only when messaging AND gameChat', () {
-    expect(gameChatRouteEnabled(), isFalse); // committed flags
+    expect(gameChatRouteEnabled(), isTrue); // committed flags (KAN-554 launch)
     expect(gameChatRouteEnabled(messaging: true, gameChat: false), isFalse);
     expect(gameChatRouteEnabled(messaging: false, gameChat: true), isFalse);
     expect(gameChatRouteEnabled(messaging: true, gameChat: true), isTrue);
   });
 
   test('disabled route body is the unavailable state (KAN-518, D19)', () {
-    expect(gameChatRouteBody(gameId: 'g1'), isA<GameChatAccessState>());
+    expect(gameChatRouteBody(gameId: 'g1'), isA<GameChatScreen>()); // committed flags (KAN-554 launch)
+    expect(
+      gameChatRouteBody(gameId: 'g1', messaging: false, gameChat: false),
+      isA<GameChatAccessState>(),
+    );
     expect(
       (gameChatRouteBody(gameId: 'g1', messaging: true, gameChat: false)
               as GameChatAccessState)
@@ -62,7 +67,7 @@ void main() {
       );
 
   Widget app(GoRouter router) => ProviderScope(
-    overrides: [gameChatPollIntervalProvider.overrideWithValue(null)],
+    overrides: [fakeMessagingBackend, gameChatPollIntervalProvider.overrideWithValue(null)],
     child: MaterialApp.router(
       routerConfig: router,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -72,7 +77,7 @@ void main() {
   );
 
   testWidgets(
-    'real route entry with committed flags (all false) shows unavailable',
+    'real route entry with committed flags (all true, KAN-554 launch) shows the chat',
     (tester) async {
       final router = GoRouter(
         initialLocation: '/start',
@@ -88,13 +93,9 @@ void main() {
       await tester.pumpWidget(app(router));
       router.go('/messaging/game/g1');
       await tester.pumpAndSettle();
-      expect(find.byKey(GameChatAccessState.unavailableKey), findsOneWidget);
+      expect(find.byType(GameChatScreen), findsOneWidget);
+      expect(find.byKey(GameChatAccessState.unavailableKey), findsNothing);
       expect(find.byKey(GameChatPlaceholder.placeholderKey), findsNothing);
-      expect(find.byType(GameChatScreen), findsNothing);
-      // The action goes back (no history after go: home).
-      await tester.tap(find.byKey(GameChatAccessState.actionKey));
-      await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('home')), findsOneWidget);
     },
   );
 

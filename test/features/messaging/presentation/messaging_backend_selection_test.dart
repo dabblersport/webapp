@@ -29,12 +29,27 @@ ProviderContainer _container(MessagingBackendConfig config) {
 }
 
 void main() {
-  test('default config uses the committed flags (off) -> fake', () {
-    final c = ProviderContainer();
-    addTearDown(c.dispose);
-    expect(c.read(messagingBackendKindProvider), MessagingBackendKind.fake);
-    expect(c.read(messagingRepositoryProvider), isA<FakeMessagingRepository>());
-  });
+  test(
+    'default config uses the committed flags (on, KAN-554 launch) -> the real '
+    'Worker, or unavailable without a base URL; never the fake',
+    () {
+      final c = ProviderContainer();
+      addTearDown(c.dispose);
+      final cfg = c.read(messagingBackendConfigProvider);
+      expect(cfg.messaging, isTrue);
+      expect(cfg.gameChat, isTrue);
+      expect(
+        c.read(messagingBackendKindProvider),
+        cfg.baseUrl.trim().isEmpty
+            ? MessagingBackendKind.unavailable
+            : MessagingBackendKind.worker,
+      );
+      expect(
+        c.read(messagingRepositoryProvider),
+        isNot(isA<FakeMessagingRepository>()),
+      );
+    },
+  );
 
   final cases = <(MessagingBackendConfig, MessagingBackendKind, Type)>[
     (

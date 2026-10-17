@@ -3,6 +3,10 @@
 name = "dabbler-messaging-skeleton"
 main = "src/index.ts"
 compatibility_date = "2026-07-01"
+# KAN-554: keep variables edited in the Cloudflare dashboard on deploy (top-level only; it cannot sit inside
+# [env.production]). This is what lets the kill switch (MESSAGING_ACCESS_MODE edited in the dashboard) survive a
+# later `wrangler deploy --env production`. See README, "Kill switch".
+keep_vars = true
 
 [[d1_databases]]
 binding = "DB"

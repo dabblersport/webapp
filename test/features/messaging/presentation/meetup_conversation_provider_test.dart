@@ -49,10 +49,10 @@ void main() {
     expect(await c.read(meetupConversationIdProvider('m1').future), isNull);
   });
 
-  test('committed flags draw nothing', () {
+  test('committed flags (KAN-554 launch) draw the entry for a going member', () {
     final c = ProviderContainer();
     addTearDown(c.dispose);
     final f = c.read(meetupChatEntryFlagsProvider);
-    expect(meetupChatEntryVisible(f, isHost: true, myStatus: 'going'), isFalse);
+    expect(meetupChatEntryVisible(f, isHost: true, myStatus: 'going'), isTrue);
   });
 }
