@@ -5,12 +5,14 @@ import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 
 import '../../../support/render_mode.dart';
 
 Widget _host(GameChatEntryFlags? flags, {required bool allowed}) =>
     ProviderScope(
       overrides: [
+        fakeMessagingBackend,
         if (flags != null) gameChatEntryFlagsProvider.overrideWithValue(flags),
       ],
       child: MaterialApp(
@@ -24,10 +26,10 @@ Widget _host(GameChatEntryFlags? flags, {required bool allowed}) =>
     );
 
 void main() {
-  test('committed flags are all false', () {
-    expect(FeatureFlags.messaging, isFalse);
-    expect(FeatureFlags.enableMessagingGameChat, isFalse);
-    expect(FeatureFlags.enableMessagingReporting, isFalse);
+  test('committed flags are all true (KAN-554 launch)', () {
+    expect(FeatureFlags.messaging, isTrue);
+    expect(FeatureFlags.enableMessagingGameChat, isTrue);
+    expect(FeatureFlags.enableMessagingReporting, isTrue);
   });
 
   test('visible only with every flag on and the user allowed', () {
@@ -50,9 +52,11 @@ void main() {
     }
   });
 
-  testWidgets('absent with the real flags (all false)', (tester) async {
+  testWidgets('present with the real flags (all true, KAN-554 launch)', (
+    tester,
+  ) async {
     await tester.pumpWidget(_host(null, allowed: true));
-    expect(find.byKey(GameChatEntry.buttonKey), findsNothing);
+    expect(find.byKey(GameChatEntry.buttonKey), findsOneWidget);
   });
 
   testWidgets('absent when reporting is off', (tester) async {

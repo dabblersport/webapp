@@ -579,8 +579,8 @@ void main() {
       },
     );
 
-    test('the messaging flag is still false', () {
-      expect(FeatureFlags.messaging, isFalse);
+    test('the messaging flag is on at the KAN-554 launch', () {
+      expect(FeatureFlags.messaging, isTrue);
     });
 
     test('no secret, key or connection string in the contract files', () {

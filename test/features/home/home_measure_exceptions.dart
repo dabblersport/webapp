@@ -41,6 +41,10 @@ const String kExEmojiReason =
 const String kExSheetHairlineReason =
     'DS sheet paints its 1px hairline inside the padding box; the frame\'s content-box sheet puts every row 1 right/lower (D-sheet, DS gap sheet-hairline)';
 
+/// messagesicon
+const String kExMessagesIconReason =
+    'Home header Messages action (KAN-554 launch, CEO decision 2026-10-15: a Messages entry point on Home next to search and notifications; design source Claude Design project 60c6ce9d, Messaging.dc.html): when messaging is on the header carries a Messages icon button (45 wide) that the Home Feed frame predates, so the location text yields width to it and search and bell sit 51 px nearer the start edge (LTR: left, RTL: right)';
+
 /// more
 const String kExMoreRtlReason =
     'frame quirk: the frame\'s `margin-left:auto` collapses in RTL, so More sits 18 after Share; the app keeps More at the far end of the row in both directions';
@@ -142,6 +146,86 @@ kMeasureExceptions = <String, MeasureException>{
   'RTL|Header (y 50-113)|location chevron': MeasureException(
     kExArabicRuleReason,
     dx: 10.11,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Header (y 50-113)|location text': MeasureException(
+    kExMessagesIconReason,
+    dx: 0.0,
+    dy: 0.5,
+    dw: -17.75,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Header (y 50-113)|location chevron': MeasureException(
+    kExMessagesIconReason,
+    dx: -17.75,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Header (y 50-113)|search button': MeasureException(
+    kExMessagesIconReason,
+    dx: -51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Header (y 50-113)|search glyph': MeasureException(
+    kExMessagesIconReason,
+    dx: -51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Header (y 50-113)|bell button': MeasureException(
+    kExMessagesIconReason,
+    dx: -51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Header (y 50-113)|bell glyph': MeasureException(
+    kExMessagesIconReason,
+    dx: -51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Header (y 50-113)|search button': MeasureException(
+    kExMessagesIconReason,
+    dx: 51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Header (y 50-113)|search glyph': MeasureException(
+    kExMessagesIconReason,
+    dx: 51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Header (y 50-113)|bell button': MeasureException(
+    kExMessagesIconReason,
+    dx: 51.0,
+    dy: 0.0,
+    dw: 0.0,
+    dh: 0.0,
+    tol: 0.06,
+  ),
+  'RTL|Header (y 50-113)|bell glyph': MeasureException(
+    kExMessagesIconReason,
+    dx: 51.0,
     dy: 0.0,
     dw: 0.0,
     dh: 0.0,

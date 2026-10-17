@@ -10,6 +10,7 @@ import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 
 import '../../../support/render_mode.dart';
 import 'fake_wake_channel.dart';
@@ -45,6 +46,7 @@ void main() {
       late FakeWakeChannel channel;
       final container = ProviderContainer(
         overrides: [
+          fakeMessagingBackend,
           fakeMessagingRepositoryProvider.overrideWithValue(repo),
           gameChatPollIntervalProvider.overrideWithValue(
             const Duration(seconds: 15),

@@ -18,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 
 import '../../../support/render_mode.dart';
 
@@ -101,6 +102,7 @@ Widget _app(_Repo repo, _Block block, _Variant v, {DateTime? endAt}) {
   var n = 0;
   return ProviderScope(
     overrides: [
+      fakeMessagingBackend,
       fakeMessagingRepositoryProvider.overrideWithValue(repo),
       blockRepositoryProvider.overrideWithValue(block),
       messagingClientKeyGeneratorProvider.overrideWithValue(() => 'key-${++n}'),
