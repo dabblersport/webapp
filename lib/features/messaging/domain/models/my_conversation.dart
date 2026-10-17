@@ -37,7 +37,8 @@ enum MyConversationKind {
   dm('dm'),
 
   /// A meetup chat (KAN-558/KAN-559): title, sport and times come from the
-  /// meetup; there is no game id and no counterpart.
+  /// meetup; the RPC's `game_id` column carries the meetup id (read into
+  /// [MyConversation.meetupId]); there is no game id and no counterpart.
   meetup('meetup');
 
   const MyConversationKind(this.wireName);
@@ -64,6 +65,7 @@ class MyConversation extends Equatable {
     required this.conversationId,
     required this.state,
     this.gameId,
+    this.meetupId,
     this.kind = MyConversationKind.game,
     this.title,
     this.sport,
@@ -80,6 +82,11 @@ class MyConversation extends Equatable {
 
   /// The game; always set on a game row, null on a DM row.
   final String? gameId;
+
+  /// Meetup rows only: the meetup id, which the RPC returns in its
+  /// `game_id` column for `kind = meetup` (KAN-559). Null on an older row
+  /// that carried none, and always null on game and DM rows.
+  final String? meetupId;
 
   /// Game chat or DM. A v1 row without `kind` is a game row.
   final MyConversationKind kind;
@@ -139,7 +146,8 @@ class MyConversation extends Equatable {
       case MyConversationKind.dm:
         if (counterpart is! String || counterpart.isEmpty) return _malformed();
       case MyConversationKind.meetup:
-        // KAN-558's row carries no meetup id: the conversation id is the key.
+        // KAN-559: `game_id` carries the meetup id. Optional, so a row from
+        // before that migration (no id) still parses.
         break;
     }
     String? str(Object? v) => v is String ? v : null;
@@ -147,7 +155,10 @@ class MyConversation extends Equatable {
       MyConversation(
         conversationId: id,
         kind: kind,
-        gameId: str(gameId),
+        gameId: kind == MyConversationKind.meetup ? null : str(gameId),
+        meetupId: kind == MyConversationKind.meetup && str(gameId) != ''
+            ? str(gameId)
+            : null,
         state: state,
         title: str(json['game_title']),
         sport: str(json['sport']),
@@ -189,7 +200,7 @@ class MyConversation extends Equatable {
 
   Map<String, dynamic> toJson() => {
     'conversation_id': conversationId,
-    'game_id': gameId,
+    'game_id': isMeetup ? meetupId : gameId,
     'game_title': title,
     'sport': sport,
     'start_at': startAt?.toIso8601String(),
@@ -207,6 +218,7 @@ class MyConversation extends Equatable {
   List<Object?> get props => [
     conversationId,
     gameId,
+    meetupId,
     title,
     sport,
     startAt,

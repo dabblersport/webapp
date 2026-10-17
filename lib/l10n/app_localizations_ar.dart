@@ -6750,4 +6750,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String messaging_meetup_kind_time(String time) {
     return 'لقاء · $time';
   }
+
+  @override
+  String get messaging_meetup_chat_open => 'محادثة اللقاء';
+
+  @override
+  String get messaging_meetup_chat_semantic => 'فتح محادثة اللقاء';
+
+  @override
+  String get messaging_meetup_chat_unavailable => 'محادثة اللقاء غير متاحة بعد';
 }

@@ -2447,5 +2447,11 @@
   "messaging_meetup_mark_label": "Meetup",
   "@messaging_meetup_mark_label": {"description": "KAN-559 Messages list: the meetup row's quiet kind label (the meetup mark). Arabic is PROVISIONAL pending content review."},
   "messaging_meetup_kind_time": "Meetup · {time}",
-  "@messaging_meetup_kind_time": {"description": "KAN-559 Messages list: the meetup row's kind label with its start date and time. Arabic is PROVISIONAL pending content review.", "placeholders": {"time": {"type": "String"}}}
+  "@messaging_meetup_kind_time": {"description": "KAN-559 Messages list: the meetup row's kind label with its start date and time. Arabic is PROVISIONAL pending content review.", "placeholders": {"time": {"type": "String"}}},
+  "messaging_meetup_chat_open": "Meetup chat",
+  "@messaging_meetup_chat_open": {"description": "KAN-559 meetup detail: the meetup chat entry (open). Arabic is PROVISIONAL pending content review."},
+  "messaging_meetup_chat_semantic": "Open the meetup chat",
+  "@messaging_meetup_chat_semantic": {"description": "KAN-559 meetup detail: the meetup chat entry (semantic). Arabic is PROVISIONAL pending content review."},
+  "messaging_meetup_chat_unavailable": "Meetup chat is not available yet",
+  "@messaging_meetup_chat_unavailable": {"description": "KAN-559 meetup detail: the meetup chat entry (unavailable). Arabic is PROVISIONAL pending content review."}
 }

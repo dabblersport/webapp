@@ -12070,6 +12070,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meetup · {time}'**
   String messaging_meetup_kind_time(String time);
+
+  /// KAN-559 meetup detail: the meetup chat entry (open). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup chat'**
+  String get messaging_meetup_chat_open;
+
+  /// KAN-559 meetup detail: the meetup chat entry (semantic). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Open the meetup chat'**
+  String get messaging_meetup_chat_semantic;
+
+  /// KAN-559 meetup detail: the meetup chat entry (unavailable). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup chat is not available yet'**
+  String get messaging_meetup_chat_unavailable;
 }
 
 class _AppLocalizationsDelegate

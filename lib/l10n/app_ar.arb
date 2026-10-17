@@ -2409,5 +2409,8 @@
   "messaging_dm_action_label": "مراسلة",
   "messaging_dm_action_semantic": "إرسال رسالة مباشرة",
   "messaging_meetup_mark_label": "لقاء",
-  "messaging_meetup_kind_time": "لقاء · {time}"
+  "messaging_meetup_kind_time": "لقاء · {time}",
+  "messaging_meetup_chat_open": "محادثة اللقاء",
+  "messaging_meetup_chat_semantic": "فتح محادثة اللقاء",
+  "messaging_meetup_chat_unavailable": "محادثة اللقاء غير متاحة بعد"
 }

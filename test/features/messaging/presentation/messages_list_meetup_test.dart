@@ -151,7 +151,34 @@ void main() {
     }).requireValue;
     expect(c.isMeetup, isTrue);
     expect(c.gameId, isNull);
+    expect(c.meetupId, isNull);
     expect(c.title, 'Run club');
+  });
+
+  test(
+    'parse reads a meetup row\'s game_id as its meetup id, never gameId',
+    () {
+      final c = MyConversation.parse({
+        'conversation_id': 'm1',
+        'state': 'send',
+        'kind': 'meetup',
+        'game_id': 'meet-42',
+      }).requireValue;
+      expect(c.meetupId, 'meet-42');
+      expect(c.gameId, isNull);
+      expect(c.toJson()['game_id'], 'meet-42');
+    },
+  );
+
+  test('a game row keeps gameId and has no meetup id', () {
+    final c = MyConversation.parse({
+      'conversation_id': 'c1',
+      'state': 'send',
+      'kind': 'game',
+      'game_id': 'g1',
+    }).requireValue;
+    expect(c.gameId, 'g1');
+    expect(c.meetupId, isNull);
   });
 
   for (final v in _variants) {

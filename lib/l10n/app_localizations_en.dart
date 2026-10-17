@@ -6704,4 +6704,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String messaging_meetup_kind_time(String time) {
     return 'Meetup · $time';
   }
+
+  @override
+  String get messaging_meetup_chat_open => 'Meetup chat';
+
+  @override
+  String get messaging_meetup_chat_semantic => 'Open the meetup chat';
+
+  @override
+  String get messaging_meetup_chat_unavailable =>
+      'Meetup chat is not available yet';
 }
