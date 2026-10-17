@@ -173,3 +173,11 @@ writes it, but the Worker only reads it). Without a value it reads as 0 (fail-cl
 and meetups is a pending follow-up ticket proposed by the orchestrator to the CEO, NOT part of KAN-558: the Worker
 records the seq on the 'left' system event through a narrow service_role RPC and clears it on rejoin; a meetup RSVP
 trigger sends left/joined events through `msg_system_notify`, which must resolve a meetup conversation.
+
+## KAN-559: meetup id in the conversation list
+
+`20261017140000_kan559_msg_my_conversations_meetup_id.sql` (one transaction) re-issues `msg_my_conversations` with
+CREATE OR REPLACE; the only change from the KAN-558 text is the meetup branch's `game_id` expression: for kind meetup,
+game_id carries the meetup id. Game and DM rows are unchanged; same columns, grants and attributes.
+AUTHORED, NOT APPLIED. New files: `meetup_list_id_probes.sql` (M1-M3, AUTHORED, NOT RUN, all BEGIN..ROLLBACK) and
+`meetup_list_id_rollback.sql` (restores the KAN-558 definition verbatim, with grants).

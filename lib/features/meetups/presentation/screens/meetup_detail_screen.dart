@@ -8,6 +8,7 @@ import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.d
 import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_share.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/meetup_chat_entry.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show isFollowingProvider, myProfileIdProvider;
@@ -355,6 +356,9 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
           ],
         ),
         if (hostName != null) _HostSection(host: c.host!, name: hostName),
+        // KAN-559: the one meetup-chat entry; draws nothing unless every
+        // messaging flag is on and the viewer is the organiser or going.
+        MeetupChatEntry(meetupId: c.id, isHost: c.isHost, myStatus: c.myStatus),
         if (c.isHost)
           DabblerActionRow(
             icon: 'setting-2',

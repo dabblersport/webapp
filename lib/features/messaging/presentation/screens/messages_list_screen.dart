@@ -12,6 +12,7 @@ import 'package:dabbler/features/messaging/presentation/messages_list_route.dart
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/messages_list_dm_row.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/messages_list_meetup_row.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The Messages list (KAN-549, KAN-562): the user's game chats and direct
@@ -37,6 +38,9 @@ class MessagesListScreen extends ConsumerWidget {
 
   static ValueKey<String> dmRowKey(String conversationId) =>
       ValueKey<String>('messages-list-dm-row-$conversationId');
+
+  static ValueKey<String> meetupRowKey(String conversationId) =>
+      ValueKey<String>('messages-list-meetup-row-$conversationId');
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -102,6 +106,25 @@ class MessagesListScreen extends ConsumerWidget {
         final c = chats[i];
         if (c.isDm) {
           return _dmRow(context, l10n, c, now, locale, i < chats.length - 1);
+        }
+        if (c.isMeetup) {
+          final time = messagesListGameTime(c.startAt, locale);
+          return MessagesListMeetupRow(
+            key: meetupRowKey(c.conversationId),
+            title: messagesListTitle(l10n, c),
+            seed: c.conversationId,
+            timestamp: messagesListRelative(c.lastActivityAt, now, locale),
+            kindLabel: time == null
+                ? l10n.messaging_meetup_mark_label
+                : l10n.messaging_meetup_kind_time(time),
+            stateLabel: messagesListStateLabel(l10n, c.state),
+            divider: i < chats.length - 1,
+            // KAN-559: the shared chat by conversation id, as a DM row opens.
+            onTap: () => context.pushNamed(
+              messagesListDmRouteName,
+              pathParameters: {messagesListDmRouteParam: c.conversationId},
+            ),
+          );
         }
         final gameId = c.gameId ?? '';
         return DabblerConversationRow(
