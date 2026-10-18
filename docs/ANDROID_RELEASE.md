@@ -105,7 +105,7 @@ SHA-256). Change a pin deliberately and re-run the validation rail.
 
 Only the client-safe allowlist reaches the app build: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID`, plus `ENVIRONMENT` from the
-input. `SUPABASE_DB_URL` and every other backend secret are never referenced.
+input. `SUPABASE_DB_URL` and every other backend secret are never referenced. Mobile builds also need the repository VARIABLE `MESSAGING_API_BASE_URL` (the messaging Worker's public URL, not a secret; set with `gh variable set`): the build passes it as `--dart-define` like the web build does and **fails fast when it is empty or not an https URL**, because with the messaging flags on a build without it shows "Couldn't load your chats" (KAN-568, found on TestFlight 1.7.9 build 178).
 
 ## Following a release: upload, review, availability are different things
 
@@ -142,6 +142,7 @@ Repository **Actions secrets** in `dabblersport/webapp`:
 | `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Keystore and key |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Play API: service account `dabbler-android-release@dabblersportapp.iam.gserviceaccount.com`, app-scoped release permissions only |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID` | Client-safe app configuration (shared with the web build) |
+| (variable, not a secret) `MESSAGING_API_BASE_URL` | The messaging Worker's public URL; required by the build |
 
 Handling: the keystore and `android/key.properties` exist only on the runner during the run
 and are deleted in an `always()` step; the service-account file is written with mode 600 and
