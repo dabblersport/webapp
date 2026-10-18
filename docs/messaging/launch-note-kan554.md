@@ -47,6 +47,23 @@ What this evidence is: calls to the production Worker and the live database as t
 
 Side effects left in the live project by this pass (normal paths, test accounts only): one DM pair between the two test accounts with two test messages, and one message report from the second test account (open for the CEO to resolve). No row was deleted or edited.
 
+### 2026-10-18 second fixture and game-chat pass (UTC; Dubai is UTC+4)
+
+Fixture: the first test game ended, so ONE new game "Dabbler Chat Test 2" was created through the app's own `rpc_create_game` / `rpc_join_game` (owner Dabbler-Test, public, capacity 10, 2026-10-18 15:00-17:00 Dubai). Read back: 1 game, 5 active roster rows (1 host + 4 players, including the second test account "teat"), 4 notifications created since it was made (count only), no conversation row yet (the registry creates it when a member first opens the chat).
+
+Live check script `supabase/tests/messaging/launchcheck/run.mjs` (README beside it; 4 unit tests with fakes). One run at 09:02:24-09:02:28 UTC as the two test accounts against the production Worker, which answered past the access gate:
+
+| Item | Result |
+|---|---|
+| Both members get the game conversation (same one) | PASS 09:02:25 |
+| Conversation writable (game not ended) | PASS |
+| A sends one test message | PASS (201, 325 ms) |
+| B lists it (game-chat round trip) | PASS (marker seen once) |
+| B files a report on it | PASS (202) |
+| Messages list of A and of B (`msg_my_conversations`) shows the game chat | PASS, 1 row each |
+
+This closes the game-chat gap from the pass above at the API level. It is still not a UI check, and it cannot tell `all` from `allowlist` (both accounts are allowlisted). The script refuses to run while the Worker answers with the off signal (it prints "MESSAGING_ACCESS_MODE is not all yet" and exits 3).
+
 ### Deployed state read on 2026-10-18 (read-only)
 | Site | Carries the Worker URL (messaging configured) |
 |---|---|
@@ -59,7 +76,7 @@ Side effects left in the live project by this pass (normal paths, test accounts 
 ### What remains and who
 1. CEO: decide how Alpha reaches the validation stage (promote to Canary, or accept alpha.dabbler.pro as the stage for step 6). 705 commits are in that promotion, not only messaging.
 2. CEO: confirm in the Cloudflare dashboard that `MESSAGING_ACCESS_MODE` is `all` (this evidence cannot tell).
-3. A fixture for game chat: an open game (end time in the future) with the two test accounts active. This needs one new game created through the app's own RPCs (SQL write approvals); the previous one has ended.
+3. Fixture: done. "Dabbler Chat Test 2" is open until 2026-10-18 17:00 Dubai; after that the live check needs another game.
 4. CEO, signed in on the validation site: Home icon, Messages list, game chat send, report sheet, admin Reports list and Read this message (admin account), realtime.
 5. Step 7: main merge needs the CEO's explicit go-ahead in the moment; then repeat the round trip on app.dabbler.pro.
 Rollback is unchanged: set `MESSAGING_ACCESS_MODE` to `off`.
