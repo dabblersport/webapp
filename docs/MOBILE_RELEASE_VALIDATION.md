@@ -15,6 +15,15 @@ Date: 2026-10-18 (Dubai). No secret, key, certificate or profile content appears
 | **Real TestFlight upload** | **Done 2026-10-18**: https://github.com/dabblersport/webapp/actions/runs/39120955973 , build `1.7.9 (178)` from Alpha `125900baf736361986672a1c04f263d6fddf02b6`, processing VALID, TestFlight IN_BETA_TESTING (internal) |
 | Public release on either store | Not done, not requested |
 
+## Android internal testing 1.7.9 (176) with the messaging Worker URL (2026-10-18)
+
+Android internal 1.7.9+175 was built before the messaging flags were on and has no Worker URL. After the iOS fix (build 179) was confirmed on the iPhone, the same fix was shipped to the Android internal track.
+* Run: https://github.com/dabblersport/webapp/actions/runs/39152843805 (workflow_dispatch on Alpha, `mode=release`, `ref=Alpha`, `version_name=1.7.9`, `version_code=176`, `track=internal`, `release_status=completed`). Resolved commit `77b42c248b91761300917f411979f7335cd0264c`. All jobs succeeded.
+* The versionCode was checked against Play before the upload (175 is taken and was not reused; 176 accepted). The build step required the repository variable `MESSAGING_API_BASE_URL`.
+* Verified AAB: package `com.dabbler.dabblerapp`, versionName `1.7.9`, versionCode `176`, signed with the recorded upload certificate (`3D:3A:63:C9:...:6F:CE`). Keystore reconstruction and "Remove signing material from the runner" both concluded success.
+* Play read-back (publish job, then an independent `mode=status` run https://github.com/dabblersport/webapp/actions/runs/39153963729): `uploaded=true`, `processed=true`, track `internal`, release status `completed` (release name `1.7.9 (176) 77b42c24`), `review=not-exposed-by-api`, `available=confirmed` ("internal testing release is completed (no review step)"). Internal testers still have to be on the tester list.
+* Internal track only: no production, no other track, no rollout. The Play production release is still 1.7.8+174. The repository variable `MOBILE_RELEASE_TRACKING` still points at 1.7.9+175 and is not changed by this run.
+
 ## Android production readiness (C3)
 
 * Environment: `android-production` exists. Deployment branch policy `Alpha` (a production publish can only be started from a run on Alpha). No required reviewers: the CEO's release instruction with the exact commit and version, typed as `production_approval`, is the approval event, so no second routine click. `android-internal` is unchanged (no rules). `github-pages` untouched.
