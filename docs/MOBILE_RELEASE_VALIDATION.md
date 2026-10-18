@@ -12,7 +12,7 @@ Date: 2026-10-18 (Dubai). No secret, key, certificate or profile content appears
 | iOS tooling, workflow, tests, docs | Done and pushed; recipe proven locally with the real Apple Distribution identity and profile |
 | iOS secrets in GitHub | 6 of 6 set (names only; the CEO ran `scripts/ios/set_apple_secrets.sh` on 2026-10-18 08:48 UTC) |
 | iOS build-only rail on a real macOS runner | **Done 2026-10-18**: https://github.com/dabblersport/webapp/actions/runs/39114076677 (see below) |
-| **Real TestFlight upload** | **Not done yet: the workflow can only build from a commit on Alpha, Canary or main, and `alpha-memphis` is not integrated into Alpha** |
+| **Real TestFlight upload** | **Done 2026-10-18**: https://github.com/dabblersport/webapp/actions/runs/39120955973 , build `1.7.9 (178)` from Alpha `125900baf736361986672a1c04f263d6fddf02b6`, processing VALID, TestFlight IN_BETA_TESTING (internal) |
 | Public release on either store | Not done, not requested |
 
 ## Android production readiness (C3)
@@ -40,6 +40,16 @@ Run https://github.com/dabblersport/webapp/actions/runs/39114076677 (push rail `
 * Nothing was uploaded and no App Store Connect write happened in this run.
 
 What remains for the real upload: integrate `alpha-memphis` into Alpha (normal path), then run **iOS release** with `mode=release`, `target=testflight`, `ref=Alpha`, empty build number.
+
+## iOS: real TestFlight upload (2026-10-18)
+
+* Run: https://github.com/dabblersport/webapp/actions/runs/39120955973 (workflow_dispatch of **iOS release** on Alpha, `mode=release`, `target=testflight`, `ref=Alpha`, `version_name=1.7.9`, build number left empty). Source commit `125900baf736361986672a1c04f263d6fddf02b6` (Alpha, the KAN-569 integration). All jobs succeeded; the submit job is skipped by design.
+* Build number: read from App Store Connect, "build number 178 is new (highest uploaded: 177)"; a duplicate or lower number is refused before building.
+* Toolchain: recorded in the run summary (macOS 26 runner image, Xcode 26 or newer enforced, Flutter 3.47.5).
+* Signing and profile verification (metadata artifact `ios-metadata`, no IPA): bundle id `app.dabbler.pro`, version `1.7.9`, build `178`, team `J5636UH8V8`, profile `Dabbler App Store` (expires 2027-10-11), signed by `Apple Distribution: Moataz Abdelrahman (J5636UH8V8)`, `get-task-allow=false`, `aps-environment=production`, IPA SHA-256 `47b58a84d6ade065231c435ee1001be0859d13f5ed0edfa4a41cc7b3e1ef58f5`.
+* Upload: altool reported "Uploaded build 178 to App Store Connect". Read-back at the end of the same run, then again by a separate **iOS release** `mode=status` run (https://github.com/dabblersport/webapp/actions/runs/39122479016): `uploaded=true`, `processing=VALID`, `testflight=IN_BETA_TESTING`, no TestFlight blocker, `submission=null`, `review=none`, `available=unconfirmed` ("no independent availability signal yet"), `buildExpired=false`.
+* Runner cleanup: the step "Remove signing material from the runner" ran and concluded success.
+* Scope: internal TestFlight only. No external testers or groups were added, and no App Store version, submission or release happened. The public App Store version is still 1.1 (lookup); build 178 is not available to the public.
 
 ## iOS: what blocked the TestFlight upload before 2026-10-18, and why automation could not do it (resolved)
 
