@@ -81,7 +81,7 @@ Sign in as the CEO's admin account for steps 5-6 and as any member of "Dabbler C
 1. Home: the Messages entry point (icon) is visible on Home. Tap it: the Messages screen (`/messaging`) opens and lists "Dabbler Chat Test 2".
 2. Tap the chat: the Game chat screen opens with the earlier test messages ("Write a message" composer visible; the game is open until 17:00 Dubai).
 3. Type a message and tap Send: it appears in the thread; on a second device or window signed in as another member it arrives without refreshing (realtime).
-4. Long-press (or open the menu on) a message from someone else and choose "Report message": pick a reason, tap "Send report"; you should see "Thanks. We received your report."
+4. Open another member's message (the app opens Report and Block sheets for a message from someone else; your own messages open nothing): choose "Report message", pick a reason and tap "Send report"; you should see "Thanks. We received your report." (The exact tap versus long-press gesture is not confirmed here.)
 5. As the admin account, open Admin, then Reports, then "Message reports" (`/admin/message-reports`): the report you just filed is listed.
 6. On that report tap "Read this message": the "Reported message" panel opens with the text. A non-admin account must not see this screen or the action.
 If any step fails, set the Worker variable `MESSAGING_ACCESS_MODE` to `off` (one step, seconds) and tell the orchestrator which step. Step 7 (main) waits for your go-ahead in the moment.
