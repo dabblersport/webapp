@@ -10,8 +10,9 @@ Date: 2026-10-18 (Dubai). No secret, key, certificate or profile content appears
 | Android internal testing (KAN-493) | Done, reused: run https://github.com/dabblersport/webapp/actions/runs/39063775769, `1.7.9+175` from `aa50d929858b66bceac9033038f5fed58557227b`, uploaded, internal track `completed`, available to internal testers confirmed in the Console |
 | Android production readiness | Done: GitHub Environment `android-production` created (branch policy: `Alpha` only, no reviewers by design), guard proven by a negative run, no production rollout |
 | iOS tooling, workflow, tests, docs | Done and pushed; recipe proven locally with the real Apple Distribution identity and profile |
-| iOS secrets in GitHub | 3 of 6 set; 3 need the CEO (below) |
-| **Real TestFlight upload** | **Not done: blocked on two CEO actions** (Issuer ID, certificate export) |
+| iOS secrets in GitHub | 6 of 6 set (names only; the CEO ran `scripts/ios/set_apple_secrets.sh` on 2026-10-18 08:48 UTC) |
+| iOS build-only rail on a real macOS runner | **Done 2026-10-18**: https://github.com/dabblersport/webapp/actions/runs/39114076677 (see below) |
+| **Real TestFlight upload** | **Not done yet: the workflow can only build from a commit on Alpha, Canary or main, and `alpha-memphis` is not integrated into Alpha** |
 | Public release on either store | Not done, not requested |
 
 ## Android production readiness (C3)
@@ -29,7 +30,18 @@ Date: 2026-10-18 (Dubai). No secret, key, certificate or profile content appears
 * Compliance: `ITSAppUsesNonExemptEncryption=false` is already declared in `ios/Runner/Info.plist`; no compliance answer was invented.
 * No public submission and no external TestFlight invitation was made; `mode=submit` is a dry run unless `dry_run=false` and the exact approval string match (tested offline: it writes nothing without `--confirm`).
 
-## iOS: what blocks the TestFlight upload, and why automation cannot do it
+## iOS: build-only validation on a runner (2026-10-18, after the CEO set the secrets)
+
+Run https://github.com/dabblersport/webapp/actions/runs/39114076677 (push rail `ios-build-validate`, source `5eec39fcc647be96e47074dbfc00f08c78f4e8c3`, version taken from pubspec, never uploads): all jobs succeeded (resolve and validate, analyze and test, build, sign, verify; the status and submission jobs are skipped by design).
+* Toolchain recorded in the run summary: runner image `macos-26-arm64` 20261013.0424, Xcode 26 or newer enforced, Flutter 3.47.5.
+* Temporary keychain: 1 identity imported, 1 valid identity (`Apple Distribution: Moataz Abdelrahman (J5636UH8V8)`), profile installed.
+* Signed IPA verified: bundle id `app.dabbler.pro`, version `1.7.8`, build `174` (pubspec; a real upload picks the next unused number from App Store Connect instead), team `J5636UH8V8`, profile `Dabbler App Store` expiring 2027-10-11, `get-task-allow=false`, `aps-environment=production`, IPA SHA-256 `36ff22c747bb1def0ca6df3896fa7a208527e24a4d0e9abaeb69007c306eae94`. The IPA itself is not an artifact; only the metadata is.
+* Runner cleanup: the step "Remove signing material from the runner" (`scripts/ios/cleanup_signing.sh`, `if: always()`) ran in the same job.
+* Nothing was uploaded and no App Store Connect write happened in this run.
+
+What remains for the real upload: integrate `alpha-memphis` into Alpha (normal path), then run **iOS release** with `mode=release`, `target=testflight`, `ref=Alpha`, empty build number.
+
+## iOS: what blocked the TestFlight upload before 2026-10-18, and why automation could not do it (resolved)
 
 1. **The App Store Connect Issuer ID is not available to automation.** Evidence of the checks already performed: not in the repository or its docs, not in the Keychain items present (`dabbler-cloudflare`, `dabbler-test-user*`, `mcp.github.dabbler`), not in the environment, not in the credentials folders (they hold only the `.p8` key and the provisioning profile). A probe of the API key without an issuer returned `HTTP 401 NOT_AUTHORIZED`, which confirms it is a team key that requires the issuer. Apple shows the Issuer ID only in the portal.
 2. **The Apple Distribution private key could not be exported.** The identity is valid in the login Keychain (`Apple Distribution: Moataz Abdelrahman (J5636UH8V8)`) and its certificate is the one the profile was issued for, but exporting the private key for CI was refused by the permission system ("Credential Exploration"). It was not bypassed; a person must export it.
