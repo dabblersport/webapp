@@ -64,6 +64,28 @@ Live check script `supabase/tests/messaging/launchcheck/run.mjs` (README beside 
 
 This closes the game-chat gap from the pass above at the API level. It is still not a UI check, and it cannot tell `all` from `allowlist` (both accounts are allowlisted). The script refuses to run while the Worker answers with the off signal (it prints "MESSAGING_ACCESS_MODE is not all yet" and exits 3).
 
+### 2026-10-18 09:30 UTC, game-chat realtime pass (same two test accounts, "Dabbler Chat Test 2", `MESSAGING_ACCESS_MODE` = `all`)
+
+| Item | Result |
+|---|---|
+| Open the game conversation | PASS 09:30:30: 200 for both accounts, the same conversation, writable (before the game start) |
+| A sends in the game chat | PASS 09:30:31: 201 |
+| Realtime wake to B | PASS: 1 wake 996 ms after the send, keys `conversation_id, id, seq, type` only |
+| B lists the message | PASS: marker seen once (200) |
+| B files a report | PASS: 202 |
+
+With the 09:02 UTC run (conversation, send, list, report, Messages list for both) the API-level game-chat checks are complete. No new game was created in this pass: "Dabbler Chat Test 2" from the earlier pass is open until 2026-10-18 17:00 Dubai.
+
+### UI checks pending for the CEO on https://alpha.dabbler.pro (the validation stage; nothing is verified here until you do them)
+Sign in as the CEO's admin account for steps 5-6 and as any member of "Dabbler Chat Test 2" (for example the owner, Dabbler-Test) for steps 1-4.
+1. Home: the Messages entry point (icon) is visible on Home. Tap it: the Messages screen (`/messaging`) opens and lists "Dabbler Chat Test 2".
+2. Tap the chat: the Game chat screen opens with the earlier test messages ("Write a message" composer visible; the game is open until 17:00 Dubai).
+3. Type a message and tap Send: it appears in the thread; on a second device or window signed in as another member it arrives without refreshing (realtime).
+4. Long-press (or open the menu on) a message from someone else and choose "Report message": pick a reason, tap "Send report"; you should see "Thanks. We received your report."
+5. As the admin account, open Admin, then Reports, then "Message reports" (`/admin/message-reports`): the report you just filed is listed.
+6. On that report tap "Read this message": the "Reported message" panel opens with the text. A non-admin account must not see this screen or the action.
+If any step fails, set the Worker variable `MESSAGING_ACCESS_MODE` to `off` (one step, seconds) and tell the orchestrator which step. Step 7 (main) waits for your go-ahead in the moment.
+
 ### Orchestrator ruling after the second pass (2026-10-18)
 - `MESSAGING_ACCESS_MODE` = `all` is **confirmed by the CEO's dashboard screenshot** (PM ledger 2026-10-18, ref `messaging-launch`). The API pass above therefore ran with the mode at `all`; the test accounts being on the allowlist no longer leaves the mode in doubt.
 - The 09:02 UTC run (7 of 7 PASS on the game chat) is the step-6 API evidence; the CEO does not need to run the script.
