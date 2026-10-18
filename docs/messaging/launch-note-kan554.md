@@ -1,6 +1,6 @@
 # Messaging launch note — KAN-554 (L1)
 
-Status: **IN PROGRESS. Steps 3 and 4 are done. Step 6 is partly verified at the API level (below); the UI checks, the game-chat round trip, step 5 confirmation and step 7 are not done.** This note is completed with timestamps as each step passes. No id, token or secret appears here; the Worker URL and the variables are named only.
+Status: **IN PROGRESS (API evidence complete; UI checks with the CEO; step 7 waits for his go-ahead). Steps 3 and 4 are done. Step 6 is partly verified at the API level (below); the UI checks, the game-chat round trip, step 5 confirmation and step 7 are not done.** This note is completed with timestamps as each step passes. No id, token or secret appears here; the Worker URL and the variables are named only.
 
 ## Go-live reference (C5)
 The CEO's go-live is recorded in the PM ledger, ref `messaging-launch`, 2026-10-15 ("افتح الان", open it now), and was cited by the orchestrator in its 2026-10-17 23:19 go-live ruling before any step ran. Blockers were Done before step 2: KAN-565 (live DB has every launch migration), KAN-566 (production Worker deployed from Alpha with D1 0001-0004 applied), KAN-553 (kill-switch drill passed, under 2 s each way).
@@ -63,6 +63,12 @@ Live check script `supabase/tests/messaging/launchcheck/run.mjs` (README beside 
 | Messages list of A and of B (`msg_my_conversations`) shows the game chat | PASS, 1 row each |
 
 This closes the game-chat gap from the pass above at the API level. It is still not a UI check, and it cannot tell `all` from `allowlist` (both accounts are allowlisted). The script refuses to run while the Worker answers with the off signal (it prints "MESSAGING_ACCESS_MODE is not all yet" and exits 3).
+
+### Orchestrator ruling after the second pass (2026-10-18)
+- `MESSAGING_ACCESS_MODE` = `all` is **confirmed by the CEO's dashboard screenshot** (PM ledger 2026-10-18, ref `messaging-launch`). The API pass above therefore ran with the mode at `all`; the test accounts being on the allowlist no longer leaves the mode in doubt.
+- The 09:02 UTC run (7 of 7 PASS on the game chat) is the step-6 API evidence; the CEO does not need to run the script.
+- The validation stage is **alpha.dabbler.pro** (decided); Canary and main are untouched.
+- The UI checks (Home icon, Messages list, report sheet, admin Reports screen and Read this message) are with the CEO. Step 7 (main) waits for his explicit go-ahead in the moment.
 
 ### Deployed state read on 2026-10-18 (read-only)
 | Site | Carries the Worker URL (messaging configured) |
