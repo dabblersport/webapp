@@ -1,4 +1,6 @@
-# Android release (KAN-493)
+# Android release (KAN-493, production readiness KAN-568)
+
+Both stores share one sequence: `docs/MOBILE_RELEASE.md`. iOS: `docs/IOS_RELEASE.md`.
 
 Build, sign, verify and publish an Android version to Google Play from GitHub Actions
 (`dabblersport/webapp`, workflow **Android release**, `.github/workflows/android-release.yml`).
@@ -52,10 +54,14 @@ production_approval = APPROVE <40-character commit> <versionName>+<versionCode>
 and `ref` set to that same full commit. Anything else fails in the first job, before any
 build. The approval string is the CEO's go-ahead for that exact commit and version.
 
-Recommended (repository setting, needs a repository admin): create the GitHub Environment
-**`android-production`** with **required reviewers** (the CEO). The `publish` job runs in
-`android-<track>`, so the reviewers then sit between "run" and "upload to production". An
-environment named `android-internal` is used for internal testing and needs no reviewers.
+The GitHub Environment **`android-production`** exists (KAN-568) and is restricted to the
+`Alpha` branch by a deployment branch policy, so a production publish can only be started from a
+run on Alpha. It deliberately has **no required reviewers**: the CEO's release instruction naming
+the exact commit and version is the approval event, and the typed `production_approval` above is
+that approval recorded in the run. Required reviewers would add a second routine click between
+"run" and "publish to production"; if the CEO wants that extra gate, add the reviewer to the
+environment in Settings > Environments, which changes nothing else. The `publish` job runs in
+`android-<track>`; `android-internal` has no rules and is used for internal testing.
 
 Setting this workflow up is not an approval to publish to production.
 

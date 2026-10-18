@@ -1,0 +1,3 @@
+# Release tooling only (KAN-568). Pinned so a release run is reproducible.
+PyJWT==2.9.0
+cryptography==43.0.3
