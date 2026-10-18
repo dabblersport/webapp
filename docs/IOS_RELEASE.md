@@ -75,7 +75,7 @@ need them:
 
 App configuration (client-safe allowlist only): `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID`. `SUPABASE_DB_URL` and every other
-backend secret are never referenced.
+backend secret are never referenced. Mobile builds also need the repository VARIABLE `MESSAGING_API_BASE_URL` (the messaging Worker's public URL, not a secret; set with `gh variable set`): the build passes it as `--dart-define` like the web build does and **fails fast when it is empty or not an https URL**, because with the messaging flags on a build without it shows "Couldn't load your chats" (KAN-568, found on TestFlight 1.7.9 build 178).
 
 Local backups of the signing material live outside the app repository, in
 `Dabbler/.release-credentials/ios` and `~/.config/dabbler-release/credentials`; never commit them.
