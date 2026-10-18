@@ -51,6 +51,15 @@ What remains for the real upload: integrate `alpha-memphis` into Alpha (normal p
 * Runner cleanup: the step "Remove signing material from the runner" ran and concluded success.
 * Scope: internal TestFlight only. No external testers or groups were added, and no App Store version, submission or release happened. The public App Store version is still 1.1 (lookup); build 178 is not available to the public.
 
+### Second upload with the messaging Worker URL (build 179)
+
+TestFlight 1.7.9 build 178 showed "Couldn't load your chats" on the iPhone: the mobile workflows did not pass `MESSAGING_API_BASE_URL` (fixed in `50d077bb`, repository variable of the same name, build fails fast without it). Build 178 stays in TestFlight but is superseded.
+* Run: https://github.com/dabblersport/webapp/actions/runs/39125781666 (workflow_dispatch on Alpha, `mode=release`, `target=testflight`, `ref=Alpha`, `version_name=1.7.9`, build number empty). Source commit `50d077bb6b0f969a2a5974f824d1af83df36fa33`. Success on every job.
+* Build number read from App Store Connect: "build number 179 is new (highest uploaded: 178)".
+* Verified: bundle `app.dabbler.pro`, version `1.7.9`, build `179`, team `J5636UH8V8`, profile `Dabbler App Store`, Apple Distribution identity, `get-task-allow=false`, `aps-environment=production`, IPA SHA-256 `84af32ef1ef317e0796f2880a80ace0bc28b45ee7d2dae1ab08d04a66a0623d5`.
+* Read-back: `processing=VALID`, `testflight=IN_BETA_TESTING`, no blocker, `submission=null`, `review=none`, `available=unconfirmed`. Independent `mode=status` run: https://github.com/dabblersport/webapp/actions/runs/39127296983 (same values).
+* Runner cleanup: "Remove signing material from the runner" concluded success. Internal TestFlight only; no external testers, no App Store version, no submission. The fix itself is confirmed only by opening Messages on build 179.
+
 ## iOS: what blocked the TestFlight upload before 2026-10-18, and why automation could not do it (resolved)
 
 1. **The App Store Connect Issuer ID is not available to automation.** Evidence of the checks already performed: not in the repository or its docs, not in the Keychain items present (`dabbler-cloudflare`, `dabbler-test-user*`, `mcp.github.dabbler`), not in the environment, not in the credentials folders (they hold only the `.p8` key and the provisioning profile). A probe of the API key without an issuer returned `HTTP 401 NOT_AUTHORIZED`, which confirms it is a team key that requires the issuer. Apple shows the Issuer ID only in the portal.
