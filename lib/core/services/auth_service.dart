@@ -17,6 +17,7 @@ import '../config/environment.dart';
 import '../../features/profile/data/datasources/profile_data_sources.dart';
 import '../../services/notifications/push_notification_service.dart';
 import '../../utils/constants/route_constants.dart';
+import '../models/google_sign_in_failure.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';
 
@@ -458,24 +459,48 @@ class AuthService {
         serverClientId: webClientId.isNotEmpty ? webClientId : null,
       );
 
-      final account = await googleSignIn.signIn();
+      // Each stage reports its own sanitized failure (KAN-570): a native
+      // sign-in error, a missing id token and a refused exchange are different
+      // causes with different fixes, and none may put provider text on screen.
+      final GoogleSignInAccount? account;
+      try {
+        account = await googleSignIn.signIn();
+      } catch (e) {
+        throw GoogleSignInFailure.from(GoogleSignInStage.native, e);
+      }
       if (account == null) return false;
 
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
+      final String? idToken;
+      final String? accessToken;
+      try {
+        final auth = await account.authentication;
+        idToken = auth.idToken;
+        accessToken = auth.accessToken;
+      } catch (e) {
+        throw GoogleSignInFailure.from(GoogleSignInStage.idToken, e);
+      }
       if (idToken == null || idToken.isEmpty) {
-        throw Exception('Google sign-in did not return an idToken.');
+        throw GoogleSignInFailure(
+          GoogleSignInStage.idToken,
+          webClientId.isEmpty ? 'no_server_client_id' : 'missing',
+        );
       }
 
-      await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: auth.accessToken,
-      );
+      try {
+        await _supabase.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+      } catch (e) {
+        throw GoogleSignInFailure.from(GoogleSignInStage.exchange, e);
+      }
 
       return true;
+    } on GoogleSignInFailure {
+      rethrow;
     } catch (e) {
-      throw Exception('Google sign-in failed: $e');
+      throw GoogleSignInFailure.from(GoogleSignInStage.unknown, e);
     }
   }
 
