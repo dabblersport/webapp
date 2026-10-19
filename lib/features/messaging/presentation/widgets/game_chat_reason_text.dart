@@ -14,6 +14,7 @@ String? gameChatReasonText(AppLocalizations l10n, MessagingReason reason) =>
       MessagingReason.leftReadOnly => l10n.messaging_reason_left_read_only,
       MessagingReason.blocked => l10n.messaging_reason_blocked,
       MessagingReason.suspended => l10n.messaging_reason_suspended,
+      MessagingReason.underAge => l10n.messaging_reason_under_age,
       MessagingReason.rateLimited => l10n.messaging_reason_rate_limited,
       MessagingReason.notFound => l10n.messaging_reason_not_found,
       MessagingReason.invalidRequest => l10n.messaging_reason_invalid_request,

@@ -4,9 +4,6 @@ import { mapAuthorizeReason } from "../src/auth";
 import worker from "../src/index";
 import { CONV_A, CONV_B, authRow, env, localD1, mockFetch, spyDb } from "./helpers";
 
-// Many D1 round trips per test: allow for a loaded machine.
-vi.setConfig({ testTimeout: 30000 });
-
 afterEach(() => vi.unstubAllGlobals());
 
 const KEY = (n: number) => `9b2f7c1e-0000-4000-8000-${String(n).padStart(12, "0")}`;

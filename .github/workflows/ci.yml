@@ -37,3 +37,11 @@ jobs:
 
       - name: Test
         run: flutter test
+
+      - name: Release tooling checks (offline, no credentials)
+        # KAN-493 / KAN-568: the Android and iOS release logic, the signing patch and the
+        # status watcher are tested on every Canary push and pull request into main.
+        run: |
+          python3 scripts/android/test_play_publish.py
+          python3 scripts/ios/test_asc_release.py
+          python3 scripts/test_mobile_tracking.py

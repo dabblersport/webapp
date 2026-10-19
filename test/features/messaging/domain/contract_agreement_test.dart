@@ -232,8 +232,10 @@ void main() {
         );
       }
       // ...and the Dart enum adds only the two client-side reasons.
+      // `under_age` is a DM reason from the Worker's start-DM call (KAN-557),
+      // outside this game-chat contract.
       final dartServer = MessagingReason.values
-          .where((r) => r.isServerReason)
+          .where((r) => r.isServerReason && r != MessagingReason.underAge)
           .map((r) => r.wireName)
           .toSet();
       expect(dartServer, contract.toSet());
@@ -577,8 +579,8 @@ void main() {
       },
     );
 
-    test('the messaging flag is still false', () {
-      expect(FeatureFlags.messaging, isFalse);
+    test('the messaging flag is on at the KAN-554 launch', () {
+      expect(FeatureFlags.messaging, isTrue);
     });
 
     test('no secret, key or connection string in the contract files', () {

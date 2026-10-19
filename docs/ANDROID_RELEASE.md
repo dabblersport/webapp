@@ -1,4 +1,6 @@
-# Android release (KAN-493)
+# Android release (KAN-493, production readiness KAN-568)
+
+Both stores share one sequence: `docs/MOBILE_RELEASE.md`. iOS: `docs/IOS_RELEASE.md`.
 
 Build, sign, verify and publish an Android version to Google Play from GitHub Actions
 (`dabblersport/webapp`, workflow **Android release**, `.github/workflows/android-release.yml`).
@@ -52,10 +54,14 @@ production_approval = APPROVE <40-character commit> <versionName>+<versionCode>
 and `ref` set to that same full commit. Anything else fails in the first job, before any
 build. The approval string is the CEO's go-ahead for that exact commit and version.
 
-Recommended (repository setting, needs a repository admin): create the GitHub Environment
-**`android-production`** with **required reviewers** (the CEO). The `publish` job runs in
-`android-<track>`, so the reviewers then sit between "run" and "upload to production". An
-environment named `android-internal` is used for internal testing and needs no reviewers.
+The GitHub Environment **`android-production`** exists (KAN-568) and is restricted to the
+`Alpha` branch by a deployment branch policy, so a production publish can only be started from a
+run on Alpha. It deliberately has **no required reviewers**: the CEO's release instruction naming
+the exact commit and version is the approval event, and the typed `production_approval` above is
+that approval recorded in the run. Required reviewers would add a second routine click between
+"run" and "publish to production"; if the CEO wants that extra gate, add the reviewer to the
+environment in Settings > Environments, which changes nothing else. The `publish` job runs in
+`android-<track>`; `android-internal` has no rules and is used for internal testing.
 
 Setting this workflow up is not an approval to publish to production.
 
@@ -99,7 +105,7 @@ SHA-256). Change a pin deliberately and re-run the validation rail.
 
 Only the client-safe allowlist reaches the app build: `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID`, plus `ENVIRONMENT` from the
-input. `SUPABASE_DB_URL` and every other backend secret are never referenced.
+input. `SUPABASE_DB_URL` and every other backend secret are never referenced. Mobile builds also need the repository VARIABLE `MESSAGING_API_BASE_URL` (the messaging Worker's public URL, not a secret; set with `gh variable set`): the build passes it as `--dart-define` like the web build does and **fails fast when it is empty or not an https URL**, because with the messaging flags on a build without it shows "Couldn't load your chats" (KAN-568, found on TestFlight 1.7.9 build 178).
 
 ## Following a release: upload, review, availability are different things
 
@@ -136,6 +142,7 @@ Repository **Actions secrets** in `dabblersport/webapp`:
 | `ANDROID_KEYSTORE_PASSWORD`, `ANDROID_KEY_ALIAS`, `ANDROID_KEY_PASSWORD` | Keystore and key |
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Play API: service account `dabbler-android-release@dabblersportapp.iam.gserviceaccount.com`, app-scoped release permissions only |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID` | Client-safe app configuration (shared with the web build) |
+| (variable, not a secret) `MESSAGING_API_BASE_URL` | The messaging Worker's public URL; required by the build |
 
 Handling: the keystore and `android/key.properties` exist only on the runner during the run
 and are deleted in an `always()` step; the service-account file is written with mode 600 and

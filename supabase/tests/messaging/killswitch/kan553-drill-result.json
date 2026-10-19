@@ -1,0 +1,77 @@
+{
+  "setup": {
+    "setupMs": 787.9955409999966,
+    "writable": false,
+    "readOnlyReason": "game_ended",
+    "sendStatus": 409,
+    "sendReason": "game_ended",
+    "roundTrip": null,
+    "bAccepted": true
+  },
+  "trials": [
+    {
+      "off": {
+        "getMs": 568.7951659999962,
+        "postMs": 1118.7736659999937,
+        "getReason": null,
+        "postReason": null,
+        "lastGetStatus": 403,
+        "lastPostStatus": 403
+      },
+      "on": {
+        "getMs": 1241.813541999989,
+        "postMs": 1557.739750000008,
+        "getReason": null,
+        "postReason": "game_ended",
+        "lastGetStatus": 200,
+        "lastPostStatus": 409
+      }
+    },
+    {
+      "off": {
+        "getMs": 672.5721670000057,
+        "postMs": 1260.9902920000022,
+        "getReason": null,
+        "postReason": null,
+        "lastGetStatus": 403,
+        "lastPostStatus": 403
+      },
+      "on": {
+        "getMs": 768.6238329999615,
+        "postMs": 1081.6642499999725,
+        "getReason": null,
+        "postReason": "game_ended",
+        "lastGetStatus": 200,
+        "lastPostStatus": 409
+      }
+    },
+    {
+      "off": {
+        "getMs": 718.1960419999668,
+        "postMs": 1652.3297499999753,
+        "getReason": null,
+        "postReason": null,
+        "lastGetStatus": 403,
+        "lastPostStatus": 403
+      },
+      "on": {
+        "getMs": 724.7603750000126,
+        "postMs": 1082.2503750000033,
+        "getReason": null,
+        "postReason": "game_ended",
+        "lastGetStatus": 200,
+        "lastPostStatus": 409
+      }
+    }
+  ],
+  "final": {
+    "getMs": 782.3737499999697,
+    "postMs": 1623.305040999956,
+    "getReason": null,
+    "postReason": null,
+    "lastGetStatus": 403,
+    "lastPostStatus": 403
+  },
+  "allWithin60s": true,
+  "finalValueOffVerified": true
+}

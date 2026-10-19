@@ -4,11 +4,13 @@
 //
 //   POST /v1/dm                          { other_user_id }  -> 200 { conversation_id }   (the existing id for an existing pair)
 //   POST /v1/conversations/{id}/mute     { muted }          -> 200 { muted }
-//   PUT / DELETE /v1/conversations/{id}/mute                -> 204 (KAN-563, the contract's mute / unmute)
+// KAN-563 (the contract's operations, docs/messaging/openapi.yaml muteConversation / unmuteConversation):
+//   PUT    /v1/conversations/{id}/mute   (no body)          -> 204   idempotent
+//   DELETE /v1/conversations/{id}/mute   (no body)          -> 204   idempotent
 
-import { DEFAULT_ACCESS_MODE, Env, denial, mapAuthorizeReason, resolveCaller } from "./auth";
+import { Env, authorize, resolveCaller } from "./auth";
 import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
-import { enforceMute, enforceNewDm } from "./rate_limit";
+import { enforceConversationOps, enforceNewDm } from "./rate_limit";
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
@@ -118,8 +120,28 @@ export async function startDm(request: Request, env: Env): Promise<Response> {
   return ok({ conversation_id: id.toLowerCase() });
 }
 
-/** msg_set_muted with the caller's own bearer. null on success, otherwise the typed failure response. */
-async function callSetMuted(authorization: string, env: Env, conversationId: string, muted: boolean): Promise<Response | null> {
+export async function setMuted(request: Request, env: Env, conversationId: string): Promise<Response> {
+  if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
+  let input: { muted?: unknown };
+  try {
+    input = await request.json();
+  } catch {
+    return reasonError("invalid_request", "body");
+  }
+  const muted = input !== null && typeof input === "object" ? input.muted : undefined;
+  if (typeof muted !== "boolean") return reasonError("invalid_request", "muted");
+  const authorization = request.headers.get("Authorization");
+  if (authorization === null || !/^Bearer [^\s]+$/.test(authorization)) return unauthenticated();
+  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
+
+  const failure = await callSetMuted(env, authorization, conversationId, muted);
+  if (failure !== null) return failure;
+  return ok({ muted });
+}
+
+
+/** msg_set_muted with the caller's bearer unchanged; null on success, otherwise the response to return. */
+async function callSetMuted(env: Env, authorization: string, conversationId: string, muted: boolean): Promise<Response | null> {
   let res: Response;
   try {
     res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_set_muted`, {
@@ -138,80 +160,21 @@ async function callSetMuted(authorization: string, env: Env, conversationId: str
   return res.ok ? null : rpcFailure(res);
 }
 
-export async function setMuted(request: Request, env: Env, conversationId: string): Promise<Response> {
-  if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
-  let input: { muted?: unknown };
-  try {
-    input = await request.json();
-  } catch {
-    return reasonError("invalid_request", "body");
-  }
-  const muted = input !== null && typeof input === "object" ? input.muted : undefined;
-  if (typeof muted !== "boolean") return reasonError("invalid_request", "muted");
-  const authorization = request.headers.get("Authorization");
-  if (authorization === null || !/^Bearer [^\s]+$/.test(authorization)) return unauthenticated();
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
-
-  const failure = await callSetMuted(authorization, env, conversationId, muted);
-  if (failure !== null) return failure;
-  return ok({ muted });
-}
-
 /**
- * KAN-563: the contract's muteConversation (PUT) and unmuteConversation (DELETE): 204, no body, idempotent. ONE database
- * round trip: msg_mute_conversation (supabase/migrations/20261015130000_kan563_*.sql) takes the user from auth.uid() with
- * the caller's bearer, applies msg_evaluate's verdict (the pilot rule included) and writes the flag, returning the verified
- * user id or the typed reason. The rate limit (one D1 write) is keyed by that returned id and checked after the call; the
- * write is an idempotent flag, so a 429 that follows it leaves nothing harmful behind.
+ * KAN-563: PUT (mute) / DELETE (unmute) /v1/conversations/{id}/mute, 204 with no body, idempotent. msg_authorize first
+ * (the caller's bearer unchanged: the verified user id and the typed refusal not_in_pilot / not_a_member / removed),
+ * then msg_set_muted. A read-only grant (left, ended, cancelled, a blocked DM) may still mute. The per-user limit runs
+ * AFTER the database call, keyed by the verified id: mute and unmute are idempotent, so an over-limit call changes
+ * nothing a normal call would not (README, "Rate limits").
  */
-export async function muteConversation(request: Request, env: Env, conversationId: string, muted: boolean): Promise<Response> {
-  if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
-  const authorization = request.headers.get("Authorization");
-  if (authorization === null || !/^Bearer [^\s]+$/.test(authorization)) return unauthenticated();
-  if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
-
-  let res: Response;
-  try {
-    res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_mute_conversation`, {
-      method: "POST",
-      headers: {
-        apikey: env.SUPABASE_ANON_KEY,
-        Authorization: authorization,
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      },
-      body: JSON.stringify({
-        p_conversation_id: conversationId.toLowerCase(),
-        p_muted: muted,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
-      }),
-    });
-  } catch {
-    return upstreamError(502, "request unavailable");
-  }
-  if (res.status === 401 || res.status === 403) return unauthenticated("token rejected");
-  if (!res.ok) return upstreamError(502, "request failed");
-
-  let parsed: unknown;
-  try {
-    parsed = await res.json();
-  } catch {
-    return upstreamError(502, "result malformed");
-  }
-  const row = Array.isArray(parsed) ? (parsed.length === 1 ? parsed[0] : undefined) : parsed;
-  if (row === null || typeof row !== "object") return upstreamError(502, "result malformed");
-  const r = row as { user_id?: unknown; reason?: unknown };
-
-  if (r.reason !== null && r.reason !== undefined) {
-    if (typeof r.reason !== "string") return upstreamError(502, "result malformed");
-    if (r.reason === "invalid_request" || r.reason === "not_found" || r.reason === "suspended") return reasonError(r.reason);
-    const m = mapAuthorizeReason(r.reason);
-    if (m.kind === "readOnly") return upstreamError(502, "result malformed");
-    return denial(m);
-  }
-  if (typeof r.user_id !== "string" || r.user_id.length === 0) return upstreamError(502, "result malformed");
-
-  const limited = await enforceMute(env.DB, r.user_id);
+export async function putMuted(request: Request, env: Env, conversationId: string, muted: boolean): Promise<Response> {
+  // The contract lists no invalid_request for these two operations: an id that cannot exist is not_found.
+  if (!UUID.test(conversationId)) return reasonError("not_found");
+  const auth = await authorize(request, env, conversationId.toLowerCase());
+  if (!auth.ok) return auth.response;
+  const failure = await callSetMuted(env, request.headers.get("Authorization") as string, conversationId, muted);
+  if (failure !== null) return failure;
+  const limited = await enforceConversationOps(env.DB, auth.grant.userId);
   if (limited !== null) return limited;
   return new Response(null, { status: 204 });
 }

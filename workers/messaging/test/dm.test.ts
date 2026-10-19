@@ -9,9 +9,6 @@ import { LOOKBACK_MESSAGES, MAX_BLOCK_LOOKUPS, summarySql } from "../src/convers
 import { NEW_DM_PER_USER_PER_HOUR, SEND_PER_USER_PER_CONVERSATION_PER_MINUTE } from "../src/rate_limit";
 import { RPC_URL, SUPABASE_URL, authRow, env, localD1 } from "./helpers";
 
-// Many D1 round trips per test: allow for a loaded machine.
-vi.setConfig({ testTimeout: 30000 });
-
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.restoreAllMocks();

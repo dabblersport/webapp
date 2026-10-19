@@ -16,9 +16,8 @@ import 'package:dabbler/features/rewards/presentation/screens/rewards_screen.dar
 import 'package:dabbler/features/misc/presentation/screens/help_center_screen.dart';
 import 'package:dabbler/features/misc/presentation/screens/transactions_screen.dart';
 import 'package:dabbler/features/admin/presentation/screens/moderation_queue_screen.dart';
-import 'package:dabbler/features/admin/presentation/message_reports_route.dart';
-import 'package:dabbler/features/admin/presentation/screens/message_reports_screen.dart';
 import 'package:dabbler/features/admin/presentation/screens/safety_overview_screen.dart';
+import 'package:dabbler/features/admin/presentation/admin_message_reports_route.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 import 'package:dabbler/app/app_router.dart';
@@ -232,6 +231,17 @@ RouteBase get adminSafetyOverviewRoute =>
       ),
     );
 
+// KAN-552: admin Reports (message reports). Same gate as the admin routes
+// above (session, then the existing is_admin RPC) plus the two messaging flags.
+RouteBase get adminMessageReportsRouteDef => adminMessageReportsRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  hasSession: () => Supabase.instance.client.auth.currentSession != null,
+  enabled: () =>
+      FeatureFlags.messaging && FeatureFlags.enableMessagingReporting,
+  isAdmin: () async =>
+      await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn) == true,
+);
+
 // Error route
 RouteBase get errorMessageRoute =>
     GoRoute(
@@ -245,25 +255,4 @@ RouteBase get errorMessageRoute =>
           child: ErrorPage(message: message),
         );
       },
-    );
-
-// KAN-552: admin-only message reports. Flags off, no session or a non-admin
-// land away from it (see messageReportsRedirect); the screen also draws
-// nothing for anyone else.
-RouteBase get adminMessageReportsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.adminMessageReports,
-      redirect: (context, state) => messageReportsRedirect(
-        flagsOn: FeatureFlags.messaging && FeatureFlags.enableMessagingReporting,
-        hasSession: Supabase.instance.client.auth.currentSession != null,
-        isAdmin: () async =>
-            await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn) ==
-            true,
-      ),
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const MessageReportsScreen(),
-        type: SharedAxisType.horizontal,
-      ),
     );

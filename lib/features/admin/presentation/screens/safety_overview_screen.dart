@@ -3,7 +3,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
-import 'package:dabbler/features/admin/presentation/providers/message_reports_providers.dart';
+import 'package:dabbler/features/admin/presentation/providers/admin_message_reports_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -16,9 +16,6 @@ final safetyOverviewProvider = FutureProvider<SafetyOverview>((ref) async {
   final service = ref.read(moderationServiceProvider);
   return await service.fetchSafetyOverview();
 });
-
-/// The key of the Reports entry row (KAN-552).
-const messageReportsEntryKey = ValueKey<String>('admin-message-reports-entry');
 
 class SafetyOverviewScreen extends ConsumerWidget {
   const SafetyOverviewScreen({super.key});
@@ -68,23 +65,13 @@ class SafetyOverviewScreen extends ConsumerWidget {
                   _buildSummaryCards(overview),
                   const DabblerGap.v(DabblerSpacing.space7),
                   _buildOverviewInfo(context, overview),
-                  // KAN-552: the one entry to the admin Reports screen; only
-                  // here (admin branch) and only with both flags on.
-                  if (messageReportsEnabled(
-                    ref.watch(messageReportsFlagsProvider),
+                  // KAN-552: the one entry to message reports, admin-only
+                  // (this branch) and only with both messaging flags on.
+                  if (adminMessageReportsEnabled(
+                    ref.watch(adminMessageReportsFlagsProvider),
                   )) ...[
                     const DabblerGap.v(DabblerSpacing.space7),
-                    DabblerListRow(
-                      key: messageReportsEntryKey,
-                      title: AppLocalizations.of(
-                        context,
-                      ).admin_message_reports_title,
-                      subtitle: AppLocalizations.of(
-                        context,
-                      ).admin_message_reports_entry_subtitle,
-                      showChevron: true,
-                      onTap: () => context.push(RoutePaths.adminMessageReports),
-                    ),
+                    _buildMessageReportsRow(context),
                   ],
                 ],
               ),
@@ -107,6 +94,22 @@ class SafetyOverviewScreen extends ConsumerWidget {
           ),
         ),
       ),
+    );
+  }
+
+  static const messageReportsRowKey = ValueKey<String>(
+    'safety-overview-message-reports',
+  );
+
+  Widget _buildMessageReportsRow(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    return DabblerListRow(
+      key: messageReportsRowKey,
+      leading: const DabblerIcon('flag', size: DabblerSizing.iconMd),
+      title: l10n.admin_message_reports_overview_row,
+      subtitle: l10n.admin_message_reports_overview_row_hint,
+      showChevron: true,
+      onTap: () => context.push(RoutePaths.adminMessageReports),
     );
   }
 

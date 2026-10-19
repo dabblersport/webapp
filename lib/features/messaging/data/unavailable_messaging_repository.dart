@@ -1,14 +1,13 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
-import 'package:dabbler/features/messaging/domain/message_reports_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
-import 'package:dabbler/features/messaging/domain/models/message_report.dart';
-import 'package:dabbler/features/messaging/domain/models/reported_message.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/report_category.dart';
+import 'package:dabbler/features/messaging/domain/models/report_row.dart';
+import 'package:dabbler/features/messaging/domain/moderation_reports_repository.dart';
 import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
@@ -20,7 +19,7 @@ class UnavailableMessagingRepository
         MessagingRepository,
         MyConversationsRepository,
         DmRepository,
-        MessageReportsRepository {
+        ModerationReportsRepository {
   const UnavailableMessagingRepository();
 
   static Err<T, Failure> _no<T>() => Err(
@@ -71,21 +70,21 @@ class UnavailableMessagingRepository
   }) async => _no();
 
   @override
-  Future<Result<List<MessageReport>, Failure>> listMessageReports({
-    int? limit,
-  }) async => Err(MessageReportsFailure(MessageReportsRefusal.failed));
-
-  @override
-  Future<Result<ReportedMessage, Failure>> readReportedMessage(
-    String reportId,
-  ) async => Err(MessageReportsFailure(MessageReportsRefusal.failed));
-
-  @override
   Future<Result<String, Failure>> startDm(String otherUserId) async => _no();
 
   @override
   Future<Result<void, Failure>> setMuted(
     String conversationId,
     bool muted,
+  ) async => _no();
+
+  @override
+  Future<Result<List<ReportRow>, Failure>> listMessageReports({
+    int? limit,
+  }) async => _no();
+
+  @override
+  Future<Result<ReportedMessage, Failure>> readReportedMessage(
+    String reportId,
   ) async => _no();
 }

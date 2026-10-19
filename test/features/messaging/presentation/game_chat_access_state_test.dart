@@ -17,6 +17,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../support/render_mode.dart';
@@ -38,6 +39,7 @@ final _boundary = GlobalKey();
 Widget _app(FakeMessagingRepository repo, _Variant v, GoRouter router) =>
     ProviderScope(
       overrides: [
+        fakeMessagingBackend,
         fakeMessagingRepositoryProvider.overrideWithValue(repo),
         gameChatPollIntervalProvider.overrideWithValue(null),
       ],

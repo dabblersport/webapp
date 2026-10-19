@@ -1,0 +1,524 @@
+# iOS release: build, sign, verify, upload to TestFlight and (only when explicitly approved)
+# submit to App Review. KAN-568.
+#
+# THE ONE ENTRY POINT is "Run workflow" on this workflow (workflow_dispatch). Nothing else
+# publishes: no push to Alpha, Canary or main, no pull request, no schedule. See
+# docs/MOBILE_RELEASE.md (both platforms) and docs/IOS_RELEASE.md (this one).
+#
+#   mode=release  build + verify (+ upload to TestFlight when target=testflight)
+#   mode=status   read-only: report the distinct stages of an uploaded build
+#   mode=submit   attach an uploaded build to the App Store version and submit it for review.
+#                 A DRY RUN unless dry_run=false AND the production approval matches exactly.
+#
+# Credentials are repository secrets, used only by the steps that need them, never echoed:
+#   IOS_DISTRIBUTION_CERT_P12_BASE64  IOS_DISTRIBUTION_CERT_PASSWORD  IOS_PROVISIONING_PROFILE_BASE64
+#   APP_STORE_CONNECT_API_KEY_P8  APP_STORE_CONNECT_KEY_ID  APP_STORE_CONNECT_ISSUER_ID
+# App configuration comes from the client-safe allowlist only:
+#   SUPABASE_URL  SUPABASE_ANON_KEY  SUPABASE_PUBLISHABLE_KEY  APP_NAME  GOOGLE_WEB_CLIENT_ID
+# plus the public repository VARIABLE MESSAGING_API_BASE_URL (the messaging Worker's URL; the build refuses to run without it)
+# (+ ENVIRONMENT from the app_environment input). Backend-only secrets (for example
+# SUPABASE_DB_URL) are never referenced by this workflow.
+#
+# The IPA is NEVER uploaded as a workflow artifact (it embeds the provisioning profile, and
+# this repository is public). It is built, verified and sent to App Store Connect inside one job.
+name: iOS release
+
+run-name: >-
+  iOS ${{ inputs.mode || 'validate' }}
+  ${{ inputs.version_name }}${{ inputs.build_number && format('+{0}', inputs.build_number) || '' }}
+  ${{ inputs.target && format('to {0}', inputs.target) || '' }}
+  (${{ inputs.ref || github.ref_name }})
+
+on:
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "release = build, verify and upload if a target is chosen; status = read-only report; submit = App Review submission (dry run unless dry_run is false)"
+        type: choice
+        options: [release, status, submit]
+        default: release
+      ref:
+        description: "Branch, tag or commit to build. Resolved to a commit and recorded. A real App Review submission needs the full 40-character commit."
+        type: string
+        required: true
+        default: Alpha
+      version_name:
+        description: "CFBundleShortVersionString, for example 1.7.9"
+        type: string
+        required: true
+      build_number:
+        description: "CFBundleVersion, an integer higher than every build in App Store Connect. Leave empty to use the next unused number read from App Store Connect (it is recorded in the run summary)"
+        type: string
+        required: false
+      target:
+        description: "none = build and verify only; testflight = upload to TestFlight (internal testing only, no external invitations)"
+        type: choice
+        options: [none, testflight]
+        default: none
+      app_environment:
+        description: "Value of the app's ENVIRONMENT define"
+        type: choice
+        options: [production, development]
+        default: production
+      dry_run:
+        description: "mode=submit only. true = report what would happen and change nothing"
+        type: boolean
+        default: true
+      production_approval:
+        description: "mode=submit with dry_run=false only. Must be exactly: APPROVE <40-character commit> <versionName>+<buildNumber>"
+        type: string
+        required: false
+  # Validation rail ONLY: pushing a ref to this branch name builds, signs and verifies an IPA
+  # and never uploads (target is forced to none). It also registers this workflow with GitHub
+  # so that workflow_dispatch can be used while the default branch does not carry the file.
+  push:
+    branches:
+      - ios-build-validate
+
+permissions:
+  contents: read
+
+# One release run at a time, queued not cancelled. A duplicate or lower build number is also
+# refused against App Store Connect itself before anything is built or uploaded.
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+env:
+  BUNDLE_ID: app.dabbler.pro
+  TEAM_ID: J5636UH8V8
+  PROFILE_NAME: Dabbler App Store
+  # Recorded toolchain. The runner image and Xcode are read at run time and written to the
+  # run summary; Apple requires App Store uploads from a current Xcode major, so the build
+  # fails below this.
+  FLUTTER_VERSION: "3.47.5"
+  XCODE_MIN_MAJOR: "26"
+
+jobs:
+  # ---------------------------------------------------------------------------------------
+  prepare:
+    name: Resolve and validate the request
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    outputs:
+      sha: ${{ steps.resolve.outputs.sha }}
+      mode: ${{ steps.resolve.outputs.mode }}
+      target: ${{ steps.resolve.outputs.target }}
+      version_name: ${{ steps.resolve.outputs.version_name }}
+      build_number: ${{ steps.resolve.outputs.build_number }}
+      app_environment: ${{ steps.resolve.outputs.app_environment }}
+      confirm_submit: ${{ steps.resolve.outputs.confirm_submit }}
+    steps:
+      - name: Checkout the requested ref
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref || github.sha }}
+          fetch-depth: 0
+
+      - name: Resolve to a commit and check the request
+        id: resolve
+        env:
+          EVENT: ${{ github.event_name }}
+          IN_MODE: ${{ inputs.mode }}
+          IN_REF: ${{ inputs.ref }}
+          IN_VNAME: ${{ inputs.version_name }}
+          IN_BUILD: ${{ inputs.build_number }}
+          IN_TARGET: ${{ inputs.target }}
+          IN_ENV: ${{ inputs.app_environment }}
+          IN_DRY: ${{ inputs.dry_run }}
+          IN_APPROVAL: ${{ inputs.production_approval }}
+        run: |
+          set -euo pipefail
+          SHA="$(git rev-parse HEAD)"
+          if [[ "$EVENT" == "push" ]]; then
+            # Validation rail: build-only, version taken from pubspec, never uploads.
+            MODE=release; TARGET=none; APPENV=production; DRY=true
+            VNAME="$(sed -n 's/^version:[[:space:]]*\([0-9][0-9.]*\)+.*/\1/p' pubspec.yaml | head -1)"
+            BUILD="$(sed -n 's/^version:[[:space:]]*[0-9][0-9.]*+\([0-9][0-9]*\).*/\1/p' pubspec.yaml | head -1)"
+          else
+            MODE="$IN_MODE"; TARGET="$IN_TARGET"; APPENV="$IN_ENV"; DRY="$IN_DRY"
+            VNAME="$IN_VNAME"; BUILD="$IN_BUILD"
+          fi
+
+          fail() { echo "::error::$1"; exit 1; }
+          [[ "$MODE" == "release" || "$MODE" == "status" || "$MODE" == "submit" ]] || fail "mode must be release, status or submit"
+          [[ "$VNAME" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || fail "version_name must look like 1.7.9"
+          [[ "$TARGET" == "none" || "$TARGET" == "testflight" ]] || fail "target must be none or testflight"
+          [[ "$APPENV" == "production" || "$APPENV" == "development" ]] || fail "app_environment must be production or development"
+          # An empty build number is allowed only when a build will be uploaded: the next unused
+          # number is then read from App Store Connect. Otherwise it must be an integer.
+          if [[ -n "$BUILD" ]]; then
+            [[ "$BUILD" =~ ^[1-9][0-9]{0,8}$ ]] || fail "build_number must be a positive integer"
+          else
+            [[ "$MODE" == "release" && "$TARGET" == "testflight" ]] || fail "build_number is required unless uploading to TestFlight (then the next unused number is used)"
+          fi
+
+          # A store build may only come from a commit that is on a recorded branch of this
+          # repository (Alpha, Canary or main), never from an arbitrary ref.
+          reachable=""
+          for b in Alpha Canary main; do
+            if git rev-parse --verify -q "origin/$b" >/dev/null && git merge-base --is-ancestor "$SHA" "origin/$b"; then
+              reachable="$reachable $b"
+            fi
+          done
+          if [[ "$MODE" != "status" && ( "$TARGET" == "testflight" || "$MODE" == "submit" ) ]]; then
+            [[ -n "$reachable" ]] || fail "commit $SHA is not on Alpha, Canary or main"
+          fi
+
+          CONFIRM=false
+          if [[ "$MODE" == "submit" && "$DRY" != "true" ]]; then
+            # A real App Review submission is the CEO's decision for an exact commit and version.
+            [[ "$IN_REF" =~ ^[0-9a-f]{40}$ ]] || fail "a real submission needs the full 40-character commit as ref"
+            [[ "$IN_REF" == "$SHA" ]] || fail "ref did not resolve to itself"
+            [[ -n "$BUILD" ]] || fail "a real submission needs the build_number of the uploaded build"
+            [[ "$IN_APPROVAL" == "APPROVE $SHA $VNAME+$BUILD" ]] || fail "production_approval must be exactly: APPROVE $SHA $VNAME+$BUILD"
+            CONFIRM=true
+          fi
+
+          {
+            echo "sha=$SHA"; echo "mode=$MODE"; echo "target=$TARGET"
+            echo "version_name=$VNAME"; echo "build_number=$BUILD"
+            echo "app_environment=$APPENV"; echo "confirm_submit=$CONFIRM"
+          } >> "$GITHUB_OUTPUT"
+
+          {
+            echo "### Release request"
+            echo "| | |"; echo "|---|---|"
+            echo "| Event | \`$EVENT\` |"
+            echo "| Mode | \`$MODE\` |"
+            echo "| Requested ref | \`${IN_REF:-$GITHUB_REF_NAME}\` |"
+            echo "| **Resolved commit** | \`$SHA\` |"
+            echo "| On branches |${reachable:- none of Alpha, Canary, main} |"
+            echo "| versionName / build number | \`$VNAME\` / \`${BUILD:-next unused}\` |"
+            echo "| Target | \`$TARGET\` |"
+            echo "| Real App Review submission | \`$CONFIRM\` |"
+            echo "| App ENVIRONMENT | \`$APPENV\` |"
+            echo "| Requested by | \`$GITHUB_ACTOR\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------------------
+  quality:
+    name: Analyze and test
+    needs: prepare
+    if: needs.prepare.outputs.mode == 'release'
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout the resolved commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: A local config selection must never ship
+        run: bash scripts/check_no_local_env.sh
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Analyze
+        run: flutter analyze --no-fatal-infos
+
+      - name: Test
+        run: flutter test --dart-define=SHOTS_ROOT="$RUNNER_TEMP/shots"
+
+      - name: Offline checks of the iOS release logic
+        run: |
+          python3 scripts/ios/test_asc_release.py
+
+  # ---------------------------------------------------------------------------------------
+  build:
+    name: Build, sign, verify and upload (iOS)
+    needs: [prepare, quality]
+    if: needs.prepare.outputs.mode == 'release'
+    runs-on: macos-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout the resolved commit
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Record the toolchain and enforce the Xcode floor
+        run: |
+          set -euo pipefail
+          # Capture first: piping xcodebuild straight into head makes xcodebuild crash on SIGPIPE.
+          XC_ALL="$(xcodebuild -version)"
+          MAJOR="$(sed -n 's/^Xcode \([0-9]*\).*/\1/p' <<<"$XC_ALL" | head -1)"
+          {
+            echo "### Toolchain"
+            echo '```'
+            echo "$XC_ALL"
+            sw_vers
+            echo "runner image: ${ImageOS:-unknown} ${ImageVersion:-unknown}"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+          (( MAJOR >= XCODE_MIN_MAJOR )) || { echo "::error::Xcode $MAJOR is older than the required Xcode $XCODE_MIN_MAJOR"; exit 1; }
+
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+
+      - name: Set up Python tooling
+        run: |
+          python3 -m venv "$RUNNER_TEMP/venv"
+          "$RUNNER_TEMP/venv/bin/pip" install --disable-pip-version-check -r scripts/ios/requirements.txt
+          echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
+
+      - name: Write the App Store Connect API key (runner only)
+        if: needs.prepare.outputs.target == 'testflight'
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for n in ASC_KEY ASC_KEY_ID ASC_ISSUER; do
+            [[ -n "${!n}" ]] || { echo "::error::an App Store Connect secret is empty (see docs/IOS_RELEASE.md for the secret names)"; exit 1; }
+          done
+          mkdir -p "$RUNNER_TEMP/asc"
+          printf '%s' "$ASC_KEY" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+          {
+            echo "ASC_KEY_FILE=$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
+            echo "ASC_KEY_ID=$ASC_KEY_ID"
+            echo "ASC_ISSUER_ID=$ASC_ISSUER"
+            echo "API_PRIVATE_KEYS_DIR=$RUNNER_TEMP/asc"
+          } >> "$GITHUB_ENV"
+
+      - name: Resolve the build number and refuse a duplicate
+        id: number
+        if: needs.prepare.outputs.target == 'testflight'
+        env:
+          REQ_BUILD: ${{ needs.prepare.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$REQ_BUILD" ]]; then
+            BUILD="$(python3 scripts/ios/asc_release.py next --bundle-id "$BUNDLE_ID" --key-file "$ASC_KEY_FILE" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID" | python3 -c 'import json,sys; print(json.load(sys.stdin)["nextBuildNumber"])')"
+          else
+            BUILD="$REQ_BUILD"
+          fi
+          python3 scripts/ios/asc_release.py check --bundle-id "$BUNDLE_ID" --build-number "$BUILD" --key-file "$ASC_KEY_FILE" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+          echo "BUILD_NUMBER=$BUILD" >> "$GITHUB_ENV"
+
+      - name: Build number for a build-only run
+        if: needs.prepare.outputs.target != 'testflight'
+        env:
+          REQ_BUILD: ${{ needs.prepare.outputs.build_number }}
+        run: echo "BUILD_NUMBER=$REQ_BUILD" >> "$GITHUB_ENV"
+
+      - name: A local config selection must never ship
+        run: bash scripts/check_no_local_env.sh
+
+      - name: Install the signing identity and profile (temporary keychain)
+        env:
+          IOS_DISTRIBUTION_CERT_P12_BASE64: ${{ secrets.IOS_DISTRIBUTION_CERT_P12_BASE64 }}
+          IOS_DISTRIBUTION_CERT_PASSWORD: ${{ secrets.IOS_DISTRIBUTION_CERT_PASSWORD }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+        run: bash scripts/ios/install_signing.sh
+
+      - name: Switch the Runner target to manual distribution signing (runner copy only)
+        run: python3 scripts/ios/prepare_manual_signing.py ios/Runner.xcodeproj/project.pbxproj "$BUNDLE_ID" "$IOS_PROFILE_NAME"
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build the signed IPA
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
+          APP_NAME: ${{ secrets.APP_NAME }}
+          GOOGLE_WEB_CLIENT_ID: ${{ secrets.GOOGLE_WEB_CLIENT_ID }}
+          # Public URL of the messaging Worker (not a secret): a repository VARIABLE, same name as the web build's.
+          MESSAGING_API_BASE_URL: ${{ vars.MESSAGING_API_BASE_URL }}
+          APP_ENVIRONMENT: ${{ needs.prepare.outputs.app_environment }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          # Client-safe allowlist only. No database URL, service key or other backend secret is read.
+          for n in SUPABASE_URL SUPABASE_ANON_KEY APP_NAME; do
+            [[ -n "${!n}" ]] || { echo "::error::required app config $n is empty"; exit 1; }
+          done
+          # Messaging is on in the committed flags, so a build without its Worker URL would show "Couldn't load your chats".
+          [[ "${MESSAGING_API_BASE_URL:-}" == https://* ]] || { echo "::error::repository variable MESSAGING_API_BASE_URL is empty or not an https URL"; exit 1; }
+          [[ -n "$BUILD_NUMBER" ]] || { echo "::error::no build number resolved"; exit 1; }
+          security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
+          flutter build ipa --release \
+            --build-name="$VNAME" --build-number="$BUILD_NUMBER" \
+            --export-options-plist=ios/ExportOptions-AppStore.plist \
+            --dart-define=SUPABASE_URL="$SUPABASE_URL" \
+            --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
+            --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
+            --dart-define=APP_NAME="$APP_NAME" \
+            --dart-define=ENVIRONMENT="$APP_ENVIRONMENT" \
+            --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
+            --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL"
+          IPA="$(ls build/ios/ipa/*.ipa | head -1)"
+          test -f "$IPA" || { echo "::error::no IPA was produced"; exit 1; }
+          echo "IPA_PATH=$IPA" >> "$GITHUB_ENV"
+
+      - name: Verify bundle id, versions, profile and signature
+        id: verify
+        env:
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          SHA: ${{ needs.prepare.outputs.sha }}
+        run: |
+          set -euo pipefail
+          OUT="$RUNNER_TEMP/out"; mkdir -p "$OUT"
+          scripts/ios/verify_ipa.sh "$IPA_PATH" "$BUNDLE_ID" "$VNAME" "$BUILD_NUMBER" "$TEAM_ID" "$PROFILE_NAME" "$OUT/metadata.json"
+          ISHA="$(sed -n 's/.*"ipaSha256": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
+          AUTH="$(sed -n 's/.*"signingAuthority": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
+          EXP="$(sed -n 's/.*"profileExpires": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
+          {
+            echo "### Signed IPA (verified)"
+            echo "| | |"; echo "|---|---|"
+            echo "| Commit | \`$SHA\` |"
+            echo "| Bundle id | \`$BUNDLE_ID\` |"
+            echo "| versionName / build number | \`$VNAME\` / \`$BUILD_NUMBER\` |"
+            echo "| Team | \`$TEAM_ID\` |"
+            echo "| Signed by | \`$AUTH\` |"
+            echo "| Provisioning profile | \`$PROFILE_NAME\` (expires $EXP) |"
+            echo "| IPA SHA-256 | \`$ISHA\` |"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload the metadata (not the IPA)
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-metadata
+          path: ${{ runner.temp }}/out/metadata.json
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Upload to App Store Connect (TestFlight)
+        if: needs.prepare.outputs.target == 'testflight'
+        run: |
+          set -euo pipefail
+          xcrun altool --upload-app -f "$IPA_PATH" -t ios --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" --output-format json > "$RUNNER_TEMP/upload.json" 2>&1 || { sed -E 's/[A-Za-z0-9_-]{30,}/<redacted>/g' "$RUNNER_TEMP/upload.json" | tail -20; echo "::error::altool upload failed"; exit 1; }
+          echo "Uploaded build $BUILD_NUMBER to App Store Connect (processing is asynchronous)."
+
+      - name: Wait for processing and read the build back
+        if: needs.prepare.outputs.target == 'testflight'
+        env:
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+        run: |
+          set -euo pipefail
+          python3 scripts/ios/asc_release.py wait --bundle-id "$BUNDLE_ID" --version-name "$VNAME" --build-number "$BUILD_NUMBER" \
+            --key-file "$ASC_KEY_FILE" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID" --timeout-minutes 45 | tee "$RUNNER_TEMP/readback.json"
+          {
+            echo "### App Store Connect read-back"
+            echo '```json'
+            cat "$RUNNER_TEMP/readback.json"
+            echo '```'
+            echo "Upload, processing and TestFlight state are distinct from App Review and store availability. Nothing was submitted for review and no external tester was invited. Follow this build with mode=status (docs/IOS_RELEASE.md)."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove signing material from the runner
+        if: always()
+        run: bash scripts/ios/cleanup_signing.sh
+
+  # ---------------------------------------------------------------------------------------
+  status:
+    name: Report release status (read-only)
+    needs: prepare
+    if: needs.prepare.outputs.mode == 'status'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (release tooling)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Set up Python tooling
+        run: python3 -m pip install --disable-pip-version-check -r scripts/ios/requirements.txt
+
+      - name: Write the App Store Connect API key (runner only)
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ -n "$ASC_KEY" ]] || { echo "::error::APP_STORE_CONNECT_API_KEY_P8 is empty"; exit 1; }
+          printf '%s' "$ASC_KEY" > "$RUNNER_TEMP/asc.p8"
+
+      - name: Read the stages from App Store Connect
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          BUILD: ${{ needs.prepare.outputs.build_number }}
+        run: |
+          set -euo pipefail
+          ARGS=(--bundle-id "$BUNDLE_ID" --version-name "$VNAME" --key-file "$RUNNER_TEMP/asc.p8" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID")
+          [[ -z "$BUILD" ]] || ARGS+=(--build-number "$BUILD")
+          python3 scripts/ios/asc_release.py status "${ARGS[@]}" | tee "$RUNNER_TEMP/status.json"
+          {
+            echo "### App Store Connect status for $VNAME (${BUILD:-no build number})"
+            echo '```json'
+            cat "$RUNNER_TEMP/status.json"
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/asc.p8" || true
+
+  # ---------------------------------------------------------------------------------------
+  submit:
+    name: App Review submission (${{ needs.prepare.outputs.confirm_submit == 'true' && 'REAL' || 'dry run' }})
+    needs: prepare
+    if: needs.prepare.outputs.mode == 'submit'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout (release tooling)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.prepare.outputs.sha }}
+
+      - name: Set up Python tooling
+        run: python3 -m pip install --disable-pip-version-check -r scripts/ios/requirements.txt
+
+      - name: Write the App Store Connect API key (runner only)
+        env:
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+        run: |
+          set -euo pipefail
+          umask 077
+          [[ -n "$ASC_KEY" ]] || { echo "::error::APP_STORE_CONNECT_API_KEY_P8 is empty"; exit 1; }
+          printf '%s' "$ASC_KEY" > "$RUNNER_TEMP/asc.p8"
+
+      - name: Submit for App Review (only with the exact approval; otherwise a dry run)
+        env:
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+          VNAME: ${{ needs.prepare.outputs.version_name }}
+          BUILD: ${{ needs.prepare.outputs.build_number }}
+          CONFIRM: ${{ needs.prepare.outputs.confirm_submit }}
+        run: |
+          set -euo pipefail
+          ARGS=(--bundle-id "$BUNDLE_ID" --version-name "$VNAME" --build-number "$BUILD" --key-file "$RUNNER_TEMP/asc.p8" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID")
+          [[ "$CONFIRM" != "true" ]] || ARGS+=(--confirm)
+          python3 scripts/ios/asc_release.py submit "${ARGS[@]}" | tee "$RUNNER_TEMP/submit.json"
+          {
+            echo "### App Review submission (confirm=$CONFIRM)"
+            echo '```json'
+            cat "$RUNNER_TEMP/submit.json"
+            echo '```'
+            echo "A submission starts App Review, which is asynchronous. Follow it with mode=status; no review duration is promised."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Remove the API key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/asc.p8" || true

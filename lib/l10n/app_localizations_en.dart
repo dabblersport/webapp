@@ -6448,6 +6448,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'You can\'t send messages in this chat. Go back.';
 
   @override
+  String get messaging_reason_under_age =>
+      'Messaging is available from age 16.';
+
+  @override
   String get messaging_reason_suspended =>
       'Chat is turned off for your account. Contact support if you think this is a mistake.';
 
@@ -6510,90 +6514,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_list_fallback_unknown_sport => 'Game';
 
   @override
-  String get admin_message_reports_title => 'Message reports';
-
-  @override
-  String get admin_message_reports_entry_subtitle =>
-      'Reported messages, newest first';
-
-  @override
-  String get admin_message_reports_loading => 'Loading reports';
-
-  @override
-  String get admin_message_reports_empty => 'No message reports';
-
-  @override
-  String get admin_message_reports_error_title => 'Couldn\'t load reports';
-
-  @override
-  String get admin_message_reports_error_body =>
-      'Check your connection and try again.';
-
-  @override
-  String get admin_message_reports_retry => 'Retry';
-
-  @override
-  String admin_message_reports_report_id(String id) {
-    return 'Report $id';
-  }
-
-  @override
-  String get admin_message_reports_read_action => 'Read this message';
-
-  @override
-  String get admin_message_reports_reading => 'Reading';
-
-  @override
-  String get admin_message_reports_panel_title => 'Reported message';
-
-  @override
-  String get admin_message_reports_panel_note =>
-      'Only you can see this. It is cleared when you close it.';
-
-  @override
-  String get admin_message_reports_panel_close => 'Close';
-
-  @override
-  String get admin_message_reports_refusal_not_moderator =>
-      'Only administrators can read reported messages.';
-
-  @override
-  String get admin_message_reports_refusal_not_found =>
-      'This message is no longer available.';
-
-  @override
-  String get admin_message_reports_refusal_rate_limited =>
-      'Too many attempts. Try again in a moment.';
-
-  @override
-  String get admin_message_reports_refusal_failed =>
-      'Couldn\'t open the message. Try again.';
-
-  @override
-  String get admin_message_reports_status_open => 'Open';
-
-  @override
-  String get admin_message_reports_status_triage => 'In triage';
-
-  @override
-  String get admin_message_reports_status_escalated => 'Escalated';
-
-  @override
-  String get admin_message_reports_status_resolved => 'Resolved';
-
-  @override
-  String get admin_message_reports_status_dismissed => 'Dismissed';
-
-  @override
-  String get admin_message_reports_status_duplicate => 'Duplicate';
-
-  @override
-  String get admin_message_reports_status_unknown => 'Unknown';
-
-  @override
-  String get admin_message_reports_reason_unknown => 'Other';
-
-  @override
   String get messaging_reason_dm_cap_reached =>
       'You\'ve started as many new conversations as you can today. Try again tomorrow.';
 
@@ -6651,27 +6571,147 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_dm_header_hint => 'Opens their profile';
 
   @override
+  String get admin_message_reports_title => 'Message reports';
+
+  @override
+  String get admin_message_reports_overview_row => 'Message reports';
+
+  @override
+  String get admin_message_reports_overview_row_hint =>
+      'Reports on chat messages';
+
+  @override
+  String get admin_message_reports_loading => 'Loading reports';
+
+  @override
+  String admin_message_reports_row_id(String id) {
+    return 'Report $id';
+  }
+
+  @override
+  String get admin_message_reports_read_action => 'Read this message';
+
+  @override
+  String get admin_message_reports_panel_title => 'Reported message';
+
+  @override
+  String get admin_message_reports_panel_close => 'Close';
+
+  @override
+  String get admin_message_reports_panel_loading => 'Loading message';
+
+  @override
+  String get admin_message_reports_panel_note =>
+      'Only you can see this. It is not saved.';
+
+  @override
+  String get admin_message_reports_empty_title => 'No message reports';
+
+  @override
+  String get admin_message_reports_empty_body =>
+      'Reports on chat messages appear here.';
+
+  @override
+  String get admin_message_reports_error_title => 'Couldn\'t load reports';
+
+  @override
+  String get admin_message_reports_error_body =>
+      'Check your connection and try again.';
+
+  @override
+  String get admin_message_reports_error_retry => 'Retry';
+
+  @override
+  String get admin_message_reports_refusal_not_a_moderator =>
+      'Only admins can read reported messages.';
+
+  @override
+  String get admin_message_reports_refusal_not_found =>
+      'This message is no longer available.';
+
+  @override
+  String get admin_message_reports_refusal_rate_limited =>
+      'Too many requests. Try again later.';
+
+  @override
+  String get admin_message_reports_refusal_other =>
+      'Couldn\'t load this message. Try again.';
+
+  @override
+  String get admin_message_reports_reason_spam => 'Spam';
+
+  @override
+  String get admin_message_reports_reason_abuse => 'Abuse';
+
+  @override
+  String get admin_message_reports_reason_hate => 'Hate';
+
+  @override
+  String get admin_message_reports_reason_harassment => 'Harassment';
+
+  @override
+  String get admin_message_reports_reason_nudity => 'Nudity';
+
+  @override
+  String get admin_message_reports_reason_illegal => 'Illegal';
+
+  @override
+  String get admin_message_reports_reason_danger => 'Danger';
+
+  @override
+  String get admin_message_reports_reason_scam => 'Scam';
+
+  @override
+  String get admin_message_reports_reason_impersonation => 'Impersonation';
+
+  @override
+  String get admin_message_reports_reason_other => 'Other';
+
+  @override
+  String get admin_message_reports_reason_unknown => 'Unspecified reason';
+
+  @override
+  String get admin_message_reports_status_open => 'Open';
+
+  @override
+  String get admin_message_reports_status_triage => 'In review';
+
+  @override
+  String get admin_message_reports_status_escalated => 'Escalated';
+
+  @override
+  String get admin_message_reports_status_resolved => 'Resolved';
+
+  @override
+  String get admin_message_reports_status_dismissed => 'Dismissed';
+
+  @override
+  String get admin_message_reports_status_duplicate => 'Duplicate';
+
+  @override
+  String get admin_message_reports_status_unknown => 'Unknown status';
+
+  @override
   String get messaging_dm_action_label => 'Message';
 
   @override
-  String get messaging_dm_action_opening => 'Opening chat';
+  String get messaging_dm_action_semantic => 'Send a direct message';
 
   @override
-  String get messaging_dm_action_blocked => 'You can\'t message this person.';
+  String get messaging_meetup_mark_label => 'Meetup';
 
   @override
-  String get messaging_dm_action_under_age =>
-      'Direct messages aren\'t available for this account.';
+  String messaging_meetup_kind_time(String time) {
+    return 'Meetup · $time';
+  }
 
   @override
-  String get messaging_dm_action_rate_limited =>
-      'You\'re doing that too fast. Wait a moment, then try again.';
+  String get messaging_meetup_chat_open => 'Meetup chat';
 
   @override
-  String get messaging_dm_action_cap_reached =>
-      'You\'ve started as many new conversations as you can today. Try again tomorrow.';
+  String get messaging_meetup_chat_semantic => 'Open the meetup chat';
 
   @override
-  String get messaging_dm_action_failed =>
-      'Couldn\'t open the chat. Try again.';
+  String get messaging_meetup_chat_unavailable =>
+      'Meetup chat is not available yet';
 }

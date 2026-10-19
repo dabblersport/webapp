@@ -35,17 +35,21 @@ void main() {
     });
   });
 
-  test('committed flag values are consistent and all false (AC2)', () {
-    expect(FeatureFlags.messaging, isFalse);
-    expect(FeatureFlags.enableMessagingGameChat, isFalse);
-    expect(FeatureFlags.enableMessagingReporting, isFalse);
-    expect(
-      FeatureFlags.messagingFlagsConsistent(
-        FeatureFlags.messaging,
-        FeatureFlags.enableMessagingGameChat,
-        FeatureFlags.enableMessagingReporting,
-      ),
-      isTrue,
-    );
-  });
+  test(
+    'committed flag values are consistent and all true at launch (KAN-554)',
+    () {
+      expect(FeatureFlags.messaging, isTrue);
+      expect(FeatureFlags.enableMessagingGameChat, isTrue);
+      expect(FeatureFlags.enableMessagingDirect, isTrue);
+      expect(FeatureFlags.enableMessagingReporting, isTrue);
+      expect(
+        FeatureFlags.messagingFlagsConsistent(
+          FeatureFlags.messaging,
+          FeatureFlags.enableMessagingGameChat,
+          FeatureFlags.enableMessagingReporting,
+        ),
+        isTrue,
+      );
+    },
+  );
 }

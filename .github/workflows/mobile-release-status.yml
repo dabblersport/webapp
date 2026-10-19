@@ -1,0 +1,106 @@
+# Mobile release status watcher (read-only). KAN-568.
+#
+# Observes the releases listed in the repository variable MOBILE_RELEASE_TRACKING (JSON, see
+# scripts/mobile_tracking.py) on both stores, every 6 hours and on demand. It NEVER publishes
+# or changes anything: it reads Google Play and App Store Connect and reports the distinct
+# stages (uploaded, processing, TestFlight, submission, review, available).
+#
+# How the result reaches people (docs/MOBILE_RELEASE.md): a terminal state (rejected, blocked)
+# makes this run RED, which GitHub emails to the repository's watchers; every run writes a
+# summary table; and the operations (Memphis) release dispatch reads the latest run with
+# `gh run view` and reports each state change in its result, which Thebes posts on the Jira
+# ticket. With the variable unset or empty this workflow does nothing (green).
+name: Mobile release status
+
+# GitHub runs `schedule` triggers ONLY from the default branch (main). Until this file reaches
+# main (a release the CEO approves), the cron below does not fire: use workflow_dispatch (this
+# workflow is registered from Alpha through the read-only branch push rail below) or the
+# `mode=status` entry points of the two release workflows.
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+  # Read-only rail: a push to this branch name runs the watcher once. It also registers the
+  # workflow with GitHub so that workflow_dispatch works while the file is not on main.
+  push:
+    branches:
+      - mobile-status-validate
+
+permissions:
+  contents: read
+
+concurrency:
+  group: mobile-release-status
+  cancel-in-progress: false
+
+env:
+  ANDROID_PACKAGE: com.dabbler.dabblerapp
+  IOS_BUNDLE_ID: app.dabbler.pro
+
+jobs:
+  watch:
+    name: Read tracked releases
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout (release tooling, default ref)
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install the store API clients
+        run: |
+          python -m pip install --disable-pip-version-check -r scripts/android/requirements.txt -r scripts/ios/requirements.txt
+
+      - name: Offline checks of the watcher logic
+        run: python scripts/test_mobile_tracking.py
+
+      - name: Read each tracked release
+        env:
+          TRACKING: ${{ vars.MOBILE_RELEASE_TRACKING }}
+          SA_JSON: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
+          ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
+        run: |
+          set -uo pipefail
+          umask 077
+          LIST="$(printf '%s' "$TRACKING" | python scripts/mobile_tracking.py parse)" || { echo "::error::MOBILE_RELEASE_TRACKING is invalid"; exit 1; }
+          N="$(python -c 'import json,sys; print(len(json.loads(sys.argv[1])))' "$LIST")"
+          if [[ "$N" == "0" ]]; then
+            echo "No releases are being tracked (MOBILE_RELEASE_TRACKING is empty)." | tee -a "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          [[ -z "$SA_JSON" ]] || printf '%s' "$SA_JSON" > "$RUNNER_TEMP/play-sa.json"
+          [[ -z "$ASC_KEY" ]] || printf '%s' "$ASC_KEY" > "$RUNNER_TEMP/asc.p8"
+          echo "### Tracked mobile releases" >> "$GITHUB_STEP_SUMMARY"
+          echo "| Platform | Version | Verdict | Why |" >> "$GITHUB_STEP_SUMMARY"
+          echo "|---|---|---|---|" >> "$GITHUB_STEP_SUMMARY"
+          bad=0
+          for i in $(seq 0 $((N-1))); do
+            ITEM="$(python -c 'import json,sys; print(json.dumps(json.loads(sys.argv[1])[int(sys.argv[2])]))' "$LIST" "$i")"
+            PLATFORM="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["platform"])' "$ITEM")"
+            VN="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["versionName"])' "$ITEM")"
+            if [[ "$PLATFORM" == "ios" ]]; then
+              BN="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["buildNumber"])' "$ITEM")"
+              REPORT="$(python scripts/ios/asc_release.py status --bundle-id "$IOS_BUNDLE_ID" --version-name "$VN" --build-number "$BN" --key-file "$RUNNER_TEMP/asc.p8" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID")"
+              LABEL="$VN+$BN"
+            else
+              VC="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["versionCode"])' "$ITEM")"
+              TR="$(python -c 'import json,sys; print(json.loads(sys.argv[1]).get("track",""))' "$ITEM")"
+              ARGS=(--package "$ANDROID_PACKAGE" --version-code "$VC" --version-name "$VN" --credentials "$RUNNER_TEMP/play-sa.json")
+              [[ -z "$TR" ]] || ARGS+=(--track "$TR")
+              REPORT="$(python scripts/android/play_publish.py status "${ARGS[@]}")"
+              LABEL="$VN+$VC${TR:+ ($TR)}"
+            fi
+            VERDICT_JSON="$(printf '%s' "$REPORT" | python scripts/mobile_tracking.py judge "$PLATFORM")"
+            V="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["verdict"])' "$VERDICT_JSON")"
+            WHY="$(python -c 'import json,sys; print(json.loads(sys.argv[1])["why"])' "$VERDICT_JSON")"
+            echo "| $PLATFORM | $LABEL | **$V** | $WHY |" >> "$GITHUB_STEP_SUMMARY"
+            [[ "$V" != "rejected" && "$V" != "blocked" ]] || bad=1
+          done
+          rm -f "$RUNNER_TEMP/play-sa.json" "$RUNNER_TEMP/asc.p8"
+          if (( bad )); then echo "::error::a tracked release is rejected or blocked (see the summary)"; exit 1; fi

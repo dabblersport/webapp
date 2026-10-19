@@ -9,6 +9,7 @@ import 'package:dabbler/features/messaging/presentation/providers/messaging_prov
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 
 import 'fake_wake_channel.dart';
 
@@ -61,6 +62,7 @@ void main() {
     user = StreamController<String?>();
     return ProviderContainer(
       overrides: [
+        fakeMessagingBackend,
         fakeMessagingRepositoryProvider.overrideWithValue(repo),
         messagingClientKeyGeneratorProvider.overrideWithValue(
           () => 'key-${++n}',
@@ -306,7 +308,10 @@ void main() {
         container.dispose();
         container = ProviderContainer(
           overrides: [
+            fakeMessagingBackend,
             fakeMessagingRepositoryProvider.overrideWithValue(repo),
+            // KAN-554: the committed flag is now on; pin it off for this group
+            messagingRealtimeEnabledProvider.overrideWithValue(false),
             // reading these would throw: proves Supabase is never touched
             messagingUserIdProvider.overrideWith(
               (ref) => throw StateError('touched'),

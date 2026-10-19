@@ -53,9 +53,9 @@ void main() {
     }, variant: desktop);
   }
 
-  testWidgets('committed flags: absent', (tester) async {
+  testWidgets('committed flags (KAN-554 launch): present', (tester) async {
     await pumpHome(tester, feedState: const FeedLoading());
-    expect(icon('messages'), findsNothing);
+    expect(icon('messages'), findsOneWidget);
   }, variant: desktop);
 
   for (final locale in const [Locale('en'), Locale('ar')]) {

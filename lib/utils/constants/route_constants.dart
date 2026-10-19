@@ -133,7 +133,6 @@ class RoutePaths {
   // Admin Routes
   static const String adminModerationQueue = '/admin/moderation-queue';
   static const String adminSafetyOverview = '/admin/safety-overview';
-  // KAN-552: admin-only message reports (flags + admin check gate the route).
   static const String adminMessageReports = '/admin/message-reports';
 
   // Error Routes

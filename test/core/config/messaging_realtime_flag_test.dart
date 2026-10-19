@@ -1,18 +1,15 @@
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// KAN-544: the Realtime flag is off, and only valid with the two flags it
-/// hangs on.
+/// KAN-544: the Realtime flag is only valid with the two flags it hangs on.
+/// KAN-554: all four launch flags are on in the committed code.
 void main() {
-  test(
-    'committed: the realtime flag and the three chat flags are all false',
-    () {
-      expect(FeatureFlags.messagingRealtime, isFalse);
-      expect(FeatureFlags.messaging, isFalse);
-      expect(FeatureFlags.enableMessagingGameChat, isFalse);
-      expect(FeatureFlags.enableMessagingReporting, isFalse);
-    },
-  );
+  test('committed (KAN-554 launch): the realtime flag and the three chat flags are all true', () {
+    expect(FeatureFlags.messagingRealtime, isTrue);
+    expect(FeatureFlags.messaging, isTrue);
+    expect(FeatureFlags.enableMessagingGameChat, isTrue);
+    expect(FeatureFlags.enableMessagingReporting, isTrue);
+  });
 
   group('messagingRealtimeConsistent', () {
     for (final messaging in [false, true]) {
@@ -59,11 +56,8 @@ void main() {
     });
   });
 
-  test('the flag is nameable but not enabled', () {
-    expect(FeatureFlags.getFeatureFlag('messaging_realtime'), isFalse);
-    expect(
-      FeatureFlags.getEnabledFeatures(),
-      isNot(contains('messaging_realtime')),
-    );
+  test('the flag is nameable and enabled at launch (KAN-554)', () {
+    expect(FeatureFlags.getFeatureFlag('messaging_realtime'), isTrue);
+    expect(FeatureFlags.getEnabledFeatures(), contains('messaging_realtime'));
   });
 }

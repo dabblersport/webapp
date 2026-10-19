@@ -455,7 +455,7 @@ class AppRouter {
     socialAnalyticsRoute,
     adminModerationQueueRoute,
     adminSafetyOverviewRoute,
-    adminMessageReportsRoute,
+    adminMessageReportsRouteDef,
     errorMessageRoute,
   ];
 }

@@ -1,21 +1,13 @@
-// KAN-557: the Message action on another user's profile. FAKES ONLY: a fake
-// messaging repository, fake flags, a fake signed-in user and a fake block
-// state. Nothing real is called. Each scenario runs in LTR and RTL and at 200
-// percent text scale.
 import 'dart:async';
 
-import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
-import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/features/messaging/data/fake_messaging_repository.dart';
+import 'package:dabbler/features/messaging/domain/my_conversations_repository.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 import 'package:dabbler/features/messaging/presentation/dm_thread_route.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_message_action_providers.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
-    show currentUserProvider;
-import 'package:dabbler/features/profile/presentation/widgets/profile/profile_message_action.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile_message_action.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -27,6 +19,8 @@ import 'package:go_router/go_router.dart';
 
 import '../../support/render_mode.dart';
 
+// KAN-557: the Message action on another user's profile. Fake repository
+// only; no network.
 typedef _Variant = ({String name, Locale locale, double scale});
 
 const List<_Variant> _variants = [
@@ -36,64 +30,79 @@ const List<_Variant> _variants = [
   (name: 'rtl-200', locale: Locale('ar'), scale: 2.0),
 ];
 
-const _me = 'user-me';
-const _other = 'user-other';
+const _viewer = 'viewer-1';
+const _target = 'target-1';
+const _profileKey = ValueKey<String>('profile');
+const _threadKey = ValueKey<String>('thread');
 
-UserProfile _user(String id) => UserProfile(
-  id: id,
-  userId: id,
-  displayName: 'Fake $id',
-  createdAt: DateTime.utc(2026),
-  updatedAt: DateTime.utc(2026),
-);
-
-/// A fake repository whose startDm waits on [gate] (the busy state).
-class _GatedDm extends FakeMessagingRepository {
-  Completer<Result<String, Failure>>? gate;
+/// Holds every startDm until [release]; delegates to the fake.
+class _GatedDm implements DmRepository {
+  _GatedDm(this.inner);
+  final FakeMessagingRepository inner;
+  final Completer<void> gate = Completer<void>();
+  void release() => gate.complete();
 
   @override
-  Future<Result<String, Failure>> startDm(String otherUserId) {
-    final g = gate;
-    if (g == null) return super.startDm(otherUserId);
-    startDmCalls++;
-    return g.future;
+  Future<Result<String, Failure>> startDm(String otherUserId) async {
+    final r = inner.startDm(otherUserId);
+    await gate.future;
+    return r;
   }
+
+  @override
+  Future<Result<void, Failure>> setMuted(String id, bool muted) =>
+      inner.setMuted(id, muted);
 }
 
 class _Nav {
-  final opened = <String>[];
+  String? param;
 }
 
 Widget _app(
-  FakeMessagingRepository repo,
-  _Variant v,
-  _Nav nav, {
+  _Variant v, {
+  required DmRepository repo,
+  required DabblerToastController toasts,
   bool messaging = true,
   bool direct = true,
-  UserProfile? viewer,
-  String? target = _other,
+  String? viewer = _viewer,
+  String? target = _target,
   bool blocked = false,
+  _Nav? nav,
+  bool inRow = false,
 }) {
   final router = GoRouter(
     initialLocation: '/',
     routes: [
       GoRoute(
         path: '/',
-        builder: (c, s) => Scaffold(
-          body: Center(
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [ProfileMessageAction(targetUserId: target)],
-            ),
-          ),
-        ),
+        builder: (c, s) => inRow
+            ? Padding(
+                key: _profileKey,
+                padding: const EdgeInsets.all(16),
+                child: Align(
+                  alignment: Alignment.topCenter,
+                  child: ProfileActionButtons(
+                    follow: DabblerButton(
+                      key: _followKey,
+                      label: 'Follow',
+                      fullWidth: true,
+                      onPressed: () {},
+                    ),
+                    message: ProfileMessageAction(targetAuthUserId: target),
+                  ),
+                ),
+              )
+            : Center(
+                key: _profileKey,
+                child: ProfileMessageAction(targetAuthUserId: target),
+              ),
       ),
       GoRoute(
         path: dmThreadRoutePath,
         name: dmThreadRouteName,
         builder: (c, s) {
-          nav.opened.add(s.pathParameters[dmThreadRouteParam]!);
-          return const SizedBox(key: ValueKey('thread'));
+          nav?.param = s.pathParameters[dmThreadRouteParam];
+          return const SizedBox(key: _threadKey);
         },
       ),
     ],
@@ -102,29 +111,26 @@ Widget _app(
   return ProviderScope(
     overrides: [
       dmRepositoryProvider.overrideWithValue(repo),
-      profileMessageFlagsProvider.overrideWithValue((
+      profileMessageActionFlagsProvider.overrideWithValue((
         messaging: messaging,
         direct: direct,
       )),
-      currentUserProvider.overrideWithValue(viewer),
-      isUserBlockedProvider.overrideWith((ref, id) async => blocked),
+      profileMessageViewerIdProvider.overrideWithValue(viewer),
+      blockedUserIdsProvider.overrideWith(
+        (ref) async => blocked ? {_target} : <String>{},
+      ),
     ],
     child: MaterialApp.router(
       debugShowCheckedModeBanner: false,
       locale: v.locale,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      theme: DabblerDesignSystemTheme.withFonts(
-        DabblerDesignSystemTheme.withTokens(renderThemeBase()),
-        locale: v.locale,
-      ),
-      builder: (context, child) => DabblerToastProvider(
-        child: MediaQuery(
-          data: MediaQuery.of(
-            context,
-          ).copyWith(textScaler: TextScaler.linear(v.scale)),
-          child: child!,
-        ),
+      theme: DabblerDesignSystemTheme.withTokens(renderThemeBase()),
+      builder: (context, child) => MediaQuery(
+        data: MediaQuery.of(
+          context,
+        ).copyWith(textScaler: TextScaler.linear(v.scale)),
+        child: DabblerToastProvider(controller: toasts, child: child!),
       ),
       routerConfig: router,
     ),
@@ -137,212 +143,227 @@ Future<void> _settle(WidgetTester tester) async {
   }
 }
 
-final _action = find.byKey(ProfileMessageAction.buttonKey);
+const _followKey = ValueKey<String>('follow');
+
+Finder get _button => find.byKey(ProfileMessageAction.buttonKey);
+
+DabblerButton _btn(WidgetTester tester) =>
+    tester.widget<DabblerButton>(_button);
+
+AppLocalizations _l10n(WidgetTester tester) =>
+    AppLocalizations.of(tester.element(find.byKey(_profileKey)));
 
 void main() {
-  setUpAll(() async {
-    await loadRenderFonts();
-  });
-
-  setUp(() {
-    final view =
-        TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
-    view.physicalSize = const Size(390 * 3, 844 * 3);
-    view.devicePixelRatio = 3;
-  });
-
-  test('the new flag defaults to false in committed code', () {
-    expect(FeatureFlags.enableMessagingDirect, isFalse);
-    expect(FeatureFlags.getFeatureFlag('messaging_direct'), isFalse);
-    expect(
-      FeatureFlags.getEnabledFeatures(),
-      isNot(contains('messaging_direct')),
-    );
-  });
-
   for (final v in _variants) {
-    final l10n = lookupAppLocalizations(v.locale);
-
     group('[${v.name}]', () {
-      testWidgets('shown only when both flags are on, signed in and not self', (
+      late DabblerToastController toasts;
+      setUp(() => toasts = DabblerToastController());
+      tearDown(() => toasts.dispose());
+
+      testWidgets('present when both flags on, signed in, not self', (
         tester,
       ) async {
-        final nav = _Nav();
-        Future<void> pump({
-          bool messaging = true,
-          bool direct = true,
-          UserProfile? viewer,
-          String? target = _other,
-        }) async {
+        final repo = FakeMessagingRepository(currentUserId: _viewer);
+        await tester.pumpWidget(_app(v, repo: repo, toasts: toasts));
+        await _settle(tester);
+        expect(_button, findsOneWidget);
+        final b = _btn(tester);
+        expect(b.disabled, isFalse);
+        expect(b.semanticLabel, _l10n(tester).messaging_dm_action_semantic);
+        // A labelled button, as in the design: the visible text is the label.
+        expect(b.label, _l10n(tester).messaging_dm_action_label);
+        expect(
+          find.descendant(
+            of: _button,
+            matching: find.text(_l10n(tester).messaging_dm_action_label),
+          ),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets('Follow and Message lay out without overflow', (
+        tester,
+      ) async {
+        final repo = FakeMessagingRepository(currentUserId: _viewer);
+        await tester.binding.setSurfaceSize(const Size(360, 800));
+        addTearDown(() => tester.binding.setSurfaceSize(null));
+        await tester.pumpWidget(
+          _app(v, repo: repo, toasts: toasts, inRow: true),
+        );
+        await _settle(tester);
+        expect(tester.takeException(), isNull);
+        final l10n = _l10n(tester);
+        expect(find.text(l10n.messaging_dm_action_label), findsOneWidget);
+        expect(find.text('Follow'), findsOneWidget);
+        final follow = tester.getRect(find.byKey(_followKey));
+        final message = tester.getRect(_button);
+        if (v.scale > ProfileActionButtons.stackAboveScale) {
+          expect(message.top, greaterThanOrEqualTo(follow.bottom));
+        } else {
+          expect(message.top, follow.top);
+          expect(message.width, closeTo(follow.width, 0.5));
+          // Message follows Follow in reading order.
+          final isRtl = v.locale.languageCode == 'ar';
+          expect(
+            isRtl ? message.right <= follow.left : message.left >= follow.right,
+            isTrue,
+          );
+        }
+      });
+
+      for (final c in [
+        (
+          name: 'messaging flag off',
+          m: false,
+          d: true,
+          viewer: _viewer,
+          t: _target,
+        ),
+        (
+          name: 'direct flag off',
+          m: true,
+          d: false,
+          viewer: _viewer,
+          t: _target,
+        ),
+        (name: 'signed out', m: true, d: true, viewer: null, t: _target),
+        (name: 'self', m: true, d: true, viewer: _target, t: _target),
+        (name: 'target not loaded', m: true, d: true, viewer: _viewer, t: null),
+      ]) {
+        testWidgets('hidden: ${c.name}', (tester) async {
+          final repo = FakeMessagingRepository(currentUserId: _viewer);
           await tester.pumpWidget(
             _app(
-              FakeMessagingRepository(),
               v,
-              nav,
-              messaging: messaging,
-              direct: direct,
-              viewer: viewer,
-              target: target,
+              repo: repo,
+              toasts: toasts,
+              messaging: c.m,
+              direct: c.d,
+              viewer: c.viewer,
+              target: c.t,
             ),
           );
           await _settle(tester);
-        }
-
-        await pump(viewer: _user(_me));
-        expect(_action, findsOneWidget);
-        expect(tester.takeException(), isNull);
-
-        await pump(viewer: _user(_me), messaging: false); // master flag off
-        expect(_action, findsNothing);
-        await pump(viewer: _user(_me), direct: false); // sub-flag off
-        expect(_action, findsNothing);
-        await pump(viewer: null); // signed out
-        expect(_action, findsNothing);
-        await pump(viewer: _user(_other)); // own profile
-        expect(_action, findsNothing);
-        await pump(viewer: _user(_me), target: null); // profile not loaded
-        expect(_action, findsNothing);
-      });
-
-      testWidgets(
-        'tap success: busy state, the thread opens with the returned id',
-        (tester) async {
-          final repo = _GatedDm()..gate = Completer<Result<String, Failure>>();
-          final nav = _Nav();
-          await tester.pumpWidget(_app(repo, v, nav, viewer: _user(_me)));
-          await _settle(tester);
-          expect(
-            find.bySemanticsLabel(l10n.messaging_dm_action_label),
-            findsOneWidget,
-          );
-
-          await tester.tap(_action);
-          await tester.pump();
-          await tester.pump();
-          expect(repo.startDmCalls, 1);
-          // Busy: announced as opening, and the loading state is drawn.
-          expect(
-            find.bySemanticsLabel(l10n.messaging_dm_action_opening),
-            findsOneWidget,
-          );
-          expect(nav.opened, isEmpty);
-
-          repo.gate!.complete(const Ok('dm-1'));
-          await _settle(tester);
-          expect(nav.opened, ['dm-1']);
-          expect(find.byKey(const ValueKey('thread')), findsOneWidget);
-        },
-      );
-
-      testWidgets('repeat taps while busy are ignored: only one DM opens', (
-        tester,
-      ) async {
-        final repo = _GatedDm()..gate = Completer<Result<String, Failure>>();
-        final nav = _Nav();
-        await tester.pumpWidget(_app(repo, v, nav, viewer: _user(_me)));
-        await _settle(tester);
-        await tester.tap(_action);
-        await tester.pump();
-        await tester.tap(_action, warnIfMissed: false);
-        await tester.pump();
-        await tester.tap(_action, warnIfMissed: false);
-        await tester.pump();
-        expect(repo.startDmCalls, 1);
-        repo.gate!.complete(const Ok('dm-1'));
-        await _settle(tester);
-        expect(nav.opened, ['dm-1']);
-      });
-
-      testWidgets('an existing pair reopens the same thread', (tester) async {
-        final repo = FakeMessagingRepository();
-        final nav = _Nav();
-        await tester.pumpWidget(_app(repo, v, nav, viewer: _user(_me)));
-        await _settle(tester);
-        await tester.tap(_action);
-        await _settle(tester);
-        expect(nav.opened, hasLength(1));
-      });
-
-      for (final c
-          in <
-            (
-              String,
-              void Function(FakeMessagingRepository),
-              String Function(AppLocalizations),
-            )
-          >[
-            (
-              'blocked',
-              (r) => r.failNextDm(FakeDmOp.startDm, MessagingReason.blocked),
-              (l) => l.messaging_dm_action_blocked,
-            ),
-            (
-              'under_age (not_in_pilot)',
-              (r) => r.failNextDm(FakeDmOp.startDm, MessagingReason.notInPilot),
-              (l) => l.messaging_dm_action_under_age,
-            ),
-            (
-              'rate_limited',
-              (r) =>
-                  r.failNextDm(FakeDmOp.startDm, MessagingReason.rateLimited),
-              (l) => l.messaging_dm_action_rate_limited,
-            ),
-            (
-              'dm_cap_reached',
-              (r) => r.failNextDmCapReached(),
-              (l) => l.messaging_dm_action_cap_reached,
-            ),
-            (
-              'not_found',
-              (r) => r.failNextDm(FakeDmOp.startDm, MessagingReason.notFound),
-              (l) => l.messaging_dm_action_failed,
-            ),
-            (
-              'unknown',
-              (r) => r.failNextDm(FakeDmOp.startDm, MessagingReason.unknown),
-              (l) => l.messaging_dm_action_failed,
-            ),
-          ]) {
-        testWidgets('a ${c.$1} failure shows its localized message and stays', (
-          tester,
-        ) async {
-          final repo = FakeMessagingRepository();
-          c.$2(repo);
-          final nav = _Nav();
-          await tester.pumpWidget(_app(repo, v, nav, viewer: _user(_me)));
-          await _settle(tester);
-          await tester.tap(_action);
-          await _settle(tester);
-          expect(find.text(c.$3(l10n)), findsOneWidget);
-          expect(nav.opened, isEmpty);
-          expect(_action, findsOneWidget); // still on the profile, idle again
-          // The next tap works (the busy state cleared).
-          await tester.tap(_action);
-          await _settle(tester);
-          expect(nav.opened, hasLength(1));
+          expect(_button, findsNothing);
         });
       }
 
-      testWidgets(
-        'a block (either direction) disables the action with the reason',
-        (tester) async {
-          final repo = FakeMessagingRepository();
+      testWidgets('tap opens the thread with the returned id', (tester) async {
+        final repo = FakeMessagingRepository(
+          currentUserId: _viewer,
+          idGenerator: () => 'abc',
+        );
+        final nav = _Nav();
+        await tester.pumpWidget(_app(v, repo: repo, toasts: toasts, nav: nav));
+        await _settle(tester);
+        await tester.tap(_button);
+        await _settle(tester);
+        expect(repo.startDmCalls, 1);
+        expect(nav.param, 'dm-abc');
+        expect(find.byKey(_threadKey), findsOneWidget);
+      });
+
+      testWidgets('busy while pending; double tap calls startDm once', (
+        tester,
+      ) async {
+        final fake = FakeMessagingRepository(
+          currentUserId: _viewer,
+          idGenerator: () => 'x',
+        );
+        final repo = _GatedDm(fake);
+        final nav = _Nav();
+        await tester.pumpWidget(_app(v, repo: repo, toasts: toasts, nav: nav));
+        await _settle(tester);
+        await tester.tap(_button);
+        await tester.pump();
+        expect(_btn(tester).loading, isTrue);
+        await tester.tap(_button, warnIfMissed: false);
+        await tester.pump();
+        repo.release();
+        await _settle(tester);
+        expect(fake.startDmCalls, 1);
+        expect(nav.param, 'dm-x');
+      });
+
+      for (final f
+          in <
+            ({
+              String name,
+              void Function(FakeMessagingRepository) arm,
+              String Function(AppLocalizations) text,
+            })
+          >[
+            (
+              name: 'blocked',
+              arm: (r) =>
+                  r.failNextDm(FakeDmOp.startDm, MessagingReason.blocked),
+              text: (l) => l.messaging_reason_blocked,
+            ),
+            (
+              name: 'under_age',
+              arm: (r) =>
+                  r.failNextDm(FakeDmOp.startDm, MessagingReason.underAge),
+              text: (l) => l.messaging_reason_under_age,
+            ),
+            (
+              name: 'rate_limited',
+              arm: (r) =>
+                  r.failNextDm(FakeDmOp.startDm, MessagingReason.rateLimited),
+              text: (l) => l.messaging_reason_rate_limited,
+            ),
+            (
+              name: 'dm_cap_reached',
+              arm: (r) => r.failNextDmCapReached(),
+              text: (l) => l.messaging_reason_dm_cap_reached,
+            ),
+          ]) {
+        testWidgets('failure ${f.name}: localized toast, stays on profile', (
+          tester,
+        ) async {
+          final repo = FakeMessagingRepository(currentUserId: _viewer);
+          f.arm(repo);
           final nav = _Nav();
           await tester.pumpWidget(
-            _app(repo, v, nav, viewer: _user(_me), blocked: true),
+            _app(v, repo: repo, toasts: toasts, nav: nav),
           );
           await _settle(tester);
-          expect(_action, findsOneWidget);
-          expect(
-            find.bySemanticsLabel(l10n.messaging_dm_action_blocked),
-            findsOneWidget,
-          );
-          await tester.tap(_action, warnIfMissed: false);
+          await tester.tap(_button);
           await _settle(tester);
-          expect(repo.startDmCalls, 0);
-          expect(nav.opened, isEmpty);
-        },
-      );
+          final l10n = _l10n(tester);
+          expect(toasts.visible.map((e) => e.spec.message), [f.text(l10n)]);
+          expect(nav.param, isNull);
+          expect(find.byKey(_profileKey), findsOneWidget);
+          final b = _btn(tester);
+          expect(b.loading, isFalse);
+          expect(b.disabled, isFalse);
+          for (final e in toasts.visible.toList()) {
+            toasts.dismiss(e.id);
+          }
+          await tester.pump(const Duration(seconds: 10));
+        });
+      }
+
+      testWidgets('blocked either direction: disabled with the reason', (
+        tester,
+      ) async {
+        final repo = FakeMessagingRepository(currentUserId: _viewer);
+        await tester.pumpWidget(
+          _app(v, repo: repo, toasts: toasts, blocked: true),
+        );
+        await _settle(tester);
+        final l10n = _l10n(tester);
+        final b = _btn(tester);
+        expect(b.disabled, isTrue);
+        expect(b.semanticLabel, l10n.user_profile_cannot_message_blocked);
+        expect(
+          find.ancestor(of: _button, matching: find.byType(DabblerTooltip)),
+          findsOneWidget,
+        );
+        await tester.tap(_button, warnIfMissed: false);
+        await _settle(tester);
+        expect(repo.startDmCalls, 0);
+      });
     });
   }
 }

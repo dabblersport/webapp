@@ -71,7 +71,7 @@ export function mapAuthorizeReason(rpcReason: string): ReasonMapping {
     : { kind: "deny", status: 403 };
 }
 
-export function denial(m: ReasonMapping): Response {
+function denial(m: ReasonMapping): Response {
   if (m.kind === "deny" && "reason" in m) return reasonError(m.reason);
   if (m.kind === "deny") return m.status === 401 ? unauthenticated() : deniedWithoutReason();
   return upstreamError(502, "authorisation result malformed");

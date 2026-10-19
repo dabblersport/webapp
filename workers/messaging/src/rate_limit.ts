@@ -20,10 +20,6 @@ export const REPORT_PER_USER_PER_HOUR = 10;
 /** KAN-561: start-DM requests per user per hour; the second line behind the database's 20 new DMs per rolling day. */
 export const NEW_DM_PER_USER_PER_HOUR = 10;
 
-/** KAN-563: game-conversation opens and mute/unmute calls per user per minute (one small D1 write each, like report). */
-export const GAME_CONVERSATION_PER_USER_PER_MINUTE = 60;
-export const MUTE_PER_USER_PER_MINUTE = 30;
-
 export const MINUTE_SECONDS = 60;
 export const HOUR_SECONDS = 3600;
 
@@ -135,24 +131,27 @@ export async function enforceNewDm(db: D1Database, userId: string): Promise<Resp
   return outcome.ok ? null : rateLimited(outcome.retryAfterSeconds);
 }
 
-// KAN-563: the same one-row upsert for a per-minute counter, scope chosen by the caller ('game_conv_minute', 'mute_minute').
-const ADMIT_MINUTE = `INSERT INTO rate_limits (subject, scope, window_start, count) VALUES (?1, ?4, ?2, 1)
+// KAN-563: get the game conversation, mute and unmute share one per-user window, scope 'conv_ops_minute' (no D1
+// migration: scope is free text). Same one-row upsert as the report limit. These operations are idempotent, so the
+// check runs AFTER the database call (the verified id comes from it): an over-limit call changes nothing a normal call
+// would not, and the caller still gets 429 + Retry-After.
+export const CONVERSATION_OPS_PER_USER_PER_MINUTE = 60;
+
+const ADMIT_CONV_OPS = `INSERT INTO rate_limits (subject, scope, window_start, count) VALUES (?1, 'conv_ops_minute', ?2, 1)
   ON CONFLICT (subject, scope) DO UPDATE SET
     count = CASE WHEN rate_limits.window_start < excluded.window_start THEN 1 ELSE rate_limits.count + 1 END,
     window_start = MAX(rate_limits.window_start, excluded.window_start)
   WHERE rate_limits.window_start < excluded.window_start OR rate_limits.count < ?3
   RETURNING count`;
 
-async function enforceMinute(db: D1Database, userId: string, scope: string, limit: number): Promise<Response | null> {
+export async function checkConversationOps(db: D1Database, userId: string): Promise<RateOutcome> {
   const now = Math.floor(Date.now() / 1000);
   const start = windowStart(now, MINUTE_SECONDS);
-  const admitted = await db.prepare(ADMIT_MINUTE).bind(userId, start, limit, scope).all();
-  return admitted.results.length > 0 ? null : rateLimited(start + MINUTE_SECONDS - now);
+  const admitted = await db.prepare(ADMIT_CONV_OPS).bind(userId, start, CONVERSATION_OPS_PER_USER_PER_MINUTE).all();
+  return admitted.results.length > 0 ? { ok: true } : { ok: false, retryAfterSeconds: start + MINUTE_SECONDS - now };
 }
 
-/** One open of a game conversation: at most 60 a minute per user. null to go on, or the 429. */
-export const enforceGameConversation = (db: D1Database, userId: string) =>
-  enforceMinute(db, userId, "game_conv_minute", GAME_CONVERSATION_PER_USER_PER_MINUTE);
-
-/** One mute or unmute: at most 30 a minute per user. null to go on, or the 429. */
-export const enforceMute = (db: D1Database, userId: string) => enforceMinute(db, userId, "mute_minute", MUTE_PER_USER_PER_MINUTE);
+export async function enforceConversationOps(db: D1Database, userId: string): Promise<Response | null> {
+  const outcome = await checkConversationOps(db, userId);
+  return outcome.ok ? null : rateLimited(outcome.retryAfterSeconds);
+}

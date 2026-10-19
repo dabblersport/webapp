@@ -6,6 +6,7 @@ import 'package:dabbler/features/messaging/presentation/providers/messaging_prov
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../support/fake_backend.dart';
 
 void main() {
   late FakeMessagingRepository repo;
@@ -16,6 +17,7 @@ void main() {
     var n = 0;
     container = ProviderContainer(
       overrides: [
+        fakeMessagingBackend,
         fakeMessagingRepositoryProvider.overrideWithValue(repo),
         messagingClientKeyGeneratorProvider.overrideWithValue(
           () => 'key-${++n}',
