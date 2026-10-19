@@ -15,7 +15,8 @@
 #   APP_STORE_CONNECT_API_KEY_P8  APP_STORE_CONNECT_KEY_ID  APP_STORE_CONNECT_ISSUER_ID
 # App configuration comes from the client-safe allowlist only:
 #   SUPABASE_URL  SUPABASE_ANON_KEY  SUPABASE_PUBLISHABLE_KEY  APP_NAME  GOOGLE_WEB_CLIENT_ID
-# plus the public repository VARIABLE MESSAGING_API_BASE_URL (the messaging Worker's URL; the build refuses to run without it)
+# plus the public repository VARIABLE MESSAGING_API_BASE_URL (the messaging Worker's URL; the build refuses to run without it).
+# GOOGLE_WEB_CLIENT_ID must be the WEB OAuth client (client_type 3 in android/app/google-services.json); the build refuses an empty value or an Android client id.
 # (+ ENVIRONMENT from the app_environment input). Backend-only secrets (for example
 # SUPABASE_DB_URL) are never referenced by this workflow.
 #
@@ -350,6 +351,8 @@ jobs:
           for n in SUPABASE_URL SUPABASE_ANON_KEY APP_NAME; do
             [[ -n "${!n}" ]] || { echo "::error::required app config $n is empty"; exit 1; }
           done
+          # The Google serverClientId must be the WEB OAuth client, never the Android one (KAN-571: ApiException 10).
+          python3 scripts/check_google_client_id.py android/app/google-services.json
           # Messaging is on in the committed flags, so a build without its Worker URL would show "Couldn't load your chats".
           [[ "${MESSAGING_API_BASE_URL:-}" == https://* ]] || { echo "::error::repository variable MESSAGING_API_BASE_URL is empty or not an https URL"; exit 1; }
           [[ -n "$BUILD_NUMBER" ]] || { echo "::error::no build number resolved"; exit 1; }
