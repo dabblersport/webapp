@@ -279,6 +279,9 @@ jobs:
           for n in SUPABASE_URL SUPABASE_ANON_KEY APP_NAME; do
             [[ -n "${!n}" ]] || { echo "::error::required app config $n is empty"; exit 1; }
           done
+          # An empty Web client id silently ships a broken Google sign-in (the native flow then gets no id token),
+          # so refuse it the same way (KAN-570). A Google Web OAuth client id always ends in .apps.googleusercontent.com.
+          [[ "${GOOGLE_WEB_CLIENT_ID:-}" == *.apps.googleusercontent.com ]] || { echo "::error::secret GOOGLE_WEB_CLIENT_ID is empty or not a Google Web OAuth client id"; exit 1; }
           # Messaging is on in the committed flags, so a build without its Worker URL would show "Couldn't load your chats".
           [[ "${MESSAGING_API_BASE_URL:-}" == https://* ]] || { echo "::error::repository variable MESSAGING_API_BASE_URL is empty or not an https URL"; exit 1; }
           flutter build appbundle --release \
@@ -288,7 +291,7 @@ jobs:
             --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
             --dart-define=APP_NAME="$APP_NAME" \
             --dart-define=ENVIRONMENT="$APP_ENVIRONMENT" \
-            --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
+            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
             --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL"
 
       - name: Verify package, versions and signing certificate
