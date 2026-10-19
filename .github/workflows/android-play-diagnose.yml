@@ -41,7 +41,7 @@ jobs:
         run: python -m pip install --disable-pip-version-check -r scripts/android/requirements.txt
 
       - name: Offline checks
-        run: python scripts/android/test_play_diagnose.py
+        run: python test_play_diagnose.py
         working-directory: scripts/android
 
       - name: Write the service-account file (runner only)
