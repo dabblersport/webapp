@@ -31,8 +31,12 @@ Release stages, kept distinct on purpose (Play does NOT expose "in review" throu
 """
 import argparse
 import json
+import io
+import os
 import re
+import subprocess
 import sys
+import tempfile
 import urllib.request
 
 SCOPE = "https://www.googleapis.com/auth/androidpublisher"
@@ -102,6 +106,73 @@ def stage_report(version_code, bundle_codes, tracks, store_page_has_version=None
 
 
 # ---- API access -------------------------------------------------------------------------
+
+def colon_fingerprint(hex_or_colon):
+    """AA:BB:... (upper-case, colon-separated) from a hex string; None if it is not hex."""
+    h = re.sub(r"[^0-9A-Fa-f]", "", hex_or_colon or "").upper()
+    if not h or len(h) % 2:
+        return None
+    return ":".join(h[i:i + 2] for i in range(0, len(h), 2))
+
+
+def parse_keytool_fingerprints(text):
+    """{'sha1': 'AA:..', 'sha256': 'AA:..'} from `keytool -printcert` output (public fingerprints only)."""
+    out = {}
+    for key, label in (("sha1", "SHA1"), ("sha256", "SHA256")):
+        m = re.search(r"^\s*%s:\s*([0-9A-Fa-f:]+)\s*$" % label, text or "", re.M)
+        if m:
+            out[key] = colon_fingerprint(m.group(1))
+    return out
+
+
+def signing_report(api, package, version_code):
+    """Read-only (KAN-571): the certificate Google Play signs this version with (the APP SIGNING key that
+    users' devices see, not the upload key). Public fingerprints only; any failure is reported as a reason
+    class, never raised, so `status` keeps working."""
+    try:
+        resp = api.generatedapks().list(packageName=package, versionCode=int(version_code)).execute()
+    except Exception as e:  # noqa: BLE001 - report the class, never the message
+        return {"checked": False, "reason": "list-failed:" + type(e).__name__}
+    apks = resp.get("generatedApks") or []
+    sha256 = sorted({colon_fingerprint(a.get("certificateSha256Hash")) for a in apks
+                     if colon_fingerprint(a.get("certificateSha256Hash"))})
+    report = {"checked": True, "generatedApkCount": len(apks), "certificateSha256": sha256}
+    download_id = next(((a.get("generatedUniversalApk") or {}).get("downloadId") for a in apks
+                        if (a.get("generatedUniversalApk") or {}).get("downloadId")), None)
+    if not download_id:
+        report["sha1"] = None
+        report["sha1Reason"] = "no-universal-apk"
+        return report
+    path = None
+    try:
+        from googleapiclient.http import MediaIoBaseDownload
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as fh:
+            path = fh.name
+            req = api.generatedapks().download_media(
+                packageName=package, versionCode=int(version_code), downloadId=download_id)
+            dl = MediaIoBaseDownload(fh, req)
+            done = False
+            while not done:
+                _, done = dl.next_chunk()
+        text = subprocess.run(["keytool", "-printcert", "-jarfile", path],
+                              capture_output=True, text=True, timeout=120).stdout
+        found = parse_keytool_fingerprints(text)
+        report["sha1"] = found.get("sha1")
+        if found.get("sha256"):
+            report["certificateSha256FromApk"] = found["sha256"]
+        if not found.get("sha1"):
+            report["sha1Reason"] = "no-v1-signature-readable"
+    except Exception as e:  # noqa: BLE001
+        report["sha1"] = None
+        report["sha1Reason"] = "download-failed:" + type(e).__name__
+    finally:
+        if path:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+    return report
+
 
 def service(credentials_path):
     from google.oauth2 import service_account
@@ -201,7 +272,7 @@ def cmd_upload(args):
     return read_back(api, args, expect_track=args.track)
 
 
-def read_back(api, args, expect_track=None):
+def read_back(api, args, expect_track=None, extra=None):
     edit_id = read_only_edit(api, args.package)
     try:
         codes = list_bundle_codes(api, args.package, edit_id)
@@ -215,13 +286,16 @@ def read_back(api, args, expect_track=None):
     verified = report["uploaded"] and (
         expect_track is None or any(x["track"] == expect_track for x in report["onTrack"]))
     report.update({"command": args.command, "ok": bool(verified), "package": args.package})
+    if extra:
+        report.update(extra)
     print(json.dumps(report, indent=2))
     return 0 if verified else 1
 
 
 def cmd_status(args):
     api = service(args.credentials)
-    return read_back(api, args, expect_track=args.track)
+    return read_back(api, args, expect_track=args.track,
+                     extra={"playSigning": signing_report(api, args.package, args.version_code)})
 
 
 def main(argv=None):

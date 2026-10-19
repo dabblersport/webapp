@@ -86,5 +86,30 @@ class Cli(unittest.TestCase):
         self.assertNotIn("private_key", src)
 
 
+class SigningFingerprints(unittest.TestCase):
+    """KAN-571: public certificate fingerprints only."""
+
+    def test_colon_fingerprint_formats_hex(self):
+        self.assertEqual(pp.colon_fingerprint("0ee1b2e9"), "0E:E1:B2:E9")
+        self.assertEqual(pp.colon_fingerprint("0E:E1:b2:e9"), "0E:E1:B2:E9")
+        self.assertIsNone(pp.colon_fingerprint(""))
+        self.assertIsNone(pp.colon_fingerprint(None))
+        self.assertIsNone(pp.colon_fingerprint("abc"))  # odd length is not a fingerprint
+
+    def test_keytool_output_is_parsed(self):
+        text = "Signer #1:\n\nCertificate:\nOwner: CN=x\nCertificate fingerprints:\n\t SHA1: 0E:E1:B2:E9\n\t SHA256: AA:BB:CC:DD\n"
+        self.assertEqual(pp.parse_keytool_fingerprints(text), {"sha1": "0E:E1:B2:E9", "sha256": "AA:BB:CC:DD"})
+        self.assertEqual(pp.parse_keytool_fingerprints("no certificate"), {})
+
+    def test_a_failing_api_is_reported_not_raised(self):
+        class Boom:
+            def generatedapks(self):
+                raise RuntimeError("secret detail must not appear")
+        r = pp.signing_report(Boom(), "com.example", "1")
+        self.assertFalse(r["checked"])
+        self.assertEqual(r["reason"], "list-failed:RuntimeError")
+        self.assertNotIn("secret", str(r))
+
+
 if __name__ == "__main__":
     unittest.main()
