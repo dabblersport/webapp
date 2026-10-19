@@ -31,8 +31,10 @@ Release stages, kept distinct on purpose (Play does NOT expose "in review" throu
 """
 import argparse
 import json
+import hashlib
 import io
 import os
+import struct
 import re
 import subprocess
 import sys
@@ -125,6 +127,52 @@ def parse_keytool_fingerprints(text):
     return out
 
 
+_SIG_BLOCK_MAGIC = b"APK Sig Block 42"
+_V2_ID, _V3_ID = 0x7109871A, 0xF05368C0
+
+
+def _u32_items(buf):
+    """Split a sequence of u32-length-prefixed items."""
+    items, i = [], 0
+    while i + 4 <= len(buf):
+        (n,) = struct.unpack_from("<I", buf, i)
+        items.append(buf[i + 4:i + 4 + n])
+        i += 4 + n
+    return items
+
+
+def apk_signing_cert_hashes(path):
+    """Public SHA-1 and SHA-256 (AA:BB:..) of the first signer certificate in an APK's v2/v3 signing block
+    (KAN-571). Needed because the Android OAuth client is registered by SHA-1 and Play only returns SHA-256.
+    Raises ValueError if there is no readable signing block."""
+    with open(path, "rb") as fh:
+        data = fh.read()
+    eocd = data.rfind(b"PK\x05\x06")
+    if eocd < 0:
+        raise ValueError("no EOCD")
+    (cd_off,) = struct.unpack_from("<I", data, eocd + 16)
+    if data[cd_off - 16:cd_off] != _SIG_BLOCK_MAGIC:
+        raise ValueError("no signing block")
+    (size,) = struct.unpack_from("<Q", data, cd_off - 24)
+    start = cd_off - size - 8
+    pos, end = start + 8, cd_off - 24
+    while pos + 12 <= end:
+        (n,) = struct.unpack_from("<Q", data, pos)
+        (pid,) = struct.unpack_from("<I", data, pos + 8)
+        value = data[pos + 12:pos + 8 + n]
+        pos += 8 + n
+        if pid not in (_V2_ID, _V3_ID):
+            continue
+        signers = _u32_items(_u32_items(value)[0])
+        signed_data = _u32_items(signers[0])[0]
+        parts = _u32_items(signed_data)  # digests, certificates, ...
+        certs = _u32_items(parts[1])
+        der = certs[0]
+        return {"sha1": colon_fingerprint(hashlib.sha1(der).hexdigest()),
+                "sha256": colon_fingerprint(hashlib.sha256(der).hexdigest())}
+    raise ValueError("no v2/v3 signer")
+
+
 def signing_report(api, package, version_code):
     """Read-only (KAN-571): the certificate Google Play signs this version with (the APP SIGNING key that
     users' devices see, not the upload key). Public fingerprints only; any failure is reported as a reason
@@ -154,14 +202,9 @@ def signing_report(api, package, version_code):
             done = False
             while not done:
                 _, done = dl.next_chunk()
-        text = subprocess.run(["keytool", "-printcert", "-jarfile", path],
-                              capture_output=True, text=True, timeout=120).stdout
-        found = parse_keytool_fingerprints(text)
+        found = apk_signing_cert_hashes(path)
         report["sha1"] = found.get("sha1")
-        if found.get("sha256"):
-            report["certificateSha256FromApk"] = found["sha256"]
-        if not found.get("sha1"):
-            report["sha1Reason"] = "no-v1-signature-readable"
+        report["certificateSha256FromApk"] = found.get("sha256")
     except Exception as e:  # noqa: BLE001
         report["sha1"] = None
         report["sha1Reason"] = "download-failed:" + type(e).__name__

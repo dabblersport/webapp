@@ -111,5 +111,36 @@ class SigningFingerprints(unittest.TestCase):
         self.assertNotIn("secret", str(r))
 
 
+
+    def test_apk_signing_block_cert_hashes(self):
+        import hashlib, struct, tempfile
+        der = b"FAKE-CERT-DER-BYTES"
+        def item(b):
+            return struct.pack("<I", len(b)) + b
+        signed_data = item(item(b"digest")) + item(item(der)) + item(b"")
+        signer = item(signed_data) + item(b"sigs") + item(b"pubkey")
+        v2 = item(item(signer))
+        pair = struct.pack("<I", pp._V2_ID) + v2
+        pairs = struct.pack("<Q", len(pair)) + pair
+        size = len(pairs) + 24
+        block = struct.pack("<Q", size) + pairs + struct.pack("<Q", size) + pp._SIG_BLOCK_MAGIC
+        local = b"PK\x03\x04" + b"x" * 20
+        cd = b"PK\x01\x02" + b"y" * 42
+        eocd = b"PK\x05\x06" + b"\0" * 8 + struct.pack("<II", len(cd), len(local) + len(block)) + b"\0\0"
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as fh:
+            fh.write(local + block + cd + eocd)
+        got = pp.apk_signing_cert_hashes(fh.name)
+        os.unlink(fh.name)
+        self.assertEqual(got["sha1"], pp.colon_fingerprint(hashlib.sha1(der).hexdigest()))
+        self.assertEqual(got["sha256"], pp.colon_fingerprint(hashlib.sha256(der).hexdigest()))
+
+    def test_an_apk_without_a_signing_block_raises(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as fh:
+            fh.write(b"PK\x05\x06" + b"\0" * 18)
+        with self.assertRaises(ValueError):
+            pp.apk_signing_cert_hashes(fh.name)
+        os.unlink(fh.name)
+
 if __name__ == "__main__":
     unittest.main()
