@@ -12,6 +12,9 @@ export interface Env {
   DB: D1Database;
   SUPABASE_URL: string;
   SUPABASE_ANON_KEY: string;
+  /** KAN-580: used ONLY by the sender-only receipt recipients route (src/receipt_reads.ts). Binding name only; the value
+   *  is set by operations as a Worker secret, never in the repo. Absent = that route answers 503. */
+  SUPABASE_SERVICE_KEY?: string;
   SKELETON_PROBE?: string;
   /** KAN-510: shared HMAC key for POST /internal/system-line. Binding name only; no value in the repo. */
   MSG_SYSTEM_HMAC_SECRET?: string;
@@ -32,6 +35,9 @@ export interface Grant {
   /** D4 group rule (KAN-512): senders the CALLER blocked (user_blocks only). Their messages are omitted from the
    *  caller's own list. Empty when the caller blocked nobody. Never another user's blocks. */
   hiddenSenderIds: string[];
+  /** KAN-580: the conversation's current members exactly as msg_authorize returned them (may include the caller).
+   *  Empty when the RPC sent none. Used only by the sender-only receipts route. */
+  memberUserIds: string[];
 }
 
 export type AuthOutcome = { ok: true; grant: Grant } | { ok: false; response: Response };
@@ -143,6 +149,7 @@ export async function authorize(request: Request, env: Env, conversationId: stri
     reason?: unknown;
     left_at_seq?: unknown;
     hidden_sender_ids?: unknown;
+    member_user_ids?: unknown;
   };
 
   if (r.allowed_action === null || r.allowed_action === undefined) {
@@ -160,9 +167,14 @@ export async function authorize(request: Request, env: Env, conversationId: stri
     hiddenSenderIds = r.hidden_sender_ids as string[];
   }
 
+  let memberUserIds: string[] = [];
+  if (Array.isArray(r.member_user_ids) && r.member_user_ids.every((x) => typeof x === "string")) {
+    memberUserIds = r.member_user_ids as string[];
+  }
+
   if (r.allowed_action === "send") {
     if (r.reason !== null && r.reason !== undefined) return malformed();
-    return { ok: true, grant: { userId: r.user_id, action: "send", readOnlyReason: null, leftAtSeq: null, hiddenSenderIds } };
+    return { ok: true, grant: { userId: r.user_id, action: "send", readOnlyReason: null, leftAtSeq: null, hiddenSenderIds, memberUserIds } };
   }
 
   if (r.allowed_action === "read") {
@@ -174,7 +186,7 @@ export async function authorize(request: Request, env: Env, conversationId: stri
       if (typeof r.left_at_seq !== "number" || !Number.isInteger(r.left_at_seq) || r.left_at_seq < 0) return malformed();
       leftAtSeq = r.left_at_seq;
     }
-    return { ok: true, grant: { userId: r.user_id, action: "read", readOnlyReason: m.reason, leftAtSeq, hiddenSenderIds } };
+    return { ok: true, grant: { userId: r.user_id, action: "read", readOnlyReason: m.reason, leftAtSeq, hiddenSenderIds, memberUserIds } };
   }
 
   return malformed();

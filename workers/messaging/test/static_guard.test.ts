@@ -24,6 +24,9 @@ const FORBIDDEN: [string, RegExp][] = [
   ["KV namespace", /KVNamespace|\bKV\b/],
   ["R2", /\bR2(Bucket)?\b/],
   ["module-level Map/WeakMap cache", /^(const|let|var)\s+\w+\s*=\s*new\s+(Weak)?Map\b/m],
+  // KAN-580: the one elevated binding, for the sender-only recipients route. It may appear only where it is declared
+  // (auth.ts) and used (receipt_reads.ts); anywhere else is a defect.
+  ["SUPABASE_SERVICE_KEY outside receipt_reads.ts/auth.ts", /SUPABASE_SERVICE_KEY/],
   ["claim access", /\.(sub|claims?)\b|\["(sub|role)"\]/],
 ];
 
@@ -33,8 +36,8 @@ describe("(g) static guard over src/", () => {
     it(`no ${name}`, () => {
       // KAN-510: the HMAC check of the signed internal endpoint is the one legitimate crypto.subtle user.
       // It never touches a bearer token; every other file stays under the ban.
-      const exempt = name === "crypto.subtle" ? "system_line.ts" : null;
-      const hits = files.filter(({ f, text }) => f !== exempt && re.test(text)).map(({ f }) => f);
+      const exempt = name === "crypto.subtle" ? ["system_line.ts"] : name.startsWith("SUPABASE_SERVICE_KEY") ? ["receipt_reads.ts", "auth.ts"] : [];
+      const hits = files.filter(({ f, text }) => !exempt.includes(f) && re.test(text)).map(({ f }) => f);
       expect(hits).toEqual([]);
     });
   }

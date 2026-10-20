@@ -29,6 +29,7 @@ import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
 import { enforceReport, enforceSend } from "./rate_limit";
 import { RECEIPTS_PATH, handleReceipt } from "./receipts";
+import { RECEIPTS_PATH_GET, RECEIPT_SEQ_PATH, handleReceiptRecipients, handleReceiptSummary } from "./receipt_reads";
 import { TYPING_PATH, handleTyping } from "./typing";
 
 export const VERSION = "messaging-skeleton/0.0.1";
@@ -116,6 +117,11 @@ const router = {
     // KAN-580: recipient acknowledgement (delivered / seen watermark). Authored on the branch, not deployed.
     const receipt = RECEIPTS_PATH.exec(url.pathname);
     if (receipt && request.method === "POST") return handleReceipt(request, env, receipt[1]);
+    // KAN-580: sender-only reads (count + Message info drawer). 404, never 403, for a non-sender.
+    const receiptGet = RECEIPTS_PATH_GET.exec(url.pathname);
+    if (receiptGet && request.method === "GET") return handleReceiptSummary(request, env, url, receiptGet[1]);
+    const receiptSeq = RECEIPT_SEQ_PATH.exec(url.pathname);
+    if (receiptSeq && request.method === "GET") return handleReceiptRecipients(request, env, receiptSeq[1], receiptSeq[2]);
 
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
