@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'dart:async';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -403,7 +404,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
         color: colors.textSecondary,
       ),
       value: _fmt(context, minutes),
-      onTap: () => showDabblerSheet<void>(
+      onTap: () => showAppSheet<void>(
         context: context,
         title: label,
         detent: DabblerSheetDetent.content,

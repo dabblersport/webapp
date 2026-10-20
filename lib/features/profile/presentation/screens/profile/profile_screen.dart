@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -217,7 +218,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
   }
 
   void _showManageProfiles() {
-    showDabblerSheet<String>(
+    showAppSheet<String>(
       context: context,
       title: AppLocalizations.of(context).profile_manage_profiles_title,
       detent: DabblerSheetDetent.content,

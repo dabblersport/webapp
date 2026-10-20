@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
 
 import 'package:dabbler/data/models/place.dart';
@@ -23,7 +24,7 @@ class PlacePickerSheet extends ConsumerStatefulWidget {
   /// Show the picker and return the selected [Place], or `null` if dismissed.
   static Future<Place?> show(BuildContext context) {
     // Was showAdaptiveSheet + DraggableScrollableSheet (0.75, 0.5-0.95).
-    return showDabblerSheet<Place>(
+    return showAppSheet<Place>(
       context: context,
       detent: DabblerSheetDetent.content,
       title: AppLocalizations.of(context).location_add,

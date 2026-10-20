@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -178,7 +179,7 @@ class _LicensesScreenState extends ConsumerState<LicensesScreen> {
   }
 
   void _showLicenseDetails(LicenseInfo license) {
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       title: license.name,
       detent: DabblerSheetDetent.content,

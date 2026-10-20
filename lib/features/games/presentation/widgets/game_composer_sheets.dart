@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -26,7 +27,7 @@ Future<T?> showGamePickSheet<T>(
   ComposerSheetConfirm? confirm,
   double? contentMaxFraction,
   bool headerDivider = true,
-}) => showDabblerSheet<T>(
+}) => showAppSheet<T>(
   context: opener,
   title: title,
   titleWidget: composerSheetTitle(title, subtitle: subtitle),

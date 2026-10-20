@@ -232,6 +232,9 @@ class BottomSheetTransitionPage extends CustomTransitionPage<void> {
          barrierDismissible: true,
          barrierColor: DabblerScrimColors.light,
          transitionsBuilder: (context, animation, secondaryAnimation, child) {
+           // The barrier is the route's own ModalBarrier, built outside this
+           // transition, so it stays put and fades; only the page slides.
+           if (DabblerMotion.reduceMotion(context)) return child;
            return SlideTransition(
              position:
                  Tween<Offset>(
@@ -301,6 +304,7 @@ class AdaptiveModalPage extends CustomTransitionPage<void> {
              );
            }
 
+           if (DabblerMotion.reduceMotion(context)) return child;
            return SlideTransition(
              position: animation.drive(
                Tween<Offset>(

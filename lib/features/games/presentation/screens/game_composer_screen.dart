@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/material.dart' show TimeOfDay;
@@ -137,7 +138,7 @@ Future<bool?> showGameComposerSheet(
     );
     return Future<bool?>.value();
   }
-  return showDabblerSheet<bool>(
+  return showAppSheet<bool>(
     context: context,
     // `max-height: 94%`, `height: auto` (`sheetP94`), as Create meet-up.
     detent: DabblerSheetDetent.content,

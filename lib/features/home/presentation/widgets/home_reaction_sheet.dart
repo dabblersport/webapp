@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -17,7 +18,7 @@ Future<void> showHomeReactionSheet(
   required Set<String> myReactions,
   String? title,
 }) {
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     title: title ?? AppLocalizations.of(context).home_vibe_title,
     detent: DabblerSheetDetent.content,

@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -103,7 +104,7 @@ class LocationPickerSheet extends ConsumerStatefulWidget {
         ValueNotifier<LocationPickerHeader>(
           LocationPickerHeader(AppLocalizations.of(context).location_add),
         );
-    return showDabblerSheet<LocationPickerResult>(
+    return showAppSheet<LocationPickerResult>(
       context: context,
       title: AppLocalizations.of(context).location_add,
       detent: DabblerSheetDetent.content,

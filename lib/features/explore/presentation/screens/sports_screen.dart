@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 // Material is imported for one non-visual symbol only: the
 // `MaterialPageRoute` route type the existing pushes use (no behaviour change).
@@ -224,7 +225,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   void _showLocationDrawer() {
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       title: 'Enable Location',
       detent: DabblerSheetDetent.content,
@@ -302,7 +303,7 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   }
 
   void _showFilterModal() {
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       title: 'Filter Results',
       detent: DabblerSheetDetent.content,

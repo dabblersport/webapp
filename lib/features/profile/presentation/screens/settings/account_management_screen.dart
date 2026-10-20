@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
@@ -261,7 +262,7 @@ class _AccountManagementScreenState
   Future<void> _showEmailSheet() async {
     _emailController.text = _email;
     _emailError = null;
-    await showDabblerSheet<void>(
+    await showAppSheet<void>(
       context: context,
       title: _l10n.acct_email_sheet_title,
       detent: DabblerSheetDetent.content,
@@ -358,7 +359,7 @@ class _AccountManagementScreenState
 
   Future<void> _showPasswordSheet() async {
     _passwordError = null;
-    await showDabblerSheet<void>(
+    await showAppSheet<void>(
       context: context,
       title: _hasPassword
           ? _l10n.acct_password_change_title
@@ -554,7 +555,7 @@ class _AccountManagementScreenState
     final confirmTextController = TextEditingController();
     var isDeleting = false;
 
-    await showDabblerSheet<void>(
+    await showAppSheet<void>(
       context: context,
       title: _l10n.acct_delete_title,
       detent: DabblerSheetDetent.content,
