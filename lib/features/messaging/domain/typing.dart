@@ -23,6 +23,10 @@ const Duration typingSendInterval = Duration(
 const Duration typingIdleStop = Duration(seconds: typingIdleStopSeconds);
 const Duration typingReceiverTtl = Duration(seconds: typingReceiverTtlSeconds);
 
+/// How long (milliseconds) each frame of the typing dots lasts: a visual
+/// cadence kept here so the dots and their tests share one value.
+const int typingDotsFrameMs = 400;
+
 /// The least a timer is set for, so an entry due "now" still fires on a later
 /// turn of the event loop.
 const int typingMinTimerMs = 1;
