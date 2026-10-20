@@ -66,32 +66,51 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       await localDataSource.cacheProfile(remoteProfile);
 
       return Right(remoteProfile);
-    } on ServerFailure catch (e) {
-      // Try to return stale cache on server error
-      final cachedProfile = await localDataSource.getCachedProfile(userId);
-      if (cachedProfile != null &&
-          (profileType == null ||
-              cachedProfile.personaType?.toLowerCase() ==
-                  profileType.toLowerCase())) {
-        return Right(cachedProfile);
-      }
-      return Left(
-        ServerFailure(message: 'Failed to fetch profile: ${e.message}'),
-      );
-    } on NetworkFailure catch (e) {
-      // Return cached data on network issues
-      final cachedProfile = await localDataSource.getCachedProfile(userId);
-      if (cachedProfile != null &&
-          (profileType == null ||
-              cachedProfile.personaType?.toLowerCase() ==
-                  profileType.toLowerCase())) {
-        return Right(cachedProfile);
-      }
-      return Left(
-        NetworkFailure(message: 'No network connection: ${e.message}'),
-      );
     } catch (e) {
-      return Left(DataFailure(message: 'Failed to get profile: $e'));
+      // Every data-source error, typed or raw (SocketException, web
+      // ClientException, TimeoutException, Postgrest), becomes one of the
+      // shared failures (KAN-603). When the server or the link is the problem
+      // the cached profile still answers; stale-cache policy itself is KAN-607.
+      final Failure failure = _profileFailure(e);
+      if (failure is NetworkFailure || failure is ServerFailure) {
+        final cachedProfile = await localDataSource.getCachedProfile(userId);
+        if (cachedProfile != null &&
+            (profileType == null ||
+                cachedProfile.personaType?.toLowerCase() ==
+                    profileType.toLowerCase())) {
+          return Right(cachedProfile);
+        }
+      }
+      return Left(failure);
+    }
+  }
+
+  /// Maps a data-source error to the shared taxonomy, keeping typed failures.
+  Failure _profileFailure(Object e) {
+    if (e is TimeoutFailure) {
+      return TimeoutFailure(message: 'Profile request timed out: ${e.message}');
+    }
+    if (e is NetworkFailure) {
+      return NetworkFailure(message: 'No network connection: ${e.message}');
+    }
+    if (e is ServerFailure) {
+      return ServerFailure(message: 'Failed to fetch profile: ${e.message}');
+    }
+    if (e is Failure) return e;
+    switch (classifyError(e)) {
+      case FailureCode.timeout:
+        return TimeoutFailure(message: 'Profile request timed out', cause: e);
+      case FailureCode.noInternet:
+        return NetworkFailure(message: 'No network connection', cause: e);
+      case FailureCode.unauthenticated:
+        return UnauthenticatedFailure(
+          message: 'Session expired. Please sign in again.',
+          cause: e,
+        );
+      case FailureCode.server:
+        return ServerFailure(message: 'Failed to fetch profile: $e', cause: e);
+      default:
+        return DataFailure(message: 'Failed to get profile: $e', cause: e);
     }
   }
 

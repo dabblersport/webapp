@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:dabbler/core/constants/timing/splash_timing.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
+import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
 import 'package:dabbler/features/app_boot/startup_splash.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
@@ -303,4 +305,19 @@ void main() {
       '9e764c856090b89be2958522a68bc0179a4fc843',
     );
   });
+
+  testWidgets(
+    'KAN-603: a bootstrap that never answers ends in the generic start-up '
+    'message after the backstop, not an endless splash',
+    (tester) async {
+      final bootstrap = Completer<Widget>();
+      await _pump(tester, bootstrap.future);
+      // The animation gate opens after its minimum display.
+      await tester.pump(SplashTiming.minDisplay);
+      expect(find.byType(BootstrapErrorApp), findsNothing);
+      await tester.pump(kStartupBackstop + const Duration(seconds: 1));
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(BootstrapErrorApp), findsOneWidget);
+    },
+  );
 }

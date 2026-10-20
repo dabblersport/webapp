@@ -1,3 +1,4 @@
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
@@ -32,7 +33,7 @@ class SupabaseNearbyVenuesDatasource implements NearbyVenuesDatasource {
     bool? indoor,
     double? maxPrice,
     double? minRating,
-  }) => Result.guard(() async {
+  }) => guardWithTimeout(() async {
     final response = await _svc.client.rpc(
       'rpc_get_nearby_venues',
       params: {
@@ -53,5 +54,5 @@ class SupabaseNearbyVenuesDatasource implements NearbyVenuesDatasource {
           (r) => NearbyVenueModel.fromJson(Map<String, dynamic>.from(r as Map)),
         )
         .toList();
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 }

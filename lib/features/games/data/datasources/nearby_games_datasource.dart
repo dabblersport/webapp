@@ -1,3 +1,4 @@
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -35,7 +36,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
     required int radiusMeters,
     String? sportId,
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
-  }) => Result.guard(() async {
+  }) => guardWithTimeout(() async {
     final response = await _svc.client.rpc(
       'rpc_get_nearby_games',
       params: {
@@ -53,7 +54,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
           (r) => NearbyGameModel.fromJson(Map<String, dynamic>.from(r as Map)),
         )
         .toList();
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 
   static const _cardColumns =
       'id, title, sport_name_en, start_at, end_at, is_cancelled, '
@@ -64,7 +65,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
     String? sportId,
-  }) => Result.guard(() async {
+  }) => guardWithTimeout(() async {
     var query = _svc.client
         .from(SupabaseConfig.vGameCardTable)
         .select(_cardColumns);
@@ -75,12 +76,12 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
 
     final rows = await query.order('start_at').limit(100) as List<dynamic>;
     return _mapCardRows(rows);
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getMyUpcomingGames({
     String? sportId,
-  }) => Result.guard(() async {
+  }) => guardWithTimeout(() async {
     var query = _svc.client
         .from(SupabaseConfig.vGameCardTable)
         .select(_cardColumns)
@@ -94,7 +95,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
 
     final rows = await query.order('start_at').limit(50) as List<dynamic>;
     return _mapCardRows(rows);
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 
   /// Maps v_game_card rows to [NearbyGameModel] (status computed here — the
   /// view has no status column; distance is 0, these paths are location-free).
