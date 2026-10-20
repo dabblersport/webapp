@@ -6,6 +6,7 @@ import 'dart:async';
 
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
 import 'package:dabbler/features/games/presentation/providers/games_following_provider.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
@@ -127,14 +128,6 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     return widget.sports[index - 1].id;
   }
 
-  Future<void> _handleRefresh() async {
-    // Invalidate every family member so both the "all games" and the
-    // location-filtered variants refetch, plus the pinned section.
-    ref.invalidate(nearbyGamesProvider);
-    ref.invalidate(myPinnedGamesProvider);
-    await Future.delayed(DabblerMotion.delaySettle);
-  }
-
   void _resetFilters() {
     ref.read(nearbyGamesFilterEnabledProvider.notifier).state = false;
     ref.read(gamesDateFilterProvider.notifier).state = GamesDateFilter.any;
@@ -250,7 +243,6 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
               sports: widget.sports,
               sportId: _sportIdForTab(i),
               scrollController: _scrollControllers[i],
-              onRefresh: _handleRefresh,
               onRetry: () => ref.invalidate(nearbyGamesProvider),
               onChangeFilters: _openFilters,
             ),
@@ -366,7 +358,6 @@ class _GameTabBody extends ConsumerWidget {
     required this.sports,
     required this.sportId,
     required this.scrollController,
-    required this.onRefresh,
     required this.onRetry,
     required this.onChangeFilters,
   });
@@ -375,7 +366,6 @@ class _GameTabBody extends ConsumerWidget {
   final List<Sport> sports;
   final String? sportId;
   final ScrollController scrollController;
-  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
   final VoidCallback onChangeFilters;
 
@@ -403,21 +393,29 @@ class _GameTabBody extends ConsumerWidget {
         ref.watch(myPinnedGamesProvider(sportId)).valueOrNull ??
         const <NearbyGameModel>[];
 
+    // KAN-598: the feed's pull-to-refresh on every state with a list or an
+    // answer. Refetches THIS tab's query under the current filters (they are
+    // untouched), and the pinned section, and waits for both, so the loader
+    // turns for the real query and is dismissed on success or error. One
+    // refresh at a time across the tabs.
+    Future<void> refresh() =>
+        ref.read(listingRefresherProvider('games')).run(() async {
+          ref.invalidate(nearbyGamesProvider);
+          ref.invalidate(myPinnedGamesProvider);
+          await Future.wait(<Future<void>>[
+            settle(ref.read(nearbyGamesProvider(params).future)),
+            settle(ref.read(myPinnedGamesProvider(sportId).future)),
+          ]);
+        });
+
     return gamesAsync.when(
       loading: () =>
           const ListingSkeletons(kind: DabblerListingSkeletonKind.game),
-      error: (e, _) => Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: ListingLayout.gutter,
-        ),
-        child: Center(
-          child: DabblerEmptyState.error(
-            title: l.listing_load_games_failed,
-            size: DabblerEmptyStateSize.inline,
-            onRetry: onRetry,
-            retryLabel: l.feed_retry,
-          ),
-        ),
+      error: (e, _) => ListingError(
+        title: l.listing_load_games_failed,
+        retryLabel: l.feed_retry,
+        onRetry: onRetry,
+        onRefresh: refresh,
       ),
       data: (games) {
         final pinnedIds = {for (final g in pinned) g.id};
@@ -463,6 +461,7 @@ class _GameTabBody extends ConsumerWidget {
               label: l.listing_change_filters,
               onPressed: onChangeFilters,
             ),
+            onRefresh: refresh,
           );
         }
 
@@ -470,7 +469,7 @@ class _GameTabBody extends ConsumerWidget {
           horizontal: ListingLayout.gutter,
         );
         return DabblerRefresh(
-          onRefresh: onRefresh,
+          onRefresh: refresh,
           child: ListView(
             controller: scrollController,
             physics: const AlwaysScrollableScrollPhysics(),

@@ -3,6 +3,7 @@ import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
@@ -236,21 +237,22 @@ class _MeetupsBody extends ConsumerWidget {
     final settings =
         ref.watch(meetupSettingsProvider).valueOrNull ??
         const <String, bool?>{};
+    // KAN-598: the feed's pull-to-refresh on every state with a list or an
+    // answer. Refetches this sport's list (filters untouched) and waits for
+    // it, one refresh at a time, so the loader is dismissed on success or error.
+    Future<void> refresh() =>
+        ref.read(listingRefresherProvider('meetups')).run(() async {
+          ref.invalidate(meetupListProvider);
+          await settle(ref.read(meetupListProvider(sportId).future));
+        });
     return list.when(
       loading: () =>
           const ListingSkeletons(kind: DabblerListingSkeletonKind.meetup),
-      error: (_, __) => Padding(
-        padding: const EdgeInsetsDirectional.symmetric(
-          horizontal: ListingLayout.gutter,
-        ),
-        child: Center(
-          child: DabblerEmptyState.error(
-            title: l.meetups_load_failed,
-            size: DabblerEmptyStateSize.inline,
-            retryLabel: l.feed_retry,
-            onRetry: () => ref.invalidate(meetupListProvider),
-          ),
-        ),
+      error: (_, __) => ListingError(
+        title: l.meetups_load_failed,
+        retryLabel: l.feed_retry,
+        onRetry: () => ref.invalidate(meetupListProvider),
+        onRefresh: refresh,
       ),
       data: (all) {
         final now = ref.read(meetupClockProvider)();
@@ -288,10 +290,11 @@ class _MeetupsBody extends ConsumerWidget {
               label: l.meetups_explore_another,
               onPressed: () => ref.invalidate(meetupListProvider),
             ),
+            onRefresh: refresh,
           );
         }
         return DabblerRefresh(
-          onRefresh: () async => ref.invalidate(meetupListProvider),
+          onRefresh: refresh,
           child: ListView(
             physics: const AlwaysScrollableScrollPhysics(),
             // The Upcoming rail bleeds to the screen edge, so the gutter is

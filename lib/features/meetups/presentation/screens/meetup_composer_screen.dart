@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
@@ -46,7 +47,7 @@ Future<void> showMeetupComposerSheet(
     );
     return Future<void>.value();
   }
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     // `max-height: 94%`, `height: auto` (`sheetP94`): as tall as the form,
     // up to the frame's cap.
@@ -288,7 +289,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
 
   // Content-sized, capped at the frame's vibes 82% (`Home Feed.dc.html:650`,
   // `sheetP82`).
-  Future<void> _pickVibe() => showDabblerSheet<void>(
+  Future<void> _pickVibe() => showAppSheet<void>(
     context: context,
     title: AppLocalizations.of(context).meetups_vibe,
     titleWidget: composerSheetTitle(AppLocalizations.of(context).meetups_vibe),

@@ -1,5 +1,6 @@
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -21,7 +22,7 @@ void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
     ref.read(selectedCountryProvider).valueOrNull,
   );
   final langCode = ref.read(localeProvider).languageCode;
-  showDabblerSheet<void>(
+  showAppSheet<void>(
     context: context,
     title: l10n.settings_tile_language_region,
     detent: DabblerSheetDetent.content,
@@ -97,7 +98,7 @@ class _PickerRow extends StatelessWidget {
 /// About group), each reached through its existing route.
 void showSettingsAboutSheet(BuildContext context) {
   final l10n = AppLocalizations.of(context);
-  showDabblerSheet<void>(
+  showAppSheet<void>(
     context: context,
     title: l10n.settings_about_title,
     detent: DabblerSheetDetent.content,
@@ -144,7 +145,7 @@ void showSettingsAboutSheet(BuildContext context) {
 /// The Become-an-organiser info sheet (`Settings.dc.html:976-977`).
 void showSettingsOrganiserSheet(BuildContext context, VoidCallback onStart) {
   final l10n = AppLocalizations.of(context);
-  showDabblerSheet<void>(
+  showAppSheet<void>(
     context: context,
     title: l10n.settings_organiser_title,
     detent: DabblerSheetDetent.content,
@@ -174,7 +175,7 @@ void showSettingsOrganiserSheet(BuildContext context, VoidCallback onStart) {
 /// The sign-out confirmation (`Settings.dc.html` `isConfirm` sheet).
 void showSettingsSignOutSheet(BuildContext context, VoidCallback onConfirm) {
   final l10n = AppLocalizations.of(context);
-  showDabblerSheet<void>(
+  showAppSheet<void>(
     context: context,
     title: l10n.settings_sign_out_title,
     detent: DabblerSheetDetent.content,

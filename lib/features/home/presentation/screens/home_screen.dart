@@ -1,4 +1,5 @@
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 
@@ -137,7 +138,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   }
 
   Future<void> _showNotificationDrawer() async {
-    final didTakeAction = await showDabblerSheet<bool>(
+    final didTakeAction = await showAppSheet<bool>(
       context: context,
       title: 'Stay Updated',
       detent: DabblerSheetDetent.content,
@@ -420,7 +421,7 @@ class _ForYouTabBody extends ConsumerWidget {
   final VoidCallback onClearBadge;
 
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
-    final confirmed = await showDabblerSheet<bool>(
+    final confirmed = await showAppSheet<bool>(
       context: context,
       title: AppLocalizations.of(context).news_hide_sheet_title,
       detent: DabblerSheetDetent.content,
@@ -1202,7 +1203,7 @@ class _HomeHeader extends ConsumerWidget {
   void _openLocationPicker(BuildContext context) {
     // `max-height: 66%`, `height: auto` (`Home Feed.dc.html:763`, `sheetP66`):
     // as tall as the list, up to the frame's cap.
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       contentMaxFraction: DabblerSheet.contentMaxFractionCompact,

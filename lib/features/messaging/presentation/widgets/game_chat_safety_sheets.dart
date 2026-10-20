@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -58,7 +59,7 @@ Future<void> showGameChatMessageOptions(
   VoidCallback? onBlocked,
 }) async {
   final l10n = AppLocalizations.of(context);
-  final choice = await showDabblerSheet<_Choice>(
+  final choice = await showAppSheet<_Choice>(
     context: context,
     detent: DabblerSheetDetent.content,
     title: l10n.messaging_chat_message_options,
@@ -94,7 +95,7 @@ Future<void> showGameChatMessageOptions(
     case _Choice.report:
       await showGameChatReportSheet(context, onSubmit: onReport);
     case _Choice.block:
-      await showDabblerSheet<void>(
+      await showAppSheet<void>(
         context: context,
         detent: DabblerSheetDetent.content,
         title: l10n.messaging_block_title,
@@ -119,7 +120,7 @@ Future<void> showGameChatReportSheet(
   final l10n = AppLocalizations.of(context);
   final controller = GameChatReportController(onSubmit: onSubmit);
   try {
-    await showDabblerSheet<void>(
+    await showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       title: l10n.messaging_report_title,

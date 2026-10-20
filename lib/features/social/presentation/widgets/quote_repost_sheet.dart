@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,7 +10,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// Opens the quote-repost composer as a design-system sheet; resolves true
 /// when the repost was sent.
 Future<bool?> showQuoteRepostSheet(BuildContext context, Post originalPost) =>
-    showDabblerSheet<bool>(
+    showAppSheet<bool>(
       context: context,
       title: AppLocalizations.of(context).post_card_menu_quote_repost,
       detent: DabblerSheetDetent.content,

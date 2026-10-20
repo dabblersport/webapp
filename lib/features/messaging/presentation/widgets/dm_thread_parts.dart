@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -81,7 +82,7 @@ Future<DmThreadAction?> showDmThreadOptions(
   required bool canReport,
 }) {
   final l10n = AppLocalizations.of(context);
-  return showDabblerSheet<DmThreadAction>(
+  return showAppSheet<DmThreadAction>(
     context: context,
     detent: DabblerSheetDetent.content,
     title: l10n.messaging_dm_options_title,

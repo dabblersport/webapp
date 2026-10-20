@@ -178,7 +178,7 @@ void main() {
   group('AC4 separation and the migration', () {
     test('migration: own table, five countries + Global, RLS, no anon', () {
       final sql = File(
-        'supabase/migrations/20261020120000_kan584_account_service_region.sql',
+        'supabase/migrations/20261020130000_kan584_account_service_region.sql',
       ).readAsStringSync();
       expect(sql, contains('account_service_region'));
       expect(sql, contains('ENABLE ROW LEVEL SECURITY'));

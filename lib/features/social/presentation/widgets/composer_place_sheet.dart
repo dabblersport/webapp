@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -95,7 +96,7 @@ Future<void> showComposerPlaceSheet(BuildContext context, WidgetRef ref) {
   );
   // Content-sized, capped at the frame's 74% (`Home Feed.dc.html:818`,
   // `sheetP74`).
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     title: l.composer_add_location,
     titleWidget: composerSheetTitle(l.composer_add_location),

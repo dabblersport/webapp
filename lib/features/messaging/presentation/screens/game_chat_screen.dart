@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -22,6 +23,7 @@ import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_composer_inset.dart';
 
 /// The game chat thread and composer (KAN-516, T16a).
 ///
@@ -199,7 +201,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           composer = _composer(l10n, view);
         case GameChatStatus.ready:
         case GameChatStatus.readOnly:
-          body = _thread(context, l10n, view);
+          body = ChatStickToLatest(child: _thread(context, l10n, view));
           if (view.status == GameChatStatus.ready) {
             composer = _composer(l10n, view);
           } else if (view.dm?.readOnly != null) {
@@ -253,7 +255,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
                 ],
               )
             : body,
-        bottomBar: composer,
+        bottomBar: composer == null ? null : ChatComposerInset(child: composer),
       );
     }
     return DabblerPage(
@@ -264,7 +266,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         actions: [if (view?.conversation != null) _muteAction(l10n, view!)],
       ),
       body: body,
-      bottomBar: composer,
+      bottomBar: composer == null ? null : ChatComposerInset(child: composer),
     );
   }
 
@@ -377,7 +379,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         final ok = await _controller.setMuted(!view.isMuted);
         if (mounted && !ok) setState(() => _muteFailed = true);
       case DmThreadAction.block:
-        await showDabblerSheet<void>(
+        await showAppSheet<void>(
           context: context,
           detent: DabblerSheetDetent.content,
           title: AppLocalizations.of(context).messaging_block_title,

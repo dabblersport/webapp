@@ -72,6 +72,27 @@ void main() {
       expect(sql[_realtime], isNot(contains('FUNCTION')));
     });
 
+    test('timestamps are newer than every pre-existing migration', () {
+      final others =
+          Directory(_dir)
+              .listSync()
+              .map((e) => e.uri.pathSegments.last)
+              .where(
+                (n) =>
+                    RegExp(r'^\d{14}_').hasMatch(n) &&
+                    !_mine.contains(n) &&
+                    n.compareTo('20261020120000') < 0 && // KAN-595 and later
+                    !n.contains(
+                      '_msg_',
+                    ), // later messaging migrations (KAN-510, KAN-529)
+              )
+              .toList()
+            ..sort();
+      for (final n in _mine) {
+        expect(n.compareTo(others.last), greaterThan(0), reason: n);
+      }
+    });
+
     test('apply order is registry, allowlist, functions, realtime', () {
       final sorted = [..._mine]..sort();
       expect(sorted, _mine);

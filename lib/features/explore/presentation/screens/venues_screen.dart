@@ -12,6 +12,7 @@ import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chi
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
+import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/venues/data/models/venue_with_sport_model.dart';
@@ -338,14 +339,23 @@ class _AllVenuesList extends ConsumerWidget {
         minRating: minRating,
       );
       final nearbyAsync = ref.watch(nearbyVenuesProvider(params));
+      // KAN-598: the feed's pull-to-refresh, waiting for THIS query (filters
+      // untouched), one refresh at a time, dismissed on success or error.
+      Future<void> refresh() =>
+          ref.read(listingRefresherProvider('venues')).run(() async {
+            ref.invalidate(nearbyVenuesProvider);
+            ref.invalidate(venuesBySportWithFiltersProvider);
+            await settle(ref.read(nearbyVenuesProvider(params).future));
+          });
 
       return nearbyAsync.when(
         loading: _loading,
-        error: (_, __) => _error(context, ref),
+        error: (_, __) => _error(context, ref, refresh),
         data: (venues) => venues.isEmpty
             ? _empty(
                 context,
                 ref,
+                refresh,
                 hint: l.listing_venues_radius_text(
                   (location.nearbyRadiusMeters / 1000).round(),
                 ),
@@ -353,6 +363,7 @@ class _AllVenuesList extends ConsumerWidget {
             : _cards(
                 context,
                 ref,
+                refresh,
                 venues
                     .map(
                       (v) => _VenueCardData(
@@ -394,10 +405,19 @@ class _AllVenuesList extends ConsumerWidget {
       limit: 200,
     );
     final venuesAsync = ref.watch(venuesBySportWithFiltersProvider(filters));
+    // KAN-598: see the nearby branch.
+    Future<void> refresh() =>
+        ref.read(listingRefresherProvider('venues')).run(() async {
+          ref.invalidate(nearbyVenuesProvider);
+          ref.invalidate(venuesBySportWithFiltersProvider);
+          await settle(
+            ref.read(venuesBySportWithFiltersProvider(filters).future),
+          );
+        });
 
     return venuesAsync.when(
       loading: _loading,
-      error: (_, __) => _error(context, ref),
+      error: (_, __) => _error(context, ref, refresh),
       data: (rows) {
         // The view has one row per venue and sport setting; keep the first.
         final seen = <String>{};
@@ -421,10 +441,11 @@ class _AllVenuesList extends ConsumerWidget {
             ),
           );
         }
-        if (venues.isEmpty) return _empty(context, ref);
+        if (venues.isEmpty) return _empty(context, ref, refresh);
         return _cards(
           context,
           ref,
+          refresh,
           venues.map((v) {
             final m = metres(v);
             return _VenueCardData(
@@ -462,38 +483,40 @@ class _AllVenuesList extends ConsumerWidget {
   Widget _loading() =>
       const ListingSkeletons(kind: DabblerListingSkeletonKind.venue);
 
-  Widget _error(BuildContext context, WidgetRef ref) => Padding(
-    padding: const EdgeInsetsDirectional.symmetric(
-      horizontal: ListingLayout.gutter,
-    ),
-    child: Center(
-      child: DabblerEmptyState.error(
-        title: AppLocalizations.of(context).listing_load_venues_failed,
-        size: DabblerEmptyStateSize.inline,
-        onRetry: () {
-          ref.invalidate(nearbyVenuesProvider);
-          ref.invalidate(venuesBySportWithFiltersProvider);
-        },
-        retryLabel: AppLocalizations.of(context).feed_retry,
-      ),
-    ),
+  Widget _error(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function() onRefresh,
+  ) => ListingError(
+    title: AppLocalizations.of(context).listing_load_venues_failed,
+    retryLabel: AppLocalizations.of(context).feed_retry,
+    onRetry: () {
+      ref.invalidate(nearbyVenuesProvider);
+      ref.invalidate(venuesBySportWithFiltersProvider);
+    },
+    onRefresh: onRefresh,
   );
 
-  Widget _empty(BuildContext context, WidgetRef ref, {String? hint}) =>
-      ListingEmpty(
-        // `Listings.dc.html:740` — the bold location glyph.
-        icon: 'location',
-        title: AppLocalizations.of(context).listing_venues_none_title,
-        // With a filter applied the useful advice is to loosen it, not to try
-        // another sport.
-        text: _filtersApplied(ref)
-            ? AppLocalizations.of(context).listing_venues_none_filters_text
-            : hint ?? AppLocalizations.of(context).listing_venues_none_text,
-        action: DabblerButton(
-          label: AppLocalizations.of(context).listing_expand_search,
-          onPressed: () => _expandSearch(ref),
-        ),
-      );
+  Widget _empty(
+    BuildContext context,
+    WidgetRef ref,
+    Future<void> Function() onRefresh, {
+    String? hint,
+  }) => ListingEmpty(
+    onRefresh: onRefresh,
+    // `Listings.dc.html:740` — the bold location glyph.
+    icon: 'location',
+    title: AppLocalizations.of(context).listing_venues_none_title,
+    // With a filter applied the useful advice is to loosen it, not to try
+    // another sport.
+    text: _filtersApplied(ref)
+        ? AppLocalizations.of(context).listing_venues_none_filters_text
+        : hint ?? AppLocalizations.of(context).listing_venues_none_text,
+    action: DabblerButton(
+      label: AppLocalizations.of(context).listing_expand_search,
+      onPressed: () => _expandSearch(ref),
+    ),
+  );
 
   bool _filtersApplied(WidgetRef ref) =>
       ref.read(venueIndoorFilterProvider) != null ||
@@ -519,13 +542,11 @@ class _AllVenuesList extends ConsumerWidget {
   Widget _cards(
     BuildContext context,
     WidgetRef ref,
+    Future<void> Function() onRefresh,
     List<_VenueCardData> venues,
   ) {
     return DabblerRefresh(
-      onRefresh: () async {
-        ref.invalidate(nearbyVenuesProvider);
-        ref.invalidate(venuesBySportWithFiltersProvider);
-      },
+      onRefresh: onRefresh,
       child: ListView(
         padding: ListingLayout.listPadding.add(
           EdgeInsetsDirectional.only(bottom: ShellOverlayInset.of(context)),

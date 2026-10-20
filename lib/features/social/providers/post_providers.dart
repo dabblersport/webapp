@@ -28,7 +28,11 @@ import 'package:dabbler/services/post_service.dart';
 
 final postRepositoryProvider = Provider<PostRepository>((ref) {
   final svc = ref.watch(supabaseServiceProvider);
-  return PostRepositoryImpl(svc);
+  // KAN-593: Following is per persona. Watching the active persona rebuilds
+  // the repository on a switch, which rebuilds every feed built on it
+  // (For you, Nearby, home) so they reload filtered by the new persona.
+  final persona = ref.watch(activePersonaProvider)?.name;
+  return PostRepositoryImpl(svc, activePersonaType: persona);
 });
 
 /// Service layer with validation (rate limit, duplicate check, enum mapping).

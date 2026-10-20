@@ -292,7 +292,7 @@ Map<String, String> parseNamedArgs(String s, int open) {
 }
 
 final RegExp _callPattern = RegExp(
-  r'\b(showDabblerSheet|showModalBottomSheet|showBottomSheet|showComposerSheet|DabblerSheetRoute|DabblerSheet)\b\s*(?:<[^()]*?>)?\s*\(',
+  r'\b(showDabblerSheet|showAppSheet|showModalBottomSheet|showBottomSheet|showComposerSheet|DabblerSheetRoute|AppSheetRoute|DabblerSheet)\b\s*(?:<[^()]*?>)?\s*\(',
 );
 
 const Set<String> _callKeywords = <String>{
@@ -330,7 +330,10 @@ bool _isDeclaration(String s, int start) {
 List<String> judge(String helper, Map<String, String> options) {
   final List<String> v = <String>[];
   switch (helper) {
-    case 'showDabblerSheet' || 'DabblerSheetRoute':
+    case 'showDabblerSheet' ||
+        'DabblerSheetRoute' ||
+        'showAppSheet' ||
+        'AppSheetRoute':
       if (options.containsKey('detents')) {
         v.add('passes `detents:` (fixed fractions)');
       }
@@ -553,6 +556,8 @@ bool startsWithTitle(String source) {
   return (chain: chain, offender: null, text: text);
 }
 
+const String _appSheetPrimitive = 'utils/transitions/app_sheet_route.dart';
+
 List<SheetCall> scanLib(Directory lib) {
   final List<SheetCall> all = <SheetCall>[];
   final List<File> files =
@@ -560,6 +565,9 @@ List<SheetCall> scanLib(Directory lib) {
           .listSync(recursive: true)
           .whereType<File>()
           .where((File f) => f.path.endsWith('.dart'))
+          // The app's sheet primitive itself (KAN-596): it builds the raw
+          // DabblerSheet the way the DS route does, so it is not a call site.
+          .where((File f) => !f.path.endsWith(_appSheetPrimitive))
           .toList()
         ..sort((File a, File b) => a.path.compareTo(b.path));
   final Map<String, String> classes = classIndex(<String>[

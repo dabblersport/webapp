@@ -1,5 +1,6 @@
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart'
     show
@@ -99,7 +100,7 @@ Future<void> _showLegal(
   required String intro,
   required List<LegalSection> sections,
 }) {
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     title: title,
     detent: DabblerSheetDetent.content,
@@ -211,7 +212,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
   }
 
   Future<void> _openLanguage() {
-    return showDabblerSheet<void>(
+    return showAppSheet<void>(
       context: context,
       title: AppLocalizations.of(context).auth_sheet_language,
       detent: DabblerSheetDetent.content,
@@ -248,7 +249,7 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
   }
 
   Future<void> _openRegion() {
-    return showDabblerSheet<void>(
+    return showAppSheet<void>(
       context: context,
       title: AppLocalizations.of(context).auth_sheet_region,
       detent: DabblerSheetDetent.content,

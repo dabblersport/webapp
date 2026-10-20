@@ -11,6 +11,7 @@ import '../models/social/comment.dart';
 import '../models/social/post.dart';
 import '../models/social/post_create_request.dart';
 import 'base_repository.dart';
+import 'following_sport_filter.dart';
 import 'post_repository.dart';
 
 /// Concrete [PostRepository] backed by Supabase.
@@ -18,8 +19,12 @@ import 'post_repository.dart';
 /// All visibility filtering is handled by RLS + `can_view_post()` at the
 /// database level. This repository intentionally keeps queries minimal.
 class PostRepositoryImpl extends BaseRepository implements PostRepository {
-  PostRepositoryImpl(super.svc);
+  PostRepositoryImpl(super.svc, {this.activePersonaType});
   SupabaseClient get _db => svc.client;
+
+  /// KAN-593: the ACTIVE persona (`PersonaType.name`); its own Following
+  /// governs the discovery feeds. `null` = unknown → no filter.
+  final String? activePersonaType;
 
   // ── In-memory enrichment (no FK joins required) ─────────────────
 
@@ -365,11 +370,17 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int limit = 20,
     int offset = 0,
   }) => guard(() async {
-    final rows = await _db
+    // KAN-593: discovery feed — Following filter in the query.
+    final followOr = followedSportsOrFilter(
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
+    );
+    var homeQuery = _db
         .from(SupabaseConfig.postsTable)
         .select()
         .eq('is_deleted', false)
-        .eq('is_hidden_admin', false)
+        .eq('is_hidden_admin', false);
+    if (followOr != null) homeQuery = homeQuery.or(followOr);
+    final rows = await homeQuery
         .order('created_at', ascending: false)
         .order('id', ascending: false)
         .range(offset, offset + limit - 1);
@@ -388,9 +399,14 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       'get_feed',
       params: {'p_limit': limit, 'p_offset': offset},
     );
-    final rows = (response as List<dynamic>)
-        .map((e) => Map<String, dynamic>.from(e as Map))
-        .toList();
+    // KAN-593: discovery feed — Following filter client-side (RPC rows).
+    final rows = filterByFollowedSports(
+      (response as List<dynamic>)
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .toList(),
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
+      (r) => r['sport_id'] as String?,
+    );
     final enriched = await _enrichRows(rows);
     final hydrated = await _attachOriginalPosts(enriched);
     final themed = await _attachPostThemes(hydrated);
@@ -455,6 +471,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int offset = 0,
   }) => guard(() async {
     List<Map<String, dynamic>> rows;
+    // KAN-593: discovery feed — Following filter in the query.
+    final followOr = followedSportsOrFilter(
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
+    );
 
     if (lat != null && lng != null) {
       // Fetch posts with geo coordinates — client-side haversine sort.
@@ -465,7 +485,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       final lngMin = lng - deltaDeg;
       final lngMax = lng + deltaDeg;
 
-      rows = await _db
+      var geoQuery = _db
           .from(SupabaseConfig.postsTable)
           .select()
           .gte('geo_lat', latMin)
@@ -475,7 +495,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           .eq('kind', 'original')
           .neq('origin_type', 'system')
           .eq('is_deleted', false)
-          .eq('is_hidden_admin', false)
+          .eq('is_hidden_admin', false);
+      if (followOr != null) geoQuery = geoQuery.or(followOr);
+      rows = await geoQuery
           .order('created_at', ascending: false)
           .limit(limit * 3); // over-fetch for client sort + page slice
 
@@ -494,14 +516,16 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       rows = rows.skip(offset).take(limit).toList();
     } else {
       // Fallback: most recent posts with any location tag.
-      rows = await _db
+      var recentQuery = _db
           .from(SupabaseConfig.postsTable)
           .select()
           .not('location_name', 'is', null)
           .eq('kind', 'original')
           .neq('origin_type', 'system')
           .eq('is_deleted', false)
-          .eq('is_hidden_admin', false)
+          .eq('is_hidden_admin', false);
+      if (followOr != null) recentQuery = recentQuery.or(followOr);
+      rows = await recentQuery
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
     }
