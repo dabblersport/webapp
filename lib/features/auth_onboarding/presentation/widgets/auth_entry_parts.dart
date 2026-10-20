@@ -1,6 +1,5 @@
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
-import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart'
     show
@@ -14,7 +13,6 @@ import 'package:dabbler/providers.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Shared, design-system-only pieces for the entry screens (landing, auth
 /// entry, email sign-up, log in). Nothing here draws anything of its own: each

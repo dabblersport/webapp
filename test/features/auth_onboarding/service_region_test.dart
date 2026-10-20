@@ -5,7 +5,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/selected
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/widgets.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
