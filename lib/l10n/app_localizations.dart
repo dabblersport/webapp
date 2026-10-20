@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get error_generic;
 
+  /// No description provided for @bootstrap_error_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler couldn\'t start'**
+  String get bootstrap_error_title;
+
+  /// No description provided for @bootstrap_error_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while starting the app. Check your connection and open the app again.'**
+  String get bootstrap_error_message;
+
   /// No description provided for @game_full.
   ///
   /// In en, this message translates to:

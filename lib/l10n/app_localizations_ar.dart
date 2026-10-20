@@ -27,6 +27,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get error_generic => 'حدث خطأ ما';
 
   @override
+  String get bootstrap_error_title => 'تعذّر تشغيل دابلر';
+
+  @override
+  String get bootstrap_error_message =>
+      'حدث خطأ أثناء تشغيل التطبيق. تحقّق من اتصالك ثم افتح التطبيق من جديد.';
+
+  @override
   String get game_full => 'اكتمل عدد اللاعبين';
 
   @override

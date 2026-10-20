@@ -6,6 +6,8 @@
   "my_games_empty_title": "لم تنضم إلى أي مباراة بعد",
   "my_games_empty_desc": "انضم إلى مباراة عامة لتظهر هنا.",
   "error_generic": "حدث خطأ ما",
+  "bootstrap_error_title": "تعذّر تشغيل دابلر",
+  "bootstrap_error_message": "حدث خطأ أثناء تشغيل التطبيق. تحقّق من اتصالك ثم افتح التطبيق من جديد.",
   "game_full": "اكتمل عدد اللاعبين",
   "game_waitlisted": "أنت في قائمة الانتظار",
   "pull_to_refresh": "اسحب للتحديث",

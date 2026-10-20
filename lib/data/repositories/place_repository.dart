@@ -57,7 +57,7 @@ class PlaceRepository {
         }, (failure) => throw Exception(failure.message));
       },
       (e) => Failure(
-        category: FailureCode.network,
+        category: classifyError(e),
         message: 'Place search failed: $e',
         cause: e,
       ),
@@ -88,7 +88,7 @@ class PlaceRepository {
         }, (failure) => throw Exception(failure.message));
       },
       (e) => Failure(
-        category: FailureCode.network,
+        category: classifyError(e),
         message: 'Place retrieval failed: $e',
         cause: e,
       ),

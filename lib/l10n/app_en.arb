@@ -6,6 +6,8 @@
   "my_games_empty_title": "You haven't joined any games yet",
   "my_games_empty_desc": "Join a public game to see it here.",
   "error_generic": "Something went wrong",
+  "bootstrap_error_title": "Dabbler couldn't start",
+  "bootstrap_error_message": "Something went wrong while starting the app. Check your connection and open the app again.",
   "game_full": "Game is full",
   "game_waitlisted": "You're on the waitlist",
   "pull_to_refresh": "Pull to refresh",

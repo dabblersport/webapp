@@ -1,3 +1,4 @@
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'dart:async';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
@@ -7,6 +8,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
 import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
@@ -194,7 +196,13 @@ Future<Widget> _bootstrap() async {
     );
 
     ThemeService().attachAccountSyncListener();
-    await ThemeService().hydrateFromAccount();
+    // Bounded (KAN-603): on a dead network the launch carries on with the
+    // theme already stored on the device instead of waiting on the account.
+    try {
+      await ThemeService().hydrateFromAccount().timeout(kRequestTimeout);
+    } catch (_) {
+      // Timeout or failure: local theme state stands.
+    }
 
     // Push notification service — initialize on mobile to set up
     // foreground handling, token refresh, and notification tap listeners.
@@ -257,6 +265,9 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The one connection state stays alive for the whole app (KAN-603): it
+    // listens to the OS and to every guarded request's outcome.
+    ref.watch(connectivityProvider);
     final locale = ref.watch(localeProvider);
     ref.listen<UserProfile?>(currentUserProfileProvider, (prev, next) {
       if (next == null) return;
