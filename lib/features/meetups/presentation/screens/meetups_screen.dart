@@ -1,3 +1,4 @@
+import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
@@ -102,7 +103,7 @@ class _MeetupsTabs extends ConsumerWidget {
               ref.read(meetupSortProvider.notifier).state = MeetupSort.soonest,
         ),
     ];
-    final denied = loc is ActiveLocationDenied;
+    final denied = activeLocationNeedsManualChange(loc);
     return SetLocationWhenDenied(
       child: DabblerPage(
         body: ListingScaffold(
@@ -111,9 +112,7 @@ class _MeetupsTabs extends ConsumerWidget {
             safeArea: false,
             contentPadding: DabblerPageHeader.listingPadding,
             title: l.nav_meetups,
-            locationLabel: loc is ActiveLocationReady
-                ? loc.location.area.name
-                : l.listing_set_location,
+            locationLabel: activeLocationLabel(l, loc),
             onLocationPressed:
                 onPickLocation ??
                 () => denied

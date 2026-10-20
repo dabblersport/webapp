@@ -1,6 +1,8 @@
 import 'package:dabbler/data/models/area.dart';
 
-enum ActiveLocationSource { gps, saved, manual }
+/// [lastKnown]: Auto is unavailable, so this is the last point a device fix
+/// produced, shown with a label and a manual-change action (KAN-586).
+enum ActiveLocationSource { gps, saved, manual, lastKnown }
 
 /// The single resolved location that drives all nearby queries app-wide.
 ///

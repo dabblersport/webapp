@@ -6017,6 +6017,18 @@ abstract class AppLocalizations {
   /// **'Morocco'**
   String get region_country_Morocco;
 
+  /// No description provided for @region_country_Qatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Qatar'**
+  String get region_country_Qatar;
+
+  /// No description provided for @region_country_Global.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get region_country_Global;
+
   /// No description provided for @region_error.
   ///
   /// In en, this message translates to:
@@ -6028,6 +6040,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Set location'**
   String get listing_set_location;
+
+  /// No description provided for @manual_location_cities_divider.
+  ///
+  /// In en, this message translates to:
+  /// **'Cities'**
+  String get manual_location_cities_divider;
+
+  /// No description provided for @manual_location_areas_divider.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas'**
+  String get manual_location_areas_divider;
+
+  /// No description provided for @location_last_known_label.
+  ///
+  /// In en, this message translates to:
+  /// **'{place} · Last known'**
+  String location_last_known_label(String place);
 
   /// No description provided for @listing_search.
   ///

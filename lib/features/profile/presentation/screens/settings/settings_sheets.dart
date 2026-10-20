@@ -1,3 +1,5 @@
+import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
@@ -6,13 +8,6 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-
-const _kSupportedCountries = [
-  'Egypt',
-  'United Arab Emirates',
-  'Saudi Arabia',
-  'Morocco',
-];
 
 const _kSupportedLanguages = [
   (code: 'en', label: 'English', native: 'English'),
@@ -23,7 +18,9 @@ const _kSupportedLanguages = [
 /// and the app-country group behind one tile.
 void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
   final l10n = AppLocalizations.of(context);
-  final currentCountry = ref.read(selectedCountryProvider).valueOrNull ?? '';
+  final currentCountry = normalizeServiceRegion(
+    ref.read(selectedCountryProvider).valueOrNull,
+  );
   final langCode = ref.read(localeProvider).languageCode;
   showAppSheet<void>(
     context: context,
@@ -58,10 +55,10 @@ void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
           tone: DabblerTextTone.secondary,
         ),
         const DabblerGap.v(DabblerSpacing.space3),
-        for (final c in _kSupportedCountries)
+        for (final (c, name) in serviceRegionOptions(l10n, langCode))
           _PickerRow(
-            label: c,
-            selected: currentCountry.toLowerCase() == c.toLowerCase(),
+            label: name,
+            selected: currentCountry == c,
             onTap: () {
               ref.read(selectedCountryProvider.notifier).setCountry(c);
               Navigator.pop(sheetContext);

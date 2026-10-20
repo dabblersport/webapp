@@ -3318,12 +3318,29 @@ class AppLocalizationsAr extends AppLocalizations {
   String get region_country_Morocco => 'المغرب';
 
   @override
+  String get region_country_Qatar => 'قطر';
+
+  @override
+  String get region_country_Global => 'عالمي';
+
+  @override
   String region_error(String error) {
     return 'خطأ: $error';
   }
 
   @override
   String get listing_set_location => 'حدد الموقع';
+
+  @override
+  String get manual_location_cities_divider => 'المدن';
+
+  @override
+  String get manual_location_areas_divider => 'المناطق';
+
+  @override
+  String location_last_known_label(String place) {
+    return '$place · آخر موقع معروف';
+  }
 
   @override
   String get listing_search => 'بحث';

@@ -58,6 +58,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final email = AuthService().getCurrentUser()?.email ?? '';
+    // The same active-profile source the Profile header reads, so both
+    // surfaces show one avatar (KAN-600).
+    final activeProfile = ref.watch(currentUserProfileProvider);
+    final avatarName = activeProfile?.getDisplayName() ?? '';
     final searching = _searchQuery.isNotEmpty;
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
@@ -88,7 +92,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 showDivider: false,
                 onTap: () => context.push('/settings/account'),
                 leading: DabblerAvatar(
-                  seed: email.isEmpty ? 'dabbler' : email,
+                  seed: avatarName.isNotEmpty ? avatarName : 'User',
+                  imageUrl: activeProfile?.avatarUrl,
                   size: DabblerAvatarSize.md,
                 ),
                 title: email.isEmpty

@@ -9,8 +9,6 @@ import 'package:dabbler/features/auth_onboarding/presentation/screens/landing_sc
 import 'package:dabbler/features/auth_onboarding/presentation/screens/otp_verification_screen.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/welcome_screen.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart'
-    show debugAuthCountries;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -239,21 +237,9 @@ void main() {
       },
     ),
     'sheet-region': (
-      () {
-        debugAuthCountries = <Map<String, dynamic>>[
-          for (final String n in <String>[
-            'United Arab Emirates',
-            'Saudi Arabia',
-            'Qatar',
-            'Kuwait',
-            'United Kingdom',
-          ])
-            <String, dynamic>{'name_en': n, 'name_ar': n},
-        ];
-        return const AuthWelcomeScreen();
-      },
+      () => const AuthWelcomeScreen(),
       (t) async {
-        await t.tap(find.text('United Arab Emirates'));
+        await t.tap(find.byType(DabblerChip).first);
         for (var i = 0; i < 8; i++) {
           await t.pump(const Duration(milliseconds: 100));
         }

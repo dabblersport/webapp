@@ -1,3 +1,5 @@
+import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/services/mock_localization_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
@@ -6,14 +8,6 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-
-/// The countries the app serves, by the name the location provider stores.
-const _kCountries = <String>[
-  'Egypt',
-  'United Arab Emirates',
-  'Saudi Arabia',
-  'Morocco',
-];
 
 /// Language & region — `Settings.dc.html` route `region`: the app language and
 /// the app country, each chosen in a sheet and applied at once.
@@ -56,13 +50,7 @@ class _LanguageSelectionScreenState
       code == 'ar' ? l10n.region_lang_ar : l10n.region_lang_en;
 
   String _countryLabel(AppLocalizations l10n, String name) =>
-      switch (name.toLowerCase()) {
-        'egypt' => l10n.region_country_Egypt,
-        'united arab emirates' => l10n.region_country_UAE,
-        'saudi arabia' => l10n.region_country_KSA,
-        'morocco' => l10n.region_country_Morocco,
-        _ => name,
-      };
+      serviceRegionLabel(l10n, name);
 
   void _toast(String message, DabblerToastTone tone) {
     DabblerToastProvider.of(
@@ -126,7 +114,9 @@ class _LanguageSelectionScreenState
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final country = ref.watch(selectedCountryProvider).valueOrNull ?? '';
+    final country = normalizeServiceRegion(
+      ref.watch(selectedCountryProvider).valueOrNull,
+    );
 
     return DabblerPage(
       topBar: settingsTopBar(
@@ -167,7 +157,10 @@ class _LanguageSelectionScreenState
                 onTap: () => _showOptions(
                   title: l10n.region_country,
                   options: [
-                    for (final c in _kCountries) (c, _countryLabel(l10n, c)),
+                    ...serviceRegionOptions(
+                      l10n,
+                      Localizations.localeOf(context).languageCode,
+                    ),
                   ],
                   current: country,
                   onSelect: _selectCountry,

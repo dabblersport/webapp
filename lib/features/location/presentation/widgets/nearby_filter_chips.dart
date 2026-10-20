@@ -32,6 +32,9 @@ List<Widget> nearbyDistanceChips(
 }) {
   final AppLocalizations l = AppLocalizations.of(context);
   final bool enabled = ref.watch(enabledProvider);
+  // No point (a city without an area, or no location): the radius presets are
+  // static tags until an area or location is chosen (KAN-586).
+  final bool canUse = ref.watch(distanceControlsEnabledProvider);
   final StateProvider<int>? own = radiusProvider;
   final int radius = own != null
       ? ref.watch(own)
@@ -40,15 +43,19 @@ List<Widget> nearbyDistanceChips(
     for (final int meters in kNearbyRadiusPresets)
       DabblerChip(
         label: nearbyRadiusLabel(l, meters),
-        selected: enabled && radius == meters,
-        onTap: () {
-          ref.read(enabledProvider.notifier).state = true;
-          if (own != null) {
-            ref.read(own.notifier).state = meters;
-          } else {
-            ref.read(activeLocationProvider.notifier).setRadiusOverride(meters);
-          }
-        },
+        selected: canUse && enabled && radius == meters,
+        onTap: !canUse
+            ? null
+            : () {
+                ref.read(enabledProvider.notifier).state = true;
+                if (own != null) {
+                  ref.read(own.notifier).state = meters;
+                } else {
+                  ref
+                      .read(activeLocationProvider.notifier)
+                      .setRadiusOverride(meters);
+                }
+              },
       ),
     DabblerChip(
       label: l.listing_any_distance,
@@ -66,12 +73,16 @@ List<Widget> nearbySortChips(
 ) {
   final AppLocalizations l = AppLocalizations.of(context);
   final NearbySortOrder sort = ref.watch(sortProvider);
+  // Nearest needs a point: off until an area or location is chosen (KAN-586).
+  final bool canUse = ref.watch(distanceControlsEnabledProvider);
   return <Widget>[
     DabblerChip(
       label: l.listing_sort_nearest,
-      selected: sort == NearbySortOrder.nearest,
-      onTap: () =>
-          ref.read(sortProvider.notifier).state = NearbySortOrder.nearest,
+      selected: canUse && sort == NearbySortOrder.nearest,
+      onTap: !canUse
+          ? null
+          : () =>
+                ref.read(sortProvider.notifier).state = NearbySortOrder.nearest,
     ),
     DabblerChip(
       label: l.listing_sort_soonest,

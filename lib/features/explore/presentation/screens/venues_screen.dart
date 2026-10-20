@@ -1,3 +1,4 @@
+import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
@@ -140,7 +141,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
         ),
     ];
 
-    final denied = locState is ActiveLocationDenied;
+    final denied = activeLocationNeedsManualChange(locState);
 
     return SetLocationWhenDenied(
       child: DabblerPage(
@@ -152,9 +153,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
                   safeArea: false,
                   contentPadding: DabblerPageHeader.listingVenuesPadding,
                   title: AppLocalizations.of(context).nav_venues,
-                  locationLabel: locState is ActiveLocationReady
-                      ? locState.location.area.name
-                      : l.listing_set_location,
+                  locationLabel: activeLocationLabel(l, locState),
                   onLocationPressed: () => denied
                       ? showSetLocationDrawer(context)
                       : HomeLocationPickerSheet.show(context),

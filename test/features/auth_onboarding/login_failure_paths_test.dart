@@ -5,6 +5,8 @@
 import 'package:dabbler/core/models/google_sign_in_failure.dart';
 import 'package:dabbler/core/models/google_sign_in_result.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/auth_welcome_screen.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/email_password_screen.dart';
@@ -16,6 +18,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../support/render_mode.dart';
@@ -101,6 +104,7 @@ class _Harness {
   final visited = <String>[];
 
   Future<void> pump(Widget screen, {String path = '/screen'}) async {
+    SharedPreferences.setMockInitialValues(<String, Object>{});
     tester.view.physicalSize = const Size(1000, 1800);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -132,6 +136,9 @@ class _Harness {
       ProviderScope(
         overrides: [
           authServiceProvider.overrideWithValue(auth),
+          // The welcome screen's region chips read the signed-in account and
+          // the stored region (KAN-584); this screen runs without Supabase.
+          currentUserIdProvider.overrideWithValue(null),
           simpleAuthProvider.overrideWith((ref) => simple),
         ],
         child: MaterialApp.router(

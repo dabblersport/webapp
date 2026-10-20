@@ -3326,12 +3326,29 @@ class AppLocalizationsEn extends AppLocalizations {
   String get region_country_Morocco => 'Morocco';
 
   @override
+  String get region_country_Qatar => 'Qatar';
+
+  @override
+  String get region_country_Global => 'Global';
+
+  @override
   String region_error(String error) {
     return 'Error: $error';
   }
 
   @override
   String get listing_set_location => 'Set location';
+
+  @override
+  String get manual_location_cities_divider => 'Cities';
+
+  @override
+  String get manual_location_areas_divider => 'Areas';
+
+  @override
+  String location_last_known_label(String place) {
+    return '$place · Last known';
+  }
 
   @override
   String get listing_search => 'Search';
