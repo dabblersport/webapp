@@ -112,6 +112,8 @@ class ListingSkeletons extends StatelessWidget {
 
 /// The listing empty answer, 60 under the chrome (`Listings.dc.html:192-203`).
 /// Scrollable so a pull still refreshes and a large text scale never clips.
+/// With [onRefresh] the pull gesture and loader are the feed's own
+/// ([DabblerRefresh]); without it the answer just scrolls.
 class ListingEmpty extends StatelessWidget {
   const ListingEmpty({
     super.key,
@@ -119,6 +121,7 @@ class ListingEmpty extends StatelessWidget {
     required this.title,
     this.text,
     this.action,
+    this.onRefresh,
   });
 
   final String icon;
@@ -126,22 +129,86 @@ class ListingEmpty extends StatelessWidget {
   final String? text;
   final Widget? action;
 
+  /// Pull-to-refresh for the empty list (KAN-598); null leaves it unrefreshable.
+  final Future<void> Function()? onRefresh;
+
   @override
-  Widget build(BuildContext context) => ListView(
-    padding: const EdgeInsetsDirectional.fromSTEB(
-      ListingLayout.gutter,
-      ListingLayout.emptyTop,
-      ListingLayout.gutter,
-      ListingLayout.listBottom,
-    ),
-    children: <Widget>[
-      DabblerEmptyState(
-        icon: icon,
-        title: title,
-        text: text,
-        size: DabblerEmptyStateSize.listing,
-        action: action,
+  Widget build(BuildContext context) {
+    final Future<void> Function()? refresh = onRefresh;
+    final Widget list = ListView(
+      // An empty or short list must still overscroll for the pull to arm.
+      physics: refresh == null ? null : const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        ListingLayout.gutter,
+        ListingLayout.emptyTop,
+        ListingLayout.gutter,
+        ListingLayout.listBottom,
       ),
-    ],
-  );
+      children: <Widget>[
+        DabblerEmptyState(
+          icon: icon,
+          title: title,
+          text: text,
+          size: DabblerEmptyStateSize.listing,
+          action: action,
+        ),
+      ],
+    );
+    return refresh == null
+        ? list
+        : DabblerRefresh(onRefresh: refresh, child: list);
+  }
+}
+
+/// The listing's load-failed answer, centred in the page like before, but
+/// scrollable so a pull refreshes it with the feed's loader (KAN-598). The
+/// retry button stays as the explicit way out.
+class ListingError extends StatelessWidget {
+  const ListingError({
+    super.key,
+    required this.title,
+    required this.retryLabel,
+    required this.onRetry,
+    this.onRefresh,
+  });
+
+  final String title;
+  final String retryLabel;
+  final VoidCallback onRetry;
+
+  /// Pull-to-refresh for the error answer; null leaves it unrefreshable.
+  final Future<void> Function()? onRefresh;
+
+  @override
+  Widget build(BuildContext context) {
+    final Future<void> Function()? refresh = onRefresh;
+    final Widget answer = Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: ListingLayout.gutter,
+      ),
+      child: Center(
+        child: DabblerEmptyState.error(
+          title: title,
+          size: DabblerEmptyStateSize.inline,
+          onRetry: onRetry,
+          retryLabel: retryLabel,
+        ),
+      ),
+    );
+    if (refresh == null) return answer;
+    return LayoutBuilder(
+      builder: (BuildContext context, BoxConstraints box) => DabblerRefresh(
+        onRefresh: refresh,
+        child: ListView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: <Widget>[
+            SizedBox(
+              height: box.hasBoundedHeight ? box.maxHeight : null,
+              child: answer,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
