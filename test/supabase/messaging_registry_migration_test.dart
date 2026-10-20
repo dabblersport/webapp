@@ -81,6 +81,7 @@ void main() {
                 (n) =>
                     RegExp(r'^\d{14}_').hasMatch(n) &&
                     !_mine.contains(n) &&
+                    n.compareTo('20261020120000') < 0 && // KAN-595 and later
                     !n.contains(
                       '_msg_',
                     ), // later messaging migrations (KAN-510, KAN-529)

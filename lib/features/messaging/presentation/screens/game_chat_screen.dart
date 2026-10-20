@@ -22,6 +22,7 @@ import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_composer_inset.dart';
 
 /// The game chat thread and composer (KAN-516, T16a).
 ///
@@ -199,7 +200,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           composer = _composer(l10n, view);
         case GameChatStatus.ready:
         case GameChatStatus.readOnly:
-          body = _thread(context, l10n, view);
+          body = ChatStickToLatest(child: _thread(context, l10n, view));
           if (view.status == GameChatStatus.ready) {
             composer = _composer(l10n, view);
           } else if (view.dm?.readOnly != null) {
@@ -253,7 +254,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
                 ],
               )
             : body,
-        bottomBar: composer,
+        bottomBar: composer == null ? null : ChatComposerInset(child: composer),
       );
     }
     return DabblerPage(
@@ -264,7 +265,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         actions: [if (view?.conversation != null) _muteAction(l10n, view!)],
       ),
       body: body,
-      bottomBar: composer,
+      bottomBar: composer == null ? null : ChatComposerInset(child: composer),
     );
   }
 
