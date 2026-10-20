@@ -2511,5 +2511,21 @@
   "messaging_gif_badge": "GIF · GIPHY",
   "@messaging_gif_badge": {"description": "KAN-582 Mark on a GIF in a chat thread: the kind and the provider credit. Arabic is PROVISIONAL pending content review."},
   "messaging_gif_semantic": "GIF from GIPHY",
-  "@messaging_gif_semantic": {"description": "KAN-582 Screen-reader label of a GIF message in a chat thread. Arabic is PROVISIONAL pending content review."}
+  "@messaging_gif_semantic": {"description": "KAN-582 Screen-reader label of a GIF message in a chat thread. Arabic is PROVISIONAL pending content review."},
+  "messaging_receipt_sent": "Sent",
+  "messaging_receipt_sending": "Sending",
+  "messaging_receipt_retrying": "Retrying",
+  "messaging_receipt_delivered": "Delivered",
+  "messaging_receipt_seen": "Seen",
+  "messaging_receipt_not_sent": "Not sent",
+  "messaging_receipt_seen_everyone": "Seen by everyone",
+  "messaging_receipt_seen_by_count": "Seen by {seen} of {total}",
+  "@messaging_receipt_seen_by_count": {"description": "KAN-580 Group message receipt: how many recipients have seen it. Approved Messaging design, section 11.", "placeholders": {"seen": {"type": "int"}, "total": {"type": "int"}}},
+  "messaging_receipt_delivered_to_count": "Delivered to {delivered} of {total}",
+  "@messaging_receipt_delivered_to_count": {"description": "KAN-580 Group message receipt: how many recipients it reached. Approved Messaging design, section 11.", "placeholders": {"delivered": {"type": "int"}, "total": {"type": "int"}}},
+  "messaging_receipts_title": "Message info",
+  "messaging_receipts_seen_by": "Seen by",
+  "messaging_receipts_delivered_to": "Delivered to",
+  "messaging_receipts_not_yet": "Not delivered yet",
+  "messaging_receipts_not_yet_short": "Not yet"
 }

@@ -6871,4 +6871,50 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_gif_semantic => 'صورة GIF من GIPHY';
+
+  @override
+  String get messaging_receipt_sent => 'أُرسلت';
+
+  @override
+  String get messaging_receipt_sending => 'جارٍ الإرسال';
+
+  @override
+  String get messaging_receipt_retrying => 'جارٍ إعادة المحاولة';
+
+  @override
+  String get messaging_receipt_delivered => 'وصلت';
+
+  @override
+  String get messaging_receipt_seen => 'شوهدت';
+
+  @override
+  String get messaging_receipt_not_sent => 'لم تُرسل';
+
+  @override
+  String get messaging_receipt_seen_everyone => 'شاهدها الجميع';
+
+  @override
+  String messaging_receipt_seen_by_count(int seen, int total) {
+    return 'شاهدها $seen من $total';
+  }
+
+  @override
+  String messaging_receipt_delivered_to_count(int delivered, int total) {
+    return 'وصلت إلى $delivered من $total';
+  }
+
+  @override
+  String get messaging_receipts_title => 'معلومات الرسالة';
+
+  @override
+  String get messaging_receipts_seen_by => 'شاهدها';
+
+  @override
+  String get messaging_receipts_delivered_to => 'وصلت إلى';
+
+  @override
+  String get messaging_receipts_not_yet => 'لم تصل بعد';
+
+  @override
+  String get messaging_receipts_not_yet_short => 'لم تصل';
 }

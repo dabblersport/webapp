@@ -6826,4 +6826,50 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_gif_semantic => 'GIF from GIPHY';
+
+  @override
+  String get messaging_receipt_sent => 'Sent';
+
+  @override
+  String get messaging_receipt_sending => 'Sending';
+
+  @override
+  String get messaging_receipt_retrying => 'Retrying';
+
+  @override
+  String get messaging_receipt_delivered => 'Delivered';
+
+  @override
+  String get messaging_receipt_seen => 'Seen';
+
+  @override
+  String get messaging_receipt_not_sent => 'Not sent';
+
+  @override
+  String get messaging_receipt_seen_everyone => 'Seen by everyone';
+
+  @override
+  String messaging_receipt_seen_by_count(int seen, int total) {
+    return 'Seen by $seen of $total';
+  }
+
+  @override
+  String messaging_receipt_delivered_to_count(int delivered, int total) {
+    return 'Delivered to $delivered of $total';
+  }
+
+  @override
+  String get messaging_receipts_title => 'Message info';
+
+  @override
+  String get messaging_receipts_seen_by => 'Seen by';
+
+  @override
+  String get messaging_receipts_delivered_to => 'Delivered to';
+
+  @override
+  String get messaging_receipts_not_yet => 'Not delivered yet';
+
+  @override
+  String get messaging_receipts_not_yet_short => 'Not yet';
 }

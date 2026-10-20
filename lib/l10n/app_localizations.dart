@@ -12280,6 +12280,90 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'GIF from GIPHY'**
   String get messaging_gif_semantic;
+
+  /// No description provided for @messaging_receipt_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get messaging_receipt_sent;
+
+  /// No description provided for @messaging_receipt_sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get messaging_receipt_sending;
+
+  /// No description provided for @messaging_receipt_retrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying'**
+  String get messaging_receipt_retrying;
+
+  /// No description provided for @messaging_receipt_delivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get messaging_receipt_delivered;
+
+  /// No description provided for @messaging_receipt_seen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get messaging_receipt_seen;
+
+  /// No description provided for @messaging_receipt_not_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get messaging_receipt_not_sent;
+
+  /// No description provided for @messaging_receipt_seen_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by everyone'**
+  String get messaging_receipt_seen_everyone;
+
+  /// KAN-580 Group message receipt: how many recipients have seen it. Approved Messaging design, section 11.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by {seen} of {total}'**
+  String messaging_receipt_seen_by_count(int seen, int total);
+
+  /// KAN-580 Group message receipt: how many recipients it reached. Approved Messaging design, section 11.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to {delivered} of {total}'**
+  String messaging_receipt_delivered_to_count(int delivered, int total);
+
+  /// No description provided for @messaging_receipts_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Message info'**
+  String get messaging_receipts_title;
+
+  /// No description provided for @messaging_receipts_seen_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by'**
+  String get messaging_receipts_seen_by;
+
+  /// No description provided for @messaging_receipts_delivered_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to'**
+  String get messaging_receipts_delivered_to;
+
+  /// No description provided for @messaging_receipts_not_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered yet'**
+  String get messaging_receipts_not_yet;
+
+  /// No description provided for @messaging_receipts_not_yet_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet'**
+  String get messaging_receipts_not_yet_short;
 }
 
 class _AppLocalizationsDelegate

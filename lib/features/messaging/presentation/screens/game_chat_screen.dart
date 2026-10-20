@@ -12,6 +12,7 @@ import 'package:dabbler/features/messaging/presentation/controllers/dm_chat_cont
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/receipts_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/chat_gif_providers.dart';
 import 'package:dabbler/features/messaging/domain/typing.dart';
@@ -89,6 +90,10 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   /// and the typing sender); empty before.
   String _conversationId = '';
 
+  /// KAN-580: whether the app is in the foreground. "Seen" is acknowledged
+  /// only while it is; "delivered" as soon as new messages reach the device.
+  bool _foreground = true;
+
   @override
   void initState() {
     super.initState();
@@ -127,7 +132,9 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   void didChangeAppLifecycleState(AppLifecycleState state) {
     // Backgrounding ends "typing" for the others at once (KAN-579).
     if (state != AppLifecycleState.resumed) _typing?.stop();
-    if (state != AppLifecycleState.resumed || !mounted) return;
+    _foreground = state == AppLifecycleState.resumed;
+    if (!_foreground || !mounted) return;
+    _ackIncoming(ref.read(_provider).valueOrNull);
     ref.read(_provider.notifier).refreshNewest();
   }
 
@@ -155,6 +162,27 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     );
   }
 
+  /// KAN-580: tells the backend how far this user has received (always) and
+  /// seen (only while the thread is on screen in the foreground) the other
+  /// people's messages. Monotonic and fire-and-forget; see [ReceiptAcker].
+  void _ackIncoming(GameChatViewState? view) {
+    final id = view?.conversation?.id;
+    if (id == null || id.isEmpty || view == null) return;
+    var through = 0;
+    for (final item in view.items) {
+      final m = item.message;
+      if (m == null || item.clientKey != null || m.clientKey != null) continue;
+      if (m.seq > through) through = m.seq;
+    }
+    if (through <= 0) return;
+    final acker = ref.read(receiptAckerProvider);
+    if (_foreground && mounted) {
+      acker.seen(id, through);
+    } else {
+      acker.delivered(id, through);
+    }
+  }
+
   void _send() {
     final body = _draft.trim();
     if (body.isEmpty) return;
@@ -177,6 +205,10 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     final async = ref.watch(_provider);
     final view = async.valueOrNull;
     _conversationId = view?.conversation?.id ?? '';
+    // KAN-580: a thread opened on cached state fires no listener change.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _ackIncoming(view);
+    });
     // KAN-579: who is typing here; a message from a typer ends their "typing".
     final typers = _conversationId.isEmpty
         ? const <String>[]
@@ -184,6 +216,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     ref.listen<AsyncValue<GameChatViewState>>(_provider, (prev, next) {
       final id = _conversationId;
       if (id.isEmpty) return;
+      _ackIncoming(next.valueOrNull);
       final before = prev?.valueOrNull?.items.length ?? 0;
       final items = next.valueOrNull?.items ?? const <ChatItem>[];
       for (final item in items.skip(before)) {

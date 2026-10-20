@@ -2444,5 +2444,19 @@
   "composer_gif_retry": "حاول مرة أخرى",
   "messaging_chat_attach_gif": "إضافة صورة GIF",
   "messaging_gif_badge": "GIF عبر GIPHY",
-  "messaging_gif_semantic": "صورة GIF من GIPHY"
+  "messaging_gif_semantic": "صورة GIF من GIPHY",
+  "messaging_receipt_sent": "أُرسلت",
+  "messaging_receipt_sending": "جارٍ الإرسال",
+  "messaging_receipt_retrying": "جارٍ إعادة المحاولة",
+  "messaging_receipt_delivered": "وصلت",
+  "messaging_receipt_seen": "شوهدت",
+  "messaging_receipt_not_sent": "لم تُرسل",
+  "messaging_receipt_seen_everyone": "شاهدها الجميع",
+  "messaging_receipt_seen_by_count": "شاهدها {seen} من {total}",
+  "messaging_receipt_delivered_to_count": "وصلت إلى {delivered} من {total}",
+  "messaging_receipts_title": "معلومات الرسالة",
+  "messaging_receipts_seen_by": "شاهدها",
+  "messaging_receipts_delivered_to": "وصلت إلى",
+  "messaging_receipts_not_yet": "لم تصل بعد",
+  "messaging_receipts_not_yet_short": "لم تصل"
 }
