@@ -6809,4 +6809,25 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get email_password_error_profile_failed =>
       'تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى.';
+
+  @override
+  String get messaging_typing_dm => 'يكتب…';
+
+  @override
+  String messaging_typing_one(String name) {
+    return '$name يكتب';
+  }
+
+  @override
+  String messaging_typing_two(String first, String second) {
+    return '$first و$second يكتبان';
+  }
+
+  @override
+  String messaging_typing_many(String name, int count) {
+    return '$name و$count آخرون يكتبون';
+  }
+
+  @override
+  String get messaging_typing_someone => 'أحد الأعضاء';
 }

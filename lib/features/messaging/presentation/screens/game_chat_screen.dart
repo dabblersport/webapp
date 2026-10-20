@@ -12,6 +12,8 @@ import 'package:dabbler/features/messaging/presentation/controllers/dm_chat_cont
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
+import 'package:dabbler/features/messaging/domain/typing.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
@@ -21,6 +23,7 @@ import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/typing_thread_item.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/chat_composer_inset.dart';
@@ -77,6 +80,14 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   Timer? _poll;
   GameChatController? _controllerRef;
 
+  /// KAN-579: this client's own typing state, sent throttled and always ended
+  /// by a stop (send, blur, background, leaving the chat, idle).
+  TypingPublisher? _typing;
+
+  /// The open conversation's id once the chat has loaded (for the typing row
+  /// and the typing sender); empty before.
+  String _conversationId = '';
+
   @override
   void initState() {
     super.initState();
@@ -84,6 +95,12 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     final controller = ref.read(_provider.notifier);
     _controllerRef = controller;
     controller.setOpen(true);
+    final typingTransport = ref.read(typingTransportProvider);
+    _typing = TypingPublisher(
+      send: (typing) => _conversationId.isEmpty
+          ? Future<void>.value()
+          : typingTransport.send(_conversationId, typing),
+    );
     _startPoll(ref.read(gameChatEffectivePollProvider));
   }
 
@@ -97,6 +114,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
 
   @override
   void dispose() {
+    _typing?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _controllerRef?.setOpen(false);
     _poll?.cancel();
@@ -106,6 +124,8 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   /// One catch-up fetch when the app comes back to the foreground (KAN-544).
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    // Backgrounding ends "typing" for the others at once (KAN-579).
+    if (state != AppLifecycleState.resumed) _typing?.stop();
     if (state != AppLifecycleState.resumed || !mounted) return;
     ref.read(_provider.notifier).refreshNewest();
   }
@@ -137,6 +157,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   void _send() {
     final body = _draft.trim();
     if (body.isEmpty) return;
+    _typing?.stop();
     setState(() => _draft = '');
     ref.read(_provider.notifier).send(body);
   }
@@ -154,6 +175,23 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     });
     final async = ref.watch(_provider);
     final view = async.valueOrNull;
+    _conversationId = view?.conversation?.id ?? '';
+    // KAN-579: who is typing here; a message from a typer ends their "typing".
+    final typers = _conversationId.isEmpty
+        ? const <String>[]
+        : ref.watch(typingPresenceProvider(_conversationId));
+    ref.listen<AsyncValue<GameChatViewState>>(_provider, (prev, next) {
+      final id = _conversationId;
+      if (id.isEmpty) return;
+      final before = prev?.valueOrNull?.items.length ?? 0;
+      final items = next.valueOrNull?.items ?? const <ChatItem>[];
+      for (final item in items.skip(before)) {
+        final sender = item.message?.senderUserId;
+        if (sender != null) {
+          ref.read(typingPresenceProvider(id).notifier).clearFor(sender);
+        }
+      }
+    });
     // T6 (KAN-518): unavailable and removed replace the whole screen, thread,
     // composer and title included; nothing about the conversation shows.
     if (view?.status == GameChatStatus.unavailable) {
@@ -238,6 +276,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           dm: dm,
           onBack: () => context.canPop() ? context.pop() : null,
           onOverflow: () => _openDmOptions(view!),
+          typing: typers.isNotEmpty,
           onOpenProfile: dm.counterpartUserId == null
               ? null
               : () => context.push(
@@ -285,6 +324,14 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
       onRetry: _retry,
       includeSystem: !_isDm,
     );
+    // KAN-579: the "is typing" row closes the thread; a new message takes its place.
+    final typingItem = typingThreadItem(
+      ref,
+      l10n,
+      conversationId: _conversationId,
+      isDm: _isDm,
+    );
+    if (typingItem != null) items.add(typingItem);
     return DabblerMessageThread(
       key: GameChatScreen.threadKey,
       context: _isDm
@@ -422,7 +469,18 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     ),
   );
 
-  Widget _composer(AppLocalizations l10n, GameChatViewState view) =>
+  /// Losing focus (blur) ends "typing" (KAN-579); the Focus node is only an
+  /// observer of the composer's own field.
+  Widget _composer(AppLocalizations l10n, GameChatViewState view) => Focus(
+    canRequestFocus: false,
+    skipTraversal: true,
+    onFocusChange: (focused) {
+      if (!focused) _typing?.stop();
+    },
+    child: _composerField(l10n, view),
+  );
+
+  Widget _composerField(AppLocalizations l10n, GameChatViewState view) =>
       DabblerChatComposer(
         key: GameChatScreen.composerKey,
         value: _draft,
@@ -431,7 +489,10 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         state: view.isSending
             ? DabblerChatComposerState.sending
             : DabblerChatComposerState.normal,
-        onChange: (v) => setState(() => _draft = v),
+        onChange: (v) {
+          setState(() => _draft = v);
+          _typing?.draftChanged(v);
+        },
         onSend: _send,
       );
 }

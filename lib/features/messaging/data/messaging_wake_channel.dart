@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/features/messaging/domain/typing.dart';
+
 /// Where the wake channel is (KAN-544). `closed` covers a channel error, a
 /// timeout and a close: the chat then polls at its normal cadence.
 enum WakeChannelStatus { connecting, subscribed, closed }
@@ -20,6 +22,11 @@ class MessagingWake {
 abstract class WakeChannel {
   /// Broadcast stream of wakes.
   Stream<MessagingWake> get wakes;
+
+  /// Ephemeral typing signals of the user's conversations (KAN-579). Never
+  /// replayed, never stored. Empty by default so a channel without typing
+  /// (a test fake) needs no change.
+  Stream<TypingSignal> get typing => const Stream<TypingSignal>.empty();
 
   /// Broadcast stream of status changes (not replayed).
   Stream<WakeChannelStatus> get statuses;
@@ -63,6 +70,7 @@ class SupabaseWakeChannel implements WakeChannel {
     );
     _channel
         .onBroadcast(event: 'msg', callback: _onBroadcast)
+        .onBroadcast(event: 'typing', callback: _onTyping)
         .subscribe(_onStatus);
   }
 
@@ -70,11 +78,15 @@ class SupabaseWakeChannel implements WakeChannel {
   late final RealtimeChannel _channel;
   final _wakes = StreamController<MessagingWake>.broadcast();
   final _statuses = StreamController<WakeChannelStatus>.broadcast();
+  final _typing = StreamController<TypingSignal>.broadcast();
   var _status = WakeChannelStatus.connecting;
   var _closed = false;
 
   @override
   Stream<MessagingWake> get wakes => _wakes.stream;
+
+  @override
+  Stream<TypingSignal> get typing => _typing.stream;
 
   @override
   Stream<WakeChannelStatus> get statuses => _statuses.stream;
@@ -86,6 +98,12 @@ class SupabaseWakeChannel implements WakeChannel {
     if (_closed) return;
     final wake = parseWake(payload);
     if (wake != null) _wakes.add(wake);
+  }
+
+  void _onTyping(Map<String, dynamic> payload) {
+    if (_closed) return;
+    final signal = parseTypingSignal(payload);
+    if (signal != null) _typing.add(signal);
   }
 
   void _onStatus(RealtimeSubscribeStatus status, Object? error) {
@@ -103,6 +121,7 @@ class SupabaseWakeChannel implements WakeChannel {
     _status = WakeChannelStatus.closed;
     await _client.removeChannel(_channel);
     await _wakes.close();
+    await _typing.close();
     await _statuses.close();
   }
 }

@@ -6762,4 +6762,25 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get email_password_error_profile_failed =>
       'You are signed in, but we couldn\'t load your account. Try again.';
+
+  @override
+  String get messaging_typing_dm => 'typing…';
+
+  @override
+  String messaging_typing_one(String name) {
+    return '$name is typing';
+  }
+
+  @override
+  String messaging_typing_two(String first, String second) {
+    return '$first and $second are typing';
+  }
+
+  @override
+  String messaging_typing_many(String name, int count) {
+    return '$name and $count others are typing';
+  }
+
+  @override
+  String get messaging_typing_someone => 'Someone';
 }

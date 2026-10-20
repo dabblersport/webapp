@@ -12172,6 +12172,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are signed in, but we couldn\'t load your account. Try again.'**
   String get email_password_error_profile_failed;
+
+  /// KAN-579 DM header subtitle while the other person types (design frame 25). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'typing…'**
+  String get messaging_typing_dm;
+
+  /// KAN-579 Group typing label, one person (design section 10). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing'**
+  String messaging_typing_one(String name);
+
+  /// KAN-579 Group typing label, two people. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} are typing'**
+  String messaging_typing_two(String first, String second);
+
+  /// KAN-579 Group typing label, three or more people; count is the number of OTHERS (at least 2). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} others are typing'**
+  String messaging_typing_many(String name, int count);
+
+  /// KAN-579 Name shown in a typing label when the typer's name could not be loaded. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_typing_someone;
 }
 
 class _AppLocalizationsDelegate

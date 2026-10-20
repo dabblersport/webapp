@@ -2477,5 +2477,15 @@
   "messaging_meetup_chat_unavailable": "Meetup chat is not available yet",
   "@messaging_meetup_chat_unavailable": {"description": "KAN-559 meetup detail: the meetup chat entry (unavailable). Arabic is PROVISIONAL pending content review."},
   "email_password_error_profile_failed": "You are signed in, but we couldn't load your account. Try again.",
-  "@email_password_error_profile_failed": {"description": "KAN-570 Shown when the password sign-in succeeded but loading the profile or starting the session failed. Arabic is PROVISIONAL pending content review."}
+  "@email_password_error_profile_failed": {"description": "KAN-570 Shown when the password sign-in succeeded but loading the profile or starting the session failed. Arabic is PROVISIONAL pending content review."},
+  "messaging_typing_dm": "typing…",
+  "@messaging_typing_dm": {"description": "KAN-579 DM header subtitle while the other person types (design frame 25). Arabic is PROVISIONAL pending content review."},
+  "messaging_typing_one": "{name} is typing",
+  "@messaging_typing_one": {"description": "KAN-579 Group typing label, one person (design section 10). Arabic is PROVISIONAL pending content review.", "placeholders": {"name": {"type": "String"}}},
+  "messaging_typing_two": "{first} and {second} are typing",
+  "@messaging_typing_two": {"description": "KAN-579 Group typing label, two people. Arabic is PROVISIONAL pending content review.", "placeholders": {"first": {"type": "String"}, "second": {"type": "String"}}},
+  "messaging_typing_many": "{name} and {count} others are typing",
+  "@messaging_typing_many": {"description": "KAN-579 Group typing label, three or more people; count is the number of OTHERS (at least 2). Arabic is PROVISIONAL pending content review.", "placeholders": {"name": {"type": "String"}, "count": {"type": "int"}}},
+  "messaging_typing_someone": "Someone",
+  "@messaging_typing_someone": {"description": "KAN-579 Name shown in a typing label when the typer's name could not be loaded. Arabic is PROVISIONAL pending content review."}
 }

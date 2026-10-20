@@ -2426,5 +2426,10 @@
   "messaging_meetup_chat_open": "محادثة اللقاء",
   "messaging_meetup_chat_semantic": "فتح محادثة اللقاء",
   "messaging_meetup_chat_unavailable": "محادثة اللقاء غير متاحة بعد",
-  "email_password_error_profile_failed": "تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى."
+  "email_password_error_profile_failed": "تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى.",
+  "messaging_typing_dm": "يكتب…",
+  "messaging_typing_one": "{name} يكتب",
+  "messaging_typing_two": "{first} و{second} يكتبان",
+  "messaging_typing_many": "{name} و{count} آخرون يكتبون",
+  "messaging_typing_someone": "أحد الأعضاء"
 }
