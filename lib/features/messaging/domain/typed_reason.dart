@@ -22,7 +22,7 @@ enum MessagingReason {
   rateLimited('rate_limited', FailureCode.rateLimited),
   notFound('not_found', FailureCode.notFound),
   invalidRequest('invalid_request', FailureCode.validation),
-  offline('offline', FailureCode.network),
+  offline('offline', FailureCode.noInternet),
   unknown('unknown', FailureCode.unknown);
 
   const MessagingReason(this.wireName, this.category);

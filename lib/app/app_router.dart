@@ -1,3 +1,4 @@
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'dart:async';
 
@@ -201,7 +202,10 @@ class AppRouter {
               .select('id')
               .eq('user_id', currentUser.id)
               .limit(1)
-              .maybeSingle();
+              .maybeSingle()
+              // Bounded (KAN-603): on timeout the catch below lets the normal
+              // flow continue with local state.
+              .timeout(kRequestTimeout);
 
           final hasProfile = profileResponse != null;
 

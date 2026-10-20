@@ -27,6 +27,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get error_generic => 'Something went wrong';
 
   @override
+  String get bootstrap_error_title => 'Dabbler couldn\'t start';
+
+  @override
+  String get bootstrap_error_message =>
+      'Something went wrong while starting the app. Check your connection and open the app again.';
+
+  @override
   String get game_full => 'Game is full';
 
   @override

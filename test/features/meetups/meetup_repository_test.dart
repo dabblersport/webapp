@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/meetups/data/repositories/meetup_repository_impl.dart';
@@ -11,7 +13,8 @@ import 'meetup_mocks.mocks.dart';
 void main() {
   late MockMeetupDataSource ds;
   late MeetupRepositoryImpl repo;
-  final boom = Exception('SocketException: down');
+  // KAN-603: a real SocketException (classification is by type, not by text).
+  const boom = SocketException('down');
 
   setUp(() {
     ds = MockMeetupDataSource();
@@ -28,7 +31,7 @@ void main() {
 
   void expectFailure(Result<dynamic, Failure> r) {
     expect(r.isFailure, isTrue);
-    expect(r.requireError.category, FailureCode.network);
+    expect(r.requireError.category, FailureCode.noInternet);
   }
 
   test('create ok + failure', () async {
