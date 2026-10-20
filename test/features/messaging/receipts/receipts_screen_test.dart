@@ -1,5 +1,6 @@
 import 'package:dabbler/features/messaging/data/fake_messaging_repository.dart';
 import 'package:dabbler/features/messaging/data/receipts_transport.dart';
+import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/receipts_providers.dart';
 import 'package:dabbler/features/messaging/presentation/screens/game_chat_screen.dart';
@@ -20,6 +21,13 @@ class _Recording implements ReceiptsTransport {
   @override
   Future<void> ack(String id, ReceiptState state, int throughSeq) async =>
       calls.add((id, state, throughSeq));
+
+  @override
+  Future<Map<int, ReceiptCounts>> summaries(String c, List<int> s) async =>
+      const {};
+
+  @override
+  Future<List<RecipientReceipt>?> recipients(String c, int s) async => null;
 }
 
 Future<_Recording> _open(
@@ -70,28 +78,29 @@ void main() {
     expect(t.calls.map((c) => c.$3).toSet().length, t.calls.length);
   });
 
-  testWidgets('backgrounding sends nothing new; returning does not repeat a seq', (
-    tester,
-  ) async {
-    final t = await _open(tester, messageCount: 1);
-    t.calls.clear();
-    for (final s in [
-      AppLifecycleState.inactive,
-      AppLifecycleState.hidden,
-      AppLifecycleState.paused,
-    ]) {
-      tester.binding.handleAppLifecycleStateChanged(s);
-    }
-    await tester.pump(const Duration(milliseconds: 100));
-    // Nothing new while backgrounded.
-    expect(t.calls, isEmpty);
-    for (final s in [
-      AppLifecycleState.hidden,
-      AppLifecycleState.inactive,
-      AppLifecycleState.resumed,
-    ]) {
-      tester.binding.handleAppLifecycleStateChanged(s);
-    }
-    await tester.pump(const Duration(milliseconds: 100));
-  });
+  testWidgets(
+    'backgrounding sends nothing new; returning does not repeat a seq',
+    (tester) async {
+      final t = await _open(tester, messageCount: 1);
+      t.calls.clear();
+      for (final s in [
+        AppLifecycleState.inactive,
+        AppLifecycleState.hidden,
+        AppLifecycleState.paused,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(s);
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+      // Nothing new while backgrounded.
+      expect(t.calls, isEmpty);
+      for (final s in [
+        AppLifecycleState.hidden,
+        AppLifecycleState.inactive,
+        AppLifecycleState.resumed,
+      ]) {
+        tester.binding.handleAppLifecycleStateChanged(s);
+      }
+      await tester.pump(const Duration(milliseconds: 100));
+    },
+  );
 }

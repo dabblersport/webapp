@@ -31,9 +31,10 @@ enum GameChatStatus {
   error,
 }
 
-/// The local delivery state of one of the caller's own messages. D8: sent and
-/// failed only, no read or delivered ticks.
-enum OutgoingState { sending, sent, failed }
+/// The local delivery state of one of the caller's own messages. [retrying] is
+/// a manual Retry in flight (KAN-580). Delivered and seen come from the
+/// receipts, not from this state.
+enum OutgoingState { sending, retrying, sent, failed }
 
 /// One row of the thread.
 class ChatItem extends Equatable {
@@ -98,7 +99,10 @@ class GameChatViewState extends Equatable {
   final int? olderCursor;
 
   /// True while any own message is being sent.
-  bool get isSending => items.any((i) => i.state == OutgoingState.sending);
+  bool get isSending => items.any(
+    (i) =>
+        i.state == OutgoingState.sending || i.state == OutgoingState.retrying,
+  );
 
   /// True when the chat is closed because the game ended or was cancelled
   /// (the typed reason from the repository, never a client rule).

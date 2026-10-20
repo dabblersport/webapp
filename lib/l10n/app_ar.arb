@@ -2458,5 +2458,6 @@
   "messaging_receipts_seen_by": "شاهدها",
   "messaging_receipts_delivered_to": "وصلت إلى",
   "messaging_receipts_not_yet": "لم تصل بعد",
-  "messaging_receipts_not_yet_short": "لم تصل"
+  "messaging_receipts_not_yet_short": "لم تصل",
+  "messaging_receipts_unknown_person": "شخص"
 }

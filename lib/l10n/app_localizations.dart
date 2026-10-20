@@ -12364,6 +12364,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not yet'**
   String get messaging_receipts_not_yet_short;
+
+  /// No description provided for @messaging_receipts_unknown_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_receipts_unknown_person;
 }
 
 class _AppLocalizationsDelegate

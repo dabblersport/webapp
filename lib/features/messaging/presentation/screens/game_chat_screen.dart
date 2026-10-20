@@ -16,6 +16,7 @@ import 'package:dabbler/features/messaging/presentation/providers/receipts_provi
 import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/chat_gif_providers.dart';
 import 'package:dabbler/features/messaging/domain/typing.dart';
+import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
@@ -25,6 +26,7 @@ import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/message_info_sheet.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/typing_thread_item.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -94,6 +96,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   /// only while it is; "delivered" as soon as new messages reach the device.
   bool _foreground = true;
 
+  /// KAN-580: refreshes the delivered/seen counts of the caller's own
+  /// messages while the thread is open. Receipts have no push channel.
+  Timer? _receiptsPoll;
+
+  /// Ids on screen when the thread first loaded; later incoming ones fade in.
+  Set<String>? _baselineIds;
+
   @override
   void initState() {
     super.initState();
@@ -108,6 +117,10 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           : typingTransport.send(_conversationId, typing),
     );
     _startPoll(ref.read(gameChatEffectivePollProvider));
+    _receiptsPoll = Timer.periodic(Duration(seconds: receiptsRefreshSeconds), (_) {
+      if (mounted && _foreground)
+        _refreshReceipts(ref.read(_provider).valueOrNull);
+    });
   }
 
   bool get _isDm => widget.conversationId != null;
@@ -124,6 +137,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     WidgetsBinding.instance.removeObserver(this);
     _controllerRef?.setOpen(false);
     _poll?.cancel();
+    _receiptsPoll?.cancel();
     super.dispose();
   }
 
@@ -135,6 +149,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     _foreground = state == AppLifecycleState.resumed;
     if (!_foreground || !mounted) return;
     _ackIncoming(ref.read(_provider).valueOrNull);
+    _refreshReceipts(ref.read(_provider).valueOrNull);
     ref.read(_provider.notifier).refreshNewest();
   }
 
@@ -183,6 +198,38 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     }
   }
 
+  /// The seqs of the caller's own messages the server has.
+  Iterable<int> _ownSeqs(GameChatViewState view) sync* {
+    for (final item in view.items) {
+      final m = item.message;
+      if (m != null && (item.clientKey != null || m.clientKey != null)) {
+        yield m.seq;
+      }
+    }
+  }
+
+  /// KAN-580: re-reads delivered/seen counts for the caller's own messages.
+  void _refreshReceipts(GameChatViewState? view) {
+    final id = view?.conversation?.id;
+    if (view == null || id == null || id.isEmpty) return;
+    ref.read(receiptCountsProvider(id).notifier).refresh(_ownSeqs(view));
+  }
+
+  /// Opens the Message info drawer for the tapped receipt count.
+  void _openReceipts(GameChatViewState view, DabblerThreadMessage m) {
+    final item = view.items.where((i) => i.message?.id == m.id).firstOrNull;
+    final message = item?.message;
+    final id = view.conversation?.id;
+    if (message == null || id == null || id.isEmpty) return;
+    showMessageInfo(
+      context: context,
+      ref: ref,
+      conversationId: id,
+      seq: message.seq,
+      preview: message.body,
+    );
+  }
+
   void _send() {
     final body = _draft.trim();
     if (body.isEmpty) return;
@@ -207,7 +254,9 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     _conversationId = view?.conversation?.id ?? '';
     // KAN-580: a thread opened on cached state fires no listener change.
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) _ackIncoming(view);
+      if (!mounted) return;
+      _ackIncoming(view);
+      _refreshReceipts(view);
     });
     // KAN-579: who is typing here; a message from a typer ends their "typing".
     final typers = _conversationId.isEmpty
@@ -217,6 +266,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
       final id = _conversationId;
       if (id.isEmpty) return;
       _ackIncoming(next.valueOrNull);
+      _refreshReceipts(next.valueOrNull);
       final before = prev?.valueOrNull?.items.length ?? 0;
       final items = next.valueOrNull?.items ?? const <ChatItem>[];
       for (final item in items.skip(before)) {
@@ -349,6 +399,15 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     GameChatViewState view,
   ) {
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final conversationId = view.conversation?.id ?? '';
+    final receipts = conversationId.isEmpty
+        ? const <int, ReceiptCounts>{}
+        : ref.watch(receiptCountsProvider(conversationId));
+    final ids = view.items
+        .map((i) => i.message?.id)
+        .whereType<String>()
+        .toSet();
+    _baselineIds ??= ids;
     final items = gameChatThreadItems(
       items: view.items,
       l10n: l10n,
@@ -357,6 +416,9 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
       gameEndAt: widget.gameEndAt,
       onRetry: _retry,
       includeSystem: !_isDm,
+      isDm: _isDm,
+      receipts: receipts,
+      freshIds: ids.difference(_baselineIds!),
     );
     // KAN-579: the "is typing" row is the thread's last message; a real
     // message takes its place.
@@ -374,6 +436,8 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           ? DabblerMessageContext.direct
           : DabblerMessageContext.group,
       items: items,
+      lang: Localizations.localeOf(context).languageCode == 'ar' ? 'ar' : 'en',
+      onReceipts: (m) => _openReceipts(view, m),
       onMessagePress: (m) => _openOptions(view, m),
       header: view.hasOlder
           ? DabblerOlderMessagesPager(

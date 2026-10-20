@@ -6872,4 +6872,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_receipts_not_yet_short => 'Not yet';
+
+  @override
+  String get messaging_receipts_unknown_person => 'Someone';
 }

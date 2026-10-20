@@ -6917,4 +6917,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_receipts_not_yet_short => 'لم تصل';
+
+  @override
+  String get messaging_receipts_unknown_person => 'شخص';
 }

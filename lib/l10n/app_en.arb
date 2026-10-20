@@ -2527,5 +2527,6 @@
   "messaging_receipts_seen_by": "Seen by",
   "messaging_receipts_delivered_to": "Delivered to",
   "messaging_receipts_not_yet": "Not delivered yet",
-  "messaging_receipts_not_yet_short": "Not yet"
+  "messaging_receipts_not_yet_short": "Not yet",
+  "messaging_receipts_unknown_person": "Someone"
 }

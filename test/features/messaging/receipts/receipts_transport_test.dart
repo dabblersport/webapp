@@ -4,6 +4,7 @@ import 'package:http/testing.dart';
 
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
 import 'package:dabbler/features/messaging/data/receipts_transport.dart';
+import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 
 WorkerReceiptsTransport _transport(MockClient client) =>
     WorkerReceiptsTransport(
@@ -20,6 +21,13 @@ class _Recorder implements ReceiptsTransport {
   @override
   Future<void> ack(String c, ReceiptState s, int seq) async =>
       calls.add('$c:${s.wire}:$seq');
+
+  @override
+  Future<Map<int, ReceiptCounts>> summaries(String c, List<int> s) async =>
+      const {};
+
+  @override
+  Future<List<RecipientReceipt>?> recipients(String c, int s) async => null;
 }
 
 void main() {
@@ -103,10 +111,96 @@ void main() {
   });
 
   test('noop transport never throws', () async {
-    await const NoopReceiptsTransport().ack(
-      conversation,
-      ReceiptState.seen,
-      9,
+    await const NoopReceiptsTransport().ack(conversation, ReceiptState.seen, 9);
+  });
+
+  group('reads', () {
+    test('summaries: GET ?seqs= and parses the counts', () async {
+      final seen = <http.Request>[];
+      final transport = _transport(
+        MockClient((r) async {
+          seen.add(r);
+          return http.Response(
+            '{"summaries":[{"seq":3,"recipients":4,"delivered_count":3,"seen_count":2},{"seq":"x"}]}',
+            200,
+          );
+        }),
+      );
+      final out = await transport.summaries(conversation, [3, 5]);
+      expect(seen.single.method, 'GET');
+      expect(seen.single.url.path, '/v1/conversations/$conversation/receipts');
+      expect(seen.single.url.queryParameters['seqs'], '3,5');
+      expect(out.keys, [3]);
+      expect(out[3]!.seen, 2);
+      expect(out[3]!.delivered, 3);
+      expect(out[3]!.total, 4);
+    });
+
+    for (final status in <int>[404, 405, 501]) {
+      test('summaries $status: empty, then no more requests', () async {
+        var calls = 0;
+        final transport = _transport(
+          MockClient((r) async {
+            calls++;
+            return http.Response('', status);
+          }),
+        );
+        expect(await transport.summaries(conversation, [1]), isEmpty);
+        expect(await transport.summaries(conversation, [1]), isEmpty);
+        expect(await transport.recipients(conversation, 1), isNull);
+        expect(calls, 1);
+      });
+    }
+
+    test(
+      'summaries: a network error or bad body is empty, never thrown',
+      () async {
+        final t1 = _transport(MockClient((r) async => throw Exception('x')));
+        expect(await t1.summaries(conversation, [1]), isEmpty);
+        final t2 = _transport(
+          MockClient((r) async => http.Response('[]', 200)),
+        );
+        expect(await t2.summaries(conversation, [1]), isEmpty);
+      },
+    );
+
+    test('recipients: GET /receipts/{seq} parses people', () async {
+      final seen = <http.Request>[];
+      final transport = _transport(
+        MockClient((r) async {
+          seen.add(r);
+          return http.Response(
+            '{"recipients":[{"user_id":"u1","state":"seen","updated_at":"2026-10-20T10:00:00Z"},{"user_id":"u2","state":"sent","updated_at":null},{"user_id":"u3","state":"bogus"}]}',
+            200,
+          );
+        }),
+      );
+      final out = (await transport.recipients(conversation, 7))!;
+      expect(
+        seen.single.url.path,
+        '/v1/conversations/$conversation/receipts/7',
+      );
+      expect(out.map((r) => r.userId), ['u1', 'u2']);
+      expect(out.first.level, ReceiptLevel.seen);
+      expect(out.first.updatedAt, DateTime.utc(2026, 10, 20, 10));
+      expect(out.last.updatedAt, isNull);
+    });
+
+    test(
+      'recipients 404 (not the sender) is null and does not latch',
+      () async {
+        var calls = 0;
+        final transport = _transport(
+          MockClient((r) async {
+            calls++;
+            return http.Response('{"error":{"reason":"not_found"}}', 404);
+          }),
+        );
+        expect(await transport.recipients(conversation, 7), isNull);
+        expect(await transport.recipients(conversation, 8), isNull);
+        expect(calls, 2);
+        expect(transport.unsupported, isFalse);
+      },
     );
   });
 }

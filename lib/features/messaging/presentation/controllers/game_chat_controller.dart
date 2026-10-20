@@ -128,7 +128,7 @@ class GameChatController
         .where((i) => i.clientKey == clientKey)
         .firstOrNull;
     if (item == null || item.state != OutgoingState.failed) return;
-    _replace(clientKey, item.copyWith(state: OutgoingState.sending));
+    _replace(clientKey, item.copyWith(state: OutgoingState.retrying));
     await _deliver(clientKey, item.body);
   }
 

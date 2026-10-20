@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
+import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 
 /// Which watermark an acknowledgement advances (KAN-580).
 enum ReceiptState {
@@ -17,6 +18,34 @@ enum ReceiptState {
 /// next, higher one, so a failure is swallowed.
 abstract class ReceiptsTransport {
   Future<void> ack(String conversationId, ReceiptState state, int throughSeq);
+
+  /// Delivered/seen counts for the caller's own messages [seqs]
+  /// (`GET /conversations/{id}/receipts?seqs=`). Empty when the backend has
+  /// no receipts or answers 404 (the Worker returns 404 for any seq the
+  /// caller did not send); the messages then stay at Sent.
+  Future<Map<int, ReceiptCounts>> summaries(
+    String conversationId,
+    List<int> seqs,
+  );
+
+  /// Who has received/seen the caller's message [seq]
+  /// (`GET /conversations/{id}/receipts/{seq}`); null when unavailable.
+  Future<List<RecipientReceipt>?> recipients(String conversationId, int seq);
+}
+
+/// One recipient's state for one message (the Message info drawer).
+class RecipientReceipt {
+  const RecipientReceipt({
+    required this.userId,
+    required this.level,
+    this.updatedAt,
+  });
+
+  final String userId;
+  final ReceiptLevel level;
+
+  /// When this person's watermark last moved; null if it never has.
+  final DateTime? updatedAt;
 }
 
 /// No receipts: the fake backend, a build without a base URL, Realtime off.
@@ -30,6 +59,18 @@ class NoopReceiptsTransport implements ReceiptsTransport {
     ReceiptState state,
     int throughSeq,
   ) async {}
+
+  @override
+  Future<Map<int, ReceiptCounts>> summaries(
+    String conversationId,
+    List<int> seqs,
+  ) async => const <int, ReceiptCounts>{};
+
+  @override
+  Future<List<RecipientReceipt>?> recipients(
+    String conversationId,
+    int seq,
+  ) async => null;
 }
 
 /// `POST /v1/conversations/{id}/receipts {state, through_seq}` on the
@@ -72,6 +113,92 @@ class WorkerReceiptsTransport implements ReceiptsTransport {
       // Repaired by the next acknowledgement.
     }
   }
+
+  @override
+  Future<Map<int, ReceiptCounts>> summaries(
+    String conversationId,
+    List<int> seqs,
+  ) async {
+    if (_unsupported || seqs.isEmpty) return const <int, ReceiptCounts>{};
+    try {
+      final response = await _http.send(
+        'GET',
+        '/conversations/${Uri.encodeComponent(conversationId)}/receipts',
+        query: <String, String>{'seqs': seqs.take(100).join(',')},
+      );
+      if (_isUnsupported(response.status)) {
+        _unsupported = true;
+        return const <int, ReceiptCounts>{};
+      }
+      final body = response.body;
+      final rows = body is Map ? body['summaries'] : null;
+      if (response.status != 200 || rows is! List) {
+        return const <int, ReceiptCounts>{};
+      }
+      final out = <int, ReceiptCounts>{};
+      for (final r in rows) {
+        if (r is! Map) continue;
+        final seq = r['seq'];
+        final total = r['recipients'];
+        final delivered = r['delivered_count'];
+        final seen = r['seen_count'];
+        if (seq is int && total is int && delivered is int && seen is int) {
+          out[seq] = ReceiptCounts(
+            seen: seen,
+            delivered: delivered,
+            total: total,
+          );
+        }
+      }
+      return out;
+    } catch (_) {
+      return const <int, ReceiptCounts>{};
+    }
+  }
+
+  @override
+  Future<List<RecipientReceipt>?> recipients(
+    String conversationId,
+    int seq,
+  ) async {
+    if (_unsupported) return null;
+    try {
+      final response = await _http.send(
+        'GET',
+        '/conversations/${Uri.encodeComponent(conversationId)}/receipts/$seq',
+      );
+      final body = response.body;
+      final rows = body is Map ? body['recipients'] : null;
+      if (response.status != 200 || rows is! List) return null;
+      final out = <RecipientReceipt>[];
+      for (final r in rows) {
+        if (r is! Map) continue;
+        final id = r['user_id'];
+        final level = switch (r['state']) {
+          'seen' => ReceiptLevel.seen,
+          'delivered' => ReceiptLevel.delivered,
+          'sent' => ReceiptLevel.sent,
+          _ => null,
+        };
+        final at = r['updated_at'];
+        if (id is String && level != null) {
+          out.add(
+            RecipientReceipt(
+              userId: id,
+              level: level,
+              updatedAt: at is String ? DateTime.tryParse(at) : null,
+            ),
+          );
+        }
+      }
+      return out;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static bool _isUnsupported(int status) =>
+      status == 404 || status == 405 || status == 501;
 }
 
 /// Decides what is worth sending. Per conversation it remembers the highest
