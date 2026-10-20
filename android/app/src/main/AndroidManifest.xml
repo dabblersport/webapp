@@ -60,6 +60,8 @@
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
                 <data android:scheme="https" android:host="app.dabbler.pro" />
+                <!-- Alpha web app (KAN-597): serves the same .well-known association files. -->
+                <data android:host="alpha.dabbler.pro" />
                 <data android:pathPrefix="/game/" />
                 <data android:pathPrefix="/post/" />
                 <data android:pathPrefix="/venue/" />
