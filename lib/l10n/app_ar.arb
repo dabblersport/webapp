@@ -2428,5 +2428,21 @@
   "messaging_meetup_chat_open": "محادثة اللقاء",
   "messaging_meetup_chat_semantic": "فتح محادثة اللقاء",
   "messaging_meetup_chat_unavailable": "محادثة اللقاء غير متاحة بعد",
-  "email_password_error_profile_failed": "تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى."
+  "email_password_error_profile_failed": "تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى.",
+  "messaging_typing_dm": "يكتب…",
+  "messaging_typing_one": "{name} يكتب",
+  "messaging_typing_two": "{first} و{second} يكتبان",
+  "messaging_typing_many": "{name} و{count} آخرون يكتبون",
+  "messaging_typing_someone": "أحد الأعضاء",
+  "composer_gif_search_placeholder": "ابحث في GIPHY…",
+  "composer_gif_attribution": "مدعوم من GIPHY",
+  "composer_gif_empty": "لم يتم العثور على صور GIF",
+  "composer_gif_offline_title": "أنت غير متصل",
+  "composer_gif_offline_text": "تحقق من اتصالك وحاول مرة أخرى.",
+  "composer_gif_unavailable_title": "صور GIF غير متاحة حاليًا",
+  "composer_gif_unavailable_text": "يمكنك الاستمرار في إرسال النصوص. حاول لاحقًا.",
+  "composer_gif_retry": "حاول مرة أخرى",
+  "messaging_chat_attach_gif": "إضافة صورة GIF",
+  "messaging_gif_badge": "GIF عبر GIPHY",
+  "messaging_gif_semantic": "صورة GIF من GIPHY"
 }

@@ -12184,6 +12184,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are signed in, but we couldn\'t load your account. Try again.'**
   String get email_password_error_profile_failed;
+
+  /// KAN-579 DM header subtitle while the other person types (design frame 25). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'typing…'**
+  String get messaging_typing_dm;
+
+  /// KAN-579 Group typing label, one person (design section 10). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing'**
+  String messaging_typing_one(String name);
+
+  /// KAN-579 Group typing label, two people. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} are typing'**
+  String messaging_typing_two(String first, String second);
+
+  /// KAN-579 Group typing label, three or more people; count is the number of OTHERS (at least 2). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} others are typing'**
+  String messaging_typing_many(String name, int count);
+
+  /// KAN-579 Name shown in a typing label when the typer's name could not be loaded. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_typing_someone;
+
+  /// KAN-582 GIF picker search field placeholder. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIPHY…'**
+  String get composer_gif_search_placeholder;
+
+  /// KAN-582 GIPHY attribution line under the GIF picker (provider credit; keep the brand name). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get composer_gif_attribution;
+
+  /// KAN-582 GIF picker: no results for the search. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No GIFs found'**
+  String get composer_gif_empty;
+
+  /// KAN-582 GIF picker offline banner title. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline'**
+  String get composer_gif_offline_title;
+
+  /// KAN-582 GIF picker offline banner text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get composer_gif_offline_text;
+
+  /// KAN-582 GIF picker: the provider is unavailable (error banner title). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIFs aren\'t available right now'**
+  String get composer_gif_unavailable_title;
+
+  /// KAN-582 GIF picker unavailable banner text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still send text. Try again later.'**
+  String get composer_gif_unavailable_text;
+
+  /// KAN-582 GIF picker retry action on the offline and unavailable banners. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get composer_gif_retry;
+
+  /// KAN-582 Accessible name of the chat composer's attach control (opens the GIF picker). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a GIF'**
+  String get messaging_chat_attach_gif;
+
+  /// KAN-582 Mark on a GIF in a chat thread: the kind and the provider credit. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF · GIPHY'**
+  String get messaging_gif_badge;
+
+  /// KAN-582 Screen-reader label of a GIF message in a chat thread. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF from GIPHY'**
+  String get messaging_gif_semantic;
 }
 
 class _AppLocalizationsDelegate

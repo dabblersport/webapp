@@ -28,6 +28,7 @@ import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
 import { enforceReport, enforceSend } from "./rate_limit";
+import { TYPING_PATH, handleTyping } from "./typing";
 
 export const VERSION = "messaging-skeleton/0.0.1";
 
@@ -106,6 +107,10 @@ const router = {
     if (mute && request.method === "DELETE") return putMuted(request, env, mute[1], false);
     const game = GAME_CONVERSATION_PATH.exec(url.pathname);
     if (game && request.method === "GET") return getGameConversation(request, env, game[1]);
+
+    // KAN-579: ephemeral typing presence. No D1, no stored row; see src/typing.ts.
+    const typing = TYPING_PATH.exec(url.pathname);
+    if (typing && request.method === "POST") return handleTyping(request, env, typing[1], ctx);
 
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);

@@ -6769,4 +6769,61 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get email_password_error_profile_failed =>
       'You are signed in, but we couldn\'t load your account. Try again.';
+
+  @override
+  String get messaging_typing_dm => 'typing…';
+
+  @override
+  String messaging_typing_one(String name) {
+    return '$name is typing';
+  }
+
+  @override
+  String messaging_typing_two(String first, String second) {
+    return '$first and $second are typing';
+  }
+
+  @override
+  String messaging_typing_many(String name, int count) {
+    return '$name and $count others are typing';
+  }
+
+  @override
+  String get messaging_typing_someone => 'Someone';
+
+  @override
+  String get composer_gif_search_placeholder => 'Search GIPHY…';
+
+  @override
+  String get composer_gif_attribution => 'Powered by GIPHY';
+
+  @override
+  String get composer_gif_empty => 'No GIFs found';
+
+  @override
+  String get composer_gif_offline_title => 'You\'re offline';
+
+  @override
+  String get composer_gif_offline_text =>
+      'Check your connection and try again.';
+
+  @override
+  String get composer_gif_unavailable_title =>
+      'GIFs aren\'t available right now';
+
+  @override
+  String get composer_gif_unavailable_text =>
+      'You can still send text. Try again later.';
+
+  @override
+  String get composer_gif_retry => 'Try again';
+
+  @override
+  String get messaging_chat_attach_gif => 'Add a GIF';
+
+  @override
+  String get messaging_gif_badge => 'GIF · GIPHY';
+
+  @override
+  String get messaging_gif_semantic => 'GIF from GIPHY';
 }

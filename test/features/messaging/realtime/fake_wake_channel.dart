@@ -4,7 +4,7 @@ import 'package:dabbler/features/messaging/data/messaging_wake_channel.dart';
 
 /// A scripted [WakeChannel]: no Supabase, no network. Tests push wakes and
 /// status changes and read how often it was opened and closed.
-class FakeWakeChannel implements WakeChannel {
+class FakeWakeChannel extends WakeChannel {
   FakeWakeChannel(
     this.userId, {
     WakeChannelStatus status = WakeChannelStatus.connecting,
