@@ -28,6 +28,7 @@ import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
 import { enforceReport, enforceSend } from "./rate_limit";
+import { RECEIPTS_PATH, handleReceipt } from "./receipts";
 import { TYPING_PATH, handleTyping } from "./typing";
 
 export const VERSION = "messaging-skeleton/0.0.1";
@@ -111,6 +112,10 @@ const router = {
     // KAN-579: ephemeral typing presence. No D1, no stored row; see src/typing.ts.
     const typing = TYPING_PATH.exec(url.pathname);
     if (typing && request.method === "POST") return handleTyping(request, env, typing[1], ctx);
+
+    // KAN-580: recipient acknowledgement (delivered / seen watermark). Authored on the branch, not deployed.
+    const receipt = RECEIPTS_PATH.exec(url.pathname);
+    if (receipt && request.method === "POST") return handleReceipt(request, env, receipt[1]);
 
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
