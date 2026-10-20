@@ -4,12 +4,15 @@ import 'package:flutter_test/flutter_test.dart';
 /// KAN-544: the Realtime flag is only valid with the two flags it hangs on.
 /// KAN-554: all four launch flags are on in the committed code.
 void main() {
-  test('committed (KAN-554 launch): the realtime flag and the three chat flags are all true', () {
-    expect(FeatureFlags.messagingRealtime, isTrue);
-    expect(FeatureFlags.messaging, isTrue);
-    expect(FeatureFlags.enableMessagingGameChat, isTrue);
-    expect(FeatureFlags.enableMessagingReporting, isTrue);
-  });
+  test(
+    'committed (KAN-554 launch): the realtime flag and the three chat flags are all true',
+    () {
+      expect(FeatureFlags.messagingRealtime, isTrue);
+      expect(FeatureFlags.messaging, isTrue);
+      expect(FeatureFlags.enableMessagingGameChat, isTrue);
+      expect(FeatureFlags.enableMessagingReporting, isTrue);
+    },
+  );
 
   group('messagingRealtimeConsistent', () {
     for (final messaging in [false, true]) {

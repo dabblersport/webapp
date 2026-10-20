@@ -23,7 +23,10 @@ import 'package:share_plus/share_plus.dart';
 /// Taps the heart: the card flips at once (optimistic, in
 /// [toggleGameFavourite]), then the toast says what the server settled on, or
 /// that it could not be updated (the card has rolled back by then).
-Future<void> _toggleFavourite(BuildContext context, NearbyGameModel game) async {
+Future<void> _toggleFavourite(
+  BuildContext context,
+  NearbyGameModel game,
+) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final ok = await toggleGameFavourite(container, game);
   if (!context.mounted) return;

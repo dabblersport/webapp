@@ -825,10 +825,14 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   @override
   Future<Result<Post, Failure>> getPost(String postId) => guard(() async {
     final rows =
-        await _db.from(SupabaseConfig.postsTable).select().eq('id', postId).limit(1) as List;
+        await _db
+                .from(SupabaseConfig.postsTable)
+                .select()
+                .eq('id', postId)
+                .limit(1)
+            as List;
     if (rows.isEmpty) throw Exception('post $postId not found');
-    final enriched =
-        await _enrichRows([rows.first as Map<String, dynamic>]);
+    final enriched = await _enrichRows([rows.first as Map<String, dynamic>]);
     final hydrated = await _attachOriginalPosts(enriched);
     final themed = await _attachPostThemes(hydrated);
 
@@ -1029,7 +1033,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         if (gameId != null) 'game_id': gameId,
       };
 
-      final row = await _db.from(SupabaseConfig.postsTable).insert(data).select().single();
+      final row = await _db
+          .from(SupabaseConfig.postsTable)
+          .insert(data)
+          .select()
+          .single();
       final post = Post.fromJson(row);
       if (extractedTags.isNotEmpty) {
         await _linkHashtags(
@@ -1139,7 +1147,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       // Squad-visibility: insert post + link to post_squads junction.
       if (request.visibility.name == 'squad' && request.squadId != null) {
-        final row = await _db.from(SupabaseConfig.postsTable).insert(payload).select().single();
+        final row = await _db
+            .from(SupabaseConfig.postsTable)
+            .insert(payload)
+            .select()
+            .single();
         // Link to squad junction table.
         await _db.from(SupabaseConfig.postSquadsTable).insert({
           'post_id': row['id'],
@@ -1156,7 +1168,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
 
       // Standard insert path.
-      final row = await _db.from(SupabaseConfig.postsTable).insert(payload).select().single();
+      final row = await _db
+          .from(SupabaseConfig.postsTable)
+          .insert(payload)
+          .select()
+          .single();
       final post = Post.fromJson(row);
       await _linkHashtags(
         postId: post.id,
@@ -1310,7 +1326,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
   @override
   Future<Result<Unit, Failure>> deletePost(String postId) => guard(() async {
-    await _db.from(SupabaseConfig.postsTable).update({'is_deleted': true}).eq('id', postId);
+    await _db
+        .from(SupabaseConfig.postsTable)
+        .update({'is_deleted': true})
+        .eq('id', postId);
     return const Unit();
   });
 
@@ -1320,14 +1339,11 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<Unit, Failure>> likePost(String postId) => guard(() async {
     final uid = svc.authUserId()!;
     final pid = await _profileId();
-    await _db.from(SupabaseConfig.likesTable).upsert(
-      {
-        'parent_activity_id': postId,
-        'profile_id': pid,
-        'actor_user_id': uid,
-      },
-      onConflict: 'parent_activity_id,profile_id',
-    );
+    await _db.from(SupabaseConfig.likesTable).upsert({
+      'parent_activity_id': postId,
+      'profile_id': pid,
+      'actor_user_id': uid,
+    }, onConflict: 'parent_activity_id,profile_id');
     return const Unit();
   });
 
@@ -1471,7 +1487,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         await _db
             .from(SupabaseConfig.postRepostsTable)
             .delete()
-            .eq('parent_activity_id',originalPostId)
+            .eq('parent_activity_id', originalPostId)
             .eq('reposter_user_id', uid);
 
         return const Unit();
@@ -1483,7 +1499,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final rows = await _db
         .from(SupabaseConfig.postRepostsTable)
         .select('id')
-        .eq('parent_activity_id',postId)
+        .eq('parent_activity_id', postId)
         .eq('reposter_user_id', uid)
         .limit(1);
     return rows.isNotEmpty;
@@ -1492,23 +1508,22 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   // ── Reactions ─────────────────────────────────────────────────────────
 
   @override
-  Future<Result<Unit, Failure>> reactToPost(String postId, String vibeId) =>
-      guard(() async {
-        final uid = svc.authUserId()!;
-        final pid = await _profileId();
-        // onConflict targets the unique index (parent_activity_id, actor_user_id)
-        // so re-reacting with a different vibe replaces the previous one.
-        await _db.from(SupabaseConfig.reactionsTable).upsert(
-          {
-            'parent_activity_id': postId,
-            'actor_profile_id': pid,
-            'actor_user_id': uid,
-            'vibe_id': vibeId,
-          },
-          onConflict: 'parent_activity_id,actor_user_id',
-        );
-        return const Unit();
-      });
+  Future<Result<Unit, Failure>> reactToPost(
+    String postId,
+    String vibeId,
+  ) => guard(() async {
+    final uid = svc.authUserId()!;
+    final pid = await _profileId();
+    // onConflict targets the unique index (parent_activity_id, actor_user_id)
+    // so re-reacting with a different vibe replaces the previous one.
+    await _db.from(SupabaseConfig.reactionsTable).upsert({
+      'parent_activity_id': postId,
+      'actor_profile_id': pid,
+      'actor_user_id': uid,
+      'vibe_id': vibeId,
+    }, onConflict: 'parent_activity_id,actor_user_id');
+    return const Unit();
+  });
 
   @override
   Future<Result<Unit, Failure>> removeReaction(String postId, String vibeId) =>
@@ -1540,10 +1555,13 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   @override
   Future<Result<Unit, Failure>> recordView(String postId) => guard(() async {
     final uid = svc.authUserId()!;
-    await _db.from(SupabaseConfig.postViewsTable).upsert({
-      'post_id': postId,
-      'viewer_user_id': uid,
-    }, onConflict: 'post_id,viewer_user_id', ignoreDuplicates: true);
+    await _db
+        .from(SupabaseConfig.postViewsTable)
+        .upsert(
+          {'post_id': postId, 'viewer_user_id': uid},
+          onConflict: 'post_id,viewer_user_id',
+          ignoreDuplicates: true,
+        );
     return const Unit();
   });
 

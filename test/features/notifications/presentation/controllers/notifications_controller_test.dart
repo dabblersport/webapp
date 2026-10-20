@@ -59,7 +59,10 @@ void main() {
   group('loadNotifications', () {
     test('populates state and unread count from the first page', () async {
       when(repository.getPage(limit: 20, cursor: null)).thenAnswer(
-        (_) async => Ok([makeNotification(id: 'n1'), makeNotification(id: 'n2', isRead: true)]),
+        (_) async => Ok([
+          makeNotification(id: 'n1'),
+          makeNotification(id: 'n2', isRead: true),
+        ]),
       );
 
       final controller = buildController();
@@ -74,7 +77,9 @@ void main() {
 
     test('surfaces a repository failure as state.error', () async {
       when(repository.getPage(limit: 20, cursor: null)).thenAnswer(
-        (_) async => const Err(Failure(category: FailureCode.network, message: 'offline')),
+        (_) async => const Err(
+          Failure(category: FailureCode.network, message: 'offline'),
+        ),
       );
 
       final controller = buildController();
@@ -86,8 +91,9 @@ void main() {
     });
 
     test('hasMore is false once a short page comes back', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification()]));
+      when(
+        repository.getPage(limit: 20, cursor: null),
+      ).thenAnswer((_) async => Ok([makeNotification()]));
 
       final controller = buildController();
       await controller.loadNotifications();
@@ -99,16 +105,21 @@ void main() {
 
   group('loadMore', () {
     test('requests the next page using the last item as cursor', () async {
-      final first = makeNotification(id: 'n1', createdAt: DateTime.utc(2026, 8, 20));
+      final first = makeNotification(
+        id: 'n1',
+        createdAt: DateTime.utc(2026, 8, 20),
+      );
       // Full page so hasMore stays true and loadMore actually fires.
       final firstPage = List.generate(
         20,
         (i) => makeNotification(id: 'n$i', createdAt: first.createdAt),
       );
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok(firstPage));
-      when(repository.getPage(limit: 20, cursor: first.createdAt))
-          .thenAnswer((_) async => Ok([makeNotification(id: 'older')]));
+      when(
+        repository.getPage(limit: 20, cursor: null),
+      ).thenAnswer((_) async => Ok(firstPage));
+      when(
+        repository.getPage(limit: 20, cursor: first.createdAt),
+      ).thenAnswer((_) async => Ok([makeNotification(id: 'older')]));
 
       final controller = buildController();
       await controller.loadNotifications();
@@ -120,8 +131,9 @@ void main() {
     });
 
     test('does nothing once hasMore is false', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification()]));
+      when(
+        repository.getPage(limit: 20, cursor: null),
+      ).thenAnswer((_) async => Ok([makeNotification()]));
 
       final controller = buildController();
       await controller.loadNotifications();
@@ -134,39 +146,52 @@ void main() {
   });
 
   group('markAsRead', () {
-    test('optimistically marks read and keeps it on repository success', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification(id: 'n1')]));
-      when(repository.markAsRead('n1')).thenAnswer((_) async => const Ok<void, Failure>(null));
+    test(
+      'optimistically marks read and keeps it on repository success',
+      () async {
+        when(
+          repository.getPage(limit: 20, cursor: null),
+        ).thenAnswer((_) async => Ok([makeNotification(id: 'n1')]));
+        when(
+          repository.markAsRead('n1'),
+        ).thenAnswer((_) async => const Ok<void, Failure>(null));
 
-      final controller = buildController();
-      await controller.loadNotifications();
-      await controller.markAsRead('n1');
+        final controller = buildController();
+        await controller.loadNotifications();
+        await controller.markAsRead('n1');
 
-      expect(controller.state.notifications.first.isRead, isTrue);
-      expect(controller.state.unreadCount, 0);
-      addTearDown(controller.dispose);
-    });
+        expect(controller.state.notifications.first.isRead, isTrue);
+        expect(controller.state.unreadCount, 0);
+        addTearDown(controller.dispose);
+      },
+    );
 
-    test('rolls back the optimistic update when the server call fails', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification(id: 'n1')]));
-      when(repository.markAsRead('n1')).thenAnswer(
-        (_) async => const Err(Failure(category: FailureCode.network, message: 'offline')),
-      );
+    test(
+      'rolls back the optimistic update when the server call fails',
+      () async {
+        when(
+          repository.getPage(limit: 20, cursor: null),
+        ).thenAnswer((_) async => Ok([makeNotification(id: 'n1')]));
+        when(repository.markAsRead('n1')).thenAnswer(
+          (_) async => const Err(
+            Failure(category: FailureCode.network, message: 'offline'),
+          ),
+        );
 
-      final controller = buildController();
-      await controller.loadNotifications();
-      await controller.markAsRead('n1');
+        final controller = buildController();
+        await controller.loadNotifications();
+        await controller.markAsRead('n1');
 
-      expect(controller.state.notifications.first.isRead, isFalse);
-      expect(controller.state.unreadCount, 1);
-      addTearDown(controller.dispose);
-    });
+        expect(controller.state.notifications.first.isRead, isFalse);
+        expect(controller.state.unreadCount, 1);
+        addTearDown(controller.dispose);
+      },
+    );
 
     test('is a no-op for an id not present in state', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification(id: 'n1')]));
+      when(
+        repository.getPage(limit: 20, cursor: null),
+      ).thenAnswer((_) async => Ok([makeNotification(id: 'n1')]));
 
       final controller = buildController();
       await controller.loadNotifications();
@@ -180,9 +205,12 @@ void main() {
   group('markAllRead', () {
     test('marks every unread notification read and zeroes the count', () async {
       when(repository.getPage(limit: 20, cursor: null)).thenAnswer(
-        (_) async => Ok([makeNotification(id: 'n1'), makeNotification(id: 'n2')]),
+        (_) async =>
+            Ok([makeNotification(id: 'n1'), makeNotification(id: 'n2')]),
       );
-      when(repository.markAllRead()).thenAnswer((_) async => const Ok<void, Failure>(null));
+      when(
+        repository.markAllRead(),
+      ).thenAnswer((_) async => const Ok<void, Failure>(null));
 
       final controller = buildController();
       await controller.loadNotifications();
@@ -195,10 +223,13 @@ void main() {
 
     test('rolls back all notifications when the server call fails', () async {
       when(repository.getPage(limit: 20, cursor: null)).thenAnswer(
-        (_) async => Ok([makeNotification(id: 'n1'), makeNotification(id: 'n2')]),
+        (_) async =>
+            Ok([makeNotification(id: 'n1'), makeNotification(id: 'n2')]),
       );
       when(repository.markAllRead()).thenAnswer(
-        (_) async => const Err(Failure(category: FailureCode.network, message: 'offline')),
+        (_) async => const Err(
+          Failure(category: FailureCode.network, message: 'offline'),
+        ),
       );
 
       final controller = buildController();
@@ -243,8 +274,9 @@ void main() {
 
   group('realtime insert', () {
     test('prepends a new notification delivered over realtime', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification(id: 'existing')]));
+      when(
+        repository.getPage(limit: 20, cursor: null),
+      ).thenAnswer((_) async => Ok([makeNotification(id: 'existing')]));
 
       late OnNewNotification onNewNotification;
       when(
@@ -267,8 +299,9 @@ void main() {
     });
 
     test('ignores a duplicate id already present in state', () async {
-      when(repository.getPage(limit: 20, cursor: null))
-          .thenAnswer((_) async => Ok([makeNotification(id: 'existing')]));
+      when(
+        repository.getPage(limit: 20, cursor: null),
+      ).thenAnswer((_) async => Ok([makeNotification(id: 'existing')]));
 
       late OnNewNotification onNewNotification;
       when(

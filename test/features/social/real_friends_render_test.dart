@@ -34,8 +34,19 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
 }
 
 const List<Map<String, dynamic>> _followers = <Map<String, dynamic>>[
-  {'id': 'p1', 'user_id': 'u1', 'display_name': 'Layla Hassan', 'username': 'layla', 'verified': true},
-  {'id': 'p2', 'user_id': 'u2', 'display_name': 'Omar Saeed', 'username': 'omar'},
+  {
+    'id': 'p1',
+    'user_id': 'u1',
+    'display_name': 'Layla Hassan',
+    'username': 'layla',
+    'verified': true,
+  },
+  {
+    'id': 'p2',
+    'user_id': 'u2',
+    'display_name': 'Omar Saeed',
+    'username': 'omar',
+  },
   {'id': 'me', 'user_id': 'u0', 'display_name': 'Me', 'username': 'me'},
 ];
 
@@ -54,7 +65,9 @@ Future<void> _pump(
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         followersListProvider.overrideWith((ref, id) async => followers),
         followingListProvider.overrideWith((ref, id) async => const []),
-        isFollowingProvider.overrideWith((ref, p) async => p.targetProfileId == 'p1'),
+        isFollowingProvider.overrideWith(
+          (ref, p) async => p.targetProfileId == 'p1',
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -96,7 +109,10 @@ void main() {
       expect(find.byType(DabblerSearchField), findsOneWidget);
       expect(find.byType(DabblerInputRow), findsNWidgets(3));
       expect(find.text('Unfollow'), findsOneWidget);
-      expect(find.text(lookupAppLocalizations(locale).user_profile_btn_follow), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).user_profile_btn_follow),
+        findsOneWidget,
+      );
       await _shoot(tester, key, 'friends-followers-$dir');
     }, variant: desktop);
 

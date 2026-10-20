@@ -49,8 +49,8 @@ class PushNotificationService {
     // Never prompt at launch on web — browsers penalize unsolicited
     // permission requests. The Home drawer / onboarding step asks instead.
     try {
-      final settings =
-          await FirebaseMessaging.instance.getNotificationSettings();
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
       if (settings.authorizationStatus == AuthorizationStatus.authorized) {
         await _wireUp();
       }
@@ -74,36 +74,36 @@ class PushNotificationService {
     await _fetchAndSaveToken();
 
     _tokenRefreshSub?.cancel();
-    _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen(
-      (newToken) async {
-        debugPrint('Web FCM token refreshed');
-        await _saveTokenToSupabase(newToken);
-      },
-      onError: (e) => debugPrint('Web FCM token refresh error: $e'),
-    );
+    _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen((
+      newToken,
+    ) async {
+      debugPrint('Web FCM token refreshed');
+      await _saveTokenToSupabase(newToken);
+    }, onError: (e) => debugPrint('Web FCM token refresh error: $e'));
   }
 
   /// Re-save the token whenever the user signs in (fresh sign-ups happen
   /// after init, when the launch-time save was skipped for lack of a user).
   void _listenAuthState() {
     _authStateSub?.cancel();
-    _authStateSub = Supabase.instance.client.auth.onAuthStateChange.listen(
-      (state) async {
-        final signedIn = state.event == AuthChangeEvent.signedIn ||
-            (state.event == AuthChangeEvent.initialSession &&
-                state.session != null);
-        if (signedIn && _wired) {
-          await _fetchAndSaveToken();
-        }
-      },
-      onError: (e) => debugPrint('Web auth-state FCM token sync error: $e'),
-    );
+    _authStateSub = Supabase.instance.client.auth.onAuthStateChange.listen((
+      state,
+    ) async {
+      final signedIn =
+          state.event == AuthChangeEvent.signedIn ||
+          (state.event == AuthChangeEvent.initialSession &&
+              state.session != null);
+      if (signedIn && _wired) {
+        await _fetchAndSaveToken();
+      }
+    }, onError: (e) => debugPrint('Web auth-state FCM token sync error: $e'));
   }
 
   Future<void> _fetchAndSaveToken() async {
     try {
-      final token =
-          await FirebaseMessaging.instance.getToken(vapidKey: _vapidKey);
+      final token = await FirebaseMessaging.instance.getToken(
+        vapidKey: _vapidKey,
+      );
       if (token != null) {
         await _saveTokenToSupabase(token);
       }
@@ -169,8 +169,7 @@ class PushNotificationService {
 
     if (preference == 'remind_later') {
       final nextAt = prefs.getInt(_notificationPromptNextAtKey);
-      if (nextAt != null &&
-          DateTime.now().millisecondsSinceEpoch < nextAt) {
+      if (nextAt != null && DateTime.now().millisecondsSinceEpoch < nextAt) {
         return false;
       }
     }
@@ -198,8 +197,8 @@ class PushNotificationService {
   /// Current browser permission status (AuthorizationStatus) without prompting.
   Future<dynamic> checkPermissionStatus() async {
     try {
-      final settings =
-          await FirebaseMessaging.instance.getNotificationSettings();
+      final settings = await FirebaseMessaging.instance
+          .getNotificationSettings();
       return settings.authorizationStatus;
     } catch (e) {
       debugPrint('Web permission status check failed: $e');

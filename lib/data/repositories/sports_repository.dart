@@ -23,45 +23,43 @@ class SportsRepository extends BaseRepository {
   /// When a country IS known, only country-matched active sports are returned.
   Future<Result<List<Sport>, Failure>> getActiveSportsForCountry(
     String? countryCode,
-  ) =>
-      guard(() async {
-        if (countryCode == null || countryCode.isEmpty) {
-          return (await getActiveSports()).fold(
-            (err) => throw Exception(err.message),
-            (sports) => sports,
-          );
-        }
+  ) => guard(() async {
+    if (countryCode == null || countryCode.isEmpty) {
+      return (await getActiveSports()).fold(
+        (err) => throw Exception(err.message),
+        (sports) => sports,
+      );
+    }
 
-        final rows = await svc.client
-            .from(SupabaseConfig.sportsTable)
-            .select()
-            .eq('is_active', true)
-            .contains('popularity_countries', [countryCode])
-            .order('name_en');
+    final rows = await svc.client
+        .from(SupabaseConfig.sportsTable)
+        .select()
+        .eq('is_active', true)
+        .contains('popularity_countries', [countryCode])
+        .order('name_en');
 
-        return rows.map((r) => Sport.fromMap(r)).toList();
-      });
+    return rows.map((r) => Sport.fromMap(r)).toList();
+  });
 
   /// Active challenge-eligible sports filtered by country, with fallback.
   Future<Result<List<Sport>, Failure>> getActiveChallengeSportsForCountry(
     String? countryCode,
-  ) =>
-      guard(() async {
-        var query = svc.client
-            .from(SupabaseConfig.sportsTable)
-            .select()
-            .eq('is_active', true)
-            .eq('is_challenge_sport', true);
+  ) => guard(() async {
+    var query = svc.client
+        .from(SupabaseConfig.sportsTable)
+        .select()
+        .eq('is_active', true)
+        .eq('is_challenge_sport', true);
 
-        if (countryCode != null && countryCode.isNotEmpty) {
-          final rows = await query
-              .contains('popularity_countries', [countryCode])
-              .order('name_en');
-          if (rows.isNotEmpty) return rows.map((r) => Sport.fromMap(r)).toList();
-        }
+    if (countryCode != null && countryCode.isNotEmpty) {
+      final rows = await query
+          .contains('popularity_countries', [countryCode])
+          .order('name_en');
+      if (rows.isNotEmpty) return rows.map((r) => Sport.fromMap(r)).toList();
+    }
 
-        // Fallback: all challenge sports regardless of country
-        final fallback = await query.order('name_en');
-        return fallback.map((r) => Sport.fromMap(r)).toList();
-      });
+    // Fallback: all challenge sports regardless of country
+    final fallback = await query.order('name_en');
+    return fallback.map((r) => Sport.fromMap(r)).toList();
+  });
 }

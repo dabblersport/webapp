@@ -169,7 +169,9 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.text(lookupAppLocalizations(locale).notif_settings_quiet_start));
+      await tester.tap(
+        find.text(lookupAppLocalizations(locale).notif_settings_quiet_start),
+      );
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

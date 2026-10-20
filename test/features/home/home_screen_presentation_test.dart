@@ -62,7 +62,11 @@ void main() {
     }
 
     final (ltrWordmark, ltrAvatar) = await xs(const Locale('en'));
-    expect(ltrWordmark, lessThan(ltrAvatar), reason: 'LTR: logo start, avatar end');
+    expect(
+      ltrWordmark,
+      lessThan(ltrAvatar),
+      reason: 'LTR: logo start, avatar end',
+    );
     final (rtlWordmark, rtlAvatar) = await xs(const Locale('ar'));
     expect(rtlWordmark, greaterThan(rtlAvatar), reason: 'RTL: header mirrored');
   }, variant: desktop);
@@ -80,7 +84,11 @@ void main() {
         updatedAt: DateTime(2026),
       ),
     );
-    await pumpHome(tester, feedState: const FeedLoading(), profileState: profile);
+    await pumpHome(
+      tester,
+      feedState: const FeedLoading(),
+      profileState: profile,
+    );
     final avatar = tester.widget<DabblerAvatar>(
       find.descendant(
         of: find.byType(DabblerNavigationTopBar),

@@ -33,7 +33,9 @@ void main() {
     raw = File('$_dir/$_file').readAsStringSync();
     sql = _squash(_stripComments(raw));
     probes = File('$_packDir/msg_report_list_probes.sql').readAsStringSync();
-    rollback = File('$_packDir/msg_report_list_rollback.sql').readAsStringSync();
+    rollback = File(
+      '$_packDir/msg_report_list_rollback.sql',
+    ).readAsStringSync();
   });
 
   test('one msg_report_list migration, later than the fixed cut-off', () {
@@ -47,19 +49,30 @@ void main() {
   });
 
   test('signature and the six columns, nothing else returned', () {
-    expect(sql,
-        contains('CREATE OR REPLACE FUNCTION public.msg_list_message_reports(p_limit integer DEFAULT 50)'));
     expect(
       sql,
-      contains('RETURNS TABLE ( report_id uuid, reason public.report_reason, '
-          'created_at timestamptz, status public.report_status, '
-          'target_message_id uuid, conversation_id uuid )'),
+      contains(
+        'CREATE OR REPLACE FUNCTION public.msg_list_message_reports(p_limit integer DEFAULT 50)',
+      ),
+    );
+    expect(
+      sql,
+      contains(
+        'RETURNS TABLE ( report_id uuid, reason public.report_reason, '
+        'created_at timestamptz, status public.report_status, '
+        'target_message_id uuid, conversation_id uuid )',
+      ),
     );
   });
 
   test('admin gate, definer, pinned search_path', () {
     expect(sql, contains('IF NOT public.is_admin() THEN'));
-    expect(sql, contains("RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'forbidden'"));
+    expect(
+      sql,
+      contains(
+        "RAISE EXCEPTION USING ERRCODE = 'P0001', MESSAGE = 'forbidden'",
+      ),
+    );
     expect(sql, contains('SECURITY DEFINER'));
     expect(sql, contains('SET search_path = public, pg_temp'));
     expect(raw, contains('admin_resolve_report'));
@@ -68,11 +81,21 @@ void main() {
   test('message reports only, newest first, clamped', () {
     expect(sql, contains("WHERE r.target_type = 'message'::public.mod_target"));
     expect(sql, contains('ORDER BY r.created_at DESC, r.id DESC'));
-    expect(sql, contains('LIMIT least(greatest(coalesce(p_limit, 50), 1), 100)'));
+    expect(
+      sql,
+      contains('LIMIT least(greatest(coalesce(p_limit, 50), 1), 100)'),
+    );
   });
 
   test('no text-bearing columns read', () {
-    for (final w in ['details', 'content_snapshot', 'username', 'display_name', 'resolution', 'body']) {
+    for (final w in [
+      'details',
+      'content_snapshot',
+      'username',
+      'display_name',
+      'resolution',
+      'body',
+    ]) {
       expect(sql.contains(w), isFalse, reason: w);
     }
     expect(sql, isNot(contains('CREATE TABLE')));
@@ -81,7 +104,9 @@ void main() {
 
   test('grants: revoke PUBLIC and anon, EXECUTE to authenticated only', () {
     expect(sql, contains('REVOKE ALL ON FUNCTION $_sig FROM PUBLIC, anon;'));
-    final grants = RegExp(r'GRANT EXECUTE[^;]*;').allMatches(sql).map((m) => m.group(0)).toList();
+    final grants = RegExp(
+      r'GRANT EXECUTE[^;]*;',
+    ).allMatches(sql).map((m) => m.group(0)).toList();
     expect(grants, ['GRANT EXECUTE ON FUNCTION $_sig TO authenticated;']);
   });
 
@@ -100,16 +125,25 @@ void main() {
     expect(probes, contains('AUTHORED, NOT RUN'));
     final body = _stripComments(probes).toLowerCase();
     final begins = RegExp(r'^begin;', multiLine: true).allMatches(body).length;
-    final rollbacks = RegExp(r'^rollback;', multiLine: true).allMatches(body).length;
+    final rollbacks = RegExp(
+      r'^rollback;',
+      multiLine: true,
+    ).allMatches(body).length;
     expect(begins, greaterThanOrEqualTo(7));
     expect(rollbacks, begins);
     expect(body, isNot(contains('commit')));
-    expect(body, isNot(matches(RegExp(r'insert into public\.(app_admins|role_grants)'))));
+    expect(
+      body,
+      isNot(matches(RegExp(r'insert into public\.(app_admins|role_grants)'))),
+    );
   });
 
   test('rollback only revokes and says it needs approval', () {
     final body = _squash(_stripComments(rollback));
-    expect(body, contains('REVOKE EXECUTE ON FUNCTION $_sig FROM authenticated;'));
+    expect(
+      body,
+      contains('REVOKE EXECUTE ON FUNCTION $_sig FROM authenticated;'),
+    );
     expect(body, isNot(contains('CREATE')));
     expect(rollback, contains('needs explicit approval'));
   });

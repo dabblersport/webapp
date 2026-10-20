@@ -35,7 +35,12 @@ const String _shotsDir = String.fromEnvironment(
 );
 
 const List<Sport> _sports = <Sport>[
-  Sport(id: 's1', nameEn: 'Football', nameAr: 'كرة القدم', sportKey: 'football'),
+  Sport(
+    id: 's1',
+    nameEn: 'Football',
+    nameAr: 'كرة القدم',
+    sportKey: 'football',
+  ),
   Sport(id: 's2', nameEn: 'Padel', nameAr: 'بادل', sportKey: 'padel'),
   Sport(id: 's4', nameEn: 'Cricket', nameAr: 'كريكيت', sportKey: 'cricket'),
 ];

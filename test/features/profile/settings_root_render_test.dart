@@ -113,7 +113,10 @@ void main() {
     ) async {
       await _pump(tester, const SettingsScreen(), locale);
       expect(find.byType(DabblerStatTile), findsNWidgets(7));
-      expect(find.text('Egypt'), locale.languageCode == 'en' ? findsOneWidget : findsNothing);
+      expect(
+        find.text('Egypt'),
+        locale.languageCode == 'en' ? findsOneWidget : findsNothing,
+      );
     });
 
     testWidgets('language & region, about and organiser sheets — $dir', (

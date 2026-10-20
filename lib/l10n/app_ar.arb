@@ -1373,6 +1373,8 @@
   "region_country_UAE": "الإمارات",
   "region_country_KSA": "السعودية",
   "region_country_Morocco": "المغرب",
+  "region_country_Qatar": "قطر",
+  "region_country_Global": "عالمي",
   "region_error": "خطأ: {error}",
   "listing_set_location": "حدد الموقع",
   "location_last_known_label": "{place} · آخر موقع معروف",

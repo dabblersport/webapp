@@ -26,13 +26,13 @@ import '../../../../helpers/supabase_test_client.dart';
 /// touch analytics.
 void main() {
   Map<String, dynamic> gameRow() => {
-        'id': 'g1',
-        'title': 'Sunday Kickabout',
-        'start_at': '2026-08-30T10:00:00Z',
-        'end_at': '2026-08-30T11:00:00Z',
-        'capacity': 10,
-        'roster_count': 8,
-      };
+    'id': 'g1',
+    'title': 'Sunday Kickabout',
+    'start_at': '2026-08-30T10:00:00Z',
+    'end_at': '2026-08-30T11:00:00Z',
+    'capacity': 10,
+    'roster_count': 8,
+  };
 
   /// Builds a controller against a router-style MockClient and waits for
   /// the constructor's initial `_load()` to settle.
@@ -61,16 +61,20 @@ void main() {
   }) {
     return (request) async {
       final path = request.url.path;
-      if (request.method == 'GET' && path.contains(SupabaseConfig.vGameCardTable)) {
+      if (request.method == 'GET' &&
+          path.contains(SupabaseConfig.vGameCardTable)) {
         return jsonObjectResponse(gameRow(), request: request);
       }
-      if (request.method == 'GET' && path.contains(SupabaseConfig.gameRosterTable)) {
+      if (request.method == 'GET' &&
+          path.contains(SupabaseConfig.gameRosterTable)) {
         return jsonListResponse(roster, request: request);
       }
-      if (request.method == 'GET' && path.contains(SupabaseConfig.gameWaitlistTable)) {
+      if (request.method == 'GET' &&
+          path.contains(SupabaseConfig.gameWaitlistTable)) {
         return jsonListResponse(waitlist, request: request);
       }
-      if (request.method == 'GET' && path.contains(SupabaseConfig.gameJoinRequestsTable)) {
+      if (request.method == 'GET' &&
+          path.contains(SupabaseConfig.gameJoinRequestsTable)) {
         return jsonListResponse(pendingRequests, request: request);
       }
       if (extra != null) return extra(request);
@@ -130,35 +134,42 @@ void main() {
   });
 
   group('joinGame', () {
-    test('waitlisted result updates lastAction without touching analytics', () async {
-      final controller = await buildAndSettle(
-        loadRouter(
-          extra: (request) async {
-            if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcJoinGameFn}')) {
-              return jsonListResponse([
-                {'result': 'waitlisted'},
-              ], request: request);
-            }
-            return jsonListResponse(const [], request: request);
-          },
-        ),
-      );
+    test(
+      'waitlisted result updates lastAction without touching analytics',
+      () async {
+        final controller = await buildAndSettle(
+          loadRouter(
+            extra: (request) async {
+              if (request.method == 'POST' &&
+                  request.url.path.contains(
+                    '/rpc/${SupabaseConfig.rpcJoinGameFn}',
+                  )) {
+                return jsonListResponse([
+                  {'result': 'waitlisted'},
+                ], request: request);
+              }
+              return jsonListResponse(const [], request: request);
+            },
+          ),
+        );
 
-      await controller.joinGame();
+        await controller.joinGame();
 
-      expect(controller.state.lastAction, JoinActionResult.waitlisted);
-      expect(controller.state.error, isNull);
-      expect(controller.state.isActing, isFalse);
-      controller.dispose();
-    });
+        expect(controller.state.lastAction, JoinActionResult.waitlisted);
+        expect(controller.state.error, isNull);
+        expect(controller.state.isActing, isFalse);
+        controller.dispose();
+      },
+    );
 
     test('request_submitted result updates lastAction', () async {
       final controller = await buildAndSettle(
         loadRouter(
           extra: (request) async {
             if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcJoinGameFn}')) {
+                request.url.path.contains(
+                  '/rpc/${SupabaseConfig.rpcJoinGameFn}',
+                )) {
               return jsonListResponse([
                 {'result': 'request_submitted'},
               ], request: request);
@@ -179,7 +190,9 @@ void main() {
         loadRouter(
           extra: (request) async {
             if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcJoinGameFn}')) {
+                request.url.path.contains(
+                  '/rpc/${SupabaseConfig.rpcJoinGameFn}',
+                )) {
               return postgrestErrorResponse(
                 message: 'P0001: not_host',
                 status: 400,
@@ -206,7 +219,9 @@ void main() {
         loadRouter(
           extra: (request) async {
             if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcLeaveGameFn}')) {
+                request.url.path.contains(
+                  '/rpc/${SupabaseConfig.rpcLeaveGameFn}',
+                )) {
               capturedUri = request.url;
               return emptyOkResponse(request: request);
             }
@@ -218,32 +233,43 @@ void main() {
       await controller.leaveGame();
 
       expect(controller.state.lastAction, JoinActionResult.left);
-      expect(capturedUri.path, contains('/rpc/${SupabaseConfig.rpcLeaveGameFn}'));
-      controller.dispose();
-    });
-
-    test('a player_not_on_roster error is translated to a friendly message', () async {
-      final controller = await buildAndSettle(
-        loadRouter(
-          extra: (request) async {
-            if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcLeaveGameFn}')) {
-              return postgrestErrorResponse(
-                message: 'P0001: player_not_on_roster',
-                status: 400,
-                request: request,
-              );
-            }
-            return jsonListResponse(const [], request: request);
-          },
-        ),
+      expect(
+        capturedUri.path,
+        contains('/rpc/${SupabaseConfig.rpcLeaveGameFn}'),
       );
-
-      await controller.leaveGame();
-
-      expect(controller.state.error, 'This player is no longer on the roster.');
       controller.dispose();
     });
+
+    test(
+      'a player_not_on_roster error is translated to a friendly message',
+      () async {
+        final controller = await buildAndSettle(
+          loadRouter(
+            extra: (request) async {
+              if (request.method == 'POST' &&
+                  request.url.path.contains(
+                    '/rpc/${SupabaseConfig.rpcLeaveGameFn}',
+                  )) {
+                return postgrestErrorResponse(
+                  message: 'P0001: player_not_on_roster',
+                  status: 400,
+                  request: request,
+                );
+              }
+              return jsonListResponse(const [], request: request);
+            },
+          ),
+        );
+
+        await controller.leaveGame();
+
+        expect(
+          controller.state.error,
+          'This player is no longer on the roster.',
+        );
+        controller.dispose();
+      },
+    );
   });
 
   group('cancelJoinRequest', () {
@@ -253,7 +279,9 @@ void main() {
         loadRouter(
           extra: (request) async {
             if (request.method == 'PATCH' &&
-                request.url.path.contains(SupabaseConfig.gameJoinRequestsTable)) {
+                request.url.path.contains(
+                  SupabaseConfig.gameJoinRequestsTable,
+                )) {
               captured = request;
               return emptyOkResponse(request: request);
             }
@@ -278,7 +306,9 @@ void main() {
         loadRouter(
           extra: (request) async {
             if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcDecideJoinRequestFn}')) {
+                request.url.path.contains(
+                  '/rpc/${SupabaseConfig.rpcDecideJoinRequestFn}',
+                )) {
               body = _decodeJsonBody(request.body);
               return emptyOkResponse(request: request);
             }
@@ -297,28 +327,33 @@ void main() {
   });
 
   group('removePlayer', () {
-    test('a cannot_remove_host error is translated to a friendly message', () async {
-      final controller = await buildAndSettle(
-        loadRouter(
-          extra: (request) async {
-            if (request.method == 'POST' &&
-                request.url.path.contains('/rpc/${SupabaseConfig.rpcRemovePlayerFn}')) {
-              return postgrestErrorResponse(
-                message: 'P0001: cannot_remove_host',
-                status: 400,
-                request: request,
-              );
-            }
-            return jsonListResponse(const [], request: request);
-          },
-        ),
-      );
+    test(
+      'a cannot_remove_host error is translated to a friendly message',
+      () async {
+        final controller = await buildAndSettle(
+          loadRouter(
+            extra: (request) async {
+              if (request.method == 'POST' &&
+                  request.url.path.contains(
+                    '/rpc/${SupabaseConfig.rpcRemovePlayerFn}',
+                  )) {
+                return postgrestErrorResponse(
+                  message: 'P0001: cannot_remove_host',
+                  status: 400,
+                  request: request,
+                );
+              }
+              return jsonListResponse(const [], request: request);
+            },
+          ),
+        );
 
-      await controller.removePlayer('p1');
+        await controller.removePlayer('p1');
 
-      expect(controller.state.error, 'The creator cannot be removed.');
-      controller.dispose();
-    });
+        expect(controller.state.error, 'The creator cannot be removed.');
+        controller.dispose();
+      },
+    );
   });
 }
 

@@ -36,7 +36,8 @@ class _RouteEntry {
 
   /// Serialised form used in the golden. `-` stands for an unnamed route and
   /// for a route with no path of its own (shells and branches).
-  String toLine() => '${fullPath.isEmpty ? '-' : fullPath}\t${name ?? '-'}\t$type';
+  String toLine() =>
+      '${fullPath.isEmpty ? '-' : fullPath}\t${name ?? '-'}\t$type';
 }
 
 /// Joins a parent full path with a child's (relative or absolute) path.
@@ -93,7 +94,8 @@ void main() {
       expect(
         file.existsSync(),
         isTrue,
-        reason: 'Golden fixture missing at $_goldenPath. Regenerate with '
+        reason:
+            'Golden fixture missing at $_goldenPath. Regenerate with '
             'UPDATE_ROUTE_GOLDEN=true flutter test test/app/route_inventory_test.dart',
       );
 
@@ -105,14 +107,14 @@ void main() {
       expect(
         actual,
         orderedEquals(expected),
-        reason: 'The route table changed. If the change is intended, '
+        reason:
+            'The route table changed. If the change is intended, '
             'regenerate the golden and review its diff.',
       );
     });
 
     test('GoRoute count is 94', () {
-      final goRoutes =
-          inventory.where((e) => e.type == 'GoRoute').length;
+      final goRoutes = inventory.where((e) => e.type == 'GoRoute').length;
       expect(goRoutes, 94);
     });
 
@@ -120,8 +122,11 @@ void main() {
       final shells = AppRouter.router.configuration.routes
           .whereType<StatefulShellRoute>()
           .toList();
-      expect(shells, hasLength(1),
-          reason: 'expected exactly one StatefulShellRoute at the top level');
+      expect(
+        shells,
+        hasLength(1),
+        reason: 'expected exactly one StatefulShellRoute at the top level',
+      );
       expect(shells.single.branches, hasLength(5));
 
       final branchEntries = inventory

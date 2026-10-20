@@ -36,7 +36,10 @@ class AreaRepositoryImpl extends BaseRepository implements AreaRepository {
     required double lat,
     required double lng,
   }) => guard(() async {
-    final rows = await svc.client.from(SupabaseConfig.areasTable).select().eq('is_active', true);
+    final rows = await svc.client
+        .from(SupabaseConfig.areasTable)
+        .select()
+        .eq('is_active', true);
 
     if (rows.isEmpty) {
       throw Exception('No active areas found');

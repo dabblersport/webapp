@@ -192,8 +192,14 @@ void main() {
       await _pump(tester, locale, key, comments: _comments);
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerOpenPost), findsOneWidget);
-      expect(find.text(lookupAppLocalizations(locale).post_detail_replies_count(6)), findsOneWidget);
-      expect(find.text(lookupAppLocalizations(locale).post_detail_follow), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).post_detail_replies_count(6)),
+        findsOneWidget,
+      );
+      expect(
+        find.text(lookupAppLocalizations(locale).post_detail_follow),
+        findsOneWidget,
+      );
       expect(find.text('GIF'), findsNothing);
       expect(find.byType(DabblerAvatar), findsWidgets);
       expect(find.byType(DabblerCommentRow), findsNWidgets(3));
@@ -205,7 +211,10 @@ void main() {
     testWidgets('post with no replies — $dir', (tester) async {
       await _pump(tester, locale, key);
       expect(tester.takeException(), isNull);
-      expect(find.text(lookupAppLocalizations(locale).post_detail_no_replies), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).post_detail_no_replies),
+        findsOneWidget,
+      );
       await _shoot(tester, key, 'post-detail-empty-$dir');
       await _settle(tester);
     });
@@ -230,15 +239,27 @@ void main() {
 
     testWidgets('replying to a reply — $dir', (tester) async {
       await _pump(tester, locale, key, comments: _comments);
-      await tester.tap(find.text(lookupAppLocalizations(locale).post_detail_reply).first);
+      await tester.tap(
+        find.text(lookupAppLocalizations(locale).post_detail_reply).first,
+      );
       await tester.pump(const Duration(milliseconds: 100));
       expect(tester.takeException(), isNull);
       expect(find.text('Aisha Khan'), findsWidgets);
-      expect(find.text(lookupAppLocalizations(locale).post_detail_replying_to), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).post_detail_replying_to),
+        findsOneWidget,
+      );
       await _shoot(tester, key, 'post-detail-replying-$dir');
-      await tester.tap(find.bySemanticsLabel(lookupAppLocalizations(locale).post_detail_cancel_reply));
+      await tester.tap(
+        find.bySemanticsLabel(
+          lookupAppLocalizations(locale).post_detail_cancel_reply,
+        ),
+      );
       await tester.pump(const Duration(milliseconds: 100));
-      expect(find.text(lookupAppLocalizations(locale).post_detail_replying_to), findsNothing);
+      expect(
+        find.text(lookupAppLocalizations(locale).post_detail_replying_to),
+        findsNothing,
+      );
       await _settle(tester);
     });
 

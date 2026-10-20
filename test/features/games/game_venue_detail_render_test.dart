@@ -361,9 +361,10 @@ void main() {
     }
 
     // The whole page on one tall canvas, so the lower sections are inspectable.
-    for (final e in [...gameScenes.entries, ...venueScenes.entries].where(
-      (e) => !e.key.endsWith('loading') && !e.key.endsWith('error'),
-    )) {
+    for (final e in [
+      ...gameScenes.entries,
+      ...venueScenes.entries,
+    ].where((e) => !e.key.endsWith('loading') && !e.key.endsWith('error'))) {
       testWidgets('renders ${e.key}-full - $dir', (tester) async {
         await _pump(
           tester,

@@ -74,6 +74,7 @@ class NearbyGameModel {
   /// The price per player in AED (`games.price_aed`): above 0 it is the price,
   /// 0 is "Free", null (a game made before the price became required) is "Ask".
   final double? priceAed;
+
   /// How many people the viewer follows are in this game; 0 when none or
   /// unknown. Not part of the listing rows: merged in after they load.
   final int followingJoined;

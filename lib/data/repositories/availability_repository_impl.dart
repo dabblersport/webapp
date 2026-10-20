@@ -64,7 +64,10 @@ class AvailabilityRepositoryImpl extends BaseRepository
         throw const AuthFailure(message: 'Not signed in');
       }
 
-      var q = _db.from(SupabaseConfig.spaceSlotHoldsTable).select().eq('created_by', uid);
+      var q = _db
+          .from(SupabaseConfig.spaceSlotHoldsTable)
+          .select()
+          .eq('created_by', uid);
 
       if (venueSpaceId != null && venueSpaceId.isNotEmpty) {
         q = q.eq('venue_space_id', venueSpaceId);
@@ -120,7 +123,10 @@ class AvailabilityRepositoryImpl extends BaseRepository
   Future<Result<void, Failure>> releaseHold(String holdId) async {
     return guard<void>(() async {
       // RLS: holds_write lets creator delete their own holds.
-      final _ = await _db.from(SupabaseConfig.spaceSlotHoldsTable).delete().eq('id', holdId);
+      final _ = await _db
+          .from(SupabaseConfig.spaceSlotHoldsTable)
+          .delete()
+          .eq('id', holdId);
     });
   }
 }

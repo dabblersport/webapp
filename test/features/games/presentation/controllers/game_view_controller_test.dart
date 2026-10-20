@@ -73,41 +73,65 @@ void main() {
     group('statusLabel', () {
       test('Cancelled takes priority over timing', () {
         final game = GameView.fromJson(
-          baseRow(overrides: {
-            'is_cancelled': true,
-            'start_at': DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
-            'end_at': DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
-          }),
+          baseRow(
+            overrides: {
+              'is_cancelled': true,
+              'start_at': DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .toIso8601String(),
+              'end_at': DateTime.now()
+                  .add(const Duration(hours: 2))
+                  .toIso8601String(),
+            },
+          ),
         );
         expect(game.statusLabel, 'Cancelled');
       });
 
       test('Upcoming when start is in the future', () {
         final game = GameView.fromJson(
-          baseRow(overrides: {
-            'start_at': DateTime.now().add(const Duration(hours: 1)).toIso8601String(),
-            'end_at': DateTime.now().add(const Duration(hours: 2)).toIso8601String(),
-          }),
+          baseRow(
+            overrides: {
+              'start_at': DateTime.now()
+                  .add(const Duration(hours: 1))
+                  .toIso8601String(),
+              'end_at': DateTime.now()
+                  .add(const Duration(hours: 2))
+                  .toIso8601String(),
+            },
+          ),
         );
         expect(game.statusLabel, 'Upcoming');
       });
 
       test('Live when now falls between start and end', () {
         final game = GameView.fromJson(
-          baseRow(overrides: {
-            'start_at': DateTime.now().subtract(const Duration(minutes: 30)).toIso8601String(),
-            'end_at': DateTime.now().add(const Duration(minutes: 30)).toIso8601String(),
-          }),
+          baseRow(
+            overrides: {
+              'start_at': DateTime.now()
+                  .subtract(const Duration(minutes: 30))
+                  .toIso8601String(),
+              'end_at': DateTime.now()
+                  .add(const Duration(minutes: 30))
+                  .toIso8601String(),
+            },
+          ),
         );
         expect(game.statusLabel, 'Live');
       });
 
       test('Ended once end_at has passed', () {
         final game = GameView.fromJson(
-          baseRow(overrides: {
-            'start_at': DateTime.now().subtract(const Duration(hours: 2)).toIso8601String(),
-            'end_at': DateTime.now().subtract(const Duration(hours: 1)).toIso8601String(),
-          }),
+          baseRow(
+            overrides: {
+              'start_at': DateTime.now()
+                  .subtract(const Duration(hours: 2))
+                  .toIso8601String(),
+              'end_at': DateTime.now()
+                  .subtract(const Duration(hours: 1))
+                  .toIso8601String(),
+            },
+          ),
         );
         expect(game.statusLabel, 'Ended');
       });
@@ -199,29 +223,41 @@ void main() {
 
       final isOnRoster = state.roster.any((r) => r.userId == currentUserId);
       final isOnWaitlist = state.waitlist.any((r) => r.userId == currentUserId);
-      final isHost = state.roster.any((r) => r.userId == currentUserId && r.isHost);
+      final isHost = state.roster.any(
+        (r) => r.userId == currentUserId && r.isHost,
+      );
 
       expect(isOnRoster, isTrue);
       expect(isOnWaitlist, isFalse);
       expect(isHost, isFalse);
     });
 
-    test('copyWith clearError/clearAction reset those fields independent of others', () {
-      const initial = GameViewState(
-        error: 'boom',
-        lastAction: JoinActionResult.joined,
-        isActing: true,
-      );
+    test(
+      'copyWith clearError/clearAction reset those fields independent of others',
+      () {
+        const initial = GameViewState(
+          error: 'boom',
+          lastAction: JoinActionResult.joined,
+          isActing: true,
+        );
 
-      final cleared = initial.copyWith(clearError: true, clearAction: true, isActing: false);
+        final cleared = initial.copyWith(
+          clearError: true,
+          clearAction: true,
+          isActing: false,
+        );
 
-      expect(cleared.error, isNull);
-      expect(cleared.lastAction, isNull);
-      expect(cleared.isActing, isFalse);
-    });
+        expect(cleared.error, isNull);
+        expect(cleared.lastAction, isNull);
+        expect(cleared.isActing, isFalse);
+      },
+    );
 
     test('copyWith without clear flags preserves existing error/action', () {
-      const initial = GameViewState(error: 'boom', lastAction: JoinActionResult.left);
+      const initial = GameViewState(
+        error: 'boom',
+        lastAction: JoinActionResult.left,
+      );
 
       final updated = initial.copyWith(isLoading: true);
 

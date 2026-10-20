@@ -35,17 +35,23 @@ void main() {
     sql = _squash(_strip(raw));
   });
 
-  test('exists, is dated after the KAN-505 migrations and redefines msg_evaluate', () {
-    expect(File(_new).existsSync(), isTrue);
-    final newest505 = Directory(_dir)
-        .listSync()
-        .map((e) => e.uri.pathSegments.last)
-        .where((n) => n.contains('kan505'))
-        .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
-    expect(_new.split('/').last.compareTo(newest505), greaterThan(0));
-    expect(sql, contains('CREATE OR REPLACE FUNCTION public.msg_evaluate('));
-    expect(sql, isNot(contains('msg_authorize'))); // passes through unchanged: not redefined
-  });
+  test(
+    'exists, is dated after the KAN-505 migrations and redefines msg_evaluate',
+    () {
+      expect(File(_new).existsSync(), isTrue);
+      final newest505 = Directory(_dir)
+          .listSync()
+          .map((e) => e.uri.pathSegments.last)
+          .where((n) => n.contains('kan505'))
+          .reduce((a, b) => a.compareTo(b) > 0 ? a : b);
+      expect(_new.split('/').last.compareTo(newest505), greaterThan(0));
+      expect(sql, contains('CREATE OR REPLACE FUNCTION public.msg_evaluate('));
+      expect(
+        sql,
+        isNot(contains('msg_authorize')),
+      ); // passes through unchanged: not redefined
+    },
+  );
 
   test('returns both contracted reasons and no longer returns read_only', () {
     expect(sql, contains("'game_cancelled'::text"));
@@ -54,7 +60,10 @@ void main() {
     expect(sql, contains("'read'::text, 'game_cancelled'::text"));
     expect(sql, contains("'read'::text, 'game_ended'::text"));
     // cancelled is tested first, so it wins over an ended game
-    expect(sql.indexOf('IF v_cancelled THEN'), lessThan(sql.indexOf('ELSIF v_end_at >= now() THEN')));
+    expect(
+      sql.indexOf('IF v_cancelled THEN'),
+      lessThan(sql.indexOf('ELSIF v_end_at >= now() THEN')),
+    );
   });
 
   test('no DROP; keeps SECURITY DEFINER, STABLE and the search_path', () {
@@ -78,11 +87,14 @@ void main() {
     expect(newBody, oldBody.replaceFirst(oldBranch, newBranch));
   });
 
-  test('the KAN-505 file is byte-unchanged (still the original read_only body)', () {
-    final o = File(_old).readAsStringSync();
-    expect(o, contains("'read'::text, 'read_only'::text"));
-    expect(o, isNot(contains('game_cancelled')));
-  });
+  test(
+    'the KAN-505 file is byte-unchanged (still the original read_only body)',
+    () {
+      final o = File(_old).readAsStringSync();
+      expect(o, contains("'read'::text, 'read_only'::text"));
+      expect(o, isNot(contains('game_cancelled')));
+    },
+  );
 
   test('rollback restores the KAN-505 msg_evaluate body verbatim, no DROP', () {
     final rb = File('$_pack/rollback.sql').readAsStringSync();
@@ -92,22 +104,25 @@ void main() {
     expect(tail, contains("'read'::text, 'read_only'::text"));
   });
 
-  test('probes P5, P6 and P6b assert the exact reasons inside begin/rollback', () {
-    final p = File('$_pack/probes.sql').readAsStringSync();
-    for (final tag in ['P5', 'P6', 'P6b']) {
-      final a = p.indexOf('-- $tag [');
-      expect(a, greaterThanOrEqualTo(0), reason: tag);
-      final end = p.indexOf('\nrollback;', a);
-      final block = p.substring(a, end + 10);
-      expect(block, contains('\nbegin;'), reason: tag);
-      expect(block, contains('AUTHORED, NOT RUN'), reason: tag);
-      expect(block, contains("allowed_action = 'read'"), reason: tag);
-      expect(block, isNot(contains('read_only')), reason: tag);
-    }
-    expect(p, contains("r.reason = 'game_ended'"));
-    expect(p, contains("r.reason = 'game_cancelled'"));
-    expect(p, contains('pass_cancelled_and_ended_game_cancelled'));
-  });
+  test(
+    'probes P5, P6 and P6b assert the exact reasons inside begin/rollback',
+    () {
+      final p = File('$_pack/probes.sql').readAsStringSync();
+      for (final tag in ['P5', 'P6', 'P6b']) {
+        final a = p.indexOf('-- $tag [');
+        expect(a, greaterThanOrEqualTo(0), reason: tag);
+        final end = p.indexOf('\nrollback;', a);
+        final block = p.substring(a, end + 10);
+        expect(block, contains('\nbegin;'), reason: tag);
+        expect(block, contains('AUTHORED, NOT RUN'), reason: tag);
+        expect(block, contains("allowed_action = 'read'"), reason: tag);
+        expect(block, isNot(contains('read_only')), reason: tag);
+      }
+      expect(p, contains("r.reason = 'game_ended'"));
+      expect(p, contains("r.reason = 'game_cancelled'"));
+      expect(p, contains('pass_cancelled_and_ended_game_cancelled'));
+    },
+  );
 
   test('README reasons table lists the two reasons instead of read_only', () {
     final r = File('$_pack/README.md').readAsStringSync();

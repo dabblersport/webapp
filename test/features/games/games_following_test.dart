@@ -109,9 +109,9 @@ void main() {
     setUp(() => mock = MockGamesFollowingRepository());
 
     test('requests only the visible ids, merged onto the cards', () async {
-      when(mock.getFollowingJoined(any)).thenAnswer(
-        (_) async => const Ok<Map<String, int>, Failure>({'g2': 3}),
-      );
+      when(
+        mock.getFollowingJoined(any),
+      ).thenAnswer((_) async => const Ok<Map<String, int>, Failure>({'g2': 3}));
       final visible = [_game('g2'), _game('g1')];
       final c = container();
       final key = gamesFollowingKey(visible);
@@ -174,9 +174,9 @@ void main() {
     });
 
     test('re-requests only when the set of ids changes', () async {
-      when(mock.getFollowingJoined(any)).thenAnswer(
-        (_) async => const Ok<Map<String, int>, Failure>({}),
-      );
+      when(
+        mock.getFollowingJoined(any),
+      ).thenAnswer((_) async => const Ok<Map<String, int>, Failure>({}));
       final c = container();
       final a = gamesFollowingKey([_game('g1'), _game('g2')]);
       final sub = c.listen(gamesFollowingJoinedProvider(a), (_, _) {});

@@ -17,19 +17,18 @@ import 'package:dabbler/app/app_router.dart';
 // from the bell button, and main_navigation_screen.dart and
 // adaptive_destinations.dart both push it from main navigation. Access is gated
 // on FeatureFlags.notifications.
-RouteBase get notificationsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.notifications,
-      redirect: (context, state) {
-        // Feature gate: the route is enabled by FeatureFlags.notifications.
-        if (!FeatureFlags.notifications) {
-          return RoutePaths.home;
-        }
-        return null; // Allow access if enabled
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const NotificationsScreenV2(),
-      ),
-    );
+RouteBase get notificationsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.notifications,
+  redirect: (context, state) {
+    // Feature gate: the route is enabled by FeatureFlags.notifications.
+    if (!FeatureFlags.notifications) {
+      return RoutePaths.home;
+    }
+    return null; // Allow access if enabled
+  },
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: const NotificationsScreenV2(),
+  ),
+);

@@ -29,7 +29,10 @@ class RatingsRepositoryImpl extends BaseRepository
       final uid = _uid;
       if (uid == null) throw const AuthFailure(message: 'Not signed in');
 
-      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('rater_user_id', uid);
+      dynamic q = _db
+          .from(SupabaseConfig.ratingsTable)
+          .select()
+          .eq('rater_user_id', uid);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -52,7 +55,10 @@ class RatingsRepositoryImpl extends BaseRepository
       final uid = _uid;
       if (uid == null) throw const AuthFailure(message: 'Not signed in');
 
-      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('target_user_id', uid);
+      dynamic q = _db
+          .from(SupabaseConfig.ratingsTable)
+          .select()
+          .eq('target_user_id', uid);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -73,7 +79,10 @@ class RatingsRepositoryImpl extends BaseRepository
     int limit = 200,
   }) async {
     return guard<List<Rating>>(() async {
-      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('target_game_id', gameId);
+      dynamic q = _db
+          .from(SupabaseConfig.ratingsTable)
+          .select()
+          .eq('target_game_id', gameId);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());
@@ -94,7 +103,10 @@ class RatingsRepositoryImpl extends BaseRepository
     int limit = 200,
   }) async {
     return guard<List<Rating>>(() async {
-      dynamic q = _db.from(SupabaseConfig.ratingsTable).select().eq('target_venue_id', venueId);
+      dynamic q = _db
+          .from(SupabaseConfig.ratingsTable)
+          .select()
+          .eq('target_venue_id', venueId);
 
       if (from != null) q = q.gte('created_at', from.toUtc().toIso8601String());
       if (to != null) q = q.lte('created_at', to.toUtc().toIso8601String());

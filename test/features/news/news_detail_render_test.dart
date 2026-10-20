@@ -64,9 +64,11 @@ final FeedNewsItem _item = FeedNewsItem(
     'ar': 'دوري البادل يفتتح موسمه الشتوي في دبي',
   },
   body: const {
-    'en': 'Twelve clubs signed up for the new season. Matches run every '
+    'en':
+        'Twelve clubs signed up for the new season. Matches run every '
         'weekend through February, with the final at the Marina courts.',
-    'ar': 'اشترك اثنا عشر ناديا في الموسم الجديد. تقام المباريات كل عطلة '
+    'ar':
+        'اشترك اثنا عشر ناديا في الموسم الجديد. تقام المباريات كل عطلة '
         'نهاية أسبوع حتى فبراير.',
   },
   likeCount: 4,
@@ -91,7 +93,9 @@ Future<void> _pump(
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
-  SharedPreferences.setMockInitialValues({'mock_language': locale.languageCode});
+  SharedPreferences.setMockInitialValues({
+    'mock_language': locale.languageCode,
+  });
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -160,7 +164,9 @@ void main() {
       expect(find.text('React'), findsNothing);
       final like = tester.widget<DabblerButton>(
         find.byWidgetPredicate(
-          (w) => w is DabblerButton && w.semanticLabel == lookupAppLocalizations(locale).sfx_like,
+          (w) =>
+              w is DabblerButton &&
+              w.semanticLabel == lookupAppLocalizations(locale).sfx_like,
         ),
       );
       expect(like.onLongPress, isNotNull);

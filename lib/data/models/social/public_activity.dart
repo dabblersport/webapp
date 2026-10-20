@@ -66,14 +66,14 @@ class PublicActivity {
       targetTitle[languageCode] ?? targetTitle['en'] ?? '';
 
   String get actionLabel => switch (activityType) {
-        PublicActivityType.comment => 'commented on a news article',
-        PublicActivityType.like => 'liked a post',
-        PublicActivityType.repost => 'reposted',
-        PublicActivityType.gameCreate => 'created a game',
-        PublicActivityType.meetupCreate => 'created a meetup',
-        PublicActivityType.post => 'posted',
-        PublicActivityType.unknown => 'was active',
-      };
+    PublicActivityType.comment => 'commented on a news article',
+    PublicActivityType.like => 'liked a post',
+    PublicActivityType.repost => 'reposted',
+    PublicActivityType.gameCreate => 'created a game',
+    PublicActivityType.meetupCreate => 'created a meetup',
+    PublicActivityType.post => 'posted',
+    PublicActivityType.unknown => 'was active',
+  };
 
   static Map<String, String> toStringMap(dynamic raw) {
     if (raw == null) return const {};
@@ -81,7 +81,9 @@ class PublicActivity {
       try {
         final decoded = jsonDecode(raw);
         if (decoded is Map) {
-          return decoded.map((k, v) => MapEntry(k.toString(), v?.toString() ?? ''));
+          return decoded.map(
+            (k, v) => MapEntry(k.toString(), v?.toString() ?? ''),
+          );
         }
         return {'en': raw};
       } catch (_) {
@@ -98,34 +100,30 @@ class PublicActivity {
     Map<String, String>? targetTitle,
     String? targetCoverImageUrl,
     String? targetNewsId,
-  }) =>
-      PublicActivity(
-        id: id,
-        activityType: activityType,
-        actorProfileId: actorProfileId,
-        actorUsername: actorUsername,
-        actorAvatarUrl: actorAvatarUrl,
-        parentActivityId: parentActivityId,
-        targetTitle: targetTitle ?? this.targetTitle,
-        targetCoverImageUrl: targetCoverImageUrl ?? this.targetCoverImageUrl,
-        targetNewsId: targetNewsId ?? this.targetNewsId,
-        createdAt: createdAt,
-      );
+  }) => PublicActivity(
+    id: id,
+    activityType: activityType,
+    actorProfileId: actorProfileId,
+    actorUsername: actorUsername,
+    actorAvatarUrl: actorAvatarUrl,
+    parentActivityId: parentActivityId,
+    targetTitle: targetTitle ?? this.targetTitle,
+    targetCoverImageUrl: targetCoverImageUrl ?? this.targetCoverImageUrl,
+    targetNewsId: targetNewsId ?? this.targetNewsId,
+    createdAt: createdAt,
+  );
 
   factory PublicActivity.fromRow(
     Map<String, dynamic> row, {
     required String actorUsername,
     String? actorAvatarUrl,
-  }) =>
-      PublicActivity(
-        id: row['id'] as String,
-        activityType: PublicActivityType.fromWire(
-          row['activity_type'] as String?,
-        ),
-        actorProfileId: row['actor_profile_id'] as String,
-        actorUsername: actorUsername,
-        actorAvatarUrl: actorAvatarUrl,
-        parentActivityId: row['parent_activity_id'] as String?,
-        createdAt: DateTime.parse(row['created_at'] as String),
-      );
+  }) => PublicActivity(
+    id: row['id'] as String,
+    activityType: PublicActivityType.fromWire(row['activity_type'] as String?),
+    actorProfileId: row['actor_profile_id'] as String,
+    actorUsername: actorUsername,
+    actorAvatarUrl: actorAvatarUrl,
+    parentActivityId: row['parent_activity_id'] as String?,
+    createdAt: DateTime.parse(row['created_at'] as String),
+  );
 }

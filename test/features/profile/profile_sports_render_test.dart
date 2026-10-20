@@ -163,7 +163,9 @@ void main() {
       expect(find.text(l10n.sports_prefs_title), findsOneWidget);
       expect(find.text(l10n.sports_prefs_my_sports), findsOneWidget);
       expect(
-        find.textContaining(l10n.sports_prefs_load_failed('').replaceAll(RegExp(r'[:：]\s*$'), '')),
+        find.textContaining(
+          l10n.sports_prefs_load_failed('').replaceAll(RegExp(r'[:：]\s*$'), ''),
+        ),
         findsOneWidget,
       );
     });

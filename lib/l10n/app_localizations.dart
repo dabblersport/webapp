@@ -6017,6 +6017,18 @@ abstract class AppLocalizations {
   /// **'Morocco'**
   String get region_country_Morocco;
 
+  /// No description provided for @region_country_Qatar.
+  ///
+  /// In en, this message translates to:
+  /// **'Qatar'**
+  String get region_country_Qatar;
+
+  /// No description provided for @region_country_Global.
+  ///
+  /// In en, this message translates to:
+  /// **'Global'**
+  String get region_country_Global;
+
   /// No description provided for @region_error.
   ///
   /// In en, this message translates to:

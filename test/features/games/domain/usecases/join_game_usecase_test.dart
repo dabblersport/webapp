@@ -39,12 +39,15 @@ void main() {
 
   void stubHappyPath(Game game) {
     when(mockRepo.getGame(game.id)).thenAnswer((_) async => Right(game));
-    when(mockRepo.isPlayerInGame(any, any))
-        .thenAnswer((_) async => const Right(false));
-    when(mockRepo.joinGame(any, any))
-        .thenAnswer((_) async => const Right(true));
-    when(mockRepo.getWaitlistPosition(any, any))
-        .thenAnswer((_) async => const Right(null));
+    when(
+      mockRepo.isPlayerInGame(any, any),
+    ).thenAnswer((_) async => const Right(false));
+    when(
+      mockRepo.joinGame(any, any),
+    ).thenAnswer((_) async => const Right(true));
+    when(
+      mockRepo.getWaitlistPosition(any, any),
+    ).thenAnswer((_) async => const Right(null));
   }
 
   group('JoinGameUseCase — parameter validation', () {
@@ -79,19 +82,21 @@ void main() {
   });
 
   group('JoinGameUseCase — own game check', () {
-    test('returns GameFailure when player tries to join their own game',
-        () async {
-      final game = makeGame(id: 'game-1', organizerId: 'player-1');
-      when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
+    test(
+      'returns GameFailure when player tries to join their own game',
+      () async {
+        final game = makeGame(id: 'game-1', organizerId: 'player-1');
+        when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
 
-      final result = await useCase(
-        JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
-      );
+        final result = await useCase(
+          JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
+        );
 
-      expect(result.isLeft(), true);
-      final failure = result.getLeft().toNullable() as GameFailure;
-      expect(failure.message, contains('own game'));
-    });
+        expect(result.isLeft(), true);
+        final failure = result.getLeft().toNullable() as GameFailure;
+        expect(failure.message, contains('own game'));
+      },
+    );
   });
 
   group('JoinGameUseCase — timing restriction', () {
@@ -122,8 +127,9 @@ void main() {
     test('returns GameFailure when player is already in the game', () async {
       final game = makeGame(id: 'game-1', organizerId: 'organizer-1');
       when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
-      when(mockRepo.isPlayerInGame('game-1', 'player-1'))
-          .thenAnswer((_) async => const Right(true));
+      when(
+        mockRepo.isPlayerInGame('game-1', 'player-1'),
+      ).thenAnswer((_) async => const Right(true));
 
       final result = await useCase(
         JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
@@ -143,8 +149,9 @@ void main() {
         status: GameStatus.cancelled,
       );
       when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
-      when(mockRepo.isPlayerInGame(any, any))
-          .thenAnswer((_) async => const Right(false));
+      when(
+        mockRepo.isPlayerInGame(any, any),
+      ).thenAnswer((_) async => const Right(false));
 
       final result = await useCase(
         JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
@@ -163,8 +170,9 @@ void main() {
         allowsWaitlist: false,
       );
       when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
-      when(mockRepo.isPlayerInGame(any, any))
-          .thenAnswer((_) async => const Right(false));
+      when(
+        mockRepo.isPlayerInGame(any, any),
+      ).thenAnswer((_) async => const Right(false));
 
       final result = await useCase(
         JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
@@ -175,59 +183,66 @@ void main() {
   });
 
   group('JoinGameUseCase — happy path', () {
-    test('returns success with isOnWaitlist=false when a spot is available',
-        () async {
-      final game = makeGame(
-        id: 'game-1',
-        organizerId: 'organizer-1',
-        maxPlayers: 10,
-        currentPlayers: 5,
-      );
-      stubHappyPath(game);
+    test(
+      'returns success with isOnWaitlist=false when a spot is available',
+      () async {
+        final game = makeGame(
+          id: 'game-1',
+          organizerId: 'organizer-1',
+          maxPlayers: 10,
+          currentPlayers: 5,
+        );
+        stubHappyPath(game);
 
-      final result = await useCase(
-        JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
-      );
+        final result = await useCase(
+          JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
+        );
 
-      expect(result.isRight(), true);
-      final joinResult = result.getRight().toNullable()!;
-      expect(joinResult.success, true);
-      expect(joinResult.isOnWaitlist, false);
-      expect(joinResult.position, null);
-    });
+        expect(result.isRight(), true);
+        final joinResult = result.getRight().toNullable()!;
+        expect(joinResult.success, true);
+        expect(joinResult.isOnWaitlist, false);
+        expect(joinResult.position, null);
+      },
+    );
 
-    test('returns success with isOnWaitlist=true when game is full but waitlist is open',
-        () async {
-      final game = makeGame(
-        id: 'game-1',
-        organizerId: 'organizer-1',
-        maxPlayers: 5,
-        currentPlayers: 5,
-        allowsWaitlist: true,
-      );
-      when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
-      when(mockRepo.isPlayerInGame(any, any))
-          .thenAnswer((_) async => const Right(false));
-      when(mockRepo.joinGame(any, any))
-          .thenAnswer((_) async => const Right(true));
-      when(mockRepo.getWaitlistPosition(any, any))
-          .thenAnswer((_) async => const Right(1));
+    test(
+      'returns success with isOnWaitlist=true when game is full but waitlist is open',
+      () async {
+        final game = makeGame(
+          id: 'game-1',
+          organizerId: 'organizer-1',
+          maxPlayers: 5,
+          currentPlayers: 5,
+          allowsWaitlist: true,
+        );
+        when(mockRepo.getGame('game-1')).thenAnswer((_) async => Right(game));
+        when(
+          mockRepo.isPlayerInGame(any, any),
+        ).thenAnswer((_) async => const Right(false));
+        when(
+          mockRepo.joinGame(any, any),
+        ).thenAnswer((_) async => const Right(true));
+        when(
+          mockRepo.getWaitlistPosition(any, any),
+        ).thenAnswer((_) async => const Right(1));
 
-      final result = await useCase(
-        JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
-      );
+        final result = await useCase(
+          JoinGameParams(gameId: 'game-1', playerId: 'player-1'),
+        );
 
-      expect(result.isRight(), true);
-      final joinResult = result.getRight().toNullable()!;
-      expect(joinResult.success, true);
-      expect(joinResult.isOnWaitlist, true);
-      expect(joinResult.position, 1);
-    });
+        expect(result.isRight(), true);
+        final joinResult = result.getRight().toNullable()!;
+        expect(joinResult.success, true);
+        expect(joinResult.isOnWaitlist, true);
+        expect(joinResult.position, 1);
+      },
+    );
 
     test('forwards NetworkFailure when getGame fails', () async {
-      when(mockRepo.getGame(any)).thenAnswer(
-        (_) async => Left(const NetworkFailure(message: 'offline')),
-      );
+      when(
+        mockRepo.getGame(any),
+      ).thenAnswer((_) async => Left(const NetworkFailure(message: 'offline')));
 
       final result = await useCase(
         JoinGameParams(gameId: 'game-1', playerId: 'player-1'),

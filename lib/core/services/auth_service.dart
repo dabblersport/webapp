@@ -994,7 +994,9 @@ class AuthService {
             .maybeSingle();
 
         if (existingSportProfile == null) {
-          await _supabase.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
+          await _supabase
+              .from(SupabaseConfig.sportProfilesTable)
+              .insert(sportProfileData);
         }
       } catch (e) {
         // Log but don't fail - sport profile is important but not critical
@@ -1019,7 +1021,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingPlayerProfile == null) {
-            await _supabase.from(SupabaseConfig.playerTable).insert(playerProfileData);
+            await _supabase
+                .from(SupabaseConfig.playerTable)
+                .insert(playerProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1044,7 +1048,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {
-            await _supabase.from(SupabaseConfig.organiserTable).insert(organiserProfileData);
+            await _supabase
+                .from(SupabaseConfig.organiserTable)
+                .insert(organiserProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1067,7 +1073,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingHostProfile == null) {
-            await _supabase.from(SupabaseConfig.hostTable).insert(hostProfileData);
+            await _supabase
+                .from(SupabaseConfig.hostTable)
+                .insert(hostProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1142,10 +1150,14 @@ class AuthService {
       await _supabase.auth.updateUser(UserAttributes(password: password));
     }
 
-    await _supabase.auth.updateUser(UserAttributes(data: {
-      'display_name': displayName,
-      if (username.isNotEmpty) 'username': username,
-    }));
+    await _supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'display_name': displayName,
+          if (username.isNotEmpty) 'username': username,
+        },
+      ),
+    );
 
     // Normalize country name → ISO code (e.g. "United Arab Emirates" → "AE")
     // The profiles.country FK targets ref_countries.code, not name_en.
@@ -1153,21 +1165,29 @@ class AuthService {
 
     // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
     // and bypass legacy-field triggers (profile_type / is_player / intention)
-    final profileId = await _supabase.rpc(SupabaseConfig.rpcOnboardProfileFn, params: {
-      'p_user_id': user.id,
-      'p_display_name': displayName,
-      'p_username': username,
-      'p_age': age,
-      'p_gender': gender,
-      'p_persona_type': personaType,
-      if (preferredSport.isNotEmpty) 'p_preferred_sport': preferredSport,
-      if (interests != null && interests.isNotEmpty) 'p_interests': interests,
-      if (countryCode != null) 'p_country': countryCode,
-      if (city != null) 'p_city': city,
-    }) as String;
+    final profileId =
+        await _supabase.rpc(
+              SupabaseConfig.rpcOnboardProfileFn,
+              params: {
+                'p_user_id': user.id,
+                'p_display_name': displayName,
+                'p_username': username,
+                'p_age': age,
+                'p_gender': gender,
+                'p_persona_type': personaType,
+                if (preferredSport.isNotEmpty)
+                  'p_preferred_sport': preferredSport,
+                if (interests != null && interests.isNotEmpty)
+                  'p_interests': interests,
+                if (countryCode != null) 'p_country': countryCode,
+                if (city != null) 'p_city': city,
+              },
+            )
+            as String;
 
-    await DefaultAvatarService(client: _supabase)
-        .ensureProfileAvatar(userId: user.id, profileId: profileId);
+    await DefaultAvatarService(
+      client: _supabase,
+    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
   }
@@ -1181,7 +1201,9 @@ class AuthService {
         params: {'p_username': username.trim()},
       );
       final row = (response is List)
-          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          ? (response.isNotEmpty
+                ? response.first as Map<String, dynamic>
+                : null)
           : response as Map<String, dynamic>?;
       if (row == null) return false;
       return !(row['available'] as bool? ?? true);

@@ -37,7 +37,6 @@ final rootNavigatorKey = GlobalKey<NavigatorState>();
 final appRouter = AppRouter.router;
 
 class AppRouter {
-
   // Analytics Observer
   static final _routeObserver = RouteObserver<ModalRoute<void>>();
   static RouteObserver<ModalRoute<void>> get routeObserver => _routeObserver;
@@ -51,7 +50,8 @@ class AppRouter {
     navigatorKey: rootNavigatorKey,
     // Show landing immediately after the native splash.
     initialLocation: RoutePaths.landing,
-    debugLogDiagnostics: kDebugMode, // Only log navigation diagnostics in debug builds
+    debugLogDiagnostics:
+        kDebugMode, // Only log navigation diagnostics in debug builds
     observers: [_routeObserver],
     errorBuilder: (context, state) => ErrorPage(message: state.error?.message),
     // Restore redirects for proper navigation flow
@@ -85,10 +85,14 @@ class AppRouter {
       // so the unauthenticated/authenticated branches further down redirect
       // it correctly on their own.
       final requestedLocation = state.matchedLocation;
-      final hasMatchingRoute =
-          router.configuration.findMatch(requestedLocation).matches.isNotEmpty;
+      final hasMatchingRoute = router.configuration
+          .findMatch(requestedLocation)
+          .matches
+          .isNotEmpty;
       if (!hasMatchingRoute) {
-        logRoute('redirect (no matching route for $requestedLocation) -> ${RoutePaths.landing}');
+        logRoute(
+          'redirect (no matching route for $requestedLocation) -> ${RoutePaths.landing}',
+        );
         return RoutePaths.landing;
       }
 
@@ -118,7 +122,6 @@ class AppRouter {
         RoutePaths.setUsername,
         RoutePaths.emailVerification,
         RoutePaths.onboardingWelcome, // Progress screen — must not be gated
-
         // New DB-authoritative onboarding routes
         RoutePaths.onboardingPersonaSelection,
         RoutePaths.onboardingInterestsSelection,
@@ -135,7 +138,6 @@ class AppRouter {
         RoutePaths.interestsSelection,
         RoutePaths.setUsername,
         RoutePaths.onboardingWelcome, // Progress screen — must not be gated
-
         // New DB-authoritative onboarding routes
         RoutePaths.onboardingPersonaSelection,
         RoutePaths.onboardingInterestsSelection,
@@ -279,7 +281,9 @@ class AppRouter {
         // If onboarding needs a specific route, enforce it.
         // Exception: never redirect away from the progress screen — it is
         // actively creating the profile and will navigate itself when done.
-        if (desired != null && loc != desired && loc != RoutePaths.onboardingWelcome) {
+        if (desired != null &&
+            loc != desired &&
+            loc != RoutePaths.onboardingWelcome) {
           logRoute('redirect (onboarding step) -> $desired');
           return desired;
         }
@@ -345,8 +349,7 @@ class AppRouter {
       }
       // Reaching the deep-link target directly (already signed in) — drop
       // any stale stash so it can't replay later.
-      if (isAuthenticated &&
-          routerRefreshNotifier.pendingDeepLink == loc) {
+      if (isAuthenticated && routerRefreshNotifier.pendingDeepLink == loc) {
         routerRefreshNotifier.consumePendingDeepLink();
       }
 

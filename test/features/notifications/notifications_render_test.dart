@@ -33,9 +33,8 @@ const String _userId = 'u-me';
 String _fakeSession(String userId) {
   String b64(Map<String, dynamic> m) =>
       base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
-  final int exp = DateTime.now()
-          .add(const Duration(days: 30))
-          .millisecondsSinceEpoch ~/
+  final int exp =
+      DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch ~/
       1000;
   final String jwt =
       '${b64({'alg': 'HS256', 'typ': 'JWT'})}.${b64({'sub': userId, 'exp': exp, 'aud': 'authenticated', 'role': 'authenticated'})}.sig';
@@ -94,58 +93,110 @@ AppNotification _n(
   Duration ago = const Duration(minutes: 5),
   String? body,
   Map<String, dynamic>? payload,
-}) =>
-    AppNotification(
-      id: id,
-      toUserId: _userId,
-      kindKey: kind,
-      title: title,
-      body: body,
-      isRead: read,
-      payload: payload,
-      createdAt: DateTime.now().subtract(ago),
-    );
+}) => AppNotification(
+  id: id,
+  toUserId: _userId,
+  kindKey: kind,
+  title: title,
+  body: body,
+  isRead: read,
+  payload: payload,
+  createdAt: DateTime.now().subtract(ago),
+);
 
 List<AppNotification> _sample() => [
-      _n('1', 'game.invited', 'Game invite',
-          payload: {'actor_name': 'Omar Haddad'},
-          body: 'Friday 7pm at Al Wasl Courts'),
-      _n('2', 'friend.requested', 'Friend request',
-          payload: {'actor_name': 'Layla Nasser'}, ago: const Duration(hours: 2)),
-      _n('3', 'social.post_liked', 'Liked',
-          payload: {'actor_name': 'Sara Khalid'},
-          read: true,
-          ago: const Duration(hours: 5)),
-      _n('4', 'arena.payment_required', 'Payment', body: 'Complete payment to confirm your booking',
-          ago: const Duration(days: 1, hours: 2)),
-      _n('5', 'reward.badge_awarded', 'Badge', read: true, ago: const Duration(days: 1, hours: 6)),
-      _n('6', 'game.reminder', 'Reminder', read: true, ago: const Duration(days: 3)),
-      _n('7', 'system.notice', 'Notice', read: true, ago: const Duration(days: 9)),
-    ];
+  _n(
+    '1',
+    'game.invited',
+    'Game invite',
+    payload: {'actor_name': 'Omar Haddad'},
+    body: 'Friday 7pm at Al Wasl Courts',
+  ),
+  _n(
+    '2',
+    'friend.requested',
+    'Friend request',
+    payload: {'actor_name': 'Layla Nasser'},
+    ago: const Duration(hours: 2),
+  ),
+  _n(
+    '3',
+    'social.post_liked',
+    'Liked',
+    payload: {'actor_name': 'Sara Khalid'},
+    read: true,
+    ago: const Duration(hours: 5),
+  ),
+  _n(
+    '4',
+    'arena.payment_required',
+    'Payment',
+    body: 'Complete payment to confirm your booking',
+    ago: const Duration(days: 1, hours: 2),
+  ),
+  _n(
+    '5',
+    'reward.badge_awarded',
+    'Badge',
+    read: true,
+    ago: const Duration(days: 1, hours: 6),
+  ),
+  _n(
+    '6',
+    'game.reminder',
+    'Reminder',
+    read: true,
+    ago: const Duration(days: 3),
+  ),
+  _n('7', 'system.notice', 'Notice', read: true, ago: const Duration(days: 9)),
+];
 
 List<ActivityFeedEvent> _activities() {
   final now = DateTime.now();
   return [
     ActivityFeedEvent(
-      id: 'a1', subjectType: 'game', subjectId: 'g1', verb: 'joined',
-      timeBucket: 'present', happenedAt: now.subtract(const Duration(minutes: 20)),
+      id: 'a1',
+      subjectType: 'game',
+      subjectId: 'g1',
+      verb: 'joined',
+      timeBucket: 'present',
+      happenedAt: now.subtract(const Duration(minutes: 20)),
       priority: 1,
-      payload: {'title': 'You joined Friday Football', 'venue_name': 'Al Wasl Courts', 'participants_count': 8},
+      payload: {
+        'title': 'You joined Friday Football',
+        'venue_name': 'Al Wasl Courts',
+        'participants_count': 8,
+      },
     ),
     ActivityFeedEvent(
-      id: 'a2', subjectType: 'reward', subjectId: 'r1', verb: 'earned',
-      timeBucket: 'past', happenedAt: now.subtract(const Duration(hours: 3)),
-      priority: 1, payload: {'title': 'Earned 50 points', 'description': 'Match completed'},
+      id: 'a2',
+      subjectType: 'reward',
+      subjectId: 'r1',
+      verb: 'earned',
+      timeBucket: 'past',
+      happenedAt: now.subtract(const Duration(hours: 3)),
+      priority: 1,
+      payload: {'title': 'Earned 50 points', 'description': 'Match completed'},
     ),
     ActivityFeedEvent(
-      id: 'a3', subjectType: 'game', subjectId: 'g2', verb: 'created',
-      timeBucket: 'upcoming', happenedAt: now.subtract(const Duration(days: 1)),
-      priority: 1, payload: {'title': 'Created Sunday Padel', 'location': 'Dubai Marina'},
+      id: 'a3',
+      subjectType: 'game',
+      subjectId: 'g2',
+      verb: 'created',
+      timeBucket: 'upcoming',
+      happenedAt: now.subtract(const Duration(days: 1)),
+      priority: 1,
+      payload: {'title': 'Created Sunday Padel', 'location': 'Dubai Marina'},
     ),
     ActivityFeedEvent(
-      id: 'a4', subjectType: 'security', subjectId: 's1', verb: 'signed_in',
-      timeBucket: 'past', happenedAt: now.subtract(const Duration(days: 1, hours: 4)),
-      priority: 1, payload: {'title': 'New sign-in', 'description': 'iPhone, Dubai'},
+      id: 'a4',
+      subjectType: 'security',
+      subjectId: 's1',
+      verb: 'signed_in',
+      timeBucket: 'past',
+      happenedAt: now.subtract(const Duration(days: 1, hours: 4)),
+      priority: 1,
+      payload: {'title': 'New sign-in', 'description': 'iPhone, Dubai'},
     ),
   ];
 }
@@ -165,17 +216,21 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        notificationsControllerProvider(_userId)
-            .overrideWith((ref) => fake ?? _FakeNotifs(notifs)),
-        activityFeedControllerProvider
-            .overrideWith((ref) => _FakeActivity(activity ?? ActivityFeedState())),
+        notificationsControllerProvider(
+          _userId,
+        ).overrideWith((ref) => fake ?? _FakeNotifs(notifs)),
+        activityFeedControllerProvider.overrideWith(
+          (ref) => _FakeActivity(activity ?? ActivityFeedState()),
+        ),
         myProfileIdProvider.overrideWith((ref) async => null),
         notificationSettingsControllerProvider.overrideWith(
-          (ref) => FakeNotificationSettings(const NotificationSettings(
-            userId: _userId,
-            quietStartMin: 23 * 60,
-            quietEndMin: 7 * 60,
-          )),
+          (ref) => FakeNotificationSettings(
+            const NotificationSettings(
+              userId: _userId,
+              quietStartMin: 23 * 60,
+              quietEndMin: 7 * 60,
+            ),
+          ),
         ),
       ],
       child: MaterialApp(
@@ -204,7 +259,9 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
@@ -223,9 +280,16 @@ void main() {
     final l10n = lookupAppLocalizations(locale);
 
     testWidgets('notifications all — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(
-              notifications: _sample(), unreadCount: 3, hasMore: true));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(
+          notifications: _sample(),
+          unreadCount: 3,
+          hasMore: true,
+        ),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerNotificationRow), findsWidgets);
       expect(find.byType(DabblerChip), findsWidgets);
@@ -234,9 +298,16 @@ void main() {
     });
 
     testWidgets('what reaches you sheet — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(
-              notifications: _sample(), unreadCount: 3, hasMore: true));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(
+          notifications: _sample(),
+          unreadCount: 3,
+          hasMore: true,
+        ),
+      );
       await tester.tap(find.bySemanticsLabel(l10n.settings_header_title));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -248,9 +319,16 @@ void main() {
     });
 
     testWidgets('notifications filtered — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(
-              notifications: _sample(), unreadCount: 3, hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(
+          notifications: _sample(),
+          unreadCount: 3,
+          hasMore: false,
+        ),
+      );
       await tester.tap(find.byType(DabblerChip).at(1));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -262,8 +340,13 @@ void main() {
 
     testWidgets('notifications unread — $dir', (tester) async {
       final unread = _sample().map((n) => n.copyWith(isRead: false)).toList();
-      final fake = _FakeNotifs(NotificationsState(
-          notifications: unread, unreadCount: unread.length, hasMore: false));
+      final fake = _FakeNotifs(
+        NotificationsState(
+          notifications: unread,
+          unreadCount: unread.length,
+          hasMore: false,
+        ),
+      );
       await _pump(tester, locale, key, notifs: fake.state, fake: fake);
       expect(find.byType(DabblerBadge), findsWidgets);
       await tester.tap(find.bySemanticsLabel(l10n.notif_mark_all_read));
@@ -274,33 +357,49 @@ void main() {
     });
 
     testWidgets('notifications empty — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: const NotificationsState(hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: const NotificationsState(hasMore: false),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerEmptyState), findsOneWidget);
       await _shoot(tester, key, 'notifications-empty-$dir');
     });
 
     testWidgets('notifications loading — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: const NotificationsState(isLoading: true, hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: const NotificationsState(isLoading: true, hasMore: false),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerSkeleton), findsWidgets);
       await _shoot(tester, key, 'notifications-loading-$dir');
     });
 
     testWidgets('notifications error — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: const NotificationsState(error: 'Network unreachable'));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: const NotificationsState(error: 'Network unreachable'),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerEmptyState), findsOneWidget);
       await _shoot(tester, key, 'notifications-error-$dir');
     });
 
     testWidgets('activity log — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
-          activity: ActivityFeedState(activities: _activities(), hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
+        activity: ActivityFeedState(activities: _activities(), hasMore: false),
+      );
       await tester.tap(find.text(l10n.notif_title_activity_log));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -316,10 +415,14 @@ void main() {
   }
 
   testWidgets('wide layout shows both panes', (tester) async {
-    await _pump(tester, const Locale('en'), const Key('shot'),
-        notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
-        activity: ActivityFeedState(activities: _activities(), hasMore: false),
-        size: const Size(1100, 800));
+    await _pump(
+      tester,
+      const Locale('en'),
+      const Key('shot'),
+      notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
+      activity: ActivityFeedState(activities: _activities(), hasMore: false),
+      size: const Size(1100, 800),
+    );
     expect(tester.takeException(), isNull);
     expect(find.text('Notifications'), findsWidgets);
     expect(find.text('Activity log'), findsOneWidget);

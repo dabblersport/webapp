@@ -34,29 +34,50 @@ Future<GoRouter> _pump(
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
 
-  Widget branch(String label) =>
-      Center(child: DabblerEmptyState(title: label));
+  Widget branch(String label) => Center(child: DabblerEmptyState(title: label));
   final router = GoRouter(
     initialLocation: '/home',
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (_, __, shell) => MainNavigationScreen(navigationShell: shell),
         branches: [
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/home', builder: (_, __) => branch('home-branch')),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/community', builder: (_, __) => branch('community-branch')),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/venues', builder: (_, __) => branch('venues-branch')),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: '/games', builder: (_, __) => branch('games-branch')),
-          ]),
-          StatefulShellBranch(routes: [
-            GoRoute(path: RoutePaths.meetups, builder: (_, __) => branch('meetups-branch')),
-          ]),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(path: '/home', builder: (_, __) => branch('home-branch')),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/community',
+                builder: (_, __) => branch('community-branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/venues',
+                builder: (_, __) => branch('venues-branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: '/games',
+                builder: (_, __) => branch('games-branch'),
+              ),
+            ],
+          ),
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.meetups,
+                builder: (_, __) => branch('meetups-branch'),
+              ),
+            ],
+          ),
         ],
       ),
       GoRoute(
@@ -81,7 +102,9 @@ Future<GoRouter> _pump(
         // The active persona decides the Create game / meet-up tiles.
         activePersonaProvider.overrideWithValue(persona),
         meetupsEnabledProvider.overrideWithValue(meetupsOn),
-        feedNotifierProvider.overrideWith((ref) => FakeFeed(const FeedLoading())),
+        feedNotifierProvider.overrideWith(
+          (ref) => FakeFeed(const FeedLoading()),
+        ),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -111,7 +134,9 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
@@ -123,23 +148,24 @@ void main() {
     await loadRenderFonts();
   });
 
-  testWidgets('a DabblerPage with the DS bottom bar: Feeds, Venues, Games, Meetups', (
-    tester,
-  ) async {
-    final semantics = tester.ensureSemantics();
-    await _pump(tester);
-    expect(find.byType(DabblerPage), findsOneWidget);
-    expect(find.byType(DabblerNavigationBottomBar), findsOneWidget);
-    expect(find.byType(Scaffold), findsNothing);
-    // The active item shows its label; every item is a named button.
-    expect(find.text('Feeds'), findsOneWidget);
-    expect(find.bySemanticsLabel('Venues'), findsOneWidget);
-    expect(find.bySemanticsLabel('Games'), findsOneWidget);
-    expect(find.bySemanticsLabel('Meetups'), findsOneWidget);
-    expect(find.text('home-branch'), findsOneWidget);
-    semantics.dispose();
-    expect(tester.takeException(), isNull);
-  });
+  testWidgets(
+    'a DabblerPage with the DS bottom bar: Feeds, Venues, Games, Meetups',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await _pump(tester);
+      expect(find.byType(DabblerPage), findsOneWidget);
+      expect(find.byType(DabblerNavigationBottomBar), findsOneWidget);
+      expect(find.byType(Scaffold), findsNothing);
+      // The active item shows its label; every item is a named button.
+      expect(find.text('Feeds'), findsOneWidget);
+      expect(find.bySemanticsLabel('Venues'), findsOneWidget);
+      expect(find.bySemanticsLabel('Games'), findsOneWidget);
+      expect(find.bySemanticsLabel('Meetups'), findsOneWidget);
+      expect(find.text('home-branch'), findsOneWidget);
+      semantics.dispose();
+      expect(tester.takeException(), isNull);
+    },
+  );
 
   testWidgets('tapping a bar item switches the shell branch', (tester) async {
     final semantics = tester.ensureSemantics();
@@ -160,8 +186,9 @@ void main() {
     semantics.dispose();
   });
 
-  testWidgets('create menu offers post, game and meetup and routes',
-      (tester) async {
+  testWidgets('create menu offers post, game and meetup and routes', (
+    tester,
+  ) async {
     final semantics = tester.ensureSemantics();
     await _pump(tester);
     await tester.tap(find.bySemanticsLabel('Create'));
@@ -197,17 +224,17 @@ void main() {
       ('host', PersonaType.host, true, [post]),
       ('persona not known yet', null, true, [post]),
       ('player, meetups flag off', PersonaType.player, false, [post, game]),
-      ('organiser, meetups flag off', PersonaType.organiser, false, [post, game]),
+      (
+        'organiser, meetups flag off',
+        PersonaType.organiser,
+        false,
+        [post, game],
+      ),
       ('socialiser, meetups flag off', PersonaType.socialiser, false, [post]),
     ]) {
       testWidgets('create menu for ${c.$1} - $dir', (tester) async {
         final semantics = tester.ensureSemantics();
-        await _pump(
-          tester,
-          locale: locale,
-          persona: c.$2,
-          meetupsOn: c.$3,
-        );
+        await _pump(tester, locale: locale, persona: c.$2, meetupsOn: c.$3);
         await tester.tap(find.bySemanticsLabel('Create'));
         await tester.pumpAndSettle();
         final items = tester
@@ -235,8 +262,9 @@ void main() {
 
   for (final locale in const [Locale('en'), Locale('ar')]) {
     final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
-    testWidgets('action: add closed, close-circle open, add again — $dir',
-        (tester) async {
+    testWidgets('action: add closed, close-circle open, add again — $dir', (
+      tester,
+    ) async {
       final semantics = tester.ensureSemantics();
       await _pump(tester, locale: locale);
       Iterable<String> glyph() => tester
@@ -295,7 +323,9 @@ void main() {
 
   for (final locale in const [Locale('en'), Locale('ar')]) {
     final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
-    testWidgets('renders the shell and the create sheet — $dir', (tester) async {
+    testWidgets('renders the shell and the create sheet — $dir', (
+      tester,
+    ) async {
       final semantics = tester.ensureSemantics();
       const key = Key('shot');
       await _pump(tester, locale: locale, boundaryKey: key);

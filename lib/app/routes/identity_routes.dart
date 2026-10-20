@@ -38,442 +38,407 @@ import 'package:dabbler/utils/transitions/page_transitions.dart';
 import 'package:dabbler/app/app_router.dart';
 
 // Landing page route
-RouteBase get landingRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '/landing',
-      pageBuilder: (context, state) =>
-          FadeTransitionPage(key: state.pageKey, child: const LandingPage()),
-    );
+RouteBase get landingRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '/landing',
+  pageBuilder: (context, state) =>
+      FadeTransitionPage(key: state.pageKey, child: const LandingPage()),
+);
 
 // Auth-choice welcome screen (after landing)
-RouteBase get authWelcomeRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.authWelcome,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const AuthWelcomeScreen(),
-      ),
-    );
+RouteBase get authWelcomeRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.authWelcome,
+  pageBuilder: (context, state) =>
+      FadeTransitionPage(key: state.pageKey, child: const AuthWelcomeScreen()),
+);
 
 // Email input route
-RouteBase get emailInputRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.emailInput,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const EmailInputScreen(),
-      ),
-    );
+RouteBase get emailInputRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.emailInput,
+  pageBuilder: (context, state) =>
+      FadeTransitionPage(key: state.pageKey, child: const EmailInputScreen()),
+);
 
 // OTP verification route
-RouteBase get otpVerificationRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.otpVerification,
-      pageBuilder: (context, state) {
-        final extra = state.extra;
-        final identifier = extra is Map
-            ? extra['identifier'] as String?
-            : extra is Map
-            ? extra['phone']
-                  as String? // Legacy support
-            : extra as String?;
-        final identifierTypeStr = extra is Map
-            ? extra['identifierType'] as String?
-            : null;
-        final userExistsBeforeOtp = extra is Map
-            ? extra['userExistsBeforeOtp'] as bool?
-            : null;
+RouteBase get otpVerificationRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.otpVerification,
+  pageBuilder: (context, state) {
+    final extra = state.extra;
+    final identifier = extra is Map
+        ? extra['identifier'] as String?
+        : extra is Map
+        ? extra['phone']
+              as String? // Legacy support
+        : extra as String?;
+    final identifierTypeStr = extra is Map
+        ? extra['identifierType'] as String?
+        : null;
+    final userExistsBeforeOtp = extra is Map
+        ? extra['userExistsBeforeOtp'] as bool?
+        : null;
 
-        // Parse identifier type
-        IdentifierType? identifierType;
-        if (identifierTypeStr == 'email') {
-          identifierType = IdentifierType.email;
-        } else if (identifierTypeStr == 'phone') {
-          identifierType = IdentifierType.phone;
-        }
-        // If null, OtpVerificationScreen will auto-detect
+    // Parse identifier type
+    IdentifierType? identifierType;
+    if (identifierTypeStr == 'email') {
+      identifierType = IdentifierType.email;
+    } else if (identifierTypeStr == 'phone') {
+      identifierType = IdentifierType.phone;
+    }
+    // If null, OtpVerificationScreen will auto-detect
 
-        return FadeTransitionPage(
-          key: state.pageKey,
-          child: OtpVerificationScreen(
-            identifier: identifier,
-            identifierType: identifierType,
-            userExistsBeforeOtp: userExistsBeforeOtp,
-            phoneNumber: identifier, // Legacy support
-          ),
-        );
-      },
+    return FadeTransitionPage(
+      key: state.pageKey,
+      child: OtpVerificationScreen(
+        identifier: identifier,
+        identifierType: identifierType,
+        userExistsBeforeOtp: userExistsBeforeOtp,
+        phoneNumber: identifier, // Legacy support
+      ),
     );
+  },
+);
 
 // Enter password route
-RouteBase get enterPasswordRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.enterPassword,
-      pageBuilder: (context, state) {
-        final extra = state.extra;
-        final email = extra is Map
-            ? extra['email'] as String?
-            : extra as String?;
-        return FadeTransitionPage(
-          key: state.pageKey,
-          child: EnterPasswordScreen(email: email ?? ''),
-        );
-      },
+RouteBase get enterPasswordRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.enterPassword,
+  pageBuilder: (context, state) {
+    final extra = state.extra;
+    final email = extra is Map ? extra['email'] as String? : extra as String?;
+    return FadeTransitionPage(
+      key: state.pageKey,
+      child: EnterPasswordScreen(email: email ?? ''),
     );
+  },
+);
 
 // Forgot password route
-RouteBase get forgotPasswordRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.forgotPassword,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const ForgotPasswordScreen(),
-      ),
-    );
+RouteBase get forgotPasswordRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.forgotPassword,
+  pageBuilder: (context, state) => FadeTransitionPage(
+    key: state.pageKey,
+    child: const ForgotPasswordScreen(),
+  ),
+);
 
 // Reset password route
-RouteBase get resetPasswordRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.resetPassword,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const ResetPasswordScreen(),
-      ),
-    );
+RouteBase get resetPasswordRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.resetPassword,
+  pageBuilder: (context, state) => FadeTransitionPage(
+    key: state.pageKey,
+    child: const ResetPasswordScreen(),
+  ),
+);
 
 // Register route
-RouteBase get registerRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.register,
-      pageBuilder: (context, state) =>
-          FadeTransitionPage(key: state.pageKey, child: const RegisterScreen()),
-    );
+RouteBase get registerRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.register,
+  pageBuilder: (context, state) =>
+      FadeTransitionPage(key: state.pageKey, child: const RegisterScreen()),
+);
 
 // Create user information route
-RouteBase get createUserInfoRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.createUserInfo,
-      pageBuilder: (context, state) {
-        final extra = state.extra;
-        final email = extra is Map
-            ? extra['email'] as String?
-            : (extra is String ? extra : null);
-        final phone = extra is Map ? extra['phone'] as String? : null;
-        final forceNew = extra is Map ? extra['forceNew'] as bool? : false;
-        return SlideTransitionPage(
-          key: state.pageKey,
-          child: CreateUserInformation(
-            email: email,
-            phone: phone,
-            forceNew: forceNew ?? false,
-          ),
-          direction: SlideDirection.fromLeft,
-        );
-      },
+RouteBase get createUserInfoRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.createUserInfo,
+  pageBuilder: (context, state) {
+    final extra = state.extra;
+    final email = extra is Map
+        ? extra['email'] as String?
+        : (extra is String ? extra : null);
+    final phone = extra is Map ? extra['phone'] as String? : null;
+    final forceNew = extra is Map ? extra['forceNew'] as bool? : false;
+    return SlideTransitionPage(
+      key: state.pageKey,
+      child: CreateUserInformation(
+        email: email,
+        phone: phone,
+        forceNew: forceNew ?? false,
+      ),
+      direction: SlideDirection.fromLeft,
     );
+  },
+);
 
 // Interests selection route (after intent selection)
-RouteBase get interestsSelectionRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.interestsSelection,
-      pageBuilder: (context, state) {
-        return SlideTransitionPage(
-          key: state.pageKey,
-          child: const InterestsSelectionScreen(),
-          direction: SlideDirection.fromLeft,
-        );
-      },
+RouteBase get interestsSelectionRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.interestsSelection,
+  pageBuilder: (context, state) {
+    return SlideTransitionPage(
+      key: state.pageKey,
+      child: const InterestsSelectionScreen(),
+      direction: SlideDirection.fromLeft,
     );
+  },
+);
 
 // Intent selection route
-RouteBase get intentSelectionRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.intentSelection,
-      pageBuilder: (context, state) {
-        return SlideTransitionPage(
-          key: state.pageKey,
-          child: const IntentSelectionScreen(),
-          direction: SlideDirection.fromLeft,
-        );
-      },
+RouteBase get intentSelectionRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.intentSelection,
+  pageBuilder: (context, state) {
+    return SlideTransitionPage(
+      key: state.pageKey,
+      child: const IntentSelectionScreen(),
+      direction: SlideDirection.fromLeft,
     );
+  },
+);
 
 // DB-authoritative persona selection route (KAN-46).
 // Reuses IntentSelectionScreen — the resume-state redirect (below) sends
 // returning users with no persona recorded here rather than to an
 // unregistered path and the error page.
-RouteBase get onboardingPersonaSelectionRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.onboardingPersonaSelection,
-      name: RouteNames.onboardingPersonaSelection,
-      pageBuilder: (context, state) {
-        return SlideTransitionPage(
-          key: state.pageKey,
-          child: const IntentSelectionScreen(),
-          direction: SlideDirection.fromLeft,
-        );
-      },
+RouteBase get onboardingPersonaSelectionRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.onboardingPersonaSelection,
+  name: RouteNames.onboardingPersonaSelection,
+  pageBuilder: (context, state) {
+    return SlideTransitionPage(
+      key: state.pageKey,
+      child: const IntentSelectionScreen(),
+      direction: SlideDirection.fromLeft,
     );
+  },
+);
 
 // Set username route (for phone users)
-RouteBase get setUsernameRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.setUsername,
-      pageBuilder: (context, state) {
-        return SlideTransitionPage(
-          key: state.pageKey,
-          child: const SetUsernameScreen(),
-          direction: SlideDirection.fromLeft,
-        );
-      },
+RouteBase get setUsernameRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.setUsername,
+  pageBuilder: (context, state) {
+    return SlideTransitionPage(
+      key: state.pageKey,
+      child: const SetUsernameScreen(),
+      direction: SlideDirection.fromLeft,
     );
+  },
+);
 
 // Location introduction: follows Welcome / Welcome Back (KAN-489). It is a
 // normal authenticated route; the welcome guard is cleared before it opens, so
 // there is no redirect loop, and it continues to Home.
-RouteBase get locationIntroRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.locationIntro,
-      name: RouteNames.locationIntro,
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: Consumer(
-          builder: (context, ref, _) =>
-              LocationIntroScreen(userId: ref.read(locationIntroUserIdProvider)),
-        ),
-      ),
-    );
+RouteBase get locationIntroRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.locationIntro,
+  name: RouteNames.locationIntro,
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: Consumer(
+      builder: (context, ref, _) =>
+          LocationIntroScreen(userId: ref.read(locationIntroUserIdProvider)),
+    ),
+  ),
+);
 
 // Welcome route
-RouteBase get welcomeRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.welcome,
-      redirect: (context, state) {
-        // Prevent returning to welcome after it has been dismissed
-        if (!routerRefreshNotifier.needsPostLoginWelcome) {
-          return RoutePaths.home;
-        }
-        return null;
-      },
-      pageBuilder: (context, state) {
-        final extra = state.extra;
-        final displayName = extra is Map
-            ? extra['displayName'] as String?
-            : 'Player';
-        final personaType = extra is Map
-            ? extra['personaType'] as String?
-            : 'player';
-        final isFirstTime = extra is Map ? extra['isFirstTime'] as bool? : true;
-        return ScaleTransitionPage(
-          key: state.pageKey,
-          child: WelcomeScreen(
-            displayName: displayName ?? 'Player',
-            personaType: personaType ?? 'player',
-            isFirstTime: isFirstTime ?? true,
-            primarySportKey: extra is Map
-                ? extra['primarySportKey'] as String?
-                : null,
-          ),
-        );
-      },
-    );
-
-// Email verification pending route
-RouteBase get emailVerificationRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.emailVerification,
-      pageBuilder: (context, state) {
-        final extra = state.extra;
-        final onboardingData = extra is Map<String, dynamic> ? extra : null;
-        return FadeTransitionPage(
-          key: state.pageKey,
-          child: EmailVerificationScreen(onboardingData: onboardingData),
-        );
-      },
-    );
-
-// Profile Onboarding Routes
-RouteBase get onboardingWelcomeRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.onboardingWelcome,
-      name: RouteNames.onboardingWelcome,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const ProfileOnboardingWelcomeScreen(),
-        direction: SlideDirection.fromLeft,
+RouteBase get welcomeRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.welcome,
+  redirect: (context, state) {
+    // Prevent returning to welcome after it has been dismissed
+    if (!routerRefreshNotifier.needsPostLoginWelcome) {
+      return RoutePaths.home;
+    }
+    return null;
+  },
+  pageBuilder: (context, state) {
+    final extra = state.extra;
+    final displayName = extra is Map
+        ? extra['displayName'] as String?
+        : 'Player';
+    final personaType = extra is Map
+        ? extra['personaType'] as String?
+        : 'player';
+    final isFirstTime = extra is Map ? extra['isFirstTime'] as bool? : true;
+    return ScaleTransitionPage(
+      key: state.pageKey,
+      child: WelcomeScreen(
+        displayName: displayName ?? 'Player',
+        personaType: personaType ?? 'player',
+        isFirstTime: isFirstTime ?? true,
+        primarySportKey: extra is Map
+            ? extra['primarySportKey'] as String?
+            : null,
       ),
     );
+  },
+);
+
+// Email verification pending route
+RouteBase get emailVerificationRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.emailVerification,
+  pageBuilder: (context, state) {
+    final extra = state.extra;
+    final onboardingData = extra is Map<String, dynamic> ? extra : null;
+    return FadeTransitionPage(
+      key: state.pageKey,
+      child: EmailVerificationScreen(onboardingData: onboardingData),
+    );
+  },
+);
+
+// Profile Onboarding Routes
+RouteBase get onboardingWelcomeRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.onboardingWelcome,
+  name: RouteNames.onboardingWelcome,
+  pageBuilder: (context, state) => SlideTransitionPage(
+    key: state.pageKey,
+    child: const ProfileOnboardingWelcomeScreen(),
+    direction: SlideDirection.fromLeft,
+  ),
+);
 
 // Interests Selection Route
 // Note: This is the sports interests selection during onboarding
-RouteBase get onboardingInterestsSelectionRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.onboardingInterestsSelection,
-      name: RouteNames.onboardingInterestsSelection,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const InterestsSelectionScreen(),
-      ),
-    );
+RouteBase get onboardingInterestsSelectionRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.onboardingInterestsSelection,
+  name: RouteNames.onboardingInterestsSelection,
+  pageBuilder: (context, state) => FadeTransitionPage(
+    key: state.pageKey,
+    child: const InterestsSelectionScreen(),
+  ),
+);
 
 // Primary Sport Selection Route
 // Note: Select ONE sport to represent the user
-RouteBase get onboardingPrimarySportRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.onboardingPrimarySport,
-      name: RouteNames.onboardingPrimarySport,
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const PrimarySportSelectionScreen(),
-      ),
-    );
+RouteBase get onboardingPrimarySportRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.onboardingPrimarySport,
+  name: RouteNames.onboardingPrimarySport,
+  pageBuilder: (context, state) => FadeTransitionPage(
+    key: state.pageKey,
+    child: const PrimarySportSelectionScreen(),
+  ),
+);
 
 // Add Persona Flow Routes (from Settings)
-RouteBase get addPersonaInterestsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.addPersonaInterests,
-      name: RouteNames.addPersonaInterests,
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const InterestsSelectionScreen(
-          mode: InterestsSelectionMode.addPersona,
-        ),
-        type: SharedAxisType.horizontal,
+RouteBase get addPersonaInterestsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.addPersonaInterests,
+  name: RouteNames.addPersonaInterests,
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const InterestsSelectionScreen(
+      mode: InterestsSelectionMode.addPersona,
+    ),
+    type: SharedAxisType.horizontal,
+  ),
+);
+
+RouteBase get addPersonaPrimarySportRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.addPersonaPrimarySport,
+  name: RouteNames.addPersonaPrimarySport,
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const PrimarySportSelectionScreen(
+      mode: PrimarySportSelectionMode.addPersona,
+    ),
+    type: SharedAxisType.horizontal,
+  ),
+);
+
+RouteBase get addPersonaUsernameRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.addPersonaUsername,
+  name: RouteNames.addPersonaUsername,
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const SetUsernameScreen(mode: SetUsernameMode.addPersona),
+    type: SharedAxisType.horizontal,
+  ),
+);
+
+RouteBase get addPersonaWelcomeRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.addPersonaWelcome,
+  name: RouteNames.addPersonaWelcome,
+  pageBuilder: (context, state) {
+    final extra = state.extra as Map<String, dynamic>?;
+    return FadeTransitionPage(
+      key: state.pageKey,
+      child: WelcomeScreen(
+        displayName: extra?['displayName'] as String? ?? '',
+        personaType: extra?['personaType'] as String? ?? 'player',
+        isFirstTime: extra?['isFirstTime'] as bool? ?? false,
+        isConversion: extra?['isConversion'] as bool? ?? false,
       ),
     );
+  },
+);
 
-RouteBase get addPersonaPrimarySportRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.addPersonaPrimarySport,
-      name: RouteNames.addPersonaPrimarySport,
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const PrimarySportSelectionScreen(
-          mode: PrimarySportSelectionMode.addPersona,
-        ),
-        type: SharedAxisType.horizontal,
-      ),
-    );
-
-RouteBase get addPersonaUsernameRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.addPersonaUsername,
-      name: RouteNames.addPersonaUsername,
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const SetUsernameScreen(mode: SetUsernameMode.addPersona),
-        type: SharedAxisType.horizontal,
-      ),
-    );
-
-RouteBase get addPersonaWelcomeRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.addPersonaWelcome,
-      name: RouteNames.addPersonaWelcome,
-      pageBuilder: (context, state) {
-        final extra = state.extra as Map<String, dynamic>?;
-        return FadeTransitionPage(
-          key: state.pageKey,
-          child: WelcomeScreen(
-            displayName: extra?['displayName'] as String? ?? '',
-            personaType: extra?['personaType'] as String? ?? 'player',
-            isFirstTime: extra?['isFirstTime'] as bool? ?? false,
-            isConversion: extra?['isConversion'] as bool? ?? false,
-          ),
-        );
-      },
-    );
-
-RouteBase get settingsLanguageRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '/settings/language',
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const LanguageSelectionScreen(),
-        type: SharedAxisType.horizontal,
-      ),
-    );
+RouteBase get settingsLanguageRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '/settings/language',
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const LanguageSelectionScreen(),
+    type: SharedAxisType.horizontal,
+  ),
+);
 
 // Social Onboarding Routes
-RouteBase get socialOnboardingWelcomeRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialOnboardingWelcome,
-      name: RouteNames.socialOnboardingWelcome,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const SocialOnboardingWelcomeScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    );
+RouteBase get socialOnboardingWelcomeRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialOnboardingWelcome,
+  name: RouteNames.socialOnboardingWelcome,
+  pageBuilder: (context, state) => SlideTransitionPage(
+    key: state.pageKey,
+    child: const SocialOnboardingWelcomeScreen(),
+    direction: SlideDirection.fromLeft,
+  ),
+);
 
-RouteBase get socialOnboardingFriendsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialOnboardingFriends,
-      name: RouteNames.socialOnboardingFriends,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const SocialOnboardingFriendsScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    );
+RouteBase get socialOnboardingFriendsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialOnboardingFriends,
+  name: RouteNames.socialOnboardingFriends,
+  pageBuilder: (context, state) => SlideTransitionPage(
+    key: state.pageKey,
+    child: const SocialOnboardingFriendsScreen(),
+    direction: SlideDirection.fromLeft,
+  ),
+);
 
-RouteBase get socialOnboardingPrivacyRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialOnboardingPrivacy,
-      name: RouteNames.socialOnboardingPrivacy,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const SocialOnboardingPrivacyScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    );
+RouteBase get socialOnboardingPrivacyRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialOnboardingPrivacy,
+  name: RouteNames.socialOnboardingPrivacy,
+  pageBuilder: (context, state) => SlideTransitionPage(
+    key: state.pageKey,
+    child: const SocialOnboardingPrivacyScreen(),
+    direction: SlideDirection.fromLeft,
+  ),
+);
 
-RouteBase get socialOnboardingNotificationsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialOnboardingNotifications,
-      name: RouteNames.socialOnboardingNotifications,
-      pageBuilder: (context, state) => SlideTransitionPage(
-        key: state.pageKey,
-        child: const SocialOnboardingNotificationsScreen(),
-        direction: SlideDirection.fromLeft,
-      ),
-    );
+RouteBase get socialOnboardingNotificationsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialOnboardingNotifications,
+  name: RouteNames.socialOnboardingNotifications,
+  pageBuilder: (context, state) => SlideTransitionPage(
+    key: state.pageKey,
+    child: const SocialOnboardingNotificationsScreen(),
+    direction: SlideDirection.fromLeft,
+  ),
+);
 
-RouteBase get socialOnboardingCompleteRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialOnboardingComplete,
-      name: RouteNames.socialOnboardingComplete,
-      pageBuilder: (context, state) => ScaleTransitionPage(
-        key: state.pageKey,
-        child: const SocialOnboardingCompleteScreen(),
-      ),
-    );
+RouteBase get socialOnboardingCompleteRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialOnboardingComplete,
+  name: RouteNames.socialOnboardingComplete,
+  pageBuilder: (context, state) => ScaleTransitionPage(
+    key: state.pageKey,
+    child: const SocialOnboardingCompleteScreen(),
+  ),
+);

@@ -3318,6 +3318,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get region_country_Morocco => 'المغرب';
 
   @override
+  String get region_country_Qatar => 'قطر';
+
+  @override
+  String get region_country_Global => 'عالمي';
+
+  @override
   String region_error(String error) {
     return 'خطأ: $error';
   }

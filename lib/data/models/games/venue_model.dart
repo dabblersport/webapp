@@ -92,9 +92,7 @@ class VenueModel extends Venue {
       }
       if (totalRatings == 0) {
         totalRatings =
-            json['total_ratings'] as int? ??
-            json['rating_count'] as int? ??
-            0;
+            json['total_ratings'] as int? ?? json['rating_count'] as int? ?? 0;
       }
 
       // Extract amenities from venue_amenities join or amenities array
@@ -130,8 +128,7 @@ class VenueModel extends Venue {
       // Extract opening hours from opening_hours join (venue_id FK)
       String openingTime = '09:00';
       String closingTime = '18:00';
-      final hoursData =
-          json['opening_hours'] ?? json['venue_opening_hours'];
+      final hoursData = json['opening_hours'] ?? json['venue_opening_hours'];
       if (hoursData != null) {
         final hours = hoursData as List<dynamic>?;
         if (hours != null && hours.isNotEmpty) {
@@ -165,10 +162,7 @@ class VenueModel extends Venue {
         addressLine2:
             json['address_line2'] as String? ??
             json['address_line_2'] as String?,
-        city:
-            json['city'] as String? ??
-            json['area'] as String? ??
-            '',
+        city: json['city'] as String? ?? json['area'] as String? ?? '',
         state: json['district'] as String? ?? json['state'] as String? ?? '',
         country: json['country'] as String? ?? '',
         postalCode: json['postal_code'] as String? ?? '',

@@ -1,3 +1,5 @@
+import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/legal_content.dart'
@@ -195,10 +197,6 @@ class AuthAccountLine extends StatelessWidget {
   }
 }
 
-/// Seeds the region sheet's countries (render tests have no network).
-@visibleForTesting
-List<Map<String, dynamic>>? debugAuthCountries;
-
 /// The region and language chips that close the welcome and entry frames, and
 /// the two sheets they open.
 class AuthLocaleChips extends ConsumerStatefulWidget {
@@ -209,50 +207,9 @@ class AuthLocaleChips extends ConsumerStatefulWidget {
 }
 
 class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
-  List<Map<String, dynamic>> _countries = <Map<String, dynamic>>[];
-  bool _countriesLoading = true;
-
   @override
   void initState() {
     super.initState();
-    _fetchCountries();
-  }
-
-  Future<void> _fetchCountries() async {
-    final List<Map<String, dynamic>>? seeded = debugAuthCountries;
-    if (seeded != null) {
-      _countries = seeded;
-      _countriesLoading = false;
-      return;
-    }
-    try {
-      final dynamic response = await Supabase.instance.client
-          .from(SupabaseConfig.refCountriesTable)
-          .select('name_en, name_ar')
-          .eq('coverage', true)
-          .order('name_en');
-      if (mounted) {
-        setState(() {
-          _countries = (response as List).cast<Map<String, dynamic>>();
-          _countriesLoading = false;
-        });
-      }
-    } catch (_) {
-      if (mounted) setState(() => _countriesLoading = false);
-    }
-  }
-
-  /// Countries are persisted/selected by their English name (canonical id),
-  /// but displayed in the active locale when a translation is available.
-  String _localized(String englishName, String languageCode) {
-    if (languageCode != 'ar') return englishName;
-    for (final Map<String, dynamic> country in _countries) {
-      if (country['name_en'] == englishName) {
-        final String? ar = country['name_ar'] as String?;
-        if (ar != null && ar.isNotEmpty) return ar;
-      }
-    }
-    return englishName;
   }
 
   Future<void> _openLanguage() {
@@ -299,25 +256,26 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
       detent: DabblerSheetDetent.content,
       showCloseButton: false,
       builder: (BuildContext ctx) {
-        if (_countriesLoading) {
-          return const Center(child: DabblerSpinner());
-        }
         return Consumer(
           builder: (BuildContext ctx, WidgetRef ref, Widget? _) {
             final String? selected = ref
                 .watch(selectedCountryProvider)
                 .valueOrNull;
             final String languageCode = ref.watch(localeProvider).languageCode;
+            final String current = normalizeServiceRegion(selected);
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: <Widget>[
-                for (final Map<String, dynamic> c in _countries)
+                for (final (String c, String label) in serviceRegionOptions(
+                  AppLocalizations.of(ctx),
+                  languageCode,
+                ))
                   DabblerInputRow.option(
-                    title: _localized(c['name_en'] as String, languageCode),
-                    selected: c['name_en'] == selected,
+                    title: label,
+                    selected: c == current,
                     onTap: () => ref
                         .read(selectedCountryProvider.notifier)
-                        .setCountry(c['name_en'] as String),
+                        .setCountry(c),
                   ),
                 const DabblerGap.v(DabblerSpacing.space4),
                 _done(ctx),
@@ -335,8 +293,9 @@ class _AuthLocaleChipsState extends ConsumerState<AuthLocaleChips> {
     final String countryName = ref
         .watch(selectedCountryProvider)
         .maybeWhen(
-          data: (String c) => _localized(c, languageCode),
-          orElse: () => 'Global',
+          data: (String c) =>
+              serviceRegionLabel(AppLocalizations.of(context), c),
+          orElse: () => serviceRegionLabel(AppLocalizations.of(context), ''),
         );
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
