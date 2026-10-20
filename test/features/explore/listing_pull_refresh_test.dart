@@ -35,7 +35,8 @@ import '../meetups/meetup_screens_harness.dart';
 /// KAN-598: the feed's pull-to-refresh (DabblerRefresh) on the Games, Venues
 /// and Meetups listings: short, empty and failed lists refresh; the refresh
 /// waits for the real query and dismisses the loader on success or error;
-/// filters and the scroll position survive; one refresh runs at a time.
+/// an active filter survives (asserted on Games); one refresh runs at a time
+/// (asserted on the runner).
 
 const List<Sport> _sports = <Sport>[
   Sport(
