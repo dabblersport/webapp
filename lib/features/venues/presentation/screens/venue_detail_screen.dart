@@ -1,7 +1,10 @@
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:dabbler/data/models/games/venue.dart' as games_venue;
@@ -11,7 +14,10 @@ import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
 import 'package:dabbler/features/venues/providers.dart';
 import 'package:dabbler/features/venues/presentation/widgets/venue_amenity_chips.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show myProfileIdProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/helpers/share_links.dart';
 
 /// Venue details (D03), drawn from `Details.dc.html` "Venue details".
 ///
@@ -412,7 +418,31 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
     );
   }
 
-  void _shareVenue() => _snack('Sharing coming soon');
+  /// KAN-597: shares the full venue web link for the running environment. On web (no reliable share sheet) the link
+  /// is copied instead; the sharing profile id rides along as attribution only.
+  Future<void> _shareVenue() async {
+    final link = ShareLinks.venue(
+      widget.venueId,
+      sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+    );
+    if (kIsWeb) {
+      await Clipboard.setData(ClipboardData(text: link));
+      if (mounted) _snack(AppLocalizations.of(context).sfx_link_copied);
+      return;
+    }
+    final name = ref
+        .read(venueDetailProvider(widget.venueId))
+        .valueOrNull
+        ?.name;
+    try {
+      await SharePlus.instance.share(
+        ShareParams(uri: Uri.parse(link), title: name, subject: name),
+      );
+    } catch (_) {
+      await Clipboard.setData(ClipboardData(text: link));
+      if (mounted) _snack(AppLocalizations.of(context).sfx_link_copied);
+    }
+  }
 
   void _getDirections() {
     final async = ref.read(venueDetailProvider(widget.venueId));
