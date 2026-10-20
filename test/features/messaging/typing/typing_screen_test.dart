@@ -15,6 +15,7 @@ import 'package:dabbler/features/messaging/presentation/providers/messaging_real
 import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
 import 'package:dabbler/features/messaging/presentation/screens/game_chat_screen.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/dm_thread_parts.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/typing_row.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/typing_thread_item.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
@@ -189,13 +190,11 @@ Future<void> _shot(WidgetTester tester, String name) async {
 /// screen: the direct header carries a plain subtitle).
 final Finder _row = find.byType(DabblerTypingIndicator);
 
-/// The label of the thread's typing item, or null.
-String? _typingLabel(WidgetTester tester) => tester
-    .widget<DabblerMessageThread>(find.byType(DabblerMessageThread))
-    .items
-    .whereType<DabblerThreadTyping>()
-    .firstOrNull
-    ?.label;
+/// The label of the typing row (group only), or null.
+String? _typingLabel(WidgetTester tester) {
+  final f = find.byKey(TypingRowKeys.label);
+  return f.evaluate().isEmpty ? null : tester.widget<DabblerText>(f).data;
+}
 
 DabblerConversationHeader _header(WidgetTester tester) =>
     tester.widget<DabblerConversationHeader>(find.byKey(DmThreadKeys.header));
@@ -232,15 +231,16 @@ void main() {
         await _settle(tester);
         expect(_header(tester).subtitle, l10n.messaging_typing_dm);
         expect(_row, findsOneWidget);
-        // Direct: the dots bubble only, no label.
+        // Direct: the dots bubble only. No label, no avatar, no gutter: the
+        // bubble starts at the thread's own inline margin.
+        expect(find.byKey(TypingRowKeys.label), findsNothing);
+        expect(find.byKey(TypingRowKeys.avatar), findsNothing);
+        final rtl = v.locale.languageCode == 'ar';
+        final bubble = tester.getRect(find.byKey(TypingRowKeys.bubble));
+        final screen = tester.getRect(find.byType(GameChatScreen));
         expect(
-          tester
-              .widget<DabblerMessageThread>(find.byType(DabblerMessageThread))
-              .items
-              .whereType<DabblerThreadTyping>()
-              .single
-              .label,
-          isNull,
+          rtl ? screen.right - bubble.right : bubble.left - screen.left,
+          DabblerMessagingSpacing.timelineInline,
         );
         await _shot(tester, 'dm-typing-${v.name}');
 
@@ -391,6 +391,28 @@ void main() {
           l10n.messaging_typing_one(isolateName('Yousef Nabil')),
         );
         expect(find.text(_typingLabel(tester)!), findsOneWidget);
+        // First typer's avatar in the 28 px gutter, label on the sender line
+        // ABOVE the bubble, bubble starts after gutter + gap (design 10).
+        final rtl = v.locale.languageCode == 'ar';
+        final avatar = tester.widget<DabblerAvatar>(
+          find.byKey(TypingRowKeys.avatar),
+        );
+        expect(avatar.seed, 'u-2');
+        final avatarBox = tester.getRect(find.byKey(TypingRowKeys.avatar));
+        final labelBox = tester.getRect(find.byKey(TypingRowKeys.label));
+        final bubbleBox = tester.getRect(find.byKey(TypingRowKeys.bubble));
+        expect(labelBox.bottom, lessThanOrEqualTo(bubbleBox.top));
+        expect(bubbleBox.height, greaterThanOrEqualTo(40));
+        final gutterAndGap =
+            DabblerMessagingSpacing.avatarGutter +
+            DabblerMessagingSpacing.avatarGap;
+        if (rtl) {
+          expect(avatarBox.right - bubbleBox.right, greaterThanOrEqualTo(0));
+          expect(avatarBox.left, greaterThan(bubbleBox.right));
+        } else {
+          expect(avatarBox.right, lessThanOrEqualTo(bubbleBox.left));
+          expect(bubbleBox.left - avatarBox.left, gutterAndGap);
+        }
         // The group's top bar keeps the conversation identity (design 8).
         expect(find.byType(DabblerConversationHeader), findsNothing);
         await _shot(tester, 'group-one-${v.name}');

@@ -536,7 +536,16 @@ final RegExp _widgetClass = RegExp(
 );
 
 /// Reasoned, permanent exceptions to the fidelity gate (path -> reason).
-const Map<String, String> fidelityAllow = {};
+const Map<String, String> fidelityAllow = {
+  // KAN-579. The approved Messaging design (section 10, frames 25-26, 44,
+  // 47-48) specifies a TypingRow (avatar in the gutter, label above, a
+  // 40 px incoming-shaped bubble) that the design system does not ship yet;
+  // the only DS item, DabblerThreadTyping, has a different geometry. The
+  // row's bubble surface is hand-built from DS colour, radius, spacing and
+  // border tokens. Remove this entry when the DS adds TypingRow.
+  'lib/features/messaging/presentation/widgets/typing_row.dart':
+      'DS has no TypingRow (design section 10); bubble built from DS tokens',
+};
 
 List<GateHit> scanStructure(String path, String src) {
   final code = stripCode(src);

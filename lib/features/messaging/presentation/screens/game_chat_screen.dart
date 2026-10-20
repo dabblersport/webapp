@@ -24,7 +24,7 @@ import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
-import 'package:dabbler/features/messaging/presentation/widgets/typing_thread_item.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/typing_row.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/chat_composer_inset.dart';
@@ -240,7 +240,19 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           composer = _composer(l10n, view);
         case GameChatStatus.ready:
         case GameChatStatus.readOnly:
-          body = ChatStickToLatest(child: _thread(context, l10n, view));
+          body = ChatStickToLatest(
+            child: Column(
+              children: [
+                Expanded(child: _thread(context, l10n, view)),
+                // KAN-579: who is typing, under the thread, above the composer.
+                ChatTypingRow(
+                  conversationId: _conversationId,
+                  isDm: _isDm,
+                  dmName: view.dm?.counterpartName,
+                ),
+              ],
+            ),
+          );
           if (view.status == GameChatStatus.ready) {
             composer = _composer(l10n, view);
           } else if (view.dm?.readOnly != null) {
@@ -325,14 +337,6 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
       onRetry: _retry,
       includeSystem: !_isDm,
     );
-    // KAN-579: the "is typing" row closes the thread; a new message takes its place.
-    final typingItem = typingThreadItem(
-      ref,
-      l10n,
-      conversationId: _conversationId,
-      isDm: _isDm,
-    );
-    if (typingItem != null) items.add(typingItem);
     return DabblerMessageThread(
       key: GameChatScreen.threadKey,
       context: _isDm
