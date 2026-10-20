@@ -30,11 +30,12 @@ final Duration kStartupBackstop =
 Future<Result<T, Failure>> guardWithTimeout<T>(
   Future<T> Function() body, {
   Duration? timeout,
+  Failure Function(Object error)? mapError,
 }) {
   return Result.guard<T, Failure>(
     () => body().timeout(timeout ?? kRequestTimeout),
     (Object error) => error is TimeoutException
         ? TimeoutFailure(message: 'The request timed out', cause: error)
-        : Failure.from(error),
+        : (mapError ?? Failure.from)(error),
   );
 }

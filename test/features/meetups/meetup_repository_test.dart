@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/meetups/data/repositories/meetup_repository_impl.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
+import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
@@ -33,6 +36,21 @@ void main() {
     expect(r.isFailure, isTrue);
     expect(r.requireError.category, FailureCode.noInternet);
   }
+
+  test('KAN-603: a create that never answers ends as a timeout failure '
+      'after the shared wait', () {
+    fakeAsync((async) {
+      when(
+        ds.create(any, actorType: anyNamed('actorType')),
+      ).thenAnswer((_) => Completer<String>().future);
+      Result<String, Failure>? out;
+      repo.create(create).then((r) => out = r);
+      async.elapse(kRequestTimeout + const Duration(seconds: 1));
+      expect(out, isNotNull);
+      expect(out!.requireError.category, FailureCode.timeout);
+      expect(out!.requireError, isA<TimeoutFailure>());
+    });
+  });
 
   test('create ok + failure', () async {
     when(

@@ -3,8 +3,10 @@ import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:supabase_flutter/supabase_flutter.dart' show PostgrestException;
 
 /// KAN-603: online / offline / poor, and the reconnect event. No UI.
 void main() {
@@ -105,6 +107,31 @@ void main() {
     os.add([ConnectivityResult.mobile]);
     await settle();
     expect(n.state, ConnectionStatus.poor);
+  });
+
+  test('real guarded requests drive the state: a SocketException or a '
+      'TimeoutException makes it poor, a success clears it', () async {
+    await make();
+    expect(n.state, ConnectionStatus.online);
+    await Result.guard<int, Failure>(
+      () async => throw const SocketException('x'),
+      Failure.from,
+    );
+    expect(n.state, ConnectionStatus.poor);
+    await Result.guard<int, Failure>(() async => 1, Failure.from);
+    expect(n.state, ConnectionStatus.online);
+    await Result.guard<int, Failure>(
+      () async => throw TimeoutException('x'),
+      Failure.from,
+    );
+    expect(n.state, ConnectionStatus.poor);
+    // A server error is not a link problem.
+    await Result.guard<int, Failure>(() async => 1, Failure.from);
+    await Result.guard<int, Failure>(
+      () async => throw const PostgrestException(message: 'x', code: '500'),
+      Failure.from,
+    );
+    expect(n.state, ConnectionStatus.online);
   });
 
   test('the provider is exported from lib/providers.dart', () {

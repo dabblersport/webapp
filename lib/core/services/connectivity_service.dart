@@ -5,6 +5,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart'
     show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/errors/request_outcome.dart';
 import 'package:dabbler/core/fp/failure.dart';
 
 /// Am I online (KAN-603): the one source of truth.
@@ -35,6 +36,9 @@ class ConnectivityNotifier extends StateNotifier<ConnectionStatus> {
       onError: (Object _) {},
     );
     unawaited(_initial());
+    // Real request outcomes (every guarded data call) feed the state.
+    RequestOutcome.onFailure = reportFailure;
+    RequestOutcome.onSuccess = reportSuccess;
   }
 
   final DateTime Function() _now;
@@ -109,6 +113,10 @@ class ConnectivityNotifier extends StateNotifier<ConnectionStatus> {
 
   @override
   void dispose() {
+    if (RequestOutcome.onFailure == reportFailure) {
+      RequestOutcome.onFailure = null;
+      RequestOutcome.onSuccess = null;
+    }
     _poorTimer?.cancel();
     _sub.cancel();
     _reconnects.close();

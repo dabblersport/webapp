@@ -1,3 +1,4 @@
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'dart:async';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
@@ -264,6 +265,9 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The one connection state stays alive for the whole app (KAN-603): it
+    // listens to the OS and to every guarded request's outcome.
+    ref.watch(connectivityProvider);
     final locale = ref.watch(localeProvider);
     ref.listen<UserProfile?>(currentUserProfileProvider, (prev, next) {
       if (next == null) return;
