@@ -59,10 +59,12 @@
                 <action android:name="android.intent.action.VIEW" />
                 <category android:name="android.intent.category.DEFAULT" />
                 <category android:name="android.intent.category.BROWSABLE" />
-                <data
-                    android:scheme="https"
-                    android:host="app.dabbler.pro"
-                    android:pathPrefix="/game" />
+                <data android:scheme="https" android:host="app.dabbler.pro" />
+                <data android:pathPrefix="/game/" />
+                <data android:pathPrefix="/post/" />
+                <data android:pathPrefix="/venue/" />
+                <data android:pathPrefix="/meetups/" />
+                <data android:pathPrefix="/u/" />
             </intent-filter>
         </activity>
         <!-- Route background FCM notifications into the same channel the app

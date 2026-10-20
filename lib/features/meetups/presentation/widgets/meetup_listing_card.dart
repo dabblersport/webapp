@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show myProfileIdProvider;
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
     show GamesSkillFilter, gamesSkillTierFor, gamesSkillTierLabel;
@@ -91,7 +93,10 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
       context.isolate(widget.meetup.title),
     );
     return ref.read(meetupShareProvider)(
-      RoutePaths.meetupLink(widget.meetup.id),
+      RoutePaths.meetupLink(
+        widget.meetup.id,
+        sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+      ),
       context.isolateTrailing(headline, 'Dabbler'),
     );
   }

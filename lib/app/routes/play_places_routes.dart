@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_guard.dart';
 import 'package:dabbler/features/favourites/presentation/screens/favourites_screen.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
@@ -97,11 +98,19 @@ RouteBase get sportsVenuesVenueIdRoute =>
 RouteBase get gameGameIdRoute =>
     GoRoute(
       path: '/game/:gameId',
-      redirect: (context, state) {
-        final gameId = state.pathParameters['gameId'];
-        if (gameId == null || gameId.isEmpty) return RoutePaths.gamesTab;
-        return '/sports/games/$gameId';
-      },
+      redirect: (context, state) =>
+          // KAN-597: validated once; a malformed id lands on Home, never an error page.
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
+    );
+
+// KAN-597: https://<origin>/venue/:venueId (the shared venue link) → /sports/venues/:venueId.
+RouteBase get venueShareLinkRoute =>
+    GoRoute(
+      path: '/venue/:venueId',
+      redirect: (context, state) =>
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
     );
 
 // Legacy /sports top-level redirect handled inside the shell branch above.
