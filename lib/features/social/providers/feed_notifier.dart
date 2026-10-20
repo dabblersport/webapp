@@ -6,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
+import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
 import 'post_providers.dart';
 
@@ -196,7 +198,15 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final result = await _repo.getPostsByIds([postId]);
     if (!mounted) return;
 
-    result.fold((_) => null, (posts) {
+    // KAN-593: a realtime insert into 'For you' obeys the Following filter.
+    final followed = await loadViewerFollowedSportIds(_db);
+    if (!mounted) return;
+    result.fold((_) => null, (fetched) {
+      final posts = filterByFollowedSports(
+        fetched,
+        followed,
+        (Post p) => p.sportId,
+      );
       if (posts.isEmpty) return;
       final data = state;
       if (data is! FeedData) return;
@@ -380,8 +390,15 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final postsById = <String, FeedPostItem>{};
     if (postIds.isNotEmpty) {
       final result = await _repo.getPostsByIds(postIds);
+      // KAN-593: 'For you' is a discovery feed — apply the Following filter
+      // here, not in getPostsByIds (which also serves direct links).
+      final followed = await loadViewerFollowedSportIds(_db);
       result.fold((_) => null, (posts) {
-        for (final p in posts) {
+        for (final p in filterByFollowedSports(
+          posts,
+          followed,
+          (Post p) => p.sportId,
+        )) {
           postsById[p.id] = FeedPostItem(p);
         }
       });
