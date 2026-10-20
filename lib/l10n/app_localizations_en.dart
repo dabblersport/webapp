@@ -3340,6 +3340,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_set_location => 'Set location';
 
   @override
+  String get manual_location_cities_divider => 'Cities';
+
+  @override
+  String get manual_location_areas_divider => 'Areas';
+
+  @override
   String location_last_known_label(String place) {
     return '$place · Last known';
   }

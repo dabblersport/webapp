@@ -90,6 +90,32 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
     }
   }
 
+  /// A city alone (KAN-586): no area or point, so distance controls stay off
+  /// until an area is chosen; city content stays usable.
+  Future<void> _selectCity(String city) async {
+    final toast = DabblerToastProvider.of(context);
+    final l10n = AppLocalizations.of(context);
+    await ref.read(activeLocationProvider.notifier).useManualCity(city);
+    if (!mounted) return;
+    Navigator.pop(context);
+    toast.show(
+      DabblerToastSpec(
+        message: l10n.manual_location_set_toast(city),
+        tone: DabblerToastTone.success,
+      ),
+    );
+  }
+
+  List<String> get _filteredCities {
+    final String q = _searchController.text.trim().toLowerCase();
+    final List<String> all = <String>{
+      for (final LocationData l in UAELocations.cities) l.city,
+    }.toList();
+    return q.isEmpty
+        ? all
+        : all.where((String c) => c.toLowerCase().contains(q)).toList();
+  }
+
   Future<void> _useCurrentLocation() async {
     final toast = DabblerToastProvider.of(context);
     final l10n = AppLocalizations.of(context);
@@ -155,7 +181,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
             padding: EdgeInsets.all(DabblerSpacing.space10),
             child: Center(child: DabblerSpinner()),
           )
-        else if (_filteredLocations.isEmpty)
+        else if (_filteredLocations.isEmpty && _filteredCities.isEmpty)
           Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(
@@ -164,7 +190,34 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
               text: AppLocalizations.of(context).manual_location_empty_text,
             ),
           )
-        else
+        else ...<Widget>[
+          if (_filteredCities.isNotEmpty) ...<Widget>[
+            DabblerDivider(
+              label: AppLocalizations.of(
+                context,
+              ).manual_location_cities_divider,
+            ),
+            const DabblerGap.v(DabblerSpacing.space4),
+            for (final String city in _filteredCities) ...<Widget>[
+              DabblerInputRow(
+                flat: true,
+                onTap: () => _selectCity(city),
+                leading: const DabblerIcon(
+                  'location',
+                  size: DabblerSizing.iconRow,
+                ),
+                title: city,
+                trailing: const DabblerChevron(),
+                semanticLabel: city,
+              ),
+              const DabblerGap.v(DabblerSpacing.space2),
+            ],
+            const DabblerGap.v(DabblerSpacing.space4),
+            DabblerDivider(
+              label: AppLocalizations.of(context).manual_location_areas_divider,
+            ),
+            const DabblerGap.v(DabblerSpacing.space4),
+          ],
           for (final LocationData location in _filteredLocations) ...<Widget>[
             _LocationTile(
               location: location,
@@ -172,6 +225,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
             ),
             const DabblerGap.v(DabblerSpacing.space2),
           ],
+        ],
       ],
     );
   }

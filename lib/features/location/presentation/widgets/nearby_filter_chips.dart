@@ -73,12 +73,16 @@ List<Widget> nearbySortChips(
 ) {
   final AppLocalizations l = AppLocalizations.of(context);
   final NearbySortOrder sort = ref.watch(sortProvider);
+  // Nearest needs a point: off until an area or location is chosen (KAN-586).
+  final bool canUse = ref.watch(distanceControlsEnabledProvider);
   return <Widget>[
     DabblerChip(
       label: l.listing_sort_nearest,
-      selected: sort == NearbySortOrder.nearest,
-      onTap: () =>
-          ref.read(sortProvider.notifier).state = NearbySortOrder.nearest,
+      selected: canUse && sort == NearbySortOrder.nearest,
+      onTap: !canUse
+          ? null
+          : () =>
+                ref.read(sortProvider.notifier).state = NearbySortOrder.nearest,
     ),
     DabblerChip(
       label: l.listing_sort_soonest,

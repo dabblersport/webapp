@@ -92,10 +92,16 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   /// 3. No saved location: [ActiveLocationLoading] now, and the background
   ///    attempt settles it (a position, or denied / error).
   Future<ActiveLocationState> _initialise() async {
-    // 0. This device's own choice (KAN-586): a Manual selection wins over the
-    // saved primary and over any GPS upgrade, and survives a restart.
+    // 0. This device's own choice (KAN-586): it wins over the saved primary
+    // and over any GPS upgrade, whatever its mode, and survives a restart.
     final stored = (await _store())?.read();
-    if (stored != null && stored.mode == DeviceLocationMode.manual) {
+    if (stored != null) {
+      if (stored.mode == DeviceLocationMode.manual || !stored.hasPoint) {
+        return _fromDeviceLocation(stored);
+      }
+      // Stored Auto: show the stored fix at once, then let a silent GPS read
+      // refresh it; if that fails it stays, labelled last known.
+      _backgroundGpsRefresh(markLastKnownOnMiss: true);
       return _fromDeviceLocation(stored);
     }
 
@@ -154,6 +160,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   void _backgroundGpsRefresh({
     ActiveLocation? currentSaved,
     bool settleWhenUnsaved = false,
+    bool markLastKnownOnMiss = false,
   }) {
     // On the event queue, after the build that started it has completed.
     Future<void>(() async {
@@ -166,6 +173,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           cap: GpsService.fixCap,
         );
         if (result is! LocationSuccess) {
+          if (markLastKnownOnMiss) {
+            final last = await _lastKnownReady();
+            if (last != null) state = AsyncData(last);
+            return;
+          }
           if (settleWhenUnsaved && state.valueOrNull is ActiveLocationLoading) {
             // Auto is unavailable: the last known location, labelled, if
             // there is one; otherwise the denied / error state.

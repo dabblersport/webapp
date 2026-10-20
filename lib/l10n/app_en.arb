@@ -1236,6 +1236,8 @@
   "region_error": "Error: {error}",
   "@region_error": {"placeholders": {"error": {"type": "String"}}},
   "listing_set_location": "Set location",
+  "manual_location_cities_divider": "Cities",
+  "manual_location_areas_divider": "Areas",
   "location_last_known_label": "{place} · Last known",
   "@location_last_known_label": {"placeholders": {"place": {"type": "String"}}},
   "listing_search": "Search",
