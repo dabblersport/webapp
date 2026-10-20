@@ -3,6 +3,7 @@
 // quiet-hours window, fed by the existing notification-settings controller.
 // The full screen stays at /settings/notifications.
 
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -14,7 +15,7 @@ import 'package:intl/intl.dart';
 /// Opens the sheet over the current route.
 void showNotifPrefsSheet(BuildContext context) {
   final l10n = AppLocalizations.of(context);
-  showDabblerSheet<void>(
+  showAppSheet<void>(
     context: context,
     title: l10n.notif_prefs_title,
     detent: DabblerSheetDetent.content,

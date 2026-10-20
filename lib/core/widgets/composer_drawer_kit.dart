@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart' show ValueListenable;
 import 'package:flutter/widgets.dart';
@@ -33,8 +34,10 @@ class ComposerFrameScope extends InheritedWidget {
 /// Wraps [builder] so the sheet it builds keeps the Create Post design frame
 /// when [opener] is inside it (a sheet is pushed on the root navigator, outside
 /// the opener's tree). Returns [builder] itself otherwise.
-WidgetBuilder composerFrameBuilder(BuildContext opener, WidgetBuilder builder) =>
-    ComposerFrameScope.active(opener)
+WidgetBuilder composerFrameBuilder(
+  BuildContext opener,
+  WidgetBuilder builder,
+) => ComposerFrameScope.active(opener)
     ? (ctx) => ComposerFrameScope(child: builder(ctx))
     : builder;
 
@@ -154,7 +157,11 @@ const double _kAdaptiveCompactWidth = 600;
 extension on ComposerDrawerShell {
   /// The Create Post frame (`Home Feed.dc.html:470-574`): handle, title row,
   /// then one scroll area that ends with the Post button under a hairline.
-  Widget _buildFrame(BuildContext context, bool keyboardOpen, double safeBottom) {
+  Widget _buildFrame(
+    BuildContext context,
+    bool keyboardOpen,
+    double safeBottom,
+  ) {
     final colors = DabblerColors.of(context);
     // The frame's sheet is its `max-height: 94%` cap whenever the content
     // fills it (the scroll area is `flex: 1`, `Home Feed.dc.html:481`; measured
@@ -569,7 +576,7 @@ Future<T?> showComposerSheet<T>(
   String? subtitle,
   VoidCallback? onClear,
   ComposerSheetConfirm? confirm,
-}) => showDabblerSheet<T>(
+}) => showAppSheet<T>(
   context: context,
   title: title,
   titleWidget: composerSheetTitle(title, subtitle: subtitle),
@@ -861,7 +868,9 @@ class ComposerSearchField extends StatelessWidget {
       // glyph, flush with the sheet's 18dp gutter (the sheet already pads its
       // body), 12dp above the list.
       return Padding(
-        padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
+        padding: const EdgeInsetsDirectional.only(
+          bottom: DabblerSpacing.space4,
+        ),
         child: DabblerTextField(
           variant: DabblerTextFieldVariant.search,
           metrics: DabblerFeedMetrics.drawn,

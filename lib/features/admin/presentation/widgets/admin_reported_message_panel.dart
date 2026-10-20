@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -17,7 +18,7 @@ Future<void> showAdminReportedMessagePanel({
   required String reportId,
 }) {
   final l10n = AppLocalizations.of(context);
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     detent: DabblerSheetDetent.content,
     title: l10n.admin_message_reports_panel_title,

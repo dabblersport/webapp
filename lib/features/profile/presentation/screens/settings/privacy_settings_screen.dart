@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/data/models/profile/privacy_settings.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
@@ -398,7 +399,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
       title: title,
       subtitle: subtitle,
       value: _audienceLabel(l10n, value),
-      onTap: () => showDabblerSheet<void>(
+      onTap: () => showAppSheet<void>(
         context: context,
         title: title,
         detent: DabblerSheetDetent.content,

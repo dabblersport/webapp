@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -15,7 +16,7 @@ Future<DateTime?> showBirthDateSheet({
   required DateTime firstDate,
   required DateTime lastDate,
 }) {
-  return showDabblerSheet<DateTime>(
+  return showAppSheet<DateTime>(
     context: context,
     title: AppLocalizations.of(context).onb_dob_label,
     detent: DabblerSheetDetent.content,

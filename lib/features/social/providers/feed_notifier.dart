@@ -6,7 +6,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
+import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show activePersonaProvider;
 import 'post_providers.dart';
 
 // =============================================================================
@@ -107,13 +111,17 @@ final class FeedData extends FeedState {
 ///   1. Opens a Realtime channel subscribed to INSERT/DELETE/UPDATE on [posts].
 ///   2. Calls [load] to fetch the initial page via [get_home_feed].
 class FeedNotifier extends StateNotifier<FeedState> {
-  FeedNotifier(this._repo, this._db) : super(const FeedLoading()) {
+  FeedNotifier(this._repo, this._db, {this.activePersonaType})
+    : super(const FeedLoading()) {
     _subscribeRealtime();
     load();
   }
 
   final PostRepository _repo;
   final SupabaseClient _db;
+
+  /// KAN-593: active persona whose Following filters 'For you'.
+  final String? activePersonaType;
   RealtimeChannel? _channel;
 
   static const int _pageSize = 20;
@@ -196,7 +204,18 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final result = await _repo.getPostsByIds([postId]);
     if (!mounted) return;
 
-    result.fold((_) => null, (posts) {
+    // KAN-593: a realtime insert into 'For you' obeys the Following filter.
+    final followed = await loadViewerFollowedSportIds(
+      _db,
+      personaType: activePersonaType,
+    );
+    if (!mounted) return;
+    result.fold((_) => null, (fetched) {
+      final posts = filterByFollowedSports(
+        fetched,
+        followed,
+        (Post p) => p.sportId,
+      );
       if (posts.isEmpty) return;
       final data = state;
       if (data is! FeedData) return;
@@ -380,8 +399,18 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final postsById = <String, FeedPostItem>{};
     if (postIds.isNotEmpty) {
       final result = await _repo.getPostsByIds(postIds);
+      // KAN-593: 'For you' is a discovery feed — apply the Following filter
+      // here, not in getPostsByIds (which also serves direct links).
+      final followed = await loadViewerFollowedSportIds(
+        _db,
+        personaType: activePersonaType,
+      );
       result.fold((_) => null, (posts) {
-        for (final p in posts) {
+        for (final p in filterByFollowedSports(
+          posts,
+          followed,
+          (Post p) => p.sportId,
+        )) {
           postsById[p.id] = FeedPostItem(p);
         }
       });
@@ -472,5 +501,7 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((
 ) {
   final repo = ref.watch(postRepositoryProvider);
   final db = Supabase.instance.client;
-  return FeedNotifier(repo, db);
+  // KAN-593: rebuilt (and so reloaded) when the active persona switches.
+  final persona = ref.watch(activePersonaProvider)?.name;
+  return FeedNotifier(repo, db, activePersonaType: persona);
 });

@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/services/theme_categories.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
@@ -211,7 +212,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
     TimeOfDay currentTime,
     ValueChanged<TimeOfDay> onTimeChanged,
   ) async {
-    final time = await showDabblerSheet<TimeOfDay>(
+    final time = await showAppSheet<TimeOfDay>(
       context: context,
       title: title,
       detent: DabblerSheetDetent.content,

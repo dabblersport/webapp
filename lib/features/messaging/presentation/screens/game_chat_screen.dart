@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -378,7 +379,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         final ok = await _controller.setMuted(!view.isMuted);
         if (mounted && !ok) setState(() => _muteFailed = true);
       case DmThreadAction.block:
-        await showDabblerSheet<void>(
+        await showAppSheet<void>(
           context: context,
           detent: DabblerSheetDetent.content,
           title: AppLocalizations.of(context).messaging_block_title,

@@ -8,6 +8,7 @@ import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
@@ -473,9 +474,9 @@ void main() {
       await _settle(tester);
       expect(tester.takeException(), isNull);
       // No header hairline.
-      final DabblerSheetRoute<void> route = ModalRoute.of(
+      final AppSheetRoute<void> route = ModalRoute.of(
         tester.element(find.byType(DabblerSheet)),
-      )! as DabblerSheetRoute<void>;
+      )! as AppSheetRoute<void>;
       expect(route.headerDivider, isFalse);
       // Clear is still the text-tone DabblerButton (ink), under the old chrome.
       final Finder clear = find.widgetWithText(DabblerButton, 'Clear');

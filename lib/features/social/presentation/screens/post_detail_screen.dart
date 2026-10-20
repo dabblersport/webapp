@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -268,7 +269,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
 
   /// A content-sized sheet holding a column of full-width buttons.
   void _showActionSheet(List<Widget> Function(BuildContext ctx) buttons) {
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       builder: (ctx) => DabblerSheetBody(

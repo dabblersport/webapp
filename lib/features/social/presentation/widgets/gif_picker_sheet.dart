@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
 import 'dart:convert';
 
@@ -14,7 +15,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 Future<void> showGifPickerSheet(
   BuildContext context, {
   required ValueChanged<String> onSelected,
-}) => showDabblerSheet<void>(
+}) => showAppSheet<void>(
   context: context,
   title: AppLocalizations.of(context).composer_search_gifs,
   detent: DabblerSheetDetent.content,

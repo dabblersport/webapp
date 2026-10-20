@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/services/mock_localization_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
@@ -95,7 +96,7 @@ class _LanguageSelectionScreenState
     required String current,
     required ValueChanged<String> onSelect,
   }) {
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       title: title,
       detent: DabblerSheetDetent.content,

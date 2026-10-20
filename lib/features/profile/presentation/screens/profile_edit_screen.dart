@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/utils/enums/game_enums.dart'
     show skillBandIndexForValue;
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -368,7 +369,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     required String category,
     required List<Sport> sports,
   }) async {
-    await showDabblerSheet<void>(
+    await showAppSheet<void>(
       context: context,
       title: category,
       detent: DabblerSheetDetent.content,
@@ -408,7 +409,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       return;
     }
 
-    await showDabblerSheet<void>(
+    await showAppSheet<void>(
       context: context,
       title: 'Choose your avatar',
       detent: DabblerSheetDetent.content,
@@ -1028,7 +1029,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   // ============================================================================
 
   void _showAddAvailabilityDialog(BuildContext context) {
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       title: 'Add Availability',
       detent: DabblerSheetDetent.content,

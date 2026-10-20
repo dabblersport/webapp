@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
@@ -7,7 +8,7 @@ void showTransactionDetails(
   BuildContext context,
   Map<String, dynamic> transaction,
 ) {
-  showDabblerSheet<void>(
+  showAppSheet<void>(
     context: context,
     detent: DabblerSheetDetent.content,
     builder: (context) => TransactionDetailsSheet(transaction: transaction),

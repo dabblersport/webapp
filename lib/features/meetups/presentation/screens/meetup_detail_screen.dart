@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
@@ -175,7 +176,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
   /// The overflow menu: Report. A host does not report their own meetup.
   void _openMore(MeetupCard c) {
     final l = AppLocalizations.of(context);
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       title: l.meetups_more,

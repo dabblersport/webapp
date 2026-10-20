@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -34,7 +35,7 @@ Future<void> showListingFilterSheet(
   required WidgetBuilder footerBuilder,
   required VoidCallback onReset,
 }) {
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     // `max-height: 80%` around its content, on the page colour.
     detent: DabblerSheetDetent.content,

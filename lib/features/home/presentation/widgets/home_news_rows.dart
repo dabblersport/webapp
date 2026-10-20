@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -131,7 +132,7 @@ Future<void> showHomeNewsReactionPicker(
   String newsId,
   Set<String> mine,
 ) {
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     title: 'React',
     detent: DabblerSheetDetent.content,

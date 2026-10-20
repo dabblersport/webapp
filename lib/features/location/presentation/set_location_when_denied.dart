@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/services/location_permission_state.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -13,7 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Opens the one manual location drawer, titled "Set location".
 Future<void> showSetLocationDrawer(BuildContext context) {
-  return showDabblerSheet<void>(
+  return showAppSheet<void>(
     context: context,
     title: AppLocalizations.of(context).listing_set_location,
     detent: DabblerSheetDetent.content,

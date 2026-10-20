@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -279,7 +280,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
 
   void _showRepostMenu() {
     final l10n = AppLocalizations.of(context);
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       builder: (ctx) => DabblerSheetBody(
@@ -312,7 +313,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
 
   void _showMoreMenu({required bool isAuthor, required String authorName}) {
     final l10n = AppLocalizations.of(context);
-    showDabblerSheet<void>(
+    showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       dragHandle: true,

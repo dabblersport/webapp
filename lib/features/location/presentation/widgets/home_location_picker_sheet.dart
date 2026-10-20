@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 // Route type only (non-visual): "Add location" keeps its existing push.
 import 'package:flutter/material.dart' show MaterialPageRoute;
@@ -57,7 +58,7 @@ class HomeLocationPickerSheet extends ConsumerStatefulWidget {
   /// `height: auto`, page background, Cancel/Done pill, no close button).
   static Future<void> show(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
-    return showDabblerSheet<void>(
+    return showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
       contentMaxFraction: DabblerSheet.contentMaxFractionCompact,
