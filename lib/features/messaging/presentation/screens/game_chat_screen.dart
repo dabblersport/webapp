@@ -13,6 +13,7 @@ import 'package:dabbler/features/messaging/presentation/providers/messages_list_
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/chat_gif_providers.dart';
 import 'package:dabbler/features/messaging/domain/typing.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
@@ -494,5 +495,21 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           _typing?.draftChanged(v);
         },
         onSend: _send,
+        // KAN-582: the attach control opens the app's GIPHY picker. The
+        // composer exists only while the chat is writable, so membership,
+        // block and closed-chat rules gate this exactly as they gate text.
+        onAttach: _openGifPicker,
+        attachLabel: l10n.messaging_chat_attach_gif,
       );
+
+  void _openGifPicker() {
+    _typing?.stop();
+    ref.read(chatGifPickerProvider)(
+      context,
+      onSelected: (url) {
+        if (!mounted) return;
+        ref.read(_provider.notifier).send(url);
+      },
+    );
+  }
 }

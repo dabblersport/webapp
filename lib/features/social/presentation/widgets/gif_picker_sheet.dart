@@ -12,6 +12,9 @@ import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Opens the GIPHY picker as a design-system sheet. [onSelected] receives the
 /// chosen GIF's URL; the sheet closes itself.
+///
+/// This is THE app's GIF integration (GIPHY, `Environment.giphyApiKey`): the
+/// post and comment composers and the chat composer (KAN-582) all open it.
 Future<void> showGifPickerSheet(
   BuildContext context, {
   required ValueChanged<String> onSelected,
@@ -29,10 +32,28 @@ Future<void> showGifPickerSheet(
 
 // GIF PICKER SHEET (GIPHY)
 
+/// What the picker is showing instead of results (KAN-582).
+enum GifPickerFailure {
+  /// The request could not be made: no connection, a timeout.
+  offline,
+
+  /// The provider answered with an error, nonsense, or no key is configured.
+  unavailable,
+}
+
 class GifPickerSheet extends StatefulWidget {
-  const GifPickerSheet({super.key, required this.onSelected});
+  /// [client] and [apiKey] default to a plain `package:http` client and
+  /// `Environment.giphyApiKey`; they exist so tests need no network.
+  const GifPickerSheet({
+    super.key,
+    required this.onSelected,
+    this.client,
+    this.apiKey,
+  });
 
   final ValueChanged<String> onSelected;
+  final http.Client? client;
+  final String? apiKey;
 
   @override
   State<GifPickerSheet> createState() => _GifPickerSheetState();
@@ -45,7 +66,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
   Timer? _debounce;
   List<Map<String, dynamic>> _results = [];
   bool _loading = false;
-  String? _error;
+  GifPickerFailure? _failure;
   int _offset = 0;
   bool _hasMore = true;
   String _apiKey = '';
@@ -53,12 +74,12 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
   @override
   void initState() {
     super.initState();
-    _apiKey = Environment.giphyApiKey;
+    _apiKey = widget.apiKey ?? Environment.giphyApiKey;
     if (_apiKey.isEmpty) {
-      _error = 'GIPHY API key not configured';
+      _failure = GifPickerFailure.unavailable;
       return;
     }
-    _loadTrending();
+    _loadFirstPage();
   }
 
   @override
@@ -68,29 +89,40 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
     super.dispose();
   }
 
-  Future<void> _loadTrending() async {
+  Future<http.Response> _get(Uri uri) =>
+      widget.client != null ? widget.client!.get(uri) : http.get(uri);
+
+  Uri _uri(String query, int offset) {
+    final params = <String, String>{
+      'api_key': _apiKey,
+      'limit': '30',
+      'offset': '$offset',
+      'rating': 'pg-13',
+      'bundle': 'messaging_non_clips',
+    };
+    if (query.isNotEmpty) params['q'] = query;
+    return Uri.parse(
+      '$_baseUrl/${query.isEmpty ? 'trending' : 'search'}',
+    ).replace(queryParameters: params);
+  }
+
+  /// The first page of trending (blank query) or search results, replacing
+  /// what is shown.
+  Future<void> _loadFirstPage() async {
+    final query = _searchController.text.trim();
     setState(() {
       _loading = true;
-      _error = null;
+      _failure = null;
       _offset = 0;
       _hasMore = true;
     });
     try {
-      final uri = Uri.parse('$_baseUrl/trending').replace(
-        queryParameters: {
-          'api_key': _apiKey,
-          'limit': '30',
-          'offset': '0',
-          'rating': 'pg-13',
-          'bundle': 'messaging_non_clips',
-        },
-      );
-      final response = await http.get(uri);
+      final response = await _get(_uri(query, 0));
       if (!mounted) return;
       if (response.statusCode != 200) {
         setState(() {
           _loading = false;
-          _error = 'Failed to load GIFs';
+          _failure = GifPickerFailure.unavailable;
         });
         return;
       }
@@ -103,62 +135,22 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
         _hasMore = (pagination?['total_count'] as int? ?? 0) > _offset;
         _loading = false;
       });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'Failed to load GIFs';
-      });
+    } on FormatException {
+      _fail(GifPickerFailure.unavailable);
+    } on TypeError {
+      _fail(GifPickerFailure.unavailable);
+    } catch (_) {
+      // The request itself failed: no connection, a timeout, a refused host.
+      _fail(GifPickerFailure.offline);
     }
   }
 
-  Future<void> _search(String query) async {
-    if (query.trim().isEmpty) {
-      _loadTrending();
-      return;
-    }
+  void _fail(GifPickerFailure failure) {
+    if (!mounted) return;
     setState(() {
-      _loading = true;
-      _error = null;
-      _offset = 0;
-      _hasMore = true;
+      _loading = false;
+      _failure = failure;
     });
-    try {
-      final uri = Uri.parse('$_baseUrl/search').replace(
-        queryParameters: {
-          'api_key': _apiKey,
-          'q': query,
-          'limit': '30',
-          'offset': '0',
-          'rating': 'pg-13',
-          'bundle': 'messaging_non_clips',
-        },
-      );
-      final response = await http.get(uri);
-      if (!mounted) return;
-      if (response.statusCode != 200) {
-        setState(() {
-          _loading = false;
-          _error = 'Search failed';
-        });
-        return;
-      }
-      final body = jsonDecode(response.body) as Map<String, dynamic>;
-      final data = (body['data'] as List).cast<Map<String, dynamic>>();
-      final pagination = body['pagination'] as Map<String, dynamic>?;
-      setState(() {
-        _results = data;
-        _offset = 30;
-        _hasMore = (pagination?['total_count'] as int? ?? 0) > _offset;
-        _loading = false;
-      });
-    } catch (e) {
-      if (!mounted) return;
-      setState(() {
-        _loading = false;
-        _error = 'Search failed';
-      });
-    }
   }
 
   Future<void> _loadMore() async {
@@ -166,19 +158,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
     final query = _searchController.text.trim();
     setState(() => _loading = true);
     try {
-      final endpoint = query.isEmpty ? 'trending' : 'search';
-      final params = <String, String>{
-        'api_key': _apiKey,
-        'limit': '30',
-        'offset': '$_offset',
-        'rating': 'pg-13',
-        'bundle': 'messaging_non_clips',
-      };
-      if (query.isNotEmpty) params['q'] = query;
-      final uri = Uri.parse(
-        '$_baseUrl/$endpoint',
-      ).replace(queryParameters: params);
-      final response = await http.get(uri);
+      final response = await _get(_uri(query, _offset));
       if (!mounted) return;
       if (response.statusCode == 200) {
         final body = jsonDecode(response.body) as Map<String, dynamic>;
@@ -201,9 +181,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
 
   void _onSearchChanged(String value) {
     _debounce?.cancel();
-    _debounce = Timer(DabblerMotion.debounceSearch, () {
-      _search(value);
-    });
+    _debounce = Timer(DabblerMotion.debounceSearch, _loadFirstPage);
   }
 
   /// Extract the full-size GIF URL to store in the post media list.
@@ -229,13 +207,34 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
     final Widget results;
-    if (_error != null) {
-      results = ComposerCenteredState.message(_error!, icon: 'danger');
+    if (_failure != null) {
+      final offline = _failure == GifPickerFailure.offline;
+      results = Padding(
+        padding: const EdgeInsets.all(DabblerSpacing.space2),
+        child: Align(
+          alignment: AlignmentDirectional.topStart,
+          child: DabblerBanner(
+            key: offline ? GifPickerKeys.offline : GifPickerKeys.unavailable,
+            tone: offline ? DabblerBannerTone.warning : DabblerBannerTone.error,
+            title: offline
+                ? l10n.composer_gif_offline_title
+                : l10n.composer_gif_unavailable_title,
+            message: offline
+                ? l10n.composer_gif_offline_text
+                : l10n.composer_gif_unavailable_text,
+            action: DabblerBannerAction(
+              label: l10n.composer_gif_retry,
+              onPressed: _apiKey.isEmpty ? null : _loadFirstPage,
+            ),
+          ),
+        ),
+      );
     } else if (_loading && _results.isEmpty) {
       results = const ComposerCenteredState.loading();
     } else if (_results.isEmpty) {
-      results = const ComposerCenteredState.message('No GIFs found');
+      results = ComposerCenteredState.message(l10n.composer_gif_empty);
     } else {
       results = NotificationListener<ScrollNotification>(
         onNotification: (notification) {
@@ -286,7 +285,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
       children: [
         ComposerSearchField(
           controller: _searchController,
-          placeholder: 'Search GIPHY...',
+          placeholder: l10n.composer_gif_search_placeholder,
           onChanged: _onSearchChanged,
         ),
         ComposerScrollArea(fraction: 0.55, child: results),
@@ -300,7 +299,7 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
           ),
           child: Center(
             child: DabblerText(
-              'Powered by GIPHY',
+              l10n.composer_gif_attribution,
               style: DabblerType.caption2,
               tone: DabblerTextTone.secondary,
             ),
@@ -309,4 +308,9 @@ class _GifPickerSheetState extends State<GifPickerSheet> {
       ],
     );
   }
+}
+
+abstract final class GifPickerKeys {
+  static const offline = ValueKey<String>('gif-picker-offline');
+  static const unavailable = ValueKey<String>('gif-picker-unavailable');
 }

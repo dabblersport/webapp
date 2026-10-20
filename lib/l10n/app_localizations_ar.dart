@@ -6830,4 +6830,38 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_typing_someone => 'أحد الأعضاء';
+
+  @override
+  String get composer_gif_search_placeholder => 'ابحث في GIPHY…';
+
+  @override
+  String get composer_gif_attribution => 'مدعوم من GIPHY';
+
+  @override
+  String get composer_gif_empty => 'لم يتم العثور على صور GIF';
+
+  @override
+  String get composer_gif_offline_title => 'أنت غير متصل';
+
+  @override
+  String get composer_gif_offline_text => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get composer_gif_unavailable_title => 'صور GIF غير متاحة حاليًا';
+
+  @override
+  String get composer_gif_unavailable_text =>
+      'يمكنك الاستمرار في إرسال النصوص. حاول لاحقًا.';
+
+  @override
+  String get composer_gif_retry => 'حاول مرة أخرى';
+
+  @override
+  String get messaging_chat_attach_gif => 'إضافة صورة GIF';
+
+  @override
+  String get messaging_gif_badge => 'GIF عبر GIPHY';
+
+  @override
+  String get messaging_gif_semantic => 'صورة GIF من GIPHY';
 }

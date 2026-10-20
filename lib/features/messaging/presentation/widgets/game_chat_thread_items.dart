@@ -1,6 +1,7 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dabbler/features/messaging/domain/gif_message.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
@@ -72,6 +73,8 @@ List<DabblerThreadItem> gameChatThreadItems({
     // Own: a pending send, or a server message carrying our idempotency key.
     final own = m == null || item.clientKey != null || m.clientKey != null;
     final key = item.clientKey;
+    // KAN-582: a body that is one GIPHY media URL is drawn as a GIF.
+    final gifUrl = gifUrlOfBody(item.body);
     out.add(
       DabblerThreadMessage(
         id: m?.id ?? key,
@@ -81,7 +84,19 @@ List<DabblerThreadItem> gameChatThreadItems({
         sender: own ? null : m.senderUserId,
         avatarSeed: own ? null : m.senderUserId,
         showSender: false,
-        content: item.body,
+        content: gifUrl == null ? item.body : null,
+        attachment: gifUrl == null
+            ? null
+            : DabblerMessageAttachment.image(
+                child: DabblerImage(
+                  url: gifUrl,
+                  width: DabblerMessage.imageSize.width,
+                  height: DabblerMessage.imageSize.height,
+                  radius: DabblerRadius.lgAll,
+                  semanticLabel: l10n.messaging_gif_semantic,
+                  overlay: DabblerBadge(label: l10n.messaging_gif_badge),
+                ),
+              ),
         timestamp: time,
         deliveryState: switch (item.state) {
           OutgoingState.sending => DabblerDeliveryState.sending,
