@@ -3334,6 +3334,11 @@ class AppLocalizationsEn extends AppLocalizations {
   String get listing_set_location => 'Set location';
 
   @override
+  String location_last_known_label(String place) {
+    return '$place · Last known';
+  }
+
+  @override
   String get listing_search => 'Search';
 
   @override

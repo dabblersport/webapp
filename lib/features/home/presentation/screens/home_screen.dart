@@ -1,3 +1,4 @@
+import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'dart:async';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 
@@ -1113,10 +1114,11 @@ class _HomeHeader extends ConsumerWidget {
         displayName ?? profile?.displayName ?? profile?.username ?? 'User';
     final unread = ref.watch(unreadNotificationCountProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
-    final locationName = locState is ActiveLocationReady
-        ? locState.location.area.name
-        : AppLocalizations.of(context).listing_set_location;
-    final denied = locState is ActiveLocationDenied;
+    final locationName = activeLocationLabel(
+      AppLocalizations.of(context),
+      locState,
+    );
+    final denied = activeLocationNeedsManualChange(locState);
 
     final leading = Column(
       crossAxisAlignment: CrossAxisAlignment.start,

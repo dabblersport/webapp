@@ -3326,6 +3326,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get listing_set_location => 'حدد الموقع';
 
   @override
+  String location_last_known_label(String place) {
+    return '$place · آخر موقع معروف';
+  }
+
+  @override
   String get listing_search => 'بحث';
 
   @override

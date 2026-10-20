@@ -1234,6 +1234,8 @@
   "region_error": "Error: {error}",
   "@region_error": {"placeholders": {"error": {"type": "String"}}},
   "listing_set_location": "Set location",
+  "location_last_known_label": "{place} · Last known",
+  "@location_last_known_label": {"placeholders": {"place": {"type": "String"}}},
   "listing_search": "Search",
   "listing_filters": "Filters",
   "listing_reset": "Reset",

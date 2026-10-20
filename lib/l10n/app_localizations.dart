@@ -6029,6 +6029,12 @@ abstract class AppLocalizations {
   /// **'Set location'**
   String get listing_set_location;
 
+  /// No description provided for @location_last_known_label.
+  ///
+  /// In en, this message translates to:
+  /// **'{place} · Last known'**
+  String location_last_known_label(String place);
+
   /// No description provided for @listing_search.
   ///
   /// In en, this message translates to:

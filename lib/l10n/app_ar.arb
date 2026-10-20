@@ -1375,6 +1375,7 @@
   "region_country_Morocco": "المغرب",
   "region_error": "خطأ: {error}",
   "listing_set_location": "حدد الموقع",
+  "location_last_known_label": "{place} · آخر موقع معروف",
   "listing_search": "بحث",
   "listing_filters": "الفلاتر",
   "listing_reset": "إعادة ضبط",

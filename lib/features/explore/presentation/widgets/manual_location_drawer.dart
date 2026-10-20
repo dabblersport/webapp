@@ -57,7 +57,13 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
       // read it), persisted so the choice survives a restart.
       await ref
           .read(activeLocationProvider.notifier)
-          .useManualPoint(location.lat, location.lng, location.displayName);
+          .useManualPoint(
+            location.lat,
+            location.lng,
+            location.displayName,
+            city: location.city,
+            area: location.area,
+          );
 
       if (mounted) {
         Navigator.pop(context);
