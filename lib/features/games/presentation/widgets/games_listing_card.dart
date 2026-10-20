@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show myProfileIdProvider;
 import 'dart:async';
 
 import 'package:dabbler/core/fp/result.dart';
@@ -23,7 +25,10 @@ import 'package:share_plus/share_plus.dart';
 /// Taps the heart: the card flips at once (optimistic, in
 /// [toggleGameFavourite]), then the toast says what the server settled on, or
 /// that it could not be updated (the card has rolled back by then).
-Future<void> _toggleFavourite(BuildContext context, NearbyGameModel game) async {
+Future<void> _toggleFavourite(
+  BuildContext context,
+  NearbyGameModel game,
+) async {
   final container = ProviderScope.containerOf(context, listen: false);
   final ok = await toggleGameFavourite(container, game);
   if (!context.mounted) return;
@@ -163,7 +168,12 @@ class GamesListingCard extends ConsumerWidget {
             semanticLabel: l.listing_share_game,
             onTap: () => SharePlus.instance.share(
               ShareParams(
-                uri: Uri.parse(RoutePaths.gameLink(game.id)),
+                uri: Uri.parse(
+                  RoutePaths.gameLink(
+                    game.id,
+                    sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+                  ),
+                ),
                 title: game.title,
                 subject: game.title,
               ),

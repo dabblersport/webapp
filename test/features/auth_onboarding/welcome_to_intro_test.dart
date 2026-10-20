@@ -175,6 +175,30 @@ void main() {
     });
   }
 
+  // KAN-597: a shared-link entry goes straight to the item: no Welcome stop and no location introduction.
+  for (final returning in <bool>[true, false]) {
+    testWidgets(
+      '${returning ? 'Welcome Back' : 'Welcome'} with a pending shared link '
+      'continues to Home by itself and skips the location intro',
+      (tester) async {
+        routerRefreshNotifier.setPendingDeepLink(
+          '/sports/games/3f1c2a9e-8b7d-4c6e-9a5f-0d1e2b3c4d5e',
+        );
+        addTearDown(routerRefreshNotifier.consumePendingDeepLink);
+        final g = _Gateway(() async => LocationPermission.denied);
+        await _pump(tester, g, returning: returning);
+        await tester.runAsync(
+          () => Future<void>.delayed(const Duration(milliseconds: 100)),
+        );
+        await tester.pump(const Duration(milliseconds: 500));
+        await tester.pump(const Duration(milliseconds: 500));
+        expect(find.byType(LocationIntroScreen), findsNothing);
+        expect(find.text('HOME-SENTINEL'), findsOneWidget);
+        expect(g.requests, 0);
+      },
+    );
+  }
+
   group('decideLocationIntro (why it shows or skips)', () {
     const store = LocationIntroStore();
     test(

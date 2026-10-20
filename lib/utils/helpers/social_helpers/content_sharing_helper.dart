@@ -5,12 +5,13 @@ import 'package:http/http.dart' as http;
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
-import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/utils/helpers/share_links.dart';
 
 /// Helper class for content sharing operations
 /// Handles text generation, deep linking, and social sharing
 class ContentSharingHelper {
-  static const String baseUrl = RoutePaths.webLinkBase;
+  /// The share origin of the running environment (KAN-597), never a fixed production host.
+  static String get baseUrl => ShareLinks.origin();
   static const int maxShareTextLength = 200;
 
   /// Generates appropriate share text based on content type

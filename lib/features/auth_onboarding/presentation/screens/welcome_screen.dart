@@ -57,6 +57,13 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       fields: const ['avatar_url', 'display_name'],
     );
     _resolvePosterSport();
+    // KAN-597: a shared-link entry (including a first sign-up) does not stop on Welcome; it continues straight to the
+    // item once this screen is up.
+    if (routerRefreshNotifier.hasPendingDeepLink) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _continue();
+      });
+    }
   }
 
   /// The sign-up's selected sport arrives with the route; otherwise (Welcome
@@ -116,6 +123,12 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     // the welcome guard and navigate in one step, so no router refresh sends
     // the user Home in between.
     final container = ProviderScope.containerOf(context, listen: false);
+    // KAN-597: someone who came in through a shared link goes straight to the item: no location introduction.
+    if (routerRefreshNotifier.hasPendingDeepLink) {
+      routerRefreshNotifier.clearPostLoginWelcome(notify: false);
+      context.go(RoutePaths.home);
+      return;
+    }
     final show = await shouldShowLocationIntro(
       userId: container.read(locationIntroUserIdProvider),
       gateway: container.read(locationPermissionGatewayProvider),

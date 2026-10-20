@@ -56,6 +56,11 @@ on:
         type: choice
         options: [none, testflight]
         default: none
+      web_link_base:
+        description: "Optional (KAN-597). The https origin share links use in this build, e.g. https://alpha.dabbler.pro for an Alpha build. Empty = the production origin. Only *.dabbler.pro is accepted."
+        type: string
+        required: false
+        default: ""
       app_environment:
         description: "Value of the app's ENVIRONMENT define"
         type: choice
@@ -344,6 +349,7 @@ jobs:
           # Public URL of the messaging Worker (not a secret): a repository VARIABLE, same name as the web build's.
           MESSAGING_API_BASE_URL: ${{ vars.MESSAGING_API_BASE_URL }}
           APP_ENVIRONMENT: ${{ needs.prepare.outputs.app_environment }}
+          WEB_LINK_BASE: ${{ inputs.web_link_base }}
           VNAME: ${{ needs.prepare.outputs.version_name }}
         run: |
           set -euo pipefail
@@ -356,6 +362,8 @@ jobs:
           # Messaging is on in the committed flags, so a build without its Worker URL would show "Couldn't load your chats".
           [[ "${MESSAGING_API_BASE_URL:-}" == https://* ]] || { echo "::error::repository variable MESSAGING_API_BASE_URL is empty or not an https URL"; exit 1; }
           [[ -n "$BUILD_NUMBER" ]] || { echo "::error::no build number resolved"; exit 1; }
+          # Share links must carry the build's own environment (KAN-597). Empty = production; otherwise https on *.dabbler.pro only.
+          [[ -z "${WEB_LINK_BASE:-}" || "$WEB_LINK_BASE" =~ ^https://([a-z0-9-]+\.)*dabbler\.pro$ ]] || { echo "::error::web_link_base must be empty or an https://*.dabbler.pro origin"; exit 1; }
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           flutter build ipa --release \
             --build-name="$VNAME" --build-number="$BUILD_NUMBER" \
@@ -366,7 +374,8 @@ jobs:
             --dart-define=APP_NAME="$APP_NAME" \
             --dart-define=ENVIRONMENT="$APP_ENVIRONMENT" \
             --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
-            --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL"
+            --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL" \
+            --dart-define=WEB_LINK_BASE="${WEB_LINK_BASE:-}"
           IPA="$(ls build/ios/ipa/*.ipa | head -1)"
           test -f "$IPA" || { echo "::error::no IPA was produced"; exit 1; }
           echo "IPA_PATH=$IPA" >> "$GITHUB_ENV"

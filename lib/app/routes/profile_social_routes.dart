@@ -5,6 +5,7 @@
 // `_PlaceholderScreen` -> `PlaceholderScreen` are renamed. Declaration order is
 // preserved by lib/app/app_router.dart's `_routes`, not by this file.
 
+import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -336,6 +337,23 @@ RouteBase get socialPostDetailPostIdRoute =>
           child: PostDetailScreen(postId: postId),
         );
       },
+    );
+
+// KAN-597: https://<origin>/post/:postId and /u/:profileId (the shared post and profile links).
+RouteBase get postShareLinkRoute =>
+    GoRoute(
+      path: '/post/:postId',
+      redirect: (context, state) =>
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
+    );
+
+RouteBase get profileShareLinkRoute =>
+    GoRoute(
+      path: '/u/:profileId',
+      redirect: (context, state) =>
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
     );
 
 RouteBase get userProfileUserIdRoute =>

@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show myProfileIdProvider;
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -101,7 +103,12 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     // instead of plain text. The headline rides along as title/subject.
     SharePlus.instance.share(
       ShareParams(
-        uri: Uri.parse(RoutePaths.gameLink(game.id)),
+        uri: Uri.parse(
+          RoutePaths.gameLink(
+            game.id,
+            sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+          ),
+        ),
         title: headline,
         subject: headline,
       ),

@@ -2,11 +2,29 @@
   "applinks": {
     "details": [
       {
-        "appIDs": ["J5636UH8V8.app.dabbler.pro"],
+        "appIDs": [
+          "J5636UH8V8.app.dabbler.pro"
+        ],
         "components": [
           {
             "/": "/game/*",
-            "comment": "Open game detail in the Dabbler app"
+            "comment": "Open the shared game in the Dabbler app"
+          },
+          {
+            "/": "/post/*",
+            "comment": "Open the shared post in the Dabbler app"
+          },
+          {
+            "/": "/venue/*",
+            "comment": "Open the shared venue in the Dabbler app"
+          },
+          {
+            "/": "/meetups/*",
+            "comment": "Open the shared meetup in the Dabbler app"
+          },
+          {
+            "/": "/u/*",
+            "comment": "Open the shared profile in the Dabbler app"
           }
         ]
       }

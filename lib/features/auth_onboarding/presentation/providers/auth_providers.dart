@@ -53,11 +53,41 @@ class RouterRefreshNotifier extends ChangeNotifier {
   /// login/signup + onboarding. No notifyListeners —
   /// it's only consulted inside the redirect handler.
   String? _pendingDeepLink;
-  String? get pendingDeepLink => _pendingDeepLink;
-  void setPendingDeepLink(String location) => _pendingDeepLink = location;
+  DateTime? _pendingDeepLinkAt;
+
+  /// How long a stashed shared link survives a cancelled or abandoned login (KAN-597). After this it is dropped, so a
+  /// link tapped hours ago cannot hijack an unrelated later login.
+  static const int pendingDeepLinkTtlMinutes = 30;
+  static const Duration pendingDeepLinkTtl = Duration(
+    minutes: pendingDeepLinkTtlMinutes,
+  );
+
+  /// Injectable clock for tests.
+  DateTime Function() clock = DateTime.now;
+
+  bool get _pendingExpired =>
+      _pendingDeepLinkAt != null &&
+      clock().difference(_pendingDeepLinkAt!) > pendingDeepLinkTtl;
+
+  String? get pendingDeepLink {
+    if (_pendingDeepLink != null && _pendingExpired) {
+      _pendingDeepLink = null;
+      _pendingDeepLinkAt = null;
+    }
+    return _pendingDeepLink;
+  }
+
+  bool get hasPendingDeepLink => pendingDeepLink != null;
+
+  void setPendingDeepLink(String location) {
+    _pendingDeepLink = location;
+    _pendingDeepLinkAt = clock();
+  }
+
   String? consumePendingDeepLink() {
-    final link = _pendingDeepLink;
+    final link = pendingDeepLink;
     _pendingDeepLink = null;
+    _pendingDeepLinkAt = null;
     return link;
   }
 }

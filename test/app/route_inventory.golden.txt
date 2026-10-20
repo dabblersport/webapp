@@ -38,6 +38,9 @@
 /sports/venues/:venueId	venue-detail	GoRoute
 /favourites	favourites	GoRoute
 /game/:gameId	-	GoRoute
+/venue/:venueId	-	GoRoute
+/post/:postId	-	GoRoute
+/u/:profileId	-	GoRoute
 /social	social	GoRoute
 /sports-explore	sports	GoRoute
 /activities	activities	GoRoute

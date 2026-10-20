@@ -2412,5 +2412,6 @@
   "messaging_meetup_kind_time": "لقاء · {time}",
   "messaging_meetup_chat_open": "محادثة اللقاء",
   "messaging_meetup_chat_semantic": "فتح محادثة اللقاء",
-  "messaging_meetup_chat_unavailable": "محادثة اللقاء غير متاحة بعد"
+  "messaging_meetup_chat_unavailable": "محادثة اللقاء غير متاحة بعد",
+  "email_password_error_profile_failed": "تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى."
 }

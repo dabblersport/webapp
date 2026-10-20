@@ -6759,4 +6759,8 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_meetup_chat_unavailable => 'محادثة اللقاء غير متاحة بعد';
+
+  @override
+  String get email_password_error_profile_failed =>
+      'تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى.';
 }

@@ -166,7 +166,10 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     final l = AppLocalizations.of(context);
     final headline = l.meetups_share_headline(context.isolate(c.title ?? ''));
     return ref.read(meetupShareProvider)(
-      RoutePaths.meetupLink(c.id),
+      RoutePaths.meetupLink(
+        c.id,
+        sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+      ),
       // The brand token is Latin inside an Arabic sentence: isolate it so the
       // trailing '!' resolves to the RTL run. LTR output is untouched.
       context.isolateTrailing(headline, 'Dabbler'),

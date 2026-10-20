@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
@@ -164,14 +165,22 @@ class AppRouter {
       // signup/login ends on the game details screen.
       final gateBlocked = !isAuthenticated;
       if (gateBlocked) {
+        // KAN-597: every shared-item link (post, venue, game, meetup, profile) is validated once, here. A malformed
+        // one is not stashed (the user lands on the normal entry, never an error page); a valid one is remembered with
+        // its destination and, if present and valid, its sharer (attribution only, never identity).
         String? deepLinkTarget;
-        if (loc.startsWith('/sports/games/')) {
-          deepLinkTarget = loc;
-        } else if (loc.startsWith('/meetups/')) {
-          deepLinkTarget = loc;
-        } else if (loc.startsWith('/game/')) {
-          final id = loc.substring('/game/'.length);
-          if (id.isNotEmpty) deepLinkTarget = '/sports/games/$id';
+        final entry = DeepLinks.resolve(
+          state.uri,
+          malformedFallback: RoutePaths.home,
+        );
+        if (entry != null) {
+          if (entry != RoutePaths.home) deepLinkTarget = entry;
+        } else if (loc.startsWith('/sports/games/') ||
+            loc.startsWith('/sports/venues/') ||
+            loc.startsWith('/social-post-detail/') ||
+            loc.startsWith('/user-profile/') ||
+            loc.startsWith('/meetups/')) {
+          deepLinkTarget = state.uri.toString();
         }
         if (deepLinkTarget != null) {
           routerRefreshNotifier.setPendingDeepLink(deepLinkTarget);
@@ -218,6 +227,12 @@ class AppRouter {
       // Must run before onboarding step enforcement to prevent the async
       // checkResumeState() from short-circuiting returning users into
       // createUserInfo.
+      // KAN-597: a user who came in through a shared link goes straight to the item: no Welcome / Welcome Back.
+      if (isAuthenticated &&
+          routerRefreshNotifier.needsPostLoginWelcome &&
+          routerRefreshNotifier.hasPendingDeepLink) {
+        routerRefreshNotifier.clearPostLoginWelcome(notify: false);
+      }
       if (isAuthenticated &&
           routerRefreshNotifier.needsPostLoginWelcome &&
           loc != RoutePaths.welcome &&
@@ -394,6 +409,9 @@ class AppRouter {
     sportsVenuesVenueIdRoute,
     favouritesRoute,
     gameGameIdRoute,
+    venueShareLinkRoute,
+    postShareLinkRoute,
+    profileShareLinkRoute,
     socialRoute,
     sportsExploreRoute,
     activitiesRoute,
