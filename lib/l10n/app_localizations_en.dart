@@ -6313,6 +6313,33 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_chat_offline_retry => 'Try again';
 
   @override
+  String get offline_banner_offline => 'No internet connection – offline mode';
+
+  @override
+  String get offline_banner_poor => 'Poor connection – updates may be slow';
+
+  @override
+  String get offline_saved_content_hint => 'Showing saved content';
+
+  @override
+  String get offline_refresh_failed =>
+      'Couldn\'t refresh. Showing saved content.';
+
+  @override
+  String get offline_load_more_failed => 'Couldn\'t load more. Tap to retry.';
+
+  @override
+  String get offline_setting_not_synced => 'Not synced. Tap to retry.';
+
+  @override
+  String get offline_auth_error_generic =>
+      'We couldn\'t complete sign-in. Check your connection and try again.';
+
+  @override
+  String get offline_bootstrap_failed =>
+      'Couldn\'t start the app. Please try again.';
+
+  @override
   String get messaging_chat_error => 'Couldn\'t load this chat. Try again.';
 
   @override
