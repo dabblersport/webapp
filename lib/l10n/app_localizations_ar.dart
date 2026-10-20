@@ -6366,6 +6366,35 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messaging_chat_offline_retry => 'حاول مرة أخرى';
 
   @override
+  String get offline_banner_offline =>
+      'لا يوجد اتصال بالإنترنت – وضع عدم الاتصال';
+
+  @override
+  String get offline_banner_poor => 'الاتصال ضعيف – قد يتأخر التحديث';
+
+  @override
+  String get offline_saved_content_hint => 'نعرض لك المحتوى المحفوظ';
+
+  @override
+  String get offline_refresh_failed =>
+      'تعذّر التحديث. نعرض لك المحتوى المحفوظ.';
+
+  @override
+  String get offline_load_more_failed =>
+      'تعذّر تحميل المزيد. اضغط لإعادة المحاولة.';
+
+  @override
+  String get offline_setting_not_synced =>
+      'لم تتم المزامنة. اضغط لإعادة المحاولة.';
+
+  @override
+  String get offline_auth_error_generic =>
+      'تعذّر إكمال تسجيل الدخول. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get offline_bootstrap_failed => 'تعذّر تشغيل التطبيق. حاول مرة أخرى.';
+
+  @override
   String get messaging_chat_error => 'تعذّر تحميل هذه الدردشة. حاول مرة أخرى.';
 
   @override

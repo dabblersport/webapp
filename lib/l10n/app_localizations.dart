@@ -11357,6 +11357,54 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get messaging_chat_offline_retry;
 
+  /// KAN-609 Offline banner text when the device has no internet connection and the app shows saved content (banner visual: its own design ticket). Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection – offline mode'**
+  String get offline_banner_offline;
+
+  /// KAN-609 Banner text when the connection is slow or unstable; content still loads in the background. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor connection – updates may be slow'**
+  String get offline_banner_poor;
+
+  /// KAN-609 Short hint shown with cached feed, listings, profile or detail content while it is not fresh. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing saved content'**
+  String get offline_saved_content_hint;
+
+  /// KAN-609 Non-blocking message (toast or inline line) when a refresh fails and the cached content stays on screen. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing saved content.'**
+  String get offline_refresh_failed;
+
+  /// KAN-609 Tappable row at the end of a list when loading the next page fails; tapping retries. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more. Tap to retry.'**
+  String get offline_load_more_failed;
+
+  /// KAN-609 Visible failure state next to a setting that was saved on the device but could not be synced; tapping retries. Wire in: KAN-608.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced. Tap to retry.'**
+  String get offline_setting_not_synced;
+
+  /// KAN-609 Generic localized replacement for raw sign-in and one-time-code (OTP) error text. Never append the raw error. Wire in: KAN-606.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t complete sign-in. Check your connection and try again.'**
+  String get offline_auth_error_generic;
+
+  /// KAN-609 Message of the start-up failure screen (shown before the app and its localization are ready). Wire in: KAN-602.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the app. Please try again.'**
+  String get offline_bootstrap_failed;
+
   /// No description provided for @messaging_chat_error.
   ///
   /// In en, this message translates to:
