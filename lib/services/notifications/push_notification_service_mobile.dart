@@ -460,22 +460,11 @@ class PushNotificationService {
         status == AuthorizationStatus.provisional) {
       try {
         await _configurePlatform();
+        // KAN-572: no Darwin initialize here. _configurePlatform already
+        // initialized local notifications on Android; initializing them on
+        // iOS takes over the UNUserNotificationCenter delegate, which FCM's
+        // native foreground presentation and onMessageOpenedApp rely on.
         await _activate();
-
-        // Initialize local notifications with tap callback
-        const androidInit = AndroidInitializationSettings(
-          '@mipmap/ic_launcher',
-        );
-        const darwinInit = DarwinInitializationSettings();
-        const initSettings = InitializationSettings(
-          android: androidInit,
-          iOS: darwinInit,
-          macOS: darwinInit,
-        );
-        await _localNotificationsPlugin.initialize(
-          initSettings,
-          onDidReceiveNotificationResponse: _onLocalNotificationTap,
-        );
       } catch (e) {
         debugPrint('Push activation error: $e');
       }

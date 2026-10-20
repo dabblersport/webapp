@@ -45,3 +45,4 @@ jobs:
           python3 scripts/android/test_play_publish.py
           python3 scripts/ios/test_asc_release.py
           python3 scripts/test_mobile_tracking.py
+          python3 scripts/test_check_google_client_id.py

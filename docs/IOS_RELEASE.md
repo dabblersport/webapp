@@ -75,7 +75,7 @@ need them:
 
 App configuration (client-safe allowlist only): `SUPABASE_URL`, `SUPABASE_ANON_KEY`,
 `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID`. `SUPABASE_DB_URL` and every other
-backend secret are never referenced. Mobile builds also need the repository VARIABLE `MESSAGING_API_BASE_URL` (the messaging Worker's public URL, not a secret; set with `gh variable set`): the build passes it as `--dart-define` like the web build does and **fails fast when it is empty or not an https URL**, because with the messaging flags on a build without it shows "Couldn't load your chats" (KAN-568, found on TestFlight 1.7.9 build 178).
+backend secret are never referenced. Mobile builds also need the repository VARIABLE `MESSAGING_API_BASE_URL` (the messaging Worker's public URL, not a secret; set with `gh variable set`): the build passes it as `--dart-define` like the web build does and **fails fast when it is empty or not an https URL**, because with the messaging flags on a build without it shows "Couldn't load your chats" (KAN-568, found on TestFlight 1.7.9 build 178). `GOOGLE_WEB_CLIENT_ID` must be the project's WEB OAuth client (`client_type` 3 in `android/app/google-services.json`), because the app compiles it as the Google `serverClientId`; `scripts/check_google_client_id.py` makes the build fail when it is empty or equals an Android client id (`client_type` 1), which would give Google sign-in ApiException 10 (KAN-571). The value is a public client id, not a key.
 
 Local backups of the signing material live outside the app repository, in
 `Dabbler/.release-credentials/ios` and `~/.config/dabbler-release/credentials`; never commit them.

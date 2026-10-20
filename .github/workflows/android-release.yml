@@ -12,7 +12,8 @@
 #   GOOGLE_PLAY_SERVICE_ACCOUNT_JSON
 # App configuration comes from the client-safe allowlist only:
 #   SUPABASE_URL  SUPABASE_ANON_KEY  SUPABASE_PUBLISHABLE_KEY  APP_NAME  GOOGLE_WEB_CLIENT_ID
-# plus the public repository VARIABLE MESSAGING_API_BASE_URL (the messaging Worker's URL; the build refuses to run without it)
+# plus the public repository VARIABLE MESSAGING_API_BASE_URL (the messaging Worker's URL; the build refuses to run without it).
+# GOOGLE_WEB_CLIENT_ID must be the WEB OAuth client (client_type 3 in android/app/google-services.json); the build refuses an empty value or an Android client id.
 # (+ ENVIRONMENT from the app_environment input). Backend-only secrets (for example
 # SUPABASE_DB_URL) are never referenced by this workflow.
 name: Android release
@@ -282,6 +283,8 @@ jobs:
           # An empty Web client id silently ships a broken Google sign-in (the native flow then gets no id token),
           # so refuse it the same way (KAN-570). A Google Web OAuth client id always ends in .apps.googleusercontent.com.
           [[ "${GOOGLE_WEB_CLIENT_ID:-}" == *.apps.googleusercontent.com ]] || { echo "::error::secret GOOGLE_WEB_CLIENT_ID is empty or not a Google Web OAuth client id"; exit 1; }
+          # The Google serverClientId must be the WEB OAuth client, never the Android one (KAN-571: ApiException 10).
+          python3 scripts/check_google_client_id.py android/app/google-services.json
           # Messaging is on in the committed flags, so a build without its Worker URL would show "Couldn't load your chats".
           [[ "${MESSAGING_API_BASE_URL:-}" == https://* ]] || { echo "::error::repository variable MESSAGING_API_BASE_URL is empty or not an https URL"; exit 1; }
           flutter build appbundle --release \
