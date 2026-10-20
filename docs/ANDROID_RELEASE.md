@@ -143,6 +143,7 @@ Repository **Actions secrets** in `dabblersport/webapp`:
 | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` | Play API: service account `dabbler-android-release@dabblersportapp.iam.gserviceaccount.com`, app-scoped release permissions only |
 | `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_PUBLISHABLE_KEY`, `APP_NAME`, `GOOGLE_WEB_CLIENT_ID` | Client-safe app configuration (shared with the web build) |
 | (note) `GOOGLE_WEB_CLIENT_ID` | The build **fails** if it is empty or not a `*.apps.googleusercontent.com` id (KAN-570): an empty value ships a broken Google sign-in |
+| (workflow input) `web_link_base` | Optional (KAN-597). The https origin share links carry in this build: `https://alpha.dabbler.pro` for an Alpha build. Empty = production. Only `*.dabbler.pro` is accepted. Passed as `WEB_LINK_BASE`. |
 | (variable, not a secret) `MESSAGING_API_BASE_URL` | The messaging Worker's public URL; required by the build |
 
 Handling: the keystore and `android/key.properties` exist only on the runner during the run
