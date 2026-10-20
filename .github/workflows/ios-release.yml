@@ -350,6 +350,8 @@ jobs:
           MESSAGING_API_BASE_URL: ${{ vars.MESSAGING_API_BASE_URL }}
           APP_ENVIRONMENT: ${{ needs.prepare.outputs.app_environment }}
           WEB_LINK_BASE: ${{ inputs.web_link_base }}
+          # Optional (KAN-582): empty means the GIF picker shows its not-configured state. Added by the CEO as a repository secret.
+          GIPHY_API_KEY: ${{ secrets.GIPHY_API_KEY }}
           VNAME: ${{ needs.prepare.outputs.version_name }}
         run: |
           set -euo pipefail
@@ -375,7 +377,8 @@ jobs:
             --dart-define=ENVIRONMENT="$APP_ENVIRONMENT" \
             --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
             --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL" \
-            --dart-define=WEB_LINK_BASE="${WEB_LINK_BASE:-}"
+            --dart-define=WEB_LINK_BASE="${WEB_LINK_BASE:-}" \
+            --dart-define=GIPHY_API_KEY="${GIPHY_API_KEY:-}"
           IPA="$(ls build/ios/ipa/*.ipa | head -1)"
           test -f "$IPA" || { echo "::error::no IPA was produced"; exit 1; }
           echo "IPA_PATH=$IPA" >> "$GITHUB_ENV"
