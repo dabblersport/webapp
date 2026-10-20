@@ -19,8 +19,12 @@ import 'post_repository.dart';
 /// All visibility filtering is handled by RLS + `can_view_post()` at the
 /// database level. This repository intentionally keeps queries minimal.
 class PostRepositoryImpl extends BaseRepository implements PostRepository {
-  PostRepositoryImpl(super.svc);
+  PostRepositoryImpl(super.svc, {this.activePersonaType});
   SupabaseClient get _db => svc.client;
+
+  /// KAN-593: the ACTIVE persona (`PersonaType.name`); its own Following
+  /// governs the discovery feeds. `null` = unknown → no filter.
+  final String? activePersonaType;
 
   // ── In-memory enrichment (no FK joins required) ─────────────────
 
@@ -368,7 +372,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   }) => guard(() async {
     // KAN-593: discovery feed — Following filter in the query.
     final followOr = followedSportsOrFilter(
-      await loadViewerFollowedSportIds(_db),
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
     );
     var homeQuery = _db
         .from(SupabaseConfig.postsTable)
@@ -400,7 +404,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       (response as List<dynamic>)
           .map((e) => Map<String, dynamic>.from(e as Map))
           .toList(),
-      await loadViewerFollowedSportIds(_db),
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
       (r) => r['sport_id'] as String?,
     );
     final enriched = await _enrichRows(rows);
@@ -469,7 +473,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     List<Map<String, dynamic>> rows;
     // KAN-593: discovery feed — Following filter in the query.
     final followOr = followedSportsOrFilter(
-      await loadViewerFollowedSportIds(_db),
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
     );
 
     if (lat != null && lng != null) {

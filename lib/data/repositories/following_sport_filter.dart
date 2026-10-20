@@ -61,23 +61,59 @@ String? followedSportsOrFilter(Set<String>? followedSportIds) {
   return 'sport_id.is.null,sport_id.in.(${ids.join(',')})';
 }
 
-/// Reads the signed-in viewer's Following (`profiles.interests`) from their
-/// oldest active profile. Any failure returns `null` → unfiltered feed, so a
-/// lookup problem can never empty or break a feed.
-Future<Set<String>?> loadViewerFollowedSportIds(SupabaseClient db) async {
+/// Fetches the `interests` row(s) of ONE profile: the viewer's active
+/// profile whose `persona_type` is [personaType]. Injectable for tests.
+typedef ActiveProfileInterestsFetch =
+    Future<List<Map<String, dynamic>>> Function(
+      String userId,
+      String personaType,
+    );
+
+/// Following is PER PROFILE (per persona): resolves the Following of the
+/// ACTIVE persona only. Returns `null` (no filter) when the user or the
+/// active persona is unknown, the profile is missing, its interests are
+/// NULL/empty, or the lookup fails. Never falls back to another persona.
+Future<Set<String>?> loadFollowedSportIdsFor({
+  required String? userId,
+  required String? personaType,
+  required ActiveProfileInterestsFetch fetch,
+}) async {
   try {
-    final uid = db.auth.currentUser?.id;
-    if (uid == null) return null;
-    final rows = await db
-        .from(SupabaseConfig.usersTable)
-        .select('interests')
-        .eq('user_id', uid)
-        .eq('is_active', true)
-        .order('created_at', ascending: true)
-        .limit(1);
+    if (userId == null || personaType == null || personaType.isEmpty) {
+      return null;
+    }
+    final rows = await fetch(userId, personaType);
     if (rows.isEmpty) return null;
     return parseFollowedSportIds(rows.first['interests']);
   } catch (_) {
     return null;
   }
+}
+
+/// Reads the signed-in viewer's Following (`profiles.interests`) from the
+/// profile of the ACTIVE persona [personaType] (from `activePersonaProvider`).
+/// Unknown persona or any failure returns `null` → unfiltered feed.
+Future<Set<String>?> loadViewerFollowedSportIds(
+  SupabaseClient db, {
+  required String? personaType,
+}) {
+  String? uid;
+  try {
+    uid = db.auth.currentUser?.id;
+  } catch (_) {
+    uid = null;
+  }
+  return loadFollowedSportIdsFor(
+    userId: uid,
+    personaType: personaType,
+    fetch: (userId, persona) async => List<Map<String, dynamic>>.from(
+      await db
+          .from(SupabaseConfig.usersTable)
+          .select('interests')
+          .eq('user_id', userId)
+          .eq('is_active', true)
+          .eq('persona_type', persona)
+          .limit(1),
+    ),
+  );
 }
