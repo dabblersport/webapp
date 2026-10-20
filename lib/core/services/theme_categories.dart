@@ -1,5 +1,4 @@
-import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerTheme;
+import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerTheme;
 
 /// The app's colour-theme categories and how each maps onto a design-system
 /// [DabblerTheme]. Pure data: no widgets, no colours.

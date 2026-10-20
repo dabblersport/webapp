@@ -135,11 +135,13 @@ void main() {
       );
       expect(find.text(l.listing_following_joined(5)), findsOneWidget);
       expect(find.text(l.listing_spots_left(7)), findsOneWidget);
-      expect(find.textContaining(l.listing_following_joined(7)), findsNothing);
+      expect(
+        find.textContaining(l.listing_following_joined(7)),
+        findsNothing,
+      );
 
-      final String mode = const String.fromEnvironment('RENDER_DARK') == '1'
-          ? 'dark'
-          : 'light';
+      final String mode =
+          const String.fromEnvironment('RENDER_DARK') == '1' ? 'dark' : 'light';
       await tester.runAsync(() async {
         final RenderRepaintBoundary boundary =
             tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;

@@ -67,12 +67,10 @@ void main() {
     expect(find.textContaining('#football'), findsOneWidget);
     expect(find.textContaining('@ahmed_fc'), findsOneWidget);
 
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const ValueKey('recent-@ahmed_fc')),
-        matching: find.byKey(const ValueKey<String>('dabbler-chip-remove')),
-      ),
-    );
+    await tester.tap(find.descendant(
+      of: find.byKey(const ValueKey('recent-@ahmed_fc')),
+      matching: find.byKey(const ValueKey<String>('dabbler-chip-remove')),
+    ));
     await tester.pump();
 
     expect(find.textContaining('@ahmed_fc'), findsNothing);

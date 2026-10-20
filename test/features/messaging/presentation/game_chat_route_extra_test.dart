@@ -59,10 +59,9 @@ FakeMessagingRepository _repo({bool writable = true}) =>
       );
 
 List<String> _systemTexts(WidgetTester tester) => [
-  for (final i
-      in tester
-          .widget<DabblerMessageThread>(find.byKey(GameChatScreen.threadKey))
-          .items)
+  for (final i in tester
+      .widget<DabblerMessageThread>(find.byKey(GameChatScreen.threadKey))
+      .items)
     if (i is DabblerThreadSystem) i.text,
 ];
 

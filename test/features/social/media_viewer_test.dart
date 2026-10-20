@@ -6,9 +6,8 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/render_mode.dart';
 
 void main() {
-  testWidgets('media viewer: dragging down past the threshold dismisses it', (
-    tester,
-  ) async {
+  testWidgets('media viewer: dragging down past the threshold dismisses it',
+      (tester) async {
     tester.view.physicalSize = const Size(393, 852);
     tester.view.devicePixelRatio = 1;
     addTearDown(tester.view.reset);
@@ -19,10 +18,11 @@ void main() {
         home: Builder(
           builder: (context) => GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () => PostMediaCarousel.openViewer(context, const [
-              'https://example.test/a.png',
-              'https://example.test/b.png',
-            ], 0),
+            onTap: () => PostMediaCarousel.openViewer(
+              context,
+              const ['https://example.test/a.png', 'https://example.test/b.png'],
+              0,
+            ),
             child: const SizedBox.expand(key: Key('open')),
           ),
         ),

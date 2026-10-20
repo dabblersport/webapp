@@ -20,8 +20,7 @@ abstract final class DabblerDesignSystemTheme {
       theme: theme,
       brightness: base.brightness,
     );
-    final List<ThemeExtension<dynamic>> extensions =
-        <ThemeExtension<dynamic>>[];
+    final List<ThemeExtension<dynamic>> extensions = <ThemeExtension<dynamic>>[];
     for (final ThemeExtension<dynamic> e in base.extensions.values) {
       if (e is! DabblerColors) extensions.add(e);
     }

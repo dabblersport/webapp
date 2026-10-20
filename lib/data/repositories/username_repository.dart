@@ -39,10 +39,8 @@ abstract class UsernameRepository {
   Stream<Result<Profile, Failure>> myProfileTypeStream(String profileType);
 
   /// Check username availability via DB RPC (authoritative — checks banned/reserved/registry).
-  Future<
-    Result<({bool available, String reason, String usernameNorm}), Failure>
-  >
-  checkAvailabilityRpc(String username);
+  Future<Result<({bool available, String reason, String usernameNorm}), Failure>>
+      checkAvailabilityRpc(String username);
 
   /// Atomically claim a username via DB RPC (race-condition safe).
   Future<Result<String, Failure>> claimUsername({

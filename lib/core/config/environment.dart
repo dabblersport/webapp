@@ -55,6 +55,10 @@ class Environment {
     'ENVIRONMENT',
     defaultValue: '',
   );
+  static const String _webLinkBaseDefine = String.fromEnvironment(
+    'WEB_LINK_BASE',
+    defaultValue: '',
+  );
   static const String _googleWebClientIdDefine = String.fromEnvironment(
     'GOOGLE_WEB_CLIENT_ID',
     defaultValue: '',
@@ -117,6 +121,10 @@ class Environment {
   static String get environment => _environmentDefine.isNotEmpty
       ? _environmentDefine
       : (dotenv.env['ENVIRONMENT'] ?? 'production');
+
+  /// Optional (KAN-597): the https origin share links are built on for THIS environment, e.g. the Alpha web app. Empty
+  /// means the production origin. Only *.dabbler.pro origins are accepted (see DeepLinks.isAllowedOrigin).
+  static String get webLinkBase => _webLinkBaseDefine;
 
   /// Optional: the messaging Worker origin (KAN-550). Empty by default; the
   /// client appends `/v1/...`. A flag-on build without it shows the

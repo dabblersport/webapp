@@ -55,10 +55,7 @@ void main() {
       final cursor = DateTime.utc(2026, 8, 20, 10);
       await repo.getPage(cursor: cursor);
 
-      expect(
-        capturedUri.queryParameters['created_at'],
-        'lt.2026-08-20T10:00:00.000Z',
-      );
+      expect(capturedUri.queryParameters['created_at'], 'lt.2026-08-20T10:00:00.000Z');
     });
 
     test('a server error is mapped to a Failure instead of throwing', () async {
@@ -116,27 +113,21 @@ void main() {
   });
 
   group('NotificationsRepositoryImpl.markClicked', () {
-    test(
-      'calls the increment-interaction RPC with the notification id',
-      () async {
-        late http.Request captured;
-        final client = buildTestSupabaseClient((request) async {
-          captured = request;
-          return emptyOkResponse(status: 200, request: request);
-        });
+    test('calls the increment-interaction RPC with the notification id', () async {
+      late http.Request captured;
+      final client = buildTestSupabaseClient((request) async {
+        captured = request;
+        return emptyOkResponse(status: 200, request: request);
+      });
 
-        final repo = NotificationsRepositoryImpl(client);
-        final result = await repo.markClicked('n1');
+      final repo = NotificationsRepositoryImpl(client);
+      final result = await repo.markClicked('n1');
 
-        expect(result.isSuccess, isTrue);
-        expect(captured.method, 'POST');
-        expect(
-          captured.url.path,
-          contains('/rpc/increment_notification_interaction'),
-        );
-        expect(captured.body, contains('"p_id":"n1"'));
-      },
-    );
+      expect(result.isSuccess, isTrue);
+      expect(captured.method, 'POST');
+      expect(captured.url.path, contains('/rpc/increment_notification_interaction'));
+      expect(captured.body, contains('"p_id":"n1"'));
+    });
   });
 
   group('NotificationsRepositoryImpl.markAllRead', () {
@@ -152,24 +143,21 @@ void main() {
       expect(result.requireError.message, contains('not authenticated'));
     });
 
-    test(
-      'PATCHes is_read=true scoped to the current user when signed in',
-      () async {
-        late http.Request captured;
-        final client = buildTestSupabaseClient((request) async {
-          captured = request;
-          return emptyOkResponse(request: request);
-        });
-        await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
+    test('PATCHes is_read=true scoped to the current user when signed in', () async {
+      late http.Request captured;
+      final client = buildTestSupabaseClient((request) async {
+        captured = request;
+        return emptyOkResponse(request: request);
+      });
+      await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
 
-        final repo = NotificationsRepositoryImpl(client);
-        final result = await repo.markAllRead();
+      final repo = NotificationsRepositoryImpl(client);
+      final result = await repo.markAllRead();
 
-        expect(result.isSuccess, isTrue);
-        expect(captured.method, 'PATCH');
-        expect(captured.url.queryParameters['to_user_id'], 'eq.u1');
-        expect(captured.url.queryParameters['is_read'], 'eq.false');
-      },
-    );
+      expect(result.isSuccess, isTrue);
+      expect(captured.method, 'PATCH');
+      expect(captured.url.queryParameters['to_user_id'], 'eq.u1');
+      expect(captured.url.queryParameters['is_read'], 'eq.false');
+    });
   });
 }

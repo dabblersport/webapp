@@ -59,8 +59,6 @@ List<NearbyGameModel> watchGamesWithFollowing(
   List<NearbyGameModel> games,
 ) => gamesWithFollowing(
   games,
-  ref
-          .watch(gamesFollowingJoinedProvider(gamesFollowingKey(games)))
-          .valueOrNull ??
+  ref.watch(gamesFollowingJoinedProvider(gamesFollowingKey(games))).valueOrNull ??
       const {},
 );

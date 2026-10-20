@@ -110,11 +110,7 @@ class VenueSubmissionRepositoryImpl extends BaseRepository
     }
 
     return guard<VenueSubmissionModel>(() async {
-      final row = await svc
-          .from(SupabaseConfig.venueSubmissionsTable)
-          .select()
-          .eq('id', id)
-          .single();
+      final row = await svc.from(SupabaseConfig.venueSubmissionsTable).select().eq('id', id).single();
       return VenueSubmissionModel.fromMap(asMap(row));
     });
   }

@@ -67,9 +67,7 @@ void main() {
         return jsonListResponse([profileJson(userId: 'u1')], request: request);
       });
       await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-      final repo = ProfilesRepositoryImpl(
-        SupabaseService(client, SupabaseErrorMapper()),
-      );
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
       final result = await repo.getMyProfile();
 
@@ -84,9 +82,7 @@ void main() {
         return jsonListResponse(const [], request: request);
       });
       await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-      final repo = ProfilesRepositoryImpl(
-        SupabaseService(client, SupabaseErrorMapper()),
-      );
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
       final result = await repo.getMyProfile();
 
@@ -98,9 +94,7 @@ void main() {
   group('getByUserId', () {
     test('returns the profile for the given user id', () async {
       final repo = buildRepo((request) async {
-        return jsonListResponse([
-          profileJson(userId: 'other-user'),
-        ], request: request);
+        return jsonListResponse([profileJson(userId: 'other-user')], request: request);
       });
 
       final result = await repo.getByUserId('other-user');
@@ -115,9 +109,7 @@ void main() {
       late Uri capturedUri;
       final repo = buildRepo((request) async {
         capturedUri = request.url;
-        return jsonListResponse([
-          profileJson(username: 'jane'),
-        ], request: request);
+        return jsonListResponse([profileJson(username: 'jane')], request: request);
       });
 
       final result = await repo.getPublicByUsername('jane');
@@ -141,31 +133,26 @@ void main() {
   });
 
   group('upsert', () {
-    test(
-      'rejects upserting another user\'s profile before hitting the network',
-      () async {
-        final client = buildTestSupabaseClient((request) async {
-          fail('should not make a network call for a permission violation');
-        });
-        await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-        final repo = ProfilesRepositoryImpl(
-          SupabaseService(client, SupabaseErrorMapper()),
-        );
+    test('rejects upserting another user\'s profile before hitting the network', () async {
+      final client = buildTestSupabaseClient((request) async {
+        fail('should not make a network call for a permission violation');
+      });
+      await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
-        final result = await repo.upsert(
-          Profile(
-            id: 'p2',
-            userId: 'someone-else',
-            profileType: 'main',
-            username: 'x',
-            displayName: 'X',
-          ),
-        );
+      final result = await repo.upsert(
+        Profile(
+          id: 'p2',
+          userId: 'someone-else',
+          profileType: 'main',
+          username: 'x',
+          displayName: 'X',
+        ),
+      );
 
-        expect(result.isFailure, isTrue);
-        expect(result.requireError, isA<PermissionFailure>());
-      },
-    );
+      expect(result.isFailure, isTrue);
+      expect(result.requireError, isA<PermissionFailure>());
+    });
 
     test('upserts the signed-in user\'s own profile', () async {
       late http.Request captured;
@@ -174,9 +161,7 @@ void main() {
         return emptyOkResponse(request: request);
       });
       await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-      final repo = ProfilesRepositoryImpl(
-        SupabaseService(client, SupabaseErrorMapper()),
-      );
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
       final result = await repo.upsert(
         Profile(
@@ -190,10 +175,7 @@ void main() {
 
       expect(result.isSuccess, isTrue);
       expect(captured.method, 'POST');
-      expect(
-        captured.headers['Prefer'],
-        contains('resolution=merge-duplicates'),
-      );
+      expect(captured.headers['Prefer'], contains('resolution=merge-duplicates'));
     });
   });
 
@@ -205,9 +187,7 @@ void main() {
         return emptyOkResponse(request: request);
       });
       await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-      final repo = ProfilesRepositoryImpl(
-        SupabaseService(client, SupabaseErrorMapper()),
-      );
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
       final result = await repo.deactivateMe();
 
@@ -224,9 +204,7 @@ void main() {
         return emptyOkResponse(request: request);
       });
       await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-      final repo = ProfilesRepositoryImpl(
-        SupabaseService(client, SupabaseErrorMapper()),
-      );
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
       final result = await repo.reactivateMe();
 
@@ -252,9 +230,7 @@ void main() {
         fail('should not make a network call for a permission violation');
       });
       await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
-      final repo = ProfilesRepositoryImpl(
-        SupabaseService(client, SupabaseErrorMapper()),
-      );
+      final repo = ProfilesRepositoryImpl(SupabaseService(client, SupabaseErrorMapper()));
 
       final result = await repo.deleteSoft('someone-else');
 

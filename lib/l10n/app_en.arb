@@ -2459,5 +2459,7 @@
   "messaging_meetup_chat_semantic": "Open the meetup chat",
   "@messaging_meetup_chat_semantic": {"description": "KAN-559 meetup detail: the meetup chat entry (semantic). Arabic is PROVISIONAL pending content review."},
   "messaging_meetup_chat_unavailable": "Meetup chat is not available yet",
-  "@messaging_meetup_chat_unavailable": {"description": "KAN-559 meetup detail: the meetup chat entry (unavailable). Arabic is PROVISIONAL pending content review."}
+  "@messaging_meetup_chat_unavailable": {"description": "KAN-559 meetup detail: the meetup chat entry (unavailable). Arabic is PROVISIONAL pending content review."},
+  "email_password_error_profile_failed": "You are signed in, but we couldn't load your account. Try again.",
+  "@email_password_error_profile_failed": {"description": "KAN-570 Shown when the password sign-in succeeded but loading the profile or starting the session failed. Arabic is PROVISIONAL pending content review."}
 }

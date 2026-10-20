@@ -18,10 +18,7 @@ class VenueConfigRepositoryImpl extends BaseRepository
     int limit = 100,
   }) async {
     return guard<List<VenueSpace>>(() async {
-      var query = svc
-          .from(SupabaseConfig.venueSpacesTable)
-          .select()
-          .eq('is_active', true);
+      var query = svc.from(SupabaseConfig.venueSpacesTable).select().eq('is_active', true);
 
       if (venueId != null && venueId.isNotEmpty) {
         query = query.eq('venue_id', venueId);

@@ -5,14 +5,14 @@
 // `_PlaceholderScreen` -> `PlaceholderScreen` are renamed. Declaration order is
 // preserved by lib/app/app_router.dart's `_routes`, not by this file.
 
+import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/error/presentation/pages/error_page.dart';
 import 'package:dabbler/features/news/presentation/screens/news_detail_screen.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
-import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart'
-    show RealFriendsScreen;
+import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart' show RealFriendsScreen;
 import 'package:dabbler/features/profile/presentation/screens/profile/profile_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/sport_profile_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile_edit_screen.dart';
@@ -40,328 +40,379 @@ import 'package:dabbler/utils/transitions/page_transitions.dart';
 import 'package:dabbler/app/app_router.dart';
 
 // /news/:newsId — news article detail (root-level, no shell)
-RouteBase get newsNewsIdRoute => GoRoute(
-  path: '/news/:newsId',
-  name: RouteNames.newsDetail,
-  parentNavigatorKey: rootNavigatorKey,
-  pageBuilder: (context, state) {
-    final item = state.extra as FeedNewsItem;
-    return CupertinoPage(
-      key: state.pageKey,
-      child: NewsDetailScreen(item: item),
+RouteBase get newsNewsIdRoute =>
+    GoRoute(
+      path: '/news/:newsId',
+      name: RouteNames.newsDetail,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final item = state.extra as FeedNewsItem;
+        return CupertinoPage(
+          key: state.pageKey,
+          child: NewsDetailScreen(item: item),
+        );
+      },
     );
-  },
-);
 
 // dabbler://app/create-game is already a first-class top-level route
 // (/create-game) so no redirect needed — it resolves directly.
 
-RouteBase get socialRoute => GoRoute(
-  path: RoutePaths.social,
-  name: RouteNames.social,
-  redirect: (context, state) => RoutePaths.community,
-);
+
+RouteBase get socialRoute =>
+    GoRoute(
+      path: RoutePaths.social,
+      name: RouteNames.social,
+      redirect: (context, state) => RoutePaths.community,
+    );
 
 // Profile route
-RouteBase get profileRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.profile,
-  name: RouteNames.profile,
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const ProfileScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-RouteBase get sportProfileRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.sportProfile,
-  name: RouteNames.sportProfile,
-  pageBuilder: (context, state) {
-    // extra is the in-app fast path; on web refresh / direct URL entry
-    // extra is lost, so fall back to the query parameters.
-    final extra = state.extra;
-    final args = extra is SportProfileRouteArgs
-        ? extra
-        : SportProfileRouteArgs.fromQueryParameters(state.uri.queryParameters);
-    if (args == null) {
-      return SharedAxisTransitionPage(
+RouteBase get profileRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.profile,
+      name: RouteNames.profile,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
-        child: const ErrorPage(message: 'Missing sport profile context.'),
+        child: const ProfileScreen(),
         type: SharedAxisType.horizontal,
-      );
-    }
-
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: SportProfileScreen(args: args),
-      type: SharedAxisType.horizontal,
-    );
-  },
-);
-
-// Profile Edit route
-RouteBase get profileEditRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/profile/edit',
-  pageBuilder: (context, state) => BottomSheetTransitionPage(
-    key: state.pageKey,
-    child: const ProfileEditScreen(),
-  ),
-);
-
-// Profile Sports Preferences route
-RouteBase get profileSportsPreferencesRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/profile/sports-preferences',
-  pageBuilder: (context, state) {
-    final profileType = state.extra is Map<String, dynamic>
-        ? (state.extra as Map<String, dynamic>)['profileType'] as String?
-        : null;
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: ProfileSportsScreen(profileType: profileType),
-      type: SharedAxisType.horizontal,
-    );
-  },
-);
-
-// Settings route
-RouteBase get settingsRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/settings',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const SettingsScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-// Settings sub-routes
-RouteBase get settingsAccountRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/settings/account',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const AccountManagementScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-RouteBase get settingsPrivacyRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/settings/privacy',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const PrivacySettingsScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-RouteBase get settingsNotificationsRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/settings/notifications',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const NotificationSettingsScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-RouteBase get settingsThemeRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/settings/theme',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const ThemeSettingsScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-// Preferences routes
-RouteBase get preferencesGamesRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/preferences/games',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const GamePreferencesScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-RouteBase get helpContactRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/help/contact',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const ContactSupportScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-RouteBase get helpBugReportRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/help/bug-report',
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const BugReportScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
-
-// About routes
-RouteBase get aboutTermsRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.aboutTerms,
-  pageBuilder: (context, state) => FadeThroughTransitionPage(
-    key: state.pageKey,
-    child: const TermsOfServiceScreen(),
-  ),
-);
-
-RouteBase get aboutPrivacyRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.aboutPrivacy,
-  pageBuilder: (context, state) => FadeThroughTransitionPage(
-    key: state.pageKey,
-    child: const PrivacyPolicyScreen(),
-  ),
-);
-
-RouteBase get aboutLicensesRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '/about/licenses',
-  pageBuilder: (context, state) => FadeThroughTransitionPage(
-    key: state.pageKey,
-    child: const LicensesScreen(),
-  ),
-);
-
-// ── Post Creation ──
-RouteBase get socialCreatePostRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.socialCreatePost,
-  name: RouteNames.socialCreatePost,
-  pageBuilder: (context, state) =>
-      AdaptiveModalPage(key: state.pageKey, child: const PostComposerScreen()),
-);
-
-// ── Post Composer (full-featured) ──
-RouteBase get postComposerRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.postComposer,
-  name: RouteNames.postComposer,
-  pageBuilder: (context, state) =>
-      AdaptiveModalPage(key: state.pageKey, child: const PostComposerScreen()),
-);
-
-// Social Feed route — feed lives in HomeScreen now.
-RouteBase get socialFeedRoute => GoRoute(
-  path: RoutePaths.socialFeed,
-  name: RouteNames.socialFeed,
-  redirect: (context, state) => RoutePaths.home,
-);
-
-RouteBase get socialSearchRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.socialSearch,
-  name: RouteNames.socialSearch,
-  redirect: (context, state) {
-    if (!FeatureFlags.socialFeed) return RoutePaths.home;
-    return null;
-  },
-  pageBuilder: (context, state) => FadeThroughTransitionPage(
-    key: state.pageKey,
-    child: const SocialSearchScreen(),
-  ),
-);
-
-RouteBase get hashtagFeedSlugRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '${RoutePaths.hashtagFeed}/:slug',
-  name: RouteNames.hashtagFeed,
-  pageBuilder: (context, state) {
-    final slug = state.pathParameters['slug'] ?? '';
-    final initialPostCount = int.tryParse(
-      state.uri.queryParameters['postCount'] ?? '',
-    );
-    return FadeThroughTransitionPage(
-      key: state.pageKey,
-      child: HashtagFeedScreen(
-        hashtagSlug: Uri.decodeComponent(slug),
-        initialPostCount: initialPostCount,
       ),
     );
-  },
-);
 
-RouteBase get socialPostDetailPostIdRoute => GoRoute(
-  path: '${RoutePaths.socialPostDetail}/:postId',
-  name: RouteNames.socialPostDetail,
-  parentNavigatorKey: rootNavigatorKey,
-  pageBuilder: (context, state) {
-    final postId = state.pathParameters['postId'] ?? '';
-    return ScaleTransitionPage(
-      key: state.pageKey,
-      child: PostDetailScreen(postId: postId),
-    );
-  },
-);
+RouteBase get sportProfileRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.sportProfile,
+      name: RouteNames.sportProfile,
+      pageBuilder: (context, state) {
+        // extra is the in-app fast path; on web refresh / direct URL entry
+        // extra is lost, so fall back to the query parameters.
+        final extra = state.extra;
+        final args = extra is SportProfileRouteArgs
+            ? extra
+            : SportProfileRouteArgs.fromQueryParameters(
+                state.uri.queryParameters,
+              );
+        if (args == null) {
+          return SharedAxisTransitionPage(
+            key: state.pageKey,
+            child: const ErrorPage(message: 'Missing sport profile context.'),
+            type: SharedAxisType.horizontal,
+          );
+        }
 
-RouteBase get userProfileUserIdRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '${RoutePaths.userProfile}/:userId',
-  name: RouteNames.userProfile,
-  pageBuilder: (context, state) {
-    final userId = state.pathParameters['userId'] ?? '';
-    final profileId = state.uri.queryParameters['profileId'];
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: UserProfileScreen(userId: userId, profileId: profileId),
-      type: SharedAxisType.horizontal,
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: SportProfileScreen(args: args),
+          type: SharedAxisType.horizontal,
+        );
+      },
     );
-  },
-);
+
+// Profile Edit route
+RouteBase get profileEditRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/profile/edit',
+      pageBuilder: (context, state) => BottomSheetTransitionPage(
+        key: state.pageKey,
+        child: const ProfileEditScreen(),
+      ),
+    );
+
+// Profile Sports Preferences route
+RouteBase get profileSportsPreferencesRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/profile/sports-preferences',
+      pageBuilder: (context, state) {
+        final profileType = state.extra is Map<String, dynamic>
+            ? (state.extra as Map<String, dynamic>)['profileType'] as String?
+            : null;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: ProfileSportsScreen(profileType: profileType),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    );
+
+// Settings route
+RouteBase get settingsRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const SettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+// Settings sub-routes
+RouteBase get settingsAccountRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings/account',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const AccountManagementScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+RouteBase get settingsPrivacyRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings/privacy',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const PrivacySettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+RouteBase get settingsNotificationsRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings/notifications',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const NotificationSettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+RouteBase get settingsThemeRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings/theme',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const ThemeSettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+// Preferences routes
+RouteBase get preferencesGamesRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/preferences/games',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const GamePreferencesScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+RouteBase get helpContactRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/help/contact',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const ContactSupportScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+RouteBase get helpBugReportRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/help/bug-report',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const BugReportScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+// About routes
+RouteBase get aboutTermsRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.aboutTerms,
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const TermsOfServiceScreen(),
+      ),
+    );
+
+RouteBase get aboutPrivacyRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.aboutPrivacy,
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const PrivacyPolicyScreen(),
+      ),
+    );
+
+RouteBase get aboutLicensesRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/about/licenses',
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const LicensesScreen(),
+      ),
+    );
+
+// ── Post Creation ──
+RouteBase get socialCreatePostRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.socialCreatePost,
+      name: RouteNames.socialCreatePost,
+      pageBuilder: (context, state) => AdaptiveModalPage(
+        key: state.pageKey,
+        child: const PostComposerScreen(),
+      ),
+    );
+
+// ── Post Composer (full-featured) ──
+RouteBase get postComposerRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.postComposer,
+      name: RouteNames.postComposer,
+      pageBuilder: (context, state) => AdaptiveModalPage(
+        key: state.pageKey,
+        child: const PostComposerScreen(),
+      ),
+    );
+
+// Social Feed route — feed lives in HomeScreen now.
+RouteBase get socialFeedRoute =>
+    GoRoute(
+      path: RoutePaths.socialFeed,
+      name: RouteNames.socialFeed,
+      redirect: (context, state) => RoutePaths.home,
+    );
+
+RouteBase get socialSearchRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.socialSearch,
+      name: RouteNames.socialSearch,
+      redirect: (context, state) {
+        if (!FeatureFlags.socialFeed) return RoutePaths.home;
+        return null;
+      },
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const SocialSearchScreen(),
+      ),
+    );
+
+RouteBase get hashtagFeedSlugRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '${RoutePaths.hashtagFeed}/:slug',
+      name: RouteNames.hashtagFeed,
+      pageBuilder: (context, state) {
+        final slug = state.pathParameters['slug'] ?? '';
+        final initialPostCount = int.tryParse(
+          state.uri.queryParameters['postCount'] ?? '',
+        );
+        return FadeThroughTransitionPage(
+          key: state.pageKey,
+          child: HashtagFeedScreen(
+            hashtagSlug: Uri.decodeComponent(slug),
+            initialPostCount: initialPostCount,
+          ),
+        );
+      },
+    );
+
+RouteBase get socialPostDetailPostIdRoute =>
+    GoRoute(
+      path: '${RoutePaths.socialPostDetail}/:postId',
+      name: RouteNames.socialPostDetail,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final postId = state.pathParameters['postId'] ?? '';
+        return ScaleTransitionPage(
+          key: state.pageKey,
+          child: PostDetailScreen(postId: postId),
+        );
+      },
+    );
+
+// KAN-597: https://<origin>/post/:postId and /u/:profileId (the shared post and profile links).
+RouteBase get postShareLinkRoute =>
+    GoRoute(
+      path: '/post/:postId',
+      redirect: (context, state) =>
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
+    );
+
+RouteBase get profileShareLinkRoute =>
+    GoRoute(
+      path: '/u/:profileId',
+      redirect: (context, state) =>
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
+    );
+
+RouteBase get userProfileUserIdRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '${RoutePaths.userProfile}/:userId',
+      name: RouteNames.userProfile,
+      pageBuilder: (context, state) {
+        final userId = state.pathParameters['userId'] ?? '';
+        final profileId = state.uri.queryParameters['profileId'];
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: UserProfileScreen(userId: userId, profileId: profileId),
+          type: SharedAxisType.horizontal,
+        );
+      },
+    );
 
 // Social Friends (People) screen — own profile, 3 tabs
-RouteBase get socialFriendsRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.socialFriends,
-  name: RouteNames.socialFriends,
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const RealFriendsScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-);
+RouteBase get socialFriendsRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.socialFriends,
+      name: RouteNames.socialFriends,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const RealFriendsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
 
 // Following list for a specific profile (2 tabs, starts on Following)
-RouteBase get followingProfileIdRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '${RoutePaths.following}/:profileId',
-  name: RouteNames.following,
-  pageBuilder: (context, state) {
-    final profileId = state.pathParameters['profileId']!;
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: RealFriendsScreen(profileId: profileId, initialTab: 0),
-      type: SharedAxisType.horizontal,
+RouteBase get followingProfileIdRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '${RoutePaths.following}/:profileId',
+      name: RouteNames.following,
+      pageBuilder: (context, state) {
+        final profileId = state.pathParameters['profileId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: RealFriendsScreen(profileId: profileId, initialTab: 0),
+          type: SharedAxisType.horizontal,
+        );
+      },
     );
-  },
-);
 
 // Followers list for a specific profile (2 tabs, starts on Followers)
-RouteBase get followersProfileIdRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: '${RoutePaths.followers}/:profileId',
-  name: RouteNames.followers,
-  pageBuilder: (context, state) {
-    final profileId = state.pathParameters['profileId']!;
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: RealFriendsScreen(profileId: profileId, initialTab: 1),
-      type: SharedAxisType.horizontal,
+RouteBase get followersProfileIdRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '${RoutePaths.followers}/:profileId',
+      name: RouteNames.followers,
+      pageBuilder: (context, state) {
+        final profileId = state.pathParameters['profileId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: RealFriendsScreen(profileId: profileId, initialTab: 1),
+          type: SharedAxisType.horizontal,
+        );
+      },
     );
-  },
-);

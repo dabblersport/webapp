@@ -35,13 +35,12 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
+    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
 }
+
 
 /// The full design vibe list (`DabblerVibe`), as the vibes table serves it.
 final List<Vibe> _vibes = <Vibe>[
@@ -173,10 +172,7 @@ void main() {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(lookupAppLocalizations(locale).composer_create_post),
-        findsOneWidget,
-      );
+      expect(find.text(lookupAppLocalizations(locale).composer_create_post), findsOneWidget);
       expect(find.byType(DabblerComposerBox), findsOneWidget);
       expect(find.text('Add GIF'), findsNothing);
       await _shoot(tester, key, 'post-$dir');
@@ -185,9 +181,7 @@ void main() {
     testWidgets('post composer: vibe picker sheet — $dir', (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
-      await tester.tap(
-        find.bySemanticsLabel(lookupAppLocalizations(locale).composer_add_vibe),
-      );
+      await tester.tap(find.bySemanticsLabel(lookupAppLocalizations(locale).composer_add_vibe));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
@@ -196,24 +190,16 @@ void main() {
       await _shoot(tester, key, 'post-vibes-$dir');
     }, variant: desktop);
 
-    testWidgets('post composer: media + visibility sheets — $dir', (
-      tester,
-    ) async {
+    testWidgets('post composer: media + visibility sheets — $dir',
+        (tester) async {
       const Key key = Key('shot');
       await _pump(tester, const PostComposerScreen(), locale, key);
-      await tester.tap(
-        find.bySemanticsLabel(
-          lookupAppLocalizations(locale).composer_add_media,
-        ),
-      );
+      await tester.tap(find.bySemanticsLabel(lookupAppLocalizations(locale).composer_add_media));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(lookupAppLocalizations(locale).composer_take_photo),
-        findsOneWidget,
-      );
+      expect(find.text(lookupAppLocalizations(locale).composer_take_photo), findsOneWidget);
       await _shoot(tester, key, 'post-media-$dir');
     }, variant: desktop);
 
@@ -221,10 +207,7 @@ void main() {
       const Key key = Key('shot');
       await _pump(tester, _gameSheet(const GameComposerScreen()), locale, key);
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(lookupAppLocalizations(locale).game_create),
-        findsWidgets,
-      );
+      expect(find.text(lookupAppLocalizations(locale).game_create), findsWidgets);
       await _shoot(tester, key, 'game-$dir');
     }, variant: desktop);
 
@@ -259,16 +242,8 @@ void main() {
   final List<Override> pickerData = <Override>[
     venueSearchProvider.overrideWith(
       (ref, q) async => <Map<String, dynamic>>[
-        <String, dynamic>{
-          'id': 'v1',
-          'name': 'Nad Al Sheba Sports Complex',
-          'city': 'Nad Al Sheba',
-        },
-        <String, dynamic>{
-          'id': 'v2',
-          'name': 'Al Warqa Practice Nets',
-          'city': 'Al Warqa',
-        },
+        <String, dynamic>{'id': 'v1', 'name': 'Nad Al Sheba Sports Complex', 'city': 'Nad Al Sheba'},
+        <String, dynamic>{'id': 'v2', 'name': 'Al Warqa Practice Nets', 'city': 'Al Warqa'},
       ],
     ),
     gameSearchProvider.overrideWith(
@@ -324,13 +299,8 @@ void main() {
 
     testWidgets('KAN-459 initial state — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pumpModal(
-        tester,
-        const PostComposerScreen(),
-        locale,
-        key,
-        extraOverrides: pickerData,
-      );
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: pickerData);
       expect(tester.takeException(), isNull);
       expect(find.text(l.composer_create_post), findsOneWidget);
       expect(find.byType(DabblerChip), findsNothing);
@@ -341,13 +311,8 @@ void main() {
 
     testWidgets('KAN-459 filled state — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pumpModal(
-        tester,
-        const PostComposerScreen(),
-        locale,
-        key,
-        extraOverrides: pickerData,
-      );
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: pickerData);
       await fill(tester);
       expect(tester.takeException(), isNull);
       // vibe chip, sport, location and game badges share one height.
@@ -362,9 +327,7 @@ void main() {
       final Rect pills = tester.getRect(find.byType(DabblerSelectPill).first);
       final Rect box = tester.getRect(find.byType(DabblerComposerBox));
       final Rect rail = tester.getRect(find.byType(DabblerAttachmentAddTile));
-      final Rect options = tester.getRect(
-        find.byType(ComposerSettingsRow).first,
-      );
+      final Rect options = tester.getRect(find.byType(ComposerSettingsRow).first);
       expect(pills.top - avatar.bottom, 15);
       expect(box.top - pills.bottom, 15);
       expect(rail.top - box.bottom, 15);
@@ -379,13 +342,8 @@ void main() {
 
     testWidgets('KAN-459 pickers over the filled state — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pumpModal(
-        tester,
-        const PostComposerScreen(),
-        locale,
-        key,
-        extraOverrides: pickerData,
-      );
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: pickerData);
       await fill(tester);
 
       Future<void> open(Finder f, String shot, {String? type}) async {
@@ -402,47 +360,25 @@ void main() {
       }
 
       // KAN-467: the tool labels are localized now, so find them by key.
+      await open(find.bySemanticsLabel(l.composer_tool_vibe_set(iso('Inspired'))), 'vibe-sheet');
+      await open(find.bySemanticsLabel(l.composer_tool_sport_set(iso('Padel'))), 'sport-sheet');
       await open(
-        find.bySemanticsLabel(l.composer_tool_vibe_set(iso('Inspired'))),
-        'vibe-sheet',
-      );
-      await open(
-        find.bySemanticsLabel(l.composer_tool_sport_set(iso('Padel'))),
-        'sport-sheet',
-      );
-      await open(
-        find.bySemanticsLabel(
-          l.composer_tool_location_set(iso('Nad Al Sheba Sports Complex')),
-        ),
-        'place-sheet',
-        type: 'Nad',
-      );
-      await open(
-        find.bySemanticsLabel(l.composer_tool_game_set(iso('Padel doubles'))),
-        'game-sheet',
-        type: 'Pad',
-      );
+          find.bySemanticsLabel(l.composer_tool_location_set(iso('Nad Al Sheba Sports Complex'))),
+          'place-sheet',
+          type: 'Nad');
+      await open(find.bySemanticsLabel(l.composer_tool_game_set(iso('Padel doubles'))), 'game-sheet',
+          type: 'Pad');
       await open(find.text(l.composer_type_dab), 'kind-sheet');
       await open(find.text(l.composer_vis_public), 'visibility-sheet');
-      await open(
-        find.bySemanticsLabel(l.composer_add_more_media),
-        'media-sheet',
-      );
+      await open(find.bySemanticsLabel(l.composer_add_more_media), 'media-sheet');
     }, variant: desktop);
-    testWidgets('KAN-467 localized labels, filled + GIF — $dir', (
-      tester,
-    ) async {
+    testWidgets('KAN-467 localized labels, filled + GIF — $dir', (tester) async {
       const Key key = Key('shot');
-      await _pumpModal(
-        tester,
-        const PostComposerScreen(),
-        locale,
-        key,
-        extraOverrides: <Override>[
-          ...pickerData,
-          activeProfileTypeProvider.overrideWith((ref) => 'player'),
-        ],
-      );
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: <Override>[
+            ...pickerData,
+            activeProfileTypeProvider.overrideWith((ref) => 'player'),
+          ]);
       await fill(tester);
       ProviderScope.containerOf(tester.element(find.byType(PostComposerScreen)))
           .read(postComposerProvider.notifier)
@@ -464,19 +400,11 @@ void main() {
       }
       expect(find.text(l.composer_media_gif), findsOneWidget);
       if (rtl) {
-        expect(
-          labels.first,
-          'النشر باسم \u2068أنت\u2069. اضغط لتبديل الملف الشخصي.',
-        );
+        expect(labels.first, 'النشر باسم \u2068أنت\u2069. اضغط لتبديل الملف الشخصي.');
         expect(labels[1], 'الأجواء: \u2068Inspired\u2069. اضغط للتغيير.');
         expect(l.composer_media_image, 'صورة');
         for (final String s in labels) {
-          expect(
-            RegExp(
-              'Vibe:|Sport:|Location:|Game:|Posting as|Tap to',
-            ).hasMatch(s),
-            isFalse,
-          );
+          expect(RegExp('Vibe:|Sport:|Location:|Game:|Posting as|Tap to').hasMatch(s), isFalse);
         }
       } else {
         // English is byte-identical to the pre-KAN-467 hardcoded strings.
@@ -494,28 +422,16 @@ void main() {
       await _shoot(tester, key, 'kan467-filled-$dir');
     }, variant: desktop);
 
-    testWidgets('KAN-467 "set" fallback + no-switch label — $dir', (
-      tester,
-    ) async {
-      await _pumpModal(
-        tester,
-        const PostComposerScreen(),
-        locale,
-        const Key('shot'),
-        extraOverrides: pickerData,
-      );
+    testWidgets('KAN-467 "set" fallback + no-switch label — $dir', (tester) async {
+      await _pumpModal(tester, const PostComposerScreen(), locale, const Key('shot'),
+          extraOverrides: pickerData);
       final PostComposerNotifier n = ProviderScope.containerOf(
         tester.element(find.byType(PostComposerScreen)),
       ).read(postComposerProvider.notifier);
       n.setVibe(id: 'inspired', label: null, emoji: '\u2728');
       await settle(tester);
-      expect(
-        find.bySemanticsLabel(l.composer_posting_as(iso(l.composer_you))),
-        findsWidgets,
-      );
-      final String vibe = l.composer_tool_vibe_set(
-        iso(l.composer_tool_value_set),
-      );
+      expect(find.bySemanticsLabel(l.composer_posting_as(iso(l.composer_you))), findsWidgets);
+      final String vibe = l.composer_tool_vibe_set(iso(l.composer_tool_value_set));
       expect(find.bySemanticsLabel(vibe), findsWidgets);
       if (!rtl) {
         expect(l.composer_posting_as(l.composer_you), 'Posting as You');
@@ -533,53 +449,32 @@ void main() {
         'lib/features/social/presentation/screens/post_composer_screen.dart',
       ).readAsStringSync();
       for (final String old in <String>[
-        "'Content Class'",
-        "'Standard social post'",
-        "'Editorial or long-form content'",
-        "'Posting as",
-        "Tap to change.'",
-        "'GIF'",
-        "'Image'",
+        "'Content Class'", "'Standard social post'",
+        "'Editorial or long-form content'", "'Posting as", "Tap to change.'",
+        "'GIF'", "'Image'",
       ]) {
         expect(src.contains(old), isFalse, reason: old);
       }
       for (final String k in <String>[
-        'composer_content_class_title',
-        'composer_content_class_social',
-        'composer_content_class_editorial',
-        'composer_content_class_social_sub',
+        'composer_content_class_title', 'composer_content_class_social',
+        'composer_content_class_editorial', 'composer_content_class_social_sub',
         'composer_content_class_editorial_sub',
       ]) {
         expect(src.contains('.$k'), isTrue, reason: k);
       }
       const Key key = Key('shot');
-      await _pumpModal(
-        tester,
-        const PostComposerScreen(),
-        locale,
-        key,
-        extraOverrides: pickerData,
-      );
+      await _pumpModal(tester, const PostComposerScreen(), locale, key,
+          extraOverrides: pickerData);
       showComposerSheet<void>(
         tester.element(find.byType(PostComposerScreen)),
         title: l.composer_content_class_title,
         builder: (ctx) => Column(
           mainAxisSize: MainAxisSize.min,
           children: <Widget>[
-            ComposerPickerRow(
-              icon: 'people',
-              title: l.composer_content_class_social,
-              subtitle: l.composer_content_class_social_sub,
-              selected: true,
-              onTap: () {},
-            ),
-            ComposerPickerRow(
-              icon: 'document-text',
-              title: l.composer_content_class_editorial,
-              subtitle: l.composer_content_class_editorial_sub,
-              selected: false,
-              onTap: () {},
-            ),
+            ComposerPickerRow(icon: 'people', title: l.composer_content_class_social,
+                subtitle: l.composer_content_class_social_sub, selected: true, onTap: () {}),
+            ComposerPickerRow(icon: 'document-text', title: l.composer_content_class_editorial,
+                subtitle: l.composer_content_class_editorial_sub, selected: false, onTap: () {}),
           ],
         ),
       );
@@ -587,22 +482,11 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(l.composer_content_class_title), findsOneWidget);
       if (!rtl) {
-        expect(
-          <String>[
-            l.composer_content_class_title,
-            l.composer_content_class_social,
-            l.composer_content_class_editorial,
-            l.composer_content_class_social_sub,
-            l.composer_content_class_editorial_sub,
-          ],
-          <String>[
-            'Content Class',
-            'Social',
-            'Editorial',
-            'Standard social post',
-            'Editorial or long-form content',
-          ],
-        );
+        expect(<String>[l.composer_content_class_title, l.composer_content_class_social,
+            l.composer_content_class_editorial, l.composer_content_class_social_sub,
+            l.composer_content_class_editorial_sub],
+            <String>['Content Class', 'Social', 'Editorial', 'Standard social post',
+            'Editorial or long-form content']);
       } else {
         expect(find.text('فئة المحتوى'), findsOneWidget);
         expect(find.text('منشور اجتماعي عادي'), findsOneWidget);

@@ -55,6 +55,11 @@ on:
         type: choice
         options: [completed, draft]
         default: completed
+      web_link_base:
+        description: "Optional (KAN-597). The https origin share links use in this build, e.g. https://alpha.dabbler.pro for an Alpha build. Empty = the production origin. Only *.dabbler.pro is accepted."
+        type: string
+        required: false
+        default: ""
       app_environment:
         description: "Value of the app's ENVIRONMENT define"
         type: choice
@@ -271,6 +276,7 @@ jobs:
           # Public URL of the messaging Worker (not a secret): a repository VARIABLE, same name as the web build's.
           MESSAGING_API_BASE_URL: ${{ vars.MESSAGING_API_BASE_URL }}
           APP_ENVIRONMENT: ${{ needs.prepare.outputs.app_environment }}
+          WEB_LINK_BASE: ${{ inputs.web_link_base }}
           VNAME: ${{ needs.prepare.outputs.version_name }}
           VCODE: ${{ needs.prepare.outputs.version_code }}
         run: |
@@ -280,10 +286,15 @@ jobs:
           for n in SUPABASE_URL SUPABASE_ANON_KEY APP_NAME; do
             [[ -n "${!n}" ]] || { echo "::error::required app config $n is empty"; exit 1; }
           done
+          # An empty Web client id silently ships a broken Google sign-in (the native flow then gets no id token),
+          # so refuse it the same way (KAN-570). A Google Web OAuth client id always ends in .apps.googleusercontent.com.
+          [[ "${GOOGLE_WEB_CLIENT_ID:-}" == *.apps.googleusercontent.com ]] || { echo "::error::secret GOOGLE_WEB_CLIENT_ID is empty or not a Google Web OAuth client id"; exit 1; }
           # The Google serverClientId must be the WEB OAuth client, never the Android one (KAN-571: ApiException 10).
           python3 scripts/check_google_client_id.py android/app/google-services.json
           # Messaging is on in the committed flags, so a build without its Worker URL would show "Couldn't load your chats".
           [[ "${MESSAGING_API_BASE_URL:-}" == https://* ]] || { echo "::error::repository variable MESSAGING_API_BASE_URL is empty or not an https URL"; exit 1; }
+          # Share links must carry the build's own environment (KAN-597). Empty = production; otherwise https on *.dabbler.pro only.
+          [[ -z "${WEB_LINK_BASE:-}" || "$WEB_LINK_BASE" =~ ^https://([a-z0-9-]+\.)*dabbler\.pro$ ]] || { echo "::error::web_link_base must be empty or an https://*.dabbler.pro origin"; exit 1; }
           flutter build appbundle --release \
             --build-name="$VNAME" --build-number="$VCODE" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
@@ -291,8 +302,9 @@ jobs:
             --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
             --dart-define=APP_NAME="$APP_NAME" \
             --dart-define=ENVIRONMENT="$APP_ENVIRONMENT" \
-            --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
-            --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL"
+            --dart-define=GOOGLE_WEB_CLIENT_ID="$GOOGLE_WEB_CLIENT_ID" \
+            --dart-define=MESSAGING_API_BASE_URL="$MESSAGING_API_BASE_URL" \
+            --dart-define=WEB_LINK_BASE="${WEB_LINK_BASE:-}"
 
       - name: Verify package, versions and signing certificate
         id: verify

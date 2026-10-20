@@ -16,19 +16,20 @@ class ProfileLocationRepositoryImpl extends BaseRepository
     required double lat,
     required double lng,
     required String areaId,
-  }) => guard(() async {
-    // Insert a PostGIS geography point. Longitude comes first in WKT.
-    final row = await svc.client
-        .from(SupabaseConfig.geoLocationsTable)
-        .insert({
-          'location': 'SRID=4326;POINT($lng $lat)',
-          'area_id': areaId,
-          'geohash': _geohash(lat, lng),
-        })
-        .select('id')
-        .single();
-    return row['id'] as String;
-  });
+  }) =>
+      guard(() async {
+        // Insert a PostGIS geography point. Longitude comes first in WKT.
+        final row = await svc.client
+            .from(SupabaseConfig.geoLocationsTable)
+            .insert({
+              'location': 'SRID=4326;POINT($lng $lat)',
+              'area_id': areaId,
+              'geohash': _geohash(lat, lng),
+            })
+            .select('id')
+            .single();
+        return row['id'] as String;
+      });
 
   // ── Profile location CRUD ────────────────────────────────────────────────
 
@@ -40,7 +41,9 @@ class ProfileLocationRepositoryImpl extends BaseRepository
             .from(SupabaseConfig.profileLocationsTable)
             .select()
             .order('created_at', ascending: false);
-        return rows.map((r) => ProfileLocation.fromJson(r)).toList();
+        return rows
+            .map((r) => ProfileLocation.fromJson(r))
+            .toList();
       });
 
   @override
@@ -52,27 +55,28 @@ class ProfileLocationRepositoryImpl extends BaseRepository
     required ProfileLocationLabel label,
     String? labelCustom,
     bool isPrimary = false,
-  }) => guard(() async {
-    // If this will be primary, demote existing primary first.
-    if (isPrimary) {
-      await svc.client
-          .from(SupabaseConfig.profileLocationsTable)
-          .update({'is_primary': false})
-          .eq('is_primary', true);
-    }
+  }) =>
+      guard(() async {
+        // If this will be primary, demote existing primary first.
+        if (isPrimary) {
+          await svc.client
+              .from(SupabaseConfig.profileLocationsTable)
+              .update({'is_primary': false})
+              .eq('is_primary', true);
+        }
 
-    final row = await svc.client
-        .from(SupabaseConfig.profileLocationsTable)
-        .insert({
-          'geo_location_id': geoLocationId,
-          'label': label.toJson(),
-          if (labelCustom != null) 'label_custom': labelCustom,
-          'is_primary': isPrimary,
-        })
-        .select()
-        .single();
-    return ProfileLocation.fromJson(row);
-  });
+        final row = await svc.client
+            .from(SupabaseConfig.profileLocationsTable)
+            .insert({
+              'geo_location_id': geoLocationId,
+              'label': label.toJson(),
+              if (labelCustom != null) 'label_custom': labelCustom,
+              'is_primary': isPrimary,
+            })
+            .select()
+            .single();
+        return ProfileLocation.fromJson(row);
+      });
 
   @override
   Future<Result<void, Failure>> setPrimary(
@@ -80,29 +84,28 @@ class ProfileLocationRepositoryImpl extends BaseRepository
     required double lat,
     required double lng,
     required String profileId,
-  }) => guard(() async {
-    // Step 1: clear existing primary
-    await svc.client
-        .from(SupabaseConfig.profileLocationsTable)
-        .update({'is_primary': false})
-        .eq('is_primary', true);
+  }) =>
+      guard(() async {
+        // Step 1: clear existing primary
+        await svc.client
+            .from(SupabaseConfig.profileLocationsTable)
+            .update({'is_primary': false})
+            .eq('is_primary', true);
 
-    // Step 2: set new primary
-    await svc.client
-        .from(SupabaseConfig.profileLocationsTable)
-        .update({'is_primary': true})
-        .eq('id', locationId);
+        // Step 2: set new primary
+        await svc.client
+            .from(SupabaseConfig.profileLocationsTable)
+            .update({'is_primary': true})
+            .eq('id', locationId);
 
-    // Step 3: sync to profiles table for post-trigger fallback
-    await svc.client
-        .from(SupabaseConfig.usersTable)
-        .update({
+        // Step 3: sync to profiles table for post-trigger fallback
+        await svc.client.from(SupabaseConfig.usersTable).update({
           'latitude': lat,
           'longitude': lng,
-          'last_location_updated_at': DateTime.now().toUtc().toIso8601String(),
-        })
-        .eq('id', profileId);
-  });
+          'last_location_updated_at':
+              DateTime.now().toUtc().toIso8601String(),
+        }).eq('id', profileId);
+      });
 
   @override
   Future<Result<void, Failure>> deleteLocation(String locationId) =>
@@ -118,20 +121,23 @@ class ProfileLocationRepositoryImpl extends BaseRepository
     String locationId,
     ProfileLocationLabel label, {
     String? customName,
-  }) => guard(() async {
-    await svc.client
-        .from(SupabaseConfig.profileLocationsTable)
-        .update({'label': label.toJson(), 'label_custom': customName})
-        .eq('id', locationId);
-  });
+  }) =>
+      guard(() async {
+        await svc.client.from(SupabaseConfig.profileLocationsTable).update({
+          'label': label.toJson(),
+          'label_custom': customName,
+        }).eq('id', locationId);
+      });
 
   @override
-  Future<Result<void, Failure>> updateRadius(String locationId, int meters) =>
+  Future<Result<void, Failure>> updateRadius(
+    String locationId,
+    int meters,
+  ) =>
       guard(() async {
         await svc.client
             .from(SupabaseConfig.profileLocationsTable)
-            .update({'nearby_radius_meters': meters})
-            .eq('id', locationId);
+            .update({'nearby_radius_meters': meters}).eq('id', locationId);
       });
 
   // ── Geohash helper ────────────────────────────────────────────────────────
@@ -184,4 +190,5 @@ class ProfileLocationRepositoryImpl extends BaseRepository
     final _ = bitsTotal;
     return buf.toString();
   }
+
 }

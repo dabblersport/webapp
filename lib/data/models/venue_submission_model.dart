@@ -24,14 +24,12 @@ extension VenueSubmissionStatusX on VenueSubmissionStatus {
   }
 
   bool get isEditable =>
-      this == VenueSubmissionStatus.draft ||
-      this == VenueSubmissionStatus.returned;
+      this == VenueSubmissionStatus.draft || this == VenueSubmissionStatus.returned;
 
   bool get canSubmitForReview => isEditable;
 
   bool get shouldShowAdminNote =>
-      this == VenueSubmissionStatus.returned ||
-      this == VenueSubmissionStatus.rejected;
+      this == VenueSubmissionStatus.returned || this == VenueSubmissionStatus.rejected;
 }
 
 /// User-editable fields for creating or updating a submission draft.

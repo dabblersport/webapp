@@ -12118,6 +12118,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Meetup chat is not available yet'**
   String get messaging_meetup_chat_unavailable;
+
+  /// KAN-570 Shown when the password sign-in succeeded but loading the profile or starting the session failed. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You are signed in, but we couldn\'t load your account. Try again.'**
+  String get email_password_error_profile_failed;
 }
 
 class _AppLocalizationsDelegate

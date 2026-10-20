@@ -26,21 +26,16 @@ void dumpGeometry(WidgetTester tester, String name) {
           final InlineSpan span = o.text;
           TextStyle? leaf = s;
           span.visitChildren((c) {
-            if (c is TextSpan && c.style != null)
-              leaf = s?.merge(c.style) ?? c.style;
+            if (c is TextSpan && c.style != null) leaf = s?.merge(c.style) ?? c.style;
             return false;
           });
-          out.writeln(
-            '${'  ' * depth}text ${r(rect)} "${t.length > 40 ? t.substring(0, 40) : t}" '
-            '${leaf?.fontFamily} ${leaf?.fontSize}/${leaf?.height == null ? '-' : ((leaf!.height! * (leaf!.fontSize ?? 0))).toStringAsFixed(1)} '
-            'w${leaf?.fontWeight?.value} c=${leaf?.color?.toARGB32().toRadixString(16)}',
-          );
+          out.writeln('${'  ' * depth}text ${r(rect)} "${t.length > 40 ? t.substring(0, 40) : t}" '
+              '${leaf?.fontFamily} ${leaf?.fontSize}/${leaf?.height == null ? '-' : ((leaf!.height! * (leaf!.fontSize ?? 0))).toStringAsFixed(1)} '
+              'w${leaf?.fontWeight?.value} c=${leaf?.color?.toARGB32().toRadixString(16)}');
         } else if (o is RenderDecoratedBox && o.decoration is BoxDecoration) {
           final BoxDecoration d = o.decoration as BoxDecoration;
-          out.writeln(
-            '${'  ' * depth}box ${r(rect)} bg=${d.color?.toARGB32().toRadixString(16)} '
-            'r=${d.borderRadius} border=${d.border?.top.width}/${d.border?.top.color.toARGB32().toRadixString(16)}',
-          );
+          out.writeln('${'  ' * depth}box ${r(rect)} bg=${d.color?.toARGB32().toRadixString(16)} '
+              'r=${d.borderRadius} border=${d.border?.top.width}/${d.border?.top.color.toARGB32().toRadixString(16)}');
         } else if (o is RenderPhysicalShape || o is RenderClipRRect) {
           out.writeln('${'  ' * depth}${o.runtimeType} ${r(rect)}');
         }

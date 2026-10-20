@@ -12,87 +12,87 @@ import 'package:dabbler/features/home/presentation/screens/main_navigation_scree
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
-import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart'
-    show RealFriendsScreen;
+import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart' show RealFriendsScreen;
 import 'package:dabbler/features/social/presentation/screens/real_friends_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/page_transitions.dart';
 
 // ── Shell route: persistent bottom-nav tabs with per-tab URLs ──
-RouteBase get homeShellRoute => StatefulShellRoute.indexedStack(
-  builder: (context, state, navigationShell) {
-    return MainNavigationScreen(navigationShell: navigationShell);
-  },
-  branches: [
-    // Branch 0 — Home / Feeds
-    StatefulShellBranch(
-      routes: [
-        GoRoute(
-          path: RoutePaths.home,
-          name: RouteNames.home,
-          pageBuilder: (context, state) => FadeThroughTransitionPage(
-            key: state.pageKey,
-            child: const HomeScreen(),
-          ),
-        ),
-      ],
-    ),
-
-    // Branch 1 — Community
-    StatefulShellBranch(
-      routes: [
-        GoRoute(
-          path: RoutePaths.community,
-          name: RouteNames.community,
-          pageBuilder: (context, state) => FadeThroughTransitionPage(
-            key: state.pageKey,
-            child: const RealFriendsScreen(),
-          ),
-        ),
-      ],
-    ),
-
-    // Branch 2 — Venues
-    StatefulShellBranch(
-      routes: [
-        GoRoute(
-          path: RoutePaths.venuesTab,
-          name: RouteNames.venuesTab,
-          pageBuilder: (context, state) => FadeThroughTransitionPage(
-            key: state.pageKey,
-            child: const VenuesScreen(),
-          ),
-        ),
-      ],
-    ),
-
-    // Branch 3 — Games
-    StatefulShellBranch(
-      routes: [
-        GoRoute(
-          path: RoutePaths.gamesTab,
-          name: RouteNames.gamesTab,
-          pageBuilder: (context, state) => FadeThroughTransitionPage(
-            key: state.pageKey,
-            child: const GamesScreen(),
-          ),
-        ),
-      ],
-    ),
-
-    // Branch 4 — Meetups (only while FeatureFlags.enableMeetups)
-    if (FeatureFlags.enableMeetups)
-      StatefulShellBranch(
-        routes: [
-          GoRoute(
-            path: RoutePaths.meetups,
-            name: RouteNames.meetups,
-            pageBuilder: (context, state) => FadeThroughTransitionPage(
-              key: state.pageKey,
-              child: const MeetupsScreen(),
+RouteBase get homeShellRoute =>
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) {
+        return MainNavigationScreen(navigationShell: navigationShell);
+      },
+      branches: [
+        // Branch 0 — Home / Feeds
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.home,
+              name: RouteNames.home,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const HomeScreen(),
+              ),
             ),
+          ],
+        ),
+
+        // Branch 1 — Community
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.community,
+              name: RouteNames.community,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const RealFriendsScreen(),
+              ),
+            ),
+          ],
+        ),
+
+        // Branch 2 — Venues
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.venuesTab,
+              name: RouteNames.venuesTab,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const VenuesScreen(),
+              ),
+            ),
+          ],
+        ),
+
+        // Branch 3 — Games
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: RoutePaths.gamesTab,
+              name: RouteNames.gamesTab,
+              pageBuilder: (context, state) => FadeThroughTransitionPage(
+                key: state.pageKey,
+                child: const GamesScreen(),
+              ),
+            ),
+          ],
+        ),
+
+        // Branch 4 — Meetups (only while FeatureFlags.enableMeetups)
+        if (FeatureFlags.enableMeetups)
+          StatefulShellBranch(
+            routes: [
+              GoRoute(
+                path: RoutePaths.meetups,
+                name: RouteNames.meetups,
+                pageBuilder: (context, state) => FadeThroughTransitionPage(
+                  key: state.pageKey,
+                  child: const MeetupsScreen(),
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
-  ],
-);
+      ],
+    );

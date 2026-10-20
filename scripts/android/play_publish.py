@@ -31,8 +31,14 @@ Release stages, kept distinct on purpose (Play does NOT expose "in review" throu
 """
 import argparse
 import json
+import hashlib
+import io
+import os
+import struct
 import re
+import subprocess
 import sys
+import tempfile
 import urllib.request
 
 SCOPE = "https://www.googleapis.com/auth/androidpublisher"
@@ -102,6 +108,114 @@ def stage_report(version_code, bundle_codes, tracks, store_page_has_version=None
 
 
 # ---- API access -------------------------------------------------------------------------
+
+def colon_fingerprint(hex_or_colon):
+    """AA:BB:... (upper-case, colon-separated) from a hex string; None if it is not hex."""
+    h = re.sub(r"[^0-9A-Fa-f]", "", hex_or_colon or "").upper()
+    if not h or len(h) % 2:
+        return None
+    return ":".join(h[i:i + 2] for i in range(0, len(h), 2))
+
+
+def parse_keytool_fingerprints(text):
+    """{'sha1': 'AA:..', 'sha256': 'AA:..'} from `keytool -printcert` output (public fingerprints only)."""
+    out = {}
+    for key, label in (("sha1", "SHA1"), ("sha256", "SHA256")):
+        m = re.search(r"^\s*%s:\s*([0-9A-Fa-f:]+)\s*$" % label, text or "", re.M)
+        if m:
+            out[key] = colon_fingerprint(m.group(1))
+    return out
+
+
+_SIG_BLOCK_MAGIC = b"APK Sig Block 42"
+_V2_ID, _V3_ID = 0x7109871A, 0xF05368C0
+
+
+def _u32_items(buf):
+    """Split a sequence of u32-length-prefixed items."""
+    items, i = [], 0
+    while i + 4 <= len(buf):
+        (n,) = struct.unpack_from("<I", buf, i)
+        items.append(buf[i + 4:i + 4 + n])
+        i += 4 + n
+    return items
+
+
+def apk_signing_cert_hashes(path):
+    """Public SHA-1 and SHA-256 (AA:BB:..) of the first signer certificate in an APK's v2/v3 signing block
+    (KAN-571). Needed because the Android OAuth client is registered by SHA-1 and Play only returns SHA-256.
+    Raises ValueError if there is no readable signing block."""
+    with open(path, "rb") as fh:
+        data = fh.read()
+    eocd = data.rfind(b"PK\x05\x06")
+    if eocd < 0:
+        raise ValueError("no EOCD")
+    (cd_off,) = struct.unpack_from("<I", data, eocd + 16)
+    if data[cd_off - 16:cd_off] != _SIG_BLOCK_MAGIC:
+        raise ValueError("no signing block")
+    (size,) = struct.unpack_from("<Q", data, cd_off - 24)
+    start = cd_off - size - 8
+    pos, end = start + 8, cd_off - 24
+    while pos + 12 <= end:
+        (n,) = struct.unpack_from("<Q", data, pos)
+        (pid,) = struct.unpack_from("<I", data, pos + 8)
+        value = data[pos + 12:pos + 8 + n]
+        pos += 8 + n
+        if pid not in (_V2_ID, _V3_ID):
+            continue
+        signers = _u32_items(_u32_items(value)[0])
+        signed_data = _u32_items(signers[0])[0]
+        parts = _u32_items(signed_data)  # digests, certificates, ...
+        certs = _u32_items(parts[1])
+        der = certs[0]
+        return {"sha1": colon_fingerprint(hashlib.sha1(der).hexdigest()),
+                "sha256": colon_fingerprint(hashlib.sha256(der).hexdigest())}
+    raise ValueError("no v2/v3 signer")
+
+
+def signing_report(api, package, version_code):
+    """Read-only (KAN-571): the certificate Google Play signs this version with (the APP SIGNING key that
+    users' devices see, not the upload key). Public fingerprints only; any failure is reported as a reason
+    class, never raised, so `status` keeps working."""
+    try:
+        resp = api.generatedapks().list(packageName=package, versionCode=int(version_code)).execute()
+    except Exception as e:  # noqa: BLE001 - report the class, never the message
+        return {"checked": False, "reason": "list-failed:" + type(e).__name__}
+    apks = resp.get("generatedApks") or []
+    sha256 = sorted({colon_fingerprint(a.get("certificateSha256Hash")) for a in apks
+                     if colon_fingerprint(a.get("certificateSha256Hash"))})
+    report = {"checked": True, "generatedApkCount": len(apks), "certificateSha256": sha256}
+    download_id = next(((a.get("generatedUniversalApk") or {}).get("downloadId") for a in apks
+                        if (a.get("generatedUniversalApk") or {}).get("downloadId")), None)
+    if not download_id:
+        report["sha1"] = None
+        report["sha1Reason"] = "no-universal-apk"
+        return report
+    path = None
+    try:
+        from googleapiclient.http import MediaIoBaseDownload
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as fh:
+            path = fh.name
+            req = api.generatedapks().download_media(
+                packageName=package, versionCode=int(version_code), downloadId=download_id)
+            dl = MediaIoBaseDownload(fh, req)
+            done = False
+            while not done:
+                _, done = dl.next_chunk()
+        found = apk_signing_cert_hashes(path)
+        report["sha1"] = found.get("sha1")
+        report["certificateSha256FromApk"] = found.get("sha256")
+    except Exception as e:  # noqa: BLE001
+        report["sha1"] = None
+        report["sha1Reason"] = "download-failed:" + type(e).__name__
+    finally:
+        if path:
+            try:
+                os.unlink(path)
+            except OSError:
+                pass
+    return report
+
 
 def service(credentials_path):
     from google.oauth2 import service_account
@@ -201,7 +315,7 @@ def cmd_upload(args):
     return read_back(api, args, expect_track=args.track)
 
 
-def read_back(api, args, expect_track=None):
+def read_back(api, args, expect_track=None, extra=None):
     edit_id = read_only_edit(api, args.package)
     try:
         codes = list_bundle_codes(api, args.package, edit_id)
@@ -215,13 +329,16 @@ def read_back(api, args, expect_track=None):
     verified = report["uploaded"] and (
         expect_track is None or any(x["track"] == expect_track for x in report["onTrack"]))
     report.update({"command": args.command, "ok": bool(verified), "package": args.package})
+    if extra:
+        report.update(extra)
     print(json.dumps(report, indent=2))
     return 0 if verified else 1
 
 
 def cmd_status(args):
     api = service(args.credentials)
-    return read_back(api, args, expect_track=args.track)
+    return read_back(api, args, expect_track=args.track,
+                     extra={"playSigning": signing_report(api, args.package, args.version_code)})
 
 
 def main(argv=None):

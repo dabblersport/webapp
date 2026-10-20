@@ -21,8 +21,7 @@ import 'package:dabbler/features/social/providers/public_activity_providers.dart
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
-import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerToastProvider;
+import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerToastProvider;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -185,29 +184,18 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
               builder: (_, __, shell) =>
                   MainNavigationScreen(navigationShell: shell),
               branches: [
-                StatefulShellBranch(
-                  routes: [
-                    GoRoute(
-                      path: '/home',
-                      builder: (_, __) => const HomeScreen(),
-                    ),
-                  ],
-                ),
-                StatefulShellBranch(
-                  routes: [
-                    GoRoute(path: '/community', builder: (_, __) => empty()),
-                  ],
-                ),
-                StatefulShellBranch(
-                  routes: [
-                    GoRoute(path: '/venues', builder: (_, __) => empty()),
-                  ],
-                ),
-                StatefulShellBranch(
-                  routes: [
-                    GoRoute(path: '/games', builder: (_, __) => empty()),
-                  ],
-                ),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/home', builder: (_, __) => const HomeScreen()),
+                ]),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/community', builder: (_, __) => empty()),
+                ]),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/venues', builder: (_, __) => empty()),
+                ]),
+                StatefulShellBranch(routes: [
+                  GoRoute(path: '/games', builder: (_, __) => empty()),
+                ]),
               ],
             ),
           ],
@@ -276,3 +264,4 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
   await tester.pump(const Duration(milliseconds: 50));
   return (feed: feed, pushed: pushed);
 }
+

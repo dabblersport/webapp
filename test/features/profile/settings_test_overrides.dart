@@ -27,7 +27,8 @@ class _FakePrivacy extends PrivacyController {
   Future<void> loadPrivacySettings(String userId) async {}
 }
 
-class FakeNotificationSettings extends StateNotifier<NotificationSettingsState>
+class FakeNotificationSettings
+    extends StateNotifier<NotificationSettingsState>
     implements NotificationSettingsController {
   FakeNotificationSettings(NotificationSettings settings)
     : super(NotificationSettingsState(settings: settings, isLoading: false));

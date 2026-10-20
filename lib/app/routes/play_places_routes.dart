@@ -1,3 +1,4 @@
+import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_guard.dart';
 import 'package:dabbler/features/favourites/presentation/screens/favourites_screen.dart';
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
@@ -33,199 +34,219 @@ import 'package:dabbler/app/app_router.dart';
 // to the correct screen without needing to know the shell structure.
 
 // /sports/games/:gameId — game detail (root-level, no shell/bottom-nav)
-RouteBase get sportsGamesGameIdRoute => GoRoute(
-  path: '/sports/games/:gameId',
-  name: RouteNames.gameDetail,
-  parentNavigatorKey: rootNavigatorKey,
-  pageBuilder: (context, state) {
-    final gameId = state.pathParameters['gameId']!;
-    // ?focus=requests (join-request notifications) scrolls the detail
-    // screen down to the pending-requests card.
-    final focus = state.uri.queryParameters['focus'];
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: GameDetailScreen(
-        gameId: gameId,
-        focusRequests: focus == 'requests',
-      ),
-      type: SharedAxisType.horizontal,
+RouteBase get sportsGamesGameIdRoute =>
+    GoRoute(
+      path: '/sports/games/:gameId',
+      name: RouteNames.gameDetail,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final gameId = state.pathParameters['gameId']!;
+        // ?focus=requests (join-request notifications) scrolls the detail
+        // screen down to the pending-requests card.
+        final focus = state.uri.queryParameters['focus'];
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: GameDetailScreen(
+            gameId: gameId,
+            focusRequests: focus == 'requests',
+          ),
+          type: SharedAxisType.horizontal,
+        );
+      },
     );
-  },
-);
 
 // /favourites — the viewer's favourite venues, games and meetups (root-level)
-RouteBase get favouritesRoute => GoRoute(
-  path: RoutePaths.favourites,
-  name: RouteNames.favourites,
-  parentNavigatorKey: rootNavigatorKey,
-  redirect: (context, state) =>
-      FeatureFlags.enableFavourites ? null : RoutePaths.home,
-  pageBuilder: (context, state) {
-    final tab = state.uri.queryParameters['tab'];
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: FavouritesScreen(
-        initialKind: FavouriteKind.values.firstWhere(
-          (k) => k.name == tab,
-          orElse: () => FavouriteKind.venue,
-        ),
-      ),
-      type: SharedAxisType.horizontal,
+RouteBase get favouritesRoute =>
+    GoRoute(
+      path: RoutePaths.favourites,
+      name: RouteNames.favourites,
+      parentNavigatorKey: rootNavigatorKey,
+      redirect: (context, state) =>
+          FeatureFlags.enableFavourites ? null : RoutePaths.home,
+      pageBuilder: (context, state) {
+        final tab = state.uri.queryParameters['tab'];
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: FavouritesScreen(
+            initialKind: FavouriteKind.values.firstWhere(
+              (k) => k.name == tab,
+              orElse: () => FavouriteKind.venue,
+            ),
+          ),
+          type: SharedAxisType.horizontal,
+        );
+      },
     );
-  },
-);
 
 // /sports/venues/:venueId — venue detail (root-level, no shell/bottom-nav)
-RouteBase get sportsVenuesVenueIdRoute => GoRoute(
-  path: '/sports/venues/:venueId',
-  name: RouteNames.venueDetail,
-  parentNavigatorKey: rootNavigatorKey,
-  pageBuilder: (context, state) {
-    final venueId = state.pathParameters['venueId']!;
-    return SharedAxisTransitionPage(
-      key: state.pageKey,
-      child: VenueDetailScreen(venueId: venueId),
-      type: SharedAxisType.horizontal,
+RouteBase get sportsVenuesVenueIdRoute =>
+    GoRoute(
+      path: '/sports/venues/:venueId',
+      name: RouteNames.venueDetail,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) {
+        final venueId = state.pathParameters['venueId']!;
+        return SharedAxisTransitionPage(
+          key: state.pageKey,
+          child: VenueDetailScreen(venueId: venueId),
+          type: SharedAxisType.horizontal,
+        );
+      },
     );
-  },
-);
 
 // dabbler://app/game/:gameId → /sports/games/:gameId (root-level detail)
-RouteBase get gameGameIdRoute => GoRoute(
-  path: '/game/:gameId',
-  redirect: (context, state) {
-    final gameId = state.pathParameters['gameId'];
-    if (gameId == null || gameId.isEmpty) return RoutePaths.gamesTab;
-    return '/sports/games/$gameId';
-  },
-);
+RouteBase get gameGameIdRoute =>
+    GoRoute(
+      path: '/game/:gameId',
+      redirect: (context, state) =>
+          // KAN-597: validated once; a malformed id lands on Home, never an error page.
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
+    );
+
+// KAN-597: https://<origin>/venue/:venueId (the shared venue link) → /sports/venues/:venueId.
+RouteBase get venueShareLinkRoute =>
+    GoRoute(
+      path: '/venue/:venueId',
+      redirect: (context, state) =>
+          DeepLinks.resolve(state.uri, malformedFallback: RoutePaths.home) ??
+          RoutePaths.home,
+    );
 
 // Legacy /sports top-level redirect handled inside the shell branch above.
 // Sports explore screen (direct access, feature-flagged)
-RouteBase get sportsExploreRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.sportsExplore,
-  name: RouteNames.sports,
-  redirect: (context, state) {
-    if (!FeatureFlags.enableGameBrowsing) {
-      return RoutePaths.home;
-    }
-    return null;
-  },
-  pageBuilder: (context, state) => FadeThroughTransitionPage(
-    key: state.pageKey,
-    child: const ExploreScreen(),
-  ),
-);
+RouteBase get sportsExploreRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.sportsExplore,
+      name: RouteNames.sports,
+      redirect: (context, state) {
+        if (!FeatureFlags.enableGameBrowsing) {
+          return RoutePaths.home;
+        }
+        return null;
+      },
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const ExploreScreen(),
+      ),
+    );
 
 // Organiser Venue Submissions
-RouteBase get myVenueSubmissionsRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.myVenueSubmissions,
-  name: RouteNames.myVenueSubmissions,
-  redirect: (context, state) {
-    final container = ProviderScope.containerOf(context, listen: false);
-    final profileState = container.read(profileControllerProvider);
-    final profileType = profileState.profile?.profileType;
-    if (profileType != 'organiser') {
-      return RoutePaths.home;
-    }
-    return null;
-  },
-  pageBuilder: (context, state) => SharedAxisTransitionPage(
-    key: state.pageKey,
-    child: const MyVenueSubmissionsScreen(),
-    type: SharedAxisType.horizontal,
-  ),
-  routes: [
+RouteBase get myVenueSubmissionsRoute =>
     GoRoute(
       parentNavigatorKey: rootNavigatorKey,
-      path: 'create',
-      name: RouteNames.createVenueSubmission,
-      pageBuilder: (context, state) {
-        final initial = state.extra is VenueSubmissionModel
-            ? state.extra as VenueSubmissionModel
-            : null;
-        return SharedAxisTransitionPage(
-          key: state.pageKey,
-          child: CreateVenueSubmissionScreen(initial: initial),
-          type: SharedAxisType.horizontal,
-        );
+      path: RoutePaths.myVenueSubmissions,
+      name: RouteNames.myVenueSubmissions,
+      redirect: (context, state) {
+        final container = ProviderScope.containerOf(context, listen: false);
+        final profileState = container.read(profileControllerProvider);
+        final profileType = profileState.profile?.profileType;
+        if (profileType != 'organiser') {
+          return RoutePaths.home;
+        }
+        return null;
       },
-    ),
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: ':${RouteParams.submissionId}',
-      name: RouteNames.venueSubmissionDetail,
-      pageBuilder: (context, state) {
-        final id = state.pathParameters[RouteParams.submissionId] ?? '';
-        return SharedAxisTransitionPage(
-          key: state.pageKey,
-          child: VenueSubmissionDetailScreen(submissionId: id),
-          type: SharedAxisType.horizontal,
-        );
-      },
-    ),
-  ],
-);
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const MyVenueSubmissionsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+      routes: [
+        GoRoute(
+          parentNavigatorKey: rootNavigatorKey,
+          path: 'create',
+          name: RouteNames.createVenueSubmission,
+          pageBuilder: (context, state) {
+            final initial = state.extra is VenueSubmissionModel
+                ? state.extra as VenueSubmissionModel
+                : null;
+            return SharedAxisTransitionPage(
+              key: state.pageKey,
+              child: CreateVenueSubmissionScreen(initial: initial),
+              type: SharedAxisType.horizontal,
+            );
+          },
+        ),
+        GoRoute(
+          parentNavigatorKey: rootNavigatorKey,
+          path: ':${RouteParams.submissionId}',
+          name: RouteNames.venueSubmissionDetail,
+          pageBuilder: (context, state) {
+            final id = state.pathParameters[RouteParams.submissionId] ?? '';
+            return SharedAxisTransitionPage(
+              key: state.pageKey,
+              child: VenueSubmissionDetailScreen(submissionId: id),
+              type: SharedAxisType.horizontal,
+            );
+          },
+        ),
+      ],
+    );
 
 // Activities route
-RouteBase get activitiesRoute => GoRoute(
-  parentNavigatorKey: rootNavigatorKey,
-  path: RoutePaths.activities,
-  name: RouteNames.activities,
-  pageBuilder: (context, state) => FadeThroughTransitionPage(
-    key: state.pageKey,
-    child: const ActivitiesScreenV2(),
-  ),
-);
+RouteBase get activitiesRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.activities,
+      name: RouteNames.activities,
+      pageBuilder: (context, state) => FadeThroughTransitionPage(
+        key: state.pageKey,
+        child: const ActivitiesScreenV2(),
+      ),
+    );
 
 // Game Creation Routes - Differentiated by profile type
 // Access is gated per profile type by FeatureFlags.enablePlayerGameCreation /
 // enableOrganiserGameCreation (feature_flags.dart) in the redirect below —
 // not a fixed MVP restriction that always blocks one side. Check the flags'
 // current values rather than assuming from this comment.
-RouteBase get createGameRoute => GoRoute(
-  path: RoutePaths.createGame,
-  name: RouteNames.createGame,
-  parentNavigatorKey: rootNavigatorKey,
-  redirect: (context, state) async {
-    // Profile type + feature flags: the one shared rule (KAN-475).
-    final container = ProviderScope.containerOf(context, listen: false);
-    return gameCreationAllowedFor(container) ? null : RoutePaths.home;
-  },
-  // The design's DS sheet (KAN-472, D-035): 94% over the scrim, a scrim
-  // tap closes it, as Create meet-up presents.
-  pageBuilder: (context, state) => GameComposerSheetPage(
-    key: state.pageKey,
-    child: const GameCreateGate(child: GameComposerScreen()),
-  ),
-);
+RouteBase get createGameRoute =>
+    GoRoute(
+      path: RoutePaths.createGame,
+      name: RouteNames.createGame,
+      parentNavigatorKey: rootNavigatorKey,
+      redirect: (context, state) async {
+        // Profile type + feature flags: the one shared rule (KAN-475).
+        final container = ProviderScope.containerOf(context, listen: false);
+        return gameCreationAllowedFor(container) ? null : RoutePaths.home;
+      },
+      // The design's DS sheet (KAN-472, D-035): 94% over the scrim, a scrim
+      // tap closes it, as Create meet-up presents.
+      pageBuilder: (context, state) => GameComposerSheetPage(
+        key: state.pageKey,
+        child: const GameCreateGate(child: GameComposerScreen()),
+      ),
+    );
 
-RouteBase get createGameBasicInfoRoute => GoRoute(
-  path: RoutePaths.createGameBasicInfo,
-  name: RouteNames.createGameBasicInfo,
-  parentNavigatorKey: rootNavigatorKey,
-  redirect: (context, state) async {
-    // Profile type + feature flags: the one shared rule (KAN-475).
-    final container = ProviderScope.containerOf(context, listen: false);
-    return gameCreationAllowedFor(container) ? null : RoutePaths.home;
-  },
-  pageBuilder: (context, state) => GameComposerSheetPage(
-    key: state.pageKey,
-    child: const GameCreateGate(child: GameComposerScreen()),
-  ),
-);
+RouteBase get createGameBasicInfoRoute =>
+    GoRoute(
+      path: RoutePaths.createGameBasicInfo,
+      name: RouteNames.createGameBasicInfo,
+      parentNavigatorKey: rootNavigatorKey,
+      redirect: (context, state) async {
+        // Profile type + feature flags: the one shared rule (KAN-475).
+        final container = ProviderScope.containerOf(context, listen: false);
+        return gameCreationAllowedFor(container) ? null : RoutePaths.home;
+      },
+      pageBuilder: (context, state) => GameComposerSheetPage(
+        key: state.pageKey,
+        child: const GameCreateGate(child: GameComposerScreen()),
+      ),
+    );
 
 // Edit an existing game — same drawer as creation, prefilled. Host-only
 // enforcement lives in rpc_update_game; the entry button is host-gated.
-RouteBase get editGameRoute => GoRoute(
-  path: RoutePaths.editGame,
-  name: RouteNames.editGame,
-  parentNavigatorKey: rootNavigatorKey,
-  pageBuilder: (context, state) => GameComposerSheetPage(
-    key: state.pageKey,
-    editing: true,
-    child: GameComposerScreen(editGameId: state.pathParameters['gameId']!),
-  ),
-);
+RouteBase get editGameRoute =>
+    GoRoute(
+      path: RoutePaths.editGame,
+      name: RouteNames.editGame,
+      parentNavigatorKey: rootNavigatorKey,
+      pageBuilder: (context, state) => GameComposerSheetPage(
+        key: state.pageKey,
+        editing: true,
+        child: GameComposerScreen(
+          editGameId: state.pathParameters['gameId']!,
+        ),
+      ),
+    );

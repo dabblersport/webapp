@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show myProfileIdProvider;
 import 'dart:async';
 
 import 'package:dabbler/core/fp/result.dart';
@@ -166,7 +168,12 @@ class GamesListingCard extends ConsumerWidget {
             semanticLabel: l.listing_share_game,
             onTap: () => SharePlus.instance.share(
               ShareParams(
-                uri: Uri.parse(RoutePaths.gameLink(game.id)),
+                uri: Uri.parse(
+                  RoutePaths.gameLink(
+                    game.id,
+                    sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+                  ),
+                ),
                 title: game.title,
                 subject: game.title,
               ),

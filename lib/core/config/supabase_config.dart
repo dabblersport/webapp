@@ -29,7 +29,6 @@ class SupabaseConfig {
 
   /// Messaging (KAN-547/KAN-550): the signed-in user's game chats.
   static const String msgMyConversationsRpc = 'msg_my_conversations';
-
   /// KAN-551: admin-only list of message reports (ids, reason, status, time).
   static const String msgListMessageReportsRpc = 'msg_list_message_reports';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';

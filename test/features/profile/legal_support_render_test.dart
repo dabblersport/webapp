@@ -113,14 +113,8 @@ void main() {
     testWidgets('privacy policy — $dir', (tester) async {
       await _pump(tester, const PrivacyPolicyScreen(), locale);
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(l10n.settings_item_privacy_policy_title),
-        findsOneWidget,
-      );
-      expect(
-        find.bySemanticsLabel(l10n.about_privacy_settings_tooltip),
-        findsWidgets,
-      );
+      expect(find.text(l10n.settings_item_privacy_policy_title), findsOneWidget);
+      expect(find.bySemanticsLabel(l10n.about_privacy_settings_tooltip), findsWidgets);
       await _shoot(tester, _shotKey, 'privacy-policy-default-$dir');
     });
 
@@ -179,7 +173,10 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.text(l10n.bug_err_title_required), findsOneWidget);
       expect(find.text(l10n.bug_err_description_required), findsOneWidget);
-      expect(find.text(l10n.bug_err_steps_required), findsOneWidget);
+      expect(
+        find.text(l10n.bug_err_steps_required),
+        findsOneWidget,
+      );
       expect(find.byType(Form), findsOneWidget);
       await _shoot(tester, _shotKey, 'bug-report-errors-$dir');
     });

@@ -95,18 +95,12 @@ Future<void> loadRenderFonts({List<String>? searchDirs}) async {
   }
 
   const List<String> glory = <String>[
-    'Glory-Light.ttf',
-    'Glory-Regular.ttf',
-    'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf',
-    'Glory-Bold.ttf',
+    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf',
-    'meral-sans-regular.ttf',
-    'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf',
-    'meral-sans-bold.ttf',
+    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['packages/dabbler_design_system/', '']) {
     await family('${prefix}Glory', glory);
@@ -115,13 +109,7 @@ Future<void> loadRenderFonts({List<String>? searchDirs}) async {
     await family('${prefix}Wingx', <String>['Wingx-Regular.otf']);
   }
   // Latin fallback for Wingx: the engine looks these up by name.
-  for (final String fallback in <String>[
-    'Roboto',
-    'Noto Sans',
-    'Arial',
-    'Georgia',
-    'Times New Roman',
-  ]) {
+  for (final String fallback in <String>['Roboto', 'Noto Sans', 'Arial', 'Georgia', 'Times New Roman']) {
     await family(fallback, <String>['Gloock-Regular.ttf']);
   }
   final String home = Platform.environment['HOME'] ?? '';
@@ -129,9 +117,9 @@ Future<void> loadRenderFonts({List<String>? searchDirs}) async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader(
-      'packages/iconsax_flutter/FlutterIconsax',
-    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader =
+        FontLoader('packages/iconsax_flutter/FlutterIconsax')
+          ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }

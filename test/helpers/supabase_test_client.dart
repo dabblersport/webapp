@@ -26,12 +26,9 @@ http.Response jsonListResponse(
   int status = 200,
   http.BaseRequest? request,
 }) {
-  return http.Response(
-    jsonEncode(rows),
-    status,
-    headers: {'content-type': 'application/json'},
-    request: request,
-  );
+  return http.Response(jsonEncode(rows), status, headers: {
+    'content-type': 'application/json',
+  }, request: request);
 }
 
 http.Response jsonObjectResponse(
@@ -39,12 +36,9 @@ http.Response jsonObjectResponse(
   int status = 200,
   http.BaseRequest? request,
 }) {
-  return http.Response(
-    jsonEncode(row),
-    status,
-    headers: {'content-type': 'application/json'},
-    request: request,
-  );
+  return http.Response(jsonEncode(row), status, headers: {
+    'content-type': 'application/json',
+  }, request: request);
 }
 
 http.Response emptyOkResponse({int status = 204, http.BaseRequest? request}) {
@@ -58,12 +52,7 @@ http.Response postgrestErrorResponse({
   http.BaseRequest? request,
 }) {
   return http.Response(
-    jsonEncode({
-      'message': message,
-      'code': code,
-      'details': null,
-      'hint': null,
-    }),
+    jsonEncode({'message': message, 'code': code, 'details': null, 'hint': null}),
     status,
     headers: {'content-type': 'application/json'},
     request: request,
@@ -73,13 +62,8 @@ http.Response postgrestErrorResponse({
 /// A local (non-network) session JSON string that [GoTrueClient.setInitialSession]
 /// accepts. Lets tests authenticate a [SupabaseClient] without hitting the
 /// GoTrue HTTP API — the accessor is a plain in-memory session parse.
-String fakeSessionJson({
-  required String userId,
-  String email = 'test@example.com',
-}) {
-  final expiresAt =
-      DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/
-      1000;
+String fakeSessionJson({required String userId, String email = 'test@example.com'}) {
+  final expiresAt = DateTime.now().add(const Duration(hours: 1)).millisecondsSinceEpoch ~/ 1000;
   return jsonEncode({
     'access_token': 'fake-access-token',
     'token_type': 'bearer',

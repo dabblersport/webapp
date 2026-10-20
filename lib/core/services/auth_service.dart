@@ -17,6 +17,7 @@ import '../config/environment.dart';
 import '../../features/profile/data/datasources/profile_data_sources.dart';
 import '../../services/notifications/push_notification_service.dart';
 import '../../utils/constants/route_constants.dart';
+import '../models/google_sign_in_failure.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';
 
@@ -458,24 +459,48 @@ class AuthService {
         serverClientId: webClientId.isNotEmpty ? webClientId : null,
       );
 
-      final account = await googleSignIn.signIn();
+      // Each stage reports its own sanitized failure (KAN-570): a native
+      // sign-in error, a missing id token and a refused exchange are different
+      // causes with different fixes, and none may put provider text on screen.
+      final GoogleSignInAccount? account;
+      try {
+        account = await googleSignIn.signIn();
+      } catch (e) {
+        throw GoogleSignInFailure.from(GoogleSignInStage.native, e);
+      }
       if (account == null) return false;
 
-      final auth = await account.authentication;
-      final idToken = auth.idToken;
+      final String? idToken;
+      final String? accessToken;
+      try {
+        final auth = await account.authentication;
+        idToken = auth.idToken;
+        accessToken = auth.accessToken;
+      } catch (e) {
+        throw GoogleSignInFailure.from(GoogleSignInStage.idToken, e);
+      }
       if (idToken == null || idToken.isEmpty) {
-        throw Exception('Google sign-in did not return an idToken.');
+        throw GoogleSignInFailure(
+          GoogleSignInStage.idToken,
+          webClientId.isEmpty ? 'no_server_client_id' : 'missing',
+        );
       }
 
-      await _supabase.auth.signInWithIdToken(
-        provider: OAuthProvider.google,
-        idToken: idToken,
-        accessToken: auth.accessToken,
-      );
+      try {
+        await _supabase.auth.signInWithIdToken(
+          provider: OAuthProvider.google,
+          idToken: idToken,
+          accessToken: accessToken,
+        );
+      } catch (e) {
+        throw GoogleSignInFailure.from(GoogleSignInStage.exchange, e);
+      }
 
       return true;
+    } on GoogleSignInFailure {
+      rethrow;
     } catch (e) {
-      throw Exception('Google sign-in failed: $e');
+      throw GoogleSignInFailure.from(GoogleSignInStage.unknown, e);
     }
   }
 
@@ -994,9 +1019,7 @@ class AuthService {
             .maybeSingle();
 
         if (existingSportProfile == null) {
-          await _supabase
-              .from(SupabaseConfig.sportProfilesTable)
-              .insert(sportProfileData);
+          await _supabase.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
         }
       } catch (e) {
         // Log but don't fail - sport profile is important but not critical
@@ -1021,9 +1044,7 @@ class AuthService {
               .maybeSingle();
 
           if (existingPlayerProfile == null) {
-            await _supabase
-                .from(SupabaseConfig.playerTable)
-                .insert(playerProfileData);
+            await _supabase.from(SupabaseConfig.playerTable).insert(playerProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1048,9 +1069,7 @@ class AuthService {
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {
-            await _supabase
-                .from(SupabaseConfig.organiserTable)
-                .insert(organiserProfileData);
+            await _supabase.from(SupabaseConfig.organiserTable).insert(organiserProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1073,9 +1092,7 @@ class AuthService {
               .maybeSingle();
 
           if (existingHostProfile == null) {
-            await _supabase
-                .from(SupabaseConfig.hostTable)
-                .insert(hostProfileData);
+            await _supabase.from(SupabaseConfig.hostTable).insert(hostProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1150,14 +1167,10 @@ class AuthService {
       await _supabase.auth.updateUser(UserAttributes(password: password));
     }
 
-    await _supabase.auth.updateUser(
-      UserAttributes(
-        data: {
-          'display_name': displayName,
-          if (username.isNotEmpty) 'username': username,
-        },
-      ),
-    );
+    await _supabase.auth.updateUser(UserAttributes(data: {
+      'display_name': displayName,
+      if (username.isNotEmpty) 'username': username,
+    }));
 
     // Normalize country name → ISO code (e.g. "United Arab Emirates" → "AE")
     // The profiles.country FK targets ref_countries.code, not name_en.
@@ -1165,29 +1178,21 @@ class AuthService {
 
     // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
     // and bypass legacy-field triggers (profile_type / is_player / intention)
-    final profileId =
-        await _supabase.rpc(
-              SupabaseConfig.rpcOnboardProfileFn,
-              params: {
-                'p_user_id': user.id,
-                'p_display_name': displayName,
-                'p_username': username,
-                'p_age': age,
-                'p_gender': gender,
-                'p_persona_type': personaType,
-                if (preferredSport.isNotEmpty)
-                  'p_preferred_sport': preferredSport,
-                if (interests != null && interests.isNotEmpty)
-                  'p_interests': interests,
-                if (countryCode != null) 'p_country': countryCode,
-                if (city != null) 'p_city': city,
-              },
-            )
-            as String;
+    final profileId = await _supabase.rpc(SupabaseConfig.rpcOnboardProfileFn, params: {
+      'p_user_id': user.id,
+      'p_display_name': displayName,
+      'p_username': username,
+      'p_age': age,
+      'p_gender': gender,
+      'p_persona_type': personaType,
+      if (preferredSport.isNotEmpty) 'p_preferred_sport': preferredSport,
+      if (interests != null && interests.isNotEmpty) 'p_interests': interests,
+      if (countryCode != null) 'p_country': countryCode,
+      if (city != null) 'p_city': city,
+    }) as String;
 
-    await DefaultAvatarService(
-      client: _supabase,
-    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
+    await DefaultAvatarService(client: _supabase)
+        .ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
   }
@@ -1201,9 +1206,7 @@ class AuthService {
         params: {'p_username': username.trim()},
       );
       final row = (response is List)
-          ? (response.isNotEmpty
-                ? response.first as Map<String, dynamic>
-                : null)
+          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
           : response as Map<String, dynamic>?;
       if (row == null) return false;
       return !(row['available'] as bool? ?? true);

@@ -115,10 +115,7 @@ final class FeedNewsItem extends FeedItem {
 
     final newsId = json['news_id'];
     if (newsId is! String || newsId.isEmpty) {
-      throw FormatException(
-        'FeedNewsItem requires a non-empty news_id',
-        newsId,
-      );
+      throw FormatException('FeedNewsItem requires a non-empty news_id', newsId);
     }
 
     return FeedNewsItem(

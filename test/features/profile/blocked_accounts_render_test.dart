@@ -14,29 +14,15 @@ void main() {
 
   final states = <String, List<Map<String, dynamic>>>{
     'list': [
-      {
-        'user_id': 'a',
-        'display_name': 'Youssef El Khatib',
-        'username': 'youssef.elkhatib',
-      },
-      {
-        'user_id': 'b',
-        'display_name': 'Priya Nair',
-        'username': 'priya.nair.dxb',
-      },
-      {
-        'user_id': 'c',
-        'display_name': 'Ahmed Al Seed',
-        'username': 'seed_dubai_001',
-      },
+      {'user_id': 'a', 'display_name': 'Youssef El Khatib', 'username': 'youssef.elkhatib'},
+      {'user_id': 'b', 'display_name': 'Priya Nair', 'username': 'priya.nair.dxb'},
+      {'user_id': 'c', 'display_name': 'Ahmed Al Seed', 'username': 'seed_dubai_001'},
     ],
     'empty': [],
   };
   for (final entry in states.entries) {
     for (final locale in const [Locale('en'), Locale('ar')]) {
-      testWidgets('blocked ${entry.key} — ${locale.languageCode}', (
-        tester,
-      ) async {
+      testWidgets('blocked ${entry.key} — ${locale.languageCode}', (tester) async {
         await pumpProfileScreen(
           tester,
           Builder(
@@ -53,9 +39,7 @@ void main() {
           ),
           locale,
           overrides: [
-            blockedUsersWithProfilesProvider.overrideWith(
-              (ref) async => entry.value,
-            ),
+            blockedUsersWithProfilesProvider.overrideWith((ref) async => entry.value),
           ],
         );
         expect(tester.takeException(), isNull);

@@ -1,6 +1,5 @@
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
-import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerPage;
+import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerPage;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 

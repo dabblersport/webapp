@@ -31,26 +31,16 @@ void main() {
   });
 
   test('no DROP, no DELETE, no TRUNCATE', () {
-    expect(
-      RegExp(r'\b(drop|delete|truncate)\b', caseSensitive: false).hasMatch(sql),
-      isFalse,
-    );
+    expect(RegExp(r'\b(drop|delete|truncate)\b', caseSensitive: false)
+        .hasMatch(sql), isFalse);
   });
 
   test('definer with pinned search_path, anon and PUBLIC revoked', () {
     expect(sql, contains('SECURITY DEFINER SET search_path = public, pg_temp'));
-    expect(
-      sql,
-      contains(
-        'REVOKE ALL ON FUNCTION public.msg_notify(uuid, bigint, text) FROM PUBLIC, anon',
-      ),
-    );
-    expect(
-      sql,
-      contains(
-        'GRANT EXECUTE ON FUNCTION public.msg_notify(uuid, bigint, text) TO authenticated',
-      ),
-    );
+    expect(sql,
+        contains('REVOKE ALL ON FUNCTION public.msg_notify(uuid, bigint, text) FROM PUBLIC, anon'));
+    expect(sql,
+        contains('GRANT EXECUTE ON FUNCTION public.msg_notify(uuid, bigint, text) TO authenticated'));
   });
 
   test('adds a push-enabled message.received kind without overwriting', () {
@@ -66,12 +56,7 @@ void main() {
   });
 
   test('keeps the Realtime wake-up and the KAN-560 recipient rules', () {
-    expect(
-      sql,
-      contains(
-        "PERFORM realtime.send(v_payload, 'msg', 'user:' || v_to::text, true)",
-      ),
-    );
+    expect(sql, contains("PERFORM realtime.send(v_payload, 'msg', 'user:' || v_to::text, true)"));
     expect(sql, contains('mm.muted_at IS NOT NULL'));
     expect(sql, contains('dm.muted_at IS NULL'));
     expect(sql, contains('b.blocked_user_id = v_uid'));

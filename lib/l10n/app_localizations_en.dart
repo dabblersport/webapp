@@ -6731,4 +6731,8 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get messaging_meetup_chat_unavailable =>
       'Meetup chat is not available yet';
+
+  @override
+  String get email_password_error_profile_failed =>
+      'You are signed in, but we couldn\'t load your account. Try again.';
 }

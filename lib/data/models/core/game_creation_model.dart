@@ -284,13 +284,13 @@ class GameCreationModel {
 
   // Sport & Format Selection
   final String? selectedSport;
-  final String? selectedSportId; // uuid from public.sports
-  final String? selectedVariantId; // uuid from public.sport_variants
-  final int? requiredPlayers; // locked from variant.required_players
-  final int? playersPerSide; // from variant.players_per_side
+  final String? selectedSportId;    // uuid from public.sports
+  final String? selectedVariantId;  // uuid from public.sport_variants
+  final int? requiredPlayers;       // locked from variant.required_players
+  final int? playersPerSide;        // from variant.players_per_side
   final GameFormat? selectedFormat;
   final String? skillLevel;
-  final int? minSkill; // derived from skill level label
+  final int? minSkill;              // derived from skill level label
   final int? maxSkill;
   final int? maxPlayers;
   final int? gameDuration; // in minutes
@@ -299,14 +299,14 @@ class GameCreationModel {
 
   // Venue & Slot Selection
   final VenueSlot? selectedVenueSlot;
-  final String? venueSpaceId; // uuid from public.venue_spaces
+  final String? venueSpaceId;       // uuid from public.venue_spaces
   final List<String>? amenityFilters;
   final List<String>? venueFilters;
   final double? maxDistance;
 
   // Access control
   final String? listingVisibility; // public | friends | private | link
-  final String? joinPolicy; // open | request | invite | link
+  final String? joinPolicy;        // open | request | invite | link
 
   // Participation & Payment
   final ParticipationMode? participationMode;
@@ -677,8 +677,7 @@ class GameCreationModel {
       skillLevel != null &&
       selectedDate != null &&
       selectedStartTime != null;
-  bool get isStep2Valid =>
-      true; // venue is optional — RPC accepts null venue_space_id
+  bool get isStep2Valid => true; // venue is optional — RPC accepts null venue_space_id
   bool get isStep3Valid => true; // Player invitation is optional
   bool get isStep4Valid => participationMode != null && paymentSplit != null;
   bool get isStep5Valid =>

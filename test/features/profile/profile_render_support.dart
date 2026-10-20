@@ -26,15 +26,13 @@ Future<void> shootProfile(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
+    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
     Directory(kProfileShotsDir).createSync(recursive: true);
-    File(
-      '$kProfileShotsDir/$name.png',
-    ).writeAsBytesSync(png!.buffer.asUint8List());
+    File('$kProfileShotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
 }
+
+
 
 const Key kShotKey = Key('shot');
 

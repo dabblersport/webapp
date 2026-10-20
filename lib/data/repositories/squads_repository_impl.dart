@@ -126,11 +126,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
   @override
   Future<Result<Squad, Failure>> getSquadById(String id) async {
     try {
-      final row = await _db
-          .from(SupabaseConfig.squadsTable)
-          .select()
-          .eq('id', id)
-          .maybeSingle();
+      final row = await _db.from(SupabaseConfig.squadsTable).select().eq('id', id).maybeSingle();
       if (row == null) {
         return Err(const NotFoundFailure(message: 'Squad not found'));
       }
@@ -150,9 +146,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
     int offset = 0,
   }) async {
     try {
-      PostgrestFilterBuilder query = _db
-          .from(SupabaseConfig.squadsTable)
-          .select();
+      PostgrestFilterBuilder query = _db.from(SupabaseConfig.squadsTable).select();
       query = query.eq('is_active', true);
       if (sport != null && sport.isNotEmpty) {
         query = query.eq('sport', sport);
@@ -625,10 +619,7 @@ class SquadsRepositoryImpl implements SquadsRepository {
       return Err(const AuthFailure(message: 'Not authenticated'));
     }
     try {
-      final rows = await _db
-          .from(SupabaseConfig.squadsTable)
-          .select()
-          .eq('owner_user_id', uid);
+      final rows = await _db.from(SupabaseConfig.squadsTable).select().eq('owner_user_id', uid);
       final squads = rows
           .map(
             (dynamic row) =>

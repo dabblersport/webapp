@@ -86,5 +86,61 @@ class Cli(unittest.TestCase):
         self.assertNotIn("private_key", src)
 
 
+class SigningFingerprints(unittest.TestCase):
+    """KAN-571: public certificate fingerprints only."""
+
+    def test_colon_fingerprint_formats_hex(self):
+        self.assertEqual(pp.colon_fingerprint("0ee1b2e9"), "0E:E1:B2:E9")
+        self.assertEqual(pp.colon_fingerprint("0E:E1:b2:e9"), "0E:E1:B2:E9")
+        self.assertIsNone(pp.colon_fingerprint(""))
+        self.assertIsNone(pp.colon_fingerprint(None))
+        self.assertIsNone(pp.colon_fingerprint("abc"))  # odd length is not a fingerprint
+
+    def test_keytool_output_is_parsed(self):
+        text = "Signer #1:\n\nCertificate:\nOwner: CN=x\nCertificate fingerprints:\n\t SHA1: 0E:E1:B2:E9\n\t SHA256: AA:BB:CC:DD\n"
+        self.assertEqual(pp.parse_keytool_fingerprints(text), {"sha1": "0E:E1:B2:E9", "sha256": "AA:BB:CC:DD"})
+        self.assertEqual(pp.parse_keytool_fingerprints("no certificate"), {})
+
+    def test_a_failing_api_is_reported_not_raised(self):
+        class Boom:
+            def generatedapks(self):
+                raise RuntimeError("secret detail must not appear")
+        r = pp.signing_report(Boom(), "com.example", "1")
+        self.assertFalse(r["checked"])
+        self.assertEqual(r["reason"], "list-failed:RuntimeError")
+        self.assertNotIn("secret", str(r))
+
+
+
+    def test_apk_signing_block_cert_hashes(self):
+        import hashlib, struct, tempfile
+        der = b"FAKE-CERT-DER-BYTES"
+        def item(b):
+            return struct.pack("<I", len(b)) + b
+        signed_data = item(item(b"digest")) + item(item(der)) + item(b"")
+        signer = item(signed_data) + item(b"sigs") + item(b"pubkey")
+        v2 = item(item(signer))
+        pair = struct.pack("<I", pp._V2_ID) + v2
+        pairs = struct.pack("<Q", len(pair)) + pair
+        size = len(pairs) + 24
+        block = struct.pack("<Q", size) + pairs + struct.pack("<Q", size) + pp._SIG_BLOCK_MAGIC
+        local = b"PK\x03\x04" + b"x" * 20
+        cd = b"PK\x01\x02" + b"y" * 42
+        eocd = b"PK\x05\x06" + b"\0" * 8 + struct.pack("<II", len(cd), len(local) + len(block)) + b"\0\0"
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as fh:
+            fh.write(local + block + cd + eocd)
+        got = pp.apk_signing_cert_hashes(fh.name)
+        os.unlink(fh.name)
+        self.assertEqual(got["sha1"], pp.colon_fingerprint(hashlib.sha1(der).hexdigest()))
+        self.assertEqual(got["sha256"], pp.colon_fingerprint(hashlib.sha256(der).hexdigest()))
+
+    def test_an_apk_without_a_signing_block_raises(self):
+        import tempfile
+        with tempfile.NamedTemporaryFile(suffix=".apk", delete=False) as fh:
+            fh.write(b"PK\x05\x06" + b"\0" * 18)
+        with self.assertRaises(ValueError):
+            pp.apk_signing_cert_hashes(fh.name)
+        os.unlink(fh.name)
+
 if __name__ == "__main__":
     unittest.main()

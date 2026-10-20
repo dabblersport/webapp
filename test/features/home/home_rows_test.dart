@@ -24,27 +24,28 @@ Post _post({
   Map<String, dynamic> reactionBreakdown = const {},
   String authorProfileId = 'prof1',
   int viewCount = 0,
-}) => Post(
-  id: 'p1',
-  authorProfileId: authorProfileId,
-  authorUserId: 'user1',
-  authorAvatarUrl: avatarUrl,
-  reactionBreakdown: reactionBreakdown,
-  viewCount: viewCount,
-  repostCount: 2,
-  allowReposts: true,
-  authorDisplayName: 'Suraj Mehta',
-  kind: PostKind.original,
-  visibility: PostVisibility.public,
-  postType: PostType.dab,
-  body: body,
-  sport: 'Cricket',
-  tags: const <String>['dabblersport', 'cricket'],
-  likeCount: 12,
-  commentCount: 0,
-  createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-  updatedAt: DateTime.now(),
-);
+}) =>
+    Post(
+      id: 'p1',
+      authorProfileId: authorProfileId,
+      authorUserId: 'user1',
+      authorAvatarUrl: avatarUrl,
+      reactionBreakdown: reactionBreakdown,
+      viewCount: viewCount,
+      repostCount: 2,
+      allowReposts: true,
+      authorDisplayName: 'Suraj Mehta',
+      kind: PostKind.original,
+      visibility: PostVisibility.public,
+      postType: PostType.dab,
+      body: body,
+      sport: 'Cricket',
+      tags: const <String>['dabblersport', 'cricket'],
+      likeCount: 12,
+      commentCount: 0,
+      createdAt: DateTime.now().subtract(const Duration(hours: 2)),
+      updatedAt: DateTime.now(),
+    );
 
 Future<List<String>> _pump(
   WidgetTester tester,
@@ -60,8 +61,7 @@ Future<List<String>> _pump(
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) =>
-            Material(child: SingleChildScrollView(child: child)),
+        builder: (_, __) => Material(child: SingleChildScrollView(child: child)),
       ),
       GoRoute(
         path: '/news/:newsId',
@@ -162,65 +162,57 @@ void main() {
     expect(visited.last, contains('${RoutePaths.socialPostDetail}/p1'));
   });
 
-  testWidgets(
-    'DabblerAvatar(imageUrl:) draws the photo; no URL falls back to the seed',
-    (tester) async {
-      await _pump(
-        tester,
-        Column(
-          children: const [
-            DabblerAvatar(
-              seed: 'With Photo',
-              imageUrl: 'https://example.invalid/a.png',
-            ),
-            DabblerAvatar(seed: 'No Photo'),
-          ],
-        ),
-      );
-      expect(find.byType(Image), findsOneWidget, reason: 'the real photo');
-      expect(find.byType(DabblerAvatar), findsWidgets, reason: 'seed fallback');
-    },
-  );
+  testWidgets('DabblerAvatar(imageUrl:) draws the photo; no URL falls back to the seed', (
+    tester,
+  ) async {
+    await _pump(
+      tester,
+      Column(
+        children: const [
+          DabblerAvatar(seed: 'With Photo', imageUrl: 'https://example.invalid/a.png'),
+          DabblerAvatar(seed: 'No Photo'),
+        ],
+      ),
+    );
+    expect(find.byType(Image), findsOneWidget, reason: 'the real photo');
+    expect(find.byType(DabblerAvatar), findsWidgets, reason: 'seed fallback');
+  });
 
-  testWidgets(
-    'a news story is a DabblerNewsCard that opens the detail and can be hidden',
-    (tester) async {
-      var hidden = 0;
-      final item = FeedNewsItem(
-        newsId: 'n1',
-        id: 'n1',
-        title: const {'en': 'Transfer window opens'},
-        body: const {'en': 'Clubs have until Friday.'},
-        likeCount: 0,
-        commentCount: 0,
-        viewCount: 0,
-        tags: const [],
-        isPinned: false,
-        priorityScore: 0,
-        createdAt: DateTime.now(),
-        feedLabel: 'Padel',
-      );
-      final visited = await _pump(
-        tester,
-        HomeNewsCard(item: item, onDismiss: () => hidden++),
-      );
-      expect(find.text('Transfer window opens'), findsOneWidget);
-      expect(find.byType(DabblerNewsCard), findsOneWidget);
-      _noMaterialVisuals();
-      // DabblerSwipeAction: swipe toward the end to reveal Hide, then press it.
-      await tester.drag(
-        find.text('Transfer window opens'),
-        const Offset(-300, 0),
-      );
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Hide'));
-      await tester.pumpAndSettle();
-      expect(hidden, 1);
-      await tester.tap(find.text('Transfer window opens'));
-      await tester.pumpAndSettle();
-      expect(visited.last, '/news/n1');
-    },
-  );
+  testWidgets('a news story is a DabblerNewsCard that opens the detail and can be hidden', (
+    tester,
+  ) async {
+    var hidden = 0;
+    final item = FeedNewsItem(
+      newsId: 'n1',
+      id: 'n1',
+      title: const {'en': 'Transfer window opens'},
+      body: const {'en': 'Clubs have until Friday.'},
+      likeCount: 0,
+      commentCount: 0,
+      viewCount: 0,
+      tags: const [],
+      isPinned: false,
+      priorityScore: 0,
+      createdAt: DateTime.now(),
+      feedLabel: 'Padel',
+    );
+    final visited = await _pump(
+      tester,
+      HomeNewsCard(item: item, onDismiss: () => hidden++),
+    );
+    expect(find.text('Transfer window opens'), findsOneWidget);
+    expect(find.byType(DabblerNewsCard), findsOneWidget);
+    _noMaterialVisuals();
+    // DabblerSwipeAction: swipe toward the end to reveal Hide, then press it.
+    await tester.drag(find.text('Transfer window opens'), const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hide'));
+    await tester.pumpAndSettle();
+    expect(hidden, 1);
+    await tester.tap(find.text('Transfer window opens'));
+    await tester.pumpAndSettle();
+    expect(visited.last, '/news/n1');
+  });
 
   testWidgets('HomeActivityRow renders actor and action from DS parts', (
     tester,
@@ -313,9 +305,9 @@ void main() {
       createdAt: DateTime.now(),
     );
     await _pump(tester, HomeNewsCard(item: item));
-    await tester.longPress(
-      find.byWidgetPredicate((w) => w is DabblerIcon && w.name == 'heart'),
-    );
+    await tester.longPress(find.byWidgetPredicate(
+      (w) => w is DabblerIcon && w.name == 'heart',
+    ));
     await tester.pumpAndSettle();
     expect(find.text('Loving'), findsOneWidget);
     expect(find.text('Angry'), findsOneWidget);
@@ -341,10 +333,7 @@ void main() {
     await _pump(
       tester,
       HomePostMedia(
-        urls: const [
-          'https://example.invalid/1.png',
-          'https://example.invalid/2.png',
-        ],
+        urls: const ['https://example.invalid/1.png', 'https://example.invalid/2.png'],
       ),
     );
     expect(find.byType(DabblerImage), findsNWidgets(2));

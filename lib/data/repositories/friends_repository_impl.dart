@@ -201,10 +201,7 @@ class FriendsRepositoryImpl implements FriendsRepository {
               ) ??
               false)) {
         try {
-          await _db.rpc(
-            SupabaseConfig.rpcFriendUnfriendFn,
-            params: {'p_peer': peerUserId},
-          );
+          await _db.rpc(SupabaseConfig.rpcFriendUnfriendFn, params: {'p_peer': peerUserId});
           return Ok(null);
         } catch (fallbackError) {
           return Err(svc.mapPostgrestError(fallbackError));

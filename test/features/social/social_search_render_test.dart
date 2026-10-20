@@ -37,9 +37,8 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(
-      format: ui.ImageByteFormat.png,
-    );
+    final ByteData? png =
+        await image.toByteData(format: ui.ImageByteFormat.png);
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
@@ -52,9 +51,7 @@ final SearchResultBundle _bundle = SearchResultBundle(
       'title': 'Football night at the marina',
       'sport': 'football',
       'venue_name': 'Al Maryah Island',
-      'start_at': DateTime.now()
-          .add(const Duration(hours: 5))
-          .toIso8601String(),
+      'start_at': DateTime.now().add(const Duration(hours: 5)).toIso8601String(),
       'max_players': 10,
       'current_players': 3,
     }),
@@ -89,8 +86,7 @@ final SearchResultBundle _bundle = SearchResultBundle(
   posts: [
     PostSearchResult(
       id: 'po1',
-      body:
-          'Looking for two more for football tonight at Al Quoz. Bring water!',
+      body: 'Looking for two more for football tonight at Al Quoz. Bring water!',
       authorDisplayName: 'Omar',
       createdAt: DateTime.now().subtract(const Duration(hours: 2)),
     ),
@@ -106,7 +102,8 @@ class _FakeRepo implements SearchRepository {
     required String query,
     required SearchMode mode,
     int limit = 20,
-  }) async => result;
+  }) async =>
+      result;
 }
 
 Future<void> _pump(
@@ -122,9 +119,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        searchRepositoryProvider.overrideWithValue(
-          _FakeRepo(result ?? Ok(_bundle)),
-        ),
+        searchRepositoryProvider.overrideWithValue(_FakeRepo(result ?? Ok(_bundle))),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -165,10 +160,7 @@ void main() {
       });
       await _pump(tester, locale, key);
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(lookupAppLocalizations(locale).sfx_recent),
-        findsOneWidget,
-      );
+      expect(find.text(lookupAppLocalizations(locale).sfx_recent), findsOneWidget);
       expect(find.byType(DabblerSearchField), findsOneWidget);
       await _shoot(tester, key, 'search-default-$dir');
     });
@@ -186,21 +178,10 @@ void main() {
     testWidgets('view all — $dir', (tester) async {
       SharedPreferences.setMockInitialValues({});
       await _pump(tester, locale, key, query: 'foot');
-      await tester.tap(
-        find.text(lookupAppLocalizations(locale).sfx_view_all).first,
-      );
+      await tester.tap(find.text(lookupAppLocalizations(locale).sfx_view_all).first);
       await tester.pump();
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(
-          lookupAppLocalizations(locale).sfx_list_header(
-            2,
-            lookupAppLocalizations(locale).sfx_people.toLowerCase(),
-            '\u2066foot\u2069',
-          ),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(lookupAppLocalizations(locale).sfx_list_header(2, lookupAppLocalizations(locale).sfx_people.toLowerCase(), '\u2066foot\u2069')), findsOneWidget);
       expect(find.byType(SearchPersonRow), findsWidgets);
       await _shoot(tester, key, 'search-viewall-$dir');
     });
@@ -213,11 +194,7 @@ void main() {
       testWidgets('view all ${v.$1} — $dir', (tester) async {
         SharedPreferences.setMockInitialValues({});
         await _pump(tester, locale, key, query: 'foot');
-        await tester.tap(
-          find
-              .text(locale.languageCode == 'ar' ? 'عرض الكل' : 'View all')
-              .at(v.$2),
-        );
+        await tester.tap(find.text(locale.languageCode == 'ar' ? 'عرض الكل' : 'View all').at(v.$2));
         await tester.pump();
         expect(tester.takeException(), isNull);
         expect(find.byType(v.$4), findsWidgets);
@@ -227,32 +204,18 @@ void main() {
 
     testWidgets('empty — $dir', (tester) async {
       SharedPreferences.setMockInitialValues({});
-      await _pump(
-        tester,
-        locale,
-        key,
-        query: 'zzz',
-        result: const Ok(SearchResultBundle.empty),
-      );
+      await _pump(tester, locale, key,
+          query: 'zzz', result: const Ok(SearchResultBundle.empty));
       expect(tester.takeException(), isNull);
-      expect(
-        find.text(
-          lookupAppLocalizations(locale).sfx_no_results_for('\u2066zzz\u2069'),
-        ),
-        findsOneWidget,
-      );
+      expect(find.text(lookupAppLocalizations(locale).sfx_no_results_for('\u2066zzz\u2069')), findsOneWidget);
       await _shoot(tester, key, 'search-empty-$dir');
     });
 
     testWidgets('error — $dir', (tester) async {
       SharedPreferences.setMockInitialValues({});
-      await _pump(
-        tester,
-        locale,
-        key,
-        query: 'foot',
-        result: const Err(Failure(message: 'Search failed. Try again.')),
-      );
+      await _pump(tester, locale, key,
+          query: 'foot',
+          result: const Err(Failure(message: 'Search failed. Try again.')));
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerEmptyState), findsOneWidget);
       await _shoot(tester, key, 'search-error-$dir');

@@ -15,48 +15,53 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
   Future<Result<List<PublicActivity>, Failure>> fetchFollowingActivities({
     int limit = 20,
     int offset = 0,
-  }) => Result.guard(() async {
-    final userId = _db.auth.currentUser?.id;
-    if (userId == null) return const <PublicActivity>[];
+  }) =>
+      Result.guard(
+        () async {
+          final userId = _db.auth.currentUser?.id;
+          if (userId == null) return const <PublicActivity>[];
 
-    final profileRows =
-        await _db
-                .from(SupabaseConfig.usersTable)
-                .select('id')
-                .eq('user_id', userId)
-                .limit(1)
-            as List;
-    if (profileRows.isEmpty) return const <PublicActivity>[];
-    final myProfileId = profileRows.first['id'] as String;
+          final profileRows = await _db
+              .from(SupabaseConfig.usersTable)
+              .select('id')
+              .eq('user_id', userId)
+              .limit(1) as List;
+          if (profileRows.isEmpty) return const <PublicActivity>[];
+          final myProfileId = profileRows.first['id'] as String;
 
-    final followRows =
-        await _db
-                .from(SupabaseConfig.profileFollowsTable)
-                .select('following_profile_id')
-                .eq('follower_profile_id', myProfileId)
-            as List;
+          final followRows = await _db
+              .from(SupabaseConfig.profileFollowsTable)
+              .select('following_profile_id')
+              .eq('follower_profile_id', myProfileId) as List;
 
-    final followedIds = followRows
-        .map((r) => r['following_profile_id'] as String)
-        .toList();
-    if (followedIds.isEmpty) return const <PublicActivity>[];
+          final followedIds = followRows
+              .map((r) => r['following_profile_id'] as String)
+              .toList();
+          if (followedIds.isEmpty) return const <PublicActivity>[];
 
-    return _fetchActivities(
-      actorIds: followedIds,
-      limit: limit,
-      offset: offset,
-    );
-  }, (e) => Failure.from(e));
+          return _fetchActivities(
+            actorIds: followedIds,
+            limit: limit,
+            offset: offset,
+          );
+        },
+        (e) => Failure.from(e),
+      );
 
   @override
   Future<Result<List<PublicActivity>, Failure>> fetchUserActivities({
     required String profileId,
     int limit = 20,
     int offset = 0,
-  }) => Result.guard(
-    () => _fetchActivities(profileId: profileId, limit: limit, offset: offset),
-    (e) => Failure.from(e),
-  );
+  }) =>
+      Result.guard(
+        () => _fetchActivities(
+          profileId: profileId,
+          limit: limit,
+          offset: offset,
+        ),
+        (e) => Failure.from(e),
+      );
 
   // ---------------------------------------------------------------------------
 
@@ -68,9 +73,7 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
   }) async {
     dynamic query = _db
         .from(SupabaseConfig.publicActivitiesTable)
-        .select(
-          'id, activity_type, actor_profile_id, parent_activity_id, created_at',
-        )
+        .select('id, activity_type, actor_profile_id, parent_activity_id, created_at')
         .not('actor_profile_id', 'is', null);
 
     if (profileId != null) {
@@ -79,11 +82,9 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
       query = (query as dynamic).inFilter('actor_profile_id', actorIds);
     }
 
-    final rows =
-        await (query as dynamic)
-                .order('created_at', ascending: false)
-                .range(offset, offset + limit - 1)
-            as List;
+    final rows = await (query as dynamic)
+        .order('created_at', ascending: false)
+        .range(offset, offset + limit - 1) as List;
 
     if (rows.isEmpty) return const [];
 
@@ -94,12 +95,10 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
         .toSet()
         .toList();
 
-    final profileRows =
-        await _db
-                .from(SupabaseConfig.usersTable)
-                .select('id, username, avatar_url')
-                .inFilter('id', actorProfileIds)
-            as List;
+    final profileRows = await _db
+        .from(SupabaseConfig.usersTable)
+        .select('id, username, avatar_url')
+        .inFilter('id', actorProfileIds) as List;
 
     final profileById = <String, Map<String, dynamic>>{
       for (final p in profileRows)
@@ -117,12 +116,10 @@ class PublicActivityRepositoryImpl implements PublicActivityRepository {
     final newsById = <String, Map<String, dynamic>>{};
     if (parentIds.isNotEmpty) {
       try {
-        final newsRows =
-            await _db
-                    .from(SupabaseConfig.publishedNewsTable)
-                    .select('id, title, cover_image_url')
-                    .inFilter('id', parentIds)
-                as List;
+        final newsRows = await _db
+            .from(SupabaseConfig.publishedNewsTable)
+            .select('id, title, cover_image_url')
+            .inFilter('id', parentIds) as List;
         for (final n in newsRows) {
           newsById[n['id'] as String] = Map<String, dynamic>.from(n as Map);
         }

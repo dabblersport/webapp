@@ -44,10 +44,7 @@ void main() {
       expect(st(3, 90), GamesCardStatus.open);
       expect(st(3, 60), GamesCardStatus.open);
       expect(st(3, -5), GamesCardStatus.open);
-      expect(
-        gamesStatusTone(GamesCardStatus.open),
-        DabblerProgressBarTone.info,
-      );
+      expect(gamesStatusTone(GamesCardStatus.open), DabblerProgressBarTone.info);
       expect(
         gamesStatusTone(GamesCardStatus.almostFull),
         DabblerProgressBarTone.warning,

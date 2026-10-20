@@ -26,32 +26,27 @@ import '../home/home_test_harness.dart';
 
 Future<void> _loadFonts() async {
   await loadRenderFonts();
-  final String dsFonts =
-      '${Directory.current.parent.path}/dabbler-design-system/fonts';
+  final String dsFonts = '${Directory.current.parent.path}/dabbler-design-system/fonts';
   Future<void> family(String name, List<String> files) async {
     final FontLoader loader = FontLoader(name);
     for (final String f in files) {
       final File file = File('$dsFonts/$f');
       if (!file.existsSync()) return;
-      loader.addFont(file.readAsBytes().then((b) => ByteData.sublistView(b)));
+      loader.addFont(
+        file.readAsBytes().then((b) => ByteData.sublistView(b)),
+      );
     }
     await loader.load();
   }
 
   const String pkg = 'packages/dabbler_design_system';
   const List<String> glory = <String>[
-    'Glory-Light.ttf',
-    'Glory-Regular.ttf',
-    'Glory-Medium.ttf',
-    'Glory-SemiBold.ttf',
-    'Glory-Bold.ttf',
+    'Glory-Light.ttf', 'Glory-Regular.ttf', 'Glory-Medium.ttf',
+    'Glory-SemiBold.ttf', 'Glory-Bold.ttf',
   ];
   const List<String> meral = <String>[
-    'meral-sans-light.ttf',
-    'meral-sans-regular.ttf',
-    'meral-sans-medium.ttf',
-    'meral-sans-semibold.ttf',
-    'meral-sans-bold.ttf',
+    'meral-sans-light.ttf', 'meral-sans-regular.ttf', 'meral-sans-medium.ttf',
+    'meral-sans-semibold.ttf', 'meral-sans-bold.ttf',
   ];
   for (final String prefix in <String>['$pkg/', '']) {
     await family('${prefix}Glory', glory);
@@ -64,9 +59,8 @@ Future<void> _loadFonts() async {
     '$home/.pub-cache/hosted/pub.dev/iconsax_flutter-1.0.1/fonts/FlutterIconsax.ttf',
   );
   if (iconsax.existsSync()) {
-    final FontLoader loader = FontLoader(
-      'packages/iconsax_flutter/FlutterIconsax',
-    )..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
+    final FontLoader loader = FontLoader('packages/iconsax_flutter/FlutterIconsax')
+      ..addFont(iconsax.readAsBytes().then((b) => ByteData.sublistView(b)));
     await loader.load();
   }
 }
@@ -198,8 +192,7 @@ void main() {
         19,
       );
       expect(
-        surfaceRect.right -
-            tester.getRect(find.byType(DabblerComposerBox)).right,
+        surfaceRect.right - tester.getRect(find.byType(DabblerComposerBox)).right,
         19,
       );
 
@@ -254,8 +247,7 @@ void main() {
               (w.decoration! as BoxDecoration).border is Border &&
               ((w.decoration! as BoxDecoration).border! as Border).top.color ==
                   colors.bgTertiary &&
-              ((w.decoration! as BoxDecoration).border! as Border).top.width ==
-                  1 &&
+              ((w.decoration! as BoxDecoration).border! as Border).top.width == 1 &&
               ((w.decoration! as BoxDecoration).border! as Border).bottom ==
                   BorderSide.none,
         ),
@@ -270,95 +262,89 @@ void main() {
       );
     }, variant: desktop);
 
-    testWidgets(
-      'sheets: header hairline where drawn, Clear, search, Dab glyph',
-      (tester) async {
-        _phone(tester);
-        await tester.pumpWidget(_createPost());
+    testWidgets('sheets: header hairline where drawn, Clear, search, Dab glyph',
+        (tester) async {
+      _phone(tester);
+      await tester.pumpWidget(_createPost());
+      await _settle(tester);
+      final AppLocalizations l = lookupAppLocalizations(const Locale('en'));
+      final DabblerColors colors = DabblerColors.of(
+        tester.element(find.byType(PostComposerScreen)),
+      );
+
+      /// Whether the open sheet draws the 1dp `--faint` hairline under its
+      /// header (the DS sheet's own `headerDivider`).
+      bool headerHairline() =>
+          tester.widget<DabblerSheet>(find.byType(DabblerSheet)).headerDivider;
+
+      Future<void> close() async {
+        await tester.tapAt(const Offset(10, 10));
         await _settle(tester);
-        final AppLocalizations l = lookupAppLocalizations(const Locale('en'));
-        final DabblerColors colors = DabblerColors.of(
-          tester.element(find.byType(PostComposerScreen)),
-        );
+      }
 
-        /// Whether the open sheet draws the 1dp `--faint` hairline under its
-        /// header (the DS sheet's own `headerDivider`).
-        bool headerHairline() => tester
-            .widget<DabblerSheet>(find.byType(DabblerSheet))
-            .headerDivider;
-
-        Future<void> close() async {
-          await tester.tapAt(const Offset(10, 10));
-          await _settle(tester);
-        }
-
-        // kind sheet: hairline, Dab row glyph filled (bold) and brand title.
-        await tester.tap(find.text(l.composer_type_dab));
-        await _settle(tester);
-        expect(headerHairline(), isTrue, reason: 'kind sheet');
-        final DabblerIcon dab = tester.widget<DabblerIcon>(
-          find.descendant(
-            of: find.byType(DabblerSheet),
-            matching: find.byWidgetPredicate(
-              (w) => w is DabblerIcon && w.name == 'like-1',
-            ),
+      // kind sheet: hairline, Dab row glyph filled (bold) and brand title.
+      await tester.tap(find.text(l.composer_type_dab));
+      await _settle(tester);
+      expect(headerHairline(), isTrue, reason: 'kind sheet');
+      final DabblerIcon dab = tester.widget<DabblerIcon>(
+        find.descendant(
+          of: find.byType(DabblerSheet),
+          matching: find.byWidgetPredicate(
+            (w) => w is DabblerIcon && w.name == 'like-1',
           ),
-        );
-        expect(dab.weight, DabblerIconWeight.bold);
-        expect(dab.color, colors.brandPrimary);
-        await close();
+        ),
+      );
+      expect(dab.weight, DabblerIconWeight.bold);
+      expect(dab.color, colors.brandPrimary);
+      await close();
 
-        // visibility sheet.
-        await tester.tap(find.text(l.composer_vis_public));
-        await _settle(tester);
-        expect(headerHairline(), isTrue, reason: 'visibility sheet');
-        await close();
+      // visibility sheet.
+      await tester.tap(find.text(l.composer_vis_public));
+      await _settle(tester);
+      expect(headerHairline(), isTrue, reason: 'visibility sheet');
+      await close();
 
-        // media sheet.
-        await tester.tap(find.bySemanticsLabel(l.composer_add_media));
-        await _settle(tester);
-        expect(headerHairline(), isTrue, reason: 'media sheet');
-        await close();
+      // media sheet.
+      await tester.tap(find.bySemanticsLabel(l.composer_add_media));
+      await _settle(tester);
+      expect(headerHairline(), isTrue, reason: 'media sheet');
+      await close();
 
-        // sport sheet (shared with the game composer, opened from Create post).
-        await tester.tap(find.bySemanticsLabel(l.composer_add_sport));
-        await _settle(tester);
-        expect(headerHairline(), isTrue, reason: 'sport sheet');
-        await close();
+      // sport sheet (shared with the game composer, opened from Create post).
+      await tester.tap(find.bySemanticsLabel(l.composer_add_sport));
+      await _settle(tester);
+      expect(headerHairline(), isTrue, reason: 'sport sheet');
+      await close();
 
-        // game sheet: hairline, muted 13/18 Clear (not a button), 42dp search.
-        await tester.tap(find.bySemanticsLabel(l.composer_link_game));
-        await _settle(tester);
-        expect(headerHairline(), isTrue, reason: 'game sheet');
-        await close();
+      // game sheet: hairline, muted 13/18 Clear (not a button), 42dp search.
+      await tester.tap(find.bySemanticsLabel(l.composer_link_game));
+      await _settle(tester);
+      expect(headerHairline(), isTrue, reason: 'game sheet');
+      await close();
 
-        // vibe and place sheets: the design draws NO header hairline.
-        await tester.tap(find.bySemanticsLabel(l.composer_add_vibe));
-        await _settle(tester);
-        expect(headerHairline(), isFalse, reason: 'vibe sheet has none');
-        // 42dp search at the sheet's own 18dp gutter.
-        final Finder search = find.byType(DabblerTextField);
-        expect(search, findsOneWidget);
-        expect(tester.getSize(search).height, 42);
-        expect(
-          tester.getRect(search).left -
-              tester.getRect(find.byType(DabblerSheet)).left,
-          18 + 1,
-          reason: 'gutter 18 + the panel hairline',
-        );
-        await close();
+      // vibe and place sheets: the design draws NO header hairline.
+      await tester.tap(find.bySemanticsLabel(l.composer_add_vibe));
+      await _settle(tester);
+      expect(headerHairline(), isFalse, reason: 'vibe sheet has none');
+      // 42dp search at the sheet's own 18dp gutter.
+      final Finder search = find.byType(DabblerTextField);
+      expect(search, findsOneWidget);
+      expect(tester.getSize(search).height, 42);
+      expect(
+        tester.getRect(search).left - tester.getRect(find.byType(DabblerSheet)).left,
+        18 + 1,
+        reason: 'gutter 18 + the panel hairline',
+      );
+      await close();
 
-        await tester.tap(find.bySemanticsLabel(l.composer_add_location));
-        await _settle(tester);
-        expect(headerHairline(), isFalse, reason: 'place sheet has none');
-        await close();
-      },
-      variant: desktop,
-    );
+      await tester.tap(find.bySemanticsLabel(l.composer_add_location));
+      await _settle(tester);
+      expect(headerHairline(), isFalse, reason: 'place sheet has none');
+      await close();
+    }, variant: desktop);
 
-    testWidgets('Clear is a muted 13/18 word, not a text button', (
-      tester,
-    ) async {
+    testWidgets('Clear is a muted 13/18 word, not a text button',
+        (tester) async {
       _phone(tester);
       await tester.pumpWidget(_createPost());
       await _settle(tester);
@@ -389,9 +375,8 @@ void main() {
   // The same kit widgets with NO frame scope: what the game and meet-up
   // composers (and the GIF picker) draw. These pin the pre-KAN-460 numbers.
   group('kit defaults outside Create post are unchanged', () {
-    testWidgets('ComposerDrawerShell: 24dp gutter, pinned Post, ink Clear', (
-      tester,
-    ) async {
+    testWidgets('ComposerDrawerShell: 24dp gutter, pinned Post, ink Clear',
+        (tester) async {
       _phone(tester);
       await tester.pumpWidget(
         _app(
@@ -448,9 +433,8 @@ void main() {
       );
     }, variant: desktop);
 
-    testWidgets('showComposerSheet / Clear / search field / picker row', (
-      tester,
-    ) async {
+    testWidgets('showComposerSheet / Clear / search field / picker row',
+        (tester) async {
       _phone(tester);
       final TextEditingController c = TextEditingController();
       addTearDown(c.dispose);

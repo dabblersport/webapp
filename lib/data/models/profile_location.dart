@@ -82,11 +82,10 @@ class ProfileLocation {
       areaId: json['area_id'] as String?,
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
-      label: ProfileLocationLabel.fromJson(
-        json['label'] as String? ?? 'custom',
-      ),
+      label: ProfileLocationLabel.fromJson(json['label'] as String? ?? 'custom'),
       labelCustom: json['label_custom'] as String?,
-      nearbyRadiusMeters: (json['nearby_radius_meters'] as int?) ?? 10000,
+      nearbyRadiusMeters:
+          (json['nearby_radius_meters'] as int?) ?? 10000,
       isPrimary: (json['is_primary'] as bool?) ?? false,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
@@ -94,19 +93,19 @@ class ProfileLocation {
   }
 
   Map<String, dynamic> toJson() => {
-    'id': id,
-    'profile_id': profileId,
-    if (geoLocationId != null) 'geo_location_id': geoLocationId,
-    if (areaId != null) 'area_id': areaId,
-    if (lat != null) 'lat': lat,
-    if (lng != null) 'lng': lng,
-    'label': label.toJson(),
-    if (labelCustom != null) 'label_custom': labelCustom,
-    'nearby_radius_meters': nearbyRadiusMeters,
-    'is_primary': isPrimary,
-    'created_at': createdAt.toIso8601String(),
-    'updated_at': updatedAt.toIso8601String(),
-  };
+        'id': id,
+        'profile_id': profileId,
+        if (geoLocationId != null) 'geo_location_id': geoLocationId,
+        if (areaId != null) 'area_id': areaId,
+        if (lat != null) 'lat': lat,
+        if (lng != null) 'lng': lng,
+        'label': label.toJson(),
+        if (labelCustom != null) 'label_custom': labelCustom,
+        'nearby_radius_meters': nearbyRadiusMeters,
+        'is_primary': isPrimary,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
+      };
 
   ProfileLocation copyWith({
     String? id,
@@ -141,6 +140,6 @@ class ProfileLocation {
   /// Human-readable label, falling back to [labelCustom] when applicable.
   String get effectiveLabel =>
       label == ProfileLocationLabel.custom && labelCustom != null
-      ? labelCustom!
-      : label.displayName;
+          ? labelCustom!
+          : label.displayName;
 }

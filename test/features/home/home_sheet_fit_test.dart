@@ -555,9 +555,7 @@ void main() {
       final BuildContext ctx = _home(tester);
       // KAN-472: the route presents the DS sheet, as Create meet-up.
       Navigator.of(ctx, rootNavigator: true).push(
-        const GameComposerSheetPage(
-          child: GameComposerScreen(),
-        ).createRoute(ctx),
+        const GameComposerSheetPage(child: GameComposerScreen()).createRoute(ctx),
       );
       await _settle(tester);
       _measureDsSheet(

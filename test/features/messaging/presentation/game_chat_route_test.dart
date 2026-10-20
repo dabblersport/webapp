@@ -29,10 +29,7 @@ void main() {
   });
 
   test('disabled route body is the unavailable state (KAN-518, D19)', () {
-    expect(
-      gameChatRouteBody(gameId: 'g1'),
-      isA<GameChatScreen>(),
-    ); // committed flags (KAN-554 launch)
+    expect(gameChatRouteBody(gameId: 'g1'), isA<GameChatScreen>()); // committed flags (KAN-554 launch)
     expect(
       gameChatRouteBody(gameId: 'g1', messaging: false, gameChat: false),
       isA<GameChatAccessState>(),
@@ -70,10 +67,7 @@ void main() {
       );
 
   Widget app(GoRouter router) => ProviderScope(
-    overrides: [
-      fakeMessagingBackend,
-      gameChatPollIntervalProvider.overrideWithValue(null),
-    ],
+    overrides: [fakeMessagingBackend, gameChatPollIntervalProvider.overrideWithValue(null)],
     child: MaterialApp.router(
       routerConfig: router,
       localizationsDelegates: AppLocalizations.localizationsDelegates,

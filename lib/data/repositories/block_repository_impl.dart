@@ -21,10 +21,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
       if (uid == targetUserId) throw Exception('Cannot block yourself');
 
       // Server-side RPC handles insert into user_blocks + removes follows/friendships
-      await _db.rpc(
-        SupabaseConfig.rpcBlockUserFn,
-        params: {'p_peer': targetUserId},
-      );
+      await _db.rpc(SupabaseConfig.rpcBlockUserFn, params: {'p_peer': targetUserId});
     });
   }
 
@@ -34,10 +31,7 @@ class BlockRepositoryImpl extends BaseRepository implements BlockRepository {
       final uid = _uid;
       if (uid == null) throw AuthException('Not authenticated');
 
-      await _db.rpc(
-        SupabaseConfig.rpcUnblockUserFn,
-        params: {'p_peer': targetUserId},
-      );
+      await _db.rpc(SupabaseConfig.rpcUnblockUserFn, params: {'p_peer': targetUserId});
     });
   }
 

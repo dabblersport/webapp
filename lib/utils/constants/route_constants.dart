@@ -1,3 +1,5 @@
+import 'package:dabbler/utils/helpers/share_links.dart';
+
 /// Route paths used throughout the app
 class RoutePaths {
   // Deep Link Configuration
@@ -9,11 +11,15 @@ class RoutePaths {
   /// the native app isn't installed. On devices with the app, the OS opens
   /// /game/:id natively via the same redirect as dabbler://app/game/:id.
   static const String webLinkBase = 'https://app.dabbler.pro';
-  static String gameLink(String gameId) => '$webLinkBase/game/$gameId';
+
+  /// The production origin; share links use [ShareLinks] (KAN-597), which picks the running environment's origin.
+  static String gameLink(String gameId, {String? sharerProfileId}) =>
+      ShareLinks.game(gameId, sharerProfileId: sharerProfileId);
 
   /// The public link to a meetup; the same host serves /meetups/:id, which the
   /// router opens (behind FeatureFlags.enableMeetups).
-  static String meetupLink(String meetupId) => '$webLinkBase/meetups/$meetupId';
+  static String meetupLink(String meetupId, {String? sharerProfileId}) =>
+      ShareLinks.meetup(meetupId, sharerProfileId: sharerProfileId);
 
   /// Store listings for the "get the app" banner on mobile web.
   /// Empty until the apps are published — the banner hides install buttons
