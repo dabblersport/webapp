@@ -1,4 +1,6 @@
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Pull-to-refresh plumbing shared by the Games, Venues and Meetups listings
@@ -45,4 +47,27 @@ Future<void> settle(Future<Object?> future) async {
   try {
     await future;
   } catch (_) {}
+}
+
+/// KAN-606: whether a listing's query still holds rows from an earlier load.
+/// A failed refetch keeps them on screen (`when(skipError: ...)`); the error
+/// answer is only for a list that has nothing to show.
+bool keepsRows(AsyncValue<List<Object?>> value) =>
+    value.hasValue && value.requireValue.isNotEmpty;
+
+/// KAN-606: whether [value] is a failed refetch that kept its rows.
+bool refreshFailedWithRows(AsyncValue<List<Object?>> value) =>
+    value.hasError && keepsRows(value);
+
+/// The transient "Couldn't refresh. Showing saved content." toast after a
+/// failed refetch that kept the list. Does nothing when [context] is gone or
+/// no toast host is mounted.
+void showListingRefreshFailedToast(BuildContext context) {
+  if (!context.mounted) return;
+  DabblerToastProvider.maybeOf(context)?.show(
+    DabblerToastSpec(
+      message: AppLocalizations.of(context).offline_refresh_failed,
+      tone: DabblerToastTone.warning,
+    ),
+  );
 }

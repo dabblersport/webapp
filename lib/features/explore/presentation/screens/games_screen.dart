@@ -243,7 +243,10 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
               sports: widget.sports,
               sportId: _sportIdForTab(i),
               scrollController: _scrollControllers[i],
-              onRetry: () => ref.invalidate(nearbyGamesProvider),
+              onRetry: () {
+                ref.invalidate(nearbyGamesProvider);
+                ref.invalidate(myPinnedGamesProvider);
+              },
               onChangeFilters: _openFilters,
             ),
           ),
@@ -389,9 +392,11 @@ class _GameTabBody extends ConsumerWidget {
     final gamesAsync = ref.watch(nearbyGamesProvider(params));
     // Pinned section: the viewer's created/joined upcoming games,
     // independent of the location filter.
-    final pinned =
-        ref.watch(myPinnedGamesProvider(sportId)).valueOrNull ??
-        const <NearbyGameModel>[];
+    // KAN-606: a failed refetch keeps the rows it had (valueOrNull); a first
+    // load that failed has none, and is never read as "no games".
+    final pinnedAsync = ref.watch(myPinnedGamesProvider(sportId));
+    final pinned = pinnedAsync.valueOrNull ?? const <NearbyGameModel>[];
+    final pinnedFailed = pinnedAsync.hasError && !pinnedAsync.hasValue;
 
     // KAN-598: the feed's pull-to-refresh on every state with a list or an
     // answer. Refetches THIS tab's query under the current filters (they are
@@ -406,17 +411,27 @@ class _GameTabBody extends ConsumerWidget {
             settle(ref.read(nearbyGamesProvider(params).future)),
             settle(ref.read(myPinnedGamesProvider(sportId).future)),
           ]);
+          // KAN-606: the list stays; the failure is a transient toast.
+          if (refreshFailedWithRows(ref.read(nearbyGamesProvider(params))) ||
+              refreshFailedWithRows(ref.read(myPinnedGamesProvider(sportId)))) {
+            if (context.mounted) showListingRefreshFailedToast(context);
+          }
         });
 
+    final error = ListingError(
+      title: l.listing_load_games_failed,
+      retryLabel: l.feed_retry,
+      onRetry: onRetry,
+      onRefresh: refresh,
+    );
+
+    // KAN-606: a failed refetch with rows keeps them; the error answer is for
+    // a list with nothing to show.
     return gamesAsync.when(
+      skipError: keepsRows(gamesAsync),
       loading: () =>
           const ListingSkeletons(kind: DabblerListingSkeletonKind.game),
-      error: (e, _) => ListingError(
-        title: l.listing_load_games_failed,
-        retryLabel: l.feed_retry,
-        onRetry: onRetry,
-        onRefresh: refresh,
-      ),
+      error: (e, _) => error,
       data: (games) {
         final pinnedIds = {for (final g in pinned) g.id};
 
@@ -440,6 +455,9 @@ class _GameTabBody extends ConsumerWidget {
         // One "N following" fetch per set of visible cards, either data path.
         final others = watchGamesWithFollowing(ref, listed);
 
+        // KAN-606: nothing listed and the pinned fetch failed is a failure,
+        // not "no games".
+        if (pinnedFailed && others.isEmpty) return error;
         if (pinned.isEmpty && others.isEmpty) {
           // `Listings.2026-10-08.dc.html:211-212` whenever anything narrows
           // the list; "No games yet" only for the bare, unlocated list, which
