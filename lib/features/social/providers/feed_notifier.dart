@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/cache/news_item_codec.dart';
 import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
@@ -182,7 +183,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
           if (i is FeedPostItem)
             {'k': 'p', 'v': i.post.toJson()}
           else if (i is FeedNewsItem)
-            {'k': 'n', 'v': i.toJson()},
+            {'k': 'n', 'v': i.toCacheJson()},
       ],
       'hasMore': data.hasMore,
       'cursor': data.cursor?.toUtc().toIso8601String(),

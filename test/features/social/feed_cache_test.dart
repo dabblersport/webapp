@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/cache/news_item_codec.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
@@ -190,7 +191,7 @@ void main() {
         'like_count': 2,
         'tags': ['a'],
       });
-      final back = FeedNewsItem.fromJson(news.toJson());
+      final back = FeedNewsItem.fromJson(news.toCacheJson());
       expect(back.newsId, 'n1');
       expect(back.title, {'en': 'Title', 'ar': 'عنوان'});
       expect(back.likeCount, 2);
