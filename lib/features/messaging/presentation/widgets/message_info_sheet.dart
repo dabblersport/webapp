@@ -71,6 +71,8 @@ Future<void> showMessageInfo({
     title: l10n.messaging_receipts_title,
     preview: preview,
     lang: locale.languageCode == 'ar' ? 'ar' : 'en',
+    allLabel: l10n.messaging_receipts_all,
+    nobodyLabel: l10n.messaging_receipts_nobody,
     groups: [
       group(
         DabblerDeliveryState.seen,
