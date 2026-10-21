@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/data/supabase_client.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -32,11 +33,20 @@ Future<T> _unwrap<T>(Future<Result<T, Failure>> f) async {
 
 /// Upcoming public meetups from v_meetup_list, optionally per sport id.
 final meetupListProvider = FutureProvider.autoDispose
-    .family<List<MeetupListItem>, String?>(
-      (ref, sportId) => _unwrap(
-        ref.watch(meetupRepositoryProvider).fetchMeetups(sportId: sportId),
-      ),
-    );
+    .family<List<MeetupListItem>, String?>((ref, sportId) {
+      final repo = ref.watch(meetupRepositoryProvider);
+      // KAN-605: stale-while-revalidate, kept on the device per account.
+      return swrFetch<List<MeetupListItem>>(
+        ref,
+        key: 'meetups.list.$sportId',
+        fetch: () => _unwrap(repo.fetchMeetups(sportId: sportId)),
+        encode: (items) => [for (final i in items) i.toJson()],
+        decode: (json) => [
+          for (final j in (json as List))
+            MeetupListItem.fromJson(Map<String, dynamic>.from(j as Map)),
+        ],
+      );
+    });
 
 class NearbyMeetupsQuery {
   const NearbyMeetupsQuery(this.lat, this.lng, [this.radiusMeters = 10000]);
@@ -56,22 +66,41 @@ class NearbyMeetupsQuery {
 }
 
 final nearbyMeetupsProvider = FutureProvider.autoDispose
-    .family<List<NearbyMeetup>, NearbyMeetupsQuery>(
-      (ref, q) => _unwrap(
-        ref
-            .watch(meetupRepositoryProvider)
-            .nearbyMeetups(
-              lat: q.lat,
-              lng: q.lng,
-              radiusMeters: q.radiusMeters,
-            ),
-      ),
-    );
+    .family<List<NearbyMeetup>, NearbyMeetupsQuery>((ref, q) {
+      final repo = ref.watch(meetupRepositoryProvider);
+      return swrFetch<List<NearbyMeetup>>(
+        ref,
+        key:
+            'meetups.nearby.${q.lat.toStringAsFixed(3)}'
+            '.${q.lng.toStringAsFixed(3)}.${q.radiusMeters}',
+        fetch: () => _unwrap(
+          repo.nearbyMeetups(
+            lat: q.lat,
+            lng: q.lng,
+            radiusMeters: q.radiusMeters,
+          ),
+        ),
+        encode: (items) => [for (final i in items) i.toJson()],
+        decode: (json) => [
+          for (final j in (json as List))
+            NearbyMeetup.fromJson(Map<String, dynamic>.from(j as Map)),
+        ],
+      );
+    });
 
 final meetupCardProvider = FutureProvider.autoDispose
-    .family<MeetupCard, String>(
-      (ref, id) => _unwrap(ref.watch(meetupRepositoryProvider).meetupCard(id)),
-    );
+    .family<MeetupCard, String>((ref, id) {
+      final repo = ref.watch(meetupRepositoryProvider);
+      // KAN-605: a meetup the viewer opened is kept for offline reading.
+      return swrFetch<MeetupCard>(
+        ref,
+        key: 'meetups.card.$id',
+        fetch: () => _unwrap(repo.meetupCard(id)),
+        encode: (card) => card.toJson(),
+        decode: (json) =>
+            MeetupCard.fromJson(Map<String, dynamic>.from(json as Map)),
+      );
+    });
 
 final meetupAttendeesProvider = FutureProvider.autoDispose
     .family<List<MeetupAttendee>, String>(

@@ -5543,6 +5543,12 @@ abstract class AppLocalizations {
   /// **'Failed to save settings. Please try again.'**
   String get priv_save_failed;
 
+  /// No description provided for @settings_not_synced_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced. Tap to retry.'**
+  String get settings_not_synced_retry;
+
   /// No description provided for @priv_saved.
   ///
   /// In en, this message translates to:

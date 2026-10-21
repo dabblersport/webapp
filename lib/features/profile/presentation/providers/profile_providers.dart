@@ -1,3 +1,6 @@
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart';
 import 'dart:async';
 import 'package:dabbler/core/config/supabase_config.dart';
 
@@ -205,10 +208,22 @@ final managePrivacyUseCaseProvider = Provider<ManagePrivacyUseCase>((ref) {
 /// Privacy controller provider
 final privacyControllerProvider =
     StateNotifierProvider<PrivacyController, PrivacyState>((ref) {
-      return PrivacyController(
+      final sync = ref.watch(settingsSyncProvider.notifier);
+      final controller = PrivacyController(
         settingsRepository: ref.watch(settingsRepositoryProvider),
         managePrivacyUseCase: ref.watch(managePrivacyUseCaseProvider),
+        sync: sync,
+        accountId: ref.watch(cacheAccountIdProvider),
       );
+      // KAN-608: the server held a newer value; show it.
+      final adopted = sync.adopted.listen((key) {
+        final id = ref.read(cacheAccountIdProvider);
+        if (key == SettingKeys.privacy && id != null) {
+          controller.loadPrivacySettings(id);
+        }
+      });
+      ref.onDispose(adopted.cancel);
+      return controller;
     });
 
 // =============================================================================

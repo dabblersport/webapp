@@ -3082,6 +3082,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get priv_save_failed => 'Failed to save settings. Please try again.';
 
   @override
+  String get settings_not_synced_retry => 'Not synced. Tap to retry.';
+
+  @override
   String get priv_saved => 'Saved';
 
   @override
