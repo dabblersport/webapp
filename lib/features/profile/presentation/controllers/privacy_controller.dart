@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart';
 import 'package:dabbler/data/models/profile/privacy_settings.dart';
+import 'package:dabbler/data/models/profile/privacy_settings_model.dart';
 import '../../domain/usecases/manage_privacy_usecase.dart';
 import '../../data/repositories/settings_repository_impl.dart';
 import 'package:dabbler/core/fp/failure.dart';
@@ -59,12 +63,43 @@ class PrivacyController extends StateNotifier<PrivacyState> {
   final ManagePrivacyUseCase? _managePrivacyUseCase;
   final SettingsRepositoryImpl? _settingsRepository;
 
+  /// [sync] / [accountId] (KAN-608): a change is applied on the device at
+  /// once, stored in the offline queue with its edit time and sent when the
+  /// connection allows; without them it is written through as before.
   PrivacyController({
     ManagePrivacyUseCase? managePrivacyUseCase,
     SettingsRepositoryImpl? settingsRepository,
+    SettingsSyncNotifier? sync,
+    String? accountId,
+    OfflineCache? cache,
   }) : _managePrivacyUseCase = managePrivacyUseCase,
        _settingsRepository = settingsRepository,
+       _sync = sync,
+       _accountId = accountId,
+       _cache = cache,
        super(const PrivacyState());
+
+  final SettingsSyncNotifier? _sync;
+  final String? _accountId;
+  final OfflineCache? _cache;
+  static final String _mirrorKey = settingsMirrorKey(SettingKeys.privacy);
+
+  bool _offlineFirst(String userId) =>
+      _sync != null && _accountId != null && _accountId == userId;
+
+  OfflineCache get _mirror => _cache ?? OfflineCache.instance;
+
+  /// What the device holds for this account: a change still waiting for the
+  /// server, else the last copy the server gave.
+  Future<PrivacySettings?> _localSettings(String userId) async {
+    final pending = await _sync!.pendingValue(SettingKeys.privacy);
+    if (pending != null) return PrivacySettingsModel.fromJson(pending);
+    final hit = await _mirror.read(userId, _mirrorKey);
+    if (hit == null) return null;
+    return PrivacySettingsModel.fromJson(
+      Map<String, dynamic>.from(hit.payload as Map),
+    );
+  }
 
   /// Load privacy settings from Supabase
   Future<void> loadPrivacySettings(String userId) async {
@@ -72,11 +107,27 @@ class PrivacyController extends StateNotifier<PrivacyState> {
 
     try {
       if (_settingsRepository != null) {
-        final result = await _settingsRepository.getPrivacySettings(userId);
-        final settings = result.fold(
-          (failure) => const PrivacySettings(),
-          (settings) => settings,
-        );
+        PrivacySettings? settings;
+        if (_offlineFirst(userId)) {
+          final pending = await _sync!.pendingValue(SettingKeys.privacy);
+          if (pending != null) settings = PrivacySettingsModel.fromJson(pending);
+        }
+        if (settings == null) {
+          final result = await _settingsRepository.getPrivacySettings(userId);
+          settings = result.fold((failure) => null, (loaded) => loaded);
+          if (_offlineFirst(userId)) {
+            if (settings != null) {
+              _mirror.write(
+                userId,
+                _mirrorKey,
+                PrivacySettingsModel.fromEntity(settings).toJson(),
+              );
+            } else {
+              settings = await _localSettings(userId);
+            }
+          }
+          settings ??= const PrivacySettings();
+        }
 
         final privacyScore = _calculatePrivacyScore(settings);
         final securityWarnings = _generateSecurityWarnings(settings);
@@ -123,6 +174,23 @@ class PrivacyController extends StateNotifier<PrivacyState> {
 
     try {
       // Direct save via repository if available
+      if (_settingsRepository != null && _offlineFirst(userId)) {
+        // KAN-608: kept on the device and queued; the screen already shows it.
+        final settings = state.settings!;
+        final value = PrivacySettingsModel.fromEntity(settings).toJson();
+        _mirror.write(userId, _mirrorKey, value);
+        state = state.copyWith(
+          isSaving: false,
+          pendingChanges: {},
+          hasUnsavedChanges: false,
+          lastSyncTime: DateTime.now(),
+          privacyScore: _calculatePrivacyScore(settings),
+          securityWarnings: _generateSecurityWarnings(settings),
+        );
+        await _sync!.submit(SettingKeys.privacy, value);
+        return true;
+      }
+
       if (_settingsRepository != null) {
         final result = await _settingsRepository.updatePrivacySettings(
           userId,

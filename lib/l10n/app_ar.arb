@@ -1294,6 +1294,7 @@
   "priv_blocked_failed": "تعذّر إلغاء الحظر: {error}",
   "priv_blocked_load_failed": "تعذّر تحميل الحسابات المحظورة: {error}",
   "priv_save_failed": "تعذّر حفظ الإعدادات. حاول مرة أخرى.",
+  "settings_not_synced_retry": "لم تتم المزامنة. اضغط لإعادة المحاولة.",
   "priv_saved": "تم الحفظ",
   "priv_t_photo": "صورة الملف",
   "priv_t_photo_sub": "أظهر صورة ملفك",

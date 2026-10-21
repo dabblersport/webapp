@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
+import 'package:dabbler/core/sync/pending_settings_store.dart';
 
 /// The signed-in account id the cache is keyed by (KAN-605). Follows the auth
 /// session, so an account switch rebuilds everything that watches it. Null
@@ -17,6 +18,7 @@ class CacheAccountNotifier extends StateNotifier<String?> {
         // A sign-out from any path (expiry, another screen) wipes the cache.
         if (event.event == AuthChangeEvent.signedOut) {
           unawaited(OfflineCache.wipeAll());
+          unawaited(const PendingSettingsStore().wipe());
         }
         if (next != state) state = next;
       });
