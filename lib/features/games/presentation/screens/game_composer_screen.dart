@@ -765,13 +765,16 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   /// closes. Held for KAN-612, which sends it; not sent yet. Saving an edit
   /// of an existing game is not a create and takes none.
   late final CreateRequestId _requestId = widget.requestId ?? CreateRequestId();
-  List<Object?>? _requestForm;
 
   bool get _isEditing => widget.editGameId != null;
 
   @override
   void initState() {
     super.initState();
+    ref.listenManual(_gameComposerProvider, (prev, next) {
+      if (prev == null || next.isSubmitting || prev.isSubmitting) return;
+      if (!listEquals(_formOf(prev), _formOf(next))) _requestId.clear();
+    });
     if (_isEditing) {
       Future.microtask(() async {
         await ref
@@ -800,46 +803,38 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     super.dispose();
   }
 
-  /// Starts (or continues) this attempt. A form edit since the last attempt
-  /// ends that attempt first, so the id is new.
-  void _beginRequest() {
-    final s = ref.read(_gameComposerProvider);
-    final form = <Object?>[
-      s.sportId,
-      s.variantId,
-      s.selectedDate,
-      s.selectedTime,
-      s.durationMinutes,
-      s.venueSpaceId,
-      s.joinPolicy,
-      s.listingVisibility,
-      s.allowWaitlist,
-      s.allowSpectators,
-      s.title,
-      s.description,
-      s.minSkill,
-      s.maxSkill,
-      s.minPlayers,
-      s.maxPlayers,
-      s.priceText,
-    ];
-    if (_requestForm != null && !listEquals(_requestForm, form)) {
-      _requestId.clear();
-    }
-    _requestForm = form;
-    _requestId.begin();
-  }
+  /// The fields the user edits. A change in any of them, while no request is
+  /// in flight, ends the current attempt, so the next Create gets a new id
+  /// even when the old value is put back.
+  static List<Object?> _formOf(dynamic s) => <Object?>[
+    s.sportId,
+    s.variantId,
+    s.selectedDate,
+    s.selectedTime,
+    s.durationMinutes,
+    s.venueSpaceId,
+    s.joinPolicy,
+    s.listingVisibility,
+    s.allowWaitlist,
+    s.allowSpectators,
+    s.title,
+    s.description,
+    s.minSkill,
+    s.maxSkill,
+    s.minPlayers,
+    s.maxPlayers,
+    s.priceText,
+  ];
 
   Future<void> _submit() async {
     // KAN-618: a second tap while one is in flight is dropped, so two taps
     // make one submission and one id.
     if (ref.read(_gameComposerProvider).isSubmitting) return;
     if (!ref.read(_gameComposerProvider.notifier).validatePrice()) return;
-    if (!_isEditing) _beginRequest();
+    if (!_isEditing) _requestId.begin();
     final ok = await ref.read(_gameComposerProvider.notifier).submit();
     if (ok && !_isEditing) {
       _requestId.clear();
-      _requestForm = null;
     }
     if (!mounted) return;
     if (ok) {
