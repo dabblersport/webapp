@@ -1,4 +1,7 @@
-import 'package:dabbler/core/constants/uae_locations.dart';
+import 'dart:async';
+
+import 'package:dabbler/data/models/mapbox_place.dart';
+import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
@@ -7,7 +10,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// KAN-587: the City-only step behind "Maybe later" in location setup. It lists
-/// canonical cities only (never an Area result), needs no GPS and no area, and
+/// map-service cities worldwide (never an Area result), needs no GPS and no area, and
 /// commits the choice as the device's manual city. Resolves to the chosen city,
 /// or null when the sheet is dismissed without one.
 Future<String?> showCityRequiredSheet(BuildContext context) {
@@ -29,27 +32,32 @@ class CityRequiredSheet extends ConsumerStatefulWidget {
 class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
   final TextEditingController _search = TextEditingController();
   bool _saving = false;
+  Timer? _debounce;
+  String _query = '';
 
   @override
   void initState() {
     super.initState();
-    _search.addListener(() => setState(() {}));
+    _search.addListener(_onChanged);
   }
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _search.dispose();
     super.dispose();
   }
 
-  List<String> get _cities {
-    final String q = _search.text.trim().toLowerCase();
-    final List<String> all = <String>{
-      for (final LocationData l in UAELocations.cities) l.city,
-    }.toList();
-    return q.isEmpty
-        ? all
-        : all.where((String c) => c.toLowerCase().contains(q)).toList();
+  void _onChanged() {
+    _debounce?.cancel();
+    final String q = _search.text.trim();
+    if (q.length < 2) {
+      setState(() => _query = '');
+      return;
+    }
+    _debounce = Timer(DabblerMotion.debounceSearch, () {
+      if (mounted) setState(() => _query = q);
+    });
   }
 
   Future<void> _pick(String city) async {
@@ -62,7 +70,9 @@ class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final List<String> cities = _cities;
+    final AsyncValue<List<MapboxPlace>> results = _query.isEmpty
+        ? const AsyncData<List<MapboxPlace>>(<MapboxPlace>[])
+        : ref.watch(mapboxCityProvider(_query));
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -72,31 +82,49 @@ class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
           placeholder: l.manual_location_search_placeholder,
         ),
         const DabblerGap.v(DabblerSpacing.space4),
-        if (cities.isEmpty)
-          Padding(
-            padding: const EdgeInsets.all(DabblerSpacing.space8),
-            child: DabblerEmptyState(
-              icon: 'location-slash',
-              title: l.manual_location_empty_title,
-              text: l.manual_location_empty_text,
-            ),
-          )
+        if (_query.isEmpty)
+          const SizedBox.shrink()
         else
-          for (final String city in cities) ...<Widget>[
-            DabblerInputRow(
-              flat: true,
-              onTap: () => _pick(city),
-              leading: const DabblerIcon(
-                'location',
-                size: DabblerSizing.iconRow,
-              ),
-              title: city,
-              trailing: const DabblerChevron(),
-              semanticLabel: city,
+          results.when(
+            loading: () => const Padding(
+              padding: EdgeInsets.all(DabblerSpacing.space8),
+              child: Center(child: DabblerSpinner()),
             ),
-            const DabblerGap.v(DabblerSpacing.space2),
-          ],
+            error: (_, __) => _empty(l),
+            data: (List<MapboxPlace> cities) => cities.isEmpty
+                ? _empty(l)
+                : Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: <Widget>[
+                      for (final MapboxPlace city in cities) ...<Widget>[
+                        DabblerInputRow(
+                          flat: true,
+                          onTap: () => _pick(city.name),
+                          leading: const DabblerIcon(
+                            'location',
+                            size: DabblerSizing.iconRow,
+                          ),
+                          title: city.name,
+                          subtitle: city.fullAddress,
+                          trailing: const DabblerChevron(),
+                          semanticLabel: city.fullAddress,
+                        ),
+                        const DabblerGap.v(DabblerSpacing.space2),
+                      ],
+                    ],
+                  ),
+          ),
       ],
     );
   }
+
+  Widget _empty(AppLocalizations l) => Padding(
+    padding: const EdgeInsets.all(DabblerSpacing.space8),
+    child: DabblerEmptyState(
+      icon: 'location-slash',
+      title: l.manual_location_empty_title,
+      text: l.manual_location_empty_text,
+    ),
+  );
 }
