@@ -19,6 +19,9 @@ import 'package:dabbler/l10n/app_localizations.dart';
 class DeviceLocationSection extends ConsumerWidget {
   const DeviceLocationSection({super.key});
 
+  static const _autoId = 'auto';
+  static const _manualId = 'manual';
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
@@ -33,20 +36,17 @@ class DeviceLocationSection extends ConsumerWidget {
       children: [
         DabblerText(l10n.location_device_section, style: DabblerType.headline),
         const DabblerGap.v(DabblerSpacing.space3),
-        Row(
-          children: [
-            DabblerChip(
-              label: l10n.location_mode_auto,
-              selected: auto,
-              onTap: () => _chooseAuto(context, ref),
-            ),
-            const DabblerGap.h(DabblerSpacing.space3),
-            DabblerChip(
-              label: l10n.location_mode_manual,
-              selected: !auto,
-              onTap: () => _chooseManual(context, ref),
-            ),
+        DabblerTabs(
+          variant: DabblerTabsVariant.segmented,
+          label: l10n.location_device_section,
+          value: auto ? _autoId : _manualId,
+          items: [
+            DabblerTabItem(id: _autoId, label: l10n.location_mode_auto),
+            DabblerTabItem(id: _manualId, label: l10n.location_mode_manual),
           ],
+          onChanged: (id) => id == _autoId
+              ? _chooseAuto(context, ref)
+              : _chooseManual(context, ref),
         ),
         const DabblerGap.v(DabblerSpacing.space3),
         if (auto)
