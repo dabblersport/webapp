@@ -200,9 +200,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         final area = await _resolveArea(result.lat, result.lng);
         if (area == null) {
           if (settleWhenUnsaved && state.valueOrNull is ActiveLocationLoading) {
-            state = AsyncData(
-              ActiveLocationError('Could not resolve your area'),
-            );
+            // Offline (KAN-607): keep the last saved area; with none, the chip
+            // reads "Set location" and opens the manual drawer, never an
+            // English error string.
+            final last = await _lastKnownReady();
+            state = AsyncData(last ?? ActiveLocationDenied());
           }
           return;
         }
@@ -285,7 +287,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       case LocationSuccess(:final lat, :final lng):
         final area = await _resolveArea(lat, lng);
         if (area == null) {
-          return ActiveLocationError('Could not resolve your area');
+          // Offline (KAN-607): keep the last saved area, else "Set location".
+          return await _lastKnownReady() ?? ActiveLocationDenied();
         }
         return ActiveLocationReady(
           ActiveLocation(
@@ -345,7 +348,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       hintAreaId: location.areaId,
     );
     if (area == null) {
-      state = AsyncData(ActiveLocationError('Could not resolve area'));
+      // Offline (KAN-607): keep the last saved area, else "Set location".
+      state = AsyncData(await _lastKnownReady() ?? ActiveLocationDenied());
       return;
     }
 
@@ -582,11 +586,19 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   }) async {
     // If we have a direct area id hint, try the cache first.
     if (hintAreaId != null) {
-      final all = await _areas.loadAll();
-      final match = all.where((a) => a.id == hintAreaId).firstOrNull;
-      if (match != null) return match;
+      try {
+        final all = await _areas.loadAll();
+        final match = all.where((a) => a.id == hintAreaId).firstOrNull;
+        if (match != null) return match;
+      } catch (_) {
+        // Offline: fall through; the caller keeps the last saved area.
+      }
     }
-    return _areas.resolveNearest(lat, lng);
+    try {
+      return await _areas.resolveNearest(lat, lng);
+    } catch (_) {
+      return null; // offline: callers keep the last saved area
+    }
   }
 }
 

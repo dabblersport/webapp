@@ -4,8 +4,10 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/data/chat_cache.dart';
 import 'package:dabbler/features/messaging/data/messaging_wake_channel.dart';
 import 'package:dabbler/features/messaging/data/unavailable_messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
@@ -30,7 +32,35 @@ class GameChatController
   @override
   Future<GameChatViewState> build(String arg) async {
     _listenForWakes();
-    return open(arg);
+    return _withCache(await open(arg));
+  }
+
+  /// The cache key of this thread's on-device copy (KAN-607).
+  @protected
+  String cacheKey(String arg) => ChatCache.gameThreadKey(arg);
+
+  /// A thread that opened is stored (newest [ChatCache.maxMessagesPerThread]
+  /// messages); one that could not be reached answers from the stored copy;
+  /// one the server closed to this account (removed, unavailable) drops it.
+  Future<GameChatViewState> _withCache(GameChatViewState fresh) async {
+    final account = ref.read(cacheAccountIdProvider);
+    if (account == null) return fresh;
+    final cache = ChatCache(ref.read(offlineCacheProvider), account);
+    final key = cacheKey(arg);
+    switch (fresh.status) {
+      case GameChatStatus.ready:
+      case GameChatStatus.empty:
+      case GameChatStatus.readOnly:
+        if (fresh.conversation != null) unawaited(cache.saveThread(key, fresh));
+      case GameChatStatus.unavailable:
+      case GameChatStatus.removed:
+        unawaited(cache.removeThread(key));
+      case GameChatStatus.offline:
+        return await cache.loadThread(key) ?? fresh;
+      case GameChatStatus.error:
+        break;
+    }
+    return fresh;
   }
 
   /// Resolves the conversation for [arg] (here: the game id) and opens it.
@@ -112,6 +142,9 @@ class GameChatController
     final key = ref.read(messagingClientKeyGeneratorProvider)();
     final current = state.valueOrNull;
     if (current == null || current.conversation == null) return;
+    // Sending offline is out of scope (KAN-607): a thread shown from the
+    // device copy refuses a send; the composer already says why.
+    if (current.fromCache) return;
     state = AsyncData(
       current.copyWith(
         status: GameChatStatus.ready,
@@ -441,7 +474,22 @@ class GameChatController
       _endIfRemoved(result.requireError);
       return;
     }
+    // The network answered: the device copy is no longer what is shown.
+    final shown = state.valueOrNull;
+    if (shown != null && shown.fromCache) {
+      state = AsyncData(shown.copyWith(fromCache: false));
+    }
     _mergeFresh(result.requireValue.messages);
+    final merged = state.valueOrNull;
+    final account = ref.read(cacheAccountIdProvider);
+    if (merged != null && account != null) {
+      unawaited(
+        ChatCache(
+          ref.read(offlineCacheProvider),
+          account,
+        ).saveThread(cacheKey(arg), merged),
+      );
+    }
   }
 
   // ---------------------------------------------------------------- Realtime

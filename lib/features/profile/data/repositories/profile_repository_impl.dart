@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -52,6 +53,14 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
           (profileType == null ||
               cachedProfile.personaType?.toLowerCase() ==
                   profileType.toLowerCase())) {
+        // Fresh enough to show at once; still revalidated on every open
+        // (KAN-607). The refresh only updates the cache: this open does not
+        // jump, the next one shows the new copy. A failure is silent.
+        _revalidate(
+          userId,
+          profileType: profileType,
+          filterActive: filterActive,
+        );
         return Right(cachedProfile);
       }
 
@@ -70,9 +79,12 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       // Every data-source error, typed or raw (SocketException, web
       // ClientException, TimeoutException, Postgrest), becomes one of the
       // shared failures (KAN-603). When the server or the link is the problem
-      // the cached profile still answers; stale-cache policy itself is KAN-607.
+      // the cached profile still answers, however old it is (KAN-607).
       final Failure failure = _profileFailure(e);
-      if (failure is NetworkFailure || failure is ServerFailure) {
+      if (failure is NetworkFailure ||
+          failure is ServerFailure ||
+          failure is TimeoutFailure) {
+        // Any age: a stale profile beats an error page (KAN-607).
         final cachedProfile = await localDataSource.getCachedProfile(userId);
         if (cachedProfile != null &&
             (profileType == null ||
@@ -83,6 +95,25 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       }
       return Left(failure);
     }
+  }
+
+  void _revalidate(
+    String userId, {
+    String? profileType,
+    required bool filterActive,
+  }) {
+    unawaited(() async {
+      try {
+        final fresh = await remoteDataSource.getProfile(
+          userId,
+          profileType: profileType,
+          filterActive: filterActive,
+        );
+        await localDataSource.cacheProfile(fresh);
+      } catch (_) {
+        // Silent: the cached copy stays.
+      }
+    }());
   }
 
   /// Maps a data-source error to the shared taxonomy, keeping typed failures.

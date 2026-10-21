@@ -170,6 +170,7 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pump();
       await tester.tap(find.text(l10n.settings_sign_out_title));
       await _settle(tester);
       expect(tester.takeException(), isNull);

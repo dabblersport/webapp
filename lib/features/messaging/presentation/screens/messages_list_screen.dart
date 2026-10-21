@@ -13,6 +13,7 @@ import 'package:dabbler/features/messaging/presentation/providers/messages_list_
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/messages_list_dm_row.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/messages_list_meetup_row.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/header_collapse.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The Messages list (KAN-549, KAN-562): the user's game chats and direct
@@ -25,7 +26,12 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// relative last-activity time and the state as a quiet label. It shows NO
 /// unread count, preview or sender name. States: loading (skeleton rows),
 /// empty, error with Retry, populated. No Realtime: loads on open and Retry.
-class MessagesListScreen extends ConsumerWidget {
+///
+/// KAN-601: the header follows Settings and Profile. A tinted title hero
+/// scrolls away with the list and the pinned bar takes over (title shown,
+/// tint dropped) once the hero's measured height is passed, with hysteresis.
+/// The tint is the `surfaceHeaderMessages` token, never a literal.
+class MessagesListScreen extends ConsumerStatefulWidget {
   const MessagesListScreen({super.key});
 
   static const listKey = ValueKey<String>('messages-list');
@@ -43,66 +49,115 @@ class MessagesListScreen extends ConsumerWidget {
       ValueKey<String>('messages-list-meetup-row-$conversationId');
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<MessagesListScreen> createState() => _MessagesListScreenState();
+}
+
+class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
+  final ScrollController _scroll = ScrollController();
+  late final HeaderCollapseController _collapse;
+
+  @override
+  void initState() {
+    super.initState();
+    _collapse = HeaderCollapseController(_scroll);
+  }
+
+  @override
+  void dispose() {
+    _collapse.dispose();
+    _scroll.dispose();
+    super.dispose();
+  }
+
+  Widget _hero(BuildContext context, AppLocalizations l10n) => MeasuredHeader(
+    onHeight: _collapse.measure,
+    child: DabblerSettingsHeader(
+      title: l10n.messaging_list_title,
+      tint: DabblerColors.of(context).surfaceHeaderMessages,
+    ),
+  );
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final async = ref.watch(messagesListProvider);
     final result = async.valueOrNull;
     final Widget body;
     if (result == null || async.isLoading) {
-      body = _MessagesListSkeleton(
-        key: loadingKey,
-        semanticLabel: l10n.messaging_list_loading,
+      body = ListView(
+        controller: _scroll,
+        physics: const NeverScrollableScrollPhysics(),
+        children: [
+          _hero(context, l10n),
+          _MessagesListSkeleton(
+            key: MessagesListScreen.loadingKey,
+            semanticLabel: l10n.messaging_list_loading,
+          ),
+        ],
       );
     } else if (result is Ok<List<MyConversation>, Object>) {
       final chats = result.requireValue;
       body = chats.isEmpty
-          ? Center(
-              child: SingleChildScrollView(
-                child: DabblerEmptyState(
-                  key: emptyKey,
+          ? ListView(
+              controller: _scroll,
+              children: [
+                _hero(context, l10n),
+                DabblerEmptyState(
+                  key: MessagesListScreen.emptyKey,
                   icon: 'messages',
                   title: l10n.messaging_list_empty_dm_title,
                   text: l10n.messaging_list_empty_dm_body,
                   size: DabblerEmptyStateSize.page,
                 ),
-              ),
+              ],
             )
-          : _list(context, ref, l10n, chats);
+          : _list(context, l10n, chats);
     } else {
-      body = Center(
-        child: SingleChildScrollView(
-          child: DabblerEmptyState.error(
-            key: errorKey,
+      body = ListView(
+        controller: _scroll,
+        children: [
+          _hero(context, l10n),
+          DabblerEmptyState.error(
+            key: MessagesListScreen.errorKey,
             title: l10n.messaging_list_error_title,
             text: l10n.messaging_list_error_body,
             retryLabel: l10n.messaging_list_error_retry,
             onRetry: () => ref.invalidate(messagesListProvider),
           ),
-        ),
+        ],
       );
     }
-    return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        title: l10n.messaging_list_title,
-        backLabel: l10n.auth_back,
-        onBack: () => context.canPop() ? context.pop() : null,
+    return ListenableBuilder(
+      listenable: _collapse,
+      builder: (context, _) => DabblerPage(
+        topBar: DabblerNavigationTopBar.titled(
+          title: l10n.messaging_list_title,
+          backLabel: l10n.auth_back,
+          onBack: () => context.canPop() ? context.pop() : null,
+          scrollController: _scroll,
+          titleRevealOffset: _collapse.revealOffset,
+          heroTint: true,
+          heroTone: DabblerNavigationHeroTone.messages,
+        ),
+        body: body,
       ),
-      body: body,
     );
   }
 
   Widget _list(
     BuildContext context,
-    WidgetRef ref,
     AppLocalizations l10n,
     List<MyConversation> chats,
   ) {
     final locale = Localizations.localeOf(context).languageCode;
     final now = ref.watch(messagingClockProvider)();
     return ListView.builder(
-      key: listKey,
-      itemCount: chats.length,
-      itemBuilder: (context, i) {
+      key: MessagesListScreen.listKey,
+      controller: _scroll,
+      itemCount: chats.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) return _hero(context, l10n);
+        final i = index - 1;
         final c = chats[i];
         if (c.isDm) {
           return _dmRow(context, l10n, c, now, locale, i < chats.length - 1);
@@ -110,7 +165,7 @@ class MessagesListScreen extends ConsumerWidget {
         if (c.isMeetup) {
           final time = messagesListGameTime(c.startAt, locale);
           return MessagesListMeetupRow(
-            key: meetupRowKey(c.conversationId),
+            key: MessagesListScreen.meetupRowKey(c.conversationId),
             title: messagesListTitle(l10n, c),
             seed: c.conversationId,
             timestamp: messagesListRelative(c.lastActivityAt, now, locale),
@@ -128,7 +183,7 @@ class MessagesListScreen extends ConsumerWidget {
         }
         final gameId = c.gameId ?? '';
         return DabblerConversationRow(
-          key: rowKey(gameId),
+          key: MessagesListScreen.rowKey(gameId),
           kind: DabblerConversationKind.game,
           sport: messagesListSport(c.sport),
           seed: gameId,
@@ -162,7 +217,7 @@ class MessagesListScreen extends ConsumerWidget {
       c.counterpartUserId ?? c.conversationId,
     );
     return MessagesListDmRow(
-      key: dmRowKey(c.conversationId),
+      key: MessagesListScreen.dmRowKey(c.conversationId),
       name: messagesListDmName(l10n, c),
       avatarSeed: avatar.seed,
       timestamp: messagesListRelative(c.lastActivityAt, now, locale),
@@ -249,8 +304,7 @@ class _MessagesListSkeleton extends StatelessWidget {
     container: true,
     label: semanticLabel,
     child: ExcludeSemantics(
-      child: ListView(
-        physics: const NeverScrollableScrollPhysics(),
+      child: Column(
         children: [
           for (var i = 0; i < _rows; i++)
             const Padding(
