@@ -136,6 +136,8 @@ class _SocialSearchScreenState extends ConsumerState<SocialSearchScreen> {
               mode: mode,
               onViewAll: (m) => setState(() => _viewAllMode = m),
               onProfileTap: _navigateToSearchProfile,
+              onRetry: () =>
+                  ref.read(searchProvider.notifier).search(searchState.query),
             )
           : SearchDefaultView(
               recentSearches: recentSearches,

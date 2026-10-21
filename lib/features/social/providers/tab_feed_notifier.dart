@@ -28,6 +28,9 @@ sealed class TabFeedState {
   bool get isLoadingMore => false;
   bool get hasMore => false;
   String? get error => null;
+
+  /// KAN-606: the last next-page load failed; the list ends in a retry row.
+  bool get loadMoreFailed => false;
 }
 
 final class TabFeedLoading extends TabFeedState {
@@ -53,6 +56,7 @@ final class TabFeedData extends TabFeedState {
     required this.posts,
     this.hasMore = true,
     this.loadingMore = false,
+    this.loadMoreFailed = false,
   });
 
   @override
@@ -64,11 +68,20 @@ final class TabFeedData extends TabFeedState {
   @override
   bool get isLoadingMore => loadingMore;
 
-  TabFeedData copyWith({List<Post>? posts, bool? hasMore, bool? loadingMore}) {
+  @override
+  final bool loadMoreFailed;
+
+  TabFeedData copyWith({
+    List<Post>? posts,
+    bool? hasMore,
+    bool? loadingMore,
+    bool? loadMoreFailed,
+  }) {
     return TabFeedData(
       posts: posts ?? this.posts,
       hasMore: hasMore ?? this.hasMore,
       loadingMore: loadingMore ?? this.loadingMore,
+      loadMoreFailed: loadMoreFailed ?? this.loadMoreFailed,
     );
   }
 }
@@ -98,25 +111,43 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
   static const int _pageSize = 20;
   int _activePage = 0;
 
+  /// Bumped by every [load]; a next page that lands after a reload started
+  /// belongs to the old list and is dropped.
+  int _generation = 0;
+
   /// Loads the first page only if not yet loaded (cache-friendly).
   Future<void> ensureLoaded() async {
     if (state is TabFeedData) return;
     await load();
   }
 
-  /// Force-reload from first page.
-  Future<void> load() async {
-    if (!mounted) return;
-    state = const TabFeedLoading();
-    _activePage = 0;
+  /// Force-reload from first page. KAN-606: a reload over a feed that has
+  /// posts keeps them on screen while it runs and when it fails; only a feed
+  /// with nothing to show goes through [TabFeedLoading] and [TabFeedFailure].
+  /// Returns whether the load succeeded.
+  Future<bool> load() async {
+    if (!mounted) return false;
+    final generation = ++_generation;
+    if (state.posts.isEmpty) state = const TabFeedLoading();
 
     final result = await _fetcher(limit: _pageSize, offset: 0);
-    if (!mounted) return;
+    if (!mounted || generation != _generation) return false;
 
-    result.fold(
-      (err) => state = TabFeedFailure(err.message),
-      (posts) =>
-          state = TabFeedData(posts: posts, hasMore: posts.length >= _pageSize),
+    return result.fold(
+      (err) {
+        final current = state;
+        if (current is TabFeedData && current.posts.isNotEmpty) {
+          state = current.copyWith(loadingMore: false);
+        } else {
+          state = TabFeedFailure(err.message);
+        }
+        return false;
+      },
+      (posts) {
+        _activePage = 0;
+        state = TabFeedData(posts: posts, hasMore: posts.length >= _pageSize);
+        return true;
+      },
     );
   }
 
@@ -127,36 +158,40 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
       return;
     }
 
-    state = data.copyWith(loadingMore: true);
+    final generation = _generation;
+    state = data.copyWith(loadingMore: true, loadMoreFailed: false);
     final nextPage = _activePage + 1;
 
     final result = await _fetcher(
       limit: _pageSize,
       offset: nextPage * _pageSize,
     );
-    if (!mounted) return;
+    if (!mounted || generation != _generation) return;
 
     final current = state;
     if (current is! TabFeedData) return;
 
-    result.fold((_) => state = current.copyWith(loadingMore: false), (
-      newPosts,
-    ) {
-      if (newPosts.isEmpty) {
-        state = current.copyWith(hasMore: false, loadingMore: false);
-        return;
-      }
-      _activePage = nextPage;
-      final existingIds = current.posts.map((p) => p.id).toSet();
-      final deduped = newPosts
-          .where((p) => !existingIds.contains(p.id))
-          .toList();
-      state = current.copyWith(
-        posts: [...current.posts, ...deduped],
-        loadingMore: false,
-        hasMore: newPosts.length >= _pageSize && deduped.isNotEmpty,
-      );
-    });
+    // KAN-606: a failed next page keeps the posts and ends the list in a
+    // retry row; [loadMore] is the retry.
+    result.fold(
+      (_) => state = current.copyWith(loadingMore: false, loadMoreFailed: true),
+      (newPosts) {
+        if (newPosts.isEmpty) {
+          state = current.copyWith(hasMore: false, loadingMore: false);
+          return;
+        }
+        _activePage = nextPage;
+        final existingIds = current.posts.map((p) => p.id).toSet();
+        final deduped = newPosts
+            .where((p) => !existingIds.contains(p.id))
+            .toList();
+        state = current.copyWith(
+          posts: [...current.posts, ...deduped],
+          loadingMore: false,
+          hasMore: newPosts.length >= _pageSize && deduped.isNotEmpty,
+        );
+      },
+    );
   }
 }
 

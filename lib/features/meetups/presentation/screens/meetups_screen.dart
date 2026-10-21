@@ -244,8 +244,15 @@ class _MeetupsBody extends ConsumerWidget {
         ref.read(listingRefresherProvider('meetups')).run(() async {
           ref.invalidate(meetupListProvider);
           await settle(ref.read(meetupListProvider(sportId).future));
+          // KAN-606: the list stays; the failure is a transient toast.
+          if (refreshFailedWithRows(ref.read(meetupListProvider(sportId)))) {
+            if (context.mounted) showListingRefreshFailedToast(context);
+          }
         });
+    // KAN-606: a failed refetch with rows keeps them; the error answer is for
+    // a list with nothing to show.
     return list.when(
+      skipError: keepsRows(list),
       loading: () =>
           const ListingSkeletons(kind: DabblerListingSkeletonKind.meetup),
       error: (_, __) => ListingError(

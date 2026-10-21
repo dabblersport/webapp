@@ -33,10 +33,18 @@ import '../../support/render_mode.dart';
 class FakeFeed extends StateNotifier<FeedState> implements FeedNotifier {
   FakeFeed(super.state);
   int loads = 0;
+  int loadMores = 0;
+
+  /// What [load] answers; true unless a test makes the refresh fail.
+  bool loadSucceeds = true;
   @override
-  Future<void> load() async => loads++;
+  Future<bool> load() async {
+    loads++;
+    return loadSucceeds;
+  }
+
   @override
-  Future<void> loadMore() async {}
+  Future<void> loadMore() async => loadMores++;
   @override
   void clearNewPostsBadge() {}
   @override
@@ -46,7 +54,7 @@ class FakeFeed extends StateNotifier<FeedState> implements FeedNotifier {
 class _Tab extends StateNotifier<TabFeedState> implements TabFeedNotifier {
   _Tab([TabFeedState state = const TabFeedLoading()]) : super(state);
   @override
-  Future<void> load() async {}
+  Future<bool> load() async => true;
   @override
   Future<void> loadMore() async {}
   @override
