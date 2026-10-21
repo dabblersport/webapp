@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:dabbler/data/models/mapbox_place.dart';
-import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
+import 'package:dabbler/features/location/presentation/widgets/map_place_results.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
@@ -77,9 +77,6 @@ class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final AsyncValue<List<MapboxPlace>> results = _query.isEmpty
-        ? const AsyncData<List<MapboxPlace>>(<MapboxPlace>[])
-        : ref.watch(mapboxCityProvider(_query));
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -89,49 +86,9 @@ class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
           placeholder: l.manual_location_search_placeholder,
         ),
         const DabblerGap.v(DabblerSpacing.space4),
-        if (_query.isEmpty)
-          const SizedBox.shrink()
-        else
-          results.when(
-            loading: () => const Padding(
-              padding: EdgeInsets.all(DabblerSpacing.space8),
-              child: Center(child: DabblerSpinner()),
-            ),
-            error: (_, __) => _empty(l),
-            data: (List<MapboxPlace> cities) => cities.isEmpty
-                ? _empty(l)
-                : Column(
-                    mainAxisSize: MainAxisSize.min,
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: <Widget>[
-                      for (final MapboxPlace city in cities) ...<Widget>[
-                        DabblerInputRow(
-                          flat: true,
-                          onTap: () => _pick(city),
-                          leading: const DabblerIcon(
-                            'location',
-                            size: DabblerSizing.iconRow,
-                          ),
-                          title: city.name,
-                          subtitle: city.fullAddress,
-                          trailing: const DabblerChevron(),
-                          semanticLabel: city.fullAddress,
-                        ),
-                        const DabblerGap.v(DabblerSpacing.space2),
-                      ],
-                    ],
-                  ),
-          ),
+        if (_query.isNotEmpty)
+          MapPlaceResults.cities(query: _query, onPick: _pick),
       ],
     );
   }
-
-  Widget _empty(AppLocalizations l) => Padding(
-    padding: const EdgeInsets.all(DabblerSpacing.space8),
-    child: DabblerEmptyState(
-      icon: 'location-slash',
-      title: l.manual_location_empty_title,
-      text: l.manual_location_empty_text,
-    ),
-  );
 }
