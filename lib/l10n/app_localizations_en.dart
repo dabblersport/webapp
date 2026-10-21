@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -7262,12 +7263,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_settings_device_title => 'Device location';
 
   @override
-  String get location_mode_auto => 'Auto';
-
-  @override
-  String get location_mode_manual => 'Manual';
-
-  @override
   String get location_saved_set_primary => 'Set as primary';
 
   @override
@@ -7278,4 +7273,91 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_saved_rename_hint => 'Custom name';
+
+  @override
+  String get location_device_section => 'Location on this device';
+
+  @override
+  String get location_mode_auto => 'Auto';
+
+  @override
+  String get location_mode_manual => 'Manual';
+
+  @override
+  String get location_mode_auto_hint => 'Follows this device\'s location.';
+
+  @override
+  String get location_mode_manual_hint => 'You choose where you are.';
+
+  @override
+  String get location_mode_change => 'Change';
+
+  @override
+  String get location_mode_none_chosen => 'No place chosen';
+
+  @override
+  String get saved_places_load_error => 'Could not load locations';
+
+  @override
+  String get saved_places_empty_title => 'No saved locations yet';
+
+  @override
+  String get saved_places_empty_text =>
+      'Save your home, work, or favourite spots so you can quickly tag them in posts.';
+
+  @override
+  String get saved_places_add_first => 'Add your first location';
+
+  @override
+  String get saved_places_delete => 'Delete';
+
+  @override
+  String get saved_places_delete_title => 'Delete location?';
+
+  @override
+  String saved_places_delete_body(String label) {
+    return 'Remove \"$label\" from your saved locations?';
+  }
+
+  @override
+  String get saved_places_set_primary => 'Set as primary';
+
+  @override
+  String get saved_places_rename => 'Rename';
+
+  @override
+  String get saved_places_rename_title => 'Rename location';
+
+  @override
+  String get saved_places_custom_name => 'Custom name';
+
+  @override
+  String get saved_places_label_school => 'School';
+
+  @override
+  String get saved_places_label_current => 'Current';
+
+  @override
+  String get saved_places_save_title => 'Save this location';
+
+  @override
+  String get saved_places_accuracy_unknown => 'Unknown accuracy';
+
+  @override
+  String get saved_places_search_hint => 'Search for a place…';
+
+  @override
+  String get saved_places_label => 'Label';
+
+  @override
+  String get saved_places_custom_hint => 'e.g. My gym, Parents\' house';
+
+  @override
+  String get saved_places_primary_toggle => 'Set as primary location';
+
+  @override
+  String get saved_places_save_action => 'Save location';
+
+  @override
+  String get saved_places_use_once => 'Use once';
 }

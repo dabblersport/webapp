@@ -1,7 +1,5 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-// Route type only (non-visual): "Add location" keeps its existing push.
-import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,7 +11,7 @@ import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
-import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
+import 'package:dabbler/features/location/presentation/add_saved_place.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_places.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -228,9 +226,7 @@ class _HomeLocationPickerSheetState
           currentState: currentState,
           onSaved: _useSaved,
           onArea: _useManual,
-          onAdd: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const SavedLocationsScreen()),
-          ),
+          onAdd: () => startAddSavedPlace(context, ref),
         ),
         // The end-of-list room the root padding gave, as a trailing gap.
         const SizedBox(height: DabblerSpacing.space9),

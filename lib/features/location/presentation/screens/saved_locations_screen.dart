@@ -4,14 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/profile_location.dart';
-import 'package:dabbler/features/location/presentation/active_location_label.dart';
-import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
-import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
-    show currentUserIdProvider;
-import 'package:dabbler/features/location/data/device_location_store.dart';
+import 'package:dabbler/features/location/presentation/add_saved_place.dart';
+import 'package:dabbler/features/location/presentation/device_location_section.dart';
+import 'package:dabbler/features/location/presentation/saved_place_labels.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -28,112 +24,66 @@ class SavedLocationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncLocations = ref.watch(profileLocationNotifierProvider);
     final canPop = Navigator.of(context).canPop();
+    final l10n = AppLocalizations.of(context);
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: AppLocalizations.of(context).settings_tile_location,
+        title: l10n.settings_tile_location,
         onBack: canPop ? () => Navigator.of(context).maybePop() : null,
       ),
       bottomOverlay: DabblerButton(
-        label: AppLocalizations.of(context).location_add_place,
+        label: l10n.location_add_place,
         icon: 'location-add',
         fullWidth: true,
-        onPressed: () => _addLocation(context, ref),
+        onPressed: () => startAddSavedPlace(context, ref),
       ),
       body: asyncLocations.when(
         loading: () => const Center(child: DabblerSpinner()),
         error: (e, _) => Center(
-          child: DabblerEmptyState.error(
-            title: AppLocalizations.of(context).location_saved_load_error,
-          ),
+          child: DabblerEmptyState.error(title: l10n.saved_places_load_error),
         ),
         data: (locations) {
-          if (locations.isEmpty) {
-            return Column(
-              children: [
-                const _DeviceLocationSection(),
-                Expanded(
-                  child: Center(
-                    child: SingleChildScrollView(
-                      padding: const EdgeInsets.all(DabblerSpacing.space9),
-                      child: DabblerEmptyState(
-                        icon: 'location-slash',
-                        title: AppLocalizations.of(
-                          context,
-                        ).location_saved_empty_title,
-                        text: AppLocalizations.of(
-                          context,
-                        ).location_saved_empty_text,
-                        size: DabblerEmptyStateSize.page,
-                        action: DabblerButton(
-                          label: AppLocalizations.of(
-                            context,
-                          ).location_saved_empty_cta,
-                          icon: 'location-add',
-                          onPressed: () => _addLocation(context, ref),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            );
-          }
-
           // Primary pinned at top, rest sorted newest first (already from repo)
           final primary = locations.where((l) => l.isPrimary).toList();
           final rest = locations.where((l) => !l.isPrimary).toList();
           final sorted = [...primary, ...rest];
 
-          return ListView.separated(
+          return ListView(
             padding: const EdgeInsetsDirectional.fromSTEB(
               DabblerSpacing.space5,
               DabblerSpacing.space5,
               DabblerSpacing.space5,
               DabblerSpacing.floatingBarClearance,
             ),
-            itemCount: sorted.length + 2,
-            separatorBuilder: (_, __) =>
-                const DabblerGap.v(DabblerSpacing.space3),
-            itemBuilder: (ctx, i) => i == 0
-                ? const _DeviceLocationSection()
-                : i == 1
-                ? DabblerText(
-                    AppLocalizations.of(ctx).location_saved_places,
-                    style: DabblerType.headline,
-                  )
-                : _LocationTile(location: sorted[i - 2]),
+            children: [
+              const DeviceLocationSection(),
+              const DabblerGap.v(DabblerSpacing.space6),
+              if (sorted.isEmpty)
+                DabblerEmptyState(
+                  icon: 'location-slash',
+                  title: l10n.saved_places_empty_title,
+                  text: l10n.saved_places_empty_text,
+                  size: DabblerEmptyStateSize.page,
+                  action: DabblerButton(
+                    label: l10n.saved_places_add_first,
+                    icon: 'location-add',
+                    onPressed: () => startAddSavedPlace(context, ref),
+                  ),
+                )
+              else ...[
+                DabblerText(
+                  l10n.location_saved_places,
+                  style: DabblerType.headline,
+                ),
+                for (final place in sorted) ...[
+                  const DabblerGap.v(DabblerSpacing.space3),
+                  _LocationTile(location: place),
+                ],
+              ],
+            ],
           );
         },
       ),
-    );
-  }
-
-  /// Starts from this device's current location (no GPS read and no
-  /// permission request: the OS permission is asked once, elsewhere). With no
-  /// point to start from, the manual "Set location" drawer opens instead. The
-  /// sheet searches any place by name; no street address is asked for.
-  Future<void> _addLocation(BuildContext context, WidgetRef ref) async {
-    final active = ref.read(activeLocationProvider).valueOrNull;
-    if (active is! ActiveLocationReady) {
-      await showSetLocationDrawer(context);
-      return;
-    }
-    final loc = active.location;
-    final area = await ref.read(
-      resolvedNearestAreaProvider((lat: loc.lat, lng: loc.lng)).future,
-    );
-    if (!context.mounted) return;
-    if (area == null) {
-      await showSetLocationDrawer(context);
-      return;
-    }
-    await SaveLocationSheet.show(
-      context,
-      lat: loc.lat,
-      lng: loc.lng,
-      areaId: area.id,
-      areaName: area.name,
     );
   }
 }
@@ -160,7 +110,7 @@ class _LocationTile extends ConsumerWidget {
       key: ValueKey(location.id),
       actions: [
         DabblerSwipeActionItem(
-          label: AppLocalizations.of(context).location_saved_delete,
+          label: AppLocalizations.of(context).saved_places_delete,
           icon: 'trash',
           tone: DabblerSwipeActionTone.destructive,
           onPressed: () async {
@@ -217,9 +167,8 @@ class _LocationTile extends ConsumerWidget {
                                   // The old badge text carried a star emoji; the star
                                   // is now a DabblerIcon (CEO rule: no emoji).
                                   DabblerBadge(
-                                    label: AppLocalizations.of(
-                                      context,
-                                    ).primary_sport_badge,
+                                    label: AppLocalizations.of(context)
+                                        .primary_sport_badge,
                                     icon: DabblerIcon('star'),
                                   ),
                                 ],
@@ -241,16 +190,15 @@ class _LocationTile extends ConsumerWidget {
               DabblerButton.icon(
                 tone: DabblerButtonTone.text,
                 icon: 'star',
-                semanticLabel: AppLocalizations.of(
-                  context,
-                ).location_saved_set_primary,
+                semanticLabel: AppLocalizations.of(context)
+                    .saved_places_set_primary,
                 onPressed: () => notifier.setPrimary(location.id),
               ),
             // Rename
             DabblerButton.icon(
               tone: DabblerButtonTone.text,
               icon: 'edit',
-              semanticLabel: AppLocalizations.of(context).location_saved_rename,
+              semanticLabel: AppLocalizations.of(context).saved_places_rename,
               onPressed: () => _rename(context, ref),
             ),
           ],
@@ -264,17 +212,16 @@ class _LocationTile extends ConsumerWidget {
       context: context,
       builder: (ctx) => DabblerDialog(
         onClose: () => Navigator.pop(ctx, false),
-        title: AppLocalizations.of(context).location_saved_delete_title,
-        description: AppLocalizations.of(
-          context,
-        ).location_saved_delete_body(location.effectiveLabel),
+        title: AppLocalizations.of(context).saved_places_delete_title,
+        description: AppLocalizations.of(context)
+            .saved_places_delete_body(location.effectiveLabel),
         destructive: true,
         secondaryAction: DabblerDialogAction(
           label: AppLocalizations.of(context).home_location_cancel,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         primaryAction: DabblerDialogAction(
-          label: AppLocalizations.of(context).location_saved_delete,
+          label: AppLocalizations.of(context).saved_places_delete,
           onPressed: () => Navigator.pop(ctx, true),
         ),
       ),
@@ -319,7 +266,7 @@ class _LocationTile extends ConsumerWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => DabblerDialog(
           onClose: () => Navigator.pop(ctx, false),
-          title: AppLocalizations.of(context).location_saved_rename_title,
+          title: AppLocalizations.of(context).saved_places_rename_title,
           secondaryAction: DabblerDialogAction(
             label: AppLocalizations.of(context).home_location_cancel,
             onPressed: () => Navigator.pop(ctx, false),
@@ -337,7 +284,7 @@ class _LocationTile extends ConsumerWidget {
                 runSpacing: DabblerSpacing.space3,
                 children: ProfileLocationLabel.values.map((l) {
                   return DabblerChip(
-                    label: l.displayName,
+                    label: savedPlaceLabelName(AppLocalizations.of(context), l),
                     selected: selectedLabel == l,
                     onTap: () => setState(() => selectedLabel = l),
                   );
@@ -347,9 +294,8 @@ class _LocationTile extends ConsumerWidget {
                 const DabblerGap.v(DabblerSpacing.space4),
                 DabblerTextField(
                   controller: customController,
-                  placeholder: AppLocalizations.of(
-                    context,
-                  ).location_saved_rename_hint,
+                  placeholder: AppLocalizations.of(context)
+                      .saved_places_custom_name,
                 ),
               ],
             ],
@@ -405,92 +351,6 @@ class _AreaName extends ConsumerWidget {
         tone: DabblerTextTone.secondary,
       ),
       orElse: () => const SizedBox.shrink(),
-    );
-  }
-}
-
-/// The Manual/Auto mode this device holds; refreshes with the active location.
-final _deviceModeProvider = FutureProvider.autoDispose<DeviceLocationMode?>((
-  ref,
-) async {
-  ref.watch(activeLocationProvider);
-  String? accountId;
-  try {
-    accountId = ref.watch(currentUserIdProvider);
-  } catch (_) {
-    accountId = null;
-  }
-  try {
-    final prefs = await SharedPreferences.getInstance();
-    return DeviceLocationStore(prefs, accountId: accountId).read()?.mode;
-  } catch (_) {
-    return null;
-  }
-});
-
-/// Location on this device (KAN-583): what this device is using now, Auto or
-/// Manual, and the two ways to change it. A device with no city shows the
-/// city-first "Set location" prompt as the only action. Per-device state only;
-/// never the public Profile City/Country and never a saved place.
-class _DeviceLocationSection extends ConsumerWidget {
-  const _DeviceLocationSection();
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final l = AppLocalizations.of(context);
-    final state = ref.watch(activeLocationProvider).valueOrNull;
-    final hasCity =
-        state is ActiveLocationReady || state is ActiveLocationCityOnly;
-    final mode = ref.watch(_deviceModeProvider).valueOrNull;
-    return Padding(
-      padding: const EdgeInsetsDirectional.only(
-        start: DabblerSpacing.space5,
-        end: DabblerSpacing.space5,
-        top: DabblerSpacing.space5,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerText(
-            l.location_settings_device_title,
-            style: DabblerType.caption1,
-          ),
-          const DabblerGap.v(DabblerSpacing.space2),
-          DabblerText(
-            hasCity
-                ? activeLocationLabel(l, state)
-                : l.location_intro_select_city,
-            style: DabblerType.headline,
-          ),
-          if (hasCity && mode != null)
-            DabblerText(
-              mode == DeviceLocationMode.auto
-                  ? l.location_mode_auto
-                  : l.location_mode_manual,
-              style: DabblerType.caption1,
-            ),
-          const DabblerGap.v(DabblerSpacing.space3),
-          if (hasCity)
-            DabblerButton(
-              label: l.location_use_current,
-              tone: DabblerButtonTone.neutral,
-              fullWidth: true,
-              onPressed: () =>
-                  ref.read(activeLocationProvider.notifier).useGpsLocation(),
-            ),
-          if (hasCity) const DabblerGap.v(DabblerSpacing.space3),
-          DabblerButton(
-            label: hasCity
-                ? l.listing_set_location
-                : l.location_intro_select_city,
-            tone: hasCity
-                ? DabblerButtonTone.neutral
-                : DabblerButtonTone.primary,
-            fullWidth: true,
-            onPressed: () => showSetLocationDrawer(context),
-          ),
-        ],
-      ),
     );
   }
 }
