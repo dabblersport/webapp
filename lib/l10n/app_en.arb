@@ -2528,5 +2528,9 @@
   "messaging_receipts_delivered_to": "Delivered to",
   "messaging_receipts_not_yet": "Not delivered yet",
   "messaging_receipts_not_yet_short": "Not yet",
-  "messaging_receipts_unknown_person": "Someone"
+  "messaging_receipts_unknown_person": "Someone",
+  "messaging_receipts_all": "All",
+  "@messaging_receipts_all": {"description": "KAN-614 receipts stat-tile value when the whole group is in the state (Seen or Delivered)."},
+  "messaging_receipts_nobody": "Nobody",
+  "@messaging_receipts_nobody": {"description": "KAN-614 receipts stat-tile value when nobody is in the state (Not yet)."}
 }

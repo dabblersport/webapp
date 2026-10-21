@@ -6920,4 +6920,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_receipts_unknown_person => 'شخص';
+
+  @override
+  String get messaging_receipts_all => 'الجميع';
+
+  @override
+  String get messaging_receipts_nobody => 'لا أحد';
 }
