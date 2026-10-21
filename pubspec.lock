@@ -261,8 +261,8 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: bd0d71ac59f882245b53dedbe913b7c905c8910d
-      resolved-ref: bd0d71ac59f882245b53dedbe913b7c905c8910d
+      ref: alpha-ds
+      resolved-ref: "470e71d25e6ac5d7e4c20d21a74dd9ff41d71192"
       url: "https://github.com/dabblersport/dabbler-design-system.git"
     source: git
     version: "0.1.1+1"
