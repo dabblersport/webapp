@@ -6974,4 +6974,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get messaging_image_pick_failed =>
       'Couldn\'t get that image. Try again.';
+
+  @override
+  String get settings_tile_location => 'Location';
+
+  @override
+  String get location_saved_places => 'Saved places';
+
+  @override
+  String get location_add_place => 'Add a place';
+
+  @override
+  String get location_custom_name_required => 'Enter a name for this place';
 }

@@ -119,6 +119,15 @@ class SettingsTiles extends ConsumerWidget {
             fitValue: true,
             onTap: onLanguageRegion,
           ),
+          DabblerStatTile(
+            size: DabblerStatTileSize.setting,
+            span: 6,
+            icon: const DabblerIcon('location'),
+            value: l10n.settings_tile_location,
+            label: l10n.location_saved_places,
+            fitValue: true,
+            onTap: () => context.push('/settings/location'),
+          ),
           if (privacy != null)
             DabblerStatTile(
               size: DabblerStatTileSize.setting,
