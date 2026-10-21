@@ -7,6 +7,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/utils/language_detector.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
@@ -135,6 +136,40 @@ class PostComposerState {
   /// True when the post has enough content to submit.
   bool get canSubmit => hasBody || hasVibe || hasSport || hasMedia;
 
+  /// True when [other] has the same form content. [isSubmitting] and [error]
+  /// are not form content. Lists compare by identity: every edit that changes
+  /// one builds a new list.
+  bool sameFormAs(PostComposerState other) =>
+      visibility == other.visibility &&
+      postType == other.postType &&
+      body == other.body &&
+      vibeId == other.vibeId &&
+      vibeName == other.vibeName &&
+      vibeEmoji == other.vibeEmoji &&
+      sportId == other.sportId &&
+      sportName == other.sportName &&
+      sportEmoji == other.sportEmoji &&
+      venueId == other.venueId &&
+      venueName == other.venueName &&
+      locationName == other.locationName &&
+      locationTagId == other.locationTagId &&
+      areaId == other.areaId &&
+      geoLat == other.geoLat &&
+      geoLng == other.geoLng &&
+      identical(media, other.media) &&
+      allowReposts == other.allowReposts &&
+      expiresAt == other.expiresAt &&
+      circleId == other.circleId &&
+      squadId == other.squadId &&
+      gameId == other.gameId &&
+      gameName == other.gameName &&
+      identical(tags, other.tags) &&
+      contentClass == other.contentClass &&
+      originType == other.originType &&
+      originId == other.originId &&
+      personaTypeSnapshot == other.personaTypeSnapshot &&
+      isPinned == other.isPinned;
+
   PostComposerState copyWith({
     PostVisibility? visibility,
     PostType? postType,
@@ -216,6 +251,30 @@ enum ComposerLocateOutcome { area, coordinates, unavailable }
 class PostComposerNotifier extends StateNotifier<PostComposerState> {
   PostComposerNotifier(this._ref) : super(const PostComposerState());
   final Ref _ref;
+
+  final CreateRequestId _requestId = CreateRequestId();
+
+  /// KAN-618: the client request id of the current create attempt; null until
+  /// the first Create tap. Held for KAN-612, which sends it; not sent yet.
+  String? get requestId => _requestId.current;
+
+  /// Editing the form ends the attempt, so the next Create gets a new id.
+  /// Changes to [PostComposerState.isSubmitting] and [PostComposerState.error]
+  /// alone are not edits.
+  @override
+  set state(PostComposerState value) {
+    if (!state.sameFormAs(value)) _requestId.clear();
+    super.state = value;
+  }
+
+  /// The composer was discarded: the attempt ends with it.
+  void discard() => _requestId.clear();
+
+  @override
+  void dispose() {
+    _requestId.clear();
+    super.dispose();
+  }
 
   PostRepository get _repo => _ref.read(postRepositoryProvider);
 
@@ -543,6 +602,15 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   Future<Result<Post, Failure>> submit() async {
     final s = state;
 
+    // KAN-618: a second tap while one is in flight is dropped, and the whole
+    // attempt, retries included, shares one request id.
+    if (s.isSubmitting) {
+      return const Err(
+        Failure(category: FailureCode.cancelled, message: 'Already posting.'),
+      );
+    }
+    _requestId.begin();
+
     // 1. Validate
     if (!s.canSubmit) {
       final err = const Failure(
@@ -684,6 +752,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
         state = state.copyWith(isSubmitting: false, error: err.message);
       },
       (_) {
+        _requestId.clear();
         state = state.copyWith(isSubmitting: false);
         // Invalidate feeds.
         _ref.invalidate(homeFeedProvider);

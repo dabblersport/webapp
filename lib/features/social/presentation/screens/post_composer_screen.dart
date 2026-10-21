@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
@@ -102,6 +103,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     result.fold(
       (err) {
         if (!mounted) return;
+        // KAN-618: a second tap during a submit; the first one decides.
+        if (err.category == FailureCode.cancelled) return;
         // KAN-592: no posting city is known. Ask for one; the draft is state,
         // untouched, and Post is tapped again once a city is chosen.
         if (err.message == kPostedFromRequired) {

@@ -1,6 +1,6 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
@@ -740,7 +741,11 @@ final _gameComposerProvider =
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class GameComposerScreen extends ConsumerStatefulWidget {
-  const GameComposerScreen({super.key, this.editGameId});
+  const GameComposerScreen({super.key, this.editGameId, this.requestId});
+
+  /// KAN-618: the holder of this create attempt's request id. A test passes
+  /// its own to read the id; by default the screen makes one.
+  final CreateRequestId? requestId;
 
   /// When set, the composer opens prefilled and saves changes to this game
   /// instead of creating a new one. Sport & format are locked in edit mode.
@@ -754,6 +759,13 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
+
+  /// KAN-618: one request id per create attempt. It is kept across failed
+  /// retries and cleared on success, on a form edit and when the drawer
+  /// closes. Held for KAN-612, which sends it; not sent yet. Saving an edit
+  /// of an existing game is not a create and takes none.
+  late final CreateRequestId _requestId = widget.requestId ?? CreateRequestId();
+  List<Object?>? _requestForm;
 
   bool get _isEditing => widget.editGameId != null;
 
@@ -781,15 +793,54 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   @override
   void dispose() {
+    _requestId.clear();
     _titleController.dispose();
     _descController.dispose();
     _priceController.dispose();
     super.dispose();
   }
 
+  /// Starts (or continues) this attempt. A form edit since the last attempt
+  /// ends that attempt first, so the id is new.
+  void _beginRequest() {
+    final s = ref.read(_gameComposerProvider);
+    final form = <Object?>[
+      s.sportId,
+      s.variantId,
+      s.selectedDate,
+      s.selectedTime,
+      s.durationMinutes,
+      s.venueSpaceId,
+      s.joinPolicy,
+      s.listingVisibility,
+      s.allowWaitlist,
+      s.allowSpectators,
+      s.title,
+      s.description,
+      s.minSkill,
+      s.maxSkill,
+      s.minPlayers,
+      s.maxPlayers,
+      s.priceText,
+    ];
+    if (_requestForm != null && !listEquals(_requestForm, form)) {
+      _requestId.clear();
+    }
+    _requestForm = form;
+    _requestId.begin();
+  }
+
   Future<void> _submit() async {
+    // KAN-618: a second tap while one is in flight is dropped, so two taps
+    // make one submission and one id.
+    if (ref.read(_gameComposerProvider).isSubmitting) return;
     if (!ref.read(_gameComposerProvider.notifier).validatePrice()) return;
+    if (!_isEditing) _beginRequest();
     final ok = await ref.read(_gameComposerProvider.notifier).submit();
+    if (ok && !_isEditing) {
+      _requestId.clear();
+      _requestForm = null;
+    }
     if (!mounted) return;
     if (ok) {
       Navigator.of(context).pop(true);
