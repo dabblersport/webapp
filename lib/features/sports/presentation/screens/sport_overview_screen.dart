@@ -264,9 +264,11 @@ class _TabsDelegate extends SliverPersistentHeaderDelegate {
     double shrinkOffset,
     bool overlapsContent,
   ) {
-    return ColoredBox(
-      color: DabblerColors.of(context).bgPrimary,
-      child: Align(alignment: Alignment.center, child: child),
+    return DabblerSurface.sunken(
+      fill: DabblerColors.of(context).bgPrimary,
+      borderWidth: 0,
+      center: true,
+      child: child,
     );
   }
 

@@ -2503,7 +2503,7 @@
   "sport_overview_tab_posts": "المنشورات",
   "sport_overview_follow": "متابعة",
   "sport_overview_following": "تتابعها",
-  "sport_overview_followers": "{count, plural, =1{متابع واحد} other{{count} متابعين}}",
+  "sport_overview_followers": "{count, plural, =1{متابع واحد} two{متابعان} few{{count} متابعين} many{{count} متابعًا} other{{count} متابع}}",
   "sport_overview_stat_games": "مباريات خلال ٧ أيام",
   "sport_overview_stat_meetups": "لقاءات خلال ٧ أيام",
   "sport_overview_stat_venues": "أماكن",

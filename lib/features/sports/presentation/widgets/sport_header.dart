@@ -32,7 +32,6 @@ class SportHeader extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final AppLocalizations l = AppLocalizations.of(context);
     final String lang = Localizations.localeOf(context).languageCode;
-    final DabblerColors colors = DabblerColors.of(context);
     final bool following = ref.watch(
       profileControllerProvider.select(
         (s) => s.profile?.interests?.contains(sport.id) ?? false,
@@ -60,14 +59,11 @@ class SportHeader extends ConsumerWidget {
         children: <Widget>[
           Row(
             children: <Widget>[
-              Container(
-                width: 72,
-                height: 72,
-                alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  color: colors.surfaceSunken,
-                  borderRadius: BorderRadius.circular(DabblerRadius.lg),
-                ),
+              DabblerSurface.sunken(
+                width: DabblerSizing.tileLg,
+                height: DabblerSizing.tileLg,
+                radius: DabblerRadius.lg,
+                center: true,
                 child: sport.sportKey == null
                     ? null
                     : DabblerSportIcon.fromKey(

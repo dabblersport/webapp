@@ -12,7 +12,7 @@ import 'package:dabbler/features/sports/data/sport_overview_models.dart';
 /// ruling is a one-line change (Games/Meetups soonest first within the next
 /// seven days; Venues top-rated first; Spaces lowest price first; Posts
 /// newest first).
-const Duration kSportOverviewWindow = Duration(days: 7);
+const int kSportOverviewWindowDays = 7;
 
 /// How many rows each Overview preview shows before "See all".
 const int kSportOverviewPreviewCount = 3;
@@ -190,7 +190,12 @@ class SupabaseSportOverviewRepository implements SportOverviewRepository {
         .eq('is_cancelled', false)
         .eq('listing_visibility', 'public')
         .gte('start_at', now.toIso8601String())
-        .lt('start_at', now.add(kSportOverviewWindow).toIso8601String());
+        .lt(
+          'start_at',
+          now
+              .add(const Duration(days: kSportOverviewWindowDays))
+              .toIso8601String(),
+        );
     if (areas != null) query = query.inFilter('area_id', areas);
     final List<dynamic> rows = await query
         .order('start_at', ascending: true)
@@ -252,7 +257,12 @@ class SupabaseSportOverviewRepository implements SportOverviewRepository {
         .eq('is_cancelled', false)
         .eq('listing_visibility', 'public')
         .gte('start_at', now.toIso8601String())
-        .lt('start_at', now.add(kSportOverviewWindow).toIso8601String());
+        .lt(
+          'start_at',
+          now
+              .add(const Duration(days: kSportOverviewWindowDays))
+              .toIso8601String(),
+        );
     if (areas != null) query = query.inFilter('area_id', areas);
     final List<dynamic> rows = await query
         .order('start_at', ascending: true)
