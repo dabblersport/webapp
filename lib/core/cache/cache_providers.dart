@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/cache/cache_cleanup.dart';
+import 'package:dabbler/core/cache/cache_policy.dart';
 import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/sync/pending_settings_store.dart';
 
@@ -52,12 +55,26 @@ final cacheAccountIdProvider =
       (ref) => CacheAccountNotifier(),
     );
 
+/// The scheduled cleanup for the signed-in account (KAN-613). It starts the
+/// first time it is read, which the cache provider does, so it runs at app
+/// start; it then also runs on resume. An account switch rebuilds it.
+final cacheCleanupProvider = Provider<CacheCleanupScheduler>((ref) {
+  final scheduler = CacheCleanupScheduler(
+    cache: OfflineCache.instance,
+    accountId: ref.watch(cacheAccountIdProvider),
+    isOffline: () => ref.read(connectivityProvider) == ConnectionStatus.offline,
+  );
+  ref.onDispose(scheduler.dispose);
+  return scheduler;
+});
+
 /// The cache. Reading it for an account also removes every other account's
-/// entries (the account-switch wipe).
+/// entries (the account-switch wipe) and starts the scheduled cleanup.
 final offlineCacheProvider = Provider<OfflineCache>((ref) {
   final account = ref.watch(cacheAccountIdProvider);
   final cache = OfflineCache.instance;
   if (account != null) unawaited(cache.wipe(keepAccountId: account));
+  ref.read(cacheCleanupProvider);
   return cache;
 });
 
@@ -95,6 +112,13 @@ Future<T> swrFetch<T>(
 
   var disposed = false;
   ref.onDispose(() => disposed = true);
+  // While this provider is alive its entry is on screen: the scheduled
+  // cleanup refreshes it instead of removing it (KAN-613).
+  ref.onDispose(
+    ShownCacheEntries.instance.register(account, key, () {
+      if (!disposed) ref.invalidateSelf();
+    }),
+  );
 
   Future<T> network() async {
     final started = DateTime.now();

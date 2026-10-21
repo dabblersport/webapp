@@ -195,6 +195,9 @@ const List<GateAllow> allowList = [
   GateAllow('lib/core/config/supabase_config.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
+  GateAllow('lib/core/cache/cache_policy.dart', [
+    'Domain duration literal',
+  ], _domainDurationReason),
   GateAllow('lib/core/services/cache_service.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
