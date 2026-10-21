@@ -12,7 +12,6 @@ DECLARE
   v_sport uuid; v_sport2 uuid; c1 text; c2 text; a1 uuid; a2 uuid; g1 uuid; g2 uuid;
   uA uuid := gen_random_uuid(); uB uuid := gen_random_uuid(); uC uuid := gen_random_uuid(); uD uuid := gen_random_uuid(); uE uuid := gen_random_uuid();
   pA uuid := gen_random_uuid(); pB uuid := gen_random_uuid(); pC uuid := gen_random_uuid(); pD uuid := gen_random_uuid(); pE uuid := gen_random_uuid();
-  ven1 uuid := gen_random_uuid(); ven2 uuid := gen_random_uuid();
 BEGIN
   SELECT id INTO v_sport  FROM public.sports ORDER BY id LIMIT 1;
   SELECT id INTO v_sport2 FROM public.sports WHERE id <> v_sport ORDER BY id LIMIT 1;
@@ -37,9 +36,6 @@ BEGIN
     (pE,uE,'personal','kan621e','Probe E',30,'player',v_sport,ARRAY[v_sport2]);
   INSERT INTO public.profile_follows(follower_profile_id,following_profile_id) VALUES (pA,pB),(pA,pD),(pA,pE);
   INSERT INTO public.user_blocks(blocker_user_id,blocked_user_id) VALUES (uA,uD);
-  -- venues: ven1 in city 1 with 3 active spaces of the sport; ven2 in city 2 with 1 space
-  INSERT INTO public.venues(id,name_en,geo_location_id,area_id) VALUES (ven1,'kan621 v1',g1,a1),(ven2,'kan621 v2',g2,a2);
-  INSERT INTO public.venue_spaces(venue_id,sport_id) VALUES (ven1,v_sport),(ven1,v_sport),(ven1,v_sport),(ven2,v_sport);
   -- news: 1 in city 1, 1 in city 2, 1 with no area
   INSERT INTO public.news(sport_id,area_id,status,published_at) VALUES (v_sport,a1,'published',now()-interval '1 hour'),(v_sport,a2,'published',now()-interval '1 hour'),(v_sport,NULL,'published',now()-interval '1 hour');
   PERFORM set_config('kan621.sport',v_sport::text,true); PERFORM set_config('kan621.c1',c1,true); PERFORM set_config('kan621.c2',c2,true);
@@ -54,17 +50,31 @@ END $seed$;
 
 -- Counts are asserted as DELTAS (after seeding minus before seeding) so rows already in the database do not matter.
 -- _b621 = before, _a621 = after; scope c1 / c2 = city, all = no city.
-CREATE TEMP TABLE _b621(scope text, games_next7 bigint, meetups_next7 bigint, posts bigint) ON COMMIT DROP;
-CREATE TEMP TABLE _a621(scope text, games_next7 bigint, meetups_next7 bigint, posts bigint) ON COMMIT DROP;
+CREATE TEMP TABLE _b621(scope text, games_next7 bigint, meetups_next7 bigint, posts bigint, venues bigint, spaces bigint) ON COMMIT DROP;
+CREATE TEMP TABLE _a621(scope text, games_next7 bigint, meetups_next7 bigint, posts bigint, venues bigint, spaces bigint) ON COMMIT DROP;
 GRANT ALL ON _b621 TO authenticated;
 GRANT ALL ON _a621 TO authenticated;
 
 SELECT set_config('request.jwt.claim.sub', current_setting('kan621.uA', true), true);
 SET LOCAL ROLE authenticated;
-INSERT INTO _b621 SELECT 'c1', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
-INSERT INTO _b621 SELECT 'c2', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
-INSERT INTO _b621 SELECT 'all', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _b621 SELECT 'c1', games_next7, meetups_next7, posts, venues, spaces FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _b621 SELECT 'c2', games_next7, meetups_next7, posts, venues, spaces FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _b621 SELECT 'all', games_next7, meetups_next7, posts, venues, spaces FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) WHERE current_setting('kan621.sport', true) IS NOT NULL;
 RESET ROLE;
+
+-- Venues and spaces are seeded AFTER the before-snapshot so P3 can assert deltas: ven1 in city 1 with 3 active
+-- spaces of the sport, ven2 in city 2 with 1 space. Expected deltas: city 1 = +1 venue / +3 spaces, city 2 = +1 / +1.
+DO $venues$
+DECLARE s uuid := current_setting('kan621.sport')::uuid; a1 uuid := current_setting('kan621.a1')::uuid; a2 uuid := current_setting('kan621.a2')::uuid;
+  g1 uuid := current_setting('kan621.g1')::uuid; g2 uuid := current_setting('kan621.g2')::uuid;
+  ven1 uuid := gen_random_uuid(); ven2 uuid := gen_random_uuid();
+BEGIN
+  INSERT INTO public.venues(id,name_en,geo_location_id,area_id) VALUES (ven1,'kan621 v1',g1,a1),(ven2,'kan621 v2',g2,a2);
+  INSERT INTO public.venue_spaces(venue_id,sport_id) VALUES (ven1,s),(ven1,s),(ven1,s),(ven2,s);
+  PERFORM set_config('kan621.venues_ok','1',true);
+EXCEPTION WHEN OTHERS THEN
+  INSERT INTO _p621 VALUES ('SEED_venues','SKIPPED',SQLERRM);
+END $venues$;
 
 -- Seeds for games, meetups and posts. Each block is independent: a trigger or constraint that rejects the seed
 -- leaves a SKIPPED row for that table (flag kan621.<t>_ok stays unset) and the other tables are still probed.
@@ -138,9 +148,9 @@ END $posts$;
 -- after snapshot, as caller A
 SELECT set_config('request.jwt.claim.sub', current_setting('kan621.uA', true), true);
 SET LOCAL ROLE authenticated;
-INSERT INTO _a621 SELECT 'c1', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
-INSERT INTO _a621 SELECT 'c2', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
-INSERT INTO _a621 SELECT 'all', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _a621 SELECT 'c1', games_next7, meetups_next7, posts, venues, spaces FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _a621 SELECT 'c2', games_next7, meetups_next7, posts, venues, spaces FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _a621 SELECT 'all', games_next7, meetups_next7, posts, venues, spaces FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) WHERE current_setting('kan621.sport', true) IS NOT NULL;
 RESET ROLE;
 
 -- act as the authenticated caller A (the role stays authenticated until the anon probe)
@@ -158,14 +168,17 @@ SELECT 'P2_followers_distinct_and_blocked',
 FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) o
 WHERE current_setting('kan621.sport', true) IS NOT NULL;
 
--- P3 (criterion 3): the venue with 3 spaces counts 1 venue and 3 spaces in its city, and 1 + 1 in the other.
+-- P3 (criterion 3): the seeded venue with 3 spaces adds 1 venue and 3 spaces in city 1, and the other adds 1 + 1 in
+-- city 2 (deltas against the before-snapshot, so existing rows do not matter). A venue is never summed with its spaces.
 INSERT INTO _p621
 SELECT 'P3_venue_vs_spaces',
-  CASE WHEN c1.spaces >= 3 AND c1.venues >= 1 AND c2.venues >= 1 AND c2.spaces >= 1 AND c1.venues < c1.spaces THEN 'pass' ELSE 'FAIL' END,
-  'c1 venues/spaces='||c1.venues||'/'||c1.spaces||' c2='||c2.venues||'/'||c2.spaces
-FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) c1,
-     public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) c2
-WHERE current_setting('kan621.sport', true) IS NOT NULL;
+  CASE WHEN current_setting('kan621.venues_ok', true) IS DISTINCT FROM '1' THEN 'SKIPPED'
+       WHEN max(a.venues-b.venues) FILTER (WHERE a.scope='c1')=1 AND max(a.spaces-b.spaces) FILTER (WHERE a.scope='c1')=3
+        AND max(a.venues-b.venues) FILTER (WHERE a.scope='c2')=1 AND max(a.spaces-b.spaces) FILTER (WHERE a.scope='c2')=1
+        AND max(a.venues-b.venues) FILTER (WHERE a.scope='all')=2 AND max(a.spaces-b.spaces) FILTER (WHERE a.scope='all')=4
+       THEN 'pass' ELSE 'FAIL' END,
+  coalesce(string_agg(a.scope||' venues/spaces=+'||(a.venues-b.venues)||'/+'||(a.spaces-b.spaces), ' ' ORDER BY a.scope),'no rows')
+FROM _a621 a JOIN _b621 b USING (scope);
 
 -- P4 (criterion 4): a city count never exceeds the all-cities count, and the sum over cities does not exceed it.
 -- posts is excluded from the sum: it is not city-scoped by design.
