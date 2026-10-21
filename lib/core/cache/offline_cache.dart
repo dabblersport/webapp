@@ -39,11 +39,11 @@ class OfflineCache {
 
   DateTime _lastWipe = DateTime.fromMillisecondsSinceEpoch(0);
 
-  /// The last account-switch wipe: every account but [_switchKeep] was cleared
-  /// at [_switchWipe], so a response still in flight for another account from
-  /// before that moment must not write it back.
-  DateTime _switchWipe = DateTime.fromMillisecondsSinceEpoch(0);
-  String? _switchKeep;
+  /// When each account was last the one kept by an account-switch wipe. A
+  /// response for account X that began before the latest switch that kept
+  /// another account is dropped, so returning to X (A to B to A) cannot revive
+  /// a response that was already in flight before B.
+  final Map<String, DateTime> _keptAt = {};
 
   Future<SharedPreferences> _p() async =>
       _prefs ??= await SharedPreferences.getInstance();
@@ -81,8 +81,8 @@ class OfflineCache {
       final started = requestStartedAt;
       if (started != null) {
         if (!started.isAfter(_lastWipe)) return null;
-        if (accountId != _switchKeep && !started.isAfter(_switchWipe)) {
-          return null;
+        for (final e in _keptAt.entries) {
+          if (e.key != accountId && !started.isAfter(e.value)) return null;
         }
       }
       return _write(accountId, key, payload, fetchedAt);
@@ -100,7 +100,7 @@ class OfflineCache {
     final prefs = await _p();
     final at = (fetchedAt ?? DateTime.now()).millisecondsSinceEpoch;
     final encoded = jsonEncode({'t': at, 'p': payload});
-    final size = encoded.length;
+    final size = utf8.encode(encoded).length; // bytes, not UTF-16 units
     final index = _readIndex(prefs, accountId);
     if (size > maxBytesPerAccount) {
       index.remove(key);
@@ -167,8 +167,7 @@ class OfflineCache {
     if (keepAccountId == null) {
       _lastWipe = DateTime.now();
     } else {
-      _switchWipe = DateTime.now();
-      _switchKeep = keepAccountId;
+      _keptAt[keepAccountId] = DateTime.now();
     }
     final done = _queue.then((_) => _wipe(keepAccountId));
     _queue = done.catchError((_) {});
