@@ -11,6 +11,14 @@ const Duration kCacheCleanupInterval = Duration(hours: 24);
 bool isCleanupExempt(String key) =>
     key.startsWith('settings.') || key.startsWith('feed.');
 
+/// Cache keys the size cap never evicts: only the device copy of a setting.
+/// Feed pages count toward the cap and are evicted oldest first, except the
+/// newest one, which stays so the Home feed is never empty offline.
+bool isSizeCapExempt(String key) => key.startsWith('settings.');
+
+/// Whether [key] is a Home feed page.
+bool isFeedKey(String key) => key.startsWith('feed.');
+
 /// What one cleanup pass did for one account.
 class CacheCleanupResult {
   const CacheCleanupResult({this.removed = const [], this.refresh = const []});

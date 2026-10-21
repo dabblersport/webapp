@@ -139,8 +139,6 @@ class OfflineCache {
     final removed = <String>[];
     final refresh = <String>[];
 
-    bool keeps(String key) => isCleanupExempt(key) || shownKeys.contains(key);
-
     for (final e in index.entries.toList()) {
       if (e.value.at >= cutoff) continue;
       if (isCleanupExempt(e.key)) continue;
@@ -155,8 +153,25 @@ class OfflineCache {
 
     var total = index.values.fold<int>(0, (s, e) => s + e.bytes);
     if (total > maxBytesPerAccount) {
-      final oldestFirst = index.entries.where((e) => !keeps(e.key)).toList()
-        ..sort((a, b) => a.value.at.compareTo(b.value.at));
+      // Feed pages count toward the cap; the newest one is kept so the Home
+      // feed is not left empty offline.
+      String? newestFeed;
+      for (final e in index.entries) {
+        if (!isFeedKey(e.key)) continue;
+        if (newestFeed == null || e.value.at > index[newestFeed]!.at) {
+          newestFeed = e.key;
+        }
+      }
+      final oldestFirst =
+          index.entries
+              .where(
+                (e) =>
+                    !isSizeCapExempt(e.key) &&
+                    e.key != newestFeed &&
+                    !shownKeys.contains(e.key),
+              )
+              .toList()
+            ..sort((a, b) => a.value.at.compareTo(b.value.at));
       for (final victim in oldestFirst) {
         if (total <= maxBytesPerAccount) break;
         total -= victim.value.bytes;
