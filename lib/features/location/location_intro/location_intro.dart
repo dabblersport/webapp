@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart' show debugPrint;
 import 'package:dabbler/core/services/location_permission_state.dart';
+import 'package:dabbler/features/location/data/device_location_store.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -98,6 +99,9 @@ enum LocationIntroDecision {
   skipNoUser,
   skipAlreadySeen,
   skipPermissionGranted,
+
+  /// This device already has a manual city (KAN-587).
+  skipManualSetup,
 }
 
 /// Decides whether to show the introduction to [userId] now: never for a
@@ -109,6 +113,7 @@ Future<LocationIntroDecision> decideLocationIntro({
   required String? userId,
   required LocationPermissionGateway gateway,
   required LocationIntroStore store,
+  Future<bool> Function()? hasManualSetup,
 }) async {
   if (userId == null || userId.isEmpty) {
     return LocationIntroDecision.skipNoUser;
@@ -121,18 +126,35 @@ Future<LocationIntroDecision> decideLocationIntro({
   } catch (_) {
     // Unreadable permission: not granted.
   }
+  // KAN-587: a city already chosen on this device is a usable setup.
+  try {
+    if (hasManualSetup != null && await hasManualSetup()) {
+      return LocationIntroDecision.skipManualSetup;
+    }
+  } catch (_) {
+    // Unreadable storage: no manual setup.
+  }
   return LocationIntroDecision.show;
+}
+
+/// Whether this device holds a manual city for [userId] (KAN-587).
+Future<bool> deviceHasManualLocation(String? userId) async {
+  final prefs = await SharedPreferences.getInstance();
+  return DeviceLocationStore(prefs, accountId: userId).read()?.mode ==
+      DeviceLocationMode.manual;
 }
 
 Future<bool> shouldShowLocationIntro({
   required String? userId,
   required LocationPermissionGateway gateway,
   required LocationIntroStore store,
+  Future<bool> Function()? hasManualSetup,
 }) async {
   final decision = await decideLocationIntro(
     userId: userId,
     gateway: gateway,
     store: store,
+    hasManualSetup: hasManualSetup,
   );
   debugPrint('[LocationIntro] ${decision.name}');
   return decision == LocationIntroDecision.show;

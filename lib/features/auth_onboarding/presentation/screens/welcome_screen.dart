@@ -133,6 +133,8 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
       userId: container.read(locationIntroUserIdProvider),
       gateway: container.read(locationPermissionGatewayProvider),
       store: container.read(locationIntroStoreProvider),
+      hasManualSetup: () =>
+          deviceHasManualLocation(container.read(locationIntroUserIdProvider)),
     );
     if (!mounted) return;
     routerRefreshNotifier.clearPostLoginWelcome(notify: false);

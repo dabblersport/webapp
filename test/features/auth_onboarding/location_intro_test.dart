@@ -2,7 +2,9 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/core/constants/uae_locations.dart';
 import 'package:dabbler/core/services/gps_service.dart';
+import 'package:dabbler/features/location/presentation/widgets/city_required_sheet.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
@@ -354,10 +356,37 @@ void main() {
       expect(await const LocationIntroStore().seen('user-1'), isTrue);
       await _shoot(tester, 'intro-$dir-$mode');
 
+      // KAN-587: Maybe later asks for a City first; nothing finishes without one.
+      expect(find.text(l.listing_set_location), findsOneWidget);
       await tester.tap(find.text(l.location_intro_later));
-      await tester.pump();
-      expect(finished, 1);
+      await tester.pumpAndSettle();
+      expect(finished, 0, reason: 'Maybe later needs a city');
+      expect(find.byType(CityRequiredSheet), findsOneWidget);
       expect(g.requests, 0, reason: 'Maybe later must not prompt');
+      // A search with no match shows the empty state, and no area rows exist.
+      await tester.enterText(find.byType(EditableText).last, 'zzzz');
+      await tester.pumpAndSettle();
+      expect(find.text(l.manual_location_empty_title), findsOneWidget);
+      await tester.enterText(find.byType(EditableText).last, '');
+      await tester.pumpAndSettle();
+      // Dismissed without a city: still on the intro.
+      Navigator.of(
+        tester.element(find.byType(CityRequiredSheet)),
+        rootNavigator: true,
+      ).pop();
+      await tester.pumpAndSettle();
+      expect(finished, 0);
+      // Choosing a canonical city (City-only: no area, no GPS) finishes.
+      await tester.tap(find.text(l.location_intro_later));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(UAELocations.cities.first.city).first);
+      await tester.pumpAndSettle();
+      expect(finished, 1);
+      expect(g.requests, 0);
+      final s = ProviderScope.containerOf(
+        tester.element(find.byType(LocationIntroScreen)),
+      ).read(activeLocationProvider).valueOrNull;
+      expect(s, isA<ActiveLocationCityOnly>());
     });
 
     testWidgets('Use my location, GPS never answers: Home at once, nothing '
