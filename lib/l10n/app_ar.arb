@@ -2506,6 +2506,7 @@
   "location_mode_change": "تغيير",
   "location_mode_none_chosen": "لم يتم اختيار مكان",
   "saved_places_load_error": "تعذّر تحميل المواقع",
+  "saved_places_save_failed": "تعذّر حفظ هذا الموقع. حاول مرة أخرى.",
   "saved_places_empty_title": "لا توجد مواقع محفوظة بعد",
   "saved_places_empty_text": "احفظ منزلك أو عملك أو أماكنك المفضلة لتتمكن من وسمها بسرعة في المنشورات.",
   "saved_places_add_first": "أضف أول موقع",

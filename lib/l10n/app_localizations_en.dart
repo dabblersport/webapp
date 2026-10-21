@@ -7027,6 +7027,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get saved_places_load_error => 'Could not load locations';
 
   @override
+  String get saved_places_save_failed =>
+      'Couldn’t save this location. Try again.';
+
+  @override
   String get saved_places_empty_title => 'No saved locations yet';
 
   @override

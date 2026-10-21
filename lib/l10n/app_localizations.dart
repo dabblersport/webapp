@@ -12647,6 +12647,12 @@ abstract class AppLocalizations {
   /// **'Could not load locations'**
   String get saved_places_load_error;
 
+  /// KAN-589 toast when saving a place fails; the sheet stays open. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t save this location. Try again.'**
+  String get saved_places_save_failed;
+
   /// KAN-589 Empty state title. AR pending content review.
   ///
   /// In en, this message translates to:

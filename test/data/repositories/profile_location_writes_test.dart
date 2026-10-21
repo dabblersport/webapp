@@ -90,6 +90,7 @@ void main() {
     for (final primary in [false, true]) {
       sent.clear();
       final result = await repo.saveLocation(
+        profileId: 'profile-1',
         lat: 25.2,
         lng: 55.3,
         geoLocationId: 'geo-1',
@@ -105,6 +106,22 @@ void main() {
         SupabaseConfig.profileLocationsTable,
       });
     }
+  });
+
+  test('saveLocation sends the profile id the insert policy checks', () async {
+    final result = await repo.saveLocation(
+      profileId: 'profile-1',
+      lat: 25.2,
+      lng: 55.3,
+      geoLocationId: 'geo-1',
+      areaId: 'area-1',
+      label: ProfileLocationLabel.custom,
+      labelCustom: 'Gym',
+    );
+    expect(result.isSuccess, isTrue);
+    final body = sent.single.body as Map<String, dynamic>;
+    expect(body['profile_id'], 'profile-1');
+    expect(body['geo_location_id'], 'geo-1');
   });
 
   test('resolveGeoLocationId writes no city/country', () async {

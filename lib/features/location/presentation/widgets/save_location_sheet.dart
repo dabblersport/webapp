@@ -136,7 +136,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     if (!_canSave) return;
     setState(() => _isSaving = true);
 
-    await ref
+    final saved = await ref
         .read(profileLocationNotifierProvider.notifier)
         .saveLocation(
           lat: _lat,
@@ -149,10 +149,17 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
           isPrimary: _isPrimary,
         );
 
-    if (mounted) {
-      setState(() => _isSaving = false);
-      Navigator.of(context).pop();
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    if (!saved) {
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: AppLocalizations.of(context).saved_places_save_failed,
+        ),
+      );
+      return;
     }
+    Navigator.of(context).pop();
   }
 
   void _useOnce() {
