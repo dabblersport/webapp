@@ -56,9 +56,26 @@ class SavedLocationsScreen extends ConsumerWidget {
               DabblerSpacing.floatingBarClearance,
             ),
             children: [
+              DabblerText(
+                l10n.location_page_private,
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              ),
+              const DabblerGap.v(DabblerSpacing.space5),
               const DeviceLocationSection(),
               const DabblerGap.v(DabblerSpacing.space6),
-              if (sorted.isEmpty)
+              DabblerText(
+                l10n.location_saved_places_header,
+                style: DabblerType.headline,
+              ),
+              const DabblerGap.v(DabblerSpacing.space2),
+              DabblerText(
+                l10n.location_saved_places_note,
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              ),
+              if (sorted.isEmpty) ...[
+                const DabblerGap.v(DabblerSpacing.space4),
                 DabblerEmptyState(
                   icon: 'location-slash',
                   title: l10n.saved_places_empty_title,
@@ -69,12 +86,8 @@ class SavedLocationsScreen extends ConsumerWidget {
                     icon: 'location-add',
                     onPressed: () => startAddSavedPlace(context, ref),
                   ),
-                )
-              else ...[
-                DabblerText(
-                  l10n.location_saved_places,
-                  style: DabblerType.headline,
                 ),
+              ] else ...[
                 for (final place in sorted) ...[
                   const DabblerGap.v(DabblerSpacing.space3),
                   _LocationTile(location: place),
@@ -167,8 +180,9 @@ class _LocationTile extends ConsumerWidget {
                                   // The old badge text carried a star emoji; the star
                                   // is now a DabblerIcon (CEO rule: no emoji).
                                   DabblerBadge(
-                                    label: AppLocalizations.of(context)
-                                        .primary_sport_badge,
+                                    label: AppLocalizations.of(
+                                      context,
+                                    ).primary_sport_badge,
                                     icon: DabblerIcon('star'),
                                   ),
                                 ],
@@ -190,8 +204,9 @@ class _LocationTile extends ConsumerWidget {
               DabblerButton.icon(
                 tone: DabblerButtonTone.text,
                 icon: 'star',
-                semanticLabel: AppLocalizations.of(context)
-                    .saved_places_set_primary,
+                semanticLabel: AppLocalizations.of(
+                  context,
+                ).saved_places_set_primary,
                 onPressed: () => notifier.setPrimary(location.id),
               ),
             // Rename
@@ -213,8 +228,9 @@ class _LocationTile extends ConsumerWidget {
       builder: (ctx) => DabblerDialog(
         onClose: () => Navigator.pop(ctx, false),
         title: AppLocalizations.of(context).saved_places_delete_title,
-        description: AppLocalizations.of(context)
-            .saved_places_delete_body(location.effectiveLabel),
+        description: AppLocalizations.of(
+          context,
+        ).saved_places_delete_body(location.effectiveLabel),
         destructive: true,
         secondaryAction: DabblerDialogAction(
           label: AppLocalizations.of(context).home_location_cancel,
@@ -294,8 +310,9 @@ class _LocationTile extends ConsumerWidget {
                 const DabblerGap.v(DabblerSpacing.space4),
                 DabblerTextField(
                   controller: customController,
-                  placeholder: AppLocalizations.of(context)
-                      .saved_places_custom_name,
+                  placeholder: AppLocalizations.of(
+                    context,
+                  ).saved_places_custom_name,
                 ),
               ],
             ],

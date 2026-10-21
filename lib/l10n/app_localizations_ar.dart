@@ -7032,6 +7032,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_saved_places => 'الأماكن المحفوظة';
 
   @override
+  String get location_page_private =>
+      'موقعك على هذا الجهاز والأماكن الخاصة التي سمّيتها. لا يرى هذه الصفحة غيرك.';
+
+  @override
+  String get location_saved_places_header => 'الأماكن المحفوظة · خاصة';
+
+  @override
+  String get location_saved_places_note =>
+      'لا يراها غيرك. تُستخدم لتسمية موقعك في التطبيق ولا تظهر في ملفك.';
+
+  @override
   String get location_add_place => 'إضافة مكان';
 
   @override
