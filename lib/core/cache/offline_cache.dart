@@ -91,6 +91,19 @@ class OfflineCache {
     return done.catchError((_) {});
   }
 
+  /// Removes one entry (an edit that invalidates it).
+  Future<void> remove(String accountId, String key) {
+    final done = _queue.then((_) async {
+      final prefs = await _p();
+      final index = _readIndex(prefs, accountId);
+      index.remove(key);
+      await prefs.remove(_entryKey(accountId, key));
+      await _saveIndex(prefs, accountId, index);
+    });
+    _queue = done.catchError((_) {});
+    return done.catchError((_) {});
+  }
+
   Future<void> _write(
     String accountId,
     String key,
