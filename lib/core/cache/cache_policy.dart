@@ -13,8 +13,11 @@ bool isCleanupExempt(String key) =>
 
 /// Cache keys the size cap never evicts: only the device copy of a setting.
 /// Feed pages count toward the cap and are evicted oldest first, except the
-/// newest one, which stays so the Home feed is never empty offline.
+/// Home feed ([kHomeFeedCacheKey]), which stays so it is never empty offline.
 bool isSizeCapExempt(String key) => key.startsWith('settings.');
+
+/// The cache key of the Home feed (the For you tab).
+const String kHomeFeedCacheKey = 'feed.foryou';
 
 /// Whether [key] is a Home feed page.
 bool isFeedKey(String key) => key.startsWith('feed.');

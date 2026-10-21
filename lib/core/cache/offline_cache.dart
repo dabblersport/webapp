@@ -153,13 +153,18 @@ class OfflineCache {
 
     var total = index.values.fold<int>(0, (s, e) => s + e.bytes);
     if (total > maxBytesPerAccount) {
-      // Feed pages count toward the cap; the newest one is kept so the Home
-      // feed is not left empty offline.
-      String? newestFeed;
-      for (final e in index.entries) {
-        if (!isFeedKey(e.key)) continue;
-        if (newestFeed == null || e.value.at > index[newestFeed]!.at) {
-          newestFeed = e.key;
+      // Feed pages count toward the cap. The Home feed (feed.foryou) is kept
+      // so it is not left empty offline; with no Home feed cached, the newest
+      // feed page is kept instead. Every other feed tab is evictable.
+      String? keptFeed = index.containsKey(kHomeFeedCacheKey)
+          ? kHomeFeedCacheKey
+          : null;
+      if (keptFeed == null) {
+        for (final e in index.entries) {
+          if (!isFeedKey(e.key)) continue;
+          if (keptFeed == null || e.value.at > index[keptFeed]!.at) {
+            keptFeed = e.key;
+          }
         }
       }
       final oldestFirst =
@@ -167,7 +172,7 @@ class OfflineCache {
               .where(
                 (e) =>
                     !isSizeCapExempt(e.key) &&
-                    e.key != newestFeed &&
+                    e.key != keptFeed &&
                     !shownKeys.contains(e.key),
               )
               .toList()
