@@ -82,9 +82,15 @@ class GameChatViewState extends Equatable {
     this.hasOlder = false,
     this.olderCursor,
     this.dm,
+    this.fromCache = false,
   });
 
   final GameChatStatus status;
+
+  /// True when this thread is the on-device copy shown because the network
+  /// failed (KAN-607): read-only, sending refused with the offline line until
+  /// a refresh succeeds.
+  final bool fromCache;
 
   /// Set only for a direct message (KAN-556): the counterpart and the DM's
   /// read-only cause. Null for a game chat, whose state is unchanged.
@@ -126,6 +132,7 @@ class GameChatViewState extends Equatable {
     bool? hasOlder,
     int? olderCursor,
     DmThreadInfo? dm,
+    bool? fromCache,
   }) => GameChatViewState(
     status: status ?? this.status,
     conversation: conversation ?? this.conversation,
@@ -134,6 +141,7 @@ class GameChatViewState extends Equatable {
     hasOlder: hasOlder ?? this.hasOlder,
     olderCursor: olderCursor ?? this.olderCursor,
     dm: dm ?? this.dm,
+    fromCache: fromCache ?? this.fromCache,
   );
 
   @override
@@ -145,6 +153,7 @@ class GameChatViewState extends Equatable {
     hasOlder,
     olderCursor,
     dm,
+    fromCache,
   ];
 }
 

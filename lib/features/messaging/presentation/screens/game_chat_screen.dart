@@ -324,12 +324,16 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
               ),
             ),
           );
-          composer = _composer(l10n, view);
+          composer = view.fromCache
+              ? _offlineComposer(l10n)
+              : _composer(l10n, view);
         case GameChatStatus.ready:
         case GameChatStatus.readOnly:
           body = ChatStickToLatest(child: _thread(context, l10n, view));
           if (view.status == GameChatStatus.ready) {
-            composer = _composer(l10n, view);
+            composer = view.fromCache
+                ? _offlineComposer(l10n)
+                : _composer(l10n, view);
           } else if (view.dm?.readOnly != null) {
             composer = dmReadOnlyNotice(l10n, view.dm!.readOnly!);
           } else if (view.isClosedByGame) {
@@ -575,6 +579,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
 
   /// Losing focus (blur) ends "typing" (KAN-579); the Focus node is only an
   /// observer of the composer's own field.
+  /// Shown in place of the composer while the thread is the device copy
+  /// (KAN-607): sending offline is refused with the existing offline line.
+  Widget _offlineComposer(AppLocalizations l10n) => DabblerConnectionNotice(
+    key: GameChatScreen.offlineKey,
+    text: l10n.messaging_chat_offline,
+  );
+
   Widget _composer(AppLocalizations l10n, GameChatViewState view) => Focus(
     canRequestFocus: false,
     skipTraversal: true,
