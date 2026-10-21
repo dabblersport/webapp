@@ -1,4 +1,5 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
@@ -12,6 +13,7 @@ import 'package:dabbler/features/social/presentation/widgets/composer_place_shee
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -99,7 +101,12 @@ class MeetupComposerScreen extends ConsumerStatefulWidget {
     this.initialDate,
     this.initialStart,
     this.initialPlace,
+    this.requestId,
   });
+
+  /// KAN-618: the holder of this create attempt's request id. A test passes
+  /// its own to read the id; by default the screen makes one.
+  final CreateRequestId? requestId;
 
   /// Pre-fills for tests and deep links.
   final DateTime? initialDate;
@@ -136,6 +143,12 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   bool _busy = false;
   String? _error;
 
+  /// KAN-618: one request id per create attempt. It is kept across failed
+  /// retries and cleared on success, on a form edit and when the drawer
+  /// closes. Held for KAN-612, which sends it; not sent yet.
+  late final CreateRequestId _requestId = widget.requestId ?? CreateRequestId();
+  List<Object?>? _requestForm;
+
   @override
   void initState() {
     super.initState();
@@ -155,9 +168,36 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
 
   @override
   void dispose() {
+    _requestId.clear();
     _title.dispose();
     _note.dispose();
     super.dispose();
+  }
+
+  /// Starts (or continues) this attempt. A form edit since the last attempt
+  /// ends that attempt first, so the id is new.
+  void _beginRequest() {
+    final form = <Object?>[
+      _title.text.trim(),
+      _note.text.trim(),
+      _sport?.id,
+      _date,
+      _start,
+      _end,
+      _place?.name,
+      _place?.venueId,
+      _capacity,
+      _policy,
+      _minSkill,
+      _maxSkill,
+      _vibe?.key,
+      _indoor,
+    ];
+    if (_requestForm != null && !listEquals(_requestForm, form)) {
+      _requestId.clear();
+    }
+    _requestForm = form;
+    _requestId.begin();
   }
 
   /// The frame's rule: the button is live once an activity is chosen
@@ -178,6 +218,9 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
       DateTime(d.year, d.month, d.day, t.hour, t.minute);
 
   Future<void> _submit() async {
+    // KAN-618: a second tap while one is in flight is dropped.
+    if (_busy) return;
+    _beginRequest();
     final l = AppLocalizations.of(context);
     final missing = _missing(l);
     if (missing != null) {
@@ -233,6 +276,8 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
         _error = meetupErrorText(l, f, l.meetups_create_failed);
       }),
       (id) {
+        _requestId.clear();
+        _requestForm = null;
         setState(() => _busy = false);
         final done = widget.onCreated;
         if (done != null) {

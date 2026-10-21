@@ -20,6 +20,8 @@ class PostCreateRequest {
     this.locationTagId,
     this.areaId,
     this.locationName,
+    this.postedFromCity,
+    this.postedFromArea,
     this.geoLat,
     this.geoLng,
     this.linkToken,
@@ -74,6 +76,11 @@ class PostCreateRequest {
 
   /// Free-text or resolved location name.
   final String? locationName;
+
+  /// KAN-592: the city (and area, when known) the author posts from. Not the
+  /// place the post is about; that is [locationName].
+  final String? postedFromCity;
+  final String? postedFromArea;
 
   /// Geo latitude (optional, from device or venue).
   final double? geoLat;
@@ -145,6 +152,8 @@ class PostCreateRequest {
       if (locationTagId != null) 'location_tag_id': locationTagId,
       if (areaId != null) 'area_id': areaId,
       if (locationName != null) 'location_name': locationName,
+      if (postedFromCity != null) 'posted_from_city': postedFromCity,
+      if (postedFromArea != null) 'posted_from_area': postedFromArea,
       if (geoLat != null) 'geo_lat': geoLat,
       if (geoLng != null) 'geo_lng': geoLng,
       if (linkToken != null) 'link_token': linkToken,
@@ -170,6 +179,8 @@ class PostCreateRequest {
     String? locationTagId,
     String? areaId,
     String? locationName,
+    String? postedFromCity,
+    String? postedFromArea,
     double? geoLat,
     double? geoLng,
     String? linkToken,
@@ -197,6 +208,8 @@ class PostCreateRequest {
       locationTagId: locationTagId ?? this.locationTagId,
       areaId: areaId ?? this.areaId,
       locationName: locationName ?? this.locationName,
+      postedFromCity: postedFromCity ?? this.postedFromCity,
+      postedFromArea: postedFromArea ?? this.postedFromArea,
       geoLat: geoLat ?? this.geoLat,
       geoLng: geoLng ?? this.geoLng,
       linkToken: linkToken ?? this.linkToken,

@@ -12388,6 +12388,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Nobody'**
   String get messaging_receipts_nobody;
+
+  /// KAN-592 title of the sheet that picks the city a post is posted from, and the prefix of its pill.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted from'**
+  String get composer_posted_from_title;
+
+  /// KAN-592 composer pill showing the posting city.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted from {city}'**
+  String composer_posted_from_pill(String city);
+
+  /// KAN-592 composer pill label while no posting city is known.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose city'**
+  String get composer_posted_from_choose;
+
+  /// KAN-592 search field placeholder in the posting-city sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search cities'**
+  String get composer_posted_from_search;
+
+  /// KAN-592 line at the top of the posting-city sheet when it opens because Post was tapped with no city.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the city you are posting from, then tap Post. Your draft is kept.'**
+  String get composer_posted_from_prompt;
+
+  /// KAN-592 empty result in the posting-city sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No cities match that search'**
+  String get composer_posted_from_none;
+
+  /// KAN-592 header location of a post written before posting cities were recorded (CEO ruling: Dubai).
+  ///
+  /// In en, this message translates to:
+  /// **'Dubai'**
+  String get post_legacy_city;
 }
 
 class _AppLocalizationsDelegate

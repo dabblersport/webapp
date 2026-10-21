@@ -23,6 +23,7 @@ import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show sportsProvider;
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/header_collapse.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Provider that checks if a profile is under takedown
@@ -77,10 +78,14 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
   // Drives the top bar: the tinted bar shows no title until the identity block
   // has scrolled away, then drops to the page ground with the handle.
   final ScrollController _scroll = ScrollController();
+  // KAN-601: the reveal point is the identity block's measured height, with
+  // hysteresis (`Profiles.dc.html:818`), not a fixed number.
+  late final HeaderCollapseController _collapse;
 
   @override
   void initState() {
     super.initState();
+    _collapse = HeaderCollapseController(_scroll);
 
     // Load initial data
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -100,6 +105,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
   @override
   void dispose() {
     AppRouter.routeObserver.unsubscribe(this);
+    _collapse.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -339,25 +345,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         (personaType == 'player' || personaType == 'organiser');
 
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(
-        title: (profile?.username ?? '').isNotEmpty
-            ? '\u200E@${profile!.username!}'
-            : l10n.profile_header_fallback,
-        scrollController: _scroll,
-        heroTint: true,
-        onBack: () => context.canPop() ? context.pop() : context.go('/home'),
-        actions: [
-          DabblerNavigationAction(
-            icon: 'repeat',
-            label: l10n.profile_btn_manage_profiles_tooltip,
-            onPressed: _showManageProfiles,
-          ),
-          DabblerNavigationAction(
-            icon: 'setting-2',
-            label: l10n.settings_header_title,
-            onPressed: () => context.push('/settings'),
-          ),
-        ],
+      topBar: ListenableBuilder(
+        listenable: _collapse,
+        builder: (context, _) => DabblerNavigationTopBar.titled(
+          title: (profile?.username ?? '').isNotEmpty
+              ? '\u200E@${profile!.username!}'
+              : l10n.profile_header_fallback,
+          scrollController: _scroll,
+          titleRevealOffset: _collapse.revealOffset,
+          heroTint: true,
+          onBack: () => context.canPop() ? context.pop() : context.go('/home'),
+          actions: [
+            DabblerNavigationAction(
+              icon: 'repeat',
+              label: l10n.profile_btn_manage_profiles_tooltip,
+              onPressed: _showManageProfiles,
+            ),
+            DabblerNavigationAction(
+              icon: 'setting-2',
+              label: l10n.settings_header_title,
+              onPressed: () => context.push('/settings'),
+            ),
+          ],
+        ),
       ),
       body: DabblerRefresh(
         onRefresh: _refreshProfileWithCacheClear,
@@ -368,24 +378,29 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
           ),
           padding: const EdgeInsets.only(bottom: DabblerSpacing.space9),
           children: [
-            OwnProfileHeader(
-              profile: profile,
-              posts: posts,
-              following: following,
-              followers: followers,
-              sportsCount: personaType == 'socialiser' ? mySports.length : null,
-              onFollowing: profileId == null
-                  ? null
-                  : () => context.pushNamed(
-                      RouteNames.following,
-                      pathParameters: {'profileId': profileId},
-                    ),
-              onFollowers: profileId == null
-                  ? null
-                  : () => context.pushNamed(
-                      RouteNames.followers,
-                      pathParameters: {'profileId': profileId},
-                    ),
+            MeasuredHeader(
+              onHeight: _collapse.measure,
+              child: OwnProfileHeader(
+                profile: profile,
+                posts: posts,
+                following: following,
+                followers: followers,
+                sportsCount: personaType == 'socialiser'
+                    ? mySports.length
+                    : null,
+                onFollowing: profileId == null
+                    ? null
+                    : () => context.pushNamed(
+                        RouteNames.following,
+                        pathParameters: {'profileId': profileId},
+                      ),
+                onFollowers: profileId == null
+                    ? null
+                    : () => context.pushNamed(
+                        RouteNames.followers,
+                        pathParameters: {'profileId': profileId},
+                      ),
+              ),
             ),
             const DabblerGap.v(DabblerSpacing.space8),
             OwnProfileStats(
