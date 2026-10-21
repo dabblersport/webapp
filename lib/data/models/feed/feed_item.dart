@@ -140,6 +140,29 @@ final class FeedNewsItem extends FeedItem {
     );
   }
 
+  /// The `feed_posts` row shape [FeedNewsItem.fromJson] reads (KAN-605: the
+  /// on-device feed cache stores this).
+  Map<String, dynamic> toJson() => {
+    'news_id': newsId,
+    'id': id,
+    'news_title': title,
+    'news_body': body,
+    'news_cover_image_url': coverImageUrl,
+    'news_source_label': sourceLabel,
+    'news_source_url': sourceUrl,
+    'news_feed_label': feedLabel,
+    'like_count': likeCount,
+    'comment_count': commentCount,
+    'view_count': viewCount,
+    'sport_id': sportId,
+    'area_id': areaId,
+    'tags': tags,
+    'regions': regions,
+    'is_pinned': isPinned,
+    'priority_score': priorityScore,
+    'created_at': createdAt.toIso8601String(),
+  };
+
   /// Returns the localised title, falling back to English.
   String localizedTitle(String languageCode) =>
       title[languageCode] ?? title['en'] ?? '';

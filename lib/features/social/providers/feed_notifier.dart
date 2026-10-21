@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/following_sport_filter.dart';
@@ -120,10 +123,70 @@ final class FeedData extends FeedState {
 ///   1. Opens a Realtime channel subscribed to INSERT/DELETE/UPDATE on [posts].
 ///   2. Calls [load] to fetch the initial page via [get_home_feed].
 class FeedNotifier extends StateNotifier<FeedState> {
-  FeedNotifier(this._repo, this._db, {this.activePersonaType})
-    : super(const FeedLoading()) {
+  /// [cache] / [accountId] (KAN-605): the first page is shown from the
+  /// on-device cache at once, then [load] refreshes it in the background.
+  FeedNotifier(
+    this._repo,
+    this._db, {
+    this.activePersonaType,
+    OfflineCache? cache,
+    String? accountId,
+  }) : _cache = cache,
+       _accountId = accountId,
+       super(const FeedLoading()) {
     _subscribeRealtime();
+    _hydrate();
     load();
+  }
+
+  final OfflineCache? _cache;
+  final String? _accountId;
+  static const String _cacheKey = 'feed.foryou';
+
+  bool get _cacheOn => _cache != null && _accountId != null;
+
+  Future<void> _hydrate() async {
+    if (!_cacheOn) return;
+    final hit = await _cache!.read(_accountId!, _cacheKey);
+    if (hit == null || !mounted || state is FeedData) return;
+    try {
+      final map = hit.payload as Map;
+      final items = <FeedItem>[
+        for (final e in (map['items'] as List))
+          switch ((e as Map)['k']) {
+            'n' => FeedNewsItem.fromJson(
+              Map<String, dynamic>.from(e['v'] as Map),
+            ),
+            _ => FeedPostItem(
+              Post.fromJson(Map<String, dynamic>.from(e['v'] as Map)),
+            ),
+          },
+      ];
+      if (items.isEmpty) return;
+      final cursorRaw = map['cursor'] as String?;
+      state = FeedData(
+        items: items,
+        hasMore: map['hasMore'] as bool? ?? true,
+        cursor: cursorRaw == null ? null : DateTime.tryParse(cursorRaw),
+      );
+    } catch (_) {
+      // A cached shape that no longer parses is the same as no cache.
+    }
+  }
+
+  void _persist(FeedData data, DateTime started) {
+    if (!_cacheOn) return;
+    _cache!.write(_accountId!, _cacheKey, {
+      'items': [
+        for (final i in data.items)
+          if (i is FeedPostItem)
+            {'k': 'p', 'v': i.post.toJson()}
+          else if (i is FeedNewsItem)
+            {'k': 'n', 'v': i.toJson()},
+      ],
+      'hasMore': data.hasMore,
+      'cursor': data.cursor?.toUtc().toIso8601String(),
+    }, requestStartedAt: started);
   }
 
   final PostRepository _repo;
@@ -289,15 +352,18 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final generation = ++_generation;
     if (state.items.isEmpty) state = const FeedLoading();
 
+    final started = DateTime.now();
     try {
-      final page = await _fetchPage(cursor: null);
+      final page = await _fetchPage(cursor: null).timeout(kRequestTimeout);
       if (!mounted || generation != _generation) return false;
-      state = FeedData(
+      final data = FeedData(
         items: page.items,
         hasMore: page.rawCount >= _pageSize,
         cursor: page.cursor,
         hasNewPosts: false,
       );
+      state = data;
+      _persist(data, started);
       return true;
     } catch (e) {
       if (!mounted || generation != _generation) return false;
@@ -532,5 +598,11 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((
   final db = Supabase.instance.client;
   // KAN-593: rebuilt (and so reloaded) when the active persona switches.
   final persona = ref.watch(activePersonaProvider)?.name;
-  return FeedNotifier(repo, db, activePersonaType: persona);
+  return FeedNotifier(
+    repo,
+    db,
+    activePersonaType: persona,
+    cache: ref.watch(offlineCacheProvider),
+    accountId: ref.watch(cacheAccountIdProvider),
+  );
 });

@@ -189,6 +189,34 @@ class NearbyGameModel {
     );
   }
 
+  /// The row shape [NearbyGameModel.fromJson] reads (KAN-605: the on-device
+  /// listing cache stores this).
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'title': title,
+    'sport_name': sportName,
+    'scheduled_at': scheduledAt?.toIso8601String(),
+    'status': status,
+    'venue_name': venueName,
+    'latitude': latitude,
+    'longitude': longitude,
+    'distance_meters': distanceMeters,
+    'player_count': playerCount,
+    'spots_remaining': spotsRemaining,
+    'is_public': isPublic,
+    'is_creator': isCreated,
+    'is_joined': isJoined,
+    'min_skill': minSkill,
+    'max_skill': maxSkill,
+    'end_at': endAt?.toIso8601String(),
+    'variant_name_en': variantNameEn,
+    'variant_name_ar': variantNameAr,
+    'host_verified': hostVerified,
+    'favorite_count': favoriteCount,
+    'favourited_by_me': favouritedByMe,
+    'price_aed': priceAed,
+  };
+
   /// Formatted distance label: "850 m" or "1.2 km".
   String get distanceLabel {
     if (distanceMeters < 1000) {

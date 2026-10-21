@@ -1,6 +1,7 @@
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/fp/result.dart';
 
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
@@ -198,34 +199,64 @@ typedef NearbyGamesParams = ({
 /// Fetches games. When lat/lng are null, returns all public upcoming games.
 /// When lat/lng are provided, uses the PostGIS RPC for proximity filtering.
 final nearbyGamesProvider = FutureProvider.autoDispose
-    .family<List<NearbyGameModel>, NearbyGamesParams>((ref, params) async {
+    .family<List<NearbyGameModel>, NearbyGamesParams>((ref, params) {
       final repo = ref.read(nearbyGamesRepositoryProvider);
 
       final lat = params.lat;
       final lng = params.lng;
-      final result = (lat != null && lng != null)
-          ? await repo.getNearbyGames(
-              lat: lat,
-              lng: lng,
-              radiusMeters: params.radiusMeters ?? 10000,
-              sportId: params.sportId,
-              sortOrder: params.sortOrder,
-            )
-          : await repo.getAllGames(sportId: params.sportId);
-      return result.fold((f) => throw Exception(f.message), (g) => g);
+      // KAN-605: stale-while-revalidate; the first page for this filter set
+      // is kept on the device per account.
+      return swrFetch<List<NearbyGameModel>>(
+        ref,
+        key:
+            'games.list.${_geo(lat)}.${_geo(lng)}.${params.radiusMeters}'
+            '.${params.sportId}.${params.sortOrder.name}',
+        fetch: () async {
+          final result = (lat != null && lng != null)
+              ? await repo.getNearbyGames(
+                  lat: lat,
+                  lng: lng,
+                  radiusMeters: params.radiusMeters ?? 10000,
+                  sportId: params.sportId,
+                  sortOrder: params.sortOrder,
+                )
+              : await repo.getAllGames(sportId: params.sportId);
+          return result.fold((f) => throw Exception(f.message), (g) => g);
+        },
+        encode: (games) => [for (final g in games) g.toJson()],
+        decode: (json) => [
+          for (final j in (json as List))
+            NearbyGameModel.fromJson(Map<String, dynamic>.from(j as Map)),
+        ],
+      );
     });
+
+String _geo(double? v) => v == null ? 'x' : v.toStringAsFixed(3);
 
 /// The viewer's own upcoming games (created or joined), pinned at the top of
 /// the games list. Location-independent — a quick game without a venue never
 /// shows in the nearby results but still belongs here. Param = sportId.
 final myPinnedGamesProvider = FutureProvider.autoDispose
-    .family<List<NearbyGameModel>, String?>((ref, sportId) async {
+    .family<List<NearbyGameModel>, String?>((ref, sportId) {
       final svc = ref.read(supabaseServiceProvider);
-      if (svc.client.auth.currentUser == null) return const [];
+      if (svc.client.auth.currentUser == null) {
+        return Future.value(const <NearbyGameModel>[]);
+      }
 
       final repo = ref.read(nearbyGamesRepositoryProvider);
-      final result = await repo.getMyUpcomingGames(sportId: sportId);
-      return result.fold((f) => throw Exception(f.message), (g) => g);
+      return swrFetch<List<NearbyGameModel>>(
+        ref,
+        key: 'games.mine.$sportId',
+        fetch: () async {
+          final result = await repo.getMyUpcomingGames(sportId: sportId);
+          return result.fold((f) => throw Exception(f.message), (g) => g);
+        },
+        encode: (games) => [for (final g in games) g.toJson()],
+        decode: (json) => [
+          for (final j in (json as List))
+            NearbyGameModel.fromJson(Map<String, dynamic>.from(j as Map)),
+        ],
+      );
     });
 
 // =============================================================================

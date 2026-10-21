@@ -1,3 +1,4 @@
+import 'package:dabbler/core/cache/offline_cache.dart';
 import 'dart:convert';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart' show FailureCode, classifyError;
@@ -352,6 +353,14 @@ class AuthService {
       await PushNotificationService.instance.revokeToken().timeout(
         kRequestTimeout,
       );
+    } catch (_) {
+      // Best-effort — see doc comment above.
+    }
+
+    try {
+      // KAN-605: the on-device feed and listing cache goes first; it needs no
+      // network, so an offline sign-out wipes it too.
+      await OfflineCache.wipeAll();
     } catch (_) {
       // Best-effort — see doc comment above.
     }
