@@ -1,13 +1,19 @@
+import 'dart:async';
+
 import 'package:dabbler/core/constants/uae_locations.dart';
+import 'package:dabbler/data/models/mapbox_place.dart';
+import 'package:dabbler/features/location/presentation/widgets/map_place_results.dart';
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The manual location picker: use the current location, or search and pick
-/// from the UAE list. Hosted in a design-system sheet, which owns the surface,
+/// from the UAE suggestions; once the user types, cities and areas come from
+/// the map service, worldwide (KAN-587). Hosted in a design-system sheet, which owns the surface,
 /// the handle and the scrolling; this widget is the sheet's content.
 class ManualLocationDrawer extends ConsumerStatefulWidget {
   const ManualLocationDrawer({super.key});
@@ -22,6 +28,11 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
   final _locationService = LocationService();
   bool _isLoading = false;
   List<LocationData> _filteredLocations = UAELocations.cities;
+  Timer? _debounce;
+
+  /// The debounced map-service query; empty (under 2 characters) shows the
+  /// UAE suggestions instead.
+  String _mapQuery = '';
 
   @override
   void initState() {
@@ -31,6 +42,7 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
 
   @override
   void dispose() {
+    _debounce?.cancel();
     _searchController.removeListener(_onSearchChanged);
     _searchController.dispose();
     super.dispose();
@@ -40,6 +52,98 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
     setState(() {
       _filteredLocations = UAELocations.search(_searchController.text);
     });
+    _debounce?.cancel();
+    final String q = _searchController.text.trim();
+    if (q.length < 2) {
+      if (_mapQuery.isNotEmpty) setState(() => _mapQuery = '');
+      return;
+    }
+    _debounce = Timer(DabblerMotion.debounceSearch, () {
+      if (mounted) setState(() => _mapQuery = q);
+    });
+  }
+
+  /// A map-service city: its name, id and country are committed (City-only).
+  Future<void> _selectMapCity(MapboxPlace place) async {
+    final toast = DabblerToastProvider.of(context);
+    final l10n = AppLocalizations.of(context);
+    await ref
+        .read(activeLocationProvider.notifier)
+        .useManualCity(
+          place.name,
+          cityId: place.id,
+          country: place.country,
+          countryCode: place.countryCode,
+        );
+    if (!mounted) return;
+    Navigator.pop(context);
+    toast.show(
+      DabblerToastSpec(
+        message: l10n.manual_location_set_toast(place.name),
+        tone: DabblerToastTone.success,
+      ),
+    );
+  }
+
+  /// A map-service area inside the chosen city.
+  Future<void> _selectMapArea(MapboxPlace place, String city) async {
+    final toast = DabblerToastProvider.of(context);
+    final l10n = AppLocalizations.of(context);
+    setState(() => _isLoading = true);
+    try {
+      await _locationService.setManualLocation(
+        place.name,
+        latitude: place.lat,
+        longitude: place.lng,
+      );
+      await ref
+          .read(activeLocationProvider.notifier)
+          .useManualPoint(
+            place.lat,
+            place.lng,
+            place.name,
+            city: city,
+            area: place.name,
+          );
+      if (mounted) {
+        Navigator.pop(context);
+        toast.show(
+          DabblerToastSpec(
+            message: l10n.manual_location_set_toast(place.name),
+            tone: DabblerToastTone.success,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        toast.show(
+          DabblerToastSpec(
+            message: l10n.manual_location_set_failed('$e'),
+            tone: DabblerToastTone.error,
+          ),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  /// The city chosen so far (a manual pick), whose Areas the search offers.
+  ({String city, String? countryCode, String? proximity})? get _chosenCity {
+    final ActiveLocationState? s = ref.read(activeLocationProvider).valueOrNull;
+    if (s is ActiveLocationCityOnly) {
+      return (city: s.city, countryCode: s.countryCode, proximity: null);
+    }
+    if (s is ActiveLocationReady &&
+        s.location.source == ActiveLocationSource.manual) {
+      final loc = s.location;
+      return (
+        city: loc.area.city,
+        countryCode: null,
+        proximity: '${loc.lng},${loc.lat}',
+      );
+    }
+    return null;
   }
 
   Future<void> _selectLocation(LocationData location) async {
@@ -181,7 +285,28 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
             padding: EdgeInsets.all(DabblerSpacing.space10),
             child: Center(child: DabblerSpinner()),
           )
-        else if (_filteredLocations.isEmpty && _filteredCities.isEmpty)
+        else if (_mapQuery.isNotEmpty) ...<Widget>[
+          DabblerDivider(
+            label: AppLocalizations.of(context).manual_location_cities_divider,
+          ),
+          const DabblerGap.v(DabblerSpacing.space4),
+          MapPlaceResults.cities(query: _mapQuery, onPick: _selectMapCity),
+          if (_chosenCity case final chosen?) ...<Widget>[
+            const DabblerGap.v(DabblerSpacing.space4),
+            DabblerDivider(
+              label: AppLocalizations.of(context).manual_location_areas_divider,
+            ),
+            const DabblerGap.v(DabblerSpacing.space4),
+            MapPlaceResults.areas(
+              query: (
+                query: _mapQuery,
+                countryCode: chosen.countryCode,
+                proximity: chosen.proximity,
+              ),
+              onPick: (MapboxPlace p) => _selectMapArea(p, chosen.city),
+            ),
+          ],
+        ] else if (_filteredLocations.isEmpty && _filteredCities.isEmpty)
           Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(

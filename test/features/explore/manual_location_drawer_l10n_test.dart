@@ -1,4 +1,5 @@
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
+import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -15,6 +16,10 @@ Future<AppLocalizations> _pump(WidgetTester tester, Locale locale) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
+      overrides: [
+        // KAN-587: typed searches go to the map service; none matches here.
+        mapboxCityProvider.overrideWith((ref, q) async => const []),
+      ],
       child: MaterialApp(
         builder: (context, child) => DabblerToastProvider(child: child!),
         locale: locale,
@@ -44,6 +49,7 @@ void main() {
       expect(find.text(l.manual_location_search_placeholder), findsOneWidget);
 
       await tester.enterText(find.byType(EditableText), 'zzqqxx-nowhere');
+      await tester.pump(const Duration(seconds: 1));
       await frames(tester);
       expect(find.text(l.manual_location_empty_title), findsOneWidget);
       expect(find.text(l.manual_location_empty_text), findsOneWidget);
