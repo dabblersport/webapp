@@ -18,6 +18,7 @@ class CreateMeetupInput {
     this.maxSkill,
     this.vibeKey,
     this.isIndoor,
+    this.requestId,
   });
 
   final String sportId;
@@ -45,6 +46,10 @@ class CreateMeetupInput {
   /// Indoor (true) / outdoor (false). Required when there is no [venueId]
   /// (the venue then supplies the setting), ignored by the server otherwise.
   final bool? isIndoor;
+
+  /// KAN-612: the client request id of this create attempt. A retry of the
+  /// same attempt sends the same id, so the server keeps one meetup.
+  final String? requestId;
 }
 
 /// Input for `rpc_meetup_update`. Null = unchanged (the RPC cannot clear

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/features/social/presentation/composer_emoji.dart';
@@ -109,6 +110,11 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         // untouched, and Post is tapped again once a city is chosen.
         if (err.message == kPostedFromRequired) {
           showComposerPostedFromSheet(_sheetContext, ref, prompt: true);
+          return;
+        }
+        // KAN-612: offline; nothing was sent and the draft is untouched.
+        if (err.message == kCreateOfflineRefused) {
+          _errorToast(AppLocalizations.of(context).offline_create_refused);
           return;
         }
         _errorToast(err.message);

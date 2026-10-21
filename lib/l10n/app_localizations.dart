@@ -11423,6 +11423,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t start the app. Please try again.'**
   String get offline_bootstrap_failed;
 
+  /// KAN-612 Inline/snackbar message when the user taps Create on a post, a game or a meetup while offline. Nothing is sent and the form is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating needs an internet connection. Nothing was created, and what you typed is still here.'**
+  String get offline_create_refused;
+
   /// No description provided for @messaging_chat_error.
   ///
   /// In en, this message translates to:

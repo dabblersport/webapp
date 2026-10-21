@@ -6406,6 +6406,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get offline_bootstrap_failed => 'تعذّر تشغيل التطبيق. حاول مرة أخرى.';
 
   @override
+  String get offline_create_refused =>
+      'الإنشاء يحتاج إلى اتصال بالإنترنت. لم يُنشأ شيء، وما كتبته ما زال كما هو.';
+
+  @override
   String get messaging_chat_error => 'تعذّر تحميل هذه الدردشة. حاول مرة أخرى.';
 
   @override

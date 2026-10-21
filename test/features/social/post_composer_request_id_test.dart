@@ -1,6 +1,8 @@
 // KAN-618: the post composer owns one client request id per create attempt.
 // It is held and exposed only; the repository call is unchanged.
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
@@ -13,6 +15,7 @@ import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/connectivity_overrides.dart';
 
 final Post _post = Post(
   id: 'p1',
@@ -56,11 +59,28 @@ class _FakeRepo implements PostRepository {
   final List<String?> ids = <String?>[];
   bool fail = false;
 
+  /// KAN-612: the request id each create call actually carried.
+  final List<String?> sent = <String?>[];
+
+  /// KAN-612: the server keeps one post per request id (KAN-611).
+  final Map<String, Post> serverRows = <String, Post>{};
+
+  /// KAN-612: the server creates the post, then the response is lost.
+  bool loseResponse = false;
+
   @override
   Future<Result<Post, Failure>> createFullPost(
     PostCreateRequest request,
   ) async {
     ids.add(_requestId());
+    sent.add(request.requestId);
+    final rid = request.requestId;
+    if (rid != null) serverRows.putIfAbsent(rid, () => _post);
+    if (loseResponse) {
+      return const Err(
+        Failure(category: FailureCode.timeout, message: 'timeout'),
+      );
+    }
     if (fail) {
       return const Err(
         Failure(category: FailureCode.noInternet, message: 'No internet'),
@@ -73,11 +93,12 @@ class _FakeRepo implements PostRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-Future<(ProviderContainer, _FakeRepo)> _composer() async {
+Future<(ProviderContainer, _FakeRepo)> _composer({bool offline = false}) async {
   late ProviderContainer c;
   final repo = _FakeRepo(() => c.read(postComposerProvider.notifier).requestId);
   c = ProviderContainer(
     overrides: [
+      offline ? offlineConnectivity() : onlineConnectivity(),
       postRepositoryProvider.overrideWithValue(repo),
       activeLocationProvider.overrideWith(_DeviceLocation.new),
     ],
@@ -85,6 +106,9 @@ Future<(ProviderContainer, _FakeRepo)> _composer() async {
   addTearDown(c.dispose);
   c.listen(postComposerProvider, (_, _) {});
   await c.read(activeLocationProvider.future);
+  // The connectivity notifier reads the OS state once, asynchronously.
+  c.read(connectivityProvider);
+  await Future<void>.delayed(Duration.zero);
   c.read(postComposerProvider.notifier).setBody('Padel tonight');
   return (c, repo);
 }
@@ -207,6 +231,56 @@ void main() {
       expect(results[0].isSuccess, isTrue);
       expect(results[1].isFailure, isTrue);
       expect(results[1].requireError.category, FailureCode.cancelled);
+    },
+  );
+
+  test('KAN-612: the held id is the one the create call carries', () async {
+    final (c, repo) = await _composer();
+    final n = c.read(postComposerProvider.notifier);
+    await n.submit();
+    expect(repo.sent.single, isNotNull);
+    expect(repo.sent.single, repo.ids.single);
+  });
+
+  test('KAN-612: lost response, then retry: one row, the same id', () async {
+    final (c, repo) = await _composer();
+    final n = c.read(postComposerProvider.notifier);
+    repo.loseResponse = true;
+    final lost = await n.submit();
+    expect(lost.isFailure, isTrue);
+    expect(repo.serverRows, hasLength(1), reason: 'server created it');
+    // The form is kept for the retry.
+    expect(c.read(postComposerProvider).body, 'Padel tonight');
+
+    repo.loseResponse = false;
+    final retry = await n.submit();
+    expect(retry.isSuccess, isTrue);
+    expect(repo.sent, hasLength(2));
+    expect(repo.sent[1], repo.sent[0]);
+    expect(repo.serverRows, hasLength(1), reason: 'no second row');
+  });
+
+  test('KAN-612: double tap is one create call', () async {
+    final (c, repo) = await _composer();
+    final n = c.read(postComposerProvider.notifier);
+    await Future.wait([n.submit(), n.submit()]);
+    expect(repo.sent, hasLength(1));
+    expect(repo.serverRows, hasLength(1));
+  });
+
+  test(
+    'KAN-612: offline: Create is refused up front, the draft is kept',
+    () async {
+      final (c, repo) = await _composer(offline: true);
+      final n = c.read(postComposerProvider.notifier);
+      final r = await n.submit();
+      expect(r.isFailure, isTrue);
+      expect(r.requireError.message, kCreateOfflineRefused);
+      expect(repo.sent, isEmpty, reason: 'nothing was sent');
+      expect(n.requestId, isNull, reason: 'no id was made');
+      final s = c.read(postComposerProvider);
+      expect(s.body, 'Padel tonight');
+      expect(s.isSubmitting, isFalse);
     },
   );
 

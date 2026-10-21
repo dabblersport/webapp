@@ -35,6 +35,7 @@ class PostCreateRequest {
     this.originId,
     this.personaTypeSnapshot,
     this.isPinned = false,
+    this.requestId,
   });
 
   /// Required — the kind of post (original, news, announcement, etc.).
@@ -121,6 +122,10 @@ class PostCreateRequest {
   /// Whether this post should be pinned on the author's profile.
   final bool isPinned;
 
+  /// KAN-612: the client request id of this create attempt. A retry of the
+  /// same attempt sends the same id, so the server keeps one row.
+  final String? requestId;
+
   /// Convert to the Supabase insert payload.
   ///
   /// `authorProfileId` and `authorUserId` are injected by the repository.
@@ -162,6 +167,7 @@ class PostCreateRequest {
       if (originId != null) 'origin_id': originId,
       if (personaTypeSnapshot != null)
         'persona_type_snapshot': personaTypeSnapshot,
+      if (requestId != null) 'request_id': requestId,
     };
   }
 

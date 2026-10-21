@@ -2277,6 +2277,8 @@
   "@offline_auth_error_generic": {"description": "KAN-609 Generic localized replacement for raw sign-in and one-time-code (OTP) error text. Never append the raw error. Wire in: KAN-606."},
   "offline_bootstrap_failed": "Couldn't start the app. Please try again.",
   "@offline_bootstrap_failed": {"description": "KAN-609 Message of the start-up failure screen (shown before the app and its localization are ready). Wire in: KAN-602."},
+  "offline_create_refused": "Creating needs an internet connection. Nothing was created, and what you typed is still here.",
+  "@offline_create_refused": {"description": "KAN-612 Inline/snackbar message when the user taps Create on a post, a game or a meetup while offline. Nothing is sent and the form is kept."},
   "messaging_chat_error": "Couldn't load this chat. Try again.",
   "messaging_chat_older_load": "Load earlier messages",
   "messaging_chat_older_loading": "Loading earlier messages",
