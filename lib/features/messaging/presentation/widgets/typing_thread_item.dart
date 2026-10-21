@@ -63,6 +63,10 @@ final typingDotsFrameProvider = StreamProvider.autoDispose<int>(
 /// 4 px dots are not expressible as message content, so the glyphs approximate
 /// them; a screen reader reads the label in a group and the dot glyphs in a
 /// direct chat (DS GAP: a DS `TypingRow` would carry its own semantics).
+///
+/// The row fades in once over `--motion-slow` when it mounts (design 10;
+/// [DabblerThreadMessage.fresh]); the design system skips the fade under
+/// reduced motion. It keeps one id, so the dots ticking never replays it.
 DabblerThreadMessage? typingThreadItem(
   BuildContext context,
   WidgetRef ref,
@@ -84,6 +88,7 @@ DabblerThreadMessage? typingThreadItem(
       content: dots,
       showAvatar: false,
       showSender: false,
+      fresh: true,
     );
   }
   final names = <String>[
@@ -96,6 +101,7 @@ DabblerThreadMessage? typingThreadItem(
     content: dots,
     showAvatar: true,
     showSender: true,
+    fresh: true,
   );
 }
 
