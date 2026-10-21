@@ -127,17 +127,49 @@ void main() {
       expect(r.removed, isEmpty);
     });
 
-    test('the cap never evicts a settings copy or a Home feed page', () async {
+    test('a feed-only cache over 2 MiB is trimmed to at most 2 MiB', () async {
       const chunk = 600 * 1024;
-      await seed(2, chunk, prefix: 'settings.s');
-      await seed(1, chunk, prefix: 'feed.f');
-      await seed(2, chunk, prefix: 'zz.');
-      // 3 exempt (1.8 MiB) + 2 others (1.2 MiB): the others go, oldest first.
-      await cache.cleanup('A', now: t0);
-      expect(prefs.getString('offline_cache.v1.A.settings.s0'), isNotNull);
-      expect(prefs.getString('offline_cache.v1.A.settings.s1'), isNotNull);
-      expect(prefs.getString('offline_cache.v1.A.feed.f0'), isNotNull);
+      await seed(4, chunk, prefix: 'feed.p'); // 2.4 MiB, all feed pages
+      final r = await cache.cleanup('A', now: t0);
+      expect(r.removed, ['feed.p0']); // oldest first
+      expect(await cache.sizeOf('A'), lessThanOrEqualTo(2 * 1024 * 1024));
+      expect(prefs.getString('offline_cache.v1.A.feed.p0'), isNull);
+      expect(prefs.getString('offline_cache.v1.A.feed.p3'), isNotNull);
     });
+
+    test(
+      'the newest feed page survives the cap so the feed is not empty',
+      () async {
+        const chunk = 1500 * 1024;
+        await seed(3, chunk, prefix: 'feed.q'); // 4.4 MiB
+        await cache.cleanup('A', now: t0);
+        expect(prefs.getString('offline_cache.v1.A.feed.q0'), isNull);
+        expect(prefs.getString('offline_cache.v1.A.feed.q1'), isNull);
+        expect(prefs.getString('offline_cache.v1.A.feed.q2'), isNotNull);
+        expect(await cache.sizeOf('A'), lessThanOrEqualTo(2 * 1024 * 1024));
+      },
+    );
+
+    test('feed pages stay exempt from age eviction', () async {
+      await put('feed.foryou', t0.subtract(const Duration(days: 9)));
+      final r = await cache.cleanup('A', now: t0);
+      expect(r.removed, isEmpty);
+    });
+
+    test(
+      'the cap never evicts a settings copy; the newest feed page stays',
+      () async {
+        const chunk = 600 * 1024;
+        await seed(2, chunk, prefix: 'settings.s');
+        await seed(1, chunk, prefix: 'feed.f');
+        await seed(2, chunk, prefix: 'zz.');
+        // 3 exempt (1.8 MiB) + 2 others (1.2 MiB): the others go, oldest first.
+        await cache.cleanup('A', now: t0);
+        expect(prefs.getString('offline_cache.v1.A.settings.s0'), isNotNull);
+        expect(prefs.getString('offline_cache.v1.A.settings.s1'), isNotNull);
+        expect(prefs.getString('offline_cache.v1.A.feed.f0'), isNotNull);
+      },
+    );
   });
 
   group('pending edits and the Home feed', () {
