@@ -103,7 +103,8 @@ export async function uploadAttachment(request: Request, env: Env, conversationI
   const auth = await authorize(request, env, conv);
   if (!auth.ok) return auth.response; // no DB and no R2 before an allowed result
   if (auth.grant.action !== "send") return reasonError(auth.grant.readOnlyReason ?? "invalid_request");
-  if (!env.MEDIA) return mediaUnavailable();
+  // The kill switch refuses new uploads only; reads of what is already stored are not affected.
+  if (!env.MEDIA || env.MESSAGING_UPLOADS === "off") return mediaUnavailable();
   const userId = auth.grant.userId;
 
   // A retry of an upload that already finished returns the same attachment: no second object, no second quota unit.

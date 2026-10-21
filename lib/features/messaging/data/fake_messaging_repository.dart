@@ -3,7 +3,10 @@ import 'dart:math' as math;
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
+import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
+import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
@@ -41,7 +44,11 @@ enum FakeDmOp { startDm, setMuted }
 /// Ids and time are deterministic through the injectable [clock] and
 /// [idGenerator].
 class FakeMessagingRepository
-    implements MessagingRepository, MyConversationsRepository, DmRepository {
+    implements
+        MessagingRepository,
+        MyConversationsRepository,
+        DmRepository,
+        MessagingImageRepository {
   FakeMessagingRepository({
     DateTime Function()? clock,
     String Function()? idGenerator,
@@ -302,6 +309,113 @@ class FakeMessagingRepository
     _byGame[conversation.gameId] = updated;
     return Ok(message);
   }
+
+  /// KAN-581: attachments uploaded to this fake, by id, and their uploader key.
+  final Map<String, MessageAttachment> uploaded = {};
+  final Map<String, MessageAttachment> _uploadByKey = {};
+
+  /// How many times [uploadImage] stored a NEW image (a repeat of a key is not
+  /// counted), and how many times it was called.
+  int newUploads = 0;
+  int uploadAttempts = 0;
+
+  /// When set, the next [uploadImage] fails with this reason (once).
+  MessagingReason? failNextUpload;
+
+  @override
+  Future<Result<MessageAttachment, Failure>> uploadImage({
+    required String conversationId,
+    required PickedImage image,
+    required String idempotencyKey,
+    UploadProgress? onProgress,
+    UploadCancel? cancel,
+  }) async {
+    uploadAttempts++;
+    if (offline) return Err(MessagingFailure.offline());
+    final reason = failNextUpload;
+    if (reason != null) {
+      failNextUpload = null;
+      return _err(_failure(reason));
+    }
+    final repeat = _uploadByKey[idempotencyKey];
+    if (repeat != null) return Ok(repeat);
+    final conversation = _byId[conversationId];
+    if (conversation == null) return _err(_failure(MessagingReason.notFound));
+    if (!conversation.writable) {
+      return _err(
+        _failure(conversation.readOnlyReason ?? MessagingReason.leftReadOnly),
+      );
+    }
+    onProgress?.call(image.bytes.length, image.bytes.length);
+    final attachment = MessageAttachment(
+      id: _idGenerator(),
+      mimeType: image.mimeType,
+      byteSize: image.bytes.length,
+    );
+    newUploads++;
+    uploaded[attachment.id] = attachment;
+    _uploadByKey[idempotencyKey] = attachment;
+    return Ok(attachment);
+  }
+
+  @override
+  Future<Result<Message, Failure>> sendImageMessage({
+    required String conversationId,
+    required String idempotencyKey,
+    required List<String> attachmentIds,
+    String caption = '',
+  }) async {
+    sendAttempts++;
+    if (offline) return Err(MessagingFailure.offline());
+    final scripted = _scripted(FakeMessagingOp.sendTextMessage);
+    if (scripted != null) return _err(scripted);
+    final existing = _sentByKey[idempotencyKey];
+    if (existing != null) return Ok(existing);
+    final conversation = _byId[conversationId];
+    if (conversation == null) return _err(_failure(MessagingReason.notFound));
+    if (!conversation.writable) {
+      return _err(
+        _failure(conversation.readOnlyReason ?? MessagingReason.leftReadOnly),
+      );
+    }
+    final found = [for (final id in attachmentIds) uploaded[id]];
+    if (found.isEmpty || found.contains(null)) {
+      return _err(_failure(MessagingReason.invalidRequest));
+    }
+    final list = _messages[conversationId] ??= [];
+    final seq = list.isEmpty ? 1 : list.last.seq + 1;
+    final message = Message(
+      id: _idGenerator(),
+      conversationId: conversationId,
+      seq: seq,
+      senderUserId: currentUserId,
+      kind: MessageKind.text,
+      body: caption,
+      clientKey: idempotencyKey,
+      createdAt: _clock(),
+      attachments: [for (final a in found) a!],
+    );
+    list.add(message);
+    _sentByKey[idempotencyKey] = message;
+    _byId[conversationId] = Conversation(
+      id: conversation.id,
+      gameId: conversation.gameId,
+      writable: conversation.writable,
+      muted: conversation.muted,
+      lastSeq: seq,
+      readOnlyReason: conversation.readOnlyReason,
+      boundary: conversation.boundary,
+    );
+    _byGame[conversation.gameId] = _byId[conversationId]!;
+    return Ok(message);
+  }
+
+  @override
+  String attachmentUrl(String attachmentId) =>
+      'https://fake.invalid/v1/attachments/$attachmentId';
+
+  @override
+  Future<Map<String, String>?> authHeaders() async => null;
 
   @override
   Future<Result<void, Failure>> reportMessage({

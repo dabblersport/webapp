@@ -6908,4 +6908,70 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get post_legacy_city => 'Dubai';
+
+  @override
+  String get messaging_share_title => 'Share';
+
+  @override
+  String get messaging_share_gallery => 'Photo library';
+
+  @override
+  String get messaging_share_camera => 'Camera';
+
+  @override
+  String get messaging_share_file => 'Image file';
+
+  @override
+  String get messaging_share_file_hint => 'Images only';
+
+  @override
+  String get messaging_share_gif => 'Search GIFs';
+
+  @override
+  String get messaging_share_gif_hint => 'Powered by GIPHY';
+
+  @override
+  String messaging_image_uploading(int percent) {
+    return 'Uploading · $percent%';
+  }
+
+  @override
+  String get messaging_image_cancel => 'Cancel upload';
+
+  @override
+  String get messaging_image_retry => 'Retry upload';
+
+  @override
+  String get messaging_image_failed => 'Upload failed';
+
+  @override
+  String get messaging_image_open => 'Open image';
+
+  @override
+  String get messaging_image_remove => 'Remove photo';
+
+  @override
+  String get messaging_image_close => 'Close';
+
+  @override
+  String get messaging_image_viewer_title => 'Photo';
+
+  @override
+  String get messaging_image_too_large => 'That image is too large to send.';
+
+  @override
+  String get messaging_image_unsupported =>
+      'Only JPG, PNG and WebP images can be sent.';
+
+  @override
+  String get messaging_image_camera_denied =>
+      'Camera access is off. Allow it in Settings to take a photo.';
+
+  @override
+  String get messaging_image_library_denied =>
+      'Photo access is off. Allow it in Settings to choose a photo.';
+
+  @override
+  String get messaging_image_pick_failed =>
+      'Couldn\'t get that image. Try again.';
 }

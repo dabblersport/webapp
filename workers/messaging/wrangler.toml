@@ -39,3 +39,8 @@ migrations_dir = "migrations"
 # The public Supabase project URL (not a secret). The anon key is a secret binding: name only, supplied outside the repo.
 SUPABASE_URL = "https://wtncuzcskpigqpmnxwws.supabase.co"
 MESSAGING_ACCESS_MODE = "off"
+
+# KAN-581: private message images. NO R2 bucket exists or is approved yet, so no [[r2_buckets]] block is declared here: a
+# binding to a missing bucket would fail the next deploy. Without the MEDIA binding every attachment route answers 503.
+# When the CEO approves R2 and operations creates the private bucket, the block to add is in docs/messaging/images-kan581.md
+# (binding MEDIA, bucket dabbler-messaging-media). MESSAGING_UPLOADS = "off" is the upload kill switch (dashboard variable).

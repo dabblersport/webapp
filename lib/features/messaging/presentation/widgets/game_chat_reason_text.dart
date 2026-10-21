@@ -18,6 +18,8 @@ String? gameChatReasonText(AppLocalizations l10n, MessagingReason reason) =>
       MessagingReason.rateLimited => l10n.messaging_reason_rate_limited,
       MessagingReason.notFound => l10n.messaging_reason_not_found,
       MessagingReason.invalidRequest => l10n.messaging_reason_invalid_request,
+      MessagingReason.payloadTooLarge => l10n.messaging_image_too_large,
+      MessagingReason.unsupportedMediaType => l10n.messaging_image_unsupported,
       MessagingReason.unknown => l10n.messaging_reason_unknown,
       MessagingReason.notInPilot ||
       MessagingReason.removed ||

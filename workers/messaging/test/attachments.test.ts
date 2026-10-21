@@ -192,6 +192,16 @@ describe("upload (AC1, AC2, AC6)", () => {
     expect((await t.db.prepare("SELECT COUNT(*) AS n FROM message_attachments").first<{ n: number }>())?.n).toBe(0);
   });
 
+  it("the MESSAGING_UPLOADS kill switch refuses new uploads (503) and leaves reads working", async () => {
+    const t = await setup();
+    const [id] = await uploaded(t, 1);
+    await send(t.e, SEND_KEY(1), { attachment_ids: [id] });
+    const off = { ...(t.e as object), MESSAGING_UPLOADS: "off" } as unknown as Parameters<typeof worker.fetch>[1];
+    expect((await upload(off, PNG, UP(77))).status).toBe(503);
+    expect((await read(off, id)).status).toBe(200);
+    expect((await objects(t.bucket)).length).toBe(1);
+  });
+
   it(`the ${UPLOADS_PER_USER_PER_HOUR + 1}th upload in an hour is 429 with Retry-After`, async () => {
     const t = await setup();
     for (let i = 0; i < UPLOADS_PER_USER_PER_HOUR; i++) expect((await upload(t.e, PNG, UP(100 + i))).status).toBe(201);

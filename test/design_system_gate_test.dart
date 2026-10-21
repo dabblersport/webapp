@@ -61,6 +61,10 @@ const _maxWidthReason =
 const _aspectReason =
     'Media aspect ratio: the design system has no media aspect-ratio role '
     'yet (filed as a DS gap).';
+const _deviceBytesReason =
+    'KAN-581 pre-upload preview: the picked photo exists only as device bytes '
+    'and DabblerImage loads network URLs only, with no bytes input and no '
+    'centred veil slot (filed as a DS gap: DabblerImage.bytes + veil).';
 const _pickerReason =
     'Image-picker downscale bound in pixels for upload size; not rendered.';
 const _domainDurationReason =
@@ -153,6 +157,16 @@ const List<GateAllow> allowList = [
     ['numeric named arg'],
     _aspectReason,
     match: 'aspectRatio: 16 / 9',
+  ),
+  GateAllow(
+    'lib/features/messaging/presentation/widgets/chat_image_widgets.dart',
+    ['Image.'],
+    _deviceBytesReason,
+  ),
+  GateAllow(
+    'lib/features/messaging/presentation/widgets/chat_attachment_tray.dart',
+    ['Image.'],
+    _deviceBytesReason,
   ),
   GateAllow(
     'lib/features/social/presentation/widgets/post_media_carousel.dart',
@@ -550,7 +564,12 @@ final RegExp _widgetClass = RegExp(
 );
 
 /// Reasoned, permanent exceptions to the fidelity gate (path -> reason).
-const Map<String, String> fidelityAllow = {};
+const Map<String, String> fidelityAllow = {
+  'lib/features/messaging/presentation/widgets/chat_image_widgets.dart':
+      _deviceBytesReason,
+  'lib/features/messaging/presentation/widgets/chat_attachment_tray.dart':
+      _deviceBytesReason,
+};
 
 List<GateHit> scanStructure(String path, String src) {
   final code = stripCode(src);
