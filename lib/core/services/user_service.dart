@@ -265,6 +265,11 @@ class UserService extends ChangeNotifier {
     return _currentUser?.language ?? 'en';
   }
 
+  /// Server time of the last language change (`profiles.language_updated_at`),
+  /// or null if never edited. The offline settings sync (KAN-608) compares a
+  /// queued language edit against it.
+  DateTime? getUserLanguageUpdatedAt() => _currentUser?.languageUpdatedAt;
+
   // Check if user has valid name
   bool hasValidUserName() {
     return _currentUser?.hasValidName ?? false;

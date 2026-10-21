@@ -4,6 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -102,12 +105,52 @@ typedef _FeedFetcher =
 /// - Call [refresh()] to force reload.
 /// - [loadMore()] appends the next page.
 class TabFeedNotifier extends StateNotifier<TabFeedState> {
-  TabFeedNotifier(this._fetcher, {bool autoLoad = true})
-    : super(const TabFeedLoading()) {
+  /// [cache] / [accountId] / [cacheKey] (KAN-605): when all three are given
+  /// the first page is read from the on-device cache at once, and every
+  /// successful first-page load is written back.
+  TabFeedNotifier(
+    this._fetcher, {
+    bool autoLoad = true,
+    OfflineCache? cache,
+    String? accountId,
+    String? cacheKey,
+  }) : _cache = cache,
+       _accountId = accountId,
+       _cacheKey = cacheKey,
+       super(const TabFeedLoading()) {
+    _hydrated = _hydrate();
     if (autoLoad) ensureLoaded();
   }
 
   final _FeedFetcher _fetcher;
+  final OfflineCache? _cache;
+  final String? _accountId;
+  final String? _cacheKey;
+  late final Future<void> _hydrated;
+
+  /// The network has answered at least once for this notifier.
+  bool _networkLoaded = false;
+
+  bool get _cacheOn =>
+      _cache != null && _accountId != null && _cacheKey != null;
+
+  /// Shows the cached first page, if there is one and nothing newer is there.
+  Future<void> _hydrate() async {
+    if (!_cacheOn) return;
+    final hit = await _cache!.read(_accountId!, _cacheKey!);
+    if (hit == null || !mounted || state is TabFeedData) return;
+    try {
+      final posts = [
+        for (final j in (hit.payload as List))
+          Post.fromJson(Map<String, dynamic>.from(j as Map)),
+      ];
+      if (posts.isEmpty) return;
+      state = TabFeedData(posts: posts, hasMore: posts.length >= _pageSize);
+    } catch (_) {
+      // A cached shape that no longer parses is the same as no cache.
+    }
+  }
+
   static const int _pageSize = 20;
   int _activePage = 0;
 
@@ -117,7 +160,9 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
 
   /// Loads the first page only if not yet loaded (cache-friendly).
   Future<void> ensureLoaded() async {
-    if (state is TabFeedData) return;
+    await _hydrated;
+    if (_networkLoaded) return;
+    if (state is TabFeedData && !_cacheOn) return;
     await load();
   }
 
@@ -130,7 +175,11 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
     final generation = ++_generation;
     if (state.posts.isEmpty) state = const TabFeedLoading();
 
-    final result = await _fetcher(limit: _pageSize, offset: 0);
+    final started = DateTime.now();
+    final result = await _fetcher(limit: _pageSize, offset: 0).timeout(
+      kRequestTimeout,
+      onTimeout: () => Err<List<Post>, Failure>(const TimeoutFailure()),
+    );
     if (!mounted || generation != _generation) return false;
 
     return result.fold(
@@ -145,7 +194,13 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
       },
       (posts) {
         _activePage = 0;
+        _networkLoaded = true;
         state = TabFeedData(posts: posts, hasMore: posts.length >= _pageSize);
+        if (_cacheOn) {
+          _cache!.write(_accountId!, _cacheKey!, [
+            for (final p in posts) p.toJson(),
+          ], requestStartedAt: started);
+        }
         return true;
       },
     );
@@ -204,10 +259,14 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
 final followingFeedProvider =
     StateNotifierProvider<TabFeedNotifier, TabFeedState>((ref) {
       final repo = ref.watch(postRepositoryProvider);
+      final account = ref.watch(cacheAccountIdProvider);
       return TabFeedNotifier(
         ({required limit, required offset}) =>
             repo.getFollowingFeed(limit: limit, offset: offset),
         autoLoad: false, // lazy: only load when user opens the tab
+        cache: ref.watch(offlineCacheProvider),
+        accountId: account,
+        cacheKey: 'feed.following',
       );
     });
 
@@ -233,43 +292,62 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
             : null;
       }),
     );
-    return _buildNearbyNotifier(repo, coords, ref.watch(gpsServiceProvider));
+    return _buildNearbyNotifier(
+      repo,
+      coords,
+      ref.watch(gpsServiceProvider),
+      cache: ref.watch(offlineCacheProvider),
+      accountId: ref.watch(cacheAccountIdProvider),
+    );
   },
 );
 
 TabFeedNotifier _buildNearbyNotifier(
   PostRepository repo,
   ({double lat, double lng})? appLocation,
-  GpsService gps,
-) {
-  return TabFeedNotifier(({required limit, required offset}) async {
-    // Prefer the app-level location selection (GPS / saved / manual area).
-    double? lat = appLocation?.lat;
-    double? lng = appLocation?.lng;
+  GpsService gps, {
+  OfflineCache? cache,
+  String? accountId,
+}) {
+  return TabFeedNotifier(
+    ({required limit, required offset}) async {
+      // Prefer the app-level location selection (GPS / saved / manual area).
+      double? lat = appLocation?.lat;
+      double? lng = appLocation?.lng;
 
-    // Fallback: raw GPS, read-only (it never raises the OS permission prompt:
-    // only the location intro or an explicit user action asks for it).
-    if (lat == null || lng == null) {
-      try {
-        final result = await gps.getCurrentLocation(
-          requestPermission: false,
-          cap: DabblerMotion.timeoutShort,
-          accuracy: LocationAccuracy.low,
-        );
-        if (result is LocationSuccess) {
-          lat = result.lat;
-          lng = result.lng;
+      // Fallback: raw GPS, read-only (it never raises the OS permission prompt:
+      // only the location intro or an explicit user action asks for it).
+      if (lat == null || lng == null) {
+        try {
+          final result = await gps.getCurrentLocation(
+            requestPermission: false,
+            cap: DabblerMotion.timeoutShort,
+            accuracy: LocationAccuracy.low,
+          );
+          if (result is LocationSuccess) {
+            lat = result.lat;
+            lng = result.lng;
+          }
+        } catch (_) {
+          // Location unavailable — backend will fall back to recency.
         }
-      } catch (_) {
-        // Location unavailable — backend will fall back to recency.
       }
-    }
 
-    return repo.getNearbyFeed(lat: lat, lng: lng, limit: limit, offset: offset);
-    // With app-level coordinates the initial fetch can't trigger a GPS
-    // permission prompt, so load eagerly — this also covers notifier
-    // recreation after a location change while the Nearby tab is visible.
-  }, autoLoad: appLocation != null);
+      return repo.getNearbyFeed(
+        lat: lat,
+        lng: lng,
+        limit: limit,
+        offset: offset,
+      );
+      // With app-level coordinates the initial fetch can't trigger a GPS
+      // permission prompt, so load eagerly — this also covers notifier
+      // recreation after a location change while the Nearby tab is visible.
+    },
+    autoLoad: appLocation != null,
+    cache: cache,
+    accountId: accountId,
+    cacheKey: 'feed.nearby',
+  );
 }
 
 // =============================================================================
@@ -286,6 +364,9 @@ final newsFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>((
     ({required limit, required offset}) =>
         repo.getNewsFeed(limit: limit, offset: offset),
     autoLoad: false,
+    cache: ref.watch(offlineCacheProvider),
+    accountId: ref.watch(cacheAccountIdProvider),
+    cacheKey: 'feed.news',
   );
 });
 

@@ -1,3 +1,5 @@
+import 'package:dabbler/core/sync/pending_settings_store.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
 import 'dart:convert';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart' show FailureCode, classifyError;
@@ -352,6 +354,16 @@ class AuthService {
       await PushNotificationService.instance.revokeToken().timeout(
         kRequestTimeout,
       );
+    } catch (_) {
+      // Best-effort — see doc comment above.
+    }
+
+    try {
+      // KAN-605: the on-device feed and listing cache goes first; it needs no
+      // network, so an offline sign-out wipes it too.
+      await OfflineCache.wipeAll();
+      // KAN-608: edits still waiting for the server are discarded too.
+      await const PendingSettingsStore().wipe();
     } catch (_) {
       // Best-effort — see doc comment above.
     }

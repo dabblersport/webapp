@@ -1,5 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart';
+
 import '../../data/models/notification_settings.dart';
 import '../../data/notification_settings_repository.dart';
 
@@ -43,16 +47,73 @@ class NotificationSettingsState {
 /// is set).
 class NotificationSettingsController
     extends StateNotifier<NotificationSettingsState> {
-  NotificationSettingsController(this._repository)
-    : super(const NotificationSettingsState()) {
+  /// [sync] / [accountId] (KAN-608): an edit is applied on the device at
+  /// once, stored in the offline queue with its edit time and sent when the
+  /// connection allows; without them an edit is written through and reverted
+  /// on failure, as before.
+  NotificationSettingsController(
+    this._repository, {
+    SettingsSyncNotifier? sync,
+    String? accountId,
+    OfflineCache? cache,
+  }) : _sync = sync,
+       _accountId = accountId,
+       _cache = cache,
+       super(const NotificationSettingsState()) {
     load();
   }
 
   final NotificationSettingsRepository _repository;
+  final SettingsSyncNotifier? _sync;
+  final String? _accountId;
+  final OfflineCache? _cache;
+
+  bool get _offlineFirst => _sync != null && _accountId != null;
+  static final String _mirrorKey = settingsMirrorKey(
+    SettingKeys.notifications,
+  );
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
+    if (_offlineFirst) {
+      // An edit still waiting for the server is newer than the server's copy.
+      final pending = await _sync!.pendingValue(SettingKeys.notifications);
+      if (!mounted) return;
+      if (pending != null) {
+        state = state.copyWith(
+          settings: NotificationSettings.fromJson(pending),
+          isLoading: false,
+          error: null,
+        );
+        return;
+      }
+    }
     final result = await _repository.load();
+    if (!mounted) return;
+    if (_offlineFirst) {
+      final mirror = _cache ?? OfflineCache.instance;
+      if (result.isSuccess) {
+        mirror.write(
+          _accountId!,
+          _mirrorKey,
+          result.fold((_) => null, (s) => s.toJson()),
+        );
+      } else {
+        // Offline: the last copy the server gave this account.
+        final hit = await mirror.read(_accountId!, _mirrorKey);
+        if (!mounted) return;
+        if (hit != null) {
+          state = state.copyWith(
+            settings: NotificationSettings.fromJson(
+              Map<String, dynamic>.from(hit.payload as Map),
+            ),
+            isLoading: false,
+            error: null,
+          );
+          return;
+        }
+      }
+    }
     result.fold(
       (failure) =>
           state = state.copyWith(isLoading: false, error: failure.message),
@@ -99,6 +160,19 @@ class NotificationSettingsController
     if (current == null) return;
 
     final updated = change(current);
+
+    if (_offlineFirst) {
+      // KAN-608: applied on the device at once, kept in the offline queue.
+      state = state.copyWith(settings: updated, isSaving: false, error: null);
+      (_cache ?? OfflineCache.instance).write(
+        _accountId!,
+        _mirrorKey,
+        updated.toJson(),
+      );
+      await _sync!.submit(SettingKeys.notifications, updated.toJson());
+      return;
+    }
+
     // Optimistic update.
     state = state.copyWith(settings: updated, isSaving: true, error: null);
 

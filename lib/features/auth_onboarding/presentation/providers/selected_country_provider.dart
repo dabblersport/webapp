@@ -1,3 +1,5 @@
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -88,7 +90,11 @@ class SelectedLocationNotifier
 
       final uid = _userId;
       if (uid != null) {
-        final String? remote = await _remote.fetch(uid);
+        // KAN-608: a region change still waiting for the server is newer.
+        final queued = await SettingsSyncBridge.hasPendingEdit(
+          SettingKeys.region,
+        );
+        final String? remote = queued ? null : await _remote.fetch(uid);
         if (remote != null) {
           region = normalizeServiceRegion(remote);
           await prefs.setString(_countryKey, region);
@@ -122,7 +128,14 @@ class SelectedLocationNotifier
       // Ignore persistence failures; state already updated in-memory.
     }
     final uid = _userId;
-    if (uid != null) await _remote.save(uid, region);
+    if (uid == null) return;
+    // KAN-608: applied on the device already; the offline queue sends it.
+    if (await SettingsSyncBridge.submit(SettingKeys.region, {
+      'region': region,
+    })) {
+      return;
+    }
+    await _remote.save(uid, region);
   }
 
   /// Legacy method for setting country only

@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -132,6 +134,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       ).where((e) => e.matches(_searchQuery)).toList(),
                     )
                   else ...[
+                    const SettingSyncHint([
+                      SettingKeys.theme,
+                      SettingKeys.language,
+                      SettingKeys.region,
+                    ]),
                     SettingsTiles(
                       onLanguageRegion: () =>
                           showSettingsLanguageRegionSheet(context, ref),
