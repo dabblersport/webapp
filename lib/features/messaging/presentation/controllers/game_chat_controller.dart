@@ -9,7 +9,11 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/data/chat_cache.dart';
 import 'package:dabbler/features/messaging/data/messaging_wake_channel.dart';
+import 'package:dabbler/features/messaging/data/unavailable_messaging_repository.dart';
+import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
+import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
@@ -153,6 +157,145 @@ class GameChatController
     await _deliver(key, body);
   }
 
+  /// The image operations of the active backend (KAN-581).
+  MessagingImageRepository get _images {
+    final repo = ref.read(messagingRepositoryProvider);
+    return repo is MessagingImageRepository
+        ? repo as MessagingImageRepository
+        : const UnavailableMessagingRepository();
+  }
+
+  final Map<String, UploadCancel> _uploadCancels = {};
+
+  /// Image deliveries run one after another, so a tray of images reaches the
+  /// server in the order it was queued.
+  Future<void> _imageTurn = Future<void>.value();
+
+  /// Sends one picked image (KAN-581): it shows at once under the upload veil,
+  /// uploads (progress, cancel), then is sent as a message carrying the
+  /// attachment id, with [caption] as its text. The message key and the upload
+  /// key are created once and reused by [retry], so a retry never duplicates.
+  Future<void> sendImage(PickedImage image, {String caption = ''}) async {
+    final generate = ref.read(messagingClientKeyGeneratorProvider);
+    final key = generate();
+    final uploadKey = generate();
+    final current = state.valueOrNull;
+    if (current == null || current.conversation == null) return;
+    state = AsyncData(
+      current.copyWith(
+        status: GameChatStatus.ready,
+        items: [
+          ...current.items,
+          ChatItem(
+            body: caption,
+            clientKey: key,
+            state: OutgoingState.sending,
+            pending: PendingImage(image: image, uploadKey: uploadKey),
+          ),
+        ],
+      ),
+    );
+    final turn = _imageTurn.then((_) => _deliverImage(key));
+    _imageTurn = turn.catchError((Object _) {});
+    await turn;
+  }
+
+  /// Stops an upload in flight, or drops a failed one: the image leaves the
+  /// thread and nothing is sent.
+  void cancelImage(String clientKey) {
+    _uploadCancels.remove(clientKey)?.cancel();
+    final current = state.valueOrNull;
+    if (current == null) return;
+    state = AsyncData(
+      current.copyWith(
+        items: [
+          for (final i in current.items)
+            if (!(i.clientKey == clientKey && i.pending != null)) i,
+        ],
+      ),
+    );
+  }
+
+  Future<void> _deliverImage(String key) async {
+    ChatItem? find() => state.valueOrNull?.items
+        .where((i) => i.clientKey == key && i.pending != null)
+        .firstOrNull;
+    final conversationId = state.valueOrNull?.conversation?.id;
+    var item = find();
+    if (conversationId == null || item == null) return;
+    var pending = item.pending!;
+
+    void fail(Failure failure) {
+      if (_endIfRemoved(failure)) return;
+      final reason = failure is MessagingFailure
+          ? failure.reason
+          : MessagingReason.unknown;
+      final latest = find();
+      if (latest == null) return;
+      _replace(
+        key,
+        latest.copyWith(state: OutgoingState.failed, failureReason: reason),
+      );
+      onSendRefused(reason);
+    }
+
+    if (pending.attachmentId == null) {
+      final cancel = _uploadCancels[key] = UploadCancel();
+      final uploaded = await _images.uploadImage(
+        conversationId: conversationId,
+        image: pending.image,
+        idempotencyKey: pending.uploadKey,
+        cancel: cancel,
+        onProgress: (sent, total) => _setProgress(key, sent / total),
+      );
+      _uploadCancels.remove(key);
+      if (cancel.isCancelled) return; // already removed by [cancelImage]
+      item = find();
+      if (item == null) return;
+      if (uploaded is Err<MessageAttachment, Failure>) {
+        fail(uploaded.error);
+        return;
+      }
+      pending = item.pending!.copyWith(
+        attachmentId: uploaded.requireValue.id,
+        progress: 1,
+      );
+      item = item.copyWith(pending: pending);
+      _replace(key, item);
+    }
+
+    final sent = await _images.sendImageMessage(
+      conversationId: conversationId,
+      idempotencyKey: key,
+      attachmentIds: [pending.attachmentId!],
+      caption: item.body,
+    );
+    final latest = find();
+    if (latest == null) return;
+    sent.fold(
+      fail,
+      (message) => _replace(
+        key,
+        latest.copyWith(
+          message: message,
+          state: OutgoingState.sent,
+          clearPending: true,
+        ),
+      ),
+    );
+  }
+
+  void _setProgress(String key, double value) {
+    final item = state.valueOrNull?.items
+        .where((i) => i.clientKey == key && i.pending != null)
+        .firstOrNull;
+    if (item == null) return;
+    final shown = item.pending!.progress;
+    // A step of under 2% is not worth a rebuild; the last step always is.
+    if (value < 1 && value - shown < 0.02) return;
+    _replace(key, item.copyWith(pending: item.pending!.copyWith(progress: value)));
+  }
+
   /// Retries a failed send with the SAME key, so it cannot duplicate.
   Future<void> retry(String clientKey) async {
     final current = state.valueOrNull;
@@ -162,6 +305,10 @@ class GameChatController
         .firstOrNull;
     if (item == null || item.state != OutgoingState.failed) return;
     _replace(clientKey, item.copyWith(state: OutgoingState.retrying));
+    if (item.pending != null) {
+      await _deliverImage(clientKey);
+      return;
+    }
     await _deliver(clientKey, item.body);
   }
 

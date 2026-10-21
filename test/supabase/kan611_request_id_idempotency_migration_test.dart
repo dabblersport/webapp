@@ -144,10 +144,69 @@ void main() {
     }
   });
 
-  test('ACLs: create_post/meetup closed to anon, game keeps its old grant', () {
+  // The live rpc_create_meetup has 20 arguments, the last being p_is_indoor
+  // (20261008140000_game_price_meetup_setting.sql). The wrapper adds
+  // p_request_id as the 21st.
+  const meetup20 =
+      'text, uuid, uuid, text, text, uuid, text, uuid, uuid, timestamp with time zone, '
+      'timestamp with time zone, integer, text, text, boolean, integer, integer, text, '
+      'jsonb, boolean';
+
+  test('meetup wraps the real 20-argument signature with p_is_indoor', () {
+    expect(
+      code,
+      contains(
+        'ALTER FUNCTION public.rpc_create_meetup($meetup20) '
+        'RENAME TO rpc_create_meetup_legacy_v2',
+      ),
+    );
+    expect(
+      code,
+      contains(
+        'REVOKE ALL ON FUNCTION public.rpc_create_meetup_legacy_v2($meetup20)',
+      ),
+    );
+    final i = code.indexOf('CREATE FUNCTION public.rpc_create_meetup(');
+    final head = code.substring(i, i + code.substring(i).indexOf(' AS '));
+    expect(
+      head,
+      contains(
+        'p_is_indoor boolean DEFAULT NULL::boolean, p_request_id uuid DEFAULT NULL',
+      ),
+    );
+    // p_is_indoor is passed through to the legacy body, both calls.
+    expect(
+      RegExp(
+        r'rpc_create_meetup_legacy_v2\([^)]*p_vibe_key, p_meta, p_is_indoor\)',
+      ).allMatches(code).length,
+      2,
+    );
+    for (final verb in [
+      'OWNER TO postgres',
+      'FROM PUBLIC, anon',
+      'TO authenticated, service_role',
+    ]) {
+      expect(code, contains('public.rpc_create_meetup($meetup20, uuid) $verb'));
+    }
+    // No 19-argument form is left anywhere.
+    expect(code, isNot(contains('integer, text, jsonb) ')));
+    expect(code, isNot(contains('text, jsonb, uuid)')));
+  });
+
+  test('anon is never granted on a create function', () {
     expect(code, contains('GRANT EXECUTE ON FUNCTION public.create_post('));
     expect(code, contains('TO authenticated, service_role'));
-    expect(code, contains('TO anon, authenticated, service_role'));
+    expect(code, isNot(contains('TO anon')));
+    final game = RegExp(
+      r'GRANT EXECUTE ON FUNCTION public\.rpc_create_game\([^)]*\) TO ([a-z_, ]+);',
+    ).firstMatch(code)!;
+    expect(game.group(1), 'authenticated, service_role');
+    expect(
+      code,
+      contains('numeric,uuid) FROM PUBLIC, anon;'),
+      reason: 'rpc_create_game is explicitly revoked from anon',
+    );
+    expect(undo, isNot(contains('TO anon')));
   });
 
   test(

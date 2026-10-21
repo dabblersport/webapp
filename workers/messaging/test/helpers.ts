@@ -14,6 +14,7 @@ export async function localD1() {
     modules: true,
     script: "export default { fetch() { return new Response('') } }",
     d1Databases: ["DB"],
+    r2Buckets: ["MEDIA"], // KAN-581: an in-memory private bucket; only attachments.test.ts uses it
   });
   const db = (await mf.getD1Database("DB")) as unknown as D1Database;
   // Every local migration in name order (0001, 0002, ...). A statement ends at a line ending in ";" unless that line

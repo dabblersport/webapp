@@ -15,6 +15,13 @@ import 'package:dabbler/features/messaging/presentation/providers/messaging_real
 import 'package:dabbler/features/messaging/presentation/providers/receipts_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/chat_gif_providers.dart';
+import 'package:dabbler/features/messaging/domain/image_policy.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
+import 'package:dabbler/features/messaging/presentation/providers/chat_image_providers.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_attachment_tray.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_image_viewer.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_image_widgets.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_share_sheet.dart';
 import 'package:dabbler/features/messaging/domain/typing.dart';
 import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
@@ -80,6 +87,9 @@ class GameChatScreen extends ConsumerStatefulWidget {
 class _GameChatScreenState extends ConsumerState<GameChatScreen>
     with WidgetsBindingObserver {
   String _draft = '';
+
+  /// KAN-581: the picked images waiting above the composer.
+  List<PickedImage> _tray = const [];
   DabblerOlderMessagesState _older = DabblerOlderMessagesState.idle;
   Timer? _poll;
   GameChatController? _controllerRef;
@@ -236,10 +246,106 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
 
   void _send() {
     final body = _draft.trim();
+    if (_tray.isNotEmpty) {
+      _sendTray();
+      return;
+    }
     if (body.isEmpty) return;
     _typing?.stop();
     setState(() => _draft = '');
     ref.read(_provider.notifier).send(body);
+  }
+
+  /// KAN-581: sends every queued image, in order, one message each (the
+  /// thread draws one image per message); the draft is the first one's caption.
+  void _sendTray() {
+    final images = _tray;
+    final caption = _draft.trim();
+    _typing?.stop();
+    setState(() {
+      _tray = const [];
+      _draft = '';
+    });
+    final controller = ref.read(_provider.notifier);
+    for (var i = 0; i < images.length; i++) {
+      controller.sendImage(images[i], caption: i == 0 ? caption : '');
+    }
+  }
+
+  /// KAN-581: the Share drawer, then the chosen picker.
+  Future<void> _openShare() async {
+    _typing?.stop();
+    final choice = await showChatShareSheet(context);
+    if (!mounted || choice == null) return;
+    if (choice == ChatShareChoice.gif) {
+      _openGifPicker();
+      return;
+    }
+    final room = MessagingImagePolicy.maxPerTray - _tray.length;
+    if (room <= 0) return;
+    final outcome = await ref.read(chatImagePickerProvider)(
+      switch (choice) {
+        ChatShareChoice.camera => ChatImageSource.camera,
+        ChatShareChoice.file => ChatImageSource.file,
+        _ => ChatImageSource.gallery,
+      },
+      remaining: room,
+    );
+    if (!mounted) return;
+    if (outcome.images.isNotEmpty) {
+      setState(() => _tray = [..._tray, ...outcome.images]);
+    }
+    final problem = outcome.problem;
+    if (problem != null) {
+      DabblerToasts.show(
+        DabblerToastSpec(
+          message: chatPickProblemText(AppLocalizations.of(context), problem),
+          tone: DabblerToastTone.error,
+        ),
+      );
+    }
+  }
+
+  /// The image inside a thread row, or null for a text row (KAN-581).
+  Widget? _imageOf(
+    AppLocalizations l10n,
+    ChatItem item,
+    Map<String, String>? headers,
+    bool headersReady,
+  ) {
+    final key = item.clientKey;
+    final pending = item.pending;
+    if (pending != null) {
+      return ChatPendingImage(
+        image: pending.image,
+        progress: pending.progress,
+        failed: item.state == OutgoingState.failed,
+        onCancel: key == null
+            ? null
+            : () => ref.read(_provider.notifier).cancelImage(key),
+        onRetry: key == null ? null : () => _retry(key),
+      );
+    }
+    final attachments = item.message?.attachments ?? const [];
+    if (attachments.isEmpty) return null;
+    final url = ref
+        .read(chatImageRepositoryProvider)
+        .attachmentUrl(attachments.first.id);
+    // Until the bearer is known the frame stays a placeholder: an image
+    // request made without it would fail and Flutter would not retry it.
+    return ChatRemoteImage(
+      url: headersReady ? url : '',
+      headers: headers,
+      semanticLabel: l10n.messaging_image_open,
+      onOpen: headersReady
+          ? () => showChatImageViewer(
+              context,
+              url: url,
+              headers: headers,
+              caption: item.body,
+            )
+          : null,
+    );
   }
 
   void _retry(String clientKey) =>
@@ -416,8 +522,15 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         .whereType<String>()
         .toSet();
     _baselineIds ??= ids;
+    final imageHeaders = ref.watch(chatImageHeadersProvider);
     final items = gameChatThreadItems(
       items: view.items,
+      imageOf: (item) => _imageOf(
+        l10n,
+        item,
+        imageHeaders.valueOrNull,
+        imageHeaders.hasValue,
+      ),
       l10n: l10n,
       locale: locale,
       now: ref.watch(messagingClockProvider)(),
@@ -592,7 +705,23 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     onFocusChange: (focused) {
       if (!focused) _typing?.stop();
     },
-    child: _composerField(l10n, view),
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_tray.isNotEmpty)
+          ChatAttachmentTray(
+            images: _tray,
+            onRemove: (i) => setState(
+              () => _tray = [
+                for (var k = 0; k < _tray.length; k++)
+                  if (k != i) _tray[k],
+              ],
+            ),
+            onSend: _sendTray,
+          ),
+        _composerField(l10n, view),
+      ],
+    ),
   );
 
   Widget _composerField(AppLocalizations l10n, GameChatViewState view) =>
@@ -609,11 +738,12 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           _typing?.draftChanged(v);
         },
         onSend: _send,
-        // KAN-582: the attach control opens the app's GIPHY picker. The
+        // KAN-581: the attach control opens the Share drawer (photo library,
+        // camera, image file, GIF search; KAN-582 keeps the GIPHY picker). The
         // composer exists only while the chat is writable, so membership,
         // block and closed-chat rules gate this exactly as they gate text.
-        onAttach: _openGifPicker,
-        attachLabel: l10n.messaging_chat_attach_gif,
+        onAttach: _openShare,
+        attachLabel: l10n.messaging_share_title,
       );
 
   void _openGifPicker() {

@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -255,7 +256,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   final CreateRequestId _requestId = CreateRequestId();
 
   /// KAN-618: the client request id of the current create attempt; null until
-  /// the first Create tap. Held for KAN-612, which sends it; not sent yet.
+  /// the first Create tap. Sent to the create call (KAN-612).
   String? get requestId => _requestId.current;
 
   /// Editing the form ends the attempt, so the next Create gets a new id.
@@ -609,7 +610,17 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
         Failure(category: FailureCode.cancelled, message: 'Already posting.'),
       );
     }
-    _requestId.begin();
+    // KAN-612: creating offline is refused up front. Nothing is sent, no id
+    // is made and the form stays exactly as typed.
+    if (_ref.read(connectivityProvider) == ConnectionStatus.offline) {
+      return const Err(
+        Failure(
+          category: FailureCode.noInternet,
+          message: kCreateOfflineRefused,
+        ),
+      );
+    }
+    final requestId = _requestId.begin();
 
     // 1. Validate
     if (!s.canSubmit) {
@@ -741,6 +752,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       originId: resolvedOriginId,
       personaTypeSnapshot: persona,
       isPinned: s.isPinned,
+      requestId: requestId,
     );
 
     // 8. Insert

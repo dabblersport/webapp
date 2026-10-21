@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 
+import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
+
 /// `text` for a member's message, `system` for a line the server adds.
 enum MessageKind {
   text('text'),
@@ -31,6 +33,7 @@ class Message extends Equatable {
     required this.createdAt,
     this.senderUserId,
     this.clientKey,
+    this.attachments = const [],
   });
 
   final String id;
@@ -49,6 +52,10 @@ class Message extends Equatable {
   final String? clientKey;
 
   final DateTime createdAt;
+
+  /// KAN-581: the images this message carries (empty for text). Absent on the
+  /// wire for a text message.
+  final List<MessageAttachment> attachments;
 
   /// Throws [FormatException] on a malformed payload; the repository
   /// implementation catches it and returns a failure.
@@ -74,7 +81,17 @@ class Message extends Equatable {
       body: body,
       clientKey: json['client_key'] as String?,
       createdAt: DateTime.parse(createdAt).toUtc(),
+      attachments: _attachmentsOf(json['attachments']),
     );
+  }
+
+  static List<MessageAttachment> _attachmentsOf(Object? raw) {
+    if (raw == null) return const [];
+    if (raw is! List) throw const FormatException('Malformed attachments');
+    return [
+      for (final a in raw)
+        MessageAttachment.fromJson(Map<String, dynamic>.from(a as Map)),
+    ];
   }
 
   Map<String, dynamic> toJson() => {
@@ -86,6 +103,8 @@ class Message extends Equatable {
     'body': body,
     'client_key': clientKey,
     'created_at': createdAt.toUtc().toIso8601String(),
+    if (attachments.isNotEmpty)
+      'attachments': [for (final a in attachments) a.toJson()],
   };
 
   @override
@@ -98,5 +117,6 @@ class Message extends Equatable {
     body,
     clientKey,
     createdAt,
+    attachments,
   ];
 }

@@ -262,10 +262,10 @@ packages:
     description:
       path: "."
       ref: alpha-ds
-      resolved-ref: "12a40c5c2c76ac58b82bfa28c8fffc23189dff74"
+      resolved-ref: "470e71d25e6ac5d7e4c20d21a74dd9ff41d71192"
       url: "https://github.com/dabblersport/dabbler-design-system.git"
     source: git
-    version: "0.1.0+1"
+    version: "0.1.1+1"
   dart_earcut:
     dependency: transitive
     description:

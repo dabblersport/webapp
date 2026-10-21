@@ -47,6 +47,7 @@ const Map<String, String> _names = {
   'u-3': 'Sara Haddad',
   'u-4': 'Omar Saleh',
   'u-5': 'Lina Aziz',
+  'u-long': 'Abdulrahman bin Mohammed bin Salman Al Rashid Al Maktoum II',
 };
 
 final _boundary = GlobalKey();
@@ -267,6 +268,55 @@ void main() {
         await _shot(tester, 'dm-normal-${v.name}');
       });
 
+      testWidgets('KAN-620: the header keeps its height while "typing…" shows, '
+          'and the dots bubble is the last item', (tester) async {
+        await tester.pumpWidget(h.app(v));
+        await _settle(tester);
+        final before = tester.getSize(find.byKey(DmThreadKeys.header));
+        h.typing(_them);
+        await _settle(tester);
+        expect(_header(tester).subtitle, l10n.messaging_typing_dm);
+        expect(tester.getSize(find.byKey(DmThreadKeys.header)), before);
+        expect(_row, findsOneWidget);
+        h.typing(_them, on: false);
+        await _settle(tester);
+        expect(tester.getSize(find.byKey(DmThreadKeys.header)), before);
+      });
+
+      testWidgets('KAN-620: the typing row fades in once and the dot ticks do '
+          'not replay it', (tester) async {
+        await tester.pumpWidget(h.app(v));
+        await _settle(tester);
+        h.typing(_them);
+        await _settle(tester);
+        expect(_typingItem(tester)!.fresh, isTrue);
+        double dim() => tester
+            .widgetList<Opacity>(
+              find.ancestor(of: _row, matching: find.byType(Opacity)),
+            )
+            .fold<double>(1, (a, o) => a * o.opacity);
+        expect(dim(), 1);
+        await tester.pump(const Duration(milliseconds: typingDotsFrameMs + 50));
+        expect(dim(), 1);
+      });
+
+      testWidgets('KAN-620: reduced motion holds the dots still', (
+        tester,
+      ) async {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await tester.pumpWidget(h.app(v));
+        await _settle(tester);
+        h.typing(_them);
+        await _settle(tester);
+        expect(tester.widget<Text>(_row).data, typingDotsStill);
+        await tester.pump(const Duration(milliseconds: typingDotsFrameMs * 3));
+        expect(tester.widget<Text>(_row).data, typingDotsStill);
+      });
+
       testWidgets('a stale indicator (no stop) expires by itself', (
         tester,
       ) async {
@@ -457,6 +507,78 @@ void main() {
         }
         await _settle(tester);
         expect(_row, findsNothing);
+      });
+
+      testWidgets('KAN-620: four typers read "{a} and 3 others"', (
+        tester,
+      ) async {
+        await open(tester);
+        for (final u in ['u-2', 'u-3', 'u-4', 'u-5']) {
+          h.typing(u);
+        }
+        await _settle(tester);
+        expect(
+          _typingLabel(tester),
+          l10n.messaging_typing_many(isolateName('Yousef Nabil'), 3),
+        );
+        if (v.locale.languageCode == 'en') {
+          expect(
+            _typingLabel(tester),
+            '\u2068Yousef Nabil\u2069 and 3 others are typing',
+          );
+        }
+      });
+
+      Future<void> longNameTyping(WidgetTester tester) async {
+        await open(tester);
+        h.typing('u-long');
+        await _settle(tester);
+      }
+
+      testWidgets('KAN-620: a 54+ character name stays inside the screen and '
+          'does not overflow', (tester) async {
+        await longNameTyping(tester);
+        expect(_names['u-long']!.length, greaterThan(54));
+        final label = find.text(_typingLabel(tester)!);
+        expect(label, findsOneWidget);
+        expect(tester.getRect(label).right, lessThanOrEqualTo(390));
+        expect(tester.getRect(label).left, greaterThanOrEqualTo(0));
+        expect(tester.takeException(), isNull);
+      });
+
+      testWidgets(
+        'KAN-620: a long name truncates to ONE line (needs DS maxLines)',
+        (tester) async {
+          await open(tester);
+          h.typing('u-2');
+          await _settle(tester);
+          final oneLine = tester
+              .getSize(find.text(_typingLabel(tester)!))
+              .height;
+          h.typing('u-2', on: false);
+          h.typing('u-long');
+          await _settle(tester);
+          expect(
+            tester.getSize(find.text(_typingLabel(tester)!)).height,
+            oneLine,
+          );
+        },
+      );
+
+      testWidgets('KAN-620: reduced motion holds the dots still', (
+        tester,
+      ) async {
+        tester.platformDispatcher.accessibilityFeaturesTestValue =
+            const FakeAccessibilityFeatures(disableAnimations: true);
+        addTearDown(
+          tester.platformDispatcher.clearAccessibilityFeaturesTestValue,
+        );
+        await open(tester);
+        h.typing('u-2');
+        await _settle(tester);
+        expect(tester.widget<Text>(_row).data, typingDotsStill);
+        await tester.pump(const Duration(milliseconds: typingDotsFrameMs * 3));
+        expect(tester.widget<Text>(_row).data, typingDotsStill);
       });
 
       testWidgets('a typer whose name cannot load reads as "Someone"', (

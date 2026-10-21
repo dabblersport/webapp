@@ -1,4 +1,5 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/features/messaging/domain/gif_message.dart';
@@ -31,6 +32,7 @@ List<DabblerThreadItem> gameChatThreadItems({
   bool isDm = false,
   Map<int, ReceiptCounts> receipts = const <int, ReceiptCounts>{},
   Set<String> freshIds = const <String>{},
+  Widget? Function(ChatItem item)? imageOf,
 }) {
   final out = <DabblerThreadItem>[];
   final today = _day(now.toLocal());
@@ -95,6 +97,8 @@ List<DabblerThreadItem> gameChatThreadItems({
     final key = item.clientKey;
     // KAN-582: a body that is one GIPHY media URL is drawn as a GIF.
     final gifUrl = gifUrlOfBody(item.body);
+    // KAN-581: an image of the caller's (uploading or failed) or a settled one.
+    final image = imageOf?.call(item);
     final counts = m == null ? null : receipts[m.seq];
     out.add(
       DabblerThreadMessage(
@@ -105,8 +109,12 @@ List<DabblerThreadItem> gameChatThreadItems({
         sender: own ? null : m.senderUserId,
         avatarSeed: own ? null : m.senderUserId,
         showSender: false,
-        content: gifUrl == null ? item.body : null,
-        attachment: gifUrl == null
+        content: gifUrl != null || (image != null && item.body.isEmpty)
+            ? null
+            : item.body,
+        attachment: image != null
+            ? DabblerMessageAttachment.image(child: image)
+            : gifUrl == null
             ? null
             : DabblerMessageAttachment.image(
                 child: DabblerImage(

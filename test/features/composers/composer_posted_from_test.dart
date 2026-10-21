@@ -12,6 +12,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/connectivity_overrides.dart';
 import '../../support/render_mode.dart';
 
 /// KAN-592: the composer's "Posted from" pill and the city prompt that opens
@@ -37,8 +38,9 @@ const Area _marina = Area(
 Future<void> _pump(
   WidgetTester tester,
   Locale locale,
-  ActiveLocationState device,
-) async {
+  ActiveLocationState device, {
+  List<Override> extraOverrides = const <Override>[],
+}) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -47,6 +49,7 @@ Future<void> _pump(
       overrides: [
         vibesProvider.overrideWith((ref) async => []),
         activeLocationProvider.overrideWith(() => _Device(device)),
+        ...extraOverrides,
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
@@ -137,6 +140,37 @@ void main() {
         findsOneWidget,
       );
       expect(container.read(postComposerProvider).body, 'Padel tonight');
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('[$tag] KAN-612 offline: Post is refused with a localized '
+        'message, the draft is kept, nothing is posted', (tester) async {
+      await _pump(
+        tester,
+        locale,
+        ActiveLocationReady(
+          const ActiveLocation(
+            lat: 25.08,
+            lng: 55.14,
+            area: _marina,
+            source: ActiveLocationSource.gps,
+          ),
+        ),
+        extraOverrides: [offlineConnectivity()],
+      );
+      await tester.enterText(find.byType(EditableText).first, 'Padel tonight');
+      await tester.pump();
+      await tester.tap(find.text(l.composer_post_cta));
+      for (var i = 0; i < 8; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      expect(find.text(l.offline_create_refused), findsOneWidget);
+      final container = ProviderScope.containerOf(
+        tester.element(find.byType(PostComposerScreen)),
+      );
+      expect(container.read(postComposerProvider).body, 'Padel tonight');
+      expect(container.read(postComposerProvider).isSubmitting, isFalse);
+      expect(container.read(postComposerProvider.notifier).requestId, isNull);
       expect(tester.takeException(), isNull);
     });
   }

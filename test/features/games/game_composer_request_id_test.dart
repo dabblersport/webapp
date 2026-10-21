@@ -1,6 +1,7 @@
 // KAN-618: the game composer owns one client request id per create attempt.
 // It is held and exposed only; the RPC payload is unchanged. The database is
 // a fake HTTP client: no network, no live data.
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
@@ -21,11 +22,21 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../support/render_mode.dart';
+import '../../support/connectivity_overrides.dart';
 
 /// The request id the composer held at each create RPC.
 final List<String?> _ids = <String?>[];
 CreateRequestId? _holder;
 bool _fail = false;
+
+/// KAN-612: the body of each create RPC, the games the fake server holds
+/// (one per request id, like the KAN-611 unique index), and how many times
+/// the daily creation cooldown was used.
+final List<Map<String, dynamic>> _bodies = <Map<String, dynamic>>[];
+final Map<String, String> _gamesByRequest = <String, String>{};
+int _anonymousGames = 0;
+int _cooldownCalls = 0;
+bool _loseResponse = false;
 
 const List<Map<String, dynamic>> _sports = <Map<String, dynamic>>[
   {
@@ -68,6 +79,7 @@ http.Client _fakeDb() => MockClient((http.Request req) async {
   );
   final String path = req.url.path;
   if (path.endsWith('/rpc/check_and_bump_cooldown')) {
+    _cooldownCalls++;
     return json(<Object>[
       <String, Object>{
         'allowed': true,
@@ -78,6 +90,19 @@ http.Client _fakeDb() => MockClient((http.Request req) async {
   }
   if (path.contains('/rpc/')) {
     _ids.add(_holder?.current);
+    final body = jsonDecode(req.body) as Map<String, dynamic>;
+    _bodies.add(body);
+    if (!_fail) {
+      final rid = body['p_request_id'] as String?;
+      final id = rid == null
+          ? 'g-anon-${_anonymousGames++}'
+          : _gamesByRequest.putIfAbsent(
+              rid,
+              () => 'g-${_gamesByRequest.length}',
+            );
+      if (_loseResponse) throw TimeoutException('response lost');
+      return json(id);
+    }
     if (_fail) {
       return json(<String, Object>{
         'message': 'network down',
@@ -106,14 +131,21 @@ Future<void> _tap(WidgetTester tester, Finder f) async {
   await _settle(tester);
 }
 
-Future<void> _pump(WidgetTester tester, Widget body) async {
+Future<void> _pump(
+  WidgetTester tester,
+  Widget body, {
+  bool offline = false,
+}) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   const locale = Locale('en');
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [activePersonaProvider.overrideWithValue(PersonaType.player)],
+      overrides: [
+        offline ? offlineConnectivity() : onlineConnectivity(),
+        activePersonaProvider.overrideWithValue(PersonaType.player),
+      ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         builder: (context, child) => DabblerToastProvider(child: child!),
@@ -221,12 +253,21 @@ void main() {
 
   setUp(() {
     _ids.clear();
+    _bodies.clear();
+    _gamesByRequest.clear();
+    _anonymousGames = 0;
+    _cooldownCalls = 0;
+    _loseResponse = false;
     _fail = false;
     _holder = CreateRequestId();
   });
 
-  Future<void> open(WidgetTester tester) async {
-    await _pump(tester, GameComposerScreen(requestId: _holder));
+  Future<void> open(WidgetTester tester, {bool offline = false}) async {
+    await _pump(
+      tester,
+      GameComposerScreen(requestId: _holder),
+      offline: offline,
+    );
     await _fill(tester, l);
   }
 
@@ -323,5 +364,61 @@ void main() {
     submit.onPressed!();
     await _settle(tester);
     expect(_ids, hasLength(1));
+  });
+
+  testWidgets('KAN-612: the create RPC carries the held id as p_request_id', (
+    tester,
+  ) async {
+    await open(tester);
+    await _tap(tester, _submit);
+    expect(_bodies.single['p_request_id'], isNotNull);
+    expect(_bodies.single['p_request_id'], _ids.single);
+  });
+
+  testWidgets('KAN-612: lost response, then retry: one game, the same id, '
+      'one cooldown use', (tester) async {
+    await open(tester);
+    _loseResponse = true;
+    await _tap(tester, _submit);
+    expect(_gamesByRequest, hasLength(1), reason: 'the server did create it');
+    // The form is kept: Create is still live.
+    expect(tester.widget<DabblerComposerSubmit>(_submit).enabled, isTrue);
+
+    _loseResponse = false;
+    await _tap(tester, _submit);
+    expect(_bodies, hasLength(2));
+    expect(_bodies[1]['p_request_id'], _bodies[0]['p_request_id']);
+    expect(_gamesByRequest, hasLength(1), reason: 'no second game');
+    expect(
+      _cooldownCalls,
+      1,
+      reason: 'a retry does not use a second daily creation slot',
+    );
+  });
+
+  testWidgets('KAN-612: double tap is one create RPC', (tester) async {
+    await open(tester);
+    await tester.ensureVisible(_submit);
+    final submit = tester.widget<DabblerComposerSubmit>(_submit);
+    submit.onPressed!();
+    submit.onPressed!();
+    await _settle(tester);
+    expect(_bodies, hasLength(1));
+    expect(_gamesByRequest, hasLength(1));
+  });
+
+  testWidgets('KAN-612: offline: Create is refused up front, the form is '
+      'kept', (tester) async {
+    await open(tester, offline: true);
+    await tester.ensureVisible(_submit);
+    tester.widget<DabblerComposerSubmit>(_submit).onPressed!();
+    await _settle(tester);
+    expect(_bodies, isEmpty, reason: 'nothing was sent');
+    expect(_cooldownCalls, 0);
+    expect(_holder!.current, isNull, reason: 'no id was made');
+    expect(find.text(l.offline_create_refused), findsOneWidget);
+    // Still on the form, still ready to Create.
+    expect(tester.widget<DabblerComposerSubmit>(_submit).enabled, isTrue);
+    expect(tester.takeException(), isNull);
   });
 }

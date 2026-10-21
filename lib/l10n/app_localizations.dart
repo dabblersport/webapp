@@ -11423,6 +11423,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t start the app. Please try again.'**
   String get offline_bootstrap_failed;
 
+  /// KAN-612 Inline/snackbar message when the user taps Create on a post, a game or a meetup while offline. Nothing is sent and the form is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating needs an internet connection. Nothing was created, and what you typed is still here.'**
+  String get offline_create_refused;
+
   /// No description provided for @messaging_chat_error.
   ///
   /// In en, this message translates to:
@@ -12430,6 +12436,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dubai'**
   String get post_legacy_city;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Title of the chat Share drawer and the accessible name of the composer's attach control.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get messaging_share_title;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: choose a photo from the OS photo library.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library'**
+  String get messaging_share_gallery;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: take a photo with the camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get messaging_share_camera;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: choose an image file with the OS file picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Image file'**
+  String get messaging_share_file;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Hint under the Image file row.
+  ///
+  /// In en, this message translates to:
+  /// **'Images only'**
+  String get messaging_share_file_hint;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: open the GIF search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIFs'**
+  String get messaging_share_gif;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Hint under the Search GIFs row. The design leaves the credit in English in both languages; the Arabic is PROVISIONAL pending content review (the parity test needs an Arabic value).
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get messaging_share_gif_hint;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Over an image while it uploads; percent is a whole number from 0 to 100.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading · {percent}%'**
+  String messaging_image_uploading(int percent);
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of the cancel target on an uploading image.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel upload'**
+  String get messaging_image_cancel;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of the retry target on an image whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry upload'**
+  String get messaging_image_retry;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Over an image whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get messaging_image_failed;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of a settled image in the thread; opens it full screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open image'**
+  String get messaging_image_open;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Accessible name of the remove target on a queued photo above the composer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get messaging_image_remove;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Closes the full-screen image.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get messaging_image_close;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Title of the full-screen image sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get messaging_image_viewer_title;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when a picked image is over the size limit, or the server refuses it as too large.
+  ///
+  /// In en, this message translates to:
+  /// **'That image is too large to send.'**
+  String get messaging_image_too_large;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when a picked file is not a supported image, or the server refuses its type.
+  ///
+  /// In en, this message translates to:
+  /// **'Only JPG, PNG and WebP images can be sent.'**
+  String get messaging_image_unsupported;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the camera permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off. Allow it in Settings to take a photo.'**
+  String get messaging_image_camera_denied;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the photo library permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access is off. Allow it in Settings to choose a photo.'**
+  String get messaging_image_library_denied;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when picking an image failed for any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get that image. Try again.'**
+  String get messaging_image_pick_failed;
+
+  /// KAN-589 Settings dashboard tile and screen title for the device location and Saved places.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get settings_tile_location;
+
+  /// KAN-589 owner-private saved places list on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places'**
+  String get location_saved_places;
+
+  /// KAN-589 add-a-saved-place action on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a place'**
+  String get location_add_place;
+
+  /// KAN-589 shown when a custom label is chosen and its name is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for this place'**
+  String get location_custom_name_required;
 }
 
 class _AppLocalizationsDelegate

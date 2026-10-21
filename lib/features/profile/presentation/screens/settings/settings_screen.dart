@@ -271,6 +271,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         '/settings/theme',
         ['dark', 'light', 'appearance'],
       ),
+      route(
+        'location',
+        l10n.settings_tile_location,
+        l10n.settings_path_root,
+        '/settings/location',
+        ['saved', 'places', 'home', 'work', 'gym', 'city', 'area', 'gps'],
+      ),
       SettingsSearchEntry(
         icon: 'translate',
         label: l10n.settings_item_language_title,

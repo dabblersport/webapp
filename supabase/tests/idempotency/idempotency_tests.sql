@@ -223,14 +223,14 @@ begin
   if u is null or sp is null then raise notice 'KAN611 SKIPPED M1/M2: no organiser profile or non-challenge sport variant'; return; end if;
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
-  a := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M', p_location_name => 'kan611 place', p_request_id => r1);
-  b := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M', p_location_name => 'kan611 place', p_request_id => r1);
+  a := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M', p_location_name => 'kan611 place', p_is_indoor => true, p_request_id => r1);
+  b := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M', p_location_name => 'kan611 place', p_is_indoor => true, p_request_id => r1);
   select count(*) into n from public.meetups where request_id = r1;
   select count(*) into h from public.meetup_rsvps where meetup_id = a;
   if a is distinct from b then raise exception 'KAN611 FAIL M1: ids differ % vs %', a, b; end if;
   if n <> 1 or h <> 1 then raise exception 'KAN611 FAIL M1: % meetup rows, % rsvp rows', n, h; end if;
   raise notice 'KAN611 PASS M1';
-  c := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M', p_location_name => 'kan611 place', p_request_id => r2);
+  c := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M', p_location_name => 'kan611 place', p_is_indoor => true, p_request_id => r2);
   select count(*) into n from public.meetups where request_id in (r1, r2);
   if c = a or n <> 2 then raise exception 'KAN611 FAIL M2: expected a second row, got %', n; end if;
   raise notice 'KAN611 PASS M2';
@@ -249,7 +249,7 @@ begin
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
   begin
-    perform public.rpc_create_meetup('organiser', sp, sv, 'kan611-M3', p_location_name => 'kan611 place', p_meta => '{"joining_rule":"paid"}'::jsonb, p_request_id => r);
+    perform public.rpc_create_meetup('organiser', sp, sv, 'kan611-M3', p_location_name => 'kan611 place', p_is_indoor => true, p_meta => '{"joining_rule":"paid"}'::jsonb, p_request_id => r);
   exception when others then msg := sqlerrm;
   end;
   if msg is distinct from 'free_meetups_only' then raise exception 'KAN611 FAIL M3: guard did not fire (got %)', msg; end if;
@@ -269,8 +269,8 @@ begin
   if u is null or sp is null then raise notice 'KAN611 SKIPPED M4: no organiser profile or non-challenge sport variant'; return; end if;
   set local role authenticated;
   perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
-  a := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M4', p_location_name => 'kan611 place');
-  b := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M4', p_location_name => 'kan611 place');
+  a := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M4', p_location_name => 'kan611 place', p_is_indoor => true);
+  b := public.rpc_create_meetup('organiser', sp, sv, 'kan611-M4', p_location_name => 'kan611 place', p_is_indoor => true);
   select request_id into r from public.meetups where id = a;
   if a = b or r is not null then raise exception 'KAN611 FAIL M4: id-less behaviour changed'; end if;
   raise notice 'KAN611 PASS M4';

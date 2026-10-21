@@ -7,7 +7,13 @@ import 'package:uuid/uuid.dart';
 /// composer calls [clear] on success, when the form is edited after a failure
 /// and when it is discarded, so the next attempt gets a new id.
 ///
-/// The id is only held here; nothing sends it yet (KAN-612).
+/// KAN-612: the composers send the id to the create calls (`create_post`,
+/// `rpc_create_game`, `rpc_create_meetup`), so a retry never makes a second row.
+/// KAN-612: the message of the failure a composer returns when Create is
+/// tapped offline. Nothing is sent and the form is kept; the screen shows
+/// `offline_create_refused` for it.
+const String kCreateOfflineRefused = 'create-offline-refused';
+
 class CreateRequestId {
   CreateRequestId({Uuid? uuid}) : _uuid = uuid ?? const Uuid();
 

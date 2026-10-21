@@ -130,6 +130,18 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     return ActiveLocationLoading();
   }
 
+  /// The saved place Auto shows for [area] (KAN-589): its label when exactly
+  /// one saved place is in that canonical area, else null (the area name).
+  /// Never blocks on or fails because of the saved-places fetch.
+  Future<String?> _autoSavedLabel(Area area) async {
+    try {
+      final places = await ref.read(profileLocationNotifierProvider.future);
+      return matchSavedPlaceLabel(area.id, places);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<ActiveLocationReady?> _trySavedPrimary() async {
     try {
       final locations = await ref.read(profileLocationNotifierProvider.future);
@@ -155,7 +167,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           defaultRadiusMeters: primary.nearbyRadiusMeters,
           source: ActiveLocationSource.saved,
           savedLocationId: primary.id,
-          savedLocationLabel: primary.effectiveLabel,
+          // Not an explicit selection: the same area rule as Auto.
+          savedLocationLabel: matchSavedPlaceLabel(area.id, locations),
         ),
       );
     } catch (_) {
@@ -209,6 +222,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           return;
         }
 
+        final savedLabel = await _autoSavedLabel(area);
+
         // Only upgrade if more accurate or saved location is missing.
         final gpsLoc = ActiveLocation(
           lat: result.lat,
@@ -218,12 +233,18 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
               _radiusOverride ?? currentSaved?.nearbyRadiusMeters ?? 10000,
           defaultRadiusMeters: currentSaved?.nearbyRadiusMeters ?? 10000,
           source: ActiveLocationSource.gps,
+          savedLocationLabel: savedLabel,
         );
 
         // Prefer GPS when accuracy ≤ 100 m or no saved location exists.
         if (currentSaved == null || result.accuracyMeters <= 100) {
           if (await _isManual()) return;
-          await _recordAutoFix(area, result.lat, result.lng);
+          await _recordAutoFix(
+            area,
+            result.lat,
+            result.lng,
+            savedLabel: savedLabel,
+          );
           state = AsyncData(ActiveLocationReady(gpsLoc));
         }
       } catch (_) {
@@ -263,7 +284,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     if (await _isManual()) return;
     final area = await _resolveArea(fix.lat, fix.lng);
     if (area == null) return;
-    await _recordAutoFix(area, fix.lat, fix.lng);
+    final savedLabel = await _autoSavedLabel(area);
+    await _recordAutoFix(area, fix.lat, fix.lng, savedLabel: savedLabel);
     final current = state.valueOrNull;
     final defaultRadius = current is ActiveLocationReady
         ? current.location.defaultRadiusMeters
@@ -277,6 +299,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           nearbyRadiusMeters: _radiusOverride ?? 10000,
           defaultRadiusMeters: defaultRadius,
           source: ActiveLocationSource.gps,
+          savedLocationLabel: savedLabel,
         ),
       ),
     );
@@ -298,6 +321,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
             nearbyRadiusMeters: _radiusOverride ?? 10000,
             defaultRadiusMeters: 10000,
             source: ActiveLocationSource.gps,
+            savedLocationLabel: await _autoSavedLabel(area),
           ),
         );
       case LocationDenied():
@@ -326,6 +350,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         next.location.lat,
         next.location.lng,
         explicit: true,
+        savedLabel: next.location.savedLocationLabel,
       );
     } else if (next is ActiveLocationDenied) {
       final last = await _lastKnownReady();
@@ -351,6 +376,21 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       // Offline (KAN-607): keep the last saved area, else "Set location".
       state = AsyncData(await _lastKnownReady() ?? ActiveLocationDenied());
       return;
+    }
+
+    // An explicit selection (KAN-589): Manual on this device only, kept across
+    // a restart, showing the saved place's label. Nothing account-level (the
+    // public profile city/country, the service region) is written.
+    try {
+      await (await _store())?.setManual(
+        city: area.city,
+        area: area.name,
+        lat: location.lat!,
+        lng: location.lng!,
+        savedLabel: location.effectiveLabel,
+      );
+    } catch (_) {
+      // Persistence is best effort; the in-memory choice already applies.
     }
 
     state = AsyncData(
@@ -452,6 +492,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     double lat,
     double lng, {
     bool explicit = false,
+    String? savedLabel,
   }) async {
     try {
       final store = await _store();
@@ -462,6 +503,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         lat: lat,
         lng: lng,
         explicit: explicit,
+        savedLabel: savedLabel,
       );
     } catch (_) {}
   }
@@ -494,6 +536,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       l.lng!,
       l.area ?? l.city,
       city: l.city,
+      savedLabel: l.savedLabel,
     );
     if (l.mode == DeviceLocationMode.manual && !last) return ready;
     return ActiveLocationReady(
@@ -510,6 +553,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     double lng,
     String label, {
     String? city,
+    String? savedLabel,
   }) {
     // A local area named after the picked place: no server lookup, so the
     // choice works offline and on restart.
@@ -528,7 +572,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         ),
         nearbyRadiusMeters: _radiusOverride ?? 10000,
         source: ActiveLocationSource.manual,
-        savedLocationLabel: label,
+        savedLocationLabel: savedLabel ?? label,
       ),
     );
   }
