@@ -41,32 +41,12 @@ void main() {
 
   test('over the cap the oldest entries are evicted first', () async {
     final chunk = 'x' * (OfflineCache.maxBytesPerAccount ~/ 4);
-    await cache.write(
-      'A',
-      'old',
-      chunk,
-      fetchedAt: DateTime(2026, 10, 1),
-    );
-    await cache.write(
-      'A',
-      'mid',
-      chunk,
-      fetchedAt: DateTime(2026, 10, 2),
-    );
-    await cache.write(
-      'A',
-      'new',
-      chunk,
-      fetchedAt: DateTime(2026, 10, 3),
-    );
+    await cache.write('A', 'old', chunk, fetchedAt: DateTime(2026, 10, 1));
+    await cache.write('A', 'mid', chunk, fetchedAt: DateTime(2026, 10, 2));
+    await cache.write('A', 'new', chunk, fetchedAt: DateTime(2026, 10, 3));
     expect(await cache.read('A', 'old'), isNotNull);
 
-    await cache.write(
-      'A',
-      'newest',
-      chunk,
-      fetchedAt: DateTime(2026, 10, 4),
-    );
+    await cache.write('A', 'newest', chunk, fetchedAt: DateTime(2026, 10, 4));
 
     expect(await cache.read('A', 'old'), isNull, reason: 'oldest goes first');
     expect(await cache.read('A', 'newest'), isNotNull);
@@ -101,44 +81,92 @@ void main() {
     );
   });
 
-  test('a response already in flight at sign-out is not written back', () async {
-    final started = DateTime.now();
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-    await cache.wipe();
-    await cache.write('A', 'k', 'late', requestStartedAt: started);
-    expect(await cache.read('A', 'k'), isNull);
+  test(
+    'a response already in flight at sign-out is not written back',
+    () async {
+      final started = DateTime.now();
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await cache.wipe();
+      await cache.write('A', 'k', 'late', requestStartedAt: started);
+      expect(await cache.read('A', 'k'), isNull);
 
-    // A request that began after the wipe is stored.
-    await cache.write('A', 'k', 'fresh', requestStartedAt: DateTime.now());
-    expect(await cache.read('A', 'k'), isNotNull);
-  });
+      // A request that began after the wipe is stored.
+      await cache.write('A', 'k', 'fresh', requestStartedAt: DateTime.now());
+      expect(await cache.read('A', 'k'), isNotNull);
+    },
+  );
 
-  test('an old-account response in flight at an account switch is dropped',
-      () async {
-    await cache.write('A', 'k', 'old');
-    final started = DateTime.now();
-    await Future<void>.delayed(const Duration(milliseconds: 5));
-    await cache.wipe(keepAccountId: 'B');
-    expect(await cache.read('A', 'k'), isNull);
+  test(
+    'an old-account response in flight at an account switch is dropped',
+    () async {
+      await cache.write('A', 'k', 'old');
+      final started = DateTime.now();
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await cache.wipe(keepAccountId: 'B');
+      expect(await cache.read('A', 'k'), isNull);
 
-    await cache.write('A', 'k', 'late', requestStartedAt: started);
-    expect(await cache.read('A', 'k'), isNull);
+      await cache.write('A', 'k', 'late', requestStartedAt: started);
+      expect(await cache.read('A', 'k'), isNull);
 
-    // The kept account still takes its in-flight write.
-    await cache.write('B', 'k', 'mine', requestStartedAt: started);
-    expect(await cache.read('B', 'k'), isNotNull);
+      // The kept account still takes its in-flight write.
+      await cache.write('B', 'k', 'mine', requestStartedAt: started);
+      expect(await cache.read('B', 'k'), isNotNull);
 
-    // A request for A that began after the switch is stored.
-    await cache.write('A', 'k', 'fresh', requestStartedAt: DateTime.now());
-    expect(await cache.read('A', 'k'), isNotNull);
-  });
+      // A request for A that began after the switch is stored.
+      await cache.write('A', 'k', 'fresh', requestStartedAt: DateTime.now());
+      expect(await cache.read('A', 'k'), isNotNull);
+    },
+  );
 
-  test('only server payloads are stored: keys are namespaced, nothing else',
-      () async {
-    await cache.write('A', 'feed.foryou', ['p']);
+  test(
+    'returning to the first account does not revive its old response',
+    () async {
+      final started = DateTime.now();
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await cache.wipe(keepAccountId: 'B');
+      await cache.wipe(keepAccountId: 'A');
+      await cache.write('A', 'k', 'late', requestStartedAt: started);
+      expect(await cache.read('A', 'k'), isNull);
+
+      await Future<void>.delayed(const Duration(milliseconds: 5));
+      await cache.write('A', 'k', 'fresh', requestStartedAt: DateTime.now());
+      expect(await cache.read('A', 'k'), isNotNull);
+    },
+  );
+
+  test('the byte cap counts UTF-8 bytes, not characters', () async {
+    // 1.5 Mi Arabic characters are 3 MiB encoded: over the 2 MiB cap.
+    await cache.write('A', 'small', 'ok');
+    await cache.write('A', 'arabic', 'ع' * (1536 * 1024));
+    expect(await cache.read('A', 'arabic'), isNull);
+    expect(await cache.read('A', 'small'), isNotNull);
+
+    // Several multi-byte entries evict the oldest by real size.
+    final half = 'ع' * (300 * 1024); // ~600 KiB each
+    for (var i = 0; i < 5; i++) {
+      await cache.write(
+        'B',
+        'e$i',
+        half,
+        fetchedAt: DateTime.fromMillisecondsSinceEpoch(1000 + i),
+      );
+    }
     expect(
-      prefs.getKeys().every((k) => k.startsWith('offline_cache.v1.A.')),
-      isTrue,
+      await cache.sizeOf('B'),
+      lessThanOrEqualTo(OfflineCache.maxBytesPerAccount),
     );
+    expect(await cache.read('B', 'e0'), isNull);
+    expect(await cache.read('B', 'e4'), isNotNull);
   });
+
+  test(
+    'only server payloads are stored: keys are namespaced, nothing else',
+    () async {
+      await cache.write('A', 'feed.foryou', ['p']);
+      expect(
+        prefs.getKeys().every((k) => k.startsWith('offline_cache.v1.A.')),
+        isTrue,
+      );
+    },
+  );
 }

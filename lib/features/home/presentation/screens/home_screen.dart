@@ -23,6 +23,7 @@ import 'package:dabbler/features/home/presentation/widgets/active_event_card.dar
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
+import 'package:dabbler/widgets/connection_banner.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
@@ -355,6 +356,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       topBar: _buildHeader(),
       body: Column(
         children: [
+          // KAN-610: sits under the header, above reminders and tabs, in
+          // normal flow; collapses to nothing when online.
+          const ConnectionBanner(),
           const HomeUpcoming(),
           if (forYouState.hasNewPosts && _activeIndex == 0)
             Center(

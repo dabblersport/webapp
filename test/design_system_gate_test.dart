@@ -69,6 +69,26 @@ const _domainDurationReason =
 
 const List<GateAllow> allowList = [
   GateAllow(
+    'lib/widgets/connection_banner.dart',
+    ['Duration literal'],
+    'KAN-604 design timing: height 220ms and opacity 160ms ease-out; the '
+        'design system has no 220/160 motion token (DabblerMotion.slow is '
+        '200ms). The 1us tick only avoids a zero-duration AnimatedSize assert.',
+    match: 'static const Duration',
+  ),
+  GateAllow(
+    'lib/widgets/connection_banner.dart',
+    ['AnimatedOpacity literal'],
+    'KAN-604 design: the notice fades over 160ms as it collapses.',
+    match: 'AnimatedOpacity(',
+  ),
+  GateAllow(
+    'lib/widgets/connection_banner.dart',
+    ['numeric named arg'],
+    'Opacity target 1/0 of the fade (visible/hidden), not a visual value.',
+    match: 'opacity: visible',
+  ),
+  GateAllow(
     'lib/core/services/gps_service.dart',
     ['Duration literal'],
     'Hard cap (8 s) on waiting for a position fix so no location flow can '
