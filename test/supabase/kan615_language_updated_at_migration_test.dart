@@ -34,11 +34,9 @@ void main() {
     expect(sql, isNot(contains('DEFAULT')));
   });
 
-  test('additive only: no DROP except its own trigger, no policy/grant', () {
+  test('additive only: no DROP at all, no policy/grant', () {
     final drops = RegExp(r'DROP [A-Z]+ [^;]*;').allMatches(sql).toList();
-    expect(drops.map((m) => m.group(0)).toList(), [
-      'DROP TRIGGER IF EXISTS trg_profiles_language_updated_at ON public.profiles;',
-    ]);
+    expect(drops.map((m) => m.group(0)).toList(), isEmpty);
     for (final word in [
       'POLICY',
       'GRANT',

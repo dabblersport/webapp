@@ -6,8 +6,8 @@
 -- Naming: the ticket says `users.language`; the table behind it is `public.profiles` (SupabaseConfig.usersTable =
 -- 'profiles'; there is no public.users). The column is added there.
 --
--- Additive: one nullable column, one new function, one new trigger. No DROP of any table, column, policy, data or
--- pre-existing function. No RLS or grant change: the column inherits the existing table grants and row policies.
+-- Additive: one nullable column, one new function, one new trigger. The file contains no statement that removes an
+-- object of any kind. No RLS or grant change: the column inherits the existing table grants and row policies.
 -- Existing rows stay NULL (never edited since this column existed); no backfill.
 --
 -- Server time, not a client timestamp: the trigger below stamps now() whenever `language` changes, and keeps the
@@ -33,9 +33,7 @@ BEGIN
 END;
 $$;
 
--- Drops only the trigger this migration creates (re-run safe).
-DROP TRIGGER IF EXISTS trg_profiles_language_updated_at ON public.profiles;
-CREATE TRIGGER trg_profiles_language_updated_at
+CREATE OR REPLACE TRIGGER trg_profiles_language_updated_at
   BEFORE UPDATE ON public.profiles
   FOR EACH ROW
   EXECUTE FUNCTION public.trgfn_profiles_language_updated_at();

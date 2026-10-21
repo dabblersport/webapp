@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/services/location_service.dart';
+import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/area_repository.dart';
 import 'package:dabbler/data/repositories/area_repository_impl.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 
 // =============================================================================
@@ -21,12 +23,49 @@ final areaRepositoryProvider = Provider<AreaRepository>((ref) {
 // AREA LOOKUPS
 // =============================================================================
 
-/// All active areas — used by the area picker in the post composer.
+/// Active areas, scoped to the city the user chose by hand (KAN-587): Areas
+/// are children of a City, so a manual city shows only its own Areas, and a
+/// same-named city of another country (Paris, France / Paris, Texas) shows
+/// none of them. With no manual city (Auto, or nothing chosen) it is every
+/// active area, as before.
 final activeAreasProvider = FutureProvider.autoDispose<List<Area>>((ref) async {
   final repo = ref.watch(areaRepositoryProvider);
   final result = await repo.getActiveAreas();
-  return result.fold((err) => <Area>[], (areas) => areas);
+  final List<Area> all = result.fold((err) => <Area>[], (areas) => areas);
+  final ActiveLocationState? loc = ref
+      .watch(activeLocationProvider)
+      .valueOrNull;
+  return scopeAreasToCity(all, loc);
 });
+
+/// The [areas] that belong to the city of [loc] when it is a manual choice;
+/// all of them otherwise.
+List<Area> scopeAreasToCity(List<Area> areas, ActiveLocationState? loc) {
+  String? city;
+  String? country;
+  String? code;
+  if (loc is ActiveLocationCityOnly) {
+    city = loc.city;
+    country = loc.country;
+    code = loc.countryCode;
+  } else if (loc is ActiveLocationReady &&
+      loc.location.source == ActiveLocationSource.manual) {
+    city = loc.location.area.city;
+    country = loc.location.area.country;
+  }
+  if (city == null) return areas;
+  final String c = city.toLowerCase();
+  bool same(String? a, String? b) =>
+      a != null && b != null && a.toLowerCase() == b.toLowerCase();
+  return <Area>[
+    for (final Area a in areas)
+      if (a.city.toLowerCase() == c &&
+          (country == null && code == null ||
+              same(a.country, code) ||
+              same(a.country, country)))
+        a,
+  ];
+}
 
 /// In-memory cache for area names. Avoids repeated fetches for the same
 /// `area_id` when rendering PostLocationChip across the feed.
