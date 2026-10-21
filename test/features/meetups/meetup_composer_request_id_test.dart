@@ -151,6 +151,25 @@ void main() {
     expect(repo.ids.last, isNot(first));
   });
 
+  testWidgets('criterion 5: an edit then restoring the value still gives a '
+      'new id', (tester) async {
+    final holder = CreateRequestId();
+    final repo = await _open(tester, holder);
+    repo.createFailure = _offline;
+    await _fill(tester);
+    await _create(tester);
+    final first = holder.current;
+
+    await tester.enterText(find.byType(EditableText).first, 'Sunset run');
+    await tester.pump();
+    await tester.enterText(find.byType(EditableText).first, 'Sunrise run');
+    await tester.pump();
+    await _create(tester);
+    expect(repo.ids, hasLength(2));
+    expect(repo.ids.last, isNotNull);
+    expect(repo.ids.last, isNot(first));
+  });
+
   testWidgets('criterion 5: closing the composer clears the id', (
     tester,
   ) async {

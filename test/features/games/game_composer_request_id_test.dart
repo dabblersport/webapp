@@ -286,6 +286,21 @@ void main() {
     expect(_ids.last, isNot(first));
   });
 
+  testWidgets('criterion 5: an edit then restoring the value still gives a '
+      'new id', (tester) async {
+    await open(tester);
+    _fail = true;
+    await _tap(tester, _submit);
+    final first = _holder!.current;
+
+    await _tap(tester, find.text(l.game_join_request));
+    await _tap(tester, find.text(l.game_join_open));
+    await _tap(tester, _submit);
+    expect(_ids, hasLength(2));
+    expect(_ids.last, isNotNull);
+    expect(_ids.last, isNot(first));
+  });
+
   testWidgets('criterion 5: closing the composer clears the id', (
     tester,
   ) async {
