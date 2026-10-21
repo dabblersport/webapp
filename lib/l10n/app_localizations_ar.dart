@@ -7020,4 +7020,16 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get messaging_image_pick_failed =>
       'تعذّر الحصول على الصورة. حاول مرة أخرى.';
+
+  @override
+  String get settings_tile_location => 'الموقع';
+
+  @override
+  String get location_saved_places => 'الأماكن المحفوظة';
+
+  @override
+  String get location_add_place => 'إضافة مكان';
+
+  @override
+  String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
 }

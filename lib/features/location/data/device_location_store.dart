@@ -26,6 +26,7 @@ class DeviceLocation {
     this.cityId,
     this.country,
     this.countryCode,
+    this.savedLabel,
   });
 
   final String city;
@@ -42,6 +43,11 @@ class DeviceLocation {
   final DeviceLocationMode mode;
   final DeviceLocationProvenance provenance;
   final DateTime updatedAt;
+
+  /// The label of the saved place this location shows (KAN-589): set when the
+  /// user selected a saved place (Manual) or when Auto's area has exactly one
+  /// saved place. Null shows the area name. Per device, like the rest.
+  final String? savedLabel;
 
   /// Distance sort and radius filters need a point; a city alone has none.
   bool get hasPoint => lat != null && lng != null;
@@ -84,6 +90,7 @@ class DeviceLocationStore {
       updatedAt:
           DateTime.tryParse(_prefs.getString(_k('updatedAt')) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
+      savedLabel: _prefs.getString(_k('savedLabel')),
     );
   }
 
@@ -93,6 +100,7 @@ class DeviceLocationStore {
     await _setOrRemoveString(_k('country'), l.country);
     await _setOrRemoveString(_k('countryCode'), l.countryCode);
     await _setOrRemoveString(_k('area'), l.area);
+    await _setOrRemoveString(_k('savedLabel'), l.savedLabel);
     await _setOrRemoveDouble(_k('lat'), l.lat);
     await _setOrRemoveDouble(_k('lng'), l.lng);
     await _prefs.setString(_k('mode'), l.mode.name);
@@ -122,6 +130,7 @@ class DeviceLocationStore {
     String? area,
     required double lat,
     required double lng,
+    String? savedLabel,
     DateTime? now,
   }) async {
     final DeviceLocation? cur = read();
@@ -137,6 +146,7 @@ class DeviceLocationStore {
       mode: DeviceLocationMode.manual,
       provenance: DeviceLocationProvenance.manual,
       updatedAt: now ?? DateTime.now(),
+      savedLabel: savedLabel,
     );
     await _write(next);
     return next;
@@ -175,6 +185,7 @@ class DeviceLocationStore {
           mode: cur.mode,
           provenance: cur.provenance,
           updatedAt: cur.updatedAt,
+          savedLabel: cur.savedLabel,
         );
         await _write(withId);
         return withId;
@@ -202,6 +213,7 @@ class DeviceLocationStore {
     required double lat,
     required double lng,
     bool explicit = false,
+    String? savedLabel,
     DateTime? now,
   }) async {
     final DeviceLocation? cur = read();
@@ -216,6 +228,7 @@ class DeviceLocationStore {
       mode: DeviceLocationMode.auto,
       provenance: DeviceLocationProvenance.gps,
       updatedAt: now ?? DateTime.now(),
+      savedLabel: savedLabel,
     );
     await _write(next);
     return next;
@@ -240,6 +253,7 @@ class DeviceLocationStore {
       mode: DeviceLocationMode.auto,
       provenance: DeviceLocationProvenance.lastKnown,
       updatedAt: cur.updatedAt,
+      savedLabel: cur.savedLabel,
     );
     await _write(next);
     return next;

@@ -445,6 +445,7 @@ class AppRouter {
     settingsPrivacyRoute,
     settingsNotificationsRoute,
     settingsThemeRoute,
+    settingsLocationRoute,
     settingsLanguageRoute,
     preferencesGamesRoute,
     helpCenterRoute,

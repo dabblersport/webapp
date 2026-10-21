@@ -2587,5 +2587,13 @@
   "messaging_image_library_denied": "Photo access is off. Allow it in Settings to choose a photo.",
   "@messaging_image_library_denied": {"description": "KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the photo library permission was refused."},
   "messaging_image_pick_failed": "Couldn't get that image. Try again.",
-  "@messaging_image_pick_failed": {"description": "KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when picking an image failed for any other reason."}
+  "@messaging_image_pick_failed": {"description": "KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when picking an image failed for any other reason."},
+  "settings_tile_location": "Location",
+  "@settings_tile_location": {"description": "KAN-589 Settings dashboard tile and screen title for the device location and Saved places."},
+  "location_saved_places": "Saved places",
+  "@location_saved_places": {"description": "KAN-589 owner-private saved places list on Settings > Location."},
+  "location_add_place": "Add a place",
+  "@location_add_place": {"description": "KAN-589 add-a-saved-place action on Settings > Location."},
+  "location_custom_name_required": "Enter a name for this place",
+  "@location_custom_name_required": {"description": "KAN-589 shown when a custom label is chosen and its name is empty."}
 }

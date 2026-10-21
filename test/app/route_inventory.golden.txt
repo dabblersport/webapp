@@ -66,6 +66,7 @@
 /settings/privacy	-	GoRoute
 /settings/notifications	-	GoRoute
 /settings/theme	-	GoRoute
+/settings/location	-	GoRoute
 /settings/language	-	GoRoute
 /preferences/games	-	GoRoute
 /help/center	-	GoRoute
