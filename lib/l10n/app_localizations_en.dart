@@ -6884,4 +6884,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get messaging_receipts_nobody => 'Nobody';
+
+  @override
+  String get composer_posted_from_title => 'Posted from';
+
+  @override
+  String composer_posted_from_pill(String city) {
+    return 'Posted from $city';
+  }
+
+  @override
+  String get composer_posted_from_choose => 'Choose city';
+
+  @override
+  String get composer_posted_from_search => 'Search cities';
+
+  @override
+  String get composer_posted_from_prompt =>
+      'Choose the city you are posting from, then tap Post. Your draft is kept.';
+
+  @override
+  String get composer_posted_from_none => 'No cities match that search';
+
+  @override
+  String get post_legacy_city => 'Dubai';
 }

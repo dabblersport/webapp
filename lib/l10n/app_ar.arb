@@ -2462,5 +2462,12 @@
   "messaging_receipts_not_yet_short": "لم تصل",
   "messaging_receipts_unknown_person": "شخص",
   "messaging_receipts_all": "الجميع",
-  "messaging_receipts_nobody": "لا أحد"
+  "messaging_receipts_nobody": "لا أحد",
+  "composer_posted_from_title": "نُشر من",
+  "composer_posted_from_pill": "نُشر من {city}",
+  "composer_posted_from_choose": "اختر المدينة",
+  "composer_posted_from_search": "ابحث عن مدينة",
+  "composer_posted_from_prompt": "اختر المدينة التي تنشر منها ثم اضغط نشر. مسودتك محفوظة.",
+  "composer_posted_from_none": "لا توجد مدن تطابق هذا البحث",
+  "post_legacy_city": "دبي"
 }

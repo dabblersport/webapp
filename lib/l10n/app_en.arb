@@ -2533,5 +2533,19 @@
   "messaging_receipts_all": "All",
   "@messaging_receipts_all": {"description": "KAN-614 receipts stat-tile value when the whole group is in the state (Seen or Delivered)."},
   "messaging_receipts_nobody": "Nobody",
-  "@messaging_receipts_nobody": {"description": "KAN-614 receipts stat-tile value when nobody is in the state (Not yet)."}
+  "@messaging_receipts_nobody": {"description": "KAN-614 receipts stat-tile value when nobody is in the state (Not yet)."},
+  "composer_posted_from_title": "Posted from",
+  "@composer_posted_from_title": {"description": "KAN-592 title of the sheet that picks the city a post is posted from, and the prefix of its pill."},
+  "composer_posted_from_pill": "Posted from {city}",
+  "@composer_posted_from_pill": {"description": "KAN-592 composer pill showing the posting city.", "placeholders": {"city": {"type": "String"}}},
+  "composer_posted_from_choose": "Choose city",
+  "@composer_posted_from_choose": {"description": "KAN-592 composer pill label while no posting city is known."},
+  "composer_posted_from_search": "Search cities",
+  "@composer_posted_from_search": {"description": "KAN-592 search field placeholder in the posting-city sheet."},
+  "composer_posted_from_prompt": "Choose the city you are posting from, then tap Post. Your draft is kept.",
+  "@composer_posted_from_prompt": {"description": "KAN-592 line at the top of the posting-city sheet when it opens because Post was tapped with no city."},
+  "composer_posted_from_none": "No cities match that search",
+  "@composer_posted_from_none": {"description": "KAN-592 empty result in the posting-city sheet."},
+  "post_legacy_city": "Dubai",
+  "@post_legacy_city": {"description": "KAN-592 header location of a post written before posting cities were recorded (CEO ruling: Dubai)."}
 }
