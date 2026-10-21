@@ -34,7 +34,12 @@ void main() {
             .where((n) => RegExp(r'^\d{14}_.*\.sql$').hasMatch(n))
             .toList()
           ..sort();
-    expect(names.last, _name);
+    // Later migrations may follow it; it must sort after the one that was latest when it was authored.
+    expect(names.contains(_name), isTrue);
+    expect(
+      _name.compareTo('20261021110000_kan592_posted_from_city.sql'),
+      greaterThan(0),
+    );
     expect(
       names.where((n) => n.startsWith(_name.substring(0, 14))),
       hasLength(1),
