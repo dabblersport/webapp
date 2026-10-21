@@ -261,11 +261,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: alpha-ds
-      resolved-ref: "12a40c5c2c76ac58b82bfa28c8fffc23189dff74"
+      ref: bd0d71ac59f882245b53dedbe913b7c905c8910d
+      resolved-ref: bd0d71ac59f882245b53dedbe913b7c905c8910d
       url: "https://github.com/dabblersport/dabbler-design-system.git"
     source: git
-    version: "0.1.0+1"
+    version: "0.1.1+1"
   dart_earcut:
     dependency: transitive
     description:
