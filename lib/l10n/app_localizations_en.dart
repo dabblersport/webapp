@@ -6908,4 +6908,16 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get post_legacy_city => 'Dubai';
+
+  @override
+  String get settings_tile_location => 'Location';
+
+  @override
+  String get location_saved_places => 'Saved places';
+
+  @override
+  String get location_add_place => 'Add a place';
+
+  @override
+  String get location_custom_name_required => 'Enter a name for this place';
 }

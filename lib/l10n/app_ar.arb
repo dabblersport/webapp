@@ -2469,5 +2469,9 @@
   "composer_posted_from_search": "ابحث عن مدينة",
   "composer_posted_from_prompt": "اختر المدينة التي تنشر منها ثم اضغط نشر. مسودتك محفوظة.",
   "composer_posted_from_none": "لا توجد مدن تطابق هذا البحث",
-  "post_legacy_city": "دبي"
+  "post_legacy_city": "دبي",
+  "settings_tile_location": "الموقع",
+  "location_saved_places": "الأماكن المحفوظة",
+  "location_add_place": "إضافة مكان",
+  "location_custom_name_required": "أدخل اسماً لهذا المكان"
 }

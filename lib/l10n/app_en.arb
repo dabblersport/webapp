@@ -2547,5 +2547,13 @@
   "composer_posted_from_none": "No cities match that search",
   "@composer_posted_from_none": {"description": "KAN-592 empty result in the posting-city sheet."},
   "post_legacy_city": "Dubai",
-  "@post_legacy_city": {"description": "KAN-592 header location of a post written before posting cities were recorded (CEO ruling: Dubai)."}
+  "@post_legacy_city": {"description": "KAN-592 header location of a post written before posting cities were recorded (CEO ruling: Dubai)."},
+  "settings_tile_location": "Location",
+  "@settings_tile_location": {"description": "KAN-589 Settings dashboard tile and screen title for the device location and Saved places."},
+  "location_saved_places": "Saved places",
+  "@location_saved_places": {"description": "KAN-589 owner-private saved places list on Settings > Location."},
+  "location_add_place": "Add a place",
+  "@location_add_place": {"description": "KAN-589 add-a-saved-place action on Settings > Location."},
+  "location_custom_name_required": "Enter a name for this place",
+  "@location_custom_name_required": {"description": "KAN-589 shown when a custom label is chosen and its name is empty."}
 }

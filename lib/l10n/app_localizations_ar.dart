@@ -6954,4 +6954,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get post_legacy_city => 'دبي';
+
+  @override
+  String get settings_tile_location => 'الموقع';
+
+  @override
+  String get location_saved_places => 'الأماكن المحفوظة';
+
+  @override
+  String get location_add_place => 'إضافة مكان';
+
+  @override
+  String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
 }

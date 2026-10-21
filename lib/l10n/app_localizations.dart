@@ -12430,6 +12430,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dubai'**
   String get post_legacy_city;
+
+  /// KAN-589 Settings dashboard tile and screen title for the device location and Saved places.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get settings_tile_location;
+
+  /// KAN-589 owner-private saved places list on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places'**
+  String get location_saved_places;
+
+  /// KAN-589 add-a-saved-place action on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a place'**
+  String get location_add_place;
+
+  /// KAN-589 shown when a custom label is chosen and its name is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for this place'**
+  String get location_custom_name_required;
 }
 
 class _AppLocalizationsDelegate
