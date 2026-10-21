@@ -19,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 import 'composer_locate_test.mocks.dart';
+import '../../support/connectivity_overrides.dart';
 
 const _nasFallback = 'a0000000-0000-0000-0000-000000000007';
 
@@ -61,6 +62,7 @@ PostComposerNotifier _setUp() {
   when(areas.resolveNearest(25.15, 55.31)).thenAnswer((_) async => _nas);
   _c = ProviderContainer(
     overrides: [
+      onlineConnectivity(),
       postRepositoryProvider.overrideWithValue(_repo),
       gpsServiceProvider.overrideWithValue(gps),
       areaRepositoryV2Provider.overrideWithValue(areas),

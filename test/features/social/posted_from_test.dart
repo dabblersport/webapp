@@ -14,6 +14,7 @@ import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../../support/connectivity_overrides.dart';
 
 Post _post({
   String? locationName,
@@ -84,6 +85,7 @@ Future<(ProviderContainer, _FakeRepo)> _composer(
   final repo = _FakeRepo();
   final c = ProviderContainer(
     overrides: [
+      onlineConnectivity(),
       postRepositoryProvider.overrideWithValue(repo),
       activeLocationProvider.overrideWith(() => _DeviceLocation(device)),
     ],

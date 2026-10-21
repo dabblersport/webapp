@@ -1,4 +1,5 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
@@ -144,7 +145,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
 
   /// KAN-618: one request id per create attempt. It is kept across failed
   /// retries and cleared on success, on a form edit and when the drawer
-  /// closes. Held for KAN-612, which sends it; not sent yet.
+  /// closes. Sent to `rpc_create_meetup` (KAN-612).
   late final CreateRequestId _requestId = widget.requestId ?? CreateRequestId();
 
   @override
@@ -200,8 +201,14 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   Future<void> _submit() async {
     // KAN-618: a second tap while one is in flight is dropped.
     if (_busy) return;
-    _requestId.begin();
     final l = AppLocalizations.of(context);
+    // KAN-612: creating offline is refused up front. Nothing is sent, no id
+    // is made and the form stays exactly as typed.
+    if (ref.read(connectivityProvider) == ConnectionStatus.offline) {
+      setState(() => _error = l.offline_create_refused);
+      return;
+    }
+    final requestId = _requestId.begin();
     final missing = _missing(l);
     if (missing != null) {
       setState(() {
@@ -247,6 +254,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             maxSkill: _maxSkill,
             vibeKey: _vibe?.key,
             isIndoor: place.venueId == null ? _indoor : null,
+            requestId: requestId,
           ),
         );
     if (!mounted) return;

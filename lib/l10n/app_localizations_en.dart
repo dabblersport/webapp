@@ -6350,6 +6350,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t start the app. Please try again.';
 
   @override
+  String get offline_create_refused =>
+      'Creating needs an internet connection. Nothing was created, and what you typed is still here.';
+
+  @override
   String get messaging_chat_error => 'Couldn\'t load this chat. Try again.';
 
   @override

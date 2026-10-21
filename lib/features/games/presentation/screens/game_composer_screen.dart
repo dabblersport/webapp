@@ -8,6 +8,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
@@ -354,6 +355,10 @@ class _ComposerState {
 class _ComposerNotifier extends StateNotifier<_ComposerState> {
   _ComposerNotifier() : super(const _ComposerState());
 
+  /// KAN-612: the request id whose attempt already used a creation-cooldown
+  /// slot. A retry of the same attempt does not use a second one.
+  String? _cooldownRequestId;
+
   final _db = Supabase.instance.client;
 
   // Variant + venue caches live on the notifier (only read by picker sheets).
@@ -617,13 +622,17 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
   void setMaxPlayers(int v) => state = state.copyWith(maxPlayers: v);
   void clearPlayers() => state = state.copyWith(clearPlayers: true);
 
-  Future<bool> submit() async {
+  /// [requestId] is the create attempt's client request id (KAN-612); it is
+  /// sent to `rpc_create_game` so a retry never makes a second game. Saving
+  /// an edit sends none.
+  Future<bool> submit({String? requestId}) async {
     if (!state.canSubmit) return false;
     state = state.copyWith(isSubmitting: true, clearError: true);
 
     try {
       // Creation cooldown only — editing your own game is not rate-limited.
-      if (!state.isEditing) {
+      if (!state.isEditing &&
+          !(requestId != null && requestId == _cooldownRequestId)) {
         final moderation = ModerationService();
         final cooldown = await moderation.checkAndBumpCooldown(
           'game.create',
@@ -640,6 +649,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           );
           return false;
         }
+        _cooldownRequestId = requestId;
       }
 
       final date = state.selectedDate!;
@@ -711,6 +721,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         if (state.minPlayers != null) 'p_min_players': state.minPlayers,
         if (state.maxPlayers != null) 'p_max_players': state.maxPlayers,
         'p_price_aed': state.priceAed,
+        if (requestId != null) 'p_request_id': requestId,
       };
 
       await _db.rpc(SupabaseConfig.rpcCreateGameFn, params: params);
@@ -762,8 +773,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   /// KAN-618: one request id per create attempt. It is kept across failed
   /// retries and cleared on success, on a form edit and when the drawer
-  /// closes. Held for KAN-612, which sends it; not sent yet. Saving an edit
-  /// of an existing game is not a create and takes none.
+  /// closes. Sent to `rpc_create_game` (KAN-612). Saving an edit of an
+  /// existing game is not a create and takes none.
   late final CreateRequestId _requestId = widget.requestId ?? CreateRequestId();
 
   bool get _isEditing => widget.editGameId != null;
@@ -830,9 +841,23 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     // KAN-618: a second tap while one is in flight is dropped, so two taps
     // make one submission and one id.
     if (ref.read(_gameComposerProvider).isSubmitting) return;
+    // KAN-612: creating offline is refused up front. Nothing is sent, no id
+    // is made and the form stays exactly as typed.
+    if (!_isEditing &&
+        ref.read(connectivityProvider) == ConnectionStatus.offline) {
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: AppLocalizations.of(context).offline_create_refused,
+          tone: DabblerToastTone.error,
+        ),
+      );
+      return;
+    }
     if (!ref.read(_gameComposerProvider.notifier).validatePrice()) return;
-    if (!_isEditing) _requestId.begin();
-    final ok = await ref.read(_gameComposerProvider.notifier).submit();
+    final requestId = _isEditing ? null : _requestId.begin();
+    final ok = await ref
+        .read(_gameComposerProvider.notifier)
+        .submit(requestId: requestId);
     if (ok && !_isEditing) {
       _requestId.clear();
     }

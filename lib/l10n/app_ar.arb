@@ -2302,6 +2302,7 @@
   "offline_setting_not_synced": "لم تتم المزامنة. اضغط لإعادة المحاولة.",
   "offline_auth_error_generic": "تعذّر إكمال تسجيل الدخول. تحقق من اتصالك وحاول مرة أخرى.",
   "offline_bootstrap_failed": "تعذّر تشغيل التطبيق. حاول مرة أخرى.",
+  "offline_create_refused": "الإنشاء يحتاج إلى اتصال بالإنترنت. لم يُنشأ شيء، وما كتبته ما زال كما هو.",
   "messaging_chat_error": "تعذّر تحميل هذه الدردشة. حاول مرة أخرى.",
   "messaging_chat_older_load": "حمّل الرسائل السابقة",
   "messaging_chat_older_loading": "جارٍ تحميل الرسائل السابقة",

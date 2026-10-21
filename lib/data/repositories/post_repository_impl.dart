@@ -1156,6 +1156,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
             geoLng: request.geoLng,
             locationTagId: request.locationTagId,
             areaId: request.areaId,
+            requestId: request.requestId,
           ),
         );
         var post = Post.fromJson(res as Map<String, dynamic>);
@@ -1189,16 +1190,22 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       // Squad-visibility: insert post + link to post_squads junction.
       if (request.visibility.name == 'squad' && request.squadId != null) {
-        final row = await _db
-            .from(SupabaseConfig.postsTable)
-            .insert(payload)
-            .select()
-            .single();
-        // Link to squad junction table.
-        await _db.from(SupabaseConfig.postSquadsTable).insert({
-          'post_id': row['id'],
-          'squad_id': request.squadId,
-        });
+        final inserted = await _insertPostRow(
+          payload,
+          requestId: request.requestId,
+          authorProfileId: authorProfileId,
+        );
+        final row = inserted.row;
+        // Link to squad junction table. On a replay the first attempt may
+        // already have linked it, so a failure there is not an error.
+        try {
+          await _db.from(SupabaseConfig.postSquadsTable).insert({
+            'post_id': row['id'],
+            'squad_id': request.squadId,
+          });
+        } catch (_) {
+          if (!inserted.replayed) rethrow;
+        }
         final post = Post.fromJson(row);
         await _linkHashtags(
           postId: post.id,
@@ -1210,12 +1217,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
 
       // Standard insert path.
-      final row = await _db
-          .from(SupabaseConfig.postsTable)
-          .insert(payload)
-          .select()
-          .single();
-      final post = Post.fromJson(row);
+      final inserted = await _insertPostRow(
+        payload,
+        requestId: request.requestId,
+        authorProfileId: authorProfileId,
+      );
+      final post = Post.fromJson(inserted.row);
       await _linkHashtags(
         postId: post.id,
         tags: request.tags,
@@ -1224,6 +1231,34 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       );
       return post;
     });
+  }
+
+  /// KAN-612: inserts the post row. A retry of the same request id meets the
+  /// unique index on (author_profile_id, request_id) (`23505`); the row the
+  /// first attempt made is returned, so the retry never makes a second post.
+  Future<({Map<String, dynamic> row, bool replayed})> _insertPostRow(
+    Map<String, dynamic> payload, {
+    required String? requestId,
+    required String authorProfileId,
+  }) async {
+    try {
+      final row = await _db
+          .from(SupabaseConfig.postsTable)
+          .insert(payload)
+          .select()
+          .single();
+      return (row: row, replayed: false);
+    } on PostgrestException catch (e) {
+      if (requestId == null || e.code != '23505') rethrow;
+      final existing = await _db
+          .from(SupabaseConfig.postsTable)
+          .select()
+          .eq('author_profile_id', authorProfileId)
+          .eq('request_id', requestId)
+          .maybeSingle();
+      if (existing == null) rethrow;
+      return (row: existing, replayed: true);
+    }
   }
 
   // ── Hashtag linking ────────────────────────────────────────────────
@@ -1717,6 +1752,7 @@ Map<String, dynamic> buildCreatePostRpcParams({
   double? geoLng,
   String? locationTagId,
   String? areaId,
+  String? requestId,
 }) => <String, dynamic>{
   'p_kind': kind,
   'p_visibility': 'circle',
@@ -1735,4 +1771,6 @@ Map<String, dynamic> buildCreatePostRpcParams({
   if (geoLng != null) 'p_geo_lng': geoLng,
   if (locationTagId != null) 'p_location_tag_id': locationTagId,
   if (areaId != null) 'p_area_id': areaId,
+  // KAN-612: a retry of the same attempt replays the first post.
+  if (requestId != null) 'p_request_id': requestId,
 };

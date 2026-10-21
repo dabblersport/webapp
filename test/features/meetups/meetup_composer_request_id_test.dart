@@ -3,6 +3,8 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/core/utils/create_request_id.dart';
+import 'package:dabbler/features/meetups/data/datasources/meetup_datasource.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_screen.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
@@ -11,6 +13,7 @@ import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/connectivity_overrides.dart';
 import 'meetup_screens_harness.dart';
 
 /// Records the holder's id at each create call.
@@ -19,13 +22,25 @@ class _SpyRepository extends FakeMeetupRepository {
   final CreateRequestId holder;
   final List<String?> ids = <String?>[];
 
+  /// KAN-612: the server keeps one meetup per request id (KAN-611).
+  final Map<String, String> serverRows = <String, String>{};
+
+  /// The server creates the meetup, then the response is lost.
+  bool loseResponse = false;
+
   @override
   Future<Result<String, Failure>> create(
     CreateMeetupInput input, {
     String actorType = 'organiser',
-  }) {
+  }) async {
     ids.add(holder.current);
-    return super.create(input, actorType: actorType);
+    final result = await super.create(input, actorType: actorType);
+    final rid = input.requestId;
+    if (rid != null && result.isSuccess) {
+      serverRows.putIfAbsent(rid, () => 'm${serverRows.length + 1}');
+      if (loseResponse) return const Err(_timeout);
+    }
+    return result;
   }
 }
 
@@ -34,10 +49,16 @@ const Failure _offline = Failure(
   message: 'No internet',
 );
 
+const Failure _timeout = Failure(
+  category: FailureCode.timeout,
+  message: 'timeout',
+);
+
 Future<_SpyRepository> _open(
   WidgetTester tester,
   CreateRequestId holder, {
   ValueChanged<String>? onCreated,
+  bool offline = false,
 }) async {
   final repo = _SpyRepository(holder);
   await pumpMeetups(
@@ -52,6 +73,7 @@ Future<_SpyRepository> _open(
       ),
     ),
     repo,
+    overrides: [offline ? offlineConnectivity() : onlineConnectivity()],
   );
   // The test font is wider than the real one; the When pills overflow here.
   tester.takeException();
@@ -199,5 +221,85 @@ void main() {
     await settle(tester);
     expect(repo.createCalls, hasLength(1));
     expect(repo.ids, hasLength(1));
+  });
+
+  testWidgets('KAN-612: the create call carries the held id', (tester) async {
+    final holder = CreateRequestId();
+    final repo = await _open(tester, holder);
+    await _fill(tester);
+    await _create(tester);
+    expect(repo.createCalls.single.requestId, isNotNull);
+    expect(repo.createCalls.single.requestId, repo.ids.single);
+  });
+
+  test('KAN-612: the RPC params carry p_request_id; absent without one', () {
+    CreateMeetupInput input({String? id}) => CreateMeetupInput(
+      sportId: 's1',
+      sportVariantId: 'v1',
+      title: 'Sunrise run',
+      locationName: 'Kite Beach',
+      startAt: DateTime.utc(2030, 1, 15, 14),
+      requestId: id,
+    );
+    expect(MeetupRpcParams.create(input(id: 'abc'))['p_request_id'], 'abc');
+    expect(
+      MeetupRpcParams.create(input()).containsKey('p_request_id'),
+      isFalse,
+    );
+  });
+
+  testWidgets('KAN-612: lost response, then retry: one meetup, the same id', (
+    tester,
+  ) async {
+    final holder = CreateRequestId();
+    String? created;
+    final repo = await _open(tester, holder, onCreated: (id) => created = id);
+    await _fill(tester);
+    repo.loseResponse = true;
+    await _create(tester);
+    expect(repo.serverRows, hasLength(1), reason: 'the server did create it');
+    // The form is kept for the retry.
+    expect(find.text('Sunrise run'), findsOneWidget);
+    expect(created, isNull);
+
+    repo.loseResponse = false;
+    await _create(tester);
+    expect(repo.createCalls, hasLength(2));
+    expect(repo.createCalls[1].requestId, repo.createCalls[0].requestId);
+    expect(repo.serverRows, hasLength(1), reason: 'no second meetup');
+    expect(created, isNotNull);
+    expect(holder.current, isNull);
+  });
+
+  testWidgets('KAN-612: double tap is one create call', (tester) async {
+    final holder = CreateRequestId();
+    final repo = await _open(tester, holder);
+    await _fill(tester);
+    await tester.ensureVisible(find.byType(DabblerComposerSubmit));
+    final submit = tester.widget<DabblerComposerSubmit>(
+      find.byType(DabblerComposerSubmit),
+    );
+    submit.onPressed!();
+    submit.onPressed!();
+    await settle(tester);
+    expect(repo.createCalls, hasLength(1));
+    expect(repo.serverRows, hasLength(1));
+  });
+
+  testWidgets('KAN-612: offline: Create is refused up front, the form is '
+      'kept', (tester) async {
+    final holder = CreateRequestId();
+    final repo = await _open(tester, holder, offline: true);
+    await _fill(tester);
+    await _create(tester);
+    expect(repo.createCalls, isEmpty, reason: 'nothing was sent');
+    expect(holder.current, isNull, reason: 'no id was made');
+    expect(
+      find.text(
+        lookupAppLocalizations(const Locale('en')).offline_create_refused,
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Sunrise run'), findsOneWidget);
   });
 }
