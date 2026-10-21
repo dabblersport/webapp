@@ -7355,6 +7355,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get saved_places_load_error => 'تعذّر تحميل المواقع';
 
   @override
+  String get saved_places_save_failed => 'تعذّر حفظ هذا الموقع. حاول مرة أخرى.';
+
+  @override
   String get saved_places_empty_title => 'لا توجد مواقع محفوظة بعد';
 
   @override

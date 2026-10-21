@@ -2775,6 +2775,8 @@
   "location_mode_none_chosen": "No place chosen",
   "@location_mode_none_chosen": {"description": "KAN-589 Manual mode with no place picked yet. AR pending content review."},
   "saved_places_load_error": "Could not load locations",
+  "saved_places_save_failed": "Couldn’t save this location. Try again.",
+  "@saved_places_save_failed": {"description": "KAN-589 toast when saving a place fails; the sheet stays open. AR pending content review."},
   "@saved_places_load_error": {"description": "KAN-589 Error state of the saved places list. AR pending content review."},
   "saved_places_empty_title": "No saved locations yet",
   "@saved_places_empty_title": {"description": "KAN-589 Empty state title. AR pending content review."},
