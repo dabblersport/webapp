@@ -12376,6 +12376,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Someone'**
   String get messaging_receipts_unknown_person;
+
+  /// KAN-614 receipts stat-tile value when the whole group is in the state (Seen or Delivered).
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get messaging_receipts_all;
+
+  /// KAN-614 receipts stat-tile value when nobody is in the state (Not yet).
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get messaging_receipts_nobody;
 }
 
 class _AppLocalizationsDelegate
