@@ -53,6 +53,16 @@ class ActiveLocationError extends ActiveLocationState {
   final String message;
 }
 
+/// What switching this device to Auto did (KAN-589).
+enum AutoSwitchResult { applied, denied, failed }
+
+/// This device's mode as the Settings control shows it: Auto while the active
+/// location follows a GPS fix (or the last one), Manual otherwise.
+bool isAutoMode(ActiveLocationState? s) =>
+    s is ActiveLocationReady &&
+    (s.location.source == ActiveLocationSource.gps ||
+        s.location.source == ActiveLocationSource.lastKnown);
+
 // =============================================================================
 // NOTIFIER
 // =============================================================================
@@ -360,6 +370,40 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       }
     }
     state = AsyncData(next);
+  }
+
+  /// The Auto choice on Settings > Location (KAN-589). The OS permission is
+  /// asked at most once per device (inside the GPS service); a denial never
+  /// re-prompts and leaves the stored mode untouched, so Manual stays Manual
+  /// and the caller opens the manual "Set location" drawer.
+  Future<AutoSwitchResult> switchToAuto() async {
+    final previous = state.valueOrNull;
+    final result = await _gps.getCurrentLocation(cap: GpsService.fixCap);
+    switch (result) {
+      case LocationDenied():
+      case LocationDeniedForever():
+      case LocationServiceOff():
+        return AutoSwitchResult.denied;
+      case LocationTimeout():
+      case LocationError():
+        return AutoSwitchResult.failed;
+      case LocationSuccess():
+        break;
+    }
+    final next = await _stateFromGpsResult(result);
+    if (next is! ActiveLocationReady) {
+      if (previous != null) state = AsyncData(previous);
+      return AutoSwitchResult.failed;
+    }
+    await _recordAutoFix(
+      next.location.area,
+      next.location.lat,
+      next.location.lng,
+      explicit: true,
+      savedLabel: next.location.savedLocationLabel,
+    );
+    state = AsyncData(next);
+    return AutoSwitchResult.applied;
   }
 
   /// Switch to a specific saved profile location.
