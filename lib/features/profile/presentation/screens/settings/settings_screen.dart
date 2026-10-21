@@ -1,11 +1,13 @@
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/header_collapse.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/settings_profiles.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/settings_search.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/settings_sheets.dart';
@@ -27,16 +29,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     with SettingsProfilesMixin<SettingsScreen> {
   final TextEditingController _searchController = TextEditingController();
   final ScrollController _scroll = ScrollController();
+  final FocusNode _searchFocus = FocusNode();
+  late final HeaderCollapseController _collapse;
   String _searchQuery = '';
   final String _appVersion = '1.7.8';
-
-  /// Scroll offset past which the bar drops the hero tint and shows its title
-  /// (`Settings.dc.html:1192` — the hero's height less the 52px bar).
-  static const double _titleRevealOffset = 260;
 
   @override
   void initState() {
     super.initState();
+    // KAN-601: the bar's reveal point is the hero's measured height, with
+    // hysteresis; a focused search holds the compact bar
+    // (`Settings.dc.html:1190-1192`).
+    _collapse = HeaderCollapseController(_scroll);
+    _searchFocus.addListener(
+      () => _collapse.pinnedCompact = _searchFocus.hasFocus,
+    );
     // Fetch user's active personas for dynamic "Add Profile" section
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final uid = ref.read(currentUserIdProvider);
@@ -50,6 +57,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   @override
   void dispose() {
     _searchController.dispose();
+    _searchFocus.dispose();
+    _collapse.dispose();
     _scroll.dispose();
     super.dispose();
   }
@@ -63,12 +72,33 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
     final activeProfile = ref.watch(currentUserProfileProvider);
     final avatarName = activeProfile?.getDisplayName() ?? '';
     final searching = _searchQuery.isNotEmpty;
+    return ListenableBuilder(
+      listenable: _collapse,
+      builder: (context, _) => _buildPage(
+        context,
+        l10n,
+        email,
+        activeProfile,
+        avatarName,
+        searching,
+      ),
+    );
+  }
+
+  Widget _buildPage(
+    BuildContext context,
+    AppLocalizations l10n,
+    String email,
+    UserProfile? activeProfile,
+    String avatarName,
+    bool searching,
+  ) {
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
         title: l10n.settings_header_title,
         onBack: () => context.pop(),
         scrollController: _scroll,
-        titleRevealOffset: _titleRevealOffset,
+        titleRevealOffset: _collapse.revealOffset,
         heroTint: true,
         actions: [
           DabblerNavigationAction(
@@ -78,53 +108,68 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
           ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: CustomScrollView(
         controller: _scroll,
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            DabblerSettingsHeader(
-              versionLabel: l10n.settings_version_label(_appVersion),
-              title: l10n.settings_header_title,
-              subtitle: l10n.settings_hero_subtitle,
-              identity: DabblerInputRow(
-                flat: true,
-                showDivider: false,
-                onTap: () => context.push('/settings/account'),
-                leading: DabblerAvatar(
-                  seed: avatarName.isNotEmpty ? avatarName : 'User',
-                  imageUrl: activeProfile?.avatarUrl,
-                  size: DabblerAvatarSize.md,
+        slivers: [
+          SliverToBoxAdapter(
+            child: MeasuredHeader(
+              onHeight: _collapse.measure,
+              child: DabblerSettingsHeader(
+                versionLabel: l10n.settings_version_label(_appVersion),
+                title: l10n.settings_header_title,
+                subtitle: l10n.settings_hero_subtitle,
+                identity: DabblerInputRow(
+                  flat: true,
+                  showDivider: false,
+                  onTap: () => context.push('/settings/account'),
+                  leading: DabblerAvatar(
+                    seed: avatarName.isNotEmpty ? avatarName : 'User',
+                    imageUrl: activeProfile?.avatarUrl,
+                    size: DabblerAvatarSize.md,
+                  ),
+                  title: email.isEmpty
+                      ? l10n.settings_item_account_management_title
+                      : email,
+                  subtitle: l10n.settings_identity_subtitle,
+                  trailing: const DabblerChevron(circled: true),
                 ),
-                title: email.isEmpty
-                    ? l10n.settings_item_account_management_title
-                    : email,
-                subtitle: l10n.settings_identity_subtitle,
-                trailing: const DabblerChevron(circled: true),
               ),
             ),
-            Padding(
+          ),
+          // The search stays under the bar while the list scrolls.
+          PinnedMeasuredSliver(
+            child: Padding(
               padding: const EdgeInsetsDirectional.fromSTEB(
                 DabblerSpacing.space5,
                 DabblerSpacing.space6,
+                DabblerSpacing.space5,
+                DabblerSpacing.space3,
+              ),
+              child: DabblerSearchField(
+                controller: _searchController,
+                focusNode: _searchFocus,
+                placeholder: l10n.settings_search_hint,
+                onChanged: (value) {
+                  setState(() => _searchQuery = value.trim().toLowerCase());
+                },
+                onCleared: () {
+                  _searchController.clear();
+                  setState(() => _searchQuery = '');
+                },
+              ),
+            ),
+          ),
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsetsDirectional.fromSTEB(
+                DabblerSpacing.space5,
+                DabblerSpacing.space3,
                 DabblerSpacing.space5,
                 DabblerSpacing.space10,
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  DabblerSearchField(
-                    controller: _searchController,
-                    placeholder: l10n.settings_search_hint,
-                    onChanged: (value) {
-                      setState(() => _searchQuery = value.trim().toLowerCase());
-                    },
-                    onCleared: () {
-                      _searchController.clear();
-                      setState(() => _searchQuery = '');
-                    },
-                  ),
-                  const DabblerGap.v(DabblerSpacing.space6),
                   if (searching)
                     SettingsSearchResults(
                       results: _searchEntries(
@@ -146,8 +191,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
