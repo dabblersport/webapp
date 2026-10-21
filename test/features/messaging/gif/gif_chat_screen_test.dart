@@ -144,6 +144,15 @@ List<DabblerThreadMessage> _messages(WidgetTester tester) => tester
     .whereType<DabblerThreadMessage>()
     .toList();
 
+/// KAN-581: the attach control opens the Share drawer; the GIF search is its
+/// last row (KAN-582's picker is unchanged behind it).
+Future<void> _openGifFromShare(WidgetTester tester, AppLocalizations l10n) async {
+  await tester.tap(find.bySemanticsLabel(l10n.messaging_share_title));
+  await _settle(tester);
+  await tester.tap(find.text(l10n.messaging_share_gif));
+  await _settle(tester);
+}
+
 void main() {
   setUpAll(() async {
     await loadRenderFonts();
@@ -171,10 +180,9 @@ void main() {
           await h.prepare();
           await tester.pumpWidget(h.app(v, picked: null));
           await _settle(tester);
-          final attach = find.bySemanticsLabel(l10n.messaging_chat_attach_gif);
+          final attach = find.bySemanticsLabel(l10n.messaging_share_title);
           expect(attach, findsOneWidget);
-          await tester.tap(attach);
-          await _settle(tester);
+          await _openGifFromShare(tester, l10n);
           expect(h.pickerOpened, 1);
         });
 
@@ -186,10 +194,7 @@ void main() {
           await tester.pumpWidget(h.app(v));
           await _settle(tester);
           final before = h.repo.sendAttempts;
-          await tester.tap(
-            find.bySemanticsLabel(l10n.messaging_chat_attach_gif),
-          );
-          await _settle(tester);
+          await _openGifFromShare(tester, l10n);
           expect(h.repo.sendAttempts, before + 1);
 
           final gifs = _messages(tester).where((m) => m.attachment != null);

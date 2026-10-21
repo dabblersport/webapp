@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
 /// What the game chat screen shows (KAN-507, T12). Loading is the
@@ -36,6 +37,35 @@ enum GameChatStatus {
 /// receipts, not from this state.
 enum OutgoingState { sending, retrying, sent, failed }
 
+/// An image of the caller's that is not on the server yet (KAN-581): the
+/// picked bytes for the preview, the idempotency key of its upload (reused on
+/// a retry so the server returns the same attachment), the attachment id once
+/// the upload finished, and the upload progress from 0 to 1.
+class PendingImage extends Equatable {
+  const PendingImage({
+    required this.image,
+    required this.uploadKey,
+    this.attachmentId,
+    this.progress = 0,
+  });
+
+  final PickedImage image;
+  final String uploadKey;
+  final String? attachmentId;
+  final double progress;
+
+  PendingImage copyWith({String? attachmentId, double? progress}) =>
+      PendingImage(
+        image: image,
+        uploadKey: uploadKey,
+        attachmentId: attachmentId ?? this.attachmentId,
+        progress: progress ?? this.progress,
+      );
+
+  @override
+  List<Object?> get props => [image, uploadKey, attachmentId, progress];
+}
+
 /// One row of the thread.
 class ChatItem extends Equatable {
   const ChatItem({
@@ -44,7 +74,11 @@ class ChatItem extends Equatable {
     this.message,
     this.clientKey,
     this.failureReason,
+    this.pending,
   });
+
+  /// KAN-581: set while an image of the caller's is uploading or failed.
+  final PendingImage? pending;
 
   /// The server message; null while sending or after a failed send.
   final Message? message;
@@ -61,16 +95,26 @@ class ChatItem extends Equatable {
     Message? message,
     OutgoingState? state,
     MessagingReason? failureReason,
+    PendingImage? pending,
+    bool clearPending = false,
   }) => ChatItem(
     body: body,
     clientKey: clientKey,
     message: message ?? this.message,
     state: state ?? this.state,
     failureReason: failureReason,
+    pending: clearPending ? null : (pending ?? this.pending),
   );
 
   @override
-  List<Object?> get props => [message, clientKey, body, state, failureReason];
+  List<Object?> get props => [
+    message,
+    clientKey,
+    body,
+    state,
+    failureReason,
+    pending,
+  ];
 }
 
 class GameChatViewState extends Equatable {
@@ -107,7 +151,9 @@ class GameChatViewState extends Equatable {
   /// True while any own message is being sent.
   bool get isSending => items.any(
     (i) =>
-        i.state == OutgoingState.sending || i.state == OutgoingState.retrying,
+        i.pending == null &&
+        (i.state == OutgoingState.sending ||
+            i.state == OutgoingState.retrying),
   );
 
   /// True when the chat is closed because the game ended or was cancelled

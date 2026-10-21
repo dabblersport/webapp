@@ -6954,4 +6954,70 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get post_legacy_city => 'دبي';
+
+  @override
+  String get messaging_share_title => 'مشاركة';
+
+  @override
+  String get messaging_share_gallery => 'مكتبة الصور';
+
+  @override
+  String get messaging_share_camera => 'الكاميرا';
+
+  @override
+  String get messaging_share_file => 'ملف صورة';
+
+  @override
+  String get messaging_share_file_hint => 'صور فقط';
+
+  @override
+  String get messaging_share_gif => 'ابحث عن GIF';
+
+  @override
+  String get messaging_share_gif_hint => 'بدعم من GIPHY';
+
+  @override
+  String messaging_image_uploading(int percent) {
+    return 'جارٍ الرفع · $percent%';
+  }
+
+  @override
+  String get messaging_image_cancel => 'إلغاء الرفع';
+
+  @override
+  String get messaging_image_retry => 'أعد الرفع';
+
+  @override
+  String get messaging_image_failed => 'تعذّر الرفع';
+
+  @override
+  String get messaging_image_open => 'افتح الصورة';
+
+  @override
+  String get messaging_image_remove => 'إزالة الصورة';
+
+  @override
+  String get messaging_image_close => 'إغلاق';
+
+  @override
+  String get messaging_image_viewer_title => 'صورة';
+
+  @override
+  String get messaging_image_too_large => 'هذه الصورة كبيرة جدًا للإرسال.';
+
+  @override
+  String get messaging_image_unsupported =>
+      'يمكن إرسال صور JPG وPNG وWebP فقط.';
+
+  @override
+  String get messaging_image_camera_denied =>
+      'الوصول إلى الكاميرا متوقف. اسمح به من الإعدادات لالتقاط صورة.';
+
+  @override
+  String get messaging_image_library_denied =>
+      'الوصول إلى الصور متوقف. اسمح به من الإعدادات لاختيار صورة.';
+
+  @override
+  String get messaging_image_pick_failed =>
+      'تعذّر الحصول على الصورة. حاول مرة أخرى.';
 }
