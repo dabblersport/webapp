@@ -15,9 +15,10 @@ enum ReceiptState {
 
 /// Tells the backend how far the signed-in user has received or seen a
 /// conversation. Fire-and-forget: a lost acknowledgement is repaired by the
-/// next, higher one, so a failure is swallowed.
+/// next, higher one, so a failure is swallowed. [ack] answers whether the
+/// backend took it, so the [ReceiptAcker] can try again after a loss.
 abstract class ReceiptsTransport {
-  Future<void> ack(String conversationId, ReceiptState state, int throughSeq);
+  Future<bool> ack(String conversationId, ReceiptState state, int throughSeq);
 
   /// Delivered/seen counts for the caller's own messages [seqs]
   /// (`GET /conversations/{id}/receipts?seqs=`). Empty when the backend has
@@ -54,11 +55,11 @@ class NoopReceiptsTransport implements ReceiptsTransport {
   const NoopReceiptsTransport();
 
   @override
-  Future<void> ack(
+  Future<bool> ack(
     String conversationId,
     ReceiptState state,
     int throughSeq,
-  ) async {}
+  ) async => true;
 
   @override
   Future<Map<int, ReceiptCounts>> summaries(
@@ -89,12 +90,12 @@ class WorkerReceiptsTransport implements ReceiptsTransport {
   bool get unsupported => _unsupported;
 
   @override
-  Future<void> ack(
+  Future<bool> ack(
     String conversationId,
     ReceiptState state,
     int throughSeq,
   ) async {
-    if (_unsupported || throughSeq <= 0) return;
+    if (_unsupported || throughSeq <= 0) return false;
     try {
       final response = await _http.send(
         'POST',
@@ -104,13 +105,14 @@ class WorkerReceiptsTransport implements ReceiptsTransport {
           'through_seq': throughSeq,
         },
       );
-      if (response.status == 404 ||
-          response.status == 405 ||
-          response.status == 501) {
+      if (_isUnsupported(response.status, response.body)) {
         _unsupported = true;
+        return false;
       }
+      return response.status == 200;
     } catch (_) {
       // Repaired by the next acknowledgement.
+      return false;
     }
   }
 
@@ -126,7 +128,7 @@ class WorkerReceiptsTransport implements ReceiptsTransport {
         '/conversations/${Uri.encodeComponent(conversationId)}/receipts',
         query: <String, String>{'seqs': seqs.take(100).join(',')},
       );
-      if (_isUnsupported(response.status)) {
+      if (_isUnsupported(response.status, response.body)) {
         _unsupported = true;
         return const <int, ReceiptCounts>{};
       }
@@ -197,8 +199,16 @@ class WorkerReceiptsTransport implements ReceiptsTransport {
     }
   }
 
-  static bool _isUnsupported(int status) =>
-      status == 404 || status == 405 || status == 501;
+  /// A Worker deployed before KAN-580 has no route: 404/405/501 with no typed
+  /// reason. A deployed Worker's own 404 carries `error.reason` ("not_found":
+  /// not the author of those seqs, no longer a member) and says nothing about
+  /// the route, so it must not switch receipts off for the whole app run.
+  static bool _isUnsupported(int status, Object? body) {
+    if (status != 404 && status != 405 && status != 501) return false;
+    final error = body is Map ? body['error'] : null;
+    final typed = error is Map && error['reason'] is String;
+    return !typed;
+  }
 }
 
 /// Decides what is worth sending. Per conversation it remembers the highest
@@ -214,18 +224,39 @@ class ReceiptAcker {
 
   /// Messages up to [throughSeq] arrived on this device.
   Future<void> delivered(String conversationId, int throughSeq) async {
-    if (throughSeq <= (_delivered[conversationId] ?? 0)) return;
+    final before = _delivered[conversationId] ?? 0;
+    if (throughSeq <= before) return;
     _delivered[conversationId] = throughSeq;
-    await _transport.ack(conversationId, ReceiptState.delivered, throughSeq);
+    final ok = await _transport.ack(
+      conversationId,
+      ReceiptState.delivered,
+      throughSeq,
+    );
+    // A lost acknowledgement is retried by the next call, not skipped.
+    if (!ok && _delivered[conversationId] == throughSeq) {
+      _delivered[conversationId] = before;
+    }
   }
 
   /// Messages up to [throughSeq] were visible to the user.
   Future<void> seen(String conversationId, int throughSeq) async {
-    if (throughSeq <= (_seen[conversationId] ?? 0)) return;
+    final seenBefore = _seen[conversationId] ?? 0;
+    if (throughSeq <= seenBefore) return;
+    final deliveredBefore = _delivered[conversationId] ?? 0;
     _seen[conversationId] = throughSeq;
-    if (throughSeq > (_delivered[conversationId] ?? 0)) {
-      _delivered[conversationId] = throughSeq;
+    if (throughSeq > deliveredBefore) _delivered[conversationId] = throughSeq;
+    final ok = await _transport.ack(
+      conversationId,
+      ReceiptState.seen,
+      throughSeq,
+    );
+    if (!ok) {
+      if (_seen[conversationId] == throughSeq) {
+        _seen[conversationId] = seenBefore;
+      }
+      if (_delivered[conversationId] == throughSeq) {
+        _delivered[conversationId] = deliveredBefore;
+      }
     }
-    await _transport.ack(conversationId, ReceiptState.seen, throughSeq);
   }
 }

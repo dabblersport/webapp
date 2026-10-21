@@ -17,10 +17,13 @@ WorkerReceiptsTransport _transport(MockClient client) =>
 
 class _Recorder implements ReceiptsTransport {
   final calls = <String>[];
+  bool ok = true;
 
   @override
-  Future<void> ack(String c, ReceiptState s, int seq) async =>
-      calls.add('$c:${s.wire}:$seq');
+  Future<bool> ack(String c, ReceiptState s, int seq) async {
+    calls.add('$c:${s.wire}:$seq');
+    return ok;
+  }
 
   @override
   Future<Map<int, ReceiptCounts>> summaries(String c, List<int> s) async =>
@@ -79,6 +82,34 @@ void main() {
     await transport.ack(conversation, ReceiptState.delivered, 2);
     expect(calls, 2);
     expect(transport.unsupported, isFalse);
+  });
+
+  test(
+    'a typed not_found 404 (route exists) does not switch receipts off',
+    () async {
+      var calls = 0;
+      final transport = _transport(
+        MockClient((r) async {
+          calls++;
+          return http.Response('{"error":{"reason":"not_found"}}', 404);
+        }),
+      );
+      await transport.summaries(conversation, [3]);
+      expect(transport.unsupported, isFalse);
+      await transport.ack(conversation, ReceiptState.seen, 3);
+      expect(calls, 2); // the ack still goes out after the 404 summary
+      expect(transport.unsupported, isFalse);
+    },
+  );
+
+  test('a lost acknowledgement is retried, not skipped', () async {
+    final rec = _Recorder()..ok = false;
+    final acker = ReceiptAcker(rec);
+    await acker.seen(conversation, 5);
+    rec.ok = true;
+    await acker.seen(conversation, 5);
+    await acker.seen(conversation, 5);
+    expect(rec.calls, ['$conversation:seen:5', '$conversation:seen:5']);
   });
 
   test('a non-positive seq sends nothing', () async {

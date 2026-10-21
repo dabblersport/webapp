@@ -36,7 +36,7 @@ class _Transport implements ReceiptsTransport {
   final List<int> asked = [];
 
   @override
-  Future<void> ack(String c, ReceiptState s, int seq) async {}
+  Future<bool> ack(String c, ReceiptState s, int seq) async => true;
 
   @override
   Future<Map<int, ReceiptCounts>> summaries(String c, List<int> seqs) async {
