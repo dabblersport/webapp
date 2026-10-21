@@ -549,7 +549,10 @@ void main() {
       // DS GAP (reported on KAN-620): the design system's message sender line
       // (`DabblerMessage`, message.dart) is a Text with no maxLines or
       // ellipsis, so a long typing label wraps to a second line. Design
-      // section 10 says "One line, truncates". Unskip once the DS carries it.
+      // section 10 says "One line, truncates". CTO ruled YES (dreq-9882ee33):
+      // the fix belongs in the DS (maxLines 1 + ellipsis), tracked by the DS
+      // ticket the PO opens (key: DS-TICKET-KEY-PENDING, replace when known).
+      // Unskip when the DS pin moves to the commit that carries the fix.
       testWidgets(
         'KAN-620: a long name truncates to ONE line (needs DS maxLines)',
         (tester) async {
