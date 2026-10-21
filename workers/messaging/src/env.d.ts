@@ -15,3 +15,16 @@ interface D1Database {
   batch<T = unknown>(statements: D1PreparedStatement[]): Promise<D1Result<T>[]>;
   exec(query: string): Promise<unknown>;
 }
+
+// KAN-581: the slice of the R2 bucket binding the Worker uses (Cloudflare's R2 Workers API). Binding name MEDIA.
+interface R2ObjectBody {
+  body: ReadableStream;
+}
+interface R2Bucket {
+  put(key: string, value: ArrayBuffer | Uint8Array | ReadableStream, options?: {
+    httpMetadata?: { contentType?: string };
+    customMetadata?: Record<string, string>;
+  }): Promise<unknown>;
+  get(key: string): Promise<R2ObjectBody | null>;
+  delete(key: string): Promise<void>;
+}

@@ -20,6 +20,9 @@ export interface Env {
   MSG_SYSTEM_HMAC_SECRET?: string;
   /** off | allowlist | all. Code default 'allowlist'; the RPC denies any other value (fails closed). */
   MESSAGING_ACCESS_MODE?: string;
+  /** KAN-581: the PRIVATE R2 bucket for message images (binding MEDIA). Absent until operations provision it; every
+   *  attachment route then answers 503. See docs/messaging/images-kan581.md. */
+  MEDIA?: R2Bucket;
 }
 
 export const DEFAULT_ACCESS_MODE = "allowlist";
