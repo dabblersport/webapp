@@ -23,6 +23,39 @@ String _block(String src, int open) {
   fail('unbalanced $opener at $open');
 }
 
+/// Whitespace-collapsed, so formatting changes do not matter but values do.
+String _flat(String s) => s.replaceAll(RegExp(r'\s+'), ' ');
+
+/// The exact expressions that tie the saved city and country to the edited
+/// fields. Each is matched whole, so replacing the value side of the city
+/// ternary, or an assignment to `countryToSave`, makes it go missing.
+const _pins = [
+  // city: the saved value is the trimmed field, null when empty
+  "'city': _cityController.text.trim().isEmpty ? null : "
+      '_cityController.text.trim(),',
+  // country: the payload carries countryToSave, nothing else
+  "'country': countryToSave,",
+  // countryToSave derives only from the trimmed country field
+  'final rawCountry = _countryController.text.trim();',
+  'if (rawCountry.isNotEmpty) { if (rawCountry.length == 2) { '
+      'countryToSave = rawCountry.toUpperCase();',
+  ".eq('name_en', rawCountry)",
+  'countryToSave = rows.isNotEmpty ? rows.first[\'code\'] as String? : null;',
+];
+
+/// The pins missing from [src], and any assignment to `countryToSave` beyond
+/// the two pinned ones.
+List<String> _unpinned(String src) {
+  final flat = _flat(src);
+  final missing = [
+    for (final p in _pins)
+      if (!flat.contains(p)) p,
+  ];
+  final assigns = RegExp(r'countryToSave\s*=[^=]').allMatches(flat).length;
+  if (assigns != 2) missing.add('countryToSave assigned $assigns times');
+  return missing;
+}
+
 const _savedPlaceTokens = [
   'profile_locations',
   'profileLocationsTable',
@@ -58,15 +91,37 @@ void main() {
     });
 
     test('city and country are written from the edited fields only', () {
-      expect(usersUpdate, contains("'city': _cityController.text.trim()"));
-      expect(usersUpdate, contains("'country': countryToSave"));
-      // countryToSave comes from the country text field alone.
-      expect(save, contains('_countryController.text.trim()'));
-      expect(
-        RegExp(r'countryToSave\s*=').allMatches(save).length,
-        2,
-        reason: 'ISO code from the field, or the ref_countries lookup of it',
+      expect(_unpinned(src), isEmpty);
+    });
+
+    test('the pin catches a constant city or country (counterexamples)', () {
+      final constantCity = src.replaceFirst(
+        ': _cityController.text.trim(),',
+        ": 'Dubai',",
       );
+      expect(constantCity, isNot(src));
+      expect(_unpinned(constantCity), isNotEmpty);
+
+      final constantCountry = src.replaceFirst(
+        'countryToSave = rawCountry.toUpperCase();',
+        "countryToSave = 'AE';",
+      );
+      expect(constantCountry, isNot(src));
+      expect(_unpinned(constantCountry), isNotEmpty);
+
+      final constantLookup = src.replaceFirst(
+        "? rows.first['code'] as String?",
+        "? 'AE'",
+      );
+      expect(constantLookup, isNot(src));
+      expect(_unpinned(constantLookup), isNotEmpty);
+
+      final constantPayload = src.replaceFirst(
+        "'country': countryToSave,",
+        "'country': 'AE',",
+      );
+      expect(constantPayload, isNot(src));
+      expect(_unpinned(constantPayload), isNotEmpty);
     });
 
     test('the users payload carries no saved-place key', () {
