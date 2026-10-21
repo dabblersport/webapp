@@ -3,7 +3,10 @@ import 'package:dabbler_design_system/dabbler_design_system.dart'
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -298,8 +301,13 @@ class GameViewController extends StateNotifier<GameViewState> {
     required SupabaseClient supabase,
     required this.gameId,
     required this.currentUserId,
+    OfflineCache? cache,
+    String? accountId,
   }) : _db = supabase,
+       _cache = cache,
+       _accountId = accountId,
        super(const GameViewState()) {
+    _hydrate();
     _load();
     _subscribeToChanges();
   }
@@ -307,6 +315,34 @@ class GameViewController extends StateNotifier<GameViewState> {
   final SupabaseClient _db;
   final String gameId;
   final String? currentUserId;
+
+  // KAN-605: a game the viewer opened is shown from the on-device cache first
+  // and refreshed in the background.
+  final OfflineCache? _cache;
+  final String? _accountId;
+  bool get _cacheOn => _cache != null && _accountId != null;
+  String get _gameKey => 'game.detail.$gameId';
+  String get _rosterKey => 'game.roster.$gameId';
+
+  Future<void> _hydrate() async {
+    if (!_cacheOn) return;
+    final game = await _cache!.read(_accountId!, _gameKey);
+    final roster = await _cache.read(_accountId, _rosterKey);
+    if (!mounted || state.game != null || game == null) return;
+    try {
+      state = state.copyWith(
+        game: GameView.fromJson(Map<String, dynamic>.from(game.payload as Map)),
+        roster: roster == null
+            ? null
+            : [
+                for (final r in (roster.payload as List))
+                  GameRosterEntry.fromJson(Map<String, dynamic>.from(r as Map)),
+              ],
+      );
+    } catch (_) {
+      // A cached shape that no longer parses is the same as no cache.
+    }
+  }
 
   RealtimeChannel? _channel;
   Timer? _refreshDebounce;
@@ -397,19 +433,29 @@ class GameViewController extends StateNotifier<GameViewState> {
   }
 
   Future<void> _fetchGame() async {
+    final started = DateTime.now();
     try {
       final row = await _db
           .from(SupabaseConfig.vGameCardTable)
           .select()
           .eq('id', gameId)
-          .single();
+          .single()
+          .timeout(kRequestTimeout);
+      if (!mounted) return;
       state = state.copyWith(game: GameView.fromJson(row));
+      if (_cacheOn) {
+        _cache!.write(_accountId!, _gameKey, row, requestStartedAt: started);
+      }
     } catch (e) {
-      state = state.copyWith(error: 'Failed to load game');
+      // KAN-605: a failed refresh behind cached data is silent.
+      if (mounted && state.game == null) {
+        state = state.copyWith(error: 'Failed to load game');
+      }
     }
   }
 
   Future<void> _fetchRoster() async {
+    final started = DateTime.now();
     try {
       final rows = await _db
           .from(SupabaseConfig.gameRosterTable)
@@ -418,7 +464,11 @@ class GameViewController extends StateNotifier<GameViewState> {
           )
           .eq('game_id', gameId)
           .eq('status', 'active')
-          .order('joined_at');
+          .order('joined_at')
+          .timeout(kRequestTimeout);
+      if (_cacheOn) {
+        _cache!.write(_accountId!, _rosterKey, rows, requestStartedAt: started);
+      }
       state = state.copyWith(
         roster: (rows as List)
             .map((r) => GameRosterEntry.fromJson(r as Map<String, dynamic>))
@@ -652,5 +702,7 @@ final gameViewControllerProvider = StateNotifierProvider.family
         supabase: supabase,
         gameId: gameId,
         currentUserId: currentUserId,
+        cache: ref.watch(offlineCacheProvider),
+        accountId: ref.watch(cacheAccountIdProvider),
       );
     });

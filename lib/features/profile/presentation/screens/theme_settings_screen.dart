@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/services/theme_categories.dart';
 import 'package:dabbler/core/services/theme_service.dart';
@@ -47,6 +49,7 @@ class _ThemeSettingsScreenState extends State<ThemeSettingsScreen> {
           return ListView(
             padding: kSettingsBodyPadding,
             children: [
+              const SettingSyncHint([SettingKeys.theme]),
               _buildThemeModeSection(l10n),
               kSettingsGroupGap,
               _buildThemeCategorySection(l10n),

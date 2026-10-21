@@ -1,3 +1,5 @@
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'dart:async';
 import 'package:dabbler/core/config/supabase_config.dart';
 
@@ -90,6 +92,8 @@ class ThemeService extends ChangeNotifier {
       final client = Supabase.instance.client;
       final user = client.auth.currentUser;
       if (user == null) return;
+      // KAN-608: an edit still waiting for the server is newer than its copy.
+      if (await SettingsSyncBridge.hasPendingEdit(SettingKeys.theme)) return;
 
       final row = await client
           .from(SupabaseConfig.userSettingsTable)
@@ -383,6 +387,10 @@ class ThemeService extends ChangeNotifier {
         'day_start_time': _formatDbTime(_dayStartTime),
         'night_start_time': _formatDbTime(_nightStartTime),
       };
+
+      // KAN-608: applied on the device already; the offline queue sends it
+      // (and keeps it when the connection is gone).
+      if (await SettingsSyncBridge.submit(SettingKeys.theme, payload)) return;
 
       final existing = await client
           .from(SupabaseConfig.userSettingsTable)

@@ -3078,6 +3078,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get priv_save_failed => 'تعذّر حفظ الإعدادات. حاول مرة أخرى.';
 
   @override
+  String get settings_not_synced_retry =>
+      'لم تتم المزامنة. اضغط لإعادة المحاولة.';
+
+  @override
   String get priv_saved => 'تم الحفظ';
 
   @override
