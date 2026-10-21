@@ -117,9 +117,13 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           : typingTransport.send(_conversationId, typing),
     );
     _startPoll(ref.read(gameChatEffectivePollProvider));
-    _receiptsPoll = Timer.periodic(Duration(seconds: receiptsRefreshSeconds), (_) {
-      if (mounted && _foreground)
-        _refreshReceipts(ref.read(_provider).valueOrNull);
+    _receiptsPoll = Timer.periodic(Duration(seconds: receiptsRefreshSeconds), (
+      _,
+    ) {
+      if (!mounted || !_foreground) return;
+      final view = ref.read(_provider).valueOrNull;
+      _ackIncoming(view); // repeats an acknowledgement the network lost
+      _refreshReceipts(view);
     });
   }
 

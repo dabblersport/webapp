@@ -19,8 +19,10 @@ class _Recording implements ReceiptsTransport {
   final List<(String, ReceiptState, int)> calls = [];
 
   @override
-  Future<void> ack(String id, ReceiptState state, int throughSeq) async =>
-      calls.add((id, state, throughSeq));
+  Future<bool> ack(String id, ReceiptState state, int throughSeq) async {
+    calls.add((id, state, throughSeq));
+    return true;
+  }
 
   @override
   Future<Map<int, ReceiptCounts>> summaries(String c, List<int> s) async =>
