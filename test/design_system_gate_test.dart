@@ -123,12 +123,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 700',
   ),
   GateAllow(
-    'lib/features/location/presentation/widgets/location_search_field.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxHeight: 280',
-  ),
-  GateAllow(
     'lib/features/home/presentation/widgets/home_post_row.dart',
     ['numeric named arg'],
     _aspectReason,
