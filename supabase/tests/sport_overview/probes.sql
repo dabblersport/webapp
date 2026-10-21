@@ -45,11 +45,105 @@ BEGIN
   PERFORM set_config('kan621.sport',v_sport::text,true); PERFORM set_config('kan621.c1',c1,true); PERFORM set_config('kan621.c2',c2,true);
   PERFORM set_config('kan621.uA',uA::text,true); PERFORM set_config('kan621.uB',uB::text,true);
   PERFORM set_config('kan621.uC',uC::text,true); PERFORM set_config('kan621.uD',uD::text,true);
+  PERFORM set_config('kan621.uB',uB::text,true); PERFORM set_config('kan621.pB',pB::text,true); PERFORM set_config('kan621.pD',pD::text,true);
+  PERFORM set_config('kan621.a1',a1::text,true); PERFORM set_config('kan621.a2',a2::text,true);
+  PERFORM set_config('kan621.g1',g1::text,true); PERFORM set_config('kan621.g2',g2::text,true);
 EXCEPTION WHEN OTHERS THEN
   INSERT INTO _p621 VALUES ('SEED','SKIPPED',SQLERRM);
 END $seed$;
 
--- act as the authenticated caller A
+-- Counts are asserted as DELTAS (after seeding minus before seeding) so rows already in the database do not matter.
+-- _b621 = before, _a621 = after; scope c1 / c2 = city, all = no city.
+CREATE TEMP TABLE _b621(scope text, games_next7 bigint, meetups_next7 bigint, posts bigint) ON COMMIT DROP;
+CREATE TEMP TABLE _a621(scope text, games_next7 bigint, meetups_next7 bigint, posts bigint) ON COMMIT DROP;
+GRANT ALL ON _b621 TO authenticated;
+GRANT ALL ON _a621 TO authenticated;
+
+SELECT set_config('request.jwt.claim.sub', current_setting('kan621.uA', true), true);
+SET LOCAL ROLE authenticated;
+INSERT INTO _b621 SELECT 'c1', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _b621 SELECT 'c2', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _b621 SELECT 'all', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+RESET ROLE;
+
+-- Seeds for games, meetups and posts. Each block is independent: a trigger or constraint that rejects the seed
+-- leaves a SKIPPED row for that table (flag kan621.<t>_ok stays unset) and the other tables are still probed.
+-- Matrix per table (sport = the probe sport): 2 qualifying rows in city 1 (+1 day, +3 days), 1 qualifying in city 2
+-- (+2 days), and negatives in city 1: cancelled / more than 7 days out / already started / not public / creator
+-- blocked by the caller. Posts have no start time; their negatives are followers-only, deleted, hidden by admin,
+-- expired and blocked author.
+DO $games$
+DECLARE s uuid := current_setting('kan621.sport')::uuid; a1 uuid := current_setting('kan621.a1')::uuid; a2 uuid := current_setting('kan621.a2')::uuid;
+  g1 uuid := current_setting('kan621.g1')::uuid; g2 uuid := current_setting('kan621.g2')::uuid;
+  pB uuid := current_setting('kan621.pB')::uuid; uB uuid := current_setting('kan621.uB')::uuid;
+  pD uuid := current_setting('kan621.pD')::uuid; uD uuid := current_setting('kan621.uD')::uuid;
+BEGIN
+  INSERT INTO public.games(creator_profile_id,creator_user_id,start_at,end_at,capacity,sport_id,geo_location_id,area_id,listing_visibility,is_cancelled) VALUES
+    (pB,uB, now()+interval '1 day',  now()+interval '1 day 1 hour',  10,s,g1,a1,'public',  false),
+    (pB,uB, now()+interval '3 days', now()+interval '3 days 1 hour', 10,s,g1,a1,'public',  false),
+    (pB,uB, now()+interval '2 days', now()+interval '2 days 1 hour', 10,s,g2,a2,'public',  false),
+    (pB,uB, now()+interval '1 day',  now()+interval '1 day 1 hour',  10,s,g1,a1,'public',  true),   -- cancelled
+    (pB,uB, now()+interval '10 days',now()+interval '10 days 1 hour',10,s,g1,a1,'public',  false),  -- outside 7 days
+    (pB,uB, now()-interval '1 day',  now()-interval '23 hours',      10,s,g1,a1,'public',  false),  -- already started
+    (pB,uB, now()+interval '1 day',  now()+interval '1 day 1 hour',  10,s,g1,a1,'private', false),  -- not public
+    (pD,uD, now()+interval '1 day',  now()+interval '1 day 1 hour',  10,s,g1,a1,'public',  false);  -- creator blocked by A
+  PERFORM set_config('kan621.games_ok','1',true);
+EXCEPTION WHEN OTHERS THEN
+  INSERT INTO _p621 VALUES ('SEED_games','SKIPPED',SQLERRM);
+END $games$;
+
+DO $meetups$
+DECLARE s uuid := current_setting('kan621.sport')::uuid; a1 uuid := current_setting('kan621.a1')::uuid; a2 uuid := current_setting('kan621.a2')::uuid;
+  g1 uuid := current_setting('kan621.g1')::uuid; g2 uuid := current_setting('kan621.g2')::uuid;
+  pB uuid := current_setting('kan621.pB')::uuid; uB uuid := current_setting('kan621.uB')::uuid;
+  pD uuid := current_setting('kan621.pD')::uuid; uD uuid := current_setting('kan621.uD')::uuid;
+BEGIN
+  INSERT INTO public.meetups(creator_profile_id,creator_user_id,host_actor_id,title,start_at,sport_id,geo_location_id,area_id,listing_visibility,is_cancelled) VALUES
+    (pB,uB,pB,'kan621 m ok1', now()+interval '1 day',  s,g1,a1,'public', false),
+    (pB,uB,pB,'kan621 m ok2', now()+interval '3 days', s,g1,a1,'public', false),
+    (pB,uB,pB,'kan621 m ok3', now()+interval '2 days', s,g2,a2,'public', false),
+    (pB,uB,pB,'kan621 m canc',now()+interval '1 day',  s,g1,a1,'public', true),    -- cancelled
+    (pB,uB,pB,'kan621 m far', now()+interval '10 days',s,g1,a1,'public', false),   -- outside 7 days
+    (pB,uB,pB,'kan621 m past',now()-interval '1 day',  s,g1,a1,'public', false),   -- already started
+    (pB,uB,pB,'kan621 m hid', now()+interval '1 day',  s,g1,a1,'hidden', false),   -- not public
+    (pD,uD,pD,'kan621 m blk', now()+interval '1 day',  s,g1,a1,'public', false);   -- creator blocked by A
+  PERFORM set_config('kan621.meetups_ok','1',true);
+EXCEPTION WHEN OTHERS THEN
+  INSERT INTO _p621 VALUES ('SEED_meetups','SKIPPED',SQLERRM);
+END $meetups$;
+
+-- posts: some author triggers read auth.uid(), so the seed runs as the author (user B).
+SELECT set_config('request.jwt.claim.sub', current_setting('kan621.uB', true), true);
+DO $posts$
+DECLARE s uuid := current_setting('kan621.sport')::uuid; a1 uuid := current_setting('kan621.a1')::uuid; a2 uuid := current_setting('kan621.a2')::uuid;
+  g1 uuid := current_setting('kan621.g1')::uuid; g2 uuid := current_setting('kan621.g2')::uuid;
+  pB uuid := current_setting('kan621.pB')::uuid; uB uuid := current_setting('kan621.uB')::uuid;
+  pD uuid := current_setting('kan621.pD')::uuid; uD uuid := current_setting('kan621.uD')::uuid;
+BEGIN
+  INSERT INTO public.posts(author_profile_id,author_user_id,kind,visibility,body,geo_lat,geo_lng,geo_location_id,area_id,author_display_name,
+                           sport_id,origin_type,post_type,is_deleted,is_hidden_admin,expires_at) VALUES
+    (pB,uB,'original','public',   'kan621 p ok1',25.0,55.0,g1,a1,'Probe B',s,'manual','dab',false,false,NULL),
+    (pB,uB,'original','public',   'kan621 p ok2',25.0,55.0,g1,a1,'Probe B',s,'manual','dab',false,false,now()+interval '1 day'),
+    (pB,uB,'original','public',   'kan621 p ok3',24.4,54.4,g2,a2,'Probe B',s,'manual','dab',false,false,NULL),          -- other city: still counts
+    (pB,uB,'original','followers','kan621 p fol',25.0,55.0,g1,a1,'Probe B',s,'manual','dab',false,false,NULL),          -- not public
+    (pB,uB,'original','public',   'kan621 p del',25.0,55.0,g1,a1,'Probe B',s,'manual','dab',true, false,NULL),          -- deleted
+    (pB,uB,'original','public',   'kan621 p hid',25.0,55.0,g1,a1,'Probe B',s,'manual','dab',false,true, NULL),          -- hidden by admin
+    (pB,uB,'original','public',   'kan621 p exp',25.0,55.0,g1,a1,'Probe B',s,'manual','dab',false,false,now()-interval '1 hour'), -- expired
+    (pD,uD,'original','public',   'kan621 p blk',25.0,55.0,g1,a1,'Probe D',s,'manual','dab',false,false,NULL);          -- author blocked by A
+  PERFORM set_config('kan621.posts_ok','1',true);
+EXCEPTION WHEN OTHERS THEN
+  INSERT INTO _p621 VALUES ('SEED_posts','SKIPPED',SQLERRM);
+END $posts$;
+
+-- after snapshot, as caller A
+SELECT set_config('request.jwt.claim.sub', current_setting('kan621.uA', true), true);
+SET LOCAL ROLE authenticated;
+INSERT INTO _a621 SELECT 'c1', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c1')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _a621 SELECT 'c2', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, current_setting('kan621.c2')) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+INSERT INTO _a621 SELECT 'all', games_next7, meetups_next7, posts FROM public.rpc_sport_overview(current_setting('kan621.sport')::uuid, NULL) WHERE current_setting('kan621.sport', true) IS NOT NULL;
+RESET ROLE;
+
+-- act as the authenticated caller A (the role stays authenticated until the anon probe)
 SELECT set_config('request.jwt.claim.sub', current_setting('kan621.uA', true), true);
 SET LOCAL ROLE authenticated;
 
@@ -106,16 +200,52 @@ SELECT 'P5b_unknown_sport_zeros',
   o.mutual_followers::text
 FROM public.rpc_sport_overview(gen_random_uuid(), NULL) o;
 
--- P5c: anon is refused.
+-- P6 (games): window, cancelled, visibility, blocked creator and city scope. Seeded: 2 in city 1, 1 in city 2.
+-- Expected deltas: city 1 = 2, city 2 = 1, all cities = 3.
+INSERT INTO _p621
+SELECT 'P6_games_next7',
+  CASE WHEN current_setting('kan621.games_ok', true) IS DISTINCT FROM '1' THEN 'SKIPPED'
+       WHEN max(a.games_next7-b.games_next7) FILTER (WHERE a.scope='c1')=2
+        AND max(a.games_next7-b.games_next7) FILTER (WHERE a.scope='c2')=1
+        AND max(a.games_next7-b.games_next7) FILTER (WHERE a.scope='all')=3 THEN 'pass' ELSE 'FAIL' END,
+  coalesce(string_agg(a.scope||'='||(a.games_next7-b.games_next7), ' ' ORDER BY a.scope),'no rows')
+FROM _a621 a JOIN _b621 b USING (scope);
+
+-- P7 (meetups): same matrix as P6. Expected deltas: city 1 = 2, city 2 = 1, all = 3.
+INSERT INTO _p621
+SELECT 'P7_meetups_next7',
+  CASE WHEN current_setting('kan621.meetups_ok', true) IS DISTINCT FROM '1' THEN 'SKIPPED'
+       WHEN max(a.meetups_next7-b.meetups_next7) FILTER (WHERE a.scope='c1')=2
+        AND max(a.meetups_next7-b.meetups_next7) FILTER (WHERE a.scope='c2')=1
+        AND max(a.meetups_next7-b.meetups_next7) FILTER (WHERE a.scope='all')=3 THEN 'pass' ELSE 'FAIL' END,
+  coalesce(string_agg(a.scope||'='||(a.meetups_next7-b.meetups_next7), ' ' ORDER BY a.scope),'no rows')
+FROM _a621 a JOIN _b621 b USING (scope);
+
+-- P8 (posts): public, live, not expired, author not blocked; NOT city-scoped, so the delta is the same (3) for
+-- city 1, city 2 and all cities (two seeded rows in city 1 and one in city 2 all count).
+INSERT INTO _p621
+SELECT 'P8_posts_not_city_scoped',
+  CASE WHEN current_setting('kan621.posts_ok', true) IS DISTINCT FROM '1' THEN 'SKIPPED'
+       WHEN max(a.posts-b.posts) FILTER (WHERE a.scope='c1')=3
+        AND max(a.posts-b.posts) FILTER (WHERE a.scope='c2')=3
+        AND max(a.posts-b.posts) FILTER (WHERE a.scope='all')=3 THEN 'pass' ELSE 'FAIL' END,
+  coalesce(string_agg(a.scope||'='||(a.posts-b.posts), ' ' ORDER BY a.scope),'no rows')
+FROM _a621 a JOIN _b621 b USING (scope);
+
+-- P5c: anon is refused. The role is switched back BEFORE anything is written to _p621: anon has no privilege on
+-- the temp table, so the result is carried out of the anon block in a transaction-local setting.
 RESET ROLE;
 SET LOCAL ROLE anon;
 DO $anon$ BEGIN
   PERFORM * FROM public.rpc_sport_overview(gen_random_uuid(), NULL);
-  INSERT INTO _p621 VALUES ('P5c_anon_denied','FAIL','anon call succeeded');
+  PERFORM set_config('kan621.anon','called',true);
 EXCEPTION WHEN insufficient_privilege THEN
-  INSERT INTO _p621 VALUES ('P5c_anon_denied','pass','42501');
+  PERFORM set_config('kan621.anon','42501',true);
 END $anon$;
 RESET ROLE;
+INSERT INTO _p621 VALUES ('P5c_anon_denied',
+  CASE WHEN current_setting('kan621.anon', true) = '42501' THEN 'pass' ELSE 'FAIL' END,
+  coalesce(current_setting('kan621.anon', true), 'no result'));
 
 SELECT * FROM _p621 ORDER BY probe;
 ROLLBACK;

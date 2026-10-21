@@ -1,6 +1,6 @@
 # Sport Overview counts: `rpc_sport_overview` (KAN-621)
 
-Status: authored, not applied. Migration `supabase/migrations/20261021130000_sport_overview_counts.sql`, probes and rollback in `supabase/tests/sport_overview/`. Frontend consumer: KAN-622.
+Status: authored, not applied. Migration `supabase/migrations/20261021115000_sport_overview_counts.sql`, probes and rollback in `supabase/tests/sport_overview/`. Frontend consumer: KAN-622.
 
 ## Signature
 `public.rpc_sport_overview(p_sport_id uuid, p_city_code text default null)` returns one row. STABLE, SECURITY DEFINER, `search_path = public, pg_temp`, EXECUTE for `authenticated` only (revoked from PUBLIC and anon). Read-only; no table, column or policy is touched.
