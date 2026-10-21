@@ -34,8 +34,18 @@ class ActiveLocationDenied extends ActiveLocationState {}
 /// distance controls are off and nothing is sorted or filtered by distance.
 /// City content stays usable.
 class ActiveLocationCityOnly extends ActiveLocationState {
-  ActiveLocationCityOnly(this.city);
+  ActiveLocationCityOnly(
+    this.city, {
+    this.cityId,
+    this.country,
+    this.countryCode,
+  });
   final String city;
+
+  /// Map-service identity of the city (KAN-587); scopes Areas to this city.
+  final String? cityId;
+  final String? country;
+  final String? countryCode;
 }
 
 class ActiveLocationError extends ActiveLocationState {
@@ -404,12 +414,29 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   /// The user changed the city. A different city clears the previous area and
   /// coordinates: the state has no point, so distance controls are off until a
   /// new area is chosen, and city content stays usable.
-  Future<void> useManualCity(String city) async {
-    final DeviceLocation? next = await (await _store())?.changeCity(city);
+  Future<void> useManualCity(
+    String city, {
+    String? cityId,
+    String? country,
+    String? countryCode,
+  }) async {
+    final DeviceLocation? next = await (await _store())?.changeCity(
+      city,
+      cityId: cityId,
+      country: country,
+      countryCode: countryCode,
+    );
     if (next != null && next.hasPoint) {
       state = AsyncData(_fromDeviceLocation(next));
     } else {
-      state = AsyncData(ActiveLocationCityOnly(city));
+      state = AsyncData(
+        ActiveLocationCityOnly(
+          city,
+          cityId: next?.cityId ?? cityId,
+          country: next?.country ?? country,
+          countryCode: next?.countryCode ?? countryCode,
+        ),
+      );
     }
   }
 
@@ -449,7 +476,14 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   }
 
   ActiveLocationState _fromDeviceLocation(DeviceLocation l) {
-    if (!l.hasPoint) return ActiveLocationCityOnly(l.city);
+    if (!l.hasPoint) {
+      return ActiveLocationCityOnly(
+        l.city,
+        cityId: l.cityId,
+        country: l.country,
+        countryCode: l.countryCode,
+      );
+    }
     final bool last = l.provenance == DeviceLocationProvenance.lastKnown;
     final ActiveLocationReady ready = _manualReady(
       l.lat!,

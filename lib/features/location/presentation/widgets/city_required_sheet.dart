@@ -60,11 +60,18 @@ class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
     });
   }
 
-  Future<void> _pick(String city) async {
+  Future<void> _pick(MapboxPlace place) async {
     if (_saving) return;
     setState(() => _saving = true);
-    await ref.read(activeLocationProvider.notifier).useManualCity(city);
-    if (mounted) Navigator.pop(context, city);
+    await ref
+        .read(activeLocationProvider.notifier)
+        .useManualCity(
+          place.name,
+          cityId: place.id,
+          country: place.country,
+          countryCode: place.countryCode,
+        );
+    if (mounted) Navigator.pop(context, place.name);
   }
 
   @override
@@ -100,7 +107,7 @@ class _CityRequiredSheetState extends ConsumerState<CityRequiredSheet> {
                       for (final MapboxPlace city in cities) ...<Widget>[
                         DabblerInputRow(
                           flat: true,
-                          onTap: () => _pick(city.name),
+                          onTap: () => _pick(city),
                           leading: const DabblerIcon(
                             'location',
                             size: DabblerSizing.iconRow,
