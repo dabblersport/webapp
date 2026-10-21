@@ -113,6 +113,26 @@ void main() {
     expect(await cache.read('A', 'k'), isNotNull);
   });
 
+  test('an old-account response in flight at an account switch is dropped',
+      () async {
+    await cache.write('A', 'k', 'old');
+    final started = DateTime.now();
+    await Future<void>.delayed(const Duration(milliseconds: 5));
+    await cache.wipe(keepAccountId: 'B');
+    expect(await cache.read('A', 'k'), isNull);
+
+    await cache.write('A', 'k', 'late', requestStartedAt: started);
+    expect(await cache.read('A', 'k'), isNull);
+
+    // The kept account still takes its in-flight write.
+    await cache.write('B', 'k', 'mine', requestStartedAt: started);
+    expect(await cache.read('B', 'k'), isNotNull);
+
+    // A request for A that began after the switch is stored.
+    await cache.write('A', 'k', 'fresh', requestStartedAt: DateTime.now());
+    expect(await cache.read('A', 'k'), isNotNull);
+  });
+
   test('only server payloads are stored: keys are namespaced, nothing else',
       () async {
     await cache.write('A', 'feed.foryou', ['p']);

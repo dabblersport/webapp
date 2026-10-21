@@ -39,6 +39,12 @@ class OfflineCache {
 
   DateTime _lastWipe = DateTime.fromMillisecondsSinceEpoch(0);
 
+  /// The last account-switch wipe: every account but [_switchKeep] was cleared
+  /// at [_switchWipe], so a response still in flight for another account from
+  /// before that moment must not write it back.
+  DateTime _switchWipe = DateTime.fromMillisecondsSinceEpoch(0);
+  String? _switchKeep;
+
   Future<SharedPreferences> _p() async =>
       _prefs ??= await SharedPreferences.getInstance();
 
@@ -73,7 +79,12 @@ class OfflineCache {
   }) {
     final done = _queue.then((_) {
       final started = requestStartedAt;
-      if (started != null && !started.isAfter(_lastWipe)) return null;
+      if (started != null) {
+        if (!started.isAfter(_lastWipe)) return null;
+        if (accountId != _switchKeep && !started.isAfter(_switchWipe)) {
+          return null;
+        }
+      }
       return _write(accountId, key, payload, fetchedAt);
     });
     _queue = done.catchError((_) {});
@@ -153,7 +164,12 @@ class OfflineCache {
   /// Removes every entry of every account except [keepAccountId] (the account
   /// switch wipe). Pass null to remove everything (sign-out).
   Future<void> wipe({String? keepAccountId}) {
-    if (keepAccountId == null) _lastWipe = DateTime.now();
+    if (keepAccountId == null) {
+      _lastWipe = DateTime.now();
+    } else {
+      _switchWipe = DateTime.now();
+      _switchKeep = keepAccountId;
+    }
     final done = _queue.then((_) => _wipe(keepAccountId));
     _queue = done.catchError((_) {});
     return done;
