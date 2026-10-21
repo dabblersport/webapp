@@ -7002,6 +7002,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_saved_places => 'Saved places';
 
   @override
+  String get location_page_private =>
+      'Where you are on this device, and the private places you’ve named. Only you see this page.';
+
+  @override
+  String get location_saved_places_header => 'Saved places · Private';
+
+  @override
+  String get location_saved_places_note =>
+      'Only you see these. They name your location in the app and are never shown on your profile.';
+
+  @override
   String get location_add_place => 'Add a place';
 
   @override

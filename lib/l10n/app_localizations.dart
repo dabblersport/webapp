@@ -12593,6 +12593,24 @@ abstract class AppLocalizations {
   /// **'Saved places'**
   String get location_saved_places;
 
+  /// KAN-589 Location.dc.html L27 page subtitle on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Where you are on this device, and the private places you’ve named. Only you see this page.'**
+  String get location_page_private;
+
+  /// KAN-589 Location.dc.html L27/L30 Saved places section header.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places · Private'**
+  String get location_saved_places_header;
+
+  /// KAN-589 Location.dc.html L27/L30 Saved places privacy note.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you see these. They name your location in the app and are never shown on your profile.'**
+  String get location_saved_places_note;
+
   /// KAN-589 add-a-saved-place action on Settings > Location.
   ///
   /// In en, this message translates to:
