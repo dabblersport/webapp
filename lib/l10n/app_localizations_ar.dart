@@ -7036,4 +7036,221 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
+
+  @override
+  String get sport_overview_title => 'الرياضة';
+
+  @override
+  String get sport_overview_tab_overview => 'نظرة عامة';
+
+  @override
+  String get sport_overview_tab_games => 'المباريات';
+
+  @override
+  String get sport_overview_tab_meetups => 'اللقاءات';
+
+  @override
+  String get sport_overview_tab_venues => 'الأماكن';
+
+  @override
+  String get sport_overview_tab_posts => 'المنشورات';
+
+  @override
+  String get sport_overview_follow => 'متابعة';
+
+  @override
+  String get sport_overview_following => 'تتابعها';
+
+  @override
+  String sport_overview_followers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count متابعين',
+      one: 'متابع واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sport_overview_stat_games => 'مباريات خلال ٧ أيام';
+
+  @override
+  String get sport_overview_stat_meetups => 'لقاءات خلال ٧ أيام';
+
+  @override
+  String get sport_overview_stat_venues => 'أماكن';
+
+  @override
+  String get sport_overview_stat_spaces => 'ملاعب';
+
+  @override
+  String get sport_overview_stat_posts => 'منشورات';
+
+  @override
+  String get sport_overview_see_all => 'عرض الكل';
+
+  @override
+  String get sport_overview_section_games => 'المباريات القادمة';
+
+  @override
+  String get sport_overview_section_venues => 'الأماكن';
+
+  @override
+  String get sport_overview_section_posts => 'أحدث المنشورات';
+
+  @override
+  String get sport_overview_switch_venues => 'الأماكن';
+
+  @override
+  String get sport_overview_switch_spaces => 'الملاعب';
+
+  @override
+  String get sport_overview_empty_games_title => 'لا توجد مباريات خلال ٧ أيام';
+
+  @override
+  String get sport_overview_empty_games_text =>
+      'عندما ينشئ أحدهم مباراة لهذه الرياضة ستظهر هنا.';
+
+  @override
+  String get sport_overview_empty_meetups_title => 'لا توجد لقاءات خلال ٧ أيام';
+
+  @override
+  String get sport_overview_empty_meetups_text =>
+      'عندما ينشئ أحدهم لقاءً لهذه الرياضة سيظهر هنا.';
+
+  @override
+  String get sport_overview_empty_venues_title => 'لا توجد أماكن بعد';
+
+  @override
+  String get sport_overview_empty_venues_text =>
+      'لا يوجد مكان يقدّم هذه الرياضة في المدينة المختارة.';
+
+  @override
+  String get sport_overview_empty_spaces_title => 'لا توجد ملاعب بعد';
+
+  @override
+  String get sport_overview_empty_spaces_text =>
+      'لا يوجد ملعب لهذه الرياضة في المدينة المختارة.';
+
+  @override
+  String get sport_overview_empty_posts_title => 'لا توجد منشورات بعد';
+
+  @override
+  String get sport_overview_empty_posts_text =>
+      'المنشورات الموسومة بهذه الرياضة تظهر هنا.';
+
+  @override
+  String get sport_overview_error_title => 'تعذّر التحميل';
+
+  @override
+  String get sport_overview_error_text =>
+      'تحقق من اتصالك وحاول مرة أخرى. لن يظهر شيء حتى يكتمل التحميل.';
+
+  @override
+  String get sport_overview_retry => 'إعادة المحاولة';
+
+  @override
+  String get sport_overview_load_more => 'عرض المزيد';
+
+  @override
+  String get sport_overview_page_error_title => 'هذه الرياضة غير متاحة';
+
+  @override
+  String get sport_overview_page_error_text =>
+      'ربما أُزيلت، أو تعذّر تحميل الصفحة.';
+
+  @override
+  String get sport_overview_city_label => 'المدينة';
+
+  @override
+  String get sport_overview_city_all => 'كل المدن';
+
+  @override
+  String get sport_overview_city_pick_title => 'اختر مدينة';
+
+  @override
+  String get sport_overview_city_clear => 'مسح المدينة';
+
+  @override
+  String get sport_overview_city_cta_title => 'اختر مدينة لترى ما هو متاح';
+
+  @override
+  String get sport_overview_city_cta_text =>
+      'هذا يفلتر هذه الصفحة فقط. موقعك يبقى كما هو.';
+
+  @override
+  String get sport_overview_city_cta_button => 'اختيار مدينة';
+
+  @override
+  String sport_overview_city_unmapped(String city) {
+    return 'لا توجد قوائم مجمّعة تحت $city بعد، لذا تظهر كل المدن.';
+  }
+
+  @override
+  String sport_overview_mutual_one(String a) {
+    return 'يتابعها $a';
+  }
+
+  @override
+  String sport_overview_mutual_two(String a, String b) {
+    return 'يتابعها $a و$b';
+  }
+
+  @override
+  String sport_overview_mutual_three(String a, String b, String c) {
+    return 'يتابعها $a و$b و$c';
+  }
+
+  @override
+  String get sport_overview_create_game => 'إنشاء مباراة';
+
+  @override
+  String get sport_overview_follow_failed =>
+      'تعذّر تحديث ما تتابعه. حاول مرة أخرى.';
+
+  @override
+  String get sport_overview_unfollow_last =>
+      'يجب أن تتابع رياضة واحدة على الأقل.';
+
+  @override
+  String get sport_overview_unfollow_practicing =>
+      'أنت تلعب هذه الرياضة، لذا لا يمكنك إلغاء متابعتها.';
+
+  @override
+  String get sport_overview_unfollow_primary =>
+      'هذه رياضتك الأساسية، لذا لا يمكنك إلغاء متابعتها.';
+
+  @override
+  String get sport_overview_join_profile_title => 'هل تريد إنشاء ملف؟';
+
+  @override
+  String sport_overview_join_profile_text(String sport) {
+    return 'تحتاج إلى ملف $sport للانضمام. سيُضاف $sport إلى الرياضات التي تلعبها وتتابعها.';
+  }
+
+  @override
+  String get sport_overview_join_profile_yes => 'نعم';
+
+  @override
+  String get sport_overview_join_profile_no => 'لا';
+
+  @override
+  String get sport_overview_join_profile_failed =>
+      'تعذّر إنشاء ملفك، لذا لم تنضم. حاول مرة أخرى.';
+
+  @override
+  String sport_overview_space_price(String price) {
+    return '$price درهم / ساعة';
+  }
+
+  @override
+  String sport_overview_space_capacity(int count) {
+    return 'حتى $count لاعبين';
+  }
+
+  @override
+  String sport_overview_open_page(String sport) {
+    return 'فتح صفحة $sport';
+  }
 }

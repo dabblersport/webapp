@@ -117,6 +117,7 @@ class SupabaseConfig {
 
   // ---- P4-1: table name constants (auto-generated from call sites) ----
   static const String areasTable = 'areas';
+  static const String refCitiesTable = 'ref_cities';
   static const String banTermsTable = 'ban_terms';
   static const String circleMembersTable = 'circle_members';
   static const String circlesTable = 'circles';
@@ -273,6 +274,8 @@ class SupabaseConfig {
   static const String rpcCreateGameFn = 'rpc_create_game';
   static const String rpcCreateSportProfileFn = 'rpc_create_sport_profile';
   static const String rpcJoinGameFn = 'rpc_join_game';
+  /// KAN-621/KAN-622: the Sport Overview aggregates (followers, city-scoped counts).
+  static const String rpcSportOverviewFn = 'rpc_sport_overview';
   static const String rpcLeaveGameFn = 'rpc_leave_game';
   static const String rpcOnboardProfileFn = 'rpc_onboard_profile';
   static const String rpcUpdateGameFn = 'rpc_update_game';

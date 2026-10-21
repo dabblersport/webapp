@@ -424,6 +424,7 @@ class AppRouter {
     profileShareLinkRoute,
     socialRoute,
     sportsExploreRoute,
+    sportOverviewRoute,
     activitiesRoute,
     rewardsRoute,
     profileRoute,

@@ -16,6 +16,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart';
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:dabbler/features/sports/presentation/screens/sport_overview_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
@@ -129,6 +130,22 @@ RouteBase get sportsExploreRoute =>
       pageBuilder: (context, state) => FadeThroughTransitionPage(
         key: state.pageKey,
         child: const ExploreScreen(),
+      ),
+    );
+
+// KAN-622: /sport/:sportId — the public page of one sport (root-level, no
+// shell). Gated on FeatureFlags.sportOverview.
+RouteBase get sportOverviewRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.sportOverview,
+      name: RouteNames.sportOverview,
+      redirect: (context, state) =>
+          FeatureFlags.sportOverview ? null : RoutePaths.home,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: SportOverviewScreen(sportId: state.pathParameters['sportId']!),
+        type: SharedAxisType.horizontal,
       ),
     );
 
