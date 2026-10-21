@@ -81,11 +81,6 @@ class SavedLocationsScreen extends ConsumerWidget {
                   title: l10n.saved_places_empty_title,
                   text: l10n.saved_places_empty_text,
                   size: DabblerEmptyStateSize.page,
-                  action: DabblerButton(
-                    label: l10n.saved_places_add_first,
-                    icon: 'location-add',
-                    onPressed: () => startAddSavedPlace(context, ref),
-                  ),
                 ),
               ] else ...[
                 for (final place in sorted) ...[
