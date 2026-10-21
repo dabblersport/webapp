@@ -93,13 +93,19 @@ void main() {
   group('size cap', () {
     /// Seeds [count] entries of [bytes] each straight into the store, oldest
     /// first, so the account is over the cap without a write evicting them.
-    Future<void> seed(int count, int bytes, {String prefix = 'big.'}) async {
+    Future<void> seed(
+      int count,
+      int bytes, {
+      String prefix = 'big.',
+      List<String>? names,
+    }) async {
       final index = <String, List<int>>{};
       for (var i = 0; i < count; i++) {
+        final name = names != null ? names[i] : '$prefix$i';
         final at = t0.subtract(Duration(minutes: count - i)); // i=0 oldest
-        index['$prefix$i'] = [at.millisecondsSinceEpoch, bytes];
+        index[name] = [at.millisecondsSinceEpoch, bytes];
         await prefs.setString(
-          'offline_cache.v1.A.$prefix$i',
+          'offline_cache.v1.A.$name',
           jsonEncode({'t': at.millisecondsSinceEpoch, 'p': 'x'}),
         );
       }
@@ -146,6 +152,24 @@ void main() {
         expect(prefs.getString('offline_cache.v1.A.feed.q0'), isNull);
         expect(prefs.getString('offline_cache.v1.A.feed.q1'), isNull);
         expect(prefs.getString('offline_cache.v1.A.feed.q2'), isNotNull);
+        expect(await cache.sizeOf('A'), lessThanOrEqualTo(2 * 1024 * 1024));
+      },
+    );
+
+    test(
+      'the Home feed survives the cap when a newer feed tab is cached',
+      () async {
+        const chunk = 600 * 1024;
+        // feed.foryou is the oldest; the other tabs are newer. 2.4 MiB.
+        await seed(
+          4,
+          chunk,
+          names: ['feed.foryou', 'feed.active', 'feed.nearby', 'feed.news'],
+        );
+        final r = await cache.cleanup('A', now: t0);
+        expect(r.removed, ['feed.active']);
+        expect(prefs.getString('offline_cache.v1.A.feed.foryou'), isNotNull);
+        expect(prefs.getString('offline_cache.v1.A.feed.news'), isNotNull);
         expect(await cache.sizeOf('A'), lessThanOrEqualTo(2 * 1024 * 1024));
       },
     );
