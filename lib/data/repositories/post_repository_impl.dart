@@ -1158,7 +1158,25 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
             areaId: request.areaId,
           ),
         );
-        final post = Post.fromJson(res as Map<String, dynamic>);
+        var post = Post.fromJson(res as Map<String, dynamic>);
+        // KAN-592: the create_post RPC takes no posting city, so the author's
+        // own new row is stamped right after it. The tagged place above is a
+        // different field and is not touched.
+        final city = request.postedFromCity;
+        if (city != null) {
+          await _db
+              .from(SupabaseConfig.postsTable)
+              .update({
+                'posted_from_city': city,
+                if (request.postedFromArea != null)
+                  'posted_from_area': request.postedFromArea,
+              })
+              .eq('id', post.id);
+          post = post.copyWith(
+            postedFromCity: city,
+            postedFromArea: request.postedFromArea,
+          );
+        }
         // Link hashtags to public.hashtags / post_hashtags tables.
         await _linkHashtags(
           postId: post.id,

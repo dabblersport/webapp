@@ -85,6 +85,13 @@ mixin _$Post {
   String? get locationTagId => throw _privateConstructorUsedError;
   @JsonKey(name: 'location_name')
   String? get locationName => throw _privateConstructorUsedError;
+
+  /// KAN-592: where the author posted from. Independent of [locationName]
+  /// (the place the post is about). Null = legacy row, shown as Dubai.
+  @JsonKey(name: 'posted_from_city')
+  String? get postedFromCity => throw _privateConstructorUsedError;
+  @JsonKey(name: 'posted_from_area')
+  String? get postedFromArea => throw _privateConstructorUsedError;
   @JsonKey(name: 'vibe_id')
   String? get primaryVibeId => throw _privateConstructorUsedError;
   @JsonKey(name: 'origin_id')
@@ -218,6 +225,8 @@ abstract class $PostCopyWith<$Res> {
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
     @JsonKey(name: 'location_name') String? locationName,
+    @JsonKey(name: 'posted_from_city') String? postedFromCity,
+    @JsonKey(name: 'posted_from_area') String? postedFromArea,
     @JsonKey(name: 'vibe_id') String? primaryVibeId,
     @JsonKey(name: 'origin_id') String? originId,
     @JsonKey(name: 'content_class') String? contentClass,
@@ -305,6 +314,8 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
     Object? sportId = freezed,
     Object? locationTagId = freezed,
     Object? locationName = freezed,
+    Object? postedFromCity = freezed,
+    Object? postedFromArea = freezed,
     Object? primaryVibeId = freezed,
     Object? originId = freezed,
     Object? contentClass = freezed,
@@ -433,6 +444,14 @@ class _$PostCopyWithImpl<$Res, $Val extends Post>
             locationName: freezed == locationName
                 ? _value.locationName
                 : locationName // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            postedFromCity: freezed == postedFromCity
+                ? _value.postedFromCity
+                : postedFromCity // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            postedFromArea: freezed == postedFromArea
+                ? _value.postedFromArea
+                : postedFromArea // ignore: cast_nullable_to_non_nullable
                       as String?,
             primaryVibeId: freezed == primaryVibeId
                 ? _value.primaryVibeId
@@ -605,6 +624,8 @@ abstract class _$$PostImplCopyWith<$Res> implements $PostCopyWith<$Res> {
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
     @JsonKey(name: 'location_name') String? locationName,
+    @JsonKey(name: 'posted_from_city') String? postedFromCity,
+    @JsonKey(name: 'posted_from_area') String? postedFromArea,
     @JsonKey(name: 'vibe_id') String? primaryVibeId,
     @JsonKey(name: 'origin_id') String? originId,
     @JsonKey(name: 'content_class') String? contentClass,
@@ -690,6 +711,8 @@ class __$$PostImplCopyWithImpl<$Res>
     Object? sportId = freezed,
     Object? locationTagId = freezed,
     Object? locationName = freezed,
+    Object? postedFromCity = freezed,
+    Object? postedFromArea = freezed,
     Object? primaryVibeId = freezed,
     Object? originId = freezed,
     Object? contentClass = freezed,
@@ -818,6 +841,14 @@ class __$$PostImplCopyWithImpl<$Res>
         locationName: freezed == locationName
             ? _value.locationName
             : locationName // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        postedFromCity: freezed == postedFromCity
+            ? _value.postedFromCity
+            : postedFromCity // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        postedFromArea: freezed == postedFromArea
+            ? _value.postedFromArea
+            : postedFromArea // ignore: cast_nullable_to_non_nullable
                   as String?,
         primaryVibeId: freezed == primaryVibeId
             ? _value.primaryVibeId
@@ -970,6 +1001,8 @@ class _$PostImpl implements _Post {
     @JsonKey(name: 'sport_id') this.sportId,
     @JsonKey(name: 'location_tag_id') this.locationTagId,
     @JsonKey(name: 'location_name') this.locationName,
+    @JsonKey(name: 'posted_from_city') this.postedFromCity,
+    @JsonKey(name: 'posted_from_area') this.postedFromArea,
     @JsonKey(name: 'vibe_id') this.primaryVibeId,
     @JsonKey(name: 'origin_id') this.originId,
     @JsonKey(name: 'content_class') this.contentClass,
@@ -1118,6 +1151,15 @@ class _$PostImpl implements _Post {
   @override
   @JsonKey(name: 'location_name')
   final String? locationName;
+
+  /// KAN-592: where the author posted from. Independent of [locationName]
+  /// (the place the post is about). Null = legacy row, shown as Dubai.
+  @override
+  @JsonKey(name: 'posted_from_city')
+  final String? postedFromCity;
+  @override
+  @JsonKey(name: 'posted_from_area')
+  final String? postedFromArea;
   @override
   @JsonKey(name: 'vibe_id')
   final String? primaryVibeId;
@@ -1250,7 +1292,7 @@ class _$PostImpl implements _Post {
 
   @override
   String toString() {
-    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, geoLocationId: $geoLocationId, areaId: $areaId, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, postThemeId: $postThemeId, postTheme: $postTheme, originalPost: $originalPost)';
+    return 'Post(id: $id, authorProfileId: $authorProfileId, authorUserId: $authorUserId, authorDisplayName: $authorDisplayName, authorAvatarUrl: $authorAvatarUrl, authorUsername: $authorUsername, authorSportEmoji: $authorSportEmoji, kind: $kind, postType: $postType, originType: $originType, visibility: $visibility, linkToken: $linkToken, body: $body, lang: $lang, sport: $sport, media: $media, venueId: $venueId, geoLat: $geoLat, geoLng: $geoLng, geoLocationId: $geoLocationId, areaId: $areaId, gameId: $gameId, sportId: $sportId, locationTagId: $locationTagId, locationName: $locationName, postedFromCity: $postedFromCity, postedFromArea: $postedFromArea, primaryVibeId: $primaryVibeId, originId: $originId, contentClass: $contentClass, tags: $tags, likeCount: $likeCount, commentCount: $commentCount, viewCount: $viewCount, priorityScore: $priorityScore, isDeleted: $isDeleted, isHiddenAdmin: $isHiddenAdmin, isActive: $isActive, allowReposts: $allowReposts, isPinned: $isPinned, isEdited: $isEdited, requiresModeration: $requiresModeration, personaTypeSnapshot: $personaTypeSnapshot, reactionBreakdown: $reactionBreakdown, vibes: $vibes, createdAt: $createdAt, updatedAt: $updatedAt, expiresAt: $expiresAt, editedAt: $editedAt, repostCount: $repostCount, postThemeId: $postThemeId, postTheme: $postTheme, originalPost: $originalPost)';
   }
 
   @override
@@ -1296,6 +1338,10 @@ class _$PostImpl implements _Post {
                 other.locationTagId == locationTagId) &&
             (identical(other.locationName, locationName) ||
                 other.locationName == locationName) &&
+            (identical(other.postedFromCity, postedFromCity) ||
+                other.postedFromCity == postedFromCity) &&
+            (identical(other.postedFromArea, postedFromArea) ||
+                other.postedFromArea == postedFromArea) &&
             (identical(other.primaryVibeId, primaryVibeId) ||
                 other.primaryVibeId == primaryVibeId) &&
             (identical(other.originId, originId) ||
@@ -1379,6 +1425,8 @@ class _$PostImpl implements _Post {
     sportId,
     locationTagId,
     locationName,
+    postedFromCity,
+    postedFromArea,
     primaryVibeId,
     originId,
     contentClass,
@@ -1461,6 +1509,8 @@ abstract class _Post implements Post {
     @JsonKey(name: 'sport_id') final String? sportId,
     @JsonKey(name: 'location_tag_id') final String? locationTagId,
     @JsonKey(name: 'location_name') final String? locationName,
+    @JsonKey(name: 'posted_from_city') final String? postedFromCity,
+    @JsonKey(name: 'posted_from_area') final String? postedFromArea,
     @JsonKey(name: 'vibe_id') final String? primaryVibeId,
     @JsonKey(name: 'origin_id') final String? originId,
     @JsonKey(name: 'content_class') final String? contentClass,
@@ -1597,6 +1647,15 @@ abstract class _Post implements Post {
   @override
   @JsonKey(name: 'location_name')
   String? get locationName;
+
+  /// KAN-592: where the author posted from. Independent of [locationName]
+  /// (the place the post is about). Null = legacy row, shown as Dubai.
+  @override
+  @JsonKey(name: 'posted_from_city')
+  String? get postedFromCity;
+  @override
+  @JsonKey(name: 'posted_from_area')
+  String? get postedFromArea;
   @override
   @JsonKey(name: 'vibe_id')
   String? get primaryVibeId;

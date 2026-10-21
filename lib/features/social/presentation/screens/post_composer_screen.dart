@@ -12,6 +12,9 @@ import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_game_link_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_posted_from_sheet.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
@@ -99,6 +102,12 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     result.fold(
       (err) {
         if (!mounted) return;
+        // KAN-592: no posting city is known. Ask for one; the draft is state,
+        // untouched, and Post is tapped again once a city is chosen.
+        if (err.message == kPostedFromRequired) {
+          showComposerPostedFromSheet(_sheetContext, ref, prompt: true);
+          return;
+        }
         _errorToast(err.message);
       },
       (post) {
@@ -565,6 +574,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   Widget _buildKindVisibilityRow(PostComposerState composerState) {
     final colors = DabblerColors.of(context);
+    final l = AppLocalizations.of(context);
+    // KAN-592: where this post is posted from. Never the place tag.
+    final postedFrom =
+        ref.watch(composerPostedFromProvider) ??
+        postedFromOfActive(ref.watch(activeLocationProvider).valueOrNull);
+    final postedFromLabel = postedFrom == null
+        ? l.composer_posted_from_choose
+        : l.composer_posted_from_pill(postedFrom.city);
     return Wrap(
       spacing: DabblerSpacing.space3,
       runSpacing: DabblerSpacing.space3,
@@ -586,6 +603,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               '${_visibilityLabel(composerState.visibility)}. '
               '${AppLocalizations.of(context).composer_tap_to_change}',
           onTap: _showVisibilityPicker,
+        ),
+        DabblerSelectPill(
+          key: const Key('composer-posted-from-pill'),
+          label: postedFromLabel,
+          icon: 'location',
+          tone: colors.warning,
+          semanticLabel: '$postedFromLabel. ${l.composer_tap_to_change}',
+          onTap: () => showComposerPostedFromSheet(_sheetContext, ref),
         ),
       ],
     );

@@ -7,6 +7,7 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/presentation/screens/post_composer_screen.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
@@ -347,6 +348,7 @@ void main() {
     );
     addTearDown(keep.close);
     n.setBody('Padel tonight');
+    n.setPostedFrom(const PostedFrom(city: 'Dubai'));
     // A mapped vibe and sport; the database emoji is a distinct marker.
     n.setVibe(id: 'inspired', label: 'Inspired', emoji: 'DB-VIBE');
     n.setSport(id: 's2', name: 'Padel', emoji: 'DB-SPORT');

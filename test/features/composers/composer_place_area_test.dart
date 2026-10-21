@@ -11,6 +11,7 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -67,7 +68,10 @@ PostComposerNotifier _setUp() {
   );
   addTearDown(_c.dispose);
   _c.listen(postComposerProvider, (_, __) {});
-  return _c.read(postComposerProvider.notifier)..setBody('Padel tonight');
+  // KAN-592: a post needs a posting city; these tests are about the place tag.
+  return _c.read(postComposerProvider.notifier)
+    ..setBody('Padel tonight')
+    ..setPostedFrom(const PostedFrom(city: 'Dubai'));
 }
 
 Future<Map<String, dynamic>> _submit(PostComposerNotifier n) async {

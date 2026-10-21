@@ -17,6 +17,8 @@ import 'package:dabbler/features/games/providers/games_providers.dart'
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 
 // =============================================================================
 // COMPOSER STATE
@@ -216,6 +218,17 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   final Ref _ref;
 
   PostRepository get _repo => _ref.read(postRepositoryProvider);
+
+  /// KAN-592: the city this post is posted from. The user's explicit choice
+  /// wins; otherwise the device location's city. Null when neither exists
+  /// (location denied, nothing chosen), which is when Post asks for a city.
+  /// Independent of the place tag: tagging or removing a place never moves it.
+  PostedFrom? resolvePostedFrom() =>
+      _ref.read(composerPostedFromProvider) ??
+      postedFromOfActive(_ref.read(activeLocationProvider).valueOrNull);
+
+  void setPostedFrom(PostedFrom? value) =>
+      _ref.read(composerPostedFromProvider.notifier).state = value;
 
   // ── Field Setters ───────────────────────────────────────────────────
 
@@ -560,6 +573,16 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       return Err(err);
     }
 
+    // KAN-592: every new post has a posting city. With none known the post
+    // is NOT sent and the draft stays exactly as typed; the screen opens the
+    // city sheet from this failure.
+    final postedFrom = resolvePostedFrom();
+    if (postedFrom == null) {
+      return const Err(
+        Failure(category: FailureCode.validation, message: kPostedFromRequired),
+      );
+    }
+
     state = s.copyWith(isSubmitting: true, error: null);
 
     // 2. Detect language
@@ -635,6 +658,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       locationTagId: s.locationTagId,
       areaId: areaId,
       locationName: s.locationName,
+      postedFromCity: postedFrom.city,
+      postedFromArea: postedFrom.area,
       geoLat: s.geoLat,
       geoLng: s.geoLng,
       linkToken: linkToken,
@@ -722,10 +747,18 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 // =============================================================================
 
 /// Composer state provider — auto-disposed when the screen is closed.
+/// KAN-592: the posting city the user chose in the composer. Auto-disposed
+/// with the composer, so the next post starts from the device location again.
+final composerPostedFromProvider = StateProvider.autoDispose<PostedFrom?>(
+  (ref) => null,
+);
+
 final postComposerProvider =
     StateNotifierProvider.autoDispose<PostComposerNotifier, PostComposerState>((
       ref,
     ) {
+      // Keep the chosen city alive exactly as long as the composer.
+      ref.listen(composerPostedFromProvider, (_, _) {});
       return PostComposerNotifier(ref);
     });
 

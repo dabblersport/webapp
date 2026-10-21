@@ -6926,4 +6926,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get messaging_receipts_nobody => 'لا أحد';
+
+  @override
+  String get composer_posted_from_title => 'نُشر من';
+
+  @override
+  String composer_posted_from_pill(String city) {
+    return 'نُشر من $city';
+  }
+
+  @override
+  String get composer_posted_from_choose => 'اختر المدينة';
+
+  @override
+  String get composer_posted_from_search => 'ابحث عن مدينة';
+
+  @override
+  String get composer_posted_from_prompt =>
+      'اختر المدينة التي تنشر منها ثم اضغط نشر. مسودتك محفوظة.';
+
+  @override
+  String get composer_posted_from_none => 'لا توجد مدن تطابق هذا البحث';
+
+  @override
+  String get post_legacy_city => 'دبي';
 }
