@@ -754,6 +754,58 @@ class AuthService {
     }
   }
 
+  /// KAN-602: the profile lookup with three honest outcomes. Unlike
+  /// [getUserProfile], a failed check is never reported as "no profile":
+  /// only a query that succeeded and returned no row is
+  /// [ProfileLookupConfirmedNoProfile]. Any thrown error, timeout or lost
+  /// connection (and a missing signed-in user, which cannot be checked) is
+  /// [ProfileLookupCouldNotCheck].
+  Future<ProfileLookupResult> lookupUserProfile({
+    List<String>? fields,
+    String? personaType,
+  }) {
+    return classifyProfileQuery(() async {
+      final user = _supabase.auth.currentUser;
+      // No signed-in user: nothing to look up, and that is not an absence.
+      if (user == null) throw StateError('no signed-in user');
+
+      final selectFields = (fields == null || fields.isEmpty)
+          ? '*'
+          : fields.join(',');
+
+      var query = _supabase
+          .from(SupabaseConfig.usersTable)
+          .select(selectFields)
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+
+      if (personaType != null) {
+        query = query.eq('persona_type', personaType);
+      }
+
+      final response = await query
+          .order('updated_at', ascending: false)
+          .limit(1);
+      return response as List<dynamic>;
+    });
+  }
+
+  /// Turns a profile query into the three outcomes: rows -> found, a
+  /// completed query with no rows -> confirmed no profile, any throw (socket,
+  /// timeout, server) -> could not check.
+  @visibleForTesting
+  static Future<ProfileLookupResult> classifyProfileQuery(
+    Future<List<dynamic>> Function() query,
+  ) async {
+    try {
+      final rows = await query();
+      if (rows.isEmpty) return const ProfileLookupConfirmedNoProfile();
+      return ProfileLookupFound(Map<String, dynamic>.from(rows.first as Map));
+    } catch (_) {
+      return const ProfileLookupCouldNotCheck();
+    }
+  }
+
   /// Ensure a stub profile exists for the current authenticated user
   /// Creates a minimal profile with onboard=FALSE if none exists
   Future<void> ensureStubProfileForCurrentUser() async {
@@ -1019,7 +1071,9 @@ class AuthService {
             .maybeSingle();
 
         if (existingSportProfile == null) {
-          await _supabase.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
+          await _supabase
+              .from(SupabaseConfig.sportProfilesTable)
+              .insert(sportProfileData);
         }
       } catch (e) {
         // Log but don't fail - sport profile is important but not critical
@@ -1044,7 +1098,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingPlayerProfile == null) {
-            await _supabase.from(SupabaseConfig.playerTable).insert(playerProfileData);
+            await _supabase
+                .from(SupabaseConfig.playerTable)
+                .insert(playerProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1069,7 +1125,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {
-            await _supabase.from(SupabaseConfig.organiserTable).insert(organiserProfileData);
+            await _supabase
+                .from(SupabaseConfig.organiserTable)
+                .insert(organiserProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1092,7 +1150,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingHostProfile == null) {
-            await _supabase.from(SupabaseConfig.hostTable).insert(hostProfileData);
+            await _supabase
+                .from(SupabaseConfig.hostTable)
+                .insert(hostProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1167,10 +1227,14 @@ class AuthService {
       await _supabase.auth.updateUser(UserAttributes(password: password));
     }
 
-    await _supabase.auth.updateUser(UserAttributes(data: {
-      'display_name': displayName,
-      if (username.isNotEmpty) 'username': username,
-    }));
+    await _supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'display_name': displayName,
+          if (username.isNotEmpty) 'username': username,
+        },
+      ),
+    );
 
     // Normalize country name → ISO code (e.g. "United Arab Emirates" → "AE")
     // The profiles.country FK targets ref_countries.code, not name_en.
@@ -1178,21 +1242,29 @@ class AuthService {
 
     // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
     // and bypass legacy-field triggers (profile_type / is_player / intention)
-    final profileId = await _supabase.rpc(SupabaseConfig.rpcOnboardProfileFn, params: {
-      'p_user_id': user.id,
-      'p_display_name': displayName,
-      'p_username': username,
-      'p_age': age,
-      'p_gender': gender,
-      'p_persona_type': personaType,
-      if (preferredSport.isNotEmpty) 'p_preferred_sport': preferredSport,
-      if (interests != null && interests.isNotEmpty) 'p_interests': interests,
-      if (countryCode != null) 'p_country': countryCode,
-      if (city != null) 'p_city': city,
-    }) as String;
+    final profileId =
+        await _supabase.rpc(
+              SupabaseConfig.rpcOnboardProfileFn,
+              params: {
+                'p_user_id': user.id,
+                'p_display_name': displayName,
+                'p_username': username,
+                'p_age': age,
+                'p_gender': gender,
+                'p_persona_type': personaType,
+                if (preferredSport.isNotEmpty)
+                  'p_preferred_sport': preferredSport,
+                if (interests != null && interests.isNotEmpty)
+                  'p_interests': interests,
+                if (countryCode != null) 'p_country': countryCode,
+                if (city != null) 'p_city': city,
+              },
+            )
+            as String;
 
-    await DefaultAvatarService(client: _supabase)
-        .ensureProfileAvatar(userId: user.id, profileId: profileId);
+    await DefaultAvatarService(
+      client: _supabase,
+    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
   }
@@ -1206,7 +1278,9 @@ class AuthService {
         params: {'p_username': username.trim()},
       );
       final row = (response is List)
-          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          ? (response.isNotEmpty
+                ? response.first as Map<String, dynamic>
+                : null)
           : response as Map<String, dynamic>?;
       if (row == null) return false;
       return !(row['available'] as bool? ?? true);
@@ -1563,4 +1637,26 @@ class AuthService {
       return null;
     }
   }
+}
+
+/// KAN-602: the outcome of [AuthService.lookupUserProfile].
+sealed class ProfileLookupResult {
+  const ProfileLookupResult();
+}
+
+/// The profile row exists.
+class ProfileLookupFound extends ProfileLookupResult {
+  const ProfileLookupFound(this.profile);
+  final Map<String, dynamic> profile;
+}
+
+/// The query succeeded and there is no profile: a genuinely new user.
+class ProfileLookupConfirmedNoProfile extends ProfileLookupResult {
+  const ProfileLookupConfirmedNoProfile();
+}
+
+/// The lookup failed (offline, timeout, server error). Says nothing about
+/// whether a profile exists, so it must never route to onboarding.
+class ProfileLookupCouldNotCheck extends ProfileLookupResult {
+  const ProfileLookupCouldNotCheck();
 }

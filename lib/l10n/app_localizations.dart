@@ -12124,6 +12124,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are signed in, but we couldn\'t load your account. Try again.'**
   String get email_password_error_profile_failed;
+
+  /// KAN-602 Shown on the sign-in, code and email-verification screens when the profile lookup after sign-in could not be completed. The user stays on the screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t check your account right now. Check your connection and try again.'**
+  String get auth_profile_check_failed;
+
+  /// KAN-602 Retry action beside the profile-check failure message. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get auth_profile_check_retry;
+
+  /// KAN-602 Generic code-screen error; replaces raw exception text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get auth_otp_generic_error;
+
+  /// KAN-602 Toast when resending the code fails; replaces raw exception text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t send a new code. Please try again.'**
+  String get auth_otp_resend_failed;
 }
 
 class _AppLocalizationsDelegate

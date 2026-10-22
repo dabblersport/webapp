@@ -13,6 +13,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/core/services/auth_service.dart';
 import '../providers/auth_providers.dart';
 
 class EnterPasswordScreen extends ConsumerStatefulWidget {
@@ -29,6 +30,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   final _passwordController = TextEditingController();
   bool _isLoading = false;
   String? _passwordError;
+  bool _profileCheckFailed = false;
   bool _isEmailValid = false;
   bool _emailTouched = false;
   bool _passwordTouched = false;
@@ -93,6 +95,60 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     return null;
   }
 
+  /// KAN-602: route on the three profile-lookup outcomes. Only a CONFIRMED
+  /// absence goes to onboarding; a lookup that could not be completed keeps
+  /// the user here, signed in, with their input intact and a retry.
+  Future<void> _checkProfileAndRoute(
+    AuthService authService,
+    String email,
+  ) async {
+    final lookup = await authService.lookupUserProfile(
+      fields: ['id', 'onboard', 'display_name', 'intention'],
+    );
+    if (!mounted) return;
+
+    switch (lookup) {
+      case ProfileLookupFound(:final profile):
+        final isOnboarded =
+            profile['onboard'] == true || profile['onboard'] == 'true';
+        if (isOnboarded) {
+          final displayName = profile['display_name'] as String? ?? '';
+          final personaType = profile['intention'] as String? ?? 'player';
+          context.go(
+            RoutePaths.welcome,
+            extra: {
+              'displayName': displayName,
+              'personaType': personaType,
+              'isFirstTime': false,
+            },
+          );
+        } else {
+          // Profile exists but onboard == false — let router redirect handle it
+          context.go(RoutePaths.home);
+        }
+      case ProfileLookupConfirmedNoProfile():
+        context.go(RoutePaths.createUserInfo, extra: {'email': email});
+      case ProfileLookupCouldNotCheck():
+        setState(() => _profileCheckFailed = true);
+    }
+  }
+
+  /// Retries only the profile lookup; the sign-in already succeeded.
+  Future<void> _retryProfileCheck() async {
+    setState(() {
+      _isLoading = true;
+      _profileCheckFailed = false;
+    });
+    try {
+      await _checkProfileAndRoute(
+        ref.read(authServiceProvider),
+        _emailController.text.trim(),
+      );
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
   Future<void> _handleLogin() async {
     if (!_isEmailValid) return;
     if (_passwordController.text.isEmpty) {
@@ -103,6 +159,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
     setState(() {
       _isLoading = true;
       _passwordError = null;
+      _profileCheckFailed = false;
     });
 
     final email = _emailController.text.trim();
@@ -132,36 +189,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         await ref.read(simpleAuthProvider.notifier).handleSuccessfulLogin();
         if (!mounted) return;
 
-        // Check if user has completed onboarding before going home
-        // (mirrors the logic in otp_verification_screen)
-        final userProfile = await authService.getUserProfile(
-          fields: ['id', 'onboard', 'display_name', 'intention'],
-        );
-        if (!mounted) return;
-
-        final isOnboarded =
-            userProfile != null &&
-            (userProfile['onboard'] == true ||
-                userProfile['onboard'] == 'true');
-
-        if (isOnboarded) {
-          final displayName = userProfile['display_name'] as String? ?? '';
-          final personaType = userProfile['intention'] as String? ?? 'player';
-          context.go(
-            RoutePaths.welcome,
-            extra: {
-              'displayName': displayName,
-              'personaType': personaType,
-              'isFirstTime': false,
-            },
-          );
-        } else if (userProfile == null) {
-          // No profile at all — go to onboarding
-          context.go(RoutePaths.createUserInfo, extra: {'email': email});
-        } else {
-          // Profile exists but onboard == false — let router redirect handle it
-          context.go(RoutePaths.home);
-        }
+        await _checkProfileAndRoute(authService, email);
       } catch (_) {
         if (!mounted) return;
         _toastError(
@@ -374,11 +402,14 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         onChanged: (_) => setState(() {
           _passwordTouched = true;
           _passwordError = null;
+          _profileCheckFailed = false;
         }),
         onSubmitted: (_) {
           if (_isEmailValid && !_isLoading) _handleLogin();
         },
       ),
+      if (_profileCheckFailed)
+        DabblerInlineMessage(l10n.auth_profile_check_failed),
     ];
 
     // Keyboard open: only the title, fields, Log in and the code link stay
@@ -410,9 +441,13 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       bodyGap: keyboard ? DabblerSpacing.space4 : DabblerSpacing.space6,
       subtitle: tight ? null : l10n.auth_login_subtitle,
       subtitleStyle: DabblerType.lead,
-      primaryLabel: l10n.auth_login_button,
+      primaryLabel: _profileCheckFailed
+          ? l10n.auth_profile_check_retry
+          : l10n.auth_login_button,
       primaryLoading: _isLoading,
-      onPrimary: _isEmailValid && !_isLoading ? _handleLogin : null,
+      onPrimary: _isEmailValid && !_isLoading
+          ? (_profileCheckFailed ? _retryProfileCheck : _handleLogin)
+          : null,
       footerBottomPadding: keyboard
           ? DabblerSpacing.space4
           : DabblerSpacing.space8,
