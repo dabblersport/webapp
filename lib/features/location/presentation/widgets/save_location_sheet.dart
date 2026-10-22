@@ -99,7 +99,11 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     super.dispose();
   }
 
-  bool get _canSave => _selectedLabel != null;
+  /// A label is chosen, and a custom label (Gym, ...) has a name.
+  bool get _canSave =>
+      _selectedLabel != null &&
+      (_selectedLabel != ProfileLocationLabel.custom ||
+          _customNameController.text.trim().isNotEmpty);
 
   LatLng? get _activeProximity {
     final locState = ref.read(activeLocationProvider).valueOrNull;

@@ -112,8 +112,11 @@ void main() {
       tester,
     ) async {
       await _pump(tester, const SettingsScreen(), locale);
-      expect(find.byType(DabblerStatTile), findsNWidgets(7));
-      expect(find.text('Egypt'), locale.languageCode == 'en' ? findsOneWidget : findsNothing);
+      expect(find.byType(DabblerStatTile), findsNWidgets(8));
+      expect(
+        find.text('Egypt'),
+        locale.languageCode == 'en' ? findsOneWidget : findsNothing,
+      );
     });
 
     testWidgets('language & region, about and organiser sheets — $dir', (
@@ -139,6 +142,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text(l10n.settings_organiser_title));
+      await _settle(tester);
       await tester.tap(find.text(l10n.settings_organiser_title));
       await _settle(tester);
       expect(find.text(l10n.settings_organiser_start), findsOneWidget);
@@ -154,6 +159,8 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.ensureVisible(find.text(l10n.settings_about_title));
+      await _settle(tester);
       await tester.tap(find.text(l10n.settings_about_title));
       await _settle(tester);
       expect(find.text(l10n.settings_item_licenses_title), findsOneWidget);
@@ -170,6 +177,7 @@ void main() {
         200,
         scrollable: find.byType(Scrollable).first,
       );
+      await tester.pump();
       await tester.tap(find.text(l10n.settings_sign_out_title));
       await _settle(tester);
       expect(tester.takeException(), isNull);

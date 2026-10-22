@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
@@ -30,6 +32,7 @@ void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SettingSyncHint([SettingKeys.language, SettingKeys.region]),
         DabblerText(
           l10n.settings_item_language_title,
           style: DabblerType.footnote,

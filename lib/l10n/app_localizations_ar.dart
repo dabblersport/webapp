@@ -27,6 +27,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get error_generic => 'حدث خطأ ما';
 
   @override
+  String get bootstrap_error_title => 'تعذّر تشغيل دابلر';
+
+  @override
+  String get bootstrap_error_message =>
+      'حدث خطأ أثناء تشغيل التطبيق. تحقّق من اتصالك ثم افتح التطبيق من جديد.';
+
+  @override
   String get game_full => 'اكتمل عدد اللاعبين';
 
   @override
@@ -3069,6 +3076,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get priv_save_failed => 'تعذّر حفظ الإعدادات. حاول مرة أخرى.';
+
+  @override
+  String get settings_not_synced_retry =>
+      'لم تتم المزامنة. اضغط لإعادة المحاولة.';
 
   @override
   String get priv_saved => 'تم الحفظ';
@@ -6366,6 +6377,39 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messaging_chat_offline_retry => 'حاول مرة أخرى';
 
   @override
+  String get offline_banner_offline =>
+      'لا يوجد اتصال بالإنترنت – وضع عدم الاتصال';
+
+  @override
+  String get offline_banner_poor => 'الاتصال ضعيف – قد يتأخر التحديث';
+
+  @override
+  String get offline_saved_content_hint => 'نعرض لك المحتوى المحفوظ';
+
+  @override
+  String get offline_refresh_failed =>
+      'تعذّر التحديث. نعرض لك المحتوى المحفوظ.';
+
+  @override
+  String get offline_load_more_failed =>
+      'تعذّر تحميل المزيد. اضغط لإعادة المحاولة.';
+
+  @override
+  String get offline_setting_not_synced =>
+      'لم تتم المزامنة. اضغط لإعادة المحاولة.';
+
+  @override
+  String get offline_auth_error_generic =>
+      'تعذّر إكمال تسجيل الدخول. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get offline_bootstrap_failed => 'تعذّر تشغيل التطبيق. حاول مرة أخرى.';
+
+  @override
+  String get offline_create_refused =>
+      'الإنشاء يحتاج إلى اتصال بالإنترنت. لم يُنشأ شيء، وما كتبته ما زال كما هو.';
+
+  @override
   String get messaging_chat_error => 'تعذّر تحميل هذه الدردشة. حاول مرة أخرى.';
 
   @override
@@ -6793,4 +6837,216 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get auth_otp_resend_failed => 'تعذّر إرسال رمز جديد. حاول مرة أخرى.';
+
+  @override
+  String get messaging_typing_dm => 'يكتب…';
+
+  @override
+  String messaging_typing_one(String name) {
+    return '$name يكتب';
+  }
+
+  @override
+  String messaging_typing_two(String first, String second) {
+    return '$first و$second يكتبان';
+  }
+
+  @override
+  String messaging_typing_many(String name, int count) {
+    return '$name و$count آخرون يكتبون';
+  }
+
+  @override
+  String get messaging_typing_someone => 'أحد الأعضاء';
+
+  @override
+  String get composer_gif_search_placeholder => 'ابحث في GIPHY…';
+
+  @override
+  String get composer_gif_attribution => 'مدعوم من GIPHY';
+
+  @override
+  String get composer_gif_empty => 'لم يتم العثور على صور GIF';
+
+  @override
+  String get composer_gif_offline_title => 'أنت غير متصل';
+
+  @override
+  String get composer_gif_offline_text => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get composer_gif_unavailable_title => 'صور GIF غير متاحة حاليًا';
+
+  @override
+  String get composer_gif_unavailable_text =>
+      'يمكنك الاستمرار في إرسال النصوص. حاول لاحقًا.';
+
+  @override
+  String get composer_gif_retry => 'حاول مرة أخرى';
+
+  @override
+  String get messaging_chat_attach_gif => 'إضافة صورة GIF';
+
+  @override
+  String get messaging_gif_badge => 'GIF عبر GIPHY';
+
+  @override
+  String get messaging_gif_semantic => 'صورة GIF من GIPHY';
+
+  @override
+  String get messaging_receipt_sent => 'أُرسلت';
+
+  @override
+  String get messaging_receipt_sending => 'جارٍ الإرسال';
+
+  @override
+  String get messaging_receipt_retrying => 'جارٍ إعادة المحاولة';
+
+  @override
+  String get messaging_receipt_delivered => 'وصلت';
+
+  @override
+  String get messaging_receipt_seen => 'شوهدت';
+
+  @override
+  String get messaging_receipt_not_sent => 'لم تُرسل';
+
+  @override
+  String get messaging_receipt_seen_everyone => 'شاهدها الجميع';
+
+  @override
+  String messaging_receipt_seen_by_count(int seen, int total) {
+    return 'شاهدها $seen من $total';
+  }
+
+  @override
+  String messaging_receipt_delivered_to_count(int delivered, int total) {
+    return 'وصلت إلى $delivered من $total';
+  }
+
+  @override
+  String get messaging_receipts_title => 'معلومات الرسالة';
+
+  @override
+  String get messaging_receipts_seen_by => 'شاهدها';
+
+  @override
+  String get messaging_receipts_delivered_to => 'وصلت إلى';
+
+  @override
+  String get messaging_receipts_not_yet => 'لم تصل بعد';
+
+  @override
+  String get messaging_receipts_not_yet_short => 'لم تصل';
+
+  @override
+  String get messaging_receipts_unknown_person => 'شخص';
+
+  @override
+  String get messaging_receipts_all => 'الجميع';
+
+  @override
+  String get messaging_receipts_nobody => 'لا أحد';
+
+  @override
+  String get composer_posted_from_title => 'نُشر من';
+
+  @override
+  String composer_posted_from_pill(String city) {
+    return 'نُشر من $city';
+  }
+
+  @override
+  String get composer_posted_from_choose => 'اختر المدينة';
+
+  @override
+  String get composer_posted_from_search => 'ابحث عن مدينة';
+
+  @override
+  String get composer_posted_from_prompt =>
+      'اختر المدينة التي تنشر منها ثم اضغط نشر. مسودتك محفوظة.';
+
+  @override
+  String get composer_posted_from_none => 'لا توجد مدن تطابق هذا البحث';
+
+  @override
+  String get post_legacy_city => 'دبي';
+
+  @override
+  String get messaging_share_title => 'مشاركة';
+
+  @override
+  String get messaging_share_gallery => 'مكتبة الصور';
+
+  @override
+  String get messaging_share_camera => 'الكاميرا';
+
+  @override
+  String get messaging_share_file => 'ملف صورة';
+
+  @override
+  String get messaging_share_file_hint => 'صور فقط';
+
+  @override
+  String get messaging_share_gif => 'ابحث عن GIF';
+
+  @override
+  String get messaging_share_gif_hint => 'بدعم من GIPHY';
+
+  @override
+  String messaging_image_uploading(int percent) {
+    return 'جارٍ الرفع · $percent%';
+  }
+
+  @override
+  String get messaging_image_cancel => 'إلغاء الرفع';
+
+  @override
+  String get messaging_image_retry => 'أعد الرفع';
+
+  @override
+  String get messaging_image_failed => 'تعذّر الرفع';
+
+  @override
+  String get messaging_image_open => 'افتح الصورة';
+
+  @override
+  String get messaging_image_remove => 'إزالة الصورة';
+
+  @override
+  String get messaging_image_close => 'إغلاق';
+
+  @override
+  String get messaging_image_viewer_title => 'صورة';
+
+  @override
+  String get messaging_image_too_large => 'هذه الصورة كبيرة جدًا للإرسال.';
+
+  @override
+  String get messaging_image_unsupported =>
+      'يمكن إرسال صور JPG وPNG وWebP فقط.';
+
+  @override
+  String get messaging_image_camera_denied =>
+      'الوصول إلى الكاميرا متوقف. اسمح به من الإعدادات لالتقاط صورة.';
+
+  @override
+  String get messaging_image_library_denied =>
+      'الوصول إلى الصور متوقف. اسمح به من الإعدادات لاختيار صورة.';
+
+  @override
+  String get messaging_image_pick_failed =>
+      'تعذّر الحصول على الصورة. حاول مرة أخرى.';
+
+  @override
+  String get settings_tile_location => 'الموقع';
+
+  @override
+  String get location_saved_places => 'الأماكن المحفوظة';
+
+  @override
+  String get location_add_place => 'إضافة مكان';
+
+  @override
+  String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
 }

@@ -20,6 +20,8 @@ class PostCreateRequest {
     this.locationTagId,
     this.areaId,
     this.locationName,
+    this.postedFromCity,
+    this.postedFromArea,
     this.geoLat,
     this.geoLng,
     this.linkToken,
@@ -33,6 +35,7 @@ class PostCreateRequest {
     this.originId,
     this.personaTypeSnapshot,
     this.isPinned = false,
+    this.requestId,
   });
 
   /// Required — the kind of post (original, news, announcement, etc.).
@@ -75,6 +78,11 @@ class PostCreateRequest {
   /// Free-text or resolved location name.
   final String? locationName;
 
+  /// KAN-592: the city (and area, when known) the author posts from. Not the
+  /// place the post is about; that is [locationName].
+  final String? postedFromCity;
+  final String? postedFromArea;
+
   /// Geo latitude (optional, from device or venue).
   final double? geoLat;
 
@@ -114,6 +122,10 @@ class PostCreateRequest {
   /// Whether this post should be pinned on the author's profile.
   final bool isPinned;
 
+  /// KAN-612: the client request id of this create attempt. A retry of the
+  /// same attempt sends the same id, so the server keeps one row.
+  final String? requestId;
+
   /// Convert to the Supabase insert payload.
   ///
   /// `authorProfileId` and `authorUserId` are injected by the repository.
@@ -145,6 +157,8 @@ class PostCreateRequest {
       if (locationTagId != null) 'location_tag_id': locationTagId,
       if (areaId != null) 'area_id': areaId,
       if (locationName != null) 'location_name': locationName,
+      if (postedFromCity != null) 'posted_from_city': postedFromCity,
+      if (postedFromArea != null) 'posted_from_area': postedFromArea,
       if (geoLat != null) 'geo_lat': geoLat,
       if (geoLng != null) 'geo_lng': geoLng,
       if (linkToken != null) 'link_token': linkToken,
@@ -153,6 +167,7 @@ class PostCreateRequest {
       if (originId != null) 'origin_id': originId,
       if (personaTypeSnapshot != null)
         'persona_type_snapshot': personaTypeSnapshot,
+      if (requestId != null) 'request_id': requestId,
     };
   }
 
@@ -170,6 +185,8 @@ class PostCreateRequest {
     String? locationTagId,
     String? areaId,
     String? locationName,
+    String? postedFromCity,
+    String? postedFromArea,
     double? geoLat,
     double? geoLng,
     String? linkToken,
@@ -197,6 +214,8 @@ class PostCreateRequest {
       locationTagId: locationTagId ?? this.locationTagId,
       areaId: areaId ?? this.areaId,
       locationName: locationName ?? this.locationName,
+      postedFromCity: postedFromCity ?? this.postedFromCity,
+      postedFromArea: postedFromArea ?? this.postedFromArea,
       geoLat: geoLat ?? this.geoLat,
       geoLng: geoLng ?? this.geoLng,
       linkToken: linkToken ?? this.linkToken,

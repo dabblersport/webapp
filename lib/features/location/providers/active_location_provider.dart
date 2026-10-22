@@ -34,8 +34,18 @@ class ActiveLocationDenied extends ActiveLocationState {}
 /// distance controls are off and nothing is sorted or filtered by distance.
 /// City content stays usable.
 class ActiveLocationCityOnly extends ActiveLocationState {
-  ActiveLocationCityOnly(this.city);
+  ActiveLocationCityOnly(
+    this.city, {
+    this.cityId,
+    this.country,
+    this.countryCode,
+  });
   final String city;
+
+  /// Map-service identity of the city (KAN-587); scopes Areas to this city.
+  final String? cityId;
+  final String? country;
+  final String? countryCode;
 }
 
 class ActiveLocationError extends ActiveLocationState {
@@ -120,6 +130,18 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     return ActiveLocationLoading();
   }
 
+  /// The saved place Auto shows for [area] (KAN-589): its label when exactly
+  /// one saved place is in that canonical area, else null (the area name).
+  /// Never blocks on or fails because of the saved-places fetch.
+  Future<String?> _autoSavedLabel(Area area) async {
+    try {
+      final places = await ref.read(profileLocationNotifierProvider.future);
+      return matchSavedPlaceLabel(area.id, places);
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<ActiveLocationReady?> _trySavedPrimary() async {
     try {
       final locations = await ref.read(profileLocationNotifierProvider.future);
@@ -145,7 +167,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           defaultRadiusMeters: primary.nearbyRadiusMeters,
           source: ActiveLocationSource.saved,
           savedLocationId: primary.id,
-          savedLocationLabel: primary.effectiveLabel,
+          // Not an explicit selection: the same area rule as Auto.
+          savedLocationLabel: matchSavedPlaceLabel(area.id, locations),
         ),
       );
     } catch (_) {
@@ -190,12 +213,16 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         final area = await _resolveArea(result.lat, result.lng);
         if (area == null) {
           if (settleWhenUnsaved && state.valueOrNull is ActiveLocationLoading) {
-            state = AsyncData(
-              ActiveLocationError('Could not resolve your area'),
-            );
+            // Offline (KAN-607): keep the last saved area; with none, the chip
+            // reads "Set location" and opens the manual drawer, never an
+            // English error string.
+            final last = await _lastKnownReady();
+            state = AsyncData(last ?? ActiveLocationDenied());
           }
           return;
         }
+
+        final savedLabel = await _autoSavedLabel(area);
 
         // Only upgrade if more accurate or saved location is missing.
         final gpsLoc = ActiveLocation(
@@ -206,12 +233,18 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
               _radiusOverride ?? currentSaved?.nearbyRadiusMeters ?? 10000,
           defaultRadiusMeters: currentSaved?.nearbyRadiusMeters ?? 10000,
           source: ActiveLocationSource.gps,
+          savedLocationLabel: savedLabel,
         );
 
         // Prefer GPS when accuracy ≤ 100 m or no saved location exists.
         if (currentSaved == null || result.accuracyMeters <= 100) {
           if (await _isManual()) return;
-          await _recordAutoFix(area, result.lat, result.lng);
+          await _recordAutoFix(
+            area,
+            result.lat,
+            result.lng,
+            savedLabel: savedLabel,
+          );
           state = AsyncData(ActiveLocationReady(gpsLoc));
         }
       } catch (_) {
@@ -251,7 +284,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     if (await _isManual()) return;
     final area = await _resolveArea(fix.lat, fix.lng);
     if (area == null) return;
-    await _recordAutoFix(area, fix.lat, fix.lng);
+    final savedLabel = await _autoSavedLabel(area);
+    await _recordAutoFix(area, fix.lat, fix.lng, savedLabel: savedLabel);
     final current = state.valueOrNull;
     final defaultRadius = current is ActiveLocationReady
         ? current.location.defaultRadiusMeters
@@ -265,6 +299,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           nearbyRadiusMeters: _radiusOverride ?? 10000,
           defaultRadiusMeters: defaultRadius,
           source: ActiveLocationSource.gps,
+          savedLocationLabel: savedLabel,
         ),
       ),
     );
@@ -275,7 +310,8 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       case LocationSuccess(:final lat, :final lng):
         final area = await _resolveArea(lat, lng);
         if (area == null) {
-          return ActiveLocationError('Could not resolve your area');
+          // Offline (KAN-607): keep the last saved area, else "Set location".
+          return await _lastKnownReady() ?? ActiveLocationDenied();
         }
         return ActiveLocationReady(
           ActiveLocation(
@@ -285,6 +321,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
             nearbyRadiusMeters: _radiusOverride ?? 10000,
             defaultRadiusMeters: 10000,
             source: ActiveLocationSource.gps,
+            savedLocationLabel: await _autoSavedLabel(area),
           ),
         );
       case LocationDenied():
@@ -313,6 +350,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         next.location.lat,
         next.location.lng,
         explicit: true,
+        savedLabel: next.location.savedLocationLabel,
       );
     } else if (next is ActiveLocationDenied) {
       final last = await _lastKnownReady();
@@ -335,8 +373,24 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       hintAreaId: location.areaId,
     );
     if (area == null) {
-      state = AsyncData(ActiveLocationError('Could not resolve area'));
+      // Offline (KAN-607): keep the last saved area, else "Set location".
+      state = AsyncData(await _lastKnownReady() ?? ActiveLocationDenied());
       return;
+    }
+
+    // An explicit selection (KAN-589): Manual on this device only, kept across
+    // a restart, showing the saved place's label. Nothing account-level (the
+    // public profile city/country, the service region) is written.
+    try {
+      await (await _store())?.setManual(
+        city: area.city,
+        area: area.name,
+        lat: location.lat!,
+        lng: location.lng!,
+        savedLabel: location.effectiveLabel,
+      );
+    } catch (_) {
+      // Persistence is best effort; the in-memory choice already applies.
     }
 
     state = AsyncData(
@@ -404,12 +458,29 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   /// The user changed the city. A different city clears the previous area and
   /// coordinates: the state has no point, so distance controls are off until a
   /// new area is chosen, and city content stays usable.
-  Future<void> useManualCity(String city) async {
-    final DeviceLocation? next = await (await _store())?.changeCity(city);
+  Future<void> useManualCity(
+    String city, {
+    String? cityId,
+    String? country,
+    String? countryCode,
+  }) async {
+    final DeviceLocation? next = await (await _store())?.changeCity(
+      city,
+      cityId: cityId,
+      country: country,
+      countryCode: countryCode,
+    );
     if (next != null && next.hasPoint) {
       state = AsyncData(_fromDeviceLocation(next));
     } else {
-      state = AsyncData(ActiveLocationCityOnly(city));
+      state = AsyncData(
+        ActiveLocationCityOnly(
+          city,
+          cityId: next?.cityId ?? cityId,
+          country: next?.country ?? country,
+          countryCode: next?.countryCode ?? countryCode,
+        ),
+      );
     }
   }
 
@@ -421,6 +492,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     double lat,
     double lng, {
     bool explicit = false,
+    String? savedLabel,
   }) async {
     try {
       final store = await _store();
@@ -431,6 +503,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         lat: lat,
         lng: lng,
         explicit: explicit,
+        savedLabel: savedLabel,
       );
     } catch (_) {}
   }
@@ -449,13 +522,21 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   }
 
   ActiveLocationState _fromDeviceLocation(DeviceLocation l) {
-    if (!l.hasPoint) return ActiveLocationCityOnly(l.city);
+    if (!l.hasPoint) {
+      return ActiveLocationCityOnly(
+        l.city,
+        cityId: l.cityId,
+        country: l.country,
+        countryCode: l.countryCode,
+      );
+    }
     final bool last = l.provenance == DeviceLocationProvenance.lastKnown;
     final ActiveLocationReady ready = _manualReady(
       l.lat!,
       l.lng!,
       l.area ?? l.city,
       city: l.city,
+      savedLabel: l.savedLabel,
     );
     if (l.mode == DeviceLocationMode.manual && !last) return ready;
     return ActiveLocationReady(
@@ -472,6 +553,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     double lng,
     String label, {
     String? city,
+    String? savedLabel,
   }) {
     // A local area named after the picked place: no server lookup, so the
     // choice works offline and on restart.
@@ -490,7 +572,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
         ),
         nearbyRadiusMeters: _radiusOverride ?? 10000,
         source: ActiveLocationSource.manual,
-        savedLocationLabel: label,
+        savedLocationLabel: savedLabel ?? label,
       ),
     );
   }
@@ -548,11 +630,19 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   }) async {
     // If we have a direct area id hint, try the cache first.
     if (hintAreaId != null) {
-      final all = await _areas.loadAll();
-      final match = all.where((a) => a.id == hintAreaId).firstOrNull;
-      if (match != null) return match;
+      try {
+        final all = await _areas.loadAll();
+        final match = all.where((a) => a.id == hintAreaId).firstOrNull;
+        if (match != null) return match;
+      } catch (_) {
+        // Offline: fall through; the caller keeps the last saved area.
+      }
     }
-    return _areas.resolveNearest(lat, lng);
+    try {
+      return await _areas.resolveNearest(lat, lng);
+    } catch (_) {
+      return null; // offline: callers keep the last saved area
+    }
   }
 }
 

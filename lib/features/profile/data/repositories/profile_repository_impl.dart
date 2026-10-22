@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -52,6 +53,14 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
           (profileType == null ||
               cachedProfile.personaType?.toLowerCase() ==
                   profileType.toLowerCase())) {
+        // Fresh enough to show at once; still revalidated on every open
+        // (KAN-607). The refresh only updates the cache: this open does not
+        // jump, the next one shows the new copy. A failure is silent.
+        _revalidate(
+          userId,
+          profileType: profileType,
+          filterActive: filterActive,
+        );
         return Right(cachedProfile);
       }
 
@@ -66,32 +75,73 @@ class ProfileRepositoryImpl implements domain.ProfileRepository {
       await localDataSource.cacheProfile(remoteProfile);
 
       return Right(remoteProfile);
-    } on ServerFailure catch (e) {
-      // Try to return stale cache on server error
-      final cachedProfile = await localDataSource.getCachedProfile(userId);
-      if (cachedProfile != null &&
-          (profileType == null ||
-              cachedProfile.personaType?.toLowerCase() ==
-                  profileType.toLowerCase())) {
-        return Right(cachedProfile);
-      }
-      return Left(
-        ServerFailure(message: 'Failed to fetch profile: ${e.message}'),
-      );
-    } on NetworkFailure catch (e) {
-      // Return cached data on network issues
-      final cachedProfile = await localDataSource.getCachedProfile(userId);
-      if (cachedProfile != null &&
-          (profileType == null ||
-              cachedProfile.personaType?.toLowerCase() ==
-                  profileType.toLowerCase())) {
-        return Right(cachedProfile);
-      }
-      return Left(
-        NetworkFailure(message: 'No network connection: ${e.message}'),
-      );
     } catch (e) {
-      return Left(DataFailure(message: 'Failed to get profile: $e'));
+      // Every data-source error, typed or raw (SocketException, web
+      // ClientException, TimeoutException, Postgrest), becomes one of the
+      // shared failures (KAN-603). When the server or the link is the problem
+      // the cached profile still answers, however old it is (KAN-607).
+      final Failure failure = _profileFailure(e);
+      if (failure is NetworkFailure ||
+          failure is ServerFailure ||
+          failure is TimeoutFailure) {
+        // Any age: a stale profile beats an error page (KAN-607).
+        final cachedProfile = await localDataSource.getCachedProfile(userId);
+        if (cachedProfile != null &&
+            (profileType == null ||
+                cachedProfile.personaType?.toLowerCase() ==
+                    profileType.toLowerCase())) {
+          return Right(cachedProfile);
+        }
+      }
+      return Left(failure);
+    }
+  }
+
+  void _revalidate(
+    String userId, {
+    String? profileType,
+    required bool filterActive,
+  }) {
+    unawaited(() async {
+      try {
+        final fresh = await remoteDataSource.getProfile(
+          userId,
+          profileType: profileType,
+          filterActive: filterActive,
+        );
+        await localDataSource.cacheProfile(fresh);
+      } catch (_) {
+        // Silent: the cached copy stays.
+      }
+    }());
+  }
+
+  /// Maps a data-source error to the shared taxonomy, keeping typed failures.
+  Failure _profileFailure(Object e) {
+    if (e is TimeoutFailure) {
+      return TimeoutFailure(message: 'Profile request timed out: ${e.message}');
+    }
+    if (e is NetworkFailure) {
+      return NetworkFailure(message: 'No network connection: ${e.message}');
+    }
+    if (e is ServerFailure) {
+      return ServerFailure(message: 'Failed to fetch profile: ${e.message}');
+    }
+    if (e is Failure) return e;
+    switch (classifyError(e)) {
+      case FailureCode.timeout:
+        return TimeoutFailure(message: 'Profile request timed out', cause: e);
+      case FailureCode.noInternet:
+        return NetworkFailure(message: 'No network connection', cause: e);
+      case FailureCode.unauthenticated:
+        return UnauthenticatedFailure(
+          message: 'Session expired. Please sign in again.',
+          cause: e,
+        );
+      case FailureCode.server:
+        return ServerFailure(message: 'Failed to fetch profile: $e', cause: e);
+      default:
+        return DataFailure(message: 'Failed to get profile: $e', cause: e);
     }
   }
 

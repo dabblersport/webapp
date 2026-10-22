@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:dabbler/core/constants/timing/splash_timing.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
+import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
@@ -176,7 +178,14 @@ class _StartupSplashState extends State<StartupSplash>
   }
 
   Future<void> _waitForBoth() async {
-    final Widget app = await widget.bootstrap;
+    // Bounded (KAN-603): a bootstrap that never answers must not hold the
+    // splash forever. The user gets the generic, localized start-up message.
+    Widget app;
+    try {
+      app = await widget.bootstrap.timeout(kStartupBackstop);
+    } on TimeoutException catch (e, st) {
+      app = BootstrapErrorApp(error: e, stackTrace: st);
+    }
     await _animationGate.future;
     if (!mounted) return;
     _minDisplay?.cancel();

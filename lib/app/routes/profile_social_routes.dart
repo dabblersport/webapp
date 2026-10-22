@@ -23,6 +23,7 @@ import 'package:dabbler/features/profile/presentation/screens/settings/privacy_s
 import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/preferences/game_preferences_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
+import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/support/contact_support_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/support/bug_report_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/terms_of_service_screen.dart';
@@ -178,6 +179,19 @@ RouteBase get settingsNotificationsRoute =>
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
         child: const NotificationSettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+/// Settings > Location (KAN-589): this device's location and the owner-private
+/// Saved places. Reached from the Location tile on the Settings dashboard.
+RouteBase get settingsLocationRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings/location',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const SavedLocationsScreen(),
         type: SharedAxisType.horizontal,
       ),
     );

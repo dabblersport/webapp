@@ -1,5 +1,7 @@
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
-import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerPage;
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerPage;
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -32,13 +34,16 @@ void main() {
       expect(find.byType(DabblerPage), findsOneWidget);
       expect(find.byType(Scaffold), findsNothing);
 
-      // The actual bootstrap error is surfaced on screen, not just printed
-      // to a console nobody watching the device can see.
-      expect(find.text('Dabbler failed to start'), findsOneWidget);
+      // KAN-603: a localized generic message, never the raw error text (it is
+      // logged by main(), not shown).
+      final l = lookupAppLocalizations(const Locale('en'));
+      expect(find.text(l.bootstrap_error_title), findsOneWidget);
+      expect(find.text(l.bootstrap_error_message), findsOneWidget);
       expect(
         find.textContaining('Missing environment variables'),
-        findsOneWidget,
+        findsNothing,
       );
+      expect(find.textContaining('SUPABASE_URL'), findsNothing);
     },
   );
 
@@ -51,7 +56,19 @@ void main() {
     await tester.pumpWidget(BootstrapErrorApp(error: 'network unreachable'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Dabbler failed to start'), findsOneWidget);
-    expect(find.textContaining('network unreachable'), findsOneWidget);
+    final l = lookupAppLocalizations(const Locale('en'));
+    expect(find.text(l.bootstrap_error_title), findsOneWidget);
+    expect(find.textContaining('network unreachable'), findsNothing);
+  });
+
+  testWidgets('the message is Arabic on an Arabic device', (tester) async {
+    tester.platformDispatcher.localesTestValue = const [Locale('ar')];
+    addTearDown(tester.platformDispatcher.clearLocalesTestValue);
+    await tester.pumpWidget(BootstrapErrorApp(error: 'secret detail 12345'));
+    await tester.pumpAndSettle();
+    final l = lookupAppLocalizations(const Locale('ar'));
+    expect(find.text(l.bootstrap_error_title), findsOneWidget);
+    expect(find.text(l.bootstrap_error_message), findsOneWidget);
+    expect(find.textContaining('secret detail'), findsNothing);
   });
 }

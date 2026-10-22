@@ -29,14 +29,15 @@ String dmCounterpartName(AppLocalizations l10n, DmThreadInfo dm) {
 }
 
 /// The DM header: back, the counterpart's avatar and name (tapping opens
-/// their profile when [onOpenProfile] is set) and the overflow menu. No
-/// presence or typing subtitle.
+/// their profile when [onOpenProfile] is set) and the overflow menu. While
+/// [typing] the subtitle reads "typing…" (KAN-579); there is no presence line.
 Widget dmThreadHeader({
   required AppLocalizations l10n,
   required DmThreadInfo dm,
   required VoidCallback? onBack,
   required VoidCallback? onOverflow,
   VoidCallback? onOpenProfile,
+  bool typing = false,
 }) {
   final seed = dm.counterpartUserId == null
       ? null
@@ -55,6 +56,8 @@ Widget dmThreadHeader({
           kind: DabblerConversationKind.player,
           title: dmCounterpartName(l10n, dm),
           seed: seed,
+          // KAN-579: the same 13 px subtitle line; the bar keeps its height.
+          subtitle: typing ? l10n.messaging_typing_dm : null,
           backLabel: l10n.auth_back,
           overflowLabel: l10n.messaging_dm_options_title,
           onBack: onBack,

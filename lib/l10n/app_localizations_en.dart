@@ -27,6 +27,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get error_generic => 'Something went wrong';
 
   @override
+  String get bootstrap_error_title => 'Dabbler couldn\'t start';
+
+  @override
+  String get bootstrap_error_message =>
+      'Something went wrong while starting the app. Check your connection and open the app again.';
+
+  @override
   String get game_full => 'Game is full';
 
   @override
@@ -3073,6 +3080,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get priv_save_failed => 'Failed to save settings. Please try again.';
+
+  @override
+  String get settings_not_synced_retry => 'Not synced. Tap to retry.';
 
   @override
   String get priv_saved => 'Saved';
@@ -6313,6 +6323,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_chat_offline_retry => 'Try again';
 
   @override
+  String get offline_banner_offline => 'No internet connection – offline mode';
+
+  @override
+  String get offline_banner_poor => 'Poor connection – updates may be slow';
+
+  @override
+  String get offline_saved_content_hint => 'Showing saved content';
+
+  @override
+  String get offline_refresh_failed =>
+      'Couldn\'t refresh. Showing saved content.';
+
+  @override
+  String get offline_load_more_failed => 'Couldn\'t load more. Tap to retry.';
+
+  @override
+  String get offline_setting_not_synced => 'Not synced. Tap to retry.';
+
+  @override
+  String get offline_auth_error_generic =>
+      'We couldn\'t complete sign-in. Check your connection and try again.';
+
+  @override
+  String get offline_bootstrap_failed =>
+      'Couldn\'t start the app. Please try again.';
+
+  @override
+  String get offline_create_refused =>
+      'Creating needs an internet connection. Nothing was created, and what you typed is still here.';
+
+  @override
   String get messaging_chat_error => 'Couldn\'t load this chat. Try again.';
 
   @override
@@ -6750,4 +6791,218 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get auth_otp_resend_failed =>
       'We couldn\'t send a new code. Please try again.';
+
+  @override
+  String get messaging_typing_dm => 'typing…';
+
+  @override
+  String messaging_typing_one(String name) {
+    return '$name is typing';
+  }
+
+  @override
+  String messaging_typing_two(String first, String second) {
+    return '$first and $second are typing';
+  }
+
+  @override
+  String messaging_typing_many(String name, int count) {
+    return '$name and $count others are typing';
+  }
+
+  @override
+  String get messaging_typing_someone => 'Someone';
+
+  @override
+  String get composer_gif_search_placeholder => 'Search GIPHY…';
+
+  @override
+  String get composer_gif_attribution => 'Powered by GIPHY';
+
+  @override
+  String get composer_gif_empty => 'No GIFs found';
+
+  @override
+  String get composer_gif_offline_title => 'You\'re offline';
+
+  @override
+  String get composer_gif_offline_text =>
+      'Check your connection and try again.';
+
+  @override
+  String get composer_gif_unavailable_title =>
+      'GIFs aren\'t available right now';
+
+  @override
+  String get composer_gif_unavailable_text =>
+      'You can still send text. Try again later.';
+
+  @override
+  String get composer_gif_retry => 'Try again';
+
+  @override
+  String get messaging_chat_attach_gif => 'Add a GIF';
+
+  @override
+  String get messaging_gif_badge => 'GIF · GIPHY';
+
+  @override
+  String get messaging_gif_semantic => 'GIF from GIPHY';
+
+  @override
+  String get messaging_receipt_sent => 'Sent';
+
+  @override
+  String get messaging_receipt_sending => 'Sending';
+
+  @override
+  String get messaging_receipt_retrying => 'Retrying';
+
+  @override
+  String get messaging_receipt_delivered => 'Delivered';
+
+  @override
+  String get messaging_receipt_seen => 'Seen';
+
+  @override
+  String get messaging_receipt_not_sent => 'Not sent';
+
+  @override
+  String get messaging_receipt_seen_everyone => 'Seen by everyone';
+
+  @override
+  String messaging_receipt_seen_by_count(int seen, int total) {
+    return 'Seen by $seen of $total';
+  }
+
+  @override
+  String messaging_receipt_delivered_to_count(int delivered, int total) {
+    return 'Delivered to $delivered of $total';
+  }
+
+  @override
+  String get messaging_receipts_title => 'Message info';
+
+  @override
+  String get messaging_receipts_seen_by => 'Seen by';
+
+  @override
+  String get messaging_receipts_delivered_to => 'Delivered to';
+
+  @override
+  String get messaging_receipts_not_yet => 'Not delivered yet';
+
+  @override
+  String get messaging_receipts_not_yet_short => 'Not yet';
+
+  @override
+  String get messaging_receipts_unknown_person => 'Someone';
+
+  @override
+  String get messaging_receipts_all => 'All';
+
+  @override
+  String get messaging_receipts_nobody => 'Nobody';
+
+  @override
+  String get composer_posted_from_title => 'Posted from';
+
+  @override
+  String composer_posted_from_pill(String city) {
+    return 'Posted from $city';
+  }
+
+  @override
+  String get composer_posted_from_choose => 'Choose city';
+
+  @override
+  String get composer_posted_from_search => 'Search cities';
+
+  @override
+  String get composer_posted_from_prompt =>
+      'Choose the city you are posting from, then tap Post. Your draft is kept.';
+
+  @override
+  String get composer_posted_from_none => 'No cities match that search';
+
+  @override
+  String get post_legacy_city => 'Dubai';
+
+  @override
+  String get messaging_share_title => 'Share';
+
+  @override
+  String get messaging_share_gallery => 'Photo library';
+
+  @override
+  String get messaging_share_camera => 'Camera';
+
+  @override
+  String get messaging_share_file => 'Image file';
+
+  @override
+  String get messaging_share_file_hint => 'Images only';
+
+  @override
+  String get messaging_share_gif => 'Search GIFs';
+
+  @override
+  String get messaging_share_gif_hint => 'Powered by GIPHY';
+
+  @override
+  String messaging_image_uploading(int percent) {
+    return 'Uploading · $percent%';
+  }
+
+  @override
+  String get messaging_image_cancel => 'Cancel upload';
+
+  @override
+  String get messaging_image_retry => 'Retry upload';
+
+  @override
+  String get messaging_image_failed => 'Upload failed';
+
+  @override
+  String get messaging_image_open => 'Open image';
+
+  @override
+  String get messaging_image_remove => 'Remove photo';
+
+  @override
+  String get messaging_image_close => 'Close';
+
+  @override
+  String get messaging_image_viewer_title => 'Photo';
+
+  @override
+  String get messaging_image_too_large => 'That image is too large to send.';
+
+  @override
+  String get messaging_image_unsupported =>
+      'Only JPG, PNG and WebP images can be sent.';
+
+  @override
+  String get messaging_image_camera_denied =>
+      'Camera access is off. Allow it in Settings to take a photo.';
+
+  @override
+  String get messaging_image_library_denied =>
+      'Photo access is off. Allow it in Settings to choose a photo.';
+
+  @override
+  String get messaging_image_pick_failed =>
+      'Couldn\'t get that image. Try again.';
+
+  @override
+  String get settings_tile_location => 'Location';
+
+  @override
+  String get location_saved_places => 'Saved places';
+
+  @override
+  String get location_add_place => 'Add a place';
+
+  @override
+  String get location_custom_name_required => 'Enter a name for this place';
 }

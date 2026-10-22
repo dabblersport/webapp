@@ -346,9 +346,15 @@ class _AllVenuesList extends ConsumerWidget {
             ref.invalidate(nearbyVenuesProvider);
             ref.invalidate(venuesBySportWithFiltersProvider);
             await settle(ref.read(nearbyVenuesProvider(params).future));
+            // KAN-606: the list stays; the failure is a transient toast.
+            if (refreshFailedWithRows(ref.read(nearbyVenuesProvider(params)))) {
+              if (context.mounted) showListingRefreshFailedToast(context);
+            }
           });
 
+      // KAN-606: a failed refetch with rows keeps them.
       return nearbyAsync.when(
+        skipError: keepsRows(nearbyAsync),
         loading: _loading,
         error: (_, __) => _error(context, ref, refresh),
         data: (venues) => venues.isEmpty
@@ -413,9 +419,17 @@ class _AllVenuesList extends ConsumerWidget {
           await settle(
             ref.read(venuesBySportWithFiltersProvider(filters).future),
           );
+          // KAN-606: see the nearby branch.
+          if (refreshFailedWithRows(
+            ref.read(venuesBySportWithFiltersProvider(filters)),
+          )) {
+            if (context.mounted) showListingRefreshFailedToast(context);
+          }
         });
 
+    // KAN-606: see the nearby branch.
     return venuesAsync.when(
+      skipError: keepsRows(venuesAsync),
       loading: _loading,
       error: (_, __) => _error(context, ref, refresh),
       data: (rows) {

@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get error_generic;
 
+  /// No description provided for @bootstrap_error_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler couldn\'t start'**
+  String get bootstrap_error_title;
+
+  /// No description provided for @bootstrap_error_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while starting the app. Check your connection and open the app again.'**
+  String get bootstrap_error_message;
+
   /// No description provided for @game_full.
   ///
   /// In en, this message translates to:
@@ -5530,6 +5542,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to save settings. Please try again.'**
   String get priv_save_failed;
+
+  /// No description provided for @settings_not_synced_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced. Tap to retry.'**
+  String get settings_not_synced_retry;
 
   /// No description provided for @priv_saved.
   ///
@@ -11357,6 +11375,60 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get messaging_chat_offline_retry;
 
+  /// KAN-609 Offline banner text when the device has no internet connection and the app shows saved content (banner visual: its own design ticket). Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection – offline mode'**
+  String get offline_banner_offline;
+
+  /// KAN-609 Banner text when the connection is slow or unstable; content still loads in the background. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor connection – updates may be slow'**
+  String get offline_banner_poor;
+
+  /// KAN-609 Short hint shown with cached feed, listings, profile or detail content while it is not fresh. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing saved content'**
+  String get offline_saved_content_hint;
+
+  /// KAN-609 Non-blocking message (toast or inline line) when a refresh fails and the cached content stays on screen. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing saved content.'**
+  String get offline_refresh_failed;
+
+  /// KAN-609 Tappable row at the end of a list when loading the next page fails; tapping retries. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more. Tap to retry.'**
+  String get offline_load_more_failed;
+
+  /// KAN-609 Visible failure state next to a setting that was saved on the device but could not be synced; tapping retries. Wire in: KAN-608.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced. Tap to retry.'**
+  String get offline_setting_not_synced;
+
+  /// KAN-609 Generic localized replacement for raw sign-in and one-time-code (OTP) error text. Never append the raw error. Wire in: KAN-606.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t complete sign-in. Check your connection and try again.'**
+  String get offline_auth_error_generic;
+
+  /// KAN-609 Message of the start-up failure screen (shown before the app and its localization are ready). Wire in: KAN-602.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the app. Please try again.'**
+  String get offline_bootstrap_failed;
+
+  /// KAN-612 Inline/snackbar message when the user taps Create on a post, a game or a meetup while offline. Nothing is sent and the form is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating needs an internet connection. Nothing was created, and what you typed is still here.'**
+  String get offline_create_refused;
+
   /// No description provided for @messaging_chat_error.
   ///
   /// In en, this message translates to:
@@ -12148,6 +12220,390 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'We couldn\'t send a new code. Please try again.'**
   String get auth_otp_resend_failed;
+
+  /// KAN-579 DM header subtitle while the other person types (design frame 25). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'typing…'**
+  String get messaging_typing_dm;
+
+  /// KAN-579 Group typing label, one person (design section 10). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing'**
+  String messaging_typing_one(String name);
+
+  /// KAN-579 Group typing label, two people. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} are typing'**
+  String messaging_typing_two(String first, String second);
+
+  /// KAN-579 Group typing label, three or more people; count is the number of OTHERS (at least 2). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} others are typing'**
+  String messaging_typing_many(String name, int count);
+
+  /// KAN-579 Name shown in a typing label when the typer's name could not be loaded. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_typing_someone;
+
+  /// KAN-582 GIF picker search field placeholder. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIPHY…'**
+  String get composer_gif_search_placeholder;
+
+  /// KAN-582 GIPHY attribution line under the GIF picker (provider credit; keep the brand name). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get composer_gif_attribution;
+
+  /// KAN-582 GIF picker: no results for the search. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No GIFs found'**
+  String get composer_gif_empty;
+
+  /// KAN-582 GIF picker offline banner title. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline'**
+  String get composer_gif_offline_title;
+
+  /// KAN-582 GIF picker offline banner text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get composer_gif_offline_text;
+
+  /// KAN-582 GIF picker: the provider is unavailable (error banner title). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIFs aren\'t available right now'**
+  String get composer_gif_unavailable_title;
+
+  /// KAN-582 GIF picker unavailable banner text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still send text. Try again later.'**
+  String get composer_gif_unavailable_text;
+
+  /// KAN-582 GIF picker retry action on the offline and unavailable banners. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get composer_gif_retry;
+
+  /// KAN-582 Accessible name of the chat composer's attach control (opens the GIF picker). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a GIF'**
+  String get messaging_chat_attach_gif;
+
+  /// KAN-582 Mark on a GIF in a chat thread: the kind and the provider credit. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF · GIPHY'**
+  String get messaging_gif_badge;
+
+  /// KAN-582 Screen-reader label of a GIF message in a chat thread. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF from GIPHY'**
+  String get messaging_gif_semantic;
+
+  /// No description provided for @messaging_receipt_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get messaging_receipt_sent;
+
+  /// No description provided for @messaging_receipt_sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get messaging_receipt_sending;
+
+  /// No description provided for @messaging_receipt_retrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying'**
+  String get messaging_receipt_retrying;
+
+  /// No description provided for @messaging_receipt_delivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get messaging_receipt_delivered;
+
+  /// No description provided for @messaging_receipt_seen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get messaging_receipt_seen;
+
+  /// No description provided for @messaging_receipt_not_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get messaging_receipt_not_sent;
+
+  /// No description provided for @messaging_receipt_seen_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by everyone'**
+  String get messaging_receipt_seen_everyone;
+
+  /// KAN-580 Group message receipt: how many recipients have seen it. Approved Messaging design, section 11.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by {seen} of {total}'**
+  String messaging_receipt_seen_by_count(int seen, int total);
+
+  /// KAN-580 Group message receipt: how many recipients it reached. Approved Messaging design, section 11.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to {delivered} of {total}'**
+  String messaging_receipt_delivered_to_count(int delivered, int total);
+
+  /// No description provided for @messaging_receipts_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Message info'**
+  String get messaging_receipts_title;
+
+  /// No description provided for @messaging_receipts_seen_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by'**
+  String get messaging_receipts_seen_by;
+
+  /// No description provided for @messaging_receipts_delivered_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to'**
+  String get messaging_receipts_delivered_to;
+
+  /// No description provided for @messaging_receipts_not_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered yet'**
+  String get messaging_receipts_not_yet;
+
+  /// No description provided for @messaging_receipts_not_yet_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet'**
+  String get messaging_receipts_not_yet_short;
+
+  /// No description provided for @messaging_receipts_unknown_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_receipts_unknown_person;
+
+  /// KAN-614 receipts stat-tile value when the whole group is in the state (Seen or Delivered).
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get messaging_receipts_all;
+
+  /// KAN-614 receipts stat-tile value when nobody is in the state (Not yet).
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get messaging_receipts_nobody;
+
+  /// KAN-592 title of the sheet that picks the city a post is posted from, and the prefix of its pill.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted from'**
+  String get composer_posted_from_title;
+
+  /// KAN-592 composer pill showing the posting city.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted from {city}'**
+  String composer_posted_from_pill(String city);
+
+  /// KAN-592 composer pill label while no posting city is known.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose city'**
+  String get composer_posted_from_choose;
+
+  /// KAN-592 search field placeholder in the posting-city sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search cities'**
+  String get composer_posted_from_search;
+
+  /// KAN-592 line at the top of the posting-city sheet when it opens because Post was tapped with no city.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the city you are posting from, then tap Post. Your draft is kept.'**
+  String get composer_posted_from_prompt;
+
+  /// KAN-592 empty result in the posting-city sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No cities match that search'**
+  String get composer_posted_from_none;
+
+  /// KAN-592 header location of a post written before posting cities were recorded (CEO ruling: Dubai).
+  ///
+  /// In en, this message translates to:
+  /// **'Dubai'**
+  String get post_legacy_city;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Title of the chat Share drawer and the accessible name of the composer's attach control.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get messaging_share_title;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: choose a photo from the OS photo library.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library'**
+  String get messaging_share_gallery;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: take a photo with the camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get messaging_share_camera;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: choose an image file with the OS file picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Image file'**
+  String get messaging_share_file;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Hint under the Image file row.
+  ///
+  /// In en, this message translates to:
+  /// **'Images only'**
+  String get messaging_share_file_hint;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: open the GIF search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIFs'**
+  String get messaging_share_gif;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Hint under the Search GIFs row. The design leaves the credit in English in both languages; the Arabic is PROVISIONAL pending content review (the parity test needs an Arabic value).
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get messaging_share_gif_hint;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Over an image while it uploads; percent is a whole number from 0 to 100.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading · {percent}%'**
+  String messaging_image_uploading(int percent);
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of the cancel target on an uploading image.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel upload'**
+  String get messaging_image_cancel;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of the retry target on an image whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry upload'**
+  String get messaging_image_retry;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Over an image whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get messaging_image_failed;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of a settled image in the thread; opens it full screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open image'**
+  String get messaging_image_open;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Accessible name of the remove target on a queued photo above the composer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get messaging_image_remove;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Closes the full-screen image.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get messaging_image_close;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Title of the full-screen image sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get messaging_image_viewer_title;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when a picked image is over the size limit, or the server refuses it as too large.
+  ///
+  /// In en, this message translates to:
+  /// **'That image is too large to send.'**
+  String get messaging_image_too_large;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when a picked file is not a supported image, or the server refuses its type.
+  ///
+  /// In en, this message translates to:
+  /// **'Only JPG, PNG and WebP images can be sent.'**
+  String get messaging_image_unsupported;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the camera permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off. Allow it in Settings to take a photo.'**
+  String get messaging_image_camera_denied;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the photo library permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access is off. Allow it in Settings to choose a photo.'**
+  String get messaging_image_library_denied;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when picking an image failed for any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get that image. Try again.'**
+  String get messaging_image_pick_failed;
+
+  /// KAN-589 Settings dashboard tile and screen title for the device location and Saved places.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get settings_tile_location;
+
+  /// KAN-589 owner-private saved places list on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places'**
+  String get location_saved_places;
+
+  /// KAN-589 add-a-saved-place action on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a place'**
+  String get location_add_place;
+
+  /// KAN-589 shown when a custom label is chosen and its name is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for this place'**
+  String get location_custom_name_required;
 }
 
 class _AppLocalizationsDelegate

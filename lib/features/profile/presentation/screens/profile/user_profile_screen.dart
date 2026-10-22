@@ -2,6 +2,7 @@ import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -22,6 +23,7 @@ import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.d
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show userPostsProvider, sportsProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/helpers/share_links.dart';
 
 /// Another user's profile (design frames PF04 / PF05, "seen by another
 /// user"): a brand-tinted identity header (avatar, name, handle, persona and
@@ -609,6 +611,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
+  Future<void> _copyProfileLink(BuildContext context) async {
+    final profileId = ref.read(profileControllerProvider).profile?.id;
+    if (profileId == null) return;
+    await Clipboard.setData(
+      ClipboardData(
+        text: ShareLinks.profile(
+          profileId,
+          sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+        ),
+      ),
+    );
+    if (mounted) _toast(AppLocalizations.of(this.context).sfx_link_copied);
+  }
+
   void _showMoreOptions(BuildContext context) {
     final targetUserId = _targetAuthUserId();
     final blocked = targetUserId == null
@@ -623,6 +639,18 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         return DabblerSheetBody(
           spacing: DabblerSpacing.space3,
           children: [
+            // KAN-597: the full web link to this profile for the running environment.
+            if (ref.read(profileControllerProvider).profile?.id != null)
+              DabblerButton(
+                label: l10n.post_detail_copy_link,
+                icon: 'copy',
+                tone: DabblerButtonTone.neutral,
+                fullWidth: true,
+                onPressed: () {
+                  Navigator.pop(sheetContext);
+                  _copyProfileLink(this.context);
+                },
+              ),
             if (blocked)
               DabblerButton(
                 label: l10n.user_profile_menu_unblock_user,

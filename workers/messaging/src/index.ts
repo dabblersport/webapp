@@ -9,9 +9,10 @@
 //   GET  /v1/moderation/reports/{reportId}/message  audited moderator read of one reported message (T18, src/moderation.ts).
 //   POST /v1/dm  GET /v1/conversations/summary  POST /v1/conversations/{id}/mute  DMs (KAN-561, src/dm.ts, src/conversations.ts)
 //   GET /v1/games/{gameId}/conversation  PUT|DELETE /v1/conversations/{id}/mute  (KAN-563, src/games.ts, src/dm.ts)
+//   POST /v1/conversations/{id}/attachments  GET /v1/attachments/{id}  private image upload and authorised read (KAN-581, src/attachments.ts)
 //   POST /v1/messages/{id}/report  report a message (T17, KAN-512): ids + reason relayed, legal hold set.
 // List applies the D4 group block filter from msg_authorize's hidden_sender_ids (T17).
-// Realtime, attachments, reactions, receipts: NOT built here.
+// Realtime, reactions: NOT built here. Images (KAN-581) are private objects behind this Worker (src/attachments.ts).
 // Per request: at most 1 subrequest (msg_authorize) + 1 D1 batch, except report: msg_authorize + msg_report_message
 // and two single-statement D1 calls (seq lookup, hold).
 
@@ -28,6 +29,10 @@ import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
 import { enforceReport, enforceSend } from "./rate_limit";
+import { RECEIPTS_PATH, handleReceipt } from "./receipts";
+import { RECEIPTS_PATH_GET, RECEIPT_SEQ_PATH, handleReceiptRecipients, handleReceiptSummary } from "./receipt_reads";
+import { TYPING_PATH, handleTyping } from "./typing";
+import { READ_PATH, UPLOAD_PATH, bindAttachments, checkAttachmentIds, readAttachment, uploadAttachment, withAttachments } from "./attachments";
 
 export const VERSION = "messaging-skeleton/0.0.1";
 
@@ -107,6 +112,25 @@ const router = {
     const game = GAME_CONVERSATION_PATH.exec(url.pathname);
     if (game && request.method === "GET") return getGameConversation(request, env, game[1]);
 
+    // KAN-579: ephemeral typing presence. No D1, no stored row; see src/typing.ts.
+    const typing = TYPING_PATH.exec(url.pathname);
+    if (typing && request.method === "POST") return handleTyping(request, env, typing[1], ctx);
+
+    // KAN-580: recipient acknowledgement (delivered / seen watermark). Authored on the branch, not deployed.
+    const receipt = RECEIPTS_PATH.exec(url.pathname);
+    if (receipt && request.method === "POST") return handleReceipt(request, env, receipt[1]);
+    // KAN-580: sender-only reads (count + Message info drawer). 404, never 403, for a non-sender.
+    const receiptGet = RECEIPTS_PATH_GET.exec(url.pathname);
+    if (receiptGet && request.method === "GET") return handleReceiptSummary(request, env, url, receiptGet[1]);
+    const receiptSeq = RECEIPT_SEQ_PATH.exec(url.pathname);
+    if (receiptSeq && request.method === "GET") return handleReceiptRecipients(request, env, receiptSeq[1], receiptSeq[2]);
+
+    // KAN-581: private images. Upload bytes to private object storage behind the membership check; read them back through the same check.
+    const up = UPLOAD_PATH.exec(url.pathname);
+    if (up && request.method === "POST") return uploadAttachment(request, env, up[1]);
+    const rd = READ_PATH.exec(url.pathname);
+    if (rd && request.method === "GET") return readAttachment(request, env, rd[1]);
+
     const m = MESSAGES_PATH.exec(url.pathname);
     if (m && request.method === "GET") return listMessages(request, env, url, m[1]);
     if (m && request.method === "POST") return sendMessage(request, env, m[1], ctx);
@@ -150,21 +174,23 @@ async function listMessages(request: Request, env: Env, url: URL, conversationId
     cap: auth.grant.leftAtSeq, // set only for a member who left; the RPC computed it
     hidden: auth.grant.hiddenSenderIds, // the caller's own blocks (user_blocks); nobody else's view changes
   });
-  return ok(page);
+  return ok({ ...page, messages: await withAttachments(env.DB, page.messages) });
 }
 
 async function sendMessage(request: Request, env: Env, conversationId: string, ctx?: WaitUntilContext): Promise<Response> {
   if (!UUID.test(conversationId)) return reasonError("invalid_request", "conversationId");
   const key = request.headers.get("Idempotency-Key") ?? "";
   if (!UUID.test(key)) return reasonError("invalid_request", "Idempotency-Key");
-  let input: { body?: unknown };
+  let input: { body?: unknown; attachment_ids?: unknown };
   try {
     input = await request.json();
   } catch {
     return reasonError("invalid_request", "body");
   }
+  const hasIds = input !== null && typeof input === "object" && input.attachment_ids !== undefined;
   const body = input !== null && typeof input === "object" && typeof input.body === "string" ? input.body : "";
-  if (body.length === 0 || body.length > MAX_BODY) return reasonError("invalid_request", "body");
+  // KAN-581: a message with images may have an empty caption; a text-only message still needs text.
+  if (body.length > MAX_BODY || (body.length === 0 && !hasIds)) return reasonError("invalid_request", "body");
 
   const auth = await authorize(request, env, conversationId);
   if (!auth.ok) return auth.response; // no DB access before an allowed result
@@ -174,16 +200,30 @@ async function sendMessage(request: Request, env: Env, conversationId: string, c
   const limited = await enforceSend(env.DB, auth.grant.userId, conversationId);
   if (limited !== null) return limited;
 
+  // KAN-581: validate the images BEFORE anything is written, so a bad id stores no message.
+  let imageIds: string[] = [];
+  if (hasIds) {
+    const prior = await env.DB.prepare("SELECT id FROM messages WHERE conversation_id = ?1 AND sender_id = ?2 AND client_key = ?3")
+      .bind(conversationId.toLowerCase(), auth.grant.userId, key.toLowerCase())
+      .first<{ id: string }>();
+    const checked = await checkAttachmentIds(env.DB, auth.grant, conversationId.toLowerCase(), input.attachment_ids, prior?.id ?? null);
+    if (!checked.ok) return checked.response;
+    imageIds = checked.ids;
+  }
   const { row, created } = await insertMessage(env.DB, {
     conversationId,
     senderId: auth.grant.userId,
     body,
     clientKey: key.toLowerCase(),
   });
+  if (created && imageIds.length > 0) {
+    await bindAttachments(env.DB, conversationId.toLowerCase(), auth.grant.userId, row.id, imageIds);
+  }
   // KAN-543: wake the members only for a NEW message (201), never for an idempotent repeat (200). Scheduled after the
   // response with ctx.waitUntil; it never delays or changes the send result.
   if (created) scheduleNotify(ctx, env, request.headers.get("Authorization"), conversationId, row.seq);
-  return json(created ? 201 : 200, toApiMessage(row, auth.grant.userId));
+  const [withImages] = await withAttachments(env.DB, [toApiMessage(row, auth.grant.userId)]);
+  return json(created ? 201 : 200, withImages);
 }
 
 /**

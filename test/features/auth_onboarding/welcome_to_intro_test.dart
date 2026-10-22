@@ -224,6 +224,16 @@ void main() {
           await d('u', () async => throw StateError('web')),
           LocationIntroDecision.show,
         );
+        expect(
+          await decideLocationIntro(
+            userId: 'u',
+            gateway: _Gateway(() async => LocationPermission.denied),
+            store: store,
+            hasManualSetup: () async => true,
+          ),
+          LocationIntroDecision.skipManualSetup,
+          reason: 'a manual city is a usable setup (KAN-587)',
+        );
         await store.markSeen('u');
         expect(
           await d('u', () async => LocationPermission.denied),

@@ -1,4 +1,7 @@
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
+import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
+import 'package:dabbler/features/location/presentation/widgets/city_required_sheet.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -10,7 +13,9 @@ import 'package:go_router/go_router.dart';
 /// The full-screen location introduction that follows Welcome / Welcome Back
 /// (KAN-489): the illustrated map, the approved copy, and two actions. The
 /// system permission prompt appears only when the user taps "Use my location";
-/// "Maybe later" (and back) continue to Home without asking the OS anything.
+/// "Set location" opens the manual drawer; "Maybe later" (and back) asks for a
+/// City only (KAN-587): no GPS, no area, and nothing is asked of the OS. Setup
+/// does not finish until a city is set.
 class LocationIntroScreen extends ConsumerStatefulWidget {
   const LocationIntroScreen({super.key, this.userId, this.onFinish});
 
@@ -80,6 +85,20 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
     );
   }
 
+  /// KAN-587: Maybe later needs a City. Dismissing the sheet keeps the user here.
+  Future<void> _maybeLater() async {
+    final city = await showCityRequiredSheet(context);
+    if (city != null && mounted) _finish();
+  }
+
+  /// Manual entry: finish once the drawer left a usable location behind.
+  Future<void> _setManually() async {
+    await showSetLocationDrawer(context);
+    if (!mounted) return;
+    final s = ref.read(activeLocationProvider).valueOrNull;
+    if (s is ActiveLocationReady || s is ActiveLocationCityOnly) _finish();
+  }
+
   void _finish([LocationIntroOutcome? outcome]) {
     if (_finished) return;
     _finished = true;
@@ -102,10 +121,10 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
     final controller = ref.read(locationIntroControllerProvider.notifier);
 
     return PopScope(
-      // Back never traps the user: it continues like "Maybe later".
+      // Back behaves like "Maybe later": a City is still needed.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) _finish();
+        if (!didPop) _maybeLater();
       },
       child: DabblerFlowPage(
         background: Semantics(
@@ -147,26 +166,40 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
         ],
         primaryLabel: l.location_intro_cta,
         onPrimary: controller.useMyLocation,
-        // On a white pill so it stays readable over the artwork.
-        secondary: Center(
-          child: DabblerCard(
-            variant: DabblerCardVariant.white,
-            borderOutside: true,
-            radius: DabblerRadius.xl,
-            padding: const EdgeInsets.symmetric(
-              horizontal: DabblerSpacing.space6,
-              vertical: DabblerSpacing.space2,
+        // On white pills so they stay readable over the artwork.
+        secondary: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            DabblerButton(
+              label: l.listing_set_location,
+              icon: 'location',
+              tone: DabblerButtonTone.outlined,
+              fullWidth: true,
+              onPressed: _setManually,
             ),
-            child: DabblerTextLink(
-              label: l.location_intro_later,
-              style: DabblerType.copy
-                  .resolveForDirection(Directionality.of(context))
-                  .copyWith(fontWeight: DabblerType.medium),
-              inline: true,
-              underline: false,
-              onPressed: _finish,
+            const DabblerGap.v(DabblerSpacing.space3),
+            Center(
+              child: DabblerCard(
+                variant: DabblerCardVariant.white,
+                borderOutside: true,
+                radius: DabblerRadius.xl,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DabblerSpacing.space6,
+                  vertical: DabblerSpacing.space2,
+                ),
+                child: DabblerTextLink(
+                  label: l.location_intro_later,
+                  style: DabblerType.copy
+                      .resolveForDirection(Directionality.of(context))
+                      .copyWith(fontWeight: DabblerType.medium),
+                  inline: true,
+                  underline: false,
+                  onPressed: _maybeLater,
+                ),
+              ),
             ),
-          ),
+          ],
         ),
       ),
     );

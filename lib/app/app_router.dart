@@ -1,3 +1,6 @@
+import 'package:dabbler/core/services/connectivity_service.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'dart:async';
 
@@ -203,14 +206,21 @@ class AppRouter {
       try {
         final supabase = Supabase.instance.client;
         final currentUser = supabase.auth.currentUser;
-        if (currentUser != null) {
+        // KAN-605: with no connection the check cannot answer, so the app
+        // goes straight on to Home and its cached feed; a slow connection
+        // gets a short wait instead of the full request timeout.
+        final connection = container.read(connectivityProvider);
+        if (currentUser != null && connection != ConnectionStatus.offline) {
           // Check if profile exists for this user
           final profileResponse = await supabase
               .from(SupabaseConfig.usersTable)
               .select('id')
               .eq('user_id', currentUser.id)
               .limit(1)
-              .maybeSingle();
+              .maybeSingle()
+              // Bounded (KAN-603/605): on timeout the catch below lets the
+              // normal flow continue with local state.
+              .timeout(DabblerMotion.timeoutShort);
 
           final hasProfile = profileResponse != null;
 
@@ -444,6 +454,7 @@ class AppRouter {
     settingsPrivacyRoute,
     settingsNotificationsRoute,
     settingsThemeRoute,
+    settingsLocationRoute,
     settingsLanguageRoute,
     preferencesGamesRoute,
     helpCenterRoute,

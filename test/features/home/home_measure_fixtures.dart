@@ -39,7 +39,8 @@ Post framePost(
   personaTypeSnapshot: 'player',
   body: body,
   sport: sport,
-  locationName: place,
+  // KAN-592: the frame's header place is where the author posted from.
+  postedFromCity: place,
   tags: const <String>[],
   likeCount: likes,
   commentCount: comments,

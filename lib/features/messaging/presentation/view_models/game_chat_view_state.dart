@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
 /// What the game chat screen shows (KAN-507, T12). Loading is the
@@ -31,9 +32,39 @@ enum GameChatStatus {
   error,
 }
 
-/// The local delivery state of one of the caller's own messages. D8: sent and
-/// failed only, no read or delivered ticks.
-enum OutgoingState { sending, sent, failed }
+/// The local delivery state of one of the caller's own messages. [retrying] is
+/// a manual Retry in flight (KAN-580). Delivered and seen come from the
+/// receipts, not from this state.
+enum OutgoingState { sending, retrying, sent, failed }
+
+/// An image of the caller's that is not on the server yet (KAN-581): the
+/// picked bytes for the preview, the idempotency key of its upload (reused on
+/// a retry so the server returns the same attachment), the attachment id once
+/// the upload finished, and the upload progress from 0 to 1.
+class PendingImage extends Equatable {
+  const PendingImage({
+    required this.image,
+    required this.uploadKey,
+    this.attachmentId,
+    this.progress = 0,
+  });
+
+  final PickedImage image;
+  final String uploadKey;
+  final String? attachmentId;
+  final double progress;
+
+  PendingImage copyWith({String? attachmentId, double? progress}) =>
+      PendingImage(
+        image: image,
+        uploadKey: uploadKey,
+        attachmentId: attachmentId ?? this.attachmentId,
+        progress: progress ?? this.progress,
+      );
+
+  @override
+  List<Object?> get props => [image, uploadKey, attachmentId, progress];
+}
 
 /// One row of the thread.
 class ChatItem extends Equatable {
@@ -43,7 +74,11 @@ class ChatItem extends Equatable {
     this.message,
     this.clientKey,
     this.failureReason,
+    this.pending,
   });
+
+  /// KAN-581: set while an image of the caller's is uploading or failed.
+  final PendingImage? pending;
 
   /// The server message; null while sending or after a failed send.
   final Message? message;
@@ -60,16 +95,26 @@ class ChatItem extends Equatable {
     Message? message,
     OutgoingState? state,
     MessagingReason? failureReason,
+    PendingImage? pending,
+    bool clearPending = false,
   }) => ChatItem(
     body: body,
     clientKey: clientKey,
     message: message ?? this.message,
     state: state ?? this.state,
     failureReason: failureReason,
+    pending: clearPending ? null : (pending ?? this.pending),
   );
 
   @override
-  List<Object?> get props => [message, clientKey, body, state, failureReason];
+  List<Object?> get props => [
+    message,
+    clientKey,
+    body,
+    state,
+    failureReason,
+    pending,
+  ];
 }
 
 class GameChatViewState extends Equatable {
@@ -81,9 +126,15 @@ class GameChatViewState extends Equatable {
     this.hasOlder = false,
     this.olderCursor,
     this.dm,
+    this.fromCache = false,
   });
 
   final GameChatStatus status;
+
+  /// True when this thread is the on-device copy shown because the network
+  /// failed (KAN-607): read-only, sending refused with the offline line until
+  /// a refresh succeeds.
+  final bool fromCache;
 
   /// Set only for a direct message (KAN-556): the counterpart and the DM's
   /// read-only cause. Null for a game chat, whose state is unchanged.
@@ -98,7 +149,12 @@ class GameChatViewState extends Equatable {
   final int? olderCursor;
 
   /// True while any own message is being sent.
-  bool get isSending => items.any((i) => i.state == OutgoingState.sending);
+  bool get isSending => items.any(
+    (i) =>
+        i.pending == null &&
+        (i.state == OutgoingState.sending ||
+            i.state == OutgoingState.retrying),
+  );
 
   /// True when the chat is closed because the game ended or was cancelled
   /// (the typed reason from the repository, never a client rule).
@@ -122,6 +178,7 @@ class GameChatViewState extends Equatable {
     bool? hasOlder,
     int? olderCursor,
     DmThreadInfo? dm,
+    bool? fromCache,
   }) => GameChatViewState(
     status: status ?? this.status,
     conversation: conversation ?? this.conversation,
@@ -130,6 +187,7 @@ class GameChatViewState extends Equatable {
     hasOlder: hasOlder ?? this.hasOlder,
     olderCursor: olderCursor ?? this.olderCursor,
     dm: dm ?? this.dm,
+    fromCache: fromCache ?? this.fromCache,
   );
 
   @override
@@ -141,6 +199,7 @@ class GameChatViewState extends Equatable {
     hasOlder,
     olderCursor,
     dm,
+    fromCache,
   ];
 }
 

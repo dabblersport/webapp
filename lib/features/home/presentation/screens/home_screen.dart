@@ -1,3 +1,4 @@
+import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'dart:async';
@@ -22,6 +23,7 @@ import 'package:dabbler/features/home/presentation/widgets/active_event_card.dar
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
+import 'package:dabbler/widgets/connection_banner.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:flutter/foundation.dart';
@@ -255,12 +257,19 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     switch (tab) {
       case FeedTab.forYou:
         final s = ref.read(feedNotifierProvider);
-        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+        // KAN-606: after a failed page the retry row is the way on.
+        if (!s.isLoading &&
+            !s.isLoadingMore &&
+            s.hasMore &&
+            !s.loadMoreFailed) {
           ref.read(feedNotifierProvider.notifier).loadMore();
         }
       case FeedTab.following:
         final s = ref.read(followingFeedProvider);
-        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+        if (!s.isLoading &&
+            !s.isLoadingMore &&
+            s.hasMore &&
+            !s.loadMoreFailed) {
           ref.read(followingFeedProvider.notifier).loadMore();
         }
         final sa = ref.read(followingActivitiesProvider);
@@ -269,7 +278,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
         }
       case FeedTab.nearby:
         final s = ref.read(nearbyFeedProvider);
-        if (!s.isLoading && !s.isLoadingMore && s.hasMore) {
+        if (!s.isLoading &&
+            !s.isLoadingMore &&
+            s.hasMore &&
+            !s.loadMoreFailed) {
           ref.read(nearbyFeedProvider.notifier).loadMore();
         }
       case FeedTab.active:
@@ -288,14 +300,38 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _handleRefresh() async {
     await _loadUserProfile();
     ref.invalidate(profileControllerProvider);
+    // KAN-606: a failed refresh over a feed with items keeps them and says so
+    // in a transient toast.
+    bool keptAfterFailure(bool ok, bool hasItems) => !ok && hasItems;
     switch (_activeTab) {
       case FeedTab.forYou:
-        await ref.read(feedNotifierProvider.notifier).load();
+        final ok = await ref.read(feedNotifierProvider.notifier).load();
+        if (keptAfterFailure(
+              ok,
+              ref.read(feedNotifierProvider).items.isNotEmpty,
+            ) &&
+            mounted) {
+          showListingRefreshFailedToast(context);
+        }
       case FeedTab.following:
-        await ref.read(followingFeedProvider.notifier).load();
+        final ok = await ref.read(followingFeedProvider.notifier).load();
         ref.read(followingActivitiesProvider.notifier).load();
+        if (keptAfterFailure(
+              ok,
+              ref.read(followingFeedProvider).posts.isNotEmpty,
+            ) &&
+            mounted) {
+          showListingRefreshFailedToast(context);
+        }
       case FeedTab.nearby:
-        await ref.read(nearbyFeedProvider.notifier).load();
+        final ok = await ref.read(nearbyFeedProvider.notifier).load();
+        if (keptAfterFailure(
+              ok,
+              ref.read(nearbyFeedProvider).posts.isNotEmpty,
+            ) &&
+            mounted) {
+          showListingRefreshFailedToast(context);
+        }
       case FeedTab.active:
         await ref.read(activeFeedProvider.notifier).load();
       case FeedTab.news:
@@ -320,6 +356,9 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
       topBar: _buildHeader(),
       body: Column(
         children: [
+          // KAN-610: sits under the header, above reminders and tabs, in
+          // normal flow; collapses to nothing when online.
+          const ConnectionBanner(),
           const HomeUpcoming(),
           if (forYouState.hasNewPosts && _activeIndex == 0)
             Center(
@@ -358,6 +397,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   scrollController: _scrollControllers[0],
                   onRefresh: _handleRefresh,
                   onRetry: () => ref.read(feedNotifierProvider.notifier).load(),
+                  onLoadMore: () =>
+                      ref.read(feedNotifierProvider.notifier).loadMore(),
                   onClearBadge: () => ref
                       .read(feedNotifierProvider.notifier)
                       .clearNewPostsBadge(),
@@ -375,6 +416,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   scrollController: _scrollControllers[2],
                   onRefresh: _handleRefresh,
                   onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
+                  onLoadMore: () =>
+                      ref.read(nearbyFeedProvider.notifier).loadMore(),
                 ),
                 _ActiveFeedTabBody(
                   state: ref.watch(activeFeedProvider),
@@ -411,6 +454,7 @@ class _ForYouTabBody extends ConsumerWidget {
     required this.scrollController,
     required this.onRefresh,
     required this.onRetry,
+    required this.onLoadMore,
     required this.onClearBadge,
   });
 
@@ -418,6 +462,9 @@ class _ForYouTabBody extends ConsumerWidget {
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
+
+  /// Retries the next page after a failed one (KAN-606).
+  final VoidCallback onLoadMore;
   final VoidCallback onClearBadge;
 
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
@@ -467,7 +514,9 @@ class _ForYouTabBody extends ConsumerWidget {
     final feedItems = state.items
         .where((item) => item is! FeedNewsItem || showNews)
         .toList();
-    final itemCount = feedItems.length + (state.isLoadingMore ? 1 : 0);
+    final itemCount =
+        feedItems.length +
+        (state.isLoadingMore || state.loadMoreFailed ? 1 : 0);
 
     return DabblerRefresh(
       onRefresh: onRefresh,
@@ -479,6 +528,9 @@ class _ForYouTabBody extends ConsumerWidget {
         separatorBuilder: (_, index) => const DabblerDivider(),
         itemBuilder: (_, index) {
           if (index == feedItems.length) {
+            if (state.loadMoreFailed) {
+              return _LoadMoreFailedRow(onRetry: onLoadMore);
+            }
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
@@ -601,7 +653,8 @@ class _FollowingFeedTabBody extends ConsumerWidget {
     }
 
     final isLoadingMore = postState.isLoadingMore;
-    final itemCount = merged.length + (isLoadingMore ? 1 : 0);
+    final loadMoreFailed = postState.loadMoreFailed;
+    final itemCount = merged.length + (isLoadingMore || loadMoreFailed ? 1 : 0);
 
     return DabblerRefresh(
       onRefresh: onRefresh,
@@ -613,6 +666,12 @@ class _FollowingFeedTabBody extends ConsumerWidget {
         separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
           if (index == merged.length) {
+            if (loadMoreFailed) {
+              return _LoadMoreFailedRow(
+                onRetry: () =>
+                    ref.read(followingFeedProvider.notifier).loadMore(),
+              );
+            }
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
@@ -728,12 +787,16 @@ class _NearbyFeedTabBody extends StatelessWidget {
     required this.scrollController,
     required this.onRefresh,
     required this.onRetry,
+    required this.onLoadMore,
   });
 
   final TabFeedState state;
   final ScrollController scrollController;
   final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
+
+  /// Retries the next page after a failed one (KAN-606).
+  final VoidCallback onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -754,7 +817,8 @@ class _NearbyFeedTabBody extends StatelessWidget {
     }
 
     final posts = state.posts;
-    final itemCount = posts.length + (state.isLoadingMore ? 1 : 0);
+    final itemCount =
+        posts.length + (state.isLoadingMore || state.loadMoreFailed ? 1 : 0);
 
     return DabblerRefresh(
       onRefresh: onRefresh,
@@ -766,6 +830,9 @@ class _NearbyFeedTabBody extends StatelessWidget {
         separatorBuilder: (_, __) => const DabblerDivider(),
         itemBuilder: (_, index) {
           if (index == posts.length) {
+            if (state.loadMoreFailed) {
+              return _LoadMoreFailedRow(onRetry: onLoadMore);
+            }
             return const Padding(
               padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
               child: Center(child: DabblerSpinner()),
@@ -802,6 +869,30 @@ class _EmptyView extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(DabblerSpacing.space10),
         child: DabblerEmptyState(icon: iconName, title: message, text: hint),
+      ),
+    );
+  }
+}
+
+/// KAN-606: the end of a feed whose next page failed — "Couldn't load more.
+/// Tap to retry." as the existing small neutral button, in the loading
+/// spinner's place. Tapping it loads the next page again.
+class _LoadMoreFailedRow extends StatelessWidget {
+  const _LoadMoreFailedRow({required this.onRetry});
+
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+      child: Center(
+        child: DabblerButton(
+          label: AppLocalizations.of(context).offline_load_more_failed,
+          tone: DabblerButtonTone.neutral,
+          size: DabblerButtonSize.small,
+          onPressed: onRetry,
+        ),
       ),
     );
   }

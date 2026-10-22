@@ -1,3 +1,5 @@
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -48,6 +50,8 @@ class LocaleNotifier extends StateNotifier<Locale> {
     final lang = profile?.language;
     if (lang == null || !_kSupported.contains(lang)) return;
     if (state.languageCode == lang) return;
+    // KAN-608: a language change still waiting for the server is newer.
+    if (await SettingsSyncBridge.hasPendingEdit(SettingKeys.language)) return;
     state = Locale(lang);
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kLangKey, lang);
@@ -64,6 +68,13 @@ class LocaleNotifier extends StateNotifier<Locale> {
     final profileId = _activeProfileId;
     final user = Supabase.instance.client.auth.currentUser;
     if (user != null && profileId != null && profileId.isNotEmpty) {
+      // KAN-608: applied on the device already; the offline queue sends it.
+      if (await SettingsSyncBridge.submit(SettingKeys.language, {
+        'profile_id': profileId,
+        'language': locale.languageCode,
+      })) {
+        return;
+      }
       try {
         await Supabase.instance.client
             .from(SupabaseConfig.usersTable)

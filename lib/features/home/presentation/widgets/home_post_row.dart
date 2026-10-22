@@ -14,6 +14,7 @@ import 'package:dabbler/features/social/presentation/widgets/post_media_carousel
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -449,9 +450,14 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         ? null
         : (matchedSport?.localizedName(context) ?? post.sport!);
 
-    // The place line: the post's saved place name only. A post with no name
-    // shows no place; the area name is never used as a place.
-    final place = (post.locationName ?? '').trim();
+    // KAN-592: the header names where the author POSTED FROM (area and city,
+    // or the city alone; a legacy post reads Dubai). The place the post is
+    // about is its own pill, below, and never reaches the header.
+    final place = postedFromHeaderLabel(
+      post,
+      legacyCity: l10n.post_legacy_city,
+    );
+    final placeTag = postPlaceTagLabel(post);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -494,6 +500,10 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           place: place,
           segments: _segments(post),
           sportLabel: sportLabel,
+          placeTagLabel: placeTag,
+          placeTagLeading: placeTag == null
+              ? null
+              : DabblerIcon('location', size: DabblerSizing.iconXs),
           sportLeading: sportKey == null
               ? null
               : DabblerSportIcon.fromKey(sportKey, size: DabblerSizing.iconXs),

@@ -11,6 +11,7 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -18,6 +19,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mockito/mockito.dart';
 
 import 'composer_locate_test.mocks.dart';
+import '../../support/connectivity_overrides.dart';
 
 const _nasFallback = 'a0000000-0000-0000-0000-000000000007';
 
@@ -60,6 +62,7 @@ PostComposerNotifier _setUp() {
   when(areas.resolveNearest(25.15, 55.31)).thenAnswer((_) async => _nas);
   _c = ProviderContainer(
     overrides: [
+      onlineConnectivity(),
       postRepositoryProvider.overrideWithValue(_repo),
       gpsServiceProvider.overrideWithValue(gps),
       areaRepositoryV2Provider.overrideWithValue(areas),
@@ -67,7 +70,10 @@ PostComposerNotifier _setUp() {
   );
   addTearDown(_c.dispose);
   _c.listen(postComposerProvider, (_, __) {});
-  return _c.read(postComposerProvider.notifier)..setBody('Padel tonight');
+  // KAN-592: a post needs a posting city; these tests are about the place tag.
+  return _c.read(postComposerProvider.notifier)
+    ..setBody('Padel tonight')
+    ..setPostedFrom(const PostedFrom(city: 'Dubai'));
 }
 
 Future<Map<String, dynamic>> _submit(PostComposerNotifier n) async {
