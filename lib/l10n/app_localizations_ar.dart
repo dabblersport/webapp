@@ -6826,6 +6826,19 @@ class AppLocalizationsAr extends AppLocalizations {
       'تم تسجيل دخولك، لكن تعذّر تحميل حسابك. حاول مرة أخرى.';
 
   @override
+  String get auth_profile_check_failed =>
+      'تعذّر التحقق من حسابك الآن. تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get auth_profile_check_retry => 'حاول مرة أخرى';
+
+  @override
+  String get auth_otp_generic_error => 'حدث خطأ ما. حاول مرة أخرى.';
+
+  @override
+  String get auth_otp_resend_failed => 'تعذّر إرسال رمز جديد. حاول مرة أخرى.';
+
+  @override
   String get messaging_typing_dm => 'يكتب…';
 
   @override

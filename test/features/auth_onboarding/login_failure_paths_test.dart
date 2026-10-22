@@ -52,6 +52,18 @@ class _FakeAuth implements AuthService {
   }
 
   @override
+  Future<ProfileLookupResult> lookupUserProfile({
+    List<String>? fields,
+    String? personaType,
+  }) async {
+    profileCalls++;
+    final row = await profile!();
+    return row == null
+        ? const ProfileLookupConfirmedNoProfile()
+        : ProfileLookupFound(row);
+  }
+
+  @override
   Future<bool> signInWithGoogle() {
     googleCalls++;
     return google!();

@@ -15,7 +15,7 @@
 // in-isolate cache. A client that ignores its throttle is bounded by the authorisation call each request costs and by
 // Supabase Realtime's own per-project message rate; that residual risk is stated in the README.
 
-import { DEFAULT_ACCESS_MODE, Env, authorize } from "./auth";
+import { Env, accessMode, authorize } from "./auth";
 import { reasonError } from "./errors";
 import type { WaitUntilContext } from "./notify";
 
@@ -38,7 +38,7 @@ export async function sendTyping(env: Env, authorization: string, conversationId
       body: JSON.stringify({
         p_conversation_id: conversationId,
         p_typing: typing,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+        p_access_mode: accessMode(env),
       }),
       signal: AbortSignal.timeout(TYPING_TIMEOUT_MS),
     });

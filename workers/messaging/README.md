@@ -171,6 +171,14 @@ Only `/v1` and `/v1/*` get CORS handling. `/health` and `/internal/*` get none, 
 
 ### Kill switch: dashboard edit vs redeploy (`MESSAGING_ACCESS_MODE`)
 
+**KAN-625: dashboard-only, fails closed.** `MESSAGING_ACCESS_MODE` is changed only by an admin in the Cloudflare
+dashboard (Workers -> the messaging Worker -> Settings -> Variables). No client, migration, database edit or Worker route
+writes it, and the Flutter app does not read it; the Worker only reads it (`accessMode(env)` in `src/auth.ts`, the one
+place the value is derived). A value that is absent, empty or not exactly `off`, `allowlist` or `all` is treated as
+`off`, so the Worker sends `p_access_mode: "off"` and the refusal is the same 403 with no reason as the KAN-553 off signal.
+A dashboard edit takes effect without a release (about 1 s); the evidence is the KAN-553 drill,
+`docs/messaging/killswitch-drill-kan553.md`. The current setting stays `all`.
+
 Source read 2026-10-15: Wrangler configuration, https://developers.cloudflare.com/workers/wrangler/configuration/
 ("Source of truth" and the `keep_vars` key):
 

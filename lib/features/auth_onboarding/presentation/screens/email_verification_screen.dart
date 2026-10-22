@@ -1,4 +1,5 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -10,8 +11,65 @@ import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
+/// What [ensureEmailVerifiedProfile] found or did.
+enum EmailVerifyProfileOutcome { existing, created, couldNotCheck }
+
+/// KAN-602: creates the profile for a verified email only when the lookup
+/// CONFIRMS none exists. A lookup that could not be completed returns
+/// [EmailVerifyProfileOutcome.couldNotCheck] and creates nothing.
+Future<EmailVerifyProfileOutcome> ensureEmailVerifiedProfile({
+  required AuthService authService,
+  required User user,
+  required Map<String, dynamic> data,
+}) async {
+  final lookup = await authService.lookupUserProfile(fields: ['id']);
+  switch (lookup) {
+    case ProfileLookupFound():
+      return EmailVerifyProfileOutcome.existing;
+    case ProfileLookupCouldNotCheck():
+      return EmailVerifyProfileOutcome.couldNotCheck;
+    case ProfileLookupConfirmedNoProfile():
+      break;
+  }
+
+  final displayName =
+      (data['displayName'] as String?) ??
+      (user.email != null ? user.email!.split('@').first : 'Player');
+  final username =
+      (data['username'] as String?) ??
+      displayName.toLowerCase().replaceAll(' ', '');
+  final age = (data['age'] as int?) ?? 18;
+  final gender = (data['gender'] as String?) ?? 'unspecified';
+  final intention =
+      (data['intention'] as String?) ?? 'compete'; // default player
+  final preferredSport = (data['preferredSport'] as String?) ?? 'football';
+  final interestsList = data['interests'] is List
+      ? data['interests'] as List
+      : null;
+  final interestsString = interestsList?.whereType<String>().join(',');
+
+  await authService.createProfile(
+    userId: user.id,
+    displayName: displayName,
+    username: username,
+    age: age,
+    gender: gender,
+    intention: intention,
+    preferredSport: preferredSport,
+    interests: interestsString,
+  );
+  return EmailVerifyProfileOutcome.created;
+}
+
 class EmailVerificationScreen extends StatefulWidget {
-  const EmailVerificationScreen({super.key, this.onboardingData});
+  const EmailVerificationScreen({
+    super.key,
+    this.onboardingData,
+    @visibleForTesting this.authService,
+  });
+
+  /// Test seam; production uses the [AuthService] singleton.
+  final AuthService? authService;
 
   /// Optional onboarding data passed from the email signup flow
   /// Contains keys: email, displayName, age, gender, intention,
@@ -190,47 +248,29 @@ class _EmailVerificationScreenState extends State<EmailVerificationScreen> {
 
       // Email is confirmed - ensure profile exists
       try {
-        final authService = AuthService();
+        final authService = widget.authService ?? AuthService();
 
-        // Check if profile already exists
-        final existingProfile = await authService.getUserProfile(
-          fields: ['id'],
+        // KAN-602: a profile is created only on a CONFIRMED absence. If the
+        // lookup could not be completed we must not guess "new user" and
+        // create (or overwrite) a profile; stay here and let them check again.
+        final outcome = await ensureEmailVerifiedProfile(
+          authService: authService,
+          user: user,
+          data: _onboardingData ?? const <String, dynamic>{},
         );
-
-        if (existingProfile == null) {
-          final data = _onboardingData ?? const <String, dynamic>{};
-
-          final displayName =
-              (data['displayName'] as String?) ??
-              (user.email != null ? user.email!.split('@').first : 'Player');
-          final username =
-              (data['username'] as String?) ??
-              displayName.toLowerCase().replaceAll(' ', '');
-          final age = (data['age'] as int?) ?? 18;
-          final gender = (data['gender'] as String?) ?? 'unspecified';
-          final intention =
-              (data['intention'] as String?) ?? 'compete'; // default player
-          final preferredSport =
-              (data['preferredSport'] as String?) ?? 'football';
-          final interestsList = data['interests'] is List
-              ? data['interests'] as List
-              : null;
-          final interestsString = interestsList?.whereType<String>().join(',');
-
-          await authService.createProfile(
-            userId: user.id,
-            displayName: displayName,
-            username: username,
-            age: age,
-            gender: gender,
-            intention: intention,
-            preferredSport: preferredSport,
-            interests: interestsString,
-          );
-
+        if (outcome == EmailVerifyProfileOutcome.couldNotCheck) {
+          if (!mounted) return;
+          setState(() {
+            _errorMessage = AppLocalizations.of(
+              context,
+            ).auth_profile_check_failed;
+          });
+          return;
+        }
+        if (outcome == EmailVerifyProfileOutcome.created) {
           // Clear stored onboarding data after successful profile creation
           await _clearStoredOnboardingData();
-        } else {}
+        }
 
         // Optionally mark profile as verified in public.profiles
         try {

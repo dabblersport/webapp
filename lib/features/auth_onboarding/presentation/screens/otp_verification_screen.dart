@@ -51,6 +51,7 @@ class OtpVerificationScreen extends ConsumerStatefulWidget {
 class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   String _code = '';
   String? _errorMessage;
+  bool _profileCheckFailed = false;
 
   bool _isLoading = false;
   bool _isResending = false;
@@ -58,6 +59,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   late String _identifier;
   late IdentifierType _identifierType;
+
+  @override
+  void dispose() {
+    routerRefreshNotifier.releaseProfileHold();
+    super.dispose();
+  }
 
   @override
   void initState() {
@@ -102,6 +109,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     setState(() {
       _code = value;
       _errorMessage = null;
+      _profileCheckFailed = false;
     });
   }
 
@@ -116,6 +124,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
 
   String _getOtpCode() => _code;
 
+  /// Classifies a failed verification without ever showing its raw text:
+  /// `expired` / `invalid` map to the frame's own lines in [build]; anything
+  /// else (offline, timeout, server) is the generic line.
+  String _verifyFailureKind(Object error) {
+    final text = error.toString().toLowerCase();
+    if (text.contains('expire')) return 'expired';
+    if (text.contains('invalid') ||
+        text.contains('incorrect') ||
+        text.contains('otp') ||
+        text.contains('token')) {
+      return 'invalid';
+    }
+    return 'generic';
+  }
+
   Future<void> _handleSubmit() async {
     final otpCode = _getOtpCode();
 
@@ -126,9 +149,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
 
     setState(() => _isLoading = true);
+    // KAN-602: the sign-in event must not move the router on before the
+    // profile check has run (see RouterRefreshNotifier.holdForProfile).
+    routerRefreshNotifier.holdForProfile();
 
     try {
-      final authService = AuthService();
+      final authService = ref.read(authServiceProvider);
       final response = await authService.verifyOtp(
         identifier: _identifier,
         type: _identifierType,
@@ -148,64 +174,48 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final rawMessage = e.toString().replaceFirst(
-          RegExp(r'^Exception:\s*'),
-          '',
-        );
-        setState(() => _errorMessage = rawMessage);
+        // KAN-602: never show raw exception text; the server's own "wrong" and
+        // "expired" codes are matched on the exception below, not displayed.
+        setState(() => _errorMessage = _verifyFailureKind(e));
       }
     } finally {
+      if (!_profileCheckFailed) routerRefreshNotifier.releaseProfileHold();
       if (mounted) {
         setState(() => _isLoading = false);
       }
     }
   }
 
+  /// KAN-602: only a CONFIRMED absence of a profile goes to onboarding. If
+  /// the lookup could not be completed the user stays on this screen, with
+  /// the verified session and the code kept, and can retry.
   Future<void> _checkUserProfileAndNavigate() async {
-    try {
-      final authService = AuthService();
-      final userProfile = await authService.getUserProfile(
-        fields: ['id', 'onboard', 'display_name', 'intention'],
-      );
+    final lookup = await ref
+        .read(authServiceProvider)
+        .lookupUserProfile(
+          fields: ['id', 'onboard', 'display_name', 'intention'],
+        );
+    if (!mounted) return;
 
-      final isOnboarded =
-          userProfile != null &&
-          (userProfile['onboard'] == true || userProfile['onboard'] == 'true');
+    if (lookup is! ProfileLookupCouldNotCheck) {
+      routerRefreshNotifier.releaseProfileHold();
+    }
 
-      if (isOnboarded) {
-        if (mounted) {
-          final displayName = userProfile['display_name'] as String? ?? '';
-          final personaType = userProfile['intention'] as String? ?? 'player';
-          context.go(
-            RoutePaths.welcome,
-            extra: {
-              'displayName': displayName,
-              'personaType': personaType,
-              'isFirstTime': false,
-            },
-          );
-        }
-      } else {
-        if (_identifierType == IdentifierType.email) {
-          ref.read(onboardingDataProvider.notifier).initWithEmail(_identifier);
-          if (mounted) {
-            context.go(
-              RoutePaths.createUserInfo,
-              extra: {'email': _identifier},
-            );
-          }
-        } else {
-          ref.read(onboardingDataProvider.notifier).initWithPhone(_identifier);
-          if (mounted) {
-            context.go(
-              RoutePaths.createUserInfo,
-              extra: {'phone': _identifier},
-            );
-          }
-        }
-      }
-    } catch (e) {
-      if (mounted) {
+    switch (lookup) {
+      case ProfileLookupFound(:final profile)
+          when profile['onboard'] == true || profile['onboard'] == 'true':
+        final displayName = profile['display_name'] as String? ?? '';
+        final personaType = profile['intention'] as String? ?? 'player';
+        context.go(
+          RoutePaths.welcome,
+          extra: {
+            'displayName': displayName,
+            'personaType': personaType,
+            'isFirstTime': false,
+          },
+        );
+      case ProfileLookupFound():
+      case ProfileLookupConfirmedNoProfile():
         if (_identifierType == IdentifierType.email) {
           ref.read(onboardingDataProvider.notifier).initWithEmail(_identifier);
           context.go(RoutePaths.createUserInfo, extra: {'email': _identifier});
@@ -213,7 +223,21 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           ref.read(onboardingDataProvider.notifier).initWithPhone(_identifier);
           context.go(RoutePaths.createUserInfo, extra: {'phone': _identifier});
         }
-      }
+      case ProfileLookupCouldNotCheck():
+        setState(() => _profileCheckFailed = true);
+    }
+  }
+
+  /// Retries only the profile lookup; the code was already verified.
+  Future<void> _retryProfileCheck() async {
+    setState(() {
+      _isLoading = true;
+      _profileCheckFailed = false;
+    });
+    try {
+      await _checkUserProfileAndNavigate();
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -223,7 +247,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     setState(() => _isResending = true);
 
     try {
-      final authService = AuthService();
+      final authService = ref.read(authServiceProvider);
       await authService.sendOtp(identifier: _identifier, type: _identifierType);
 
       if (mounted) {
@@ -241,9 +265,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       if (mounted) {
         DabblerToastProvider.of(context).show(
           DabblerToastSpec(
-            message: AppLocalizations.of(
-              context,
-            ).otp_verify_error_prefix(e.toString()),
+            message: AppLocalizations.of(context).auth_otp_resend_failed,
             tone: DabblerToastTone.error,
           ),
         );
@@ -278,6 +300,8 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       final String lower = message.toLowerCase();
       if (lower.contains('expire')) {
         message = l10n.auth_otp_expired;
+      } else if (message == 'generic') {
+        message = l10n.auth_otp_generic_error;
       } else if (lower.contains('invalid') ||
           lower.contains('incorrect') ||
           lower.contains('token') ||
@@ -340,6 +364,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
             const DabblerGap.v(DabblerSpacing.space4),
             DabblerInlineMessage(message!),
           ],
+          if (_profileCheckFailed) ...<Widget>[
+            const DabblerGap.v(DabblerSpacing.space4),
+            DabblerInlineMessage(l10n.auth_profile_check_failed),
+          ],
         ],
       ),
       Align(
@@ -371,9 +399,13 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       headerTopPadding: DabblerSpacing.space4,
       subtitle: subtitle,
       subtitleStyle: DabblerType.lead,
-      primaryLabel: l10n.auth_otp_continue,
+      primaryLabel: _profileCheckFailed
+          ? l10n.auth_profile_check_retry
+          : l10n.auth_otp_continue,
       primaryLoading: _isLoading,
-      onPrimary: isAllFilled && !_isLoading ? _handleSubmit : null,
+      onPrimary: isAllFilled && !_isLoading
+          ? (_profileCheckFailed ? _retryProfileCheck : _handleSubmit)
+          : null,
       content: body,
     );
   }

@@ -6778,6 +6778,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'You are signed in, but we couldn\'t load your account. Try again.';
 
   @override
+  String get auth_profile_check_failed =>
+      'We couldn\'t check your account right now. Check your connection and try again.';
+
+  @override
+  String get auth_profile_check_retry => 'Try again';
+
+  @override
+  String get auth_otp_generic_error =>
+      'Something went wrong. Please try again.';
+
+  @override
+  String get auth_otp_resend_failed =>
+      'We couldn\'t send a new code. Please try again.';
+
+  @override
   String get messaging_typing_dm => 'typing…';
 
   @override
