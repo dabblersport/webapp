@@ -3,6 +3,8 @@ import 'dart:convert';
 
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'package:dabbler/core/cache/cache_policy.dart';
+
 /// One cached server response and when it was fetched (KAN-605).
 class CacheEntry {
   const CacheEntry({required this.payload, required this.fetchedAt});
@@ -102,6 +104,90 @@ class OfflineCache {
     });
     _queue = done.catchError((_) {});
     return done.catchError((_) {});
+  }
+
+  /// The scheduled cleanup for one account (KAN-613).
+  ///
+  /// Removes entries fetched before `now - maxAge`, then, if the account is
+  /// still over [maxBytesPerAccount], evicts the oldest remaining until it
+  /// fits. Never removes an exempt key ([isCleanupExempt]) or one in
+  /// [shownKeys]: a stale entry that is shown comes back in
+  /// [CacheCleanupResult.refresh] for the caller to refresh. Runs in the write
+  /// queue, so it never races a write.
+  Future<CacheCleanupResult> cleanup(
+    String accountId, {
+    required DateTime now,
+    Duration maxAge = kCacheCleanupInterval,
+    Set<String> shownKeys = const {},
+  }) {
+    final done = _queue.then(
+      (_) => _cleanup(accountId, now, maxAge, shownKeys),
+    );
+    _queue = done.then<void>((_) {}, onError: (_) {});
+    return done;
+  }
+
+  Future<CacheCleanupResult> _cleanup(
+    String accountId,
+    DateTime now,
+    Duration maxAge,
+    Set<String> shownKeys,
+  ) async {
+    final prefs = await _p();
+    final index = _readIndex(prefs, accountId);
+    final cutoff = now.subtract(maxAge).millisecondsSinceEpoch;
+    final removed = <String>[];
+    final refresh = <String>[];
+
+    for (final e in index.entries.toList()) {
+      if (e.value.at >= cutoff) continue;
+      if (isCleanupExempt(e.key)) continue;
+      if (shownKeys.contains(e.key)) {
+        refresh.add(e.key);
+        continue;
+      }
+      index.remove(e.key);
+      removed.add(e.key);
+      await prefs.remove(_entryKey(accountId, e.key));
+    }
+
+    var total = index.values.fold<int>(0, (s, e) => s + e.bytes);
+    if (total > maxBytesPerAccount) {
+      // Feed pages count toward the cap. The Home feed (feed.foryou) is kept
+      // so it is not left empty offline; with no Home feed cached, the newest
+      // feed page is kept instead. Every other feed tab is evictable.
+      String? keptFeed = index.containsKey(kHomeFeedCacheKey)
+          ? kHomeFeedCacheKey
+          : null;
+      if (keptFeed == null) {
+        for (final e in index.entries) {
+          if (!isFeedKey(e.key)) continue;
+          if (keptFeed == null || e.value.at > index[keptFeed]!.at) {
+            keptFeed = e.key;
+          }
+        }
+      }
+      final oldestFirst =
+          index.entries
+              .where(
+                (e) =>
+                    !isSizeCapExempt(e.key) &&
+                    e.key != keptFeed &&
+                    !shownKeys.contains(e.key),
+              )
+              .toList()
+            ..sort((a, b) => a.value.at.compareTo(b.value.at));
+      for (final victim in oldestFirst) {
+        if (total <= maxBytesPerAccount) break;
+        total -= victim.value.bytes;
+        index.remove(victim.key);
+        removed.add(victim.key);
+        await prefs.remove(_entryKey(accountId, victim.key));
+      }
+    }
+
+    if (removed.isNotEmpty) await _saveIndex(prefs, accountId, index);
+    return CacheCleanupResult(removed: removed, refresh: refresh);
   }
 
   Future<void> _write(
