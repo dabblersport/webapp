@@ -8465,4 +8465,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String profile_stat_sport_matches_visitor(String sport) {
     return '$sport matches';
   }
+
+  @override
+  String get listing_use_city_only => 'Use city only';
 }
