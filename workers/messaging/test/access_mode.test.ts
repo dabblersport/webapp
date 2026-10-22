@@ -79,7 +79,7 @@ describe("valid values pass through unchanged on list and send", () => {
 describe("valid values reach p_access_mode unchanged on every route that sends it", () => {
   const MSG_ID = "aaaaaaaa-aaaa-4aaa-8aaa-00000000000a";
   const GAME = "99999999-9999-4999-8999-999999999999";
-  const ROUTES = ["msg_authorize", "msg_game_conversation", "msg_notify", "msg_typing", "msg_ack_receipt", "msg_report_message", "msg_receipt_summary"];
+  const ROUTES = ["msg_authorize", "msg_game_conversation", "msg_notify", "msg_typing", "msg_ack_receipt", "msg_report_message", "msg_receipt_summary", "msg_receipt_recipients"];
 
   for (const v of ["off", "allowlist", "all"]) {
     it(v, async () => {
@@ -105,7 +105,7 @@ describe("valid values reach p_access_mode unchanged on every route that sends i
           .prepare("INSERT INTO messages (id, conversation_id, seq, sender_id, body, created_at, client_key) VALUES (?1, ?2, 1, 'real-user', 'x', 't', 'k1')")
           .bind(MSG_ID, CONV_A)
           .run();
-        const e = { ...env(db), MESSAGING_ACCESS_MODE: v } as never;
+        const e = { ...env(db), MESSAGING_ACCESS_MODE: v, SUPABASE_SERVICE_KEY: "service-key-for-test" } as never;
         const scheduled: Promise<unknown>[] = [];
         const ctx = { waitUntil: (p: Promise<unknown>) => void scheduled.push(p) };
         const json = { ...H };
@@ -115,12 +115,16 @@ describe("valid values reach p_access_mode unchanged on every route that sends i
         await worker.fetch(new Request(`${base}/typing`, { method: "POST", headers: json, body: JSON.stringify({ typing: true }) }), e, ctx);
         await worker.fetch(new Request(`${base}/receipts`, { method: "POST", headers: json, body: JSON.stringify({ state: "seen", through_seq: 1 }) }), e, ctx);
         await worker.fetch(new Request(`${base}/receipts?seqs=1`, { headers: H }), e, ctx);
+        await worker.fetch(new Request(`${base}/receipts/1`, { headers: H }), e, ctx);
         await worker.fetch(new Request(`https://worker.local/v1/messages/${MSG_ID}/report`, { method: "POST", headers: json, body: JSON.stringify({ reason: "spam" }) }), e, ctx);
         await Promise.all(scheduled);
         for (const fn of ROUTES) {
           expect(seen[fn], `${fn} was called`).toBeDefined();
-          for (const mode of seen[fn]) expect(mode, fn).toBe(v);
+          // msg_receipt_recipients is the elevated call made AFTER msg_authorize; it carries no mode of its own, so
+          // its authorisation is proven by msg_authorize receiving v (counted below: send, typing, ack, summary, recipients, report).
+          if (fn !== "msg_receipt_recipients") for (const mode of seen[fn]) expect(mode, fn).toBe(v);
         }
+        expect(seen.msg_authorize).toEqual([v, v, v, v, v, v]);
       } finally {
         await mf.dispose();
       }
