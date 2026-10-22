@@ -754,6 +754,10 @@ class AuthService {
     }
   }
 
+  static const bool _qaFailProfileLookup = bool.fromEnvironment(
+    'QA_FAIL_PROFILE_LOOKUP',
+  );
+
   /// KAN-602: the profile lookup with three honest outcomes. Unlike
   /// [getUserProfile], a failed check is never reported as "no profile":
   /// only a query that succeeded and returned no row is
@@ -765,6 +769,12 @@ class AuthService {
     String? personaType,
   }) {
     return classifyProfileQuery(() async {
+      // QA switch: `--dart-define=QA_FAIL_PROFILE_LOOKUP=true` makes the check
+      // fail after sign-in succeeded, so the could-not-check path can be driven
+      // in a running build without a network conditioner. Ignored in release.
+      if (_qaFailProfileLookup && !kReleaseMode) {
+        throw StateError('QA_FAIL_PROFILE_LOOKUP');
+      }
       final user = _supabase.auth.currentUser;
       // No signed-in user: nothing to look up, and that is not an absence.
       if (user == null) throw StateError('no signed-in user');
