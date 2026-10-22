@@ -5,6 +5,7 @@
 // used: no Supabase, no network, no account. Emails and codes are placeholders.
 import 'dart:async';
 import 'dart:io';
+import 'dart:ui' as ui;
 
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
@@ -19,6 +20,7 @@ import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart' show RenderRepaintBoundary;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -145,9 +147,15 @@ User _user() => User(
 );
 
 class _Harness {
-  _Harness(this.tester, {this.locale = const Locale('en')});
+  _Harness(
+    this.tester, {
+    this.locale = const Locale('en'),
+    this.dark = false,
+  });
   final WidgetTester tester;
   final Locale locale;
+  final bool dark;
+  final shotKey = GlobalKey();
   final auth = _FakeAuth();
   final visited = <String>[];
 
@@ -192,18 +200,39 @@ class _Harness {
         child: MaterialApp.router(
           debugShowCheckedModeBanner: false,
           routerConfig: router,
-          builder: (context, child) => DabblerToastProvider(child: child!),
+          builder: (context, child) => RepaintBoundary(
+            key: shotKey,
+            child: DabblerToastProvider(child: child!),
+          ),
           locale: locale,
           localizationsDelegates: AppLocalizations.localizationsDelegates,
           supportedLocales: AppLocalizations.supportedLocales,
           theme: DabblerDesignSystemTheme.withFonts(
-            DabblerDesignSystemTheme.withTokens(renderThemeBase()),
+            DabblerDesignSystemTheme.withTokens(
+              dark ? ThemeData.dark() : renderThemeBase(),
+            ),
             locale: locale,
           ),
         ),
       ),
     );
     await tester.pump(const Duration(milliseconds: 300));
+  }
+
+  /// Local-only evidence: renders the current frame to a PNG under the shots
+  /// root. Nothing here touches account preferences or the database.
+  Future<void> shot(String name) async {
+    final boundary =
+        tester.renderObject(find.byKey(shotKey)) as RenderRepaintBoundary;
+    final image = await tester.runAsync(() => boundary.toImage(pixelRatio: 1));
+    final bytes = await tester.runAsync(
+      () => image!.toByteData(format: ui.ImageByteFormat.png),
+    );
+    final file = File('$kShotsRoot/kan602/$name.png');
+    await tester.runAsync(() async {
+      await file.parent.create(recursive: true);
+      await file.writeAsBytes(bytes!.buffer.asUint8List());
+    });
   }
 
   Future<void> settle() async {
@@ -315,6 +344,63 @@ void main() {
       expect(find.text(h.l10n.auth_profile_check_retry), findsOneWidget);
       expect(h.visited, isEmpty);
     });
+  });
+
+  group('password login: Arabic/RTL and dark (KAN-602 QA coverage)', () {
+    const combos = <(String, Locale, bool)>[
+      ('ar-light', Locale('ar'), false),
+      ('en-dark', Locale('en'), true),
+      ('ar-dark', Locale('ar'), true),
+    ];
+    for (final (name, locale, dark) in combos) {
+      testWidgets('$name: fails, keeps input, then retry succeeds -> welcome', (
+        tester,
+      ) async {
+        final h = _Harness(tester, locale: locale, dark: dark)
+          ..auth.outcome = _Outcome.socket;
+        await h.pump(const EnterPasswordScreen(email: ''));
+        await h.submitPassword();
+
+        // Stayed, localized message + retry, fields kept, no onboarding.
+        expect(h.visited, isEmpty);
+        expect(find.text(h.l10n.auth_profile_check_failed), findsOneWidget);
+        expect(find.text(h.l10n.auth_profile_check_retry), findsOneWidget);
+        expect(find.textContaining('SocketException'), findsNothing);
+        expect(find.text('person@example.test'), findsOneWidget);
+        expect(h.auth.signIns, 1);
+        final dir = Directionality.of(
+          tester.element(find.text(h.l10n.auth_profile_check_failed)),
+        );
+        expect(
+          dir,
+          locale.languageCode == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+        );
+        expect(
+          Theme.of(
+            tester.element(find.text(h.l10n.auth_profile_check_failed)),
+          ).brightness,
+          dark ? Brightness.dark : Brightness.light,
+        );
+        await h.shot('password-failed-$name');
+
+        // Retry while still failing: same state, still no onboarding.
+        await tester.tap(find.text(h.l10n.auth_profile_check_retry));
+        await h.settle();
+        expect(h.visited, isEmpty);
+        expect(find.text(h.l10n.auth_profile_check_failed), findsOneWidget);
+        expect(find.text('person@example.test'), findsOneWidget);
+        expect(h.auth.lookups, 2);
+
+        // The failure switch goes off: Try again succeeds and routes onward
+        // without signing in again.
+        h.auth.outcome = _Outcome.found;
+        await tester.tap(find.text(h.l10n.auth_profile_check_retry));
+        await h.settle();
+        expect(h.auth.signIns, 1);
+        expect(h.auth.lookups, 3);
+        expect(h.visited, [RoutePaths.welcome]);
+      });
+    }
   });
 
   group('code (OTP) verification', () {
