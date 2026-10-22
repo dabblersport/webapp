@@ -54,6 +54,7 @@ class _FakeActive extends ActiveLocationNotifier {
     String? cityId,
     String? country,
     String? countryCode,
+    bool clearArea = false,
   }) async {
     _cityCalls.add(<String?>[city, country]);
     state = AsyncData(ActiveLocationCityOnly(city, country: country));

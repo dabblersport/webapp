@@ -294,7 +294,7 @@ class _HomeLocationPickerSheetState
   Future<void> _useCity(Area city) async {
     await ref
         .read(activeLocationProvider.notifier)
-        .useManualCity(city.city, country: city.country);
+        .useManualCity(city.city, country: city.country, clearArea: true);
     if (mounted) Navigator.of(context).pop();
   }
 
