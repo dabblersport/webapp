@@ -38,8 +38,10 @@ class SavedLocationsScreen extends ConsumerWidget {
       ),
       body: asyncLocations.when(
         loading: () => const Center(child: DabblerSpinner()),
-        error: (e, _) => const Center(
-          child: DabblerEmptyState.error(title: 'Could not load locations'),
+        error: (e, _) => Center(
+          child: DabblerEmptyState.error(
+            title: AppLocalizations.of(context).location_saved_load_error,
+          ),
         ),
         data: (locations) {
           if (locations.isEmpty) {
@@ -52,13 +54,17 @@ class SavedLocationsScreen extends ConsumerWidget {
                       padding: const EdgeInsets.all(DabblerSpacing.space9),
                       child: DabblerEmptyState(
                         icon: 'location-slash',
-                        title: 'No saved locations yet',
-                        text:
-                            'Save your home, work, or favourite spots so you can '
-                            'quickly tag them in posts.',
+                        title: AppLocalizations.of(
+                          context,
+                        ).location_saved_empty_title,
+                        text: AppLocalizations.of(
+                          context,
+                        ).location_saved_empty_text,
                         size: DabblerEmptyStateSize.page,
                         action: DabblerButton(
-                          label: 'Add your first location',
+                          label: AppLocalizations.of(
+                            context,
+                          ).location_saved_empty_cta,
                           icon: 'location-add',
                           onPressed: () => _addLocation(context, ref),
                         ),
@@ -150,7 +156,7 @@ class _LocationTile extends ConsumerWidget {
       key: ValueKey(location.id),
       actions: [
         DabblerSwipeActionItem(
-          label: 'Delete',
+          label: AppLocalizations.of(context).location_saved_delete,
           icon: 'trash',
           tone: DabblerSwipeActionTone.destructive,
           onPressed: () async {
@@ -252,16 +258,17 @@ class _LocationTile extends ConsumerWidget {
       context: context,
       builder: (ctx) => DabblerDialog(
         onClose: () => Navigator.pop(ctx, false),
-        title: 'Delete location?',
-        description:
-            'Remove "${location.effectiveLabel}" from your saved locations?',
+        title: AppLocalizations.of(context).location_saved_delete_title,
+        description: AppLocalizations.of(
+          context,
+        ).location_saved_delete_body(location.effectiveLabel),
         destructive: true,
         secondaryAction: DabblerDialogAction(
           label: AppLocalizations.of(context).home_location_cancel,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         primaryAction: DabblerDialogAction(
-          label: 'Delete',
+          label: AppLocalizations.of(context).location_saved_delete,
           onPressed: () => Navigator.pop(ctx, true),
         ),
       ),

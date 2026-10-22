@@ -2605,5 +2605,19 @@
   "location_add_place": "Add a place",
   "@location_add_place": {"description": "KAN-589 add-a-saved-place action on Settings > Location."},
   "location_custom_name_required": "Enter a name for this place",
-  "@location_custom_name_required": {"description": "KAN-589 shown when a custom label is chosen and its name is empty."}
+  "@location_custom_name_required": {"description": "KAN-589 shown when a custom label is chosen and its name is empty."},
+  "location_saved_load_error": "Could not load locations",
+  "@location_saved_load_error": {"description": "KAN-583 error shown on Settings > Location when the saved places list fails to load."},
+  "location_saved_empty_title": "No saved locations yet",
+  "@location_saved_empty_title": {"description": "KAN-583 empty-state title on Settings > Location when the user has no saved places."},
+  "location_saved_empty_text": "Save your home, work, or favourite spots so you can quickly tag them in posts.",
+  "@location_saved_empty_text": {"description": "KAN-583 empty-state body on Settings > Location explaining why to save places."},
+  "location_saved_empty_cta": "Add your first location",
+  "@location_saved_empty_cta": {"description": "KAN-583 empty-state button on Settings > Location that starts adding a saved place."},
+  "location_saved_delete": "Delete",
+  "@location_saved_delete": {"description": "KAN-583 delete action for a saved place on Settings > Location."},
+  "location_saved_delete_title": "Delete location?",
+  "@location_saved_delete_title": {"description": "KAN-583 confirmation dialog title for deleting a saved place."},
+  "location_saved_delete_body": "Remove \"{name}\" from your saved locations?",
+  "@location_saved_delete_body": {"description": "KAN-583 confirmation dialog body for deleting a saved place.", "placeholders": {"name": {"type": "String"}}}
 }

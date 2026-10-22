@@ -12604,6 +12604,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a name for this place'**
   String get location_custom_name_required;
+
+  /// KAN-583 error shown on Settings > Location when the saved places list fails to load.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load locations'**
+  String get location_saved_load_error;
+
+  /// KAN-583 empty-state title on Settings > Location when the user has no saved places.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved locations yet'**
+  String get location_saved_empty_title;
+
+  /// KAN-583 empty-state body on Settings > Location explaining why to save places.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your home, work, or favourite spots so you can quickly tag them in posts.'**
+  String get location_saved_empty_text;
+
+  /// KAN-583 empty-state button on Settings > Location that starts adding a saved place.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first location'**
+  String get location_saved_empty_cta;
+
+  /// KAN-583 delete action for a saved place on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get location_saved_delete;
+
+  /// KAN-583 confirmation dialog title for deleting a saved place.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete location?'**
+  String get location_saved_delete_title;
+
+  /// KAN-583 confirmation dialog body for deleting a saved place.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" from your saved locations?'**
+  String location_saved_delete_body(String name);
 }
 
 class _AppLocalizationsDelegate

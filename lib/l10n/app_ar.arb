@@ -2498,5 +2498,12 @@
   "settings_tile_location": "الموقع",
   "location_saved_places": "الأماكن المحفوظة",
   "location_add_place": "إضافة مكان",
-  "location_custom_name_required": "أدخل اسماً لهذا المكان"
+  "location_custom_name_required": "أدخل اسماً لهذا المكان",
+  "location_saved_load_error": "تعذّر تحميل المواقع",
+  "location_saved_empty_title": "لا توجد مواقع محفوظة بعد",
+  "location_saved_empty_text": "احفظ منزلك أو عملك أو أماكنك المفضلة لتتمكن من إضافتها بسرعة إلى منشوراتك.",
+  "location_saved_empty_cta": "أضف أول موقع",
+  "location_saved_delete": "حذف",
+  "location_saved_delete_title": "حذف الموقع؟",
+  "location_saved_delete_body": "هل تريد إزالة \"{name}\" من مواقعك المحفوظة؟"
 }

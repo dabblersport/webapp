@@ -7005,4 +7005,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_custom_name_required => 'Enter a name for this place';
+
+  @override
+  String get location_saved_load_error => 'Could not load locations';
+
+  @override
+  String get location_saved_empty_title => 'No saved locations yet';
+
+  @override
+  String get location_saved_empty_text =>
+      'Save your home, work, or favourite spots so you can quickly tag them in posts.';
+
+  @override
+  String get location_saved_empty_cta => 'Add your first location';
+
+  @override
+  String get location_saved_delete => 'Delete';
+
+  @override
+  String get location_saved_delete_title => 'Delete location?';
+
+  @override
+  String location_saved_delete_body(String name) {
+    return 'Remove \"$name\" from your saved locations?';
+  }
 }

@@ -7049,4 +7049,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
+
+  @override
+  String get location_saved_load_error => 'تعذّر تحميل المواقع';
+
+  @override
+  String get location_saved_empty_title => 'لا توجد مواقع محفوظة بعد';
+
+  @override
+  String get location_saved_empty_text =>
+      'احفظ منزلك أو عملك أو أماكنك المفضلة لتتمكن من إضافتها بسرعة إلى منشوراتك.';
+
+  @override
+  String get location_saved_empty_cta => 'أضف أول موقع';
+
+  @override
+  String get location_saved_delete => 'حذف';
+
+  @override
+  String get location_saved_delete_title => 'حذف الموقع؟';
+
+  @override
+  String location_saved_delete_body(String name) {
+    return 'هل تريد إزالة \"$name\" من مواقعك المحفوظة؟';
+  }
 }
