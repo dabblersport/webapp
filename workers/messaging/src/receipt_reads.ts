@@ -15,7 +15,7 @@
 // for this caller. SUPABASE_SERVICE_KEY is read in this file alone (static_guard.test.ts enforces that).
 // Nothing is written anywhere. No message body is read or sent; nothing is logged (KAN-513 guard).
 
-import { DEFAULT_ACCESS_MODE, Env, authorize } from "./auth";
+import { Env, accessMode, authorize } from "./auth";
 import { ok, reasonError, upstreamError } from "./errors";
 
 export const RECEIPTS_PATH_GET = /^\/v1\/conversations\/([^/]+)\/receipts$/;
@@ -72,7 +72,7 @@ export async function handleReceiptSummary(request: Request, env: Env, url: URL,
   const rows = await rpc(env, "msg_receipt_summary", env.SUPABASE_ANON_KEY, authorization, {
     p_conversation_id: conversationId,
     p_seqs: mine,
-    p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+    p_access_mode: accessMode(env),
   });
   if (!Array.isArray(rows)) return upstreamError(502, "receipts unavailable");
   const summaries = rows

@@ -79,7 +79,7 @@ export function rpcJson(body: unknown, status = 200) {
 }
 
 export function env(db: D1Database, extra: Record<string, string> = {}) {
-  return { DB: db, SUPABASE_URL, SUPABASE_ANON_KEY: "test-placeholder-not-a-key", ...extra };
+  return { DB: db, SUPABASE_URL, SUPABASE_ANON_KEY: "test-placeholder-not-a-key", MESSAGING_ACCESS_MODE: "allowlist", ...extra };
 }
 
 /** One msg_authorize row in the real function's shape (KAN-505). */

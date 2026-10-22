@@ -16,7 +16,7 @@
 // Per request: at most 1 subrequest (msg_authorize) + 1 D1 batch, except report: msg_authorize + msg_report_message
 // and two single-statement D1 calls (seq lookup, hold).
 
-import { Env, authorize, hasBearer } from "./auth";
+import { Env, accessMode, authorize, hasBearer } from "./auth";
 import { insertMessage } from "./db";
 import { ok, reasonError, unauthenticated, upstreamError } from "./errors";
 import { setLegalHold } from "./retention";
@@ -273,7 +273,7 @@ async function reportMessage(request: Request, env: Env, messageId: string): Pro
         p_message_id: messageId.toLowerCase(),
         p_message_seq: target.seq,
         p_reason: reason,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || "allowlist",
+        p_access_mode: accessMode(env),
       }),
     });
   } catch {

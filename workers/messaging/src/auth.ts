@@ -18,7 +18,7 @@ export interface Env {
   SKELETON_PROBE?: string;
   /** KAN-510: shared HMAC key for POST /internal/system-line. Binding name only; no value in the repo. */
   MSG_SYSTEM_HMAC_SECRET?: string;
-  /** off | allowlist | all. Code default 'allowlist'; the RPC denies any other value (fails closed). */
+  /** off | allowlist | all. Dashboard-only. Absent, empty or any other value = 'off' (accessMode(), fails closed). */
   MESSAGING_ACCESS_MODE?: string;
   /** KAN-581: the PRIVATE R2 bucket for message images (binding MEDIA). Absent until operations provision it; every
    *  attachment route then answers 503. See docs/messaging/images-kan581.md. */
@@ -28,7 +28,17 @@ export interface Env {
   MESSAGING_UPLOADS?: string;
 }
 
-export const DEFAULT_ACCESS_MODE = "allowlist";
+export type AccessMode = "off" | "allowlist" | "all";
+
+/**
+ * KAN-625: the ONE place the access mode is derived. MESSAGING_ACCESS_MODE is changed only by an admin in the Cloudflare
+ * dashboard (Worker variable); nothing in this Worker or the app writes it. Fail closed: a value that is absent, empty or
+ * not exactly off|allowlist|all (case-sensitive) is treated as 'off'.
+ */
+export function accessMode(env: Env): AccessMode {
+  const v = env.MESSAGING_ACCESS_MODE;
+  return v === "off" || v === "allowlist" || v === "all" ? v : "off";
+}
 
 /** What the caller may do, exactly as msg_authorize said. */
 export interface Grant {
@@ -127,7 +137,7 @@ export async function authorize(request: Request, env: Env, conversationId: stri
       },
       body: JSON.stringify({
         p_conversation_id: conversationId,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+        p_access_mode: accessMode(env),
       }),
     });
   } catch {
@@ -228,7 +238,7 @@ export async function resolveCaller(request: Request, env: Env): Promise<CallerO
       },
       body: JSON.stringify({
         p_conversation_id: NIL_CONVERSATION,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+        p_access_mode: accessMode(env),
       }),
     });
   } catch {

@@ -11,7 +11,7 @@
 // Worker holds no elevated key. No message body, name or id other than the conversation id is read or sent; nothing
 // is logged (KAN-513 guard).
 
-import { DEFAULT_ACCESS_MODE, Env, authorize } from "./auth";
+import { Env, accessMode, authorize } from "./auth";
 import { reasonError, ok, upstreamError } from "./errors";
 
 export const RECEIPTS_PATH = /^\/v1\/conversations\/([^/]+)\/receipts$/;
@@ -56,7 +56,7 @@ export async function handleReceipt(request: Request, env: Env, conversationId: 
         p_conversation_id: conversationId,
         p_state: input.state,
         p_through_seq: seq,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+        p_access_mode: accessMode(env),
       }),
       signal: AbortSignal.timeout(RECEIPT_TIMEOUT_MS),
     });
