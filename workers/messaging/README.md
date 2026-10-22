@@ -193,6 +193,14 @@ read `MESSAGING_ACCESS_MODE` (Worker -> Settings -> Variables) before and after 
 reset anyway, remove `MESSAGING_ACCESS_MODE` from the committed vars and manage it only in the dashboard. Until that
 check is done, re-read the dashboard value after every deploy. No Worker deploy was made by KAN-554's flag commit.
 
+**Finding, KAN-581 deploy 2026-10-22 (version 119b23d7): the question is still OPEN.** The CEO confirmed the live dashboard
+value was `"all"` while the committed value was `"off"`. To make the deploy risk-free the committed value was first aligned
+to `"all"` (and `MESSAGING_UPLOADS = "on"` plus the `MEDIA` R2 binding were added), so the deploy could not show whether
+`keep_vars` keeps a dashboard value that differs from the committed one. After the deploy `wrangler versions view` lists
+`MESSAGING_ACCESS_MODE ("all")`: unchanged, as expected from the equal values. The committed value is now `"all"`, so the
+fail-safe `"off"` starting value described above no longer applies. Making the variable dashboard-only, which is what
+resolves this, is a separate follow-up and was not done here.
+
 ## Direct messages (KAN-561)
 Authorisation stays the database's: a DM is a conversation id like any other, so `POST/GET .../messages` and the report
 route work unchanged (`msg_authorize` returns `kind dm` memberships; KAN-560). Route code changed in one place only:
