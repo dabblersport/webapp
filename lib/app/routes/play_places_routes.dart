@@ -232,7 +232,11 @@ RouteBase get createGameRoute =>
       // tap closes it, as Create meet-up presents.
       pageBuilder: (context, state) => GameComposerSheetPage(
         key: state.pageKey,
-        child: const GameCreateGate(child: GameComposerScreen()),
+        child: GameCreateGate(
+          child: GameComposerScreen(
+            initialSportId: state.uri.queryParameters['sport'],
+          ),
+        ),
       ),
     );
 
