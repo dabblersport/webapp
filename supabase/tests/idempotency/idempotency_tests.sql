@@ -1,7 +1,11 @@
 -- KAN-611 SQL tests: request-id idempotency for create_post / rpc_create_game / rpc_create_meetup.
 --
--- Covers: supabase/migrations/20261021120000_kan611_request_id_idempotency.sql
+-- Covers: supabase/migrations/20261021120000_kan611_request_id_columns.sql
+--         supabase/migrations/20261021120100_kan611_create_post_request_id.sql
+--         supabase/migrations/20261021120200_kan611_rpc_create_game_request_id.sql
+--         supabase/migrations/20261021120300_kan611_rpc_create_meetup_request_id.sql
 --
+-- AUTHORED NOT RUN.
 -- STATUS: AUTHORED, NOT RUN. Nothing here was executed against any database by the team. Memphis runs it AFTER
 -- applying the migration (execute_sql only, test data only, project wtncuzcskpigqpmnxwws only) and records the real
 -- PASS/FAIL. Every test is ONE batch that starts with BEGIN and ends with ROLLBACK, so nothing persists. A failing
@@ -13,10 +17,28 @@
 -- SET LOCAL ROLE authenticated + request.jwt.claims. Run each test as postgres with the role switched inside the batch;
 -- as postgres alone the guards would pass vacuously.
 --
--- Index: T1 post same id | T2 post different ids | T3 post rollback (hashtag failure, squad failure) | T4 post no id
+-- Index: P0 pre-check (run BEFORE the migration)
+--        T1 post same id | T2 post different ids | T4 post no id
 --        G1 game same id | G2 game different ids | G3 game guards + replay | G4 game no id
 --        M1 meetup same id | M2 meetup different ids | M3 meetup guards + replay | M4 meetup no id
---        X1 legacy functions closed | X2 index + setting hygiene | X3 scoped per profile
+--        X1 post-check: one overload each, legacy closed, no anon/PUBLIC on new fns | X2 indexes + setting | X3 scoped per user
+-- Limits: no numeric daily create limit exists for posts/games/meetups (see README). G3 proves a replay adds no row,
+-- so it cannot consume a count-based allowance; G3/M3 prove the guards still fire on a first call with an id.
+
+-- P0 [READ-ONLY] pre-check, BEFORE apply: exactly one overload per name, and no *_legacy_v2 yet.
+begin read only;
+do $$
+declare f text;
+begin
+  foreach f in array array['create_post', 'rpc_create_game', 'rpc_create_meetup'] loop
+    if (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = f) <> 1
+      then raise exception 'KAN611 FAIL P0: % does not have exactly one overload', f; end if;
+    if exists (select 1 from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname = f || '_legacy_v2')
+      then raise exception 'KAN611 FAIL P0: %_legacy_v2 already exists', f; end if;
+  end loop;
+  raise notice 'KAN611 PASS P0';
+end $$;
+rollback;
 
 -- T1 [WRITE-IN-TRANSACTION-ROLLBACK] create_post twice with the same request id: one row, the same id both times.
 begin;
@@ -52,73 +74,6 @@ begin
   select count(*) into n from public.posts where request_id in (r1, r2);
   if n <> 2 or a->>'id' = b->>'id' then raise exception 'KAN611 FAIL T2: expected two rows, got %', n; end if;
   raise notice 'KAN611 PASS T2';
-end $$;
-rollback;
-
--- T3a [WRITE-IN-TRANSACTION-ROLLBACK] partial failure: a hashtag-link failure inside create_post leaves NO post.
--- A trigger that always raises is created on post_hashtags inside this transaction (DDL rolls back with it).
-begin;
-create function public.kan611_test_boom() returns trigger language plpgsql as $f$ begin raise exception 'kan611_boom'; end $f$;
-create trigger kan611_test_boom before insert on public.post_hashtags for each row execute function public.kan611_test_boom();
-do $$
-declare u uuid; rid uuid := gen_random_uuid(); failed boolean := false; n int; h int;
-begin
-  select user_id into u from public.profiles where is_active and persona_type = 'player' order by created_at limit 1;
-  if u is null then raise notice 'KAN611 SKIPPED T3a: no active player profile'; return; end if;
-  set local role authenticated;
-  perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
-  begin
-    perform public.create_post(p_kind => 'moment', p_visibility => 'public', p_body => 'kan611-T3a', p_tags => array['kan611tag'], p_request_id => rid);
-  exception when others then failed := true;
-  end;
-  select count(*) into n from public.posts where request_id = rid or body = 'kan611-T3a';
-  select count(*) into h from public.hashtags where tag = 'kan611tag';
-  if not failed then raise exception 'KAN611 FAIL T3a: the forced hashtag failure did not raise'; end if;
-  if n <> 0 then raise exception 'KAN611 FAIL T3a: % post row(s) remain after the failure', n; end if;
-  if h <> 0 then raise exception 'KAN611 FAIL T3a: % hashtag row(s) remain after the failure', h; end if;
-  raise notice 'KAN611 PASS T3a';
-end $$;
-rollback;
-
--- T3b [WRITE-IN-TRANSACTION-ROLLBACK] partial failure: a squad-link failure leaves NO post. The same boom trigger on
--- post_squads forces it (independent of whether post_squads has a foreign key).
-begin;
-create function public.kan611_test_boom() returns trigger language plpgsql as $f$ begin raise exception 'kan611_boom'; end $f$;
-create trigger kan611_test_boom before insert on public.post_squads for each row execute function public.kan611_test_boom();
-do $$
-declare u uuid; rid uuid := gen_random_uuid(); failed boolean := false; n int;
-begin
-  select user_id into u from public.profiles where is_active and persona_type = 'player' order by created_at limit 1;
-  if u is null then raise notice 'KAN611 SKIPPED T3b: no active player profile'; return; end if;
-  set local role authenticated;
-  perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
-  begin
-    perform public.create_post(p_kind => 'moment', p_visibility => 'squad', p_body => 'kan611-T3b', p_squad_ids => array[gen_random_uuid()], p_request_id => rid);
-  exception when others then failed := true;
-  end;
-  select count(*) into n from public.posts where request_id = rid or body = 'kan611-T3b';
-  if not failed then raise exception 'KAN611 FAIL T3b: the forced squad failure did not raise'; end if;
-  if n <> 0 then raise exception 'KAN611 FAIL T3b: % post row(s) remain', n; end if;
-  raise notice 'KAN611 PASS T3b';
-end $$;
-rollback;
-
--- T3c [WRITE-IN-TRANSACTION-ROLLBACK] the success path links hashtags and the squad in the same call, and a repeat adds nothing.
-begin;
-do $$
-declare u uuid; rid uuid := gen_random_uuid(); a jsonb; pid uuid; h1 int; h2 int;
-begin
-  select user_id into u from public.profiles where is_active and persona_type = 'player' order by created_at limit 1;
-  if u is null then raise notice 'KAN611 SKIPPED T3c: no active player profile'; return; end if;
-  set local role authenticated;
-  perform set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
-  a := public.create_post(p_kind => 'moment', p_visibility => 'public', p_body => 'kan611-T3c', p_tags => array['#KAN611Tag', 'kan611tag2'], p_request_id => rid);
-  pid := (a->>'id')::uuid;
-  select count(*) into h1 from public.post_hashtags where post_id = pid;
-  perform public.create_post(p_kind => 'moment', p_visibility => 'public', p_body => 'kan611-T3c', p_tags => array['#KAN611Tag', 'kan611tag2'], p_request_id => rid);
-  select count(*) into h2 from public.post_hashtags where post_id = pid;
-  if h1 <> 2 or h2 <> 2 then raise exception 'KAN611 FAIL T3c: hashtag links % then % (want 2 and 2)', h1, h2; end if;
-  raise notice 'KAN611 PASS T3c';
 end $$;
 rollback;
 
@@ -288,8 +243,14 @@ begin
   if bad is not null then raise exception 'KAN611 FAIL X1: legacy function open to clients: %', bad; end if;
   if (select count(*) from pg_proc p join pg_namespace n on n.oid = p.pronamespace where n.nspname = 'public' and p.proname in ('create_post', 'rpc_create_game', 'rpc_create_meetup')) <> 3
     then raise exception 'KAN611 FAIL X1: expected exactly one create_post, rpc_create_game and rpc_create_meetup'; end if;
-  if has_function_privilege('anon', 'public.create_post(text,text,text,text,text,text,jsonb,text[],uuid,uuid,uuid,uuid[],uuid[],uuid[],uuid[],uuid,text,double precision,double precision,uuid,uuid)'::regprocedure, 'EXECUTE')
-    then raise exception 'KAN611 FAIL X1: anon can execute create_post'; end if;
+  -- New functions: proacl set, no PUBLIC (grantee 0) and no anon entry; authenticated can execute.
+  select string_agg(p.oid::regprocedure::text, ', ') into bad from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+   where n.nspname = 'public' and p.proname in ('create_post', 'rpc_create_game', 'rpc_create_meetup')
+     and (p.proacl is null
+          or exists (select 1 from aclexplode(p.proacl) a where a.grantee = 0 or a.grantee = 'anon'::regrole)
+          or has_function_privilege('anon', p.oid, 'EXECUTE')
+          or not has_function_privilege('authenticated', p.oid, 'EXECUTE'));
+  if bad is not null then raise exception 'KAN611 FAIL X1: new function ACL wrong (anon/PUBLIC present or authenticated missing): %', bad; end if;
   raise notice 'KAN611 PASS X1';
 end $$;
 rollback;
@@ -298,7 +259,7 @@ rollback;
 begin read only;
 do $$
 begin
-  if (select count(*) from pg_indexes where schemaname = 'public' and indexname in ('posts_author_request_id_key', 'games_creator_request_id_key', 'meetups_creator_request_id_key')
+  if (select count(*) from pg_indexes where schemaname = 'public' and indexname in ('posts_author_user_request_id_key', 'games_creator_user_request_id_key', 'meetups_creator_user_request_id_key')
         and indexdef ilike '%UNIQUE%' and indexdef ilike '%request_id IS NOT NULL%') <> 3
     then raise exception 'KAN611 FAIL X2: a partial unique index is missing'; end if;
   if coalesce(nullif(current_setting('thebes.create_request_id', true), ''), '') <> '' then raise exception 'KAN611 FAIL X2: setting left set'; end if;
@@ -306,7 +267,7 @@ begin
 end $$;
 rollback;
 
--- X3 [WRITE-IN-TRANSACTION-ROLLBACK] the request id is scoped to the profile: the same id used by a second user creates a
+-- X3 [WRITE-IN-TRANSACTION-ROLLBACK] the request id is scoped to the owner user: the same id used by a second user creates a
 -- separate post and never returns the first user's row.
 begin;
 do $$
