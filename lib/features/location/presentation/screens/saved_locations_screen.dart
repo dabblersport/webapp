@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/profile_location.dart';
+import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
@@ -42,23 +43,30 @@ class SavedLocationsScreen extends ConsumerWidget {
         ),
         data: (locations) {
           if (locations.isEmpty) {
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(DabblerSpacing.space9),
-                child: DabblerEmptyState(
-                  icon: 'location-slash',
-                  title: 'No saved locations yet',
-                  text:
-                      'Save your home, work, or favourite spots so you can '
-                      'quickly tag them in posts.',
-                  size: DabblerEmptyStateSize.page,
-                  action: DabblerButton(
-                    label: 'Add your first location',
-                    icon: 'location-add',
-                    onPressed: () => _addLocation(context, ref),
+            return Column(
+              children: [
+                const _DeviceLocationSection(),
+                Expanded(
+                  child: Center(
+                    child: SingleChildScrollView(
+                      padding: const EdgeInsets.all(DabblerSpacing.space9),
+                      child: DabblerEmptyState(
+                        icon: 'location-slash',
+                        title: 'No saved locations yet',
+                        text:
+                            'Save your home, work, or favourite spots so you can '
+                            'quickly tag them in posts.',
+                        size: DabblerEmptyStateSize.page,
+                        action: DabblerButton(
+                          label: 'Add your first location',
+                          icon: 'location-add',
+                          onPressed: () => _addLocation(context, ref),
+                        ),
+                      ),
+                    ),
                   ),
                 ),
-              ),
+              ],
             );
           }
 
@@ -74,15 +82,17 @@ class SavedLocationsScreen extends ConsumerWidget {
               DabblerSpacing.space5,
               DabblerSpacing.floatingBarClearance,
             ),
-            itemCount: sorted.length + 1,
+            itemCount: sorted.length + 2,
             separatorBuilder: (_, __) =>
                 const DabblerGap.v(DabblerSpacing.space3),
             itemBuilder: (ctx, i) => i == 0
+                ? const _DeviceLocationSection()
+                : i == 1
                 ? DabblerText(
                     AppLocalizations.of(ctx).location_saved_places,
                     style: DabblerType.headline,
                   )
-                : _LocationTile(location: sorted[i - 1]),
+                : _LocationTile(location: sorted[i - 2]),
           );
         },
       ),
@@ -380,6 +390,56 @@ class _AreaName extends ConsumerWidget {
         tone: DabblerTextTone.secondary,
       ),
       orElse: () => const SizedBox.shrink(),
+    );
+  }
+}
+
+/// Location on this device (KAN-583): what this device is using now, Auto or
+/// Manual, and the two ways to change it. A device with no city shows the
+/// city-first "Set location" prompt as the only action. Per-device state only;
+/// never the public Profile City/Country and never a saved place.
+class _DeviceLocationSection extends ConsumerWidget {
+  const _DeviceLocationSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l = AppLocalizations.of(context);
+    final state = ref.watch(activeLocationProvider).valueOrNull;
+    final hasCity =
+        state is ActiveLocationReady || state is ActiveLocationCityOnly;
+    return Padding(
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space5,
+        end: DabblerSpacing.space5,
+        top: DabblerSpacing.space5,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DabblerText(
+            hasCity ? activeLocationLabel(l, state) : l.listing_set_location,
+            style: DabblerType.headline,
+          ),
+          const DabblerGap.v(DabblerSpacing.space3),
+          if (hasCity)
+            DabblerButton(
+              label: l.location_use_current,
+              tone: DabblerButtonTone.neutral,
+              fullWidth: true,
+              onPressed: () =>
+                  ref.read(activeLocationProvider.notifier).useGpsLocation(),
+            ),
+          if (hasCity) const DabblerGap.v(DabblerSpacing.space3),
+          DabblerButton(
+            label: l.listing_set_location,
+            tone: hasCity
+                ? DabblerButtonTone.neutral
+                : DabblerButtonTone.primary,
+            fullWidth: true,
+            onPressed: () => showSetLocationDrawer(context),
+          ),
+        ],
+      ),
     );
   }
 }
