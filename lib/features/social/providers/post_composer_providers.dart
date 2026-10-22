@@ -687,15 +687,15 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     }
 
     // 5. Auto-resolve origin_type + origin_id from linked entities
-    OriginType resolvedOriginType = s.originType;
-    String? resolvedOriginId = s.originId;
-    if (s.gameId != null && resolvedOriginType == OriginType.manual) {
-      resolvedOriginType = OriginType.game;
-      resolvedOriginId ??= s.gameId;
-    } else if (s.venueId != null && resolvedOriginType == OriginType.manual) {
-      resolvedOriginType = OriginType.venue;
-      resolvedOriginId ??= s.venueId;
-    }
+    final origin = resolveComposerOrigin(
+      originType: s.originType,
+      originId: s.originId,
+      postType: s.postType,
+      gameId: s.gameId,
+      venueId: s.venueId,
+    );
+    final resolvedOriginType = origin.type;
+    final resolvedOriginId = origin.id;
 
     // 6. Capture persona_type_snapshot from active profile
     String? persona = s.personaTypeSnapshot;
@@ -878,3 +878,25 @@ final composerJoinedGamesProvider =
           },
       ];
     });
+
+/// The origin a new post is stored with. Linking a game or a venue only
+/// promotes a manual post's origin when the post is allocated: a manual
+/// moment/dab/kick_in post stays `manual`, because `posts_content_model_check`
+/// pairs the game and venue origins with the allocated post type only. The
+/// linked place is still sent in `venue_id` / `game_id` (KAN-592: a tagged
+/// venue never changes how the post is stored).
+({OriginType type, String? id}) resolveComposerOrigin({
+  required OriginType originType,
+  required String? originId,
+  required PostType postType,
+  required String? gameId,
+  required String? venueId,
+}) {
+  if (originType == OriginType.manual && postType == PostType.allocated) {
+    if (gameId != null) return (type: OriginType.game, id: originId ?? gameId);
+    if (venueId != null) {
+      return (type: OriginType.venue, id: originId ?? venueId);
+    }
+  }
+  return (type: originType, id: originId);
+}
