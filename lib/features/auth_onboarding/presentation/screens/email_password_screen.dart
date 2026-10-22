@@ -58,6 +58,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
 
   @override
   void dispose() {
+    routerRefreshNotifier.releaseProfileHold();
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -106,6 +107,10 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       fields: ['id', 'onboard', 'display_name', 'intention'],
     );
     if (!mounted) return;
+
+    if (lookup is! ProfileLookupCouldNotCheck) {
+      routerRefreshNotifier.releaseProfileHold();
+    }
 
     switch (lookup) {
       case ProfileLookupFound(:final profile):
@@ -161,6 +166,9 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       _passwordError = null;
       _profileCheckFailed = false;
     });
+    // KAN-602: the sign-in event must not move the router on before the
+    // profile check has run (see RouterRefreshNotifier.holdForProfile).
+    routerRefreshNotifier.holdForProfile();
 
     final email = _emailController.text.trim();
     final password = _passwordController.text;
@@ -216,6 +224,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
         );
       }
     } finally {
+      if (!_profileCheckFailed) routerRefreshNotifier.releaseProfileHold();
       if (mounted) setState(() => _isLoading = false);
     }
   }

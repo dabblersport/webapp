@@ -157,6 +157,15 @@ class AppRouter {
         return null;
       }
 
+      // KAN-602: a sign-in screen is checking the profile; stay on it until it
+      // routes (or shows its could-not-check message).
+      if (isAuthenticated &&
+          isOnAuthPage &&
+          routerRefreshNotifier.holdForProfileCheck) {
+        logRoute('allow (profile check in progress)');
+        return null;
+      }
+
       // ─── DEEP LINK RETENTION ───
       // A shared game link (https://app.dabbler.pro/game/<id> or
       // dabbler://app/game/<id>) tapped while logged out gets bounced through

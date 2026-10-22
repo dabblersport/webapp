@@ -61,6 +61,12 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
   late IdentifierType _identifierType;
 
   @override
+  void dispose() {
+    routerRefreshNotifier.releaseProfileHold();
+    super.dispose();
+  }
+
+  @override
   void initState() {
     super.initState();
 
@@ -143,6 +149,9 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
     }
 
     setState(() => _isLoading = true);
+    // KAN-602: the sign-in event must not move the router on before the
+    // profile check has run (see RouterRefreshNotifier.holdForProfile).
+    routerRefreshNotifier.holdForProfile();
 
     try {
       final authService = ref.read(authServiceProvider);
@@ -170,6 +179,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
         setState(() => _errorMessage = _verifyFailureKind(e));
       }
     } finally {
+      if (!_profileCheckFailed) routerRefreshNotifier.releaseProfileHold();
       if (mounted) {
         setState(() => _isLoading = false);
       }
@@ -186,6 +196,10 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
           fields: ['id', 'onboard', 'display_name', 'intention'],
         );
     if (!mounted) return;
+
+    if (lookup is! ProfileLookupCouldNotCheck) {
+      routerRefreshNotifier.releaseProfileHold();
+    }
 
     switch (lookup) {
       case ProfileLookupFound(:final profile)

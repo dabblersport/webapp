@@ -242,6 +242,7 @@ const _failures = <_Outcome>[
 ];
 
 void main() {
+  profileHoldTests();
   setUpAll(() async {
     await loadRenderFonts();
   });
@@ -433,5 +434,18 @@ void main() {
         expect(auth.creates, 0);
       });
     }
+  });
+}
+
+void profileHoldTests() {
+  group('KAN-602 router profile hold', () {
+    test('holds while a profile check runs and releases after', () {
+      final n = RouterRefreshNotifier();
+      expect(n.holdForProfileCheck, isFalse);
+      n.holdForProfile();
+      expect(n.holdForProfileCheck, isTrue);
+      n.releaseProfileHold();
+      expect(n.holdForProfileCheck, isFalse);
+    });
   });
 }
