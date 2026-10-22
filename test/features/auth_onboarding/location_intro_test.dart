@@ -372,7 +372,7 @@ void main() {
       await _shoot(tester, 'intro-$dir-$mode');
 
       // KAN-587: Maybe later asks for a City first; nothing finishes without one.
-      expect(find.text(l.listing_set_location), findsOneWidget);
+      expect(find.text(l.location_intro_select_city), findsOneWidget);
       await tester.tap(find.text(l.location_intro_later));
       await tester.pumpAndSettle();
       expect(finished, 0, reason: 'Maybe later needs a city');

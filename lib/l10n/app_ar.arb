@@ -2505,5 +2505,13 @@
   "location_saved_empty_cta": "أضف أول موقع",
   "location_saved_delete": "حذف",
   "location_saved_delete_title": "حذف الموقع؟",
-  "location_saved_delete_body": "هل تريد إزالة \"{name}\" من مواقعك المحفوظة؟"
+  "location_saved_delete_body": "هل تريد إزالة \"{name}\" من مواقعك المحفوظة؟",
+  "location_intro_select_city": "اختر مدينتك",
+  "location_settings_device_title": "موقع الجهاز",
+  "location_mode_auto": "تلقائي",
+  "location_mode_manual": "يدوي",
+  "location_saved_set_primary": "تعيين كموقع أساسي",
+  "location_saved_rename": "إعادة تسمية",
+  "location_saved_rename_title": "إعادة تسمية الموقع",
+  "location_saved_rename_hint": "اسم مخصص"
 }

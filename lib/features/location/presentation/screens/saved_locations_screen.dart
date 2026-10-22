@@ -6,7 +6,11 @@ import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
+    show currentUserIdProvider;
+import 'package:dabbler/features/location/data/device_location_store.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -237,14 +241,16 @@ class _LocationTile extends ConsumerWidget {
               DabblerButton.icon(
                 tone: DabblerButtonTone.text,
                 icon: 'star',
-                semanticLabel: 'Set as primary',
+                semanticLabel: AppLocalizations.of(
+                  context,
+                ).location_saved_set_primary,
                 onPressed: () => notifier.setPrimary(location.id),
               ),
             // Rename
             DabblerButton.icon(
               tone: DabblerButtonTone.text,
               icon: 'edit',
-              semanticLabel: 'Rename',
+              semanticLabel: AppLocalizations.of(context).location_saved_rename,
               onPressed: () => _rename(context, ref),
             ),
           ],
@@ -313,7 +319,7 @@ class _LocationTile extends ConsumerWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => DabblerDialog(
           onClose: () => Navigator.pop(ctx, false),
-          title: 'Rename location',
+          title: AppLocalizations.of(context).location_saved_rename_title,
           secondaryAction: DabblerDialogAction(
             label: AppLocalizations.of(context).home_location_cancel,
             onPressed: () => Navigator.pop(ctx, false),
@@ -341,7 +347,9 @@ class _LocationTile extends ConsumerWidget {
                 const DabblerGap.v(DabblerSpacing.space4),
                 DabblerTextField(
                   controller: customController,
-                  placeholder: 'Custom name',
+                  placeholder: AppLocalizations.of(
+                    context,
+                  ).location_saved_rename_hint,
                 ),
               ],
             ],
@@ -401,6 +409,25 @@ class _AreaName extends ConsumerWidget {
   }
 }
 
+/// The Manual/Auto mode this device holds; refreshes with the active location.
+final _deviceModeProvider = FutureProvider.autoDispose<DeviceLocationMode?>((
+  ref,
+) async {
+  ref.watch(activeLocationProvider);
+  String? accountId;
+  try {
+    accountId = ref.watch(currentUserIdProvider);
+  } catch (_) {
+    accountId = null;
+  }
+  try {
+    final prefs = await SharedPreferences.getInstance();
+    return DeviceLocationStore(prefs, accountId: accountId).read()?.mode;
+  } catch (_) {
+    return null;
+  }
+});
+
 /// Location on this device (KAN-583): what this device is using now, Auto or
 /// Manual, and the two ways to change it. A device with no city shows the
 /// city-first "Set location" prompt as the only action. Per-device state only;
@@ -414,6 +441,7 @@ class _DeviceLocationSection extends ConsumerWidget {
     final state = ref.watch(activeLocationProvider).valueOrNull;
     final hasCity =
         state is ActiveLocationReady || state is ActiveLocationCityOnly;
+    final mode = ref.watch(_deviceModeProvider).valueOrNull;
     return Padding(
       padding: const EdgeInsetsDirectional.only(
         start: DabblerSpacing.space5,
@@ -424,9 +452,23 @@ class _DeviceLocationSection extends ConsumerWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           DabblerText(
-            hasCity ? activeLocationLabel(l, state) : l.listing_set_location,
+            l.location_settings_device_title,
+            style: DabblerType.caption1,
+          ),
+          const DabblerGap.v(DabblerSpacing.space2),
+          DabblerText(
+            hasCity
+                ? activeLocationLabel(l, state)
+                : l.location_intro_select_city,
             style: DabblerType.headline,
           ),
+          if (hasCity && mode != null)
+            DabblerText(
+              mode == DeviceLocationMode.auto
+                  ? l.location_mode_auto
+                  : l.location_mode_manual,
+              style: DabblerType.caption1,
+            ),
           const DabblerGap.v(DabblerSpacing.space3),
           if (hasCity)
             DabblerButton(
@@ -438,7 +480,9 @@ class _DeviceLocationSection extends ConsumerWidget {
             ),
           if (hasCity) const DabblerGap.v(DabblerSpacing.space3),
           DabblerButton(
-            label: l.listing_set_location,
+            label: hasCity
+                ? l.listing_set_location
+                : l.location_intro_select_city,
             tone: hasCity
                 ? DabblerButtonTone.neutral
                 : DabblerButtonTone.primary,
