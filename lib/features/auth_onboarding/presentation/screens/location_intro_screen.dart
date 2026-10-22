@@ -166,7 +166,7 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
         ],
         primaryLabel: l.location_intro_cta,
         onPrimary: controller.useMyLocation,
-        // On white pills so they stay readable over the artwork.
+        // Secondary buttons (KAN-583), not pills: Maybe later is a button too.
         secondary: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -179,25 +179,11 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
               onPressed: _setManually,
             ),
             const DabblerGap.v(DabblerSpacing.space3),
-            Center(
-              child: DabblerCard(
-                variant: DabblerCardVariant.white,
-                borderOutside: true,
-                radius: DabblerRadius.xl,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: DabblerSpacing.space6,
-                  vertical: DabblerSpacing.space2,
-                ),
-                child: DabblerTextLink(
-                  label: l.location_intro_later,
-                  style: DabblerType.copy
-                      .resolveForDirection(Directionality.of(context))
-                      .copyWith(fontWeight: DabblerType.medium),
-                  inline: true,
-                  underline: false,
-                  onPressed: _maybeLater,
-                ),
-              ),
+            DabblerButton(
+              label: l.location_intro_later,
+              tone: DabblerButtonTone.neutral,
+              fullWidth: true,
+              onPressed: _maybeLater,
             ),
           ],
         ),
