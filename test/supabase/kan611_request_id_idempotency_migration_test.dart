@@ -34,7 +34,7 @@ void main() {
             .where((n) => RegExp(r'^\d{14}_.*\.sql$').hasMatch(n))
             .toList()
           ..sort();
-    expect(names, contains(_name));
+    expect(names.last, _name);
     expect(
       names.where((n) => n.startsWith(_name.substring(0, 14))),
       hasLength(1),

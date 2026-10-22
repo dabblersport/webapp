@@ -17,7 +17,6 @@ abstract class ProfileLocationRepository {
 
   /// Insert a new `profile_locations` row.
   Future<Result<ProfileLocation, Failure>> saveLocation({
-    required String profileId,
     required double lat,
     required double lng,
     required String geoLocationId,

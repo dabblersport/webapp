@@ -127,44 +127,6 @@ void main() {
     }
   }
 
-  test('saveLocation reports success and sends the profile id', () async {
-    final notifier = container.read(profileLocationNotifierProvider.notifier);
-    await container.read(profileLocationNotifierProvider.future);
-
-    final saved = await notifier.saveLocation(
-      lat: 25.2,
-      lng: 55.3,
-      areaId: 'area-c',
-      label: ProfileLocationLabel.custom,
-      labelCustom: 'Gym',
-    );
-
-    expect(saved, isTrue);
-    final insert = sent.lastWhere(
-      (s) => s.method == 'POST' && s.table == 'profile_locations',
-    );
-    expect((insert.body as Map)['profile_id'], 'p1');
-    final list = container.read(profileLocationNotifierProvider).value!;
-    expect(list.first.id, 'c');
-  });
-
-  test('saveLocation without a profile saves nothing and reports it', () async {
-    profileNotifier.state = const ProfileState();
-    final notifier = container.read(profileLocationNotifierProvider.notifier);
-    await container.read(profileLocationNotifierProvider.future);
-    sent.clear();
-
-    final saved = await notifier.saveLocation(
-      lat: 25.2,
-      lng: 55.3,
-      areaId: 'area-c',
-      label: ProfileLocationLabel.home,
-    );
-
-    expect(saved, isFalse);
-    expect(sent.where((s) => s.method == 'POST'), isEmpty);
-  });
-
   test('every notifier operation writes no city/country', () async {
     final notifier = container.read(profileLocationNotifierProvider.notifier);
     await container.read(profileLocationNotifierProvider.future);

@@ -36,8 +36,7 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
 
   // ── Save ──────────────────────────────────────────────────────────────────
 
-  /// Returns whether the place was saved. A failure leaves the list as it was.
-  Future<bool> saveLocation({
+  Future<void> saveLocation({
     required double lat,
     required double lng,
     required String areaId,
@@ -45,9 +44,6 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
     String? labelCustom,
     bool isPrimary = false,
   }) async {
-    final profileId = ref.read(profileControllerProvider).profile?.id;
-    if (profileId == null) return false;
-
     // 1. Insert geo_location and get its id
     final geoResult = await _repo.resolveGeoLocationId(
       lat: lat,
@@ -56,11 +52,10 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
     );
 
     final geoLocationId = geoResult.fold((_) => null, (id) => id);
-    if (geoLocationId == null) return false;
+    if (geoLocationId == null) return;
 
     // 2. Insert profile_location
     final saveResult = await _repo.saveLocation(
-      profileId: profileId,
       lat: lat,
       lng: lng,
       geoLocationId: geoLocationId,
@@ -70,14 +65,13 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
       isPrimary: isPrimary,
     );
 
-    return saveResult.fold((_) => false, (saved) {
+    saveResult.fold((_) => null, (saved) {
       final current = state.valueOrNull ?? [];
       // Demote previous primary in local state if this one is primary
       final updated = isPrimary
           ? [saved, ...current.map((l) => l.copyWith(isPrimary: false))]
           : [saved, ...current];
       state = AsyncData(updated);
-      return true;
     });
   }
 

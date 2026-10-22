@@ -48,7 +48,6 @@ class ProfileLocationRepositoryImpl extends BaseRepository
 
   @override
   Future<Result<ProfileLocation, Failure>> saveLocation({
-    required String profileId,
     required double lat,
     required double lng,
     required String geoLocationId,
@@ -69,7 +68,6 @@ class ProfileLocationRepositoryImpl extends BaseRepository
         final row = await svc.client
             .from(SupabaseConfig.profileLocationsTable)
             .insert({
-              'profile_id': profileId,
               'geo_location_id': geoLocationId,
               'label': label.toJson(),
               if (labelCustom != null) 'label_custom': labelCustom,
