@@ -14,6 +14,10 @@ import 'base_repository.dart';
 import 'following_sport_filter.dart';
 import 'post_repository.dart';
 
+/// The city a post written before posting cities were recorded belongs to
+/// (KAN-592 CEO ruling; the same value as `kLegacyPostedFromCity`).
+const String _legacyPostsCity = 'Dubai';
+
 /// Concrete [PostRepository] backed by Supabase.
 ///
 /// All visibility filtering is handled by RLS + `can_view_post()` at the
@@ -467,6 +471,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<List<Post>, Failure>> getNearbyFeed({
     double? lat,
     double? lng,
+    String? city,
     int limit = 20,
     int offset = 0,
   }) => guard(() async {
@@ -514,6 +519,35 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       // Apply offset + limit after sort.
       rows = rows.skip(offset).take(limit).toList();
+    } else if (city != null) {
+      // KAN-588: only the city is known, so no distance: the posts posted
+      // from that city, newest first. A post written before posting cities
+      // were recorded (no posted_from_city) belongs to Dubai (CEO ruling).
+      var cityQuery = _db
+          .from(SupabaseConfig.postsTable)
+          .select()
+          .eq('kind', 'original')
+          .neq('origin_type', 'system')
+          .eq('is_deleted', false)
+          .eq('is_hidden_admin', false);
+      if (city.trim().toLowerCase() == _legacyPostsCity.toLowerCase()) {
+        cityQuery = cityQuery.or(
+          'posted_from_city.ilike.$_legacyPostsCity,posted_from_city.is.null',
+        );
+      } else {
+        cityQuery = cityQuery.ilike(
+          'posted_from_city',
+          city
+              .trim()
+              .replaceAll('\\', '\\\\')
+              .replaceAll('%', '\\%')
+              .replaceAll('_', '\\_'),
+        );
+      }
+      if (followOr != null) cityQuery = cityQuery.or(followOr);
+      rows = await cityQuery
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
     } else {
       // Fallback: most recent posts with any location tag.
       var recentQuery = _db

@@ -6,6 +6,7 @@ import 'package:dabbler/core/fp/result.dart';
 
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/games/data/datasources/nearby_games_datasource.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
@@ -183,20 +184,23 @@ final gamesSkillFilterProvider = StateProvider<GamesSkillFilter>(
 // =============================================================================
 
 /// Parameters that drive a games query.
-/// lat/lng/radiusMeters are null when no location filter is active.
+/// lat/lng/radiusMeters are null when no location filter is active. [city]
+/// (KAN-588) scopes the unlocated list to the selected city.
 typedef NearbyGamesParams = ({
   double? lat,
   double? lng,
   int? radiusMeters,
   String? sportId,
   NearbySortOrder sortOrder,
+  ListingCity? city,
 });
 
 // =============================================================================
 // MAIN PROVIDER
 // =============================================================================
 
-/// Fetches games. When lat/lng are null, returns all public upcoming games.
+/// Fetches games. When lat/lng are null, returns the public upcoming games of
+/// the selected city ([NearbyGamesParams.city]; all of them when there is none).
 /// When lat/lng are provided, uses the PostGIS RPC for proximity filtering.
 final nearbyGamesProvider = FutureProvider.autoDispose
     .family<List<NearbyGameModel>, NearbyGamesParams>((ref, params) {
@@ -204,14 +208,22 @@ final nearbyGamesProvider = FutureProvider.autoDispose
 
       final lat = params.lat;
       final lng = params.lng;
+      final city = params.city;
       // KAN-605: stale-while-revalidate; the first page for this filter set
       // is kept on the device per account.
       return swrFetch<List<NearbyGameModel>>(
         ref,
         key:
             'games.list.${_geo(lat)}.${_geo(lng)}.${params.radiusMeters}'
-            '.${params.sportId}.${params.sortOrder.name}',
+            '.${params.sportId}.${params.sortOrder.name}'
+            '.${city == null ? 'x' : '${city.name}|${city.country}|${city.countryCode}'}',
         fetch: () async {
+          // The Areas of the city, resolved before the query so a city change
+          // never serves the previous city's rows (KAN-588).
+          final List<String>? areaIds =
+              (lat == null || lng == null) && city != null
+              ? await ref.read(listingCityAreaIdsProvider(city).future)
+              : null;
           final result = (lat != null && lng != null)
               ? await repo.getNearbyGames(
                   lat: lat,
@@ -220,7 +232,10 @@ final nearbyGamesProvider = FutureProvider.autoDispose
                   sportId: params.sportId,
                   sortOrder: params.sortOrder,
                 )
-              : await repo.getAllGames(sportId: params.sportId);
+              : await repo.getAllGames(
+                  sportId: params.sportId,
+                  areaIds: areaIds,
+                );
           return result.fold((f) => throw Exception(f.message), (g) => g);
         },
         encode: (games) => [for (final g in games) g.toJson()],

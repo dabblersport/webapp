@@ -29,7 +29,7 @@ import '../../support/render_mode.dart';
 
 class _Location extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 const List<Sport> _sports = <Sport>[

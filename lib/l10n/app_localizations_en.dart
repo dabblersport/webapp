@@ -7092,4 +7092,10 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'Use once';
+
+  @override
+  String get listing_choose_city_title => 'Choose city';
+
+  @override
+  String get listing_select_city => 'Select city';
 }

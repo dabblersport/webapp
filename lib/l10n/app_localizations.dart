@@ -12772,6 +12772,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use once'**
   String get saved_places_use_once;
+
+  /// KAN-588 empty-state title of Venues, Games, Meetups and the Nearby feed while no city is selected. AC wording. AR reuses the approved composer_posted_from_choose value.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose city'**
+  String get listing_choose_city_title;
+
+  /// KAN-588 button of the Choose city empty state; opens the city picker. AC wording. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get listing_select_city;
 }
 
 class _AppLocalizationsDelegate

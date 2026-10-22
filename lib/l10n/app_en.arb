@@ -2661,5 +2661,9 @@
   "saved_places_save_action": "Save location",
   "@saved_places_save_action": {"description": "KAN-589 Save button in the save sheet. AR pending content review."},
   "saved_places_use_once": "Use once",
-  "@saved_places_use_once": {"description": "KAN-589 Use-once button in the save sheet. AR pending content review."}
+  "@saved_places_use_once": {"description": "KAN-589 Use-once button in the save sheet. AR pending content review."},
+  "listing_choose_city_title": "Choose city",
+  "@listing_choose_city_title": {"description": "KAN-588 empty-state title of Venues, Games, Meetups and the Nearby feed while no city is selected. AC wording. AR reuses the approved composer_posted_from_choose value."},
+  "listing_select_city": "Select city",
+  "@listing_select_city": {"description": "KAN-588 button of the Choose city empty state; opens the city picker. AC wording. AR pending content review."}
 }

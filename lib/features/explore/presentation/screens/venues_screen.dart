@@ -10,6 +10,7 @@ import 'package:dabbler/features/games/providers/games_providers.dart'
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
@@ -226,6 +227,8 @@ class _VenuesFilterBody extends ConsumerWidget {
     final maxPrice = ref.watch(venueMaxPriceFilterProvider);
     final minRating = ref.watch(venueMinRatingFilterProvider);
     final sort = ref.watch(nearbyVenueSortProvider);
+    // Distance needs an Area or a location (KAN-586).
+    final canUseDistance = ref.watch(distanceControlsEnabledProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -290,9 +293,13 @@ class _VenuesFilterBody extends ConsumerWidget {
             for (final value in VenueSortOrder.values)
               DabblerChip(
                 label: _sortLabel(l, value),
-                selected: sort == value,
-                onTap: () =>
-                    ref.read(nearbyVenueSortProvider.notifier).state = value,
+                selected:
+                    sort == value &&
+                    (canUseDistance || value != VenueSortOrder.distance),
+                onTap: value == VenueSortOrder.distance && !canUseDistance
+                    ? null
+                    : () => ref.read(nearbyVenueSortProvider.notifier).state =
+                          value,
               ),
           ],
         ),
@@ -323,6 +330,13 @@ class _AllVenuesList extends ConsumerWidget {
     final indoor = ref.watch(venueIndoorFilterProvider);
     final maxPrice = ref.watch(venueMaxPriceFilterProvider);
     final minRating = ref.watch(venueMinRatingFilterProvider);
+
+    // KAN-588: the location is still settling, then no city selected: nothing
+    // to list, a way to choose one.
+    if (ref.watch(listingCityPendingProvider)) return _loading();
+    if (ref.watch(listingCityMissingProvider)) {
+      return const ListingChooseCity();
+    }
 
     // Nearby path: PostGIS RPC filtered by the active location + radius.
     // While the filter is on but location isn't ready (locating/denied),
@@ -401,8 +415,12 @@ class _AllVenuesList extends ConsumerWidget {
       );
     }
 
+    // KAN-588: the unlocated list is the selected city's. With no distance
+    // point it is alphabetical (the server orders by name); an explicit
+    // rating or price sort still applies.
     final filters = VenuesBySportFilters(
       sportId: sportId,
+      city: ref.watch(listingCityProvider)?.name,
       isActive: true,
       isIndoor: indoor,
       maxPrice: maxPrice,

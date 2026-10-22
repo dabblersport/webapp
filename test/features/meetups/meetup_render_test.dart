@@ -13,6 +13,7 @@ import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetups_screen.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -68,6 +69,9 @@ Future<void> _shoot(
         meetupRepositoryProvider.overrideWithValue(repo),
         activeLocationProvider.overrideWith(_Ready.new),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         isFollowingProvider.overrideWith((ref, p) async => false),
         meetupFollowActionProvider.overrideWithValue(
           ({

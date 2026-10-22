@@ -61,6 +61,7 @@ class _Posts implements PostRepository {
   Future<Result<List<Post>, Failure>> getNearbyFeed({
     double? lat,
     double? lng,
+    String? city,
     int limit = 20,
     int offset = 0,
   }) async {

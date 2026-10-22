@@ -31,7 +31,9 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/features/home/presentation/widgets/notification_permission_drawer.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
+import 'package:dabbler/features/location/presentation/widgets/city_required_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
@@ -781,7 +783,7 @@ class _ActiveFeedTabBody extends StatelessWidget {
 // ────────────────────────────────────────────────────────────────────────────
 // Nearby feed tab — original post cards with "Near you" chip
 // ────────────────────────────────────────────────────────────────────────────
-class _NearbyFeedTabBody extends StatelessWidget {
+class _NearbyFeedTabBody extends ConsumerWidget {
   const _NearbyFeedTabBody({
     required this.state,
     required this.scrollController,
@@ -799,7 +801,12 @@ class _NearbyFeedTabBody extends StatelessWidget {
   final VoidCallback onLoadMore;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    // KAN-588: no city selected: nothing nearby to show, a way to choose one.
+    if (ref.watch(listingCityMissingProvider)) {
+      return const _ChooseCityView();
+    }
+
     if (state.isLoading && state.posts.isEmpty) {
       return const _FeedSkeletonList();
     }
@@ -869,6 +876,30 @@ class _EmptyView extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(DabblerSpacing.space10),
         child: DabblerEmptyState(icon: iconName, title: message, text: hint),
+      ),
+    );
+  }
+}
+
+/// KAN-588: the Nearby tab while no city is selected: "Choose city" and a
+/// "Select city" button that opens the city picker.
+class _ChooseCityView extends StatelessWidget {
+  const _ChooseCityView();
+
+  @override
+  Widget build(BuildContext context) {
+    final l = AppLocalizations.of(context);
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(DabblerSpacing.space10),
+        child: DabblerEmptyState(
+          icon: 'location',
+          title: l.listing_choose_city_title,
+          action: DabblerButton(
+            label: l.listing_select_city,
+            onPressed: () => showCityRequiredSheet(context),
+          ),
+        ),
       ),
     );
   }

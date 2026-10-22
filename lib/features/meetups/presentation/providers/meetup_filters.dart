@@ -45,9 +45,15 @@ final meetupDateProvider = StateProvider<MeetupDateFilter?>((ref) => null);
 /// venue (and so setting) is unknown matches neither Indoor nor Outdoor.
 final meetupIndoorProvider = StateProvider<bool?>((ref) => null);
 
-final meetupSortProvider = StateProvider<MeetupSort>(
-  (ref) => MeetupSort.soonest,
-);
+/// The sort the viewer chose, or null for the default: starting soonest, or
+/// alphabetical while only a city is known (KAN-588).
+final meetupSortProvider = StateProvider<MeetupSort?>((ref) => null);
+
+/// The sort chip that reads as selected: the chosen one, else "Starting
+/// soonest" (the default), except with only a city where the default is
+/// alphabetical and no chip is selected.
+MeetupSort? meetupSortSelection(MeetupSort? chosen, {required bool cityOnly}) =>
+    chosen ?? (cityOnly ? null : MeetupSort.soonest);
 
 /// The radius presets of the Distance group, in metres.
 const List<int> kMeetupRadiusPresets = <int>[5000, 10000];
@@ -60,6 +66,8 @@ List<MeetupListItem> applyMeetupFilters(
   required Map<String, double> distances,
   int? radiusMeters,
   MeetupSort sort = MeetupSort.soonest,
+  bool alphabetical = false,
+  Set<String>? areaIds,
   MeetupDateFilter? date,
   bool? indoor,
   Map<String, bool?> settings = const <String, bool?>{},
@@ -68,7 +76,9 @@ List<MeetupListItem> applyMeetupFilters(
   final clock = now ?? DateTime.now();
   final out = <MeetupListItem>[
     for (final m in all)
-      if ((radiusMeters == null ||
+      if ((areaIds == null ||
+              (m.areaId != null && areaIds.contains(m.areaId))) &&
+          (radiusMeters == null ||
               distances[m.id] == null ||
               distances[m.id]! <= radiusMeters) &&
           (date == null || meetupInDateFilter(m.startAt, date, clock)) &&
@@ -76,6 +86,11 @@ List<MeetupListItem> applyMeetupFilters(
         m,
   ];
   out.sort((a, b) {
+    // Only a city is known and no sort was chosen: A to Z (KAN-588).
+    if (alphabetical) {
+      final byTitle = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      return byTitle != 0 ? byTitle : a.startAt.compareTo(b.startAt);
+    }
     if (sort == MeetupSort.popular && a.goingCount != b.goingCount) {
       return b.goingCount.compareTo(a.goingCount);
     }

@@ -25,7 +25,7 @@ import '../home/home_test_harness.dart';
 
 class _Location extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 const List<Sport> _sports = <Sport>[

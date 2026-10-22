@@ -64,7 +64,7 @@ class _Location extends ActiveLocationNotifier {
 /// No ready active location (KAN-446): the listing has nothing to measure from.
 class _NoLocation extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {

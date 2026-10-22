@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
@@ -218,6 +219,9 @@ Future<void> _pumpMeetups(
         ),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(_Location.new),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         meetupSettingsProvider.overrideWith(
           (ref) async => const <String, bool?>{},

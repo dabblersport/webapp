@@ -7137,4 +7137,10 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'استخدمه مرة واحدة';
+
+  @override
+  String get listing_choose_city_title => 'اختر المدينة';
+
+  @override
+  String get listing_select_city => 'اختيار المدينة';
 }

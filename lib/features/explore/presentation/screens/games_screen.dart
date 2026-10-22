@@ -16,6 +16,7 @@ import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/providers.dart' hide nearbyGamesProvider;
@@ -76,6 +77,7 @@ NearbyGamesParams _paramsFor(WidgetRef ref, String? sportId) {
     sportId: sportId,
     sortOrder:
         ref.watch(nearbyGameSortProvider) ?? NearbySortOrder.defaultOrder,
+    city: ref.watch(listingCityProvider),
   );
 }
 
@@ -386,6 +388,14 @@ class _GameTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    // KAN-588: the location is still settling, then no city selected: nothing
+    // to list, a way to choose one.
+    if (ref.watch(listingCityPendingProvider)) {
+      return const ListingSkeletons(kind: DabblerListingSkeletonKind.game);
+    }
+    if (ref.watch(listingCityMissingProvider)) {
+      return const ListingChooseCity(icon: 'game');
+    }
     final params = _paramsFor(ref, sportId);
     final isFiltered = params.lat != null;
 
@@ -448,8 +458,12 @@ class _GameTabBody extends ConsumerWidget {
             .where((g) => _passes(ref, g, now))
             .toList();
         // Default order is starting soonest (CEO 2026-10-08), whichever path
-        // served the rows; "Nearest" keeps the server's distance order.
-        if (ref.watch(nearbyGameSortProvider) != NearbySortOrder.nearest) {
+        // served the rows; "Nearest" keeps the server's distance order. With
+        // only a city and no sort chosen the list is alphabetical (KAN-588).
+        final chosenSort = ref.watch(nearbyGameSortProvider);
+        if (chosenSort == null && ref.watch(listingCityOnlyProvider)) {
+          listed.sort(_byTitle);
+        } else if (chosenSort != NearbySortOrder.nearest) {
           listed.sort(_bySoonest);
         }
         // One "N following" fetch per set of visible cards, either data path.
@@ -623,6 +637,11 @@ class _UpcomingRail extends StatelessWidget {
       onTap: () => context.push(RoutePaths.gameDetail(g.id)),
     );
   }
+}
+
+int _byTitle(NearbyGameModel a, NearbyGameModel b) {
+  final int byName = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+  return byName != 0 ? byName : _bySoonest(a, b);
 }
 
 int _bySoonest(NearbyGameModel a, NearbyGameModel b) {
