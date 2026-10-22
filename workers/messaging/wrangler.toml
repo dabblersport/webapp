@@ -38,7 +38,8 @@ migrations_dir = "migrations"
 [env.production.vars]
 # The public Supabase project URL (not a secret). The anon key is a secret binding: name only, supplied outside the repo.
 SUPABASE_URL = "https://wtncuzcskpigqpmnxwws.supabase.co"
-MESSAGING_ACCESS_MODE = "off"
+# KAN-581: aligned to the live dashboard value ("all", confirmed by the CEO 2026-10-22) so a deploy cannot reset it.
+MESSAGING_ACCESS_MODE = "all"
 MESSAGING_UPLOADS = "on"
 
 # KAN-581: private message images. The CEO approved R2 (KAN-581 comment 13540) and operations created the PRIVATE bucket
