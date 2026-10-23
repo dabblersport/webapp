@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -7019,30 +7018,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_custom_name_required => 'Enter a name for this place';
 
   @override
-  String get location_saved_load_error => 'Could not load locations';
-
-  @override
-  String get location_saved_empty_title => 'No saved locations yet';
-
-  @override
-  String get location_saved_empty_text =>
-      'Save your home, work, or favourite spots so you can quickly tag them in posts.';
-
-  @override
-  String get location_saved_empty_cta => 'Add your first location';
-
-  @override
-  String get location_saved_delete => 'Delete';
-
-  @override
-  String get location_saved_delete_title => 'Delete location?';
-
-  @override
-  String location_saved_delete_body(String name) {
-    return 'Remove \"$name\" from your saved locations?';
-  }
-
-  @override
   String get sport_overview_title => 'Sport';
 
   @override
@@ -7272,18 +7247,6 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_settings_device_title => 'Device location';
-
-  @override
-  String get location_saved_set_primary => 'Set as primary';
-
-  @override
-  String get location_saved_rename => 'Rename';
-
-  @override
-  String get location_saved_rename_title => 'Rename location';
-
-  @override
-  String get location_saved_rename_hint => 'Custom name';
 
   @override
   String get location_device_section => 'Location on this device';

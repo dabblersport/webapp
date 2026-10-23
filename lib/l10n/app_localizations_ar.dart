@@ -1,6 +1,5 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
-
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -7063,30 +7062,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
 
   @override
-  String get location_saved_load_error => 'تعذّر تحميل المواقع';
-
-  @override
-  String get location_saved_empty_title => 'لا توجد مواقع محفوظة بعد';
-
-  @override
-  String get location_saved_empty_text =>
-      'احفظ منزلك أو عملك أو أماكنك المفضلة لتتمكن من إضافتها بسرعة إلى منشوراتك.';
-
-  @override
-  String get location_saved_empty_cta => 'أضف أول موقع';
-
-  @override
-  String get location_saved_delete => 'حذف';
-
-  @override
-  String get location_saved_delete_title => 'حذف الموقع؟';
-
-  @override
-  String location_saved_delete_body(String name) {
-    return 'هل تريد إزالة \"$name\" من مواقعك المحفوظة؟';
-  }
-
-  @override
   String get sport_overview_title => 'الرياضة';
 
   @override
@@ -7317,18 +7292,6 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_settings_device_title => 'موقع الجهاز';
-
-  @override
-  String get location_saved_set_primary => 'تعيين كموقع أساسي';
-
-  @override
-  String get location_saved_rename => 'إعادة تسمية';
-
-  @override
-  String get location_saved_rename_title => 'إعادة تسمية الموقع';
-
-  @override
-  String get location_saved_rename_hint => 'اسم مخصص';
 
   @override
   String get location_device_section => 'الموقع على هذا الجهاز';
