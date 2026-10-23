@@ -21,6 +21,7 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_sport_tap.dart';
 import 'package:dabbler/features/venues/presentation/widgets/place_picker_sheet.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -613,6 +614,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           : null,
       sportLabel: post.sport?.isNotEmpty == true
           ? resolvePostSportLabel(context, ref, post)
+          : null,
+      onSportTap: post.sport?.isNotEmpty == true
+          ? postSportTap(context, post)
           : null,
       // The saved place name only; never the area name.
       placeLabel: (post.locationName ?? '').trim().isEmpty

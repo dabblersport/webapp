@@ -419,7 +419,11 @@ class _PostsBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         for (final Post p in posts) ...<Widget>[
-          HomePostRow.resolve(p, metrics: DabblerFeedMetrics.drawn),
+          HomePostRow.resolve(
+            p,
+            metrics: DabblerFeedMetrics.drawn,
+            currentSportId: sportId,
+          ),
           const DabblerDivider(),
         ],
         if (paged && state.loadMoreFailed)

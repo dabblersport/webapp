@@ -11,6 +11,7 @@ import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.d
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_sport_tap.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
@@ -37,7 +38,12 @@ class HomePostRow extends ConsumerStatefulWidget {
     this.showNearbyChipInHeader = false,
     this.showActions = true,
     this.metrics = DabblerFeedMetrics.touch,
+    this.currentSportId,
   });
+
+  /// KAN-622: the sport whose page this row sits on (the Sport Overview posts
+  /// tab), so its own sport tag is not a link to the page already open.
+  final String? currentSportId;
 
   /// [DabblerFeedMetrics.drawn] draws the row exactly as the Home Feed frame
   /// measures it; the Home screen passes it. Every other screen that shows a
@@ -60,6 +66,7 @@ class HomePostRow extends ConsumerStatefulWidget {
     bool showActions = true,
     DabblerPostDetail? detail,
     DabblerFeedMetrics metrics = DabblerFeedMetrics.touch,
+    String? currentSportId,
   }) {
     if (post.originType == OriginType.repost) {
       return HomeRepostRow(post: post, detail: detail);
@@ -69,6 +76,7 @@ class HomePostRow extends ConsumerStatefulWidget {
       showNearbyChipInHeader: showNearbyChipInHeader,
       showActions: showActions,
       metrics: metrics,
+      currentSportId: currentSportId,
     );
   }
 
@@ -500,6 +508,13 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           place: place,
           segments: _segments(post),
           sportLabel: sportLabel,
+          onSportTap: sportLabel == null
+              ? null
+              : postSportTap(
+                  context,
+                  post,
+                  currentSportId: widget.currentSportId,
+                ),
           placeTagLabel: placeTag,
           placeTagLeading: placeTag == null
               ? null
