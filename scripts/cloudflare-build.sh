@@ -32,4 +32,6 @@ flutter build web --release \
   --dart-define=ENVIRONMENT="$ENVIRONMENT" \
   --dart-define=GOOGLE_WEB_CLIENT_ID="${GOOGLE_WEB_CLIENT_ID:-}" \
   --dart-define=MESSAGING_API_BASE_URL="${MESSAGING_API_BASE_URL:-}" \
-  --dart-define=GIPHY_API_KEY="${GIPHY_API_KEY:-}"
+  --dart-define=GIPHY_API_KEY="${GIPHY_API_KEY:-}" \
+  --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN:-}" \
+  --dart-define=MAPBOX_TOKEN="${MAPBOX_ACCESS_TOKEN:-}"
