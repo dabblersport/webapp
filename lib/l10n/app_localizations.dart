@@ -13180,6 +13180,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use once'**
   String get saved_places_use_once;
+
+  /// KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Map unavailable'**
+  String get location_map_unavailable;
 }
 
 class _AppLocalizationsDelegate

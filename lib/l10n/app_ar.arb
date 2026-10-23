@@ -2594,5 +2594,6 @@
   "saved_places_custom_hint": "مثال: النادي الرياضي، بيت الأهل",
   "saved_places_primary_toggle": "تعيين كموقع أساسي",
   "saved_places_save_action": "حفظ الموقع",
-  "saved_places_use_once": "استخدمه مرة واحدة"
+  "saved_places_use_once": "استخدمه مرة واحدة",
+  "location_map_unavailable": "الخريطة غير متاحة"
 }

@@ -94,7 +94,15 @@ class DeviceLocationSection extends ConsumerWidget {
         .read(activeLocationProvider.notifier)
         .switchToAuto();
     if (!context.mounted || r == AutoSwitchResult.applied) return;
-    if (r == AutoSwitchResult.denied) await showSetLocationDrawer(context);
+    if (r == AutoSwitchResult.denied) {
+      await showSetLocationDrawer(context);
+    } else {
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: AppLocalizations.of(context).location_timeout,
+        ),
+      );
+    }
   }
 
   /// Manual keeps the place the device shows now (written as this device's
