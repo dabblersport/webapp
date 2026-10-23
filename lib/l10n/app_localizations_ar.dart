@@ -7299,4 +7299,28 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listing_select_city => 'اختيار المدينة';
+
+  @override
+  String get location_intro_select_city => 'اختر مدينتك';
+
+  @override
+  String get location_settings_device_title => 'موقع الجهاز';
+
+  @override
+  String get location_mode_auto => 'تلقائي';
+
+  @override
+  String get location_mode_manual => 'يدوي';
+
+  @override
+  String get location_saved_set_primary => 'تعيين كموقع أساسي';
+
+  @override
+  String get location_saved_rename => 'إعادة تسمية';
+
+  @override
+  String get location_saved_rename_title => 'إعادة تسمية الموقع';
+
+  @override
+  String get location_saved_rename_hint => 'اسم مخصص';
 }

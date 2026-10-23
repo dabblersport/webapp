@@ -94,11 +94,11 @@ void main() {
     expect(find.text(l.listing_set_location), findsOneWidget);
   });
 
-  testWidgets('no city: only the city-first Set location prompt', (
+  testWidgets('no city: only the city-first Select city prompt', (
     tester,
   ) async {
     await _pump(tester, ActiveLocationDenied());
     expect(find.text(l.location_use_current), findsNothing);
-    expect(find.text(l.listing_set_location), findsWidgets);
+    expect(find.text(l.location_intro_select_city), findsWidgets);
   });
 }

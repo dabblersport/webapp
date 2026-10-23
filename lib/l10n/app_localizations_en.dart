@@ -7254,4 +7254,28 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listing_select_city => 'Select city';
+
+  @override
+  String get location_intro_select_city => 'Select city';
+
+  @override
+  String get location_settings_device_title => 'Device location';
+
+  @override
+  String get location_mode_auto => 'Auto';
+
+  @override
+  String get location_mode_manual => 'Manual';
+
+  @override
+  String get location_saved_set_primary => 'Set as primary';
+
+  @override
+  String get location_saved_rename => 'Rename';
+
+  @override
+  String get location_saved_rename_title => 'Rename location';
+
+  @override
+  String get location_saved_rename_hint => 'Custom name';
 }

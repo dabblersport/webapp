@@ -2741,5 +2741,21 @@
   "sport_overview_open_page": "Open {sport} page",
   "@sport_overview_open_page": {"description": "KAN-622 entry from a sport chip.", "placeholders": {"sport": {"type": "String"}}},
   "listing_choose_city_title": "Choose city",
-  "listing_select_city": "Select city"
+  "listing_select_city": "Select city",
+  "location_intro_select_city": "Select city",
+  "@location_intro_select_city": {"description": "KAN-628 city-first CTA when no city is set (intro screen and device section)."},
+  "location_settings_device_title": "Device location",
+  "@location_settings_device_title": {"description": "KAN-628 section title of the device location block in Settings > Location."},
+  "location_mode_auto": "Auto",
+  "@location_mode_auto": {"description": "KAN-628 label of the device location mode Auto."},
+  "location_mode_manual": "Manual",
+  "@location_mode_manual": {"description": "KAN-628 label of the device location mode Manual."},
+  "location_saved_set_primary": "Set as primary",
+  "@location_saved_set_primary": {"description": "KAN-628 semantic label (screen-reader) on the set-primary icon button for a saved place."},
+  "location_saved_rename": "Rename",
+  "@location_saved_rename": {"description": "KAN-628 semantic label (screen-reader) on the rename icon button for a saved place."},
+  "location_saved_rename_title": "Rename location",
+  "@location_saved_rename_title": {"description": "KAN-628 title of the rename dialog for a saved place."},
+  "location_saved_rename_hint": "Custom name",
+  "@location_saved_rename_hint": {"description": "KAN-628 placeholder in the rename dialog text field."}
 }

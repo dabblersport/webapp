@@ -172,7 +172,7 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             DabblerButton(
-              label: l.listing_set_location,
+              label: l.location_intro_select_city,
               icon: 'location',
               tone: DabblerButtonTone.outlined,
               fullWidth: true,

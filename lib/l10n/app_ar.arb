@@ -2567,5 +2567,13 @@
   "sport_overview_space_capacity": "حتى {count} لاعبين",
   "sport_overview_open_page": "فتح صفحة {sport}",
   "listing_choose_city_title": "اختر المدينة",
-  "listing_select_city": "اختيار المدينة"
+  "listing_select_city": "اختيار المدينة",
+  "location_intro_select_city": "اختر مدينتك",
+  "location_settings_device_title": "موقع الجهاز",
+  "location_mode_auto": "تلقائي",
+  "location_mode_manual": "يدوي",
+  "location_saved_set_primary": "تعيين كموقع أساسي",
+  "location_saved_rename": "إعادة تسمية",
+  "location_saved_rename_title": "إعادة تسمية الموقع",
+  "location_saved_rename_hint": "اسم مخصص"
 }

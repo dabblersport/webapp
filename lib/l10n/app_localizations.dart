@@ -13018,6 +13018,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select city'**
   String get listing_select_city;
+
+  /// KAN-628 city-first CTA when no city is set (intro screen and device section).
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get location_intro_select_city;
+
+  /// KAN-628 section title of the device location block in Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Device location'**
+  String get location_settings_device_title;
+
+  /// KAN-628 label of the device location mode Auto.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get location_mode_auto;
+
+  /// KAN-628 label of the device location mode Manual.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get location_mode_manual;
+
+  /// KAN-628 semantic label (screen-reader) on the set-primary icon button for a saved place.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as primary'**
+  String get location_saved_set_primary;
+
+  /// KAN-628 semantic label (screen-reader) on the rename icon button for a saved place.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get location_saved_rename;
+
+  /// KAN-628 title of the rename dialog for a saved place.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename location'**
+  String get location_saved_rename_title;
+
+  /// KAN-628 placeholder in the rename dialog text field.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom name'**
+  String get location_saved_rename_hint;
 }
 
 class _AppLocalizationsDelegate
