@@ -45,7 +45,7 @@ dependencies:
   dabbler_design_system:
     git:
       url: https://github.com/dabblersport/dabbler-design-system.git
-      ref: alpha-ds
+      ref: dee5257b7df4829a93b35bc787e7111ffac099f8
 
 
   # Local storage for theme preferences
