@@ -13006,6 +13006,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open {sport} page'**
   String sport_overview_open_page(String sport);
+
+  /// No description provided for @listing_choose_city_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose city'**
+  String get listing_choose_city_title;
+
+  /// No description provided for @listing_select_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get listing_select_city;
 }
 
 class _AppLocalizationsDelegate

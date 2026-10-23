@@ -2739,5 +2739,7 @@
   "sport_overview_space_capacity": "Up to {count} players",
   "@sport_overview_space_capacity": {"description": "KAN-622 Sport Overview page.", "placeholders": {"count": {"type": "int"}}},
   "sport_overview_open_page": "Open {sport} page",
-  "@sport_overview_open_page": {"description": "KAN-622 entry from a sport chip.", "placeholders": {"sport": {"type": "String"}}}
+  "@sport_overview_open_page": {"description": "KAN-622 entry from a sport chip.", "placeholders": {"sport": {"type": "String"}}},
+  "listing_choose_city_title": "Choose city",
+  "listing_select_city": "Select city"
 }

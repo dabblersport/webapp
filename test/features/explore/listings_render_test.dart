@@ -60,7 +60,7 @@ Future<void> _shootC4(WidgetTester tester, Key key, String name) async {
 
 class _Location extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 /// A ready location (Dubai), for frames the design draws with one.

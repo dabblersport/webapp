@@ -37,7 +37,7 @@ final bool _dark = const String.fromEnvironment('RENDER_DARK') == '1';
 
 class _Location extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 Future<void> _shoot(WidgetTester tester, Key key, String name) async {

@@ -17,6 +17,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/render_mode.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'meetup_screens_harness.dart';
 
 /// Listings fidelity (phase 6): the Meetups listing measured against
@@ -26,7 +27,7 @@ import 'meetup_screens_harness.dart';
 
 class _Denied extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 Future<void> _pump(
@@ -45,6 +46,9 @@ Future<void> _pump(
         meetupRepositoryProvider.overrideWithValue(repo),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(_Denied.new),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         isFollowingProvider.overrideWith((ref, p) async => false),
         meetupFollowActionProvider.overrideWithValue(

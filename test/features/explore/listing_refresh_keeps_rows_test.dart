@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/explore/presentation/screens/games_screen.dart';
 import 'package:dabbler/features/explore/presentation/screens/venues_screen.dart';
@@ -70,7 +71,7 @@ VenueWithSportModel _venue(String id, String name) => VenueWithSportModel(
 
 class _Denied extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 class _Ready extends ActiveLocationNotifier {
@@ -307,6 +308,9 @@ void main() {
       meetupClockProvider.overrideWithValue(() => now),
       activePersonaProvider.overrideWithValue(PersonaType.player),
       activeLocationProvider.overrideWith(_Ready.new),
+      listingCityAreaIdsProvider.overrideWith(
+        (ref, city) async => <String>['a1'],
+      ),
       myProfileIdProvider.overrideWith((ref) async => 'me'),
     ];
 

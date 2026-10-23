@@ -1,3 +1,4 @@
+import 'package:dabbler/features/location/presentation/widgets/city_required_sheet.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -109,6 +110,28 @@ class ListingSkeletons extends StatelessWidget {
       ],
     ],
   );
+}
+
+/// KAN-588: what Venues, Games and Meetups show while no city is selected:
+/// "Choose city" and a "Select city" button that opens the city picker (no GPS,
+/// no area needed).
+class ListingChooseCity extends StatelessWidget {
+  const ListingChooseCity({super.key, this.icon = 'location'});
+
+  final String icon;
+
+  @override
+  Widget build(BuildContext context) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    return ListingEmpty(
+      icon: icon,
+      title: l.listing_choose_city_title,
+      action: DabblerButton(
+        label: l.listing_select_city,
+        onPressed: () => showCityRequiredSheet(context),
+      ),
+    );
+  }
 }
 
 /// The listing empty answer, 60 under the chrome (`Listings.dc.html:192-203`).

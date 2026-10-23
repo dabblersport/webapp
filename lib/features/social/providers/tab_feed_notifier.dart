@@ -13,6 +13,7 @@ import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'post_providers.dart';
 
 // =============================================================================
@@ -292,10 +293,14 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
             : null;
       }),
     );
+    // KAN-588: the selected city. With only a city and no point the feed is
+    // that city's posts, newest first; a change of city rebuilds this.
+    final city = ref.watch(listingCityProvider)?.name;
     return _buildNearbyNotifier(
       repo,
       coords,
       ref.watch(gpsServiceProvider),
+      city: city,
       cache: ref.watch(offlineCacheProvider),
       accountId: ref.watch(cacheAccountIdProvider),
     );
@@ -306,6 +311,7 @@ TabFeedNotifier _buildNearbyNotifier(
   PostRepository repo,
   ({double lat, double lng})? appLocation,
   GpsService gps, {
+  String? city,
   OfflineCache? cache,
   String? accountId,
 }) {
@@ -314,6 +320,12 @@ TabFeedNotifier _buildNearbyNotifier(
       // Prefer the app-level location selection (GPS / saved / manual area).
       double? lat = appLocation?.lat;
       double? lng = appLocation?.lng;
+
+      // Only the city is known (a hand-picked City, no Area): no point and no
+      // GPS, the city's posts newest first (KAN-588).
+      if ((lat == null || lng == null) && city != null) {
+        return repo.getNearbyFeed(city: city, limit: limit, offset: offset);
+      }
 
       // Fallback: raw GPS, read-only (it never raises the OS permission prompt:
       // only the location intro or an explicit user action asks for it).
@@ -343,10 +355,16 @@ TabFeedNotifier _buildNearbyNotifier(
       // permission prompt, so load eagerly — this also covers notifier
       // recreation after a location change while the Nearby tab is visible.
     },
-    autoLoad: appLocation != null,
+    autoLoad: appLocation != null || city != null,
     cache: cache,
     accountId: accountId,
-    cacheKey: 'feed.nearby',
+    // Per city, so a city change never shows the previous city's cached posts;
+    // a city without a point is newest-first, apart from the distance-ranked.
+    cacheKey: city == null
+        ? 'feed.nearby'
+        : appLocation == null
+        ? 'feed.nearby.city.$city'
+        : 'feed.nearby.$city',
   );
 }
 

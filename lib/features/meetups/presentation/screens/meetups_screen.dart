@@ -6,6 +6,7 @@ import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -71,11 +72,12 @@ class _MeetupsTabs extends ConsumerWidget {
     final loc = ref.watch(activeLocationProvider).valueOrNull;
     final radius = ref.watch(meetupRadiusProvider);
     final sort = ref.watch(meetupSortProvider);
+    final cityOnly = ref.watch(listingCityOnlyProvider);
     final date = ref.watch(meetupDateProvider);
     final indoor = ref.watch(meetupIndoorProvider);
     void reset() {
       ref.read(meetupRadiusProvider.notifier).state = null;
-      ref.read(meetupSortProvider.notifier).state = MeetupSort.soonest;
+      ref.read(meetupSortProvider.notifier).state = null;
       ref.read(meetupDateProvider.notifier).state = null;
       ref.read(meetupIndoorProvider.notifier).state = null;
     }
@@ -96,11 +98,12 @@ class _MeetupsTabs extends ConsumerWidget {
           label: indoor ? l.listing_indoor : l.listing_outdoor,
           onRemove: () => ref.read(meetupIndoorProvider.notifier).state = null,
         ),
-      if (sort != MeetupSort.soonest)
+      // The default shows no chip: soonest, or A to Z while only a city is
+      // known (KAN-588). Choosing "Starting soonest" there is a chip.
+      if (sort != null && (sort != MeetupSort.soonest || cityOnly))
         DabblerFilterRailItem(
           label: _sortLabel(l, sort),
-          onRemove: () =>
-              ref.read(meetupSortProvider.notifier).state = MeetupSort.soonest,
+          onRemove: () => ref.read(meetupSortProvider.notifier).state = null,
         ),
     ];
     final denied = activeLocationNeedsManualChange(loc);
@@ -228,6 +231,37 @@ class _MeetupsBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    // KAN-588: the location is still settling, then no city selected: nothing
+    // to list, a way to choose one.
+    if (ref.watch(listingCityPendingProvider)) {
+      return const ListingSkeletons(kind: DabblerListingSkeletonKind.meetup);
+    }
+    if (ref.watch(listingCityMissingProvider)) {
+      return const ListingChooseCity(icon: 'people');
+    }
+    final city = ref.watch(listingCityProvider);
+    final cityOnly = ref.watch(listingCityOnlyProvider);
+    // The Areas of the city, which is how a meetup (it carries an area_id) is
+    // matched to it. Until they arrive the list is loading, never the
+    // previous city's rows.
+    final cityAreas = city == null
+        ? null
+        : ref.watch(listingCityAreaIdsProvider(city));
+    if (cityAreas != null && !cityAreas.hasValue && !cityAreas.hasError) {
+      return const ListingSkeletons(kind: DabblerListingSkeletonKind.meetup);
+    }
+    // The city's Areas could not be loaded: an error with a retry, never an
+    // empty city.
+    if (city != null && cityAreas != null && !cityAreas.hasValue) {
+      return ListingError(
+        title: l.meetups_load_failed,
+        retryLabel: l.feed_retry,
+        onRetry: () => ref.invalidate(listingCityAreaIdsProvider(city)),
+      );
+    }
+    final Set<String>? areaIds = cityAreas == null
+        ? null
+        : <String>{...?cityAreas.valueOrNull};
     final list = ref.watch(meetupListProvider(sportId));
     final radius = ref.watch(meetupRadiusProvider);
     final sort = ref.watch(meetupSortProvider);
@@ -280,7 +314,9 @@ class _MeetupsBody extends ConsumerWidget {
           ],
           distances: distances,
           radiusMeters: radius,
-          sort: sort,
+          sort: sort ?? MeetupSort.soonest,
+          alphabetical: sort == null && cityOnly,
+          areaIds: areaIds,
           date: date,
           indoor: indoor,
           settings: settings,
@@ -351,7 +387,12 @@ class _MeetupFilterBody extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final radius = ref.watch(meetupRadiusProvider);
-    final sort = ref.watch(meetupSortProvider);
+    final sort = meetupSortSelection(
+      ref.watch(meetupSortProvider),
+      cityOnly: ref.watch(listingCityOnlyProvider),
+    );
+    // Distance and Nearest need an Area or a location (KAN-586).
+    final canUseDistance = ref.watch(distanceControlsEnabledProvider);
     final date = ref.watch(meetupDateProvider);
     final indoor = ref.watch(meetupIndoorProvider);
     return Column(
@@ -365,8 +406,10 @@ class _MeetupFilterBody extends ConsumerWidget {
             for (final m in kMeetupRadiusPresets)
               DabblerChip(
                 label: l.listing_within_km((m / 1000).round()),
-                selected: radius == m,
-                onTap: () => ref.read(meetupRadiusProvider.notifier).state = m,
+                selected: canUseDistance && radius == m,
+                onTap: !canUseDistance
+                    ? null
+                    : () => ref.read(meetupRadiusProvider.notifier).state = m,
               ),
             DabblerChip(
               label: l.listing_any_distance,
@@ -409,9 +452,12 @@ class _MeetupFilterBody extends ConsumerWidget {
             ])
               DabblerChip(
                 label: _sortLabel(l, value),
-                selected: sort == value,
-                onTap: () =>
-                    ref.read(meetupSortProvider.notifier).state = value,
+                selected:
+                    sort == value &&
+                    (canUseDistance || value != MeetupSort.nearest),
+                onTap: value == MeetupSort.nearest && !canUseDistance
+                    ? null
+                    : () => ref.read(meetupSortProvider.notifier).state = value,
               ),
           ],
         ),
@@ -428,7 +474,12 @@ class _ShowMeetupsButton extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final all = ref.watch(meetupListProvider(null)).valueOrNull;
-    final count = all == null
+    final city = ref.watch(listingCityProvider);
+    final cityAreas = city == null
+        ? null
+        : ref.watch(listingCityAreaIdsProvider(city)).valueOrNull;
+    final chosen = ref.watch(meetupSortProvider);
+    final count = all == null || (city != null && cityAreas == null)
         ? null
         : applyMeetupFilters(
             <MeetupListItem>[
@@ -437,7 +488,9 @@ class _ShowMeetupsButton extends ConsumerWidget {
             ],
             distances: ref.watch(meetupDistancesProvider),
             radiusMeters: ref.watch(meetupRadiusProvider),
-            sort: ref.watch(meetupSortProvider),
+            sort: chosen ?? MeetupSort.soonest,
+            alphabetical: chosen == null && ref.watch(listingCityOnlyProvider),
+            areaIds: cityAreas == null ? null : <String>{...cityAreas},
             date: ref.watch(meetupDateProvider),
             indoor: ref.watch(meetupIndoorProvider),
             settings:

@@ -7,6 +7,7 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/home/presentation/widgets/section_themed.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -131,6 +132,9 @@ Future<void> _pump(
           ),
         ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         ...overrides,
       ],
       child: MaterialApp(

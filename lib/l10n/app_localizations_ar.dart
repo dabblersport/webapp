@@ -7293,4 +7293,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String sport_overview_open_page(String sport) {
     return 'فتح صفحة $sport';
   }
+
+  @override
+  String get listing_choose_city_title => 'اختر المدينة';
+
+  @override
+  String get listing_select_city => 'اختيار المدينة';
 }

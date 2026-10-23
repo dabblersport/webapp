@@ -7248,4 +7248,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String sport_overview_open_page(String sport) {
     return 'Open $sport page';
   }
+
+  @override
+  String get listing_choose_city_title => 'Choose city';
+
+  @override
+  String get listing_select_city => 'Select city';
 }

@@ -17,7 +17,7 @@ void main() {
     tester,
   ) async {
     final fake = installGeo();
-    await pumpMeetups(tester, const MeetupsScreen(), _repo());
+    await pumpMeetups(tester, const MeetupsScreen(), _repo(), denied: true);
     await expectPickFlow(tester, fake, surface);
   });
 
@@ -25,7 +25,7 @@ void main() {
     tester,
   ) async {
     final fake = installGeo();
-    await pumpMeetups(tester, const MeetupsScreen(), _repo());
+    await pumpMeetups(tester, const MeetupsScreen(), _repo(), denied: true);
     await expectDismissFlow(tester, fake, surface);
   });
 

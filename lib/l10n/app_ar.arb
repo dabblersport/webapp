@@ -2565,5 +2565,7 @@
   "sport_overview_join_profile_failed": "تعذّر إنشاء ملفك، لذا لم تنضم. حاول مرة أخرى.",
   "sport_overview_space_price": "{price} درهم / ساعة",
   "sport_overview_space_capacity": "حتى {count} لاعبين",
-  "sport_overview_open_page": "فتح صفحة {sport}"
+  "sport_overview_open_page": "فتح صفحة {sport}",
+  "listing_choose_city_title": "اختر المدينة",
+  "listing_select_city": "اختيار المدينة"
 }

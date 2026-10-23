@@ -15,7 +15,11 @@ abstract class NearbyGamesDatasource {
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
   });
 
-  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({String? sportId});
+  /// Public upcoming games; with [areaIds] only those in those Areas (a city).
+  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
+    String? sportId,
+    List<String>? areaIds,
+  });
 
   /// The viewer's own upcoming games — created by them or where they're on
   /// the active roster. Location-independent (pinned "My games" section).
@@ -65,13 +69,20 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
     String? sportId,
+    List<String>? areaIds,
   }) => guardWithTimeout(() async {
+    // KAN-588: a city with no Area rows holds no game; ask nothing.
+    if (areaIds != null && areaIds.isEmpty) return <NearbyGameModel>[];
+
     var query = _svc.client
         .from(SupabaseConfig.vGameCardTable)
         .select(_cardColumns);
 
     if (sportId != null) {
       query = query.eq('sport_id', sportId);
+    }
+    if (areaIds != null) {
+      query = query.inFilter('area_id', areaIds);
     }
 
     final rows = await query.order('start_at').limit(100) as List<dynamic>;
