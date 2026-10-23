@@ -18,9 +18,10 @@ final ValueNotifier<Map<String, Size>> placesIntrinsics =
     ValueNotifier<Map<String, Size>>(const <String, Size>{});
 
 class IosPlacesUiKitHost implements PlacesUiKitHost {
-  IosPlacesUiKitHost({this.horizontal = false});
+  IosPlacesUiKitHost({this.horizontal = false, this.photoOnly = false});
 
   final bool horizontal;
+  final bool photoOnly;
 
   /// Initialises the native SDK. Only called by the experiment harness (or an
   /// explicitly enabled development build); flag off never reaches it.
@@ -53,6 +54,7 @@ class IosPlacesUiKitHost implements PlacesUiKitHost {
     return _PlacesCover(
       placeId: placeId,
       horizontal: horizontal,
+      photoOnly: photoOnly,
       fallback: fallback,
     );
   }
@@ -64,11 +66,13 @@ class _PlacesCover extends StatefulWidget {
   const _PlacesCover({
     required this.placeId,
     required this.horizontal,
+    required this.photoOnly,
     required this.fallback,
   });
 
   final String placeId;
   final bool horizontal;
+  final bool photoOnly;
   final Widget fallback;
 
   @override
@@ -91,6 +95,7 @@ class _PlacesCoverState extends State<_PlacesCover> {
           creationParams: <String, Object?>{
             'placeId': widget.placeId,
             'horizontal': widget.horizontal,
+            'photoOnly': widget.photoOnly,
           },
           creationParamsCodec: const StandardMessageCodec(),
         );

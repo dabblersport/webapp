@@ -95,3 +95,54 @@ Nothing below can be done by the engineering seat, and no secret or card detail 
 ## 8. Rollback
 
 Flag off (default) restores the current cover with no SDK initialisation and no Google request. Retire the PoC by deleting the `experiment` folder, the one `experimentCover` call in `venues_screen.dart`, the flag, this document, and any native integration added later; revoke only the experiment project's keys.
+
+## 9. Phase B to D results (iPhone Simulator only; sections 7 and 8 above are superseded by 11 and 12)
+
+Scope: the iPhone 18 Pro simulator, Android deferred. A simulator run is not proof of real-device performance. Keys came from the macOS Keychain straight into the run environment; they are in no source, log or doc (a log scan found 0 occurrences). Quotas: UI Kit Query 200/day, Text Search 20/day, every other Places API (New) operation 0, spend ceiling USD 0.
+
+**Host.** Native SwiftUI `PlaceDetailsCompactView` inside a `UiKitView` platform view (`dabbler/places_ui_kit`), bridged on channel `dabbler/places_experiment`. SDK: Google Places SDK 11.2.0 through SPM in Runner only (GooglePlaces and GooglePlacesSwift). Flag off means the bridge is registered inert: no `configure` call, no SDK init, no Google request.
+
+**Matching (Text Search, place IDs only, IDs-only SKU).** 10 of 20 searches used. 7 of 9 venues returned one Place ID, stored in `kPlacesManifest`. All Star Sport and Champs returned none (the Champs Area 4 point search also returned none). Doubtful matches: Aktiv Nation resolved to "XTRA SPORTS BADMINTON ACADEMY - UNASCO Complex" (a different venue); United Pro resolved to "UPRO Dubai (United Pro Sports)", shown by Google as temporarily closed; 365 Open Sports ("365 Indoor Courts") and Jebel Ali Recreation Club ("Jebel Ali Recreation Centre by Dubai Retail", typed Restaurant, photo showed a bar interior) are probable, not confirmed. Ahdaaf, ISD Padel and Danube Sports World are correct.
+
+**Fit (C2): FAIL.** Standard compact content measured 194 to 497 dp tall at 370 dp width against the 170 dp cover slot. Name, rating, the Maps button and the mandatory "Google Maps" attribution cannot fit without crop, scale or cover.
+
+**Route 1 (Ruling 4): no photo-only element.** The narrowest content, `.media(lightbox: false)`, measured 370 x 348.7 dp for six venues and 370 x 132 dp for one. The photo is the top part only; a Maps button and the "Google Maps" attribution row (with an info icon) render under it and cannot be hidden. They can't sit in a 170 dp cover without crop, scale or cover, and Dabbler's own name/rating/open row can't replace the Google rows. Screenshots: `shots/photo-1..9.png` in the job directory.
+
+**Lifecycle and requests.** Light nine pass: 7 creates, 7 successes, 0 failures, p50 about 1.06 s, p95 about 3.58 s. Photo-only pass: 7 creates, 7 successes, p50 about 1.05 s, p95 about 3.14 s. One dark pass made 45 creates for 7 venues (loadsToday 52); the cause is not found and it is an open finding; it was not repeated. Totals today: 10 searches, 69 loads (guard 150, Google quota 200). No unexpected paid SKU seen; billing reports can lag about 48 h, so cost is "pending", not asserted as zero.
+
+## 10. Route 2: Places API (New) Place Details with Dabbler's own card (prepared, not live)
+
+Code: `places_details_route.dart` (field mask, models, a source that is disabled by default, cost model). No HTTP code and no new package. Nothing calls Google: quotas for these operations are 0.
+
+**Fields and SKUs** (Google pricing page, read 2026-10-23; billed at the highest SKU in the field mask):
+
+| Field | SKU |
+|---|---|
+| `id`, `photos` metadata | Place Details Essentials IDs Only (unlimited, $0) |
+| `displayName`, `googleMapsUri` | Place Details Pro ($17 per 1,000, 5,000 free a month) |
+| `rating`, `userRatingCount`, `currentOpeningHours` | Place Details Enterprise ($20 per 1,000, 1,000 free a month) |
+| photo media | Place Details Photos ($7 per 1,000, 1,000 free a month) |
+
+The mask in `kPlacesDetailsFieldMask` therefore bills as Enterprise. If the card took the name from Dabbler and left out rating/open-now, it would bill at Pro or below.
+
+**Terms** (Maps Platform policies page, read 2026-10-23):
+- Allowed: our own card layout, with the Google Maps logo (16 to 19 dp high) or the plain text "Google Maps" (Roboto 400, 12 to 16 sp, #1F1F1F or #5E5E5E, 4.5:1 contrast, not translated, not wrapped) shown with the Places data, a photo author credit (avatar, name, profile link; thumbnails may omit it if the larger view carries it), and a link to the item on Google Maps through `googleMapsUri`.
+- Not allowed: pre-fetching, caching or storing Places content. Only the place ID may be stored indefinitely. So every card view is a live request; no Cloudinary or Supabase copy, no scraping, no extraction (Route 3 stays forbidden). The "Google Maps" text is not translated, so the Arabic card carries the English attribution.
+
+**Cost for nine venues** (one Enterprise Details request plus one Photos request per venue per live view, nothing cached): about 9 + 9 requests per list view. Free allowances cover roughly 111 list views a month; beyond that each list view costs about USD 0.24 (9 x $0.020 + 9 x $0.007). 1,000 list views a month is 9,000 requests on each line: 8,000 billable x $0.020 = $160 plus 8,000 x $0.007 = $56, about USD 216 (`PlacesRoute2Cost.monthlyUsd`).
+
+**What the CEO must set** (the engineering seat cannot do this, and no key restriction was changed):
+1. Google Cloud console, project centered-moon-512515-d5, Places API (New): raise the "Place Details" requests-per-day quota from 0 to 33 and the "Place Details Photos" (photo media) requests-per-day quota from 0 to 33. Thirty-three a day is about 1,000 a month, which keeps the bill at USD 0 inside the free allowances. That allows about 3 full nine-venue list views a day, which is enough for a PoC and not for production.
+2. Allow Places API (New) on the iOS key's API restriction (it is limited to the UI Kit API today). The iOS key is bundle-restricted, so the request can be made from the app with no server credential. A production design needs a server-side proxy so the key and quota are not in the client; that is a separate decision.
+3. If he wants more than 33 a day, the USD 0 ceiling has to be raised as well, with a stated monthly budget.
+
+## 11. Rollback
+
+Flag off (the default) restores the current cover with no SDK initialisation and no Google request. To retire the PoC: in `ios/Runner.xcodeproj/project.pbxproj` remove the Google Places package reference, the two product dependencies (GooglePlaces, GooglePlacesSwift) and the `PlacesExperiment` file references; revert both `Package.resolved` files; delete `ios/Runner/PlacesExperiment`; remove the bridge registration in `ios/Runner/AppDelegate.swift`; delete `lib/features/venues/experiment`, `lib/experiment_places_main.dart`, the matching tests and this document; revoke or restrict the experiment keys in the experiment project only. The Podfile and CocoaPods were not touched.
+
+## 12. Open items
+
+- Android is deferred; nothing here says how the component behaves on a device or on Android.
+- Two venues have no Place ID and one match is the wrong venue.
+- The dark pass amplification (45 creates for 7 venues) is unexplained.
+- The tier 10/20 runs, RTL, text-scale and horizontal passes were not run; tiers 50 and 100 are blocked on purpose by the 150 guard and the 200 quota.
