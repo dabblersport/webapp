@@ -29,6 +29,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/features/venues/experiment/places_ui_kit_experiment.dart';
+
 // =============================================================================
 // SCREEN
 // =============================================================================
@@ -748,11 +750,17 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
       name: venue.name,
       // The cover slot always draws; without a photo it is the sunken fill
       // with the gallery glyph.
-      cover: DabblerImage(
-        url: venue.coverUrl,
+      // KAN-629: the experiment returns this baseline untouched unless its
+      // default-off flag is on and the venue is one of the nine.
+      cover: experimentCover(
+        venueId: venue.id,
         height: DabblerCardVenue.coverHeight,
-        radius: BorderRadius.zero,
-        placeholderGlyph: true,
+        baseline: DabblerImage(
+          url: venue.coverUrl,
+          height: DabblerCardVenue.coverHeight,
+          radius: BorderRadius.zero,
+          placeholderGlyph: true,
+        ),
       ),
       area: locationLine,
       tags: [

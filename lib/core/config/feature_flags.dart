@@ -23,6 +23,14 @@ class FeatureFlags {
   /// Games & Matches
   static const bool enableGameBrowsing = true;
 
+  /// KAN-629: Google Places UI Kit cover experiment for nine venues. OFF by
+  /// default; reachable only in a development build started with
+  /// `--dart-define=PLACES_UI_KIT_EXPERIMENT=true`. Off means no SDK
+  /// initialisation and no Google request. Never turn this on for a release.
+  static const bool placesUiKitExperiment = bool.fromEnvironment(
+    'PLACES_UI_KIT_EXPERIMENT',
+  );
+
   /// KAN-622: the public Sport Overview page (a sport's listings and tagged
   /// posts). On in Alpha; every entry point and the route are gated on it.
   static const bool sportOverview = true;
