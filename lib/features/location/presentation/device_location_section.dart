@@ -37,7 +37,7 @@ class DeviceLocationSection extends ConsumerWidget {
         DabblerText(l10n.location_device_section, style: DabblerType.headline),
         const DabblerGap.v(DabblerSpacing.space3),
         DabblerTabs(
-          variant: DabblerTabsVariant.segmented,
+          variant: DabblerTabsVariant.segmentedCard,
           label: l10n.location_device_section,
           value: auto ? _autoId : _manualId,
           items: [

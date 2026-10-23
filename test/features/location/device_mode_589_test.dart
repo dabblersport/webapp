@@ -148,22 +148,35 @@ void main() {
     expect(find.text('Change'), findsOneWidget);
   });
 
-  testWidgets('Auto (granted) switches to Auto and writes it to the device store', (
+  testWidgets('Auto / Manual control uses the segmentedCard variant', (
     tester,
   ) async {
-    final p = await _pump(
+    await _pump(
       tester,
       permission: LocationPermission.always,
       seed: _seedManual,
     );
-    await tester.tap(find.text('Auto'));
-    await _frames(tester);
-    final DeviceLocation? stored = await _stored();
-    expect(stored?.mode, DeviceLocationMode.auto);
-    expect(stored?.provenance, DeviceLocationProvenance.gps);
-    expect(find.text('Change'), findsNothing); // Auto hides the manual row
-    expect(p.requestCalls, 0);
+    final DabblerTabs tabs = tester.widget(find.byType(DabblerTabs));
+    expect(tabs.variant, DabblerTabsVariant.segmentedCard);
   });
+
+  testWidgets(
+    'Auto (granted) switches to Auto and writes it to the device store',
+    (tester) async {
+      final p = await _pump(
+        tester,
+        permission: LocationPermission.always,
+        seed: _seedManual,
+      );
+      await tester.tap(find.text('Auto'));
+      await _frames(tester);
+      final DeviceLocation? stored = await _stored();
+      expect(stored?.mode, DeviceLocationMode.auto);
+      expect(stored?.provenance, DeviceLocationProvenance.gps);
+      expect(find.text('Change'), findsNothing); // Auto hides the manual row
+      expect(p.requestCalls, 0);
+    },
+  );
 
   testWidgets('Manual from Auto keeps the place as this device\'s Manual '
       'choice and persists', (tester) async {
