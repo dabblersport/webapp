@@ -13186,6 +13186,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Map unavailable'**
   String get location_map_unavailable;
+
+  /// KAN-589 label of a location that comes from the device GPS. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get location_current_label;
+
+  /// KAN-589 confirm button of the Set location point picker. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this location'**
+  String get location_point_use;
+
+  /// KAN-589 label of a point picked on the map without a place name. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location'**
+  String get location_point_selected;
+
+  /// KAN-589 hint under the Set location map. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search a place, or tap the map to move the pin.'**
+  String get location_point_hint;
 }
 
 class _AppLocalizationsDelegate
