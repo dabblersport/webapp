@@ -26,6 +26,7 @@ const String _mode = String.fromEnvironment(
 const bool _dark = bool.fromEnvironment('PLACES_DARK');
 const bool _rtl = bool.fromEnvironment('PLACES_RTL');
 const bool _horizontal = bool.fromEnvironment('PLACES_HORIZONTAL');
+const bool _photoOnly = bool.fromEnvironment('PLACES_PHOTO_ONLY');
 const int _tier = int.fromEnvironment('PLACES_TIER', defaultValue: 10);
 const String _scaleRaw = String.fromEnvironment(
   'PLACES_SCALE',
@@ -134,7 +135,10 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final started = await IosPlacesUiKitHost.start();
   plx('configured ${jsonEncode(started)}');
-  PlacesExperiment.host = IosPlacesUiKitHost(horizontal: _horizontal);
+  PlacesExperiment.host = IosPlacesUiKitHost(
+    horizontal: _horizontal,
+    photoOnly: _photoOnly,
+  );
   PlacesExperiment.manifest = {
     ...kPlacesManifest,
     // A development-only override, e.g. to verify an alternate candidate.

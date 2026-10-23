@@ -102,13 +102,15 @@ final class PlacesExperimentState {
 struct PlacesCompactCover: View {
   let placeId: String
   let horizontal: Bool
+  let photoOnly: Bool
   let started: Date
 
   @State private var query: PlaceDetailsQuery
 
-  init(placeId: String, horizontal: Bool) {
+  init(placeId: String, horizontal: Bool, photoOnly: Bool = false) {
     self.placeId = placeId
     self.horizontal = horizontal
+    self.photoOnly = photoOnly
     self.started = Date()
     _query = State(initialValue: PlaceDetailsQuery(identifier: .placeID(placeId)))
   }
@@ -118,7 +120,7 @@ struct PlacesCompactCover: View {
       orientation: horizontal ? .horizontal : .vertical,
       query: $query,
       configuration: PlaceDetailsCompactConfiguration(
-        content: PlaceDetailsCompactView.standardContent,
+        content: photoOnly ? [.media(lightbox: false)] : PlaceDetailsCompactView.standardContent,
         theme: PlacesMaterialTheme()),
       placeDetailsCallback: { result in
         let ms = Date().timeIntervalSince(started) * 1000
@@ -159,8 +161,8 @@ final class PlacesCoverView: NSObject, FlutterPlatformView {
   private let host: UIHostingController<PlacesCompactCover>
   private let container = PlacesSizingContainer()
 
-  init(frame: CGRect, placeId: String, horizontal: Bool) {
-    host = UIHostingController(rootView: PlacesCompactCover(placeId: placeId, horizontal: horizontal))
+  init(frame: CGRect, placeId: String, horizontal: Bool, photoOnly: Bool) {
+    host = UIHostingController(rootView: PlacesCompactCover(placeId: placeId, horizontal: horizontal, photoOnly: photoOnly))
     host.view.backgroundColor = .clear
     container.frame = frame
     container.placeId = placeId
@@ -186,7 +188,8 @@ final class PlacesCoverFactory: NSObject, FlutterPlatformViewFactory {
     return PlacesCoverView(
       frame: frame,
       placeId: p?["placeId"] as? String ?? "",
-      horizontal: p?["horizontal"] as? Bool ?? false)
+      horizontal: p?["horizontal"] as? Bool ?? false,
+      photoOnly: p?["photoOnly"] as? Bool ?? false)
   }
 }
 
