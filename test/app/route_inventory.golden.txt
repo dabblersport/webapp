@@ -43,6 +43,7 @@
 /u/:profileId	-	GoRoute
 /social	social	GoRoute
 /sports-explore	sports	GoRoute
+/sport/:sportId	sport-overview	GoRoute
 /activities	activities	GoRoute
 /rewards	rewards	GoRoute
 /profile	profile	GoRoute

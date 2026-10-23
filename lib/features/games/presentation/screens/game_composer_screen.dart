@@ -752,7 +752,17 @@ final _gameComposerProvider =
 // ─── Screen ───────────────────────────────────────────────────────────────────
 
 class GameComposerScreen extends ConsumerStatefulWidget {
-  const GameComposerScreen({super.key, this.editGameId, this.requestId});
+  const GameComposerScreen({
+    super.key,
+    this.editGameId,
+    this.requestId,
+    this.initialSportId,
+  });
+
+  /// KAN-622: a sport to preselect when creating (the Sport Overview page's
+  /// Create game). Ignored when editing, or when the sport is not one the
+  /// composer offers.
+  final String? initialSportId;
 
   /// KAN-618: the holder of this create attempt's request id. A test passes
   /// its own to read the id; by default the screen makes one.
@@ -799,9 +809,20 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       });
     } else {
       // Kick off sport load so the chips appear as soon as the drawer opens.
-      Future.microtask(
-        () => ref.read(_gameComposerProvider.notifier).ensureSports(),
-      );
+      Future.microtask(() async {
+        final notifier = ref.read(_gameComposerProvider.notifier);
+        await notifier.ensureSports();
+        final id = widget.initialSportId;
+        if (!mounted || id == null) return;
+        final s = ref.read(_gameComposerProvider);
+        if (s.sportId != null) return;
+        for (final sport in s.sports) {
+          if (sport['id'] == id) {
+            notifier.selectSport(sport);
+            break;
+          }
+        }
+      });
     }
   }
 

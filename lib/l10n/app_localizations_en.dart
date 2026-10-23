@@ -7029,4 +7029,223 @@ class AppLocalizationsEn extends AppLocalizations {
   String location_saved_delete_body(String name) {
     return 'Remove \"$name\" from your saved locations?';
   }
+
+  @override
+  String get sport_overview_title => 'Sport';
+
+  @override
+  String get sport_overview_tab_overview => 'Overview';
+
+  @override
+  String get sport_overview_tab_games => 'Games';
+
+  @override
+  String get sport_overview_tab_meetups => 'Meetups';
+
+  @override
+  String get sport_overview_tab_venues => 'Venues';
+
+  @override
+  String get sport_overview_tab_posts => 'Posts';
+
+  @override
+  String get sport_overview_follow => 'Follow';
+
+  @override
+  String get sport_overview_following => 'Following';
+
+  @override
+  String sport_overview_followers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count followers',
+      one: '1 follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sport_overview_stat_games => 'Games in 7 days';
+
+  @override
+  String get sport_overview_stat_meetups => 'Meetups in 7 days';
+
+  @override
+  String get sport_overview_stat_venues => 'Venues';
+
+  @override
+  String get sport_overview_stat_spaces => 'Spaces';
+
+  @override
+  String get sport_overview_stat_posts => 'Posts';
+
+  @override
+  String get sport_overview_see_all => 'See all';
+
+  @override
+  String get sport_overview_section_games => 'Next games';
+
+  @override
+  String get sport_overview_section_venues => 'Venues';
+
+  @override
+  String get sport_overview_section_posts => 'Latest posts';
+
+  @override
+  String get sport_overview_switch_venues => 'Venues';
+
+  @override
+  String get sport_overview_switch_spaces => 'Spaces';
+
+  @override
+  String get sport_overview_empty_games_title => 'No games in the next 7 days';
+
+  @override
+  String get sport_overview_empty_games_text =>
+      'When someone creates a game for this sport, it shows here.';
+
+  @override
+  String get sport_overview_empty_meetups_title =>
+      'No meetups in the next 7 days';
+
+  @override
+  String get sport_overview_empty_meetups_text =>
+      'When someone creates a meetup for this sport, it shows here.';
+
+  @override
+  String get sport_overview_empty_venues_title => 'No venues yet';
+
+  @override
+  String get sport_overview_empty_venues_text =>
+      'No venue offers this sport in the chosen city.';
+
+  @override
+  String get sport_overview_empty_spaces_title => 'No spaces yet';
+
+  @override
+  String get sport_overview_empty_spaces_text =>
+      'No space for this sport in the chosen city.';
+
+  @override
+  String get sport_overview_empty_posts_title => 'No posts yet';
+
+  @override
+  String get sport_overview_empty_posts_text =>
+      'Posts tagged with this sport show here.';
+
+  @override
+  String get sport_overview_error_title => 'Couldn\'t load this';
+
+  @override
+  String get sport_overview_error_text =>
+      'Check your connection and try again. Nothing is shown until it loads.';
+
+  @override
+  String get sport_overview_retry => 'Retry';
+
+  @override
+  String get sport_overview_load_more => 'Load more';
+
+  @override
+  String get sport_overview_page_error_title => 'This sport isn\'t available';
+
+  @override
+  String get sport_overview_page_error_text =>
+      'It may have been removed, or the page couldn\'t load.';
+
+  @override
+  String get sport_overview_city_label => 'City';
+
+  @override
+  String get sport_overview_city_all => 'All cities';
+
+  @override
+  String get sport_overview_city_pick_title => 'Choose a city';
+
+  @override
+  String get sport_overview_city_clear => 'Clear city';
+
+  @override
+  String get sport_overview_city_cta_title => 'Pick a city to see what\'s on';
+
+  @override
+  String get sport_overview_city_cta_text =>
+      'This only filters this page. Your location stays as it is.';
+
+  @override
+  String get sport_overview_city_cta_button => 'Choose a city';
+
+  @override
+  String sport_overview_city_unmapped(String city) {
+    return 'No listings are grouped under $city yet, so this shows every city.';
+  }
+
+  @override
+  String sport_overview_mutual_one(String a) {
+    return 'Followed by $a';
+  }
+
+  @override
+  String sport_overview_mutual_two(String a, String b) {
+    return 'Followed by $a and $b';
+  }
+
+  @override
+  String sport_overview_mutual_three(String a, String b, String c) {
+    return 'Followed by $a, $b and $c';
+  }
+
+  @override
+  String get sport_overview_create_game => 'Create game';
+
+  @override
+  String get sport_overview_follow_failed =>
+      'Couldn\'t update your Following. Try again.';
+
+  @override
+  String get sport_overview_unfollow_last =>
+      'You must follow at least one sport.';
+
+  @override
+  String get sport_overview_unfollow_practicing =>
+      'You play this sport, so you can\'t unfollow it.';
+
+  @override
+  String get sport_overview_unfollow_primary =>
+      'This is your primary sport, so you can\'t unfollow it.';
+
+  @override
+  String get sport_overview_join_profile_title =>
+      'Do you want to create profile?';
+
+  @override
+  String sport_overview_join_profile_text(String sport) {
+    return 'You need a $sport profile to join. It adds $sport to the sports you play and follow.';
+  }
+
+  @override
+  String get sport_overview_join_profile_yes => 'Yes';
+
+  @override
+  String get sport_overview_join_profile_no => 'No';
+
+  @override
+  String get sport_overview_join_profile_failed =>
+      'Couldn\'t create your profile, so you haven\'t joined. Try again.';
+
+  @override
+  String sport_overview_space_price(String price) {
+    return '$price AED / hour';
+  }
+
+  @override
+  String sport_overview_space_capacity(int count) {
+    return 'Up to $count players';
+  }
+
+  @override
+  String sport_overview_open_page(String sport) {
+    return 'Open $sport page';
+  }
 }

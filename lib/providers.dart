@@ -48,3 +48,4 @@ export 'features/messaging/presentation/providers/messaging_realtime_providers.d
 export 'core/feedback/feedback_center.dart';
 export 'core/feedback/feedback_intent.dart';
 export 'core/feedback/presentation_context.dart';
+export 'features/sports/presentation/providers/sport_overview_providers.dart';

@@ -12646,6 +12646,366 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Remove \"{name}\" from your saved locations?'**
   String location_saved_delete_body(String name);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get sport_overview_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get sport_overview_tab_overview;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get sport_overview_tab_games;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get sport_overview_tab_meetups;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_tab_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_tab_posts;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get sport_overview_follow;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get sport_overview_following;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 follower} other{{count} followers}}'**
+  String sport_overview_followers(int count);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Games in 7 days'**
+  String get sport_overview_stat_games;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups in 7 days'**
+  String get sport_overview_stat_meetups;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_stat_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces'**
+  String get sport_overview_stat_spaces;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_stat_posts;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get sport_overview_see_all;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Next games'**
+  String get sport_overview_section_games;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_section_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest posts'**
+  String get sport_overview_section_posts;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_switch_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces'**
+  String get sport_overview_switch_spaces;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No games in the next 7 days'**
+  String get sport_overview_empty_games_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone creates a game for this sport, it shows here.'**
+  String get sport_overview_empty_games_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetups in the next 7 days'**
+  String get sport_overview_empty_meetups_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone creates a meetup for this sport, it shows here.'**
+  String get sport_overview_empty_meetups_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues yet'**
+  String get sport_overview_empty_venues_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No venue offers this sport in the chosen city.'**
+  String get sport_overview_empty_venues_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No spaces yet'**
+  String get sport_overview_empty_spaces_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No space for this sport in the chosen city.'**
+  String get sport_overview_empty_spaces_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get sport_overview_empty_posts_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts tagged with this sport show here.'**
+  String get sport_overview_empty_posts_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this'**
+  String get sport_overview_error_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again. Nothing is shown until it loads.'**
+  String get sport_overview_error_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get sport_overview_retry;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get sport_overview_load_more;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'This sport isn\'t available'**
+  String get sport_overview_page_error_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been removed, or the page couldn\'t load.'**
+  String get sport_overview_page_error_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get sport_overview_city_label;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'All cities'**
+  String get sport_overview_city_all;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a city'**
+  String get sport_overview_city_pick_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear city'**
+  String get sport_overview_city_clear;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a city to see what\'s on'**
+  String get sport_overview_city_cta_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'This only filters this page. Your location stays as it is.'**
+  String get sport_overview_city_cta_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a city'**
+  String get sport_overview_city_cta_button;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No listings are grouped under {city} yet, so this shows every city.'**
+  String sport_overview_city_unmapped(String city);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {a}'**
+  String sport_overview_mutual_one(String a);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {a} and {b}'**
+  String sport_overview_mutual_two(String a, String b);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {a}, {b} and {c}'**
+  String sport_overview_mutual_three(String a, String b, String c);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game'**
+  String get sport_overview_create_game;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update your Following. Try again.'**
+  String get sport_overview_follow_failed;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'You must follow at least one sport.'**
+  String get sport_overview_unfollow_last;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'You play this sport, so you can\'t unfollow it.'**
+  String get sport_overview_unfollow_practicing;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your primary sport, so you can\'t unfollow it.'**
+  String get sport_overview_unfollow_primary;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to create profile?'**
+  String get sport_overview_join_profile_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'You need a {sport} profile to join. It adds {sport} to the sports you play and follow.'**
+  String sport_overview_join_profile_text(String sport);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get sport_overview_join_profile_yes;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get sport_overview_join_profile_no;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create your profile, so you haven\'t joined. Try again.'**
+  String get sport_overview_join_profile_failed;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} AED / hour'**
+  String sport_overview_space_price(String price);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} players'**
+  String sport_overview_space_capacity(int count);
+
+  /// KAN-622 entry from a sport chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {sport} page'**
+  String sport_overview_open_page(String sport);
 }
 
 class _AppLocalizationsDelegate

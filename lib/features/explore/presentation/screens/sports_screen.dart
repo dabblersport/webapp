@@ -29,6 +29,7 @@ import 'package:dabbler/features/venues/presentation/providers/venues_with_sport
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
+import 'package:dabbler/features/sports/presentation/widgets/sport_page_link.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// No design frame exists for this screen (route `/sports-explore`): it is
@@ -912,6 +913,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           leadingIcon: _sportIcon(name),
           onTap: onTap,
         ),
+        if (selected && name.trim().toLowerCase() != 'all')
+          SportPageLink(sportName: name),
         if (showCount) ...[
           const DabblerGap.h(DabblerSpacing.space1),
           DabblerBadge(label: '$venueCount'),

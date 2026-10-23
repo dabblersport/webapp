@@ -23,6 +23,10 @@ class FeatureFlags {
   /// Games & Matches
   static const bool enableGameBrowsing = true;
 
+  /// KAN-622: the public Sport Overview page (a sport's listings and tagged
+  /// posts). On in Alpha; every entry point and the route are gated on it.
+  static const bool sportOverview = true;
+
   /// Central MVP feature flags (UI gating only; do not delete code).
   static const bool socialFeed = true;
   // KAN-554: messaging launch. The master flag for game chat and direct

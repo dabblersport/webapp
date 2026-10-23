@@ -78,6 +78,10 @@ class RoutePaths {
   static const String games = '/games';
   static const String social = '/social';
   static const String sportsExplore = '/sports-explore';
+
+  /// KAN-622: the public page of one sport (not a user's Sport Profile).
+  static const String sportOverview = '/sport/:sportId';
+  static String sportOverviewFor(String sportId) => '/sport/$sportId';
   static const String activities = '/activities';
   static const String notifications = '/notifications';
 
@@ -215,6 +219,7 @@ class RouteNames {
 
   // Main Navigation Routes
   static const String sports = 'sports';
+  static const String sportOverview = 'sport-overview';
   static const String community = 'community';
   static const String venuesTab = 'venues-tab';
   static const String gamesTab = 'games-tab';
