@@ -1,6 +1,5 @@
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/venues/experiment/places_ui_kit_experiment.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -9,7 +8,11 @@ class _Host implements PlacesUiKitHost {
   Widget? result = const SizedBox(key: ValueKey('google'));
 
   @override
-  Widget? buildCover(String placeId, {required double height}) {
+  Widget? buildCover(
+    String placeId, {
+    required double height,
+    required Widget fallback,
+  }) {
     builds++;
     return result;
   }
@@ -122,6 +125,6 @@ void main() {
     );
     expect(g.used, 3);
     expect(g.remaining, 0);
-    expect(kPlacesAttemptCeiling, 2000);
+    expect(kPlacesAttemptCeiling, lessThan(200));
   });
 }

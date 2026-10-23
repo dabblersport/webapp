@@ -59,9 +59,11 @@ const List<PlacesExperimentVenue> kPlacesExperimentVenues = [
   ),
 ];
 
-/// Hard ceiling on Google request/load attempts for the whole experiment
-/// (ticket section 9). Matching attempts count against the same ceiling.
-const int kPlacesAttemptCeiling = 2000;
+/// Hard ceiling on UI Kit loads per day. The owner set hard Google quotas of
+/// 200 UI Kit queries and 20 Text Search requests a day for the experiment
+/// project; this guard stays below both (the native side keeps the
+/// authoritative persisted count, 150 loads and 12 searches a day).
+const int kPlacesAttemptCeiling = 150;
 
 /// Counts attempts before they are made. An app counter does not guarantee
 /// no charge (budget alerts and quotas still apply); it is the conservative
@@ -90,15 +92,28 @@ class PlacesAttemptGuard {
 /// native integration once credentials exist; absent today.
 abstract class PlacesUiKitHost {
   /// A widget that loads [placeId] inside the existing cover slot, or null
-  /// when this host cannot show it. The host reserves an attempt on
-  /// [PlacesExperiment.guard] before each real load.
-  Widget? buildCover(String placeId, {required double height});
+  /// when this host cannot show it. The host reserves one load on its own
+  /// guard when the native component is really created, and shows [fallback]
+  /// when the budget is spent or the load cannot start.
+  Widget? buildCover(
+    String placeId, {
+    required double height,
+    required Widget fallback,
+  });
 }
 
 /// Experiment-only manifest of confirmed Google Place IDs by Supabase id.
-/// Empty until Phase B (matching) runs; Place IDs may be retained, other
-/// Google content may not.
-const Map<String, String> kPlacesManifest = <String, String>{};
+/// Filled from Phase B (matching); Place IDs may be retained, other Google
+/// content may not.
+const Map<String, String> kPlacesManifest = <String, String>{
+  '85de82d7-9470-408c-ba3d-3559ea9248b6': 'ChIJEZX1qaBpXz4RE9thNcl8NEM',
+  'c68d6c80-54a4-4d17-ac93-395be1fa8ba4': 'ChIJNezLq2lpXz4Rkh7EgOuQ9BM',
+  '387f6a70-760b-47d5-a991-495d07aa869f': 'ChIJe1nHNaJtXz4RYSC415CaLr8',
+  'c5aefd96-474d-4171-b7e6-64155a1d6fa3': 'ChIJvcNC9OBrXz4RvlQ5KYDxZTs',
+  '069a13d4-8994-462c-9226-0024d1d4006c': 'ChIJ7_SW41JlXz4Rpz6SWh9213U',
+  'e91d8b43-360f-4da6-ad0b-d89b5402db85': 'ChIJR35g9yETXz4RDpnjxl-PExs',
+  'cbcb52c5-9ffd-42e3-bec3-a3447a18cf3f': 'ChIJPV1IjLVpXz4RYyUnLIrLa_o',
+};
 
 class PlacesExperiment {
   PlacesExperiment._();
@@ -138,5 +153,6 @@ Widget experimentCover({
   final host = PlacesExperiment.host;
   if (placeId == null || host == null) return baseline;
   if (PlacesExperiment.guard.remaining <= 0) return baseline;
-  return host.buildCover(placeId, height: height) ?? baseline;
+  return host.buildCover(placeId, height: height, fallback: baseline) ??
+      baseline;
 }

@@ -142,6 +142,13 @@ final class NativeSplash {
   func didInitializeImplicitFlutterEngine(_ engineBridge: FlutterImplicitEngineBridge) {
     GeneratedPluginRegistrant.register(with: engineBridge.pluginRegistry)
 
+    // KAN-629 experiment: registers the platform view and channel only. The
+    // Places SDK is not initialised and nothing is requested until Dart calls
+    // `configure`, which only the default-off PLACES_UI_KIT_EXPERIMENT does.
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "PlacesExperiment") {
+      PlacesExperimentBridge.register(with: registrar)
+    }
+
     // Flutter's splash calls `handoff` once it has painted its first animation
     // frame: reply with the loop phase, then drop the native overlay.
     let channel = FlutterMethodChannel(
