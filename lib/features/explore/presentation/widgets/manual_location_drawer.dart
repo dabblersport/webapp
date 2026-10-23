@@ -189,16 +189,30 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
     setState(() => _isLoading = true);
 
     try {
-      await _locationService.fetchLocation(requestPermission: true);
+      // The device's own coordinates become the active location (KAN-589);
+      // the OS permission is asked at most once, inside the GPS service.
+      final AutoSwitchResult r = await ref
+          .read(activeLocationProvider.notifier)
+          .switchToAuto();
 
       if (mounted) {
-        Navigator.pop(context);
-        toast.show(
-          DabblerToastSpec(
-            message: l10n.manual_location_updated_toast,
-            tone: DabblerToastTone.success,
-          ),
-        );
+        if (r == AutoSwitchResult.applied) {
+          Navigator.pop(context);
+          toast.show(
+            DabblerToastSpec(
+              message: l10n.manual_location_updated_toast,
+              tone: DabblerToastTone.success,
+            ),
+          );
+        } else {
+          toast.show(
+            DabblerToastSpec(
+              message: r == AutoSwitchResult.denied
+                  ? l10n.location_intro_denied
+                  : l10n.location_timeout,
+            ),
+          );
+        }
       }
     } catch (e) {
       if (mounted) {

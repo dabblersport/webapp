@@ -95,6 +95,28 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
 
   AreaRepository get _areas => ref.read(areaRepositoryV2Provider);
 
+  /// A location that is only a point (KAN-589, CPO): the coordinates are the
+  /// location and the Area is optional extra information, so a point outside
+  /// the covered Areas (or one the lookup could not reach) still works.
+  Area _pointArea(double lat, double lng) => Area(
+    id: 'point',
+    name: '',
+    district: '',
+    city: '',
+    country: '',
+    centerLat: lat,
+    centerLng: lng,
+  );
+
+  /// The Area of a point, or the coordinates-only Area when there is none.
+  Future<Area> _areaOrPoint(
+    double lat,
+    double lng, {
+    String? hintAreaId,
+  }) async =>
+      await _resolveArea(lat, lng, hintAreaId: hintAreaId) ??
+      _pointArea(lat, lng);
+
   @override
   Future<ActiveLocationState> build() async {
     // Keep alive so nearby feeds don't re-initialise on navigation.
@@ -165,12 +187,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       if (primary == null) return null;
       if (primary.lat == null || primary.lng == null) return null;
 
-      final area = await _resolveArea(
+      final area = await _areaOrPoint(
         primary.lat!,
         primary.lng!,
         hintAreaId: primary.areaId,
       );
-      if (area == null) return null;
 
       return ActiveLocationReady(
         ActiveLocation(
@@ -224,17 +245,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
           return;
         }
 
-        final area = await _resolveArea(result.lat, result.lng);
-        if (area == null) {
-          if (settleWhenUnsaved && state.valueOrNull is ActiveLocationLoading) {
-            // Offline (KAN-607): keep the last saved area; with none, the chip
-            // reads "Set location" and opens the manual drawer, never an
-            // English error string.
-            final last = await _lastKnownReady();
-            state = AsyncData(last ?? ActiveLocationDenied());
-          }
-          return;
-        }
+        final area = await _areaOrPoint(result.lat, result.lng);
 
         final savedLabel = await _autoSavedLabel(area);
 
@@ -296,8 +307,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
 
   Future<void> _applyDeviceFix(LocationSuccess fix) async {
     if (await _isManual()) return;
-    final area = await _resolveArea(fix.lat, fix.lng);
-    if (area == null) return;
+    final area = await _areaOrPoint(fix.lat, fix.lng);
     final savedLabel = await _autoSavedLabel(area);
     await _recordAutoFix(area, fix.lat, fix.lng, savedLabel: savedLabel);
     final current = state.valueOrNull;
@@ -322,11 +332,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   Future<ActiveLocationState> _stateFromGpsResult(LocationResult result) async {
     switch (result) {
       case LocationSuccess(:final lat, :final lng):
-        final area = await _resolveArea(lat, lng);
-        if (area == null) {
-          // Offline (KAN-607): keep the last saved area, else "Set location".
-          return await _lastKnownReady() ?? ActiveLocationDenied();
-        }
+        final area = await _areaOrPoint(lat, lng);
         return ActiveLocationReady(
           ActiveLocation(
             lat: lat,
@@ -415,16 +421,11 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     if (location.lat == null || location.lng == null) return;
     state = AsyncData(ActiveLocationLoading());
 
-    final area = await _resolveArea(
+    final area = await _areaOrPoint(
       location.lat!,
       location.lng!,
       hintAreaId: location.areaId,
     );
-    if (area == null) {
-      // Offline (KAN-607): keep the last saved area, else "Set location".
-      state = AsyncData(await _lastKnownReady() ?? ActiveLocationDenied());
-      return;
-    }
 
     // An explicit selection (KAN-589): Manual on this device only, kept across
     // a restart, showing the saved place's label. Nothing account-level (the
@@ -432,7 +433,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     try {
       await (await _store())?.setManual(
         city: area.city,
-        area: area.name,
+        area: area.name.isEmpty ? null : area.name,
         lat: location.lat!,
         lng: location.lng!,
         savedLabel: location.effectiveLabel,
@@ -494,13 +495,30 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     try {
       await (await _store())?.setManual(
         city: city ?? label,
-        area: area ?? label,
+        area: area ?? (label.isEmpty ? null : label),
         lat: lat,
         lng: lng,
       );
     } catch (_) {
       // Persistence is best effort; the in-memory choice already applies.
     }
+  }
+
+  /// Switch to a point picked on the map or found by a place search (KAN-589).
+  /// The coordinates are always kept; the nearest Area, when there is one, only
+  /// adds its city and name.
+  Future<void> useMapPoint(double lat, double lng, {String? label}) async {
+    final Area? near = await _resolveArea(lat, lng);
+    final String name = (label ?? '').trim().isNotEmpty
+        ? label!.trim()
+        : (near?.name ?? '');
+    await useManualPoint(
+      lat,
+      lng,
+      name,
+      city: near?.city ?? '',
+      area: name.isEmpty ? null : name,
+    );
   }
 
   /// The user changed the city. A different city clears the previous area and
@@ -547,7 +565,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       if (store == null) return;
       await store.applyAutoFix(
         city: area.city,
-        area: area.name,
+        area: area.name.isEmpty ? null : area.name,
         lat: lat,
         lng: lng,
         explicit: explicit,
@@ -610,15 +628,17 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       ActiveLocation(
         lat: lat,
         lng: lng,
-        area: Area(
-          id: 'manual',
-          name: label,
-          district: label,
-          city: city ?? label,
-          country: 'AE',
-          centerLat: lat,
-          centerLng: lng,
-        ),
+        area: label.isEmpty && (city ?? '').isEmpty
+            ? _pointArea(lat, lng)
+            : Area(
+                id: 'manual',
+                name: label,
+                district: label,
+                city: city ?? label,
+                country: 'AE',
+                centerLat: lat,
+                centerLng: lng,
+              ),
         nearbyRadiusMeters: _radiusOverride ?? 10000,
         source: ActiveLocationSource.manual,
         savedLocationLabel: savedLabel ?? label,

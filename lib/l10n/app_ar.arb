@@ -2664,5 +2664,9 @@
   "saved_places_primary_toggle": "تعيين كموقع أساسي",
   "saved_places_save_action": "حفظ الموقع",
   "saved_places_use_once": "استخدمه مرة واحدة",
-  "location_map_unavailable": "الخريطة غير متاحة"
+  "location_map_unavailable": "الخريطة غير متاحة",
+  "location_current_label": "الموقع الحالي",
+  "location_point_use": "استخدم هذا الموقع",
+  "location_point_selected": "الموقع المحدد",
+  "location_point_hint": "ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس."
 }

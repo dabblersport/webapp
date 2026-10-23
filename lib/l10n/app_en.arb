@@ -2916,5 +2916,13 @@
   "saved_places_use_once": "Use once",
   "@saved_places_use_once": {"description": "KAN-589 Use-once button in the save sheet. AR pending content review."},
   "location_map_unavailable": "Map unavailable",
-  "@location_map_unavailable": {"description": "KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review."}
+  "@location_map_unavailable": {"description": "KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review."},
+  "location_current_label": "Current location",
+  "@location_current_label": {"description": "KAN-589 label of a location that comes from the device GPS. AR pending content review."},
+  "location_point_use": "Use this location",
+  "@location_point_use": {"description": "KAN-589 confirm button of the Set location point picker. AR pending content review."},
+  "location_point_selected": "Selected location",
+  "@location_point_selected": {"description": "KAN-589 label of a point picked on the map without a place name. AR pending content review."},
+  "location_point_hint": "Search a place, or tap the map to move the pin.",
+  "@location_point_hint": {"description": "KAN-589 hint under the Set location map. AR pending content review."}
 }

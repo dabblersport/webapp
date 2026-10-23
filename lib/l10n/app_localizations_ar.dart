@@ -7704,4 +7704,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_map_unavailable => 'الخريطة غير متاحة';
+
+  @override
+  String get location_current_label => 'الموقع الحالي';
+
+  @override
+  String get location_point_use => 'استخدم هذا الموقع';
+
+  @override
+  String get location_point_selected => 'الموقع المحدد';
+
+  @override
+  String get location_point_hint =>
+      'ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس.';
 }
