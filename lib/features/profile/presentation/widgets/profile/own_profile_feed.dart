@@ -108,11 +108,14 @@ class _OwnProfileFeedState extends ConsumerState<OwnProfileFeed> {
     return async.when(
       data: (List<Post> posts) {
         if (posts.isEmpty) return _Empty(empty);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final Post post in posts) resolvePostLayout(post),
-          ],
+        return Padding(
+          padding: DabblerInsets.feedScreen,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (final Post post in posts) resolvePostLayout(post),
+            ],
+          ),
         );
       },
       loading: () => const _Loading(),
