@@ -2914,5 +2914,7 @@
   "saved_places_save_action": "Save location",
   "@saved_places_save_action": {"description": "KAN-589 Save button in the save sheet. AR pending content review."},
   "saved_places_use_once": "Use once",
-  "@saved_places_use_once": {"description": "KAN-589 Use-once button in the save sheet. AR pending content review."}
+  "@saved_places_use_once": {"description": "KAN-589 Use-once button in the save sheet. AR pending content review."},
+  "location_map_unavailable": "Map unavailable",
+  "@location_map_unavailable": {"description": "KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review."}
 }

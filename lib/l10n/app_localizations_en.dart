@@ -7642,4 +7642,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'Use once';
+
+  @override
+  String get location_map_unavailable => 'Map unavailable';
 }

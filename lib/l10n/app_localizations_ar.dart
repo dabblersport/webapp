@@ -7701,4 +7701,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'استخدمه مرة واحدة';
+
+  @override
+  String get location_map_unavailable => 'الخريطة غير متاحة';
 }
