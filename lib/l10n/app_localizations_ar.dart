@@ -7045,34 +7045,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_saved_places => 'الأماكن المحفوظة';
 
   @override
+  String get location_page_private =>
+      'موقعك على هذا الجهاز والأماكن الخاصة التي سمّيتها. لا يرى هذه الصفحة غيرك.';
+
+  @override
+  String get location_saved_places_header => 'الأماكن المحفوظة · خاصة';
+
+  @override
+  String get location_saved_places_note =>
+      'لا يراها غيرك. تُستخدم لتسمية موقعك في التطبيق ولا تظهر في ملفك.';
+
+  @override
   String get location_add_place => 'إضافة مكان';
 
   @override
   String get location_custom_name_required => 'أدخل اسماً لهذا المكان';
-
-  @override
-  String get location_saved_load_error => 'تعذّر تحميل المواقع';
-
-  @override
-  String get location_saved_empty_title => 'لا توجد مواقع محفوظة بعد';
-
-  @override
-  String get location_saved_empty_text =>
-      'احفظ منزلك أو عملك أو أماكنك المفضلة لتتمكن من إضافتها بسرعة إلى منشوراتك.';
-
-  @override
-  String get location_saved_empty_cta => 'أضف أول موقع';
-
-  @override
-  String get location_saved_delete => 'حذف';
-
-  @override
-  String get location_saved_delete_title => 'حذف الموقع؟';
-
-  @override
-  String location_saved_delete_body(String name) {
-    return 'هل تريد إزالة \"$name\" من مواقعك المحفوظة؟';
-  }
 
   @override
   String get sport_overview_title => 'الرياضة';
@@ -7307,20 +7294,92 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_settings_device_title => 'موقع الجهاز';
 
   @override
+  String get location_device_section => 'الموقع على هذا الجهاز';
+
+  @override
   String get location_mode_auto => 'تلقائي';
 
   @override
   String get location_mode_manual => 'يدوي';
 
   @override
-  String get location_saved_set_primary => 'تعيين كموقع أساسي';
+  String get location_mode_auto_hint => 'يتبع موقع هذا الجهاز.';
 
   @override
-  String get location_saved_rename => 'إعادة تسمية';
+  String get location_mode_manual_hint => 'أنت تحدد مكانك.';
 
   @override
-  String get location_saved_rename_title => 'إعادة تسمية الموقع';
+  String get location_mode_change => 'تغيير';
 
   @override
-  String get location_saved_rename_hint => 'اسم مخصص';
+  String get location_mode_none_chosen => 'لم يتم اختيار مكان';
+
+  @override
+  String get saved_places_load_error => 'تعذّر تحميل المواقع';
+
+  @override
+  String get saved_places_save_failed => 'تعذّر حفظ هذا الموقع. حاول مرة أخرى.';
+
+  @override
+  String get saved_places_empty_title => 'لا توجد مواقع محفوظة بعد';
+
+  @override
+  String get saved_places_empty_text =>
+      'احفظ منزلك أو عملك أو أماكنك المفضلة لتتمكن من وسمها بسرعة في المنشورات.';
+
+  @override
+  String get saved_places_add_first => 'أضف أول موقع';
+
+  @override
+  String get saved_places_delete => 'حذف';
+
+  @override
+  String get saved_places_delete_title => 'حذف الموقع؟';
+
+  @override
+  String saved_places_delete_body(String label) {
+    return 'هل تريد إزالة \"$label\" من مواقعك المحفوظة؟';
+  }
+
+  @override
+  String get saved_places_set_primary => 'تعيين كموقع أساسي';
+
+  @override
+  String get saved_places_rename => 'إعادة تسمية';
+
+  @override
+  String get saved_places_rename_title => 'إعادة تسمية الموقع';
+
+  @override
+  String get saved_places_custom_name => 'اسم مخصص';
+
+  @override
+  String get saved_places_label_school => 'المدرسة';
+
+  @override
+  String get saved_places_label_current => 'الحالي';
+
+  @override
+  String get saved_places_save_title => 'حفظ هذا الموقع';
+
+  @override
+  String get saved_places_accuracy_unknown => 'الدقة غير معروفة';
+
+  @override
+  String get saved_places_search_hint => 'ابحث عن مكان…';
+
+  @override
+  String get saved_places_label => 'التسمية';
+
+  @override
+  String get saved_places_custom_hint => 'مثال: النادي الرياضي، بيت الأهل';
+
+  @override
+  String get saved_places_primary_toggle => 'تعيين كموقع أساسي';
+
+  @override
+  String get saved_places_save_action => 'حفظ الموقع';
+
+  @override
+  String get saved_places_use_once => 'استخدمه مرة واحدة';
 }

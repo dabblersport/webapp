@@ -7,9 +7,11 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
+import 'package:dabbler/features/location/presentation/saved_place_labels.dart';
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Bottom sheet for saving or using a GPS-resolved location.
 ///
@@ -63,7 +65,7 @@ class SaveLocationSheet extends ConsumerStatefulWidget {
     return showAppSheet<void>(
       context: context,
       detent: DabblerSheetDetent.content,
-      title: 'Save this location',
+      title: AppLocalizations.of(context).saved_places_save_title,
       builder: (_) => SaveLocationSheet(
         lat: lat,
         lng: lng,
@@ -124,9 +126,9 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     return colors.error;
   }
 
-  String _accuracyText() {
+  String _accuracyText(AppLocalizations l10n) {
     final m = widget.accuracyMeters;
-    if (m == null) return 'Unknown accuracy';
+    if (m == null) return l10n.saved_places_accuracy_unknown;
     return '± ${m.toStringAsFixed(0)} m';
   }
 
@@ -134,7 +136,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     if (!_canSave) return;
     setState(() => _isSaving = true);
 
-    await ref
+    final saved = await ref
         .read(profileLocationNotifierProvider.notifier)
         .saveLocation(
           lat: _lat,
@@ -147,10 +149,17 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
           isPrimary: _isPrimary,
         );
 
-    if (mounted) {
-      setState(() => _isSaving = false);
-      Navigator.of(context).pop();
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+    if (!saved) {
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: AppLocalizations.of(context).saved_places_save_failed,
+        ),
+      );
+      return;
     }
+    Navigator.of(context).pop();
   }
 
   void _useOnce() {
@@ -162,6 +171,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
     final accuracy = _accuracyStatus(colors);
+    final l10n = AppLocalizations.of(context);
 
     // The DabblerSheet owns the surface, the title and the body inset and
     // scrolls; this returns the content only. The keyboard inset is a trailing
@@ -171,7 +181,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
       children: [
         // Mapbox place search
         LocationSearchField(
-          hintText: 'Search for a place…',
+          hintText: l10n.saved_places_search_hint,
           proximity: _activeProximity,
           onSelected: (place) async {
             final repo = ref.read(areaRepositoryV2Provider);
@@ -242,20 +252,20 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             Expanded(
               child: DabblerText(_areaName, style: DabblerType.headline),
             ),
-            DabblerBadge(label: _accuracyText(), status: accuracy),
+            DabblerBadge(label: _accuracyText(l10n), status: accuracy),
           ],
         ),
         const DabblerGap.v(DabblerSpacing.space8),
 
         // Label picker
-        DabblerText('Label', style: DabblerType.headline),
+        DabblerText(l10n.saved_places_label, style: DabblerType.headline),
         const DabblerGap.v(DabblerSpacing.space3),
         Wrap(
           spacing: DabblerSpacing.space3,
           runSpacing: DabblerSpacing.space3,
           children: ProfileLocationLabel.values.map((label) {
             return DabblerChip(
-              label: label.displayName,
+              label: savedPlaceLabelName(l10n, label),
               selected: _selectedLabel == label,
               onTap: () => setState(() => _selectedLabel = label),
             );
@@ -267,7 +277,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
         if (_selectedLabel == ProfileLocationLabel.custom) ...[
           DabblerTextField(
             controller: _customNameController,
-            placeholder: 'e.g. My gym, Parents\' house',
+            placeholder: l10n.saved_places_custom_hint,
             onChanged: (_) => setState(() {}),
           ),
           const DabblerGap.v(DabblerSpacing.space4),
@@ -275,10 +285,10 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
 
         // Primary toggle
         DabblerInputRow(
-          title: 'Set as primary location',
+          title: l10n.saved_places_primary_toggle,
           trailing: DabblerToggle(
             checked: _isPrimary,
-            semanticLabel: 'Set as primary location',
+            semanticLabel: l10n.saved_places_primary_toggle,
             onChanged: (v) => setState(() => _isPrimary = v),
           ),
           onTap: () => setState(() => _isPrimary = !_isPrimary),
@@ -287,7 +297,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
 
         // Save button
         DabblerButton(
-          label: 'Save location',
+          label: l10n.saved_places_save_action,
           fullWidth: true,
           loading: _isSaving,
           disabled: !_canSave || _isSaving,
@@ -298,7 +308,7 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
         // Use once button
         if (widget.onUseOnce != null)
           DabblerButton(
-            label: 'Use once',
+            label: l10n.saved_places_use_once,
             tone: DabblerButtonTone.text,
             fullWidth: true,
             onPressed: _useOnce,

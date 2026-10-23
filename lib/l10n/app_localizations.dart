@@ -12593,6 +12593,24 @@ abstract class AppLocalizations {
   /// **'Saved places'**
   String get location_saved_places;
 
+  /// KAN-589 Location.dc.html L27 page subtitle on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Where you are on this device, and the private places you’ve named. Only you see this page.'**
+  String get location_page_private;
+
+  /// KAN-589 Location.dc.html L27/L30 Saved places section header.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places · Private'**
+  String get location_saved_places_header;
+
+  /// KAN-589 Location.dc.html L27/L30 Saved places privacy note.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you see these. They name your location in the app and are never shown on your profile.'**
+  String get location_saved_places_note;
+
   /// KAN-589 add-a-saved-place action on Settings > Location.
   ///
   /// In en, this message translates to:
@@ -12604,48 +12622,6 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Enter a name for this place'**
   String get location_custom_name_required;
-
-  /// KAN-583 error shown on Settings > Location when the saved places list fails to load.
-  ///
-  /// In en, this message translates to:
-  /// **'Could not load locations'**
-  String get location_saved_load_error;
-
-  /// KAN-583 empty-state title on Settings > Location when the user has no saved places.
-  ///
-  /// In en, this message translates to:
-  /// **'No saved locations yet'**
-  String get location_saved_empty_title;
-
-  /// KAN-583 empty-state body on Settings > Location explaining why to save places.
-  ///
-  /// In en, this message translates to:
-  /// **'Save your home, work, or favourite spots so you can quickly tag them in posts.'**
-  String get location_saved_empty_text;
-
-  /// KAN-583 empty-state button on Settings > Location that starts adding a saved place.
-  ///
-  /// In en, this message translates to:
-  /// **'Add your first location'**
-  String get location_saved_empty_cta;
-
-  /// KAN-583 delete action for a saved place on Settings > Location.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete'**
-  String get location_saved_delete;
-
-  /// KAN-583 confirmation dialog title for deleting a saved place.
-  ///
-  /// In en, this message translates to:
-  /// **'Delete location?'**
-  String get location_saved_delete_title;
-
-  /// KAN-583 confirmation dialog body for deleting a saved place.
-  ///
-  /// In en, this message translates to:
-  /// **'Remove \"{name}\" from your saved locations?'**
-  String location_saved_delete_body(String name);
 
   /// KAN-622 Sport Overview page.
   ///
@@ -13031,41 +13007,179 @@ abstract class AppLocalizations {
   /// **'Device location'**
   String get location_settings_device_title;
 
-  /// KAN-628 label of the device location mode Auto.
+  /// KAN-589 Section heading on Settings > Location above Saved places. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Location on this device'**
+  String get location_device_section;
+
+  /// KAN-589 Segmented option: the logo label follows this device's GPS. AR pending content review.
   ///
   /// In en, this message translates to:
   /// **'Auto'**
   String get location_mode_auto;
 
-  /// KAN-628 label of the device location mode Manual.
+  /// KAN-589 Segmented option: the user picks the place. AR pending content review.
   ///
   /// In en, this message translates to:
   /// **'Manual'**
   String get location_mode_manual;
 
-  /// KAN-628 semantic label (screen-reader) on the set-primary icon button for a saved place.
+  /// KAN-589 Caption under the section when Auto is on. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows this device\'s location.'**
+  String get location_mode_auto_hint;
+
+  /// KAN-589 Caption under the section when Manual is on. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You choose where you are.'**
+  String get location_mode_manual_hint;
+
+  /// KAN-589 Action that opens the City/Area picker in Manual mode. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get location_mode_change;
+
+  /// KAN-589 Manual mode with no place picked yet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No place chosen'**
+  String get location_mode_none_chosen;
+
+  /// KAN-589 Error state of the saved places list. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load locations'**
+  String get saved_places_load_error;
+
+  /// KAN-589 toast when saving a place fails; the sheet stays open. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t save this location. Try again.'**
+  String get saved_places_save_failed;
+
+  /// KAN-589 Empty state title. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved locations yet'**
+  String get saved_places_empty_title;
+
+  /// KAN-589 Empty state body. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your home, work, or favourite spots so you can quickly tag them in posts.'**
+  String get saved_places_empty_text;
+
+  /// KAN-589 Empty state action. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first location'**
+  String get saved_places_add_first;
+
+  /// KAN-589 Swipe action and dialog confirm for a saved place. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get saved_places_delete;
+
+  /// KAN-589 Delete confirmation title. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete location?'**
+  String get saved_places_delete_title;
+
+  /// KAN-589 Delete confirmation body. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{label}\" from your saved locations?'**
+  String saved_places_delete_body(String label);
+
+  /// KAN-589 Accessibility label of the star button. AR pending content review.
   ///
   /// In en, this message translates to:
   /// **'Set as primary'**
-  String get location_saved_set_primary;
+  String get saved_places_set_primary;
 
-  /// KAN-628 semantic label (screen-reader) on the rename icon button for a saved place.
+  /// KAN-589 Accessibility label of the edit button. AR pending content review.
   ///
   /// In en, this message translates to:
   /// **'Rename'**
-  String get location_saved_rename;
+  String get saved_places_rename;
 
-  /// KAN-628 title of the rename dialog for a saved place.
+  /// KAN-589 Rename dialog title. AR pending content review.
   ///
   /// In en, this message translates to:
   /// **'Rename location'**
-  String get location_saved_rename_title;
+  String get saved_places_rename_title;
 
-  /// KAN-628 placeholder in the rename dialog text field.
+  /// KAN-589 Placeholder of the custom name field. AR pending content review.
   ///
   /// In en, this message translates to:
   /// **'Custom name'**
-  String get location_saved_rename_hint;
+  String get saved_places_custom_name;
+
+  /// KAN-589 Saved place label chip. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get saved_places_label_school;
+
+  /// KAN-589 Saved place label chip. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get saved_places_label_current;
+
+  /// KAN-589 Title of the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this location'**
+  String get saved_places_save_title;
+
+  /// KAN-589 Badge when the fix has no accuracy. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown accuracy'**
+  String get saved_places_accuracy_unknown;
+
+  /// KAN-589 Search field hint in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a place…'**
+  String get saved_places_search_hint;
+
+  /// KAN-589 Heading of the label chips in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get saved_places_label;
+
+  /// KAN-589 Placeholder for a custom label name. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. My gym, Parents\' house'**
+  String get saved_places_custom_hint;
+
+  /// KAN-589 Toggle row in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as primary location'**
+  String get saved_places_primary_toggle;
+
+  /// KAN-589 Save button in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save location'**
+  String get saved_places_save_action;
+
+  /// KAN-589 Use-once button in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Use once'**
+  String get saved_places_use_once;
 }
 
 class _AppLocalizationsDelegate

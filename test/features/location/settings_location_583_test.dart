@@ -75,7 +75,7 @@ void main() {
     await loadRenderFonts();
   });
 
-  testWidgets('a device with a city shows it with both change actions', (
+  testWidgets('a device with a city shows the Auto / Manual device section', (
     tester,
   ) async {
     await _pump(
@@ -89,16 +89,17 @@ void main() {
         ),
       ),
     );
-    expect(find.text('Dubai Marina'), findsOneWidget);
-    expect(find.text(l.location_use_current), findsOneWidget);
-    expect(find.text(l.listing_set_location), findsOneWidget);
+    // KAN-589 layout: the Auto / Manual control replaces the KAN-583
+    // "Use current location" button.
+    expect(find.text('Location on this device'), findsOneWidget);
+    expect(find.text('Auto'), findsOneWidget);
+    expect(find.text('Manual'), findsOneWidget);
+    expect(find.text(l.location_use_current), findsNothing);
   });
 
-  testWidgets('no city: only the city-first Select city prompt', (
-    tester,
-  ) async {
+  testWidgets('no city: no Use current location action', (tester) async {
     await _pump(tester, ActiveLocationDenied());
     expect(find.text(l.location_use_current), findsNothing);
-    expect(find.text(l.location_intro_select_city), findsWidgets);
+    expect(find.text('Location on this device'), findsOneWidget);
   });
 }
