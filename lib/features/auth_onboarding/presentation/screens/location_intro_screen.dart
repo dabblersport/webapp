@@ -1,3 +1,4 @@
+import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -9,14 +10,21 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// The full-screen location introduction that follows Welcome / Welcome Back
-/// (KAN-489): the illustrated map, the approved copy, and two actions. The
+/// The full-screen location introduction that follows Welcome / Welcome Back,
+/// drawn as the prompt frame of `Location.dc.html` (KAN-640): the location
+/// tile, "Welcome, <first name>", "Where do you play?", its line, and three
+/// stacked buttons (Use my location, Enter location manually, Maybe later). The
 /// system permission prompt appears only when the user taps "Use my location";
 /// "Select city" opens the manual drawer; "Maybe later" (and back) finishes the
 /// intro at once (KAN-640): no GPS, no area, no city, nothing asked of the OS.
 /// A city already chosen is kept; listings gate on a city at point of use.
 class LocationIntroScreen extends ConsumerStatefulWidget {
-  const LocationIntroScreen({super.key, this.userId, this.onFinish});
+  const LocationIntroScreen({
+    super.key,
+    this.userId,
+    this.onFinish,
+    this.displayNameLoader,
+  });
 
   /// Whose presentation to record (null: nothing is recorded).
   final String? userId;
@@ -24,8 +32,10 @@ class LocationIntroScreen extends ConsumerStatefulWidget {
   /// Where to go on; defaults to Home.
   final VoidCallback? onFinish;
 
-  /// The bundled PNG copy of the supplied `Location.md` artwork.
-  static const String artAsset = 'assets/images/location_intro.webp';
+  /// Test seam: how the greeting's name is read (default: the signed-in
+  /// user's profile). A null or empty answer draws no greeting line.
+  @visibleForTesting
+  final Future<String?> Function()? displayNameLoader;
 
   @override
   ConsumerState<LocationIntroScreen> createState() =>
@@ -35,9 +45,32 @@ class LocationIntroScreen extends ConsumerStatefulWidget {
 class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
   bool _finished = false;
 
+  /// The user's first name for the greeting; null until known (no line).
+  String? _firstName;
+
+  Future<String?> _readDisplayName() async {
+    final profile = await AuthService().getUserProfile(
+      fields: const ['display_name'],
+    );
+    return (profile?['display_name'] as String?);
+  }
+
+  Future<void> _loadName() async {
+    try {
+      final raw = await (widget.displayNameLoader ?? _readDisplayName)();
+      final name = raw?.trim() ?? '';
+      if (name.isEmpty || !mounted) return;
+      final space = name.indexOf(RegExp(r'\s'));
+      setState(() => _firstName = space < 0 ? name : name.substring(0, space));
+    } catch (_) {
+      // No name: the greeting line is simply not drawn.
+    }
+  }
+
   @override
   void initState() {
     super.initState();
+    _loadName();
     // Presented: never show it to this user on this device again.
     final id = widget.userId;
     if (id != null) {
@@ -115,6 +148,7 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
       if (next.phase == LocationIntroPhase.done) _finish(next.outcome);
     });
     final controller = ref.read(locationIntroControllerProvider.notifier);
+    final colors = DabblerColors.of(context);
 
     return PopScope(
       // Back behaves like "Maybe later": it finishes the intro.
@@ -123,41 +157,57 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
         if (!didPop) _maybeLater();
       },
       child: DabblerFlowPage(
-        background: Semantics(
-          image: true,
-          label: l.location_intro_art,
-          child: Image.asset(
-            LocationIntroScreen.artAsset,
-            fit: BoxFit.cover,
-            alignment: Alignment.center,
-          ),
-        ),
-        spreadChildren: true,
-        bodyTopPadding: DabblerSpacing.space8,
-        bodyBottomPadding: DabblerSpacing.space4,
-        footerBottomPadding: DabblerSpacing.space6,
+        // `Location.dc.html` prompt frame: 36 above, 24 between the tile, the
+        // text block and the banner area.
+        bodyTopPadding: DabblerSpacing.space10,
+        bodyGap: DabblerSpacing.space8,
         content: <Widget>[
-          const DabblerGap.v(DabblerSpacing.space1),
-          DabblerCard(
-            variant: DabblerCardVariant.white,
-            borderOutside: true,
-            radius: DabblerRadius.xl,
-            padding: DabblerInsets.card,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: <Widget>[
+          Align(
+            alignment: AlignmentDirectional.centerStart,
+            child: ExcludeSemantics(
+              child: DabblerSurface(
+                radius: DabblerRadius.lg,
+                fill: DabblerSurface.tintedFillOf(colors, colors.brandPrimary),
+                borderColor: DabblerSurface.tintedBorderOf(
+                  colors,
+                  colors.brandPrimary,
+                ),
+                borderWidth: DabblerSizing.borderDefault,
+                width: DabblerSpacing.space8 + DabblerSpacing.space10,
+                height: DabblerSpacing.space8 + DabblerSpacing.space10,
+                center: true,
+                child: DabblerIcon(
+                  'location',
+                  weight: DabblerIconWeight.bold,
+                  size: DabblerSizing.iconLg,
+                  color: colors.brandPrimary,
+                ),
+              ),
+            ),
+          ),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: <Widget>[
+              if (_firstName != null) ...<Widget>[
                 DabblerText(
-                  l.location_intro_headline,
-                  style: DabblerType.displaySection,
+                  l.location_intro_kicker(_firstName!),
+                  style: DabblerType.subheadline,
+                  weight: DabblerTextWeight.semibold,
+                  tone: DabblerTextTone.brand,
                 ),
                 const DabblerGap.v(DabblerSpacing.space3),
-                DabblerText(
-                  l.location_intro_body,
-                  style: DabblerType.lead,
-                  tone: DabblerTextTone.secondary,
-                ),
               ],
-            ),
+              DabblerText(
+                l.location_intro_title,
+                style: DabblerType.displayScreen,
+              ),
+              const DabblerGap.v(DabblerSpacing.space3),
+              DabblerText(
+                l.location_intro_subtitle,
+                style: DabblerType.lead,
+                tone: DabblerTextTone.secondary,
+              ),
+            ],
           ),
         ],
         primaryLabel: l.location_intro_cta,
@@ -168,13 +218,12 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: <Widget>[
             DabblerButton(
-              label: l.location_intro_select_city,
-              icon: 'location',
+              label: l.location_intro_manual,
               tone: DabblerButtonTone.outlined,
               fullWidth: true,
               onPressed: _setManually,
             ),
-            const DabblerGap.v(DabblerSpacing.space3),
+            const DabblerGap.v(DabblerSpacing.space4),
             DabblerButton(
               label: l.location_intro_later,
               tone: DabblerButtonTone.neutral,

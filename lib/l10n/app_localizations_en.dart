@@ -7249,6 +7249,21 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_intro_select_city => 'Select city';
 
   @override
+  String location_intro_kicker(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
+  String get location_intro_title => 'Where do you play?';
+
+  @override
+  String get location_intro_subtitle =>
+      'Your city decides which games, venues and meetups you see. Adding an area turns on distances.';
+
+  @override
+  String get location_intro_manual => 'Enter location manually';
+
+  @override
   String get location_settings_device_title => 'Device location';
 
   @override
