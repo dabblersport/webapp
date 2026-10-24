@@ -208,6 +208,7 @@ List<VenueWithSportModel> _venues() => const <VenueWithSportModel>[
     id: 'v1',
     sportId: 's1',
     nameEn: 'Dubai Sports City Pitch 3',
+    coverUrl: 'https://example.invalid/pitch3.jpg',
     city: 'Dubai',
     area: 'Sports City',
     isIndoor: false,
@@ -548,6 +549,14 @@ void main() {
       expect(find.text(dir == 'rtl' ? 'ملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
       expect(find.byType(DabblerCardVenue), findsWidgets);
+      // KAN-638: details-only cards. No cover, with or without a photo URL
+      // (Pitch 3 has one, the other two do not), and no photo request.
+      expect(find.byType(DabblerImage), findsNothing);
+      for (final DabblerCardVenue card in tester.widgetList<DabblerCardVenue>(
+        find.byType(DabblerCardVenue),
+      )) {
+        expect(card.cover, isNull);
+      }
       // The favourite is the bare DS heart (Listings 2026-10-08b): no chip,
       // no share group.
       expect(find.byType(DabblerListingSocial), findsNothing);

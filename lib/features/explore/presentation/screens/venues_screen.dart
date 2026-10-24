@@ -653,11 +653,10 @@ class _VenueCardData {
 }
 
 /// A venue on the design system's venue card (`Listings.dc.html:750-820`):
-/// the 170px cover (a placeholder until the venue has a photo), the aggregate
-/// rating, the "Top rated" / "Verified" / "Open now" badges, the distance chip,
-/// every sport and the keyed facilities; the heart toggles the favourite
-/// (`toggle_favorite`, `favorites` table) and the share glyph shares the
-/// venue's link.
+/// no cover (KAN-638), the aggregate rating, the "Top rated" / "Verified" /
+/// "Open now" badges, the distance chip, every sport and the keyed
+/// facilities; the heart toggles the favourite (`toggle_favorite`, `favorites`
+/// table) and the share glyph shares the venue's link.
 class _VenueCard extends ConsumerStatefulWidget {
   const _VenueCard({required this.venue});
 
@@ -746,14 +745,8 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
 
     return DabblerCardVenue(
       name: venue.name,
-      // The cover slot always draws; without a photo it is the sunken fill
-      // with the gallery glyph.
-      cover: DabblerImage(
-        url: venue.coverUrl,
-        height: DabblerCardVenue.coverHeight,
-        radius: BorderRadius.zero,
-        placeholderGlyph: true,
-      ),
+      // KAN-638: details-only card; the cover slot is omitted, so no media
+      // space is reserved whether or not the venue has a photo.
       area: locationLine,
       tags: [
         // KAN-446: the tag always shows; without a distance it says so.
