@@ -12,6 +12,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
     show currentUserIdProvider;
 import 'package:dabbler/features/games/providers/games_providers.dart'
     as games_providers;
+import 'package:dabbler/core/utils/sport_background_assets.dart';
 import 'package:dabbler/features/venues/providers.dart';
 import 'package:dabbler/features/venues/presentation/widgets/venue_amenity_chips.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
@@ -47,6 +48,38 @@ String _labelFor(String sport) =>
 String _sportKey(String sport) {
   final key = sport.trim().toLowerCase();
   return key == 'soccer' ? 'football' : key;
+}
+
+/// A Spaces card's media: the bundled background for the space's own sport key
+/// or the plain placeholder with the sport icon when the key has none.
+class _SpaceMedia extends StatelessWidget {
+  final String sportKey;
+  const _SpaceMedia({required this.sportKey});
+
+  @override
+  Widget build(BuildContext context) {
+    final icon = DabblerSportIcon.fromKey(
+      sportKey,
+      size: DabblerSizing.iconRow,
+    );
+    final background = sportBackgroundWidget(
+      sportKey,
+      widgetKey: ValueKey<String>('space-background-$sportKey'),
+    );
+    if (background == null) {
+      return DabblerImage(
+        height: DabblerSizing.railCardHeight,
+        radius: BorderRadius.zero,
+        overlay: icon,
+      );
+    }
+    // The artwork names the sport, so the icon overlay is not repeated on it.
+    return SizedBox(
+      height: DabblerSizing.railCardHeight,
+      width: double.infinity,
+      child: background,
+    );
+  }
 }
 
 class VenueDetailScreen extends ConsumerStatefulWidget {
@@ -236,14 +269,7 @@ class _VenueDetailScreenState extends ConsumerState<VenueDetailScreen> {
                       const DabblerGap.h(DabblerSpacing.space4),
                   itemBuilder: (_, i) => DabblerCard(
                     width: DabblerSizing.railCardWidth,
-                    media: DabblerImage(
-                      height: DabblerSizing.railCardHeight,
-                      radius: BorderRadius.zero,
-                      overlay: DabblerSportIcon.fromKey(
-                        _sportKey(sports[i]),
-                        size: DabblerSizing.iconRow,
-                      ),
-                    ),
+                    media: _SpaceMedia(sportKey: _sportKey(sports[i])),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
