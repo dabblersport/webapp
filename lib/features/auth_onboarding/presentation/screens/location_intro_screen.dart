@@ -1,19 +1,25 @@
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/providers.dart';
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 /// The full-screen location introduction that follows Welcome / Welcome Back,
-/// drawn as the prompt frame of `Location.dc.html` (KAN-640): the location
-/// tile, "Welcome, <first name>", "Where do you play?", its line, and three
-/// stacked buttons (Use my location, Enter location manually, Maybe later). The
+/// drawn as the prompt frame of `Location.dc.html` (KAN-640): the Location
+/// background, a country pill, a card ("Welcome, first name", "Where do you
+/// play?", its line), a banner after a refusal or a missing GPS fix, and a
+/// card of three buttons (Use my location, Enter location manually, Maybe
+/// later). The
 /// system permission prompt appears only when the user taps "Use my location";
 /// "Select city" opens the manual drawer; "Maybe later" (and back) finishes the
 /// intro at once (KAN-640): no GPS, no area, no city, nothing asked of the OS.
@@ -25,6 +31,10 @@ class LocationIntroScreen extends ConsumerStatefulWidget {
     this.onFinish,
     this.displayNameLoader,
   });
+
+  /// The Location background (`assets/location-intro-background.webp` in
+  /// the design project is this same image).
+  static const String artAsset = 'assets/images/location_intro.webp';
 
   /// Whose presentation to record (null: nothing is recorded).
   final String? userId;
@@ -78,42 +88,68 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
     }
   }
 
-  /// Tells the user, once and without holding them here, why nearby games may
-  /// be missing. Never shown for an allowed permission.
-  void _hint(LocationIntroOutcome? outcome) {
-    final l = AppLocalizations.of(context);
-    final gateway = ref.read(locationPermissionGatewayProvider);
-    final (String message, bool serviceSettings)? hint = switch (outcome) {
-      LocationIntroOutcome.denied => (l.location_intro_denied, false),
-      LocationIntroOutcome.deniedForever => (
-        l.location_intro_denied_forever,
-        false,
-      ),
-      LocationIntroOutcome.serviceOff => (l.location_intro_service_off, true),
-      _ => null,
-    };
-    if (hint == null) return;
-    final canOpen =
-        !kIsWeb &&
-        (outcome == LocationIntroOutcome.deniedForever ||
-            outcome == LocationIntroOutcome.serviceOff);
-    DabblerToasts.show(
-      DabblerToastSpec(
-        message: hint.$1,
-        tone: DabblerToastTone.info,
-        action: canOpen
-            ? DabblerToastAction(
-                label: l.location_intro_open_settings,
-                onPressed: () {
-                  if (hint.$2) {
-                    gateway.openLocationSettings();
-                  } else {
-                    gateway.openAppSettings();
-                  }
-                },
-              )
-            : null,
-      ),
+  /// What the permission answer left on screen (`Location.dc.html` frames
+  /// 03 and 04): the banner above the buttons and the primary's role.
+  _Notice? _notice;
+
+  void _onAnswer(LocationIntroOutcome? outcome) {
+    switch (outcome) {
+      case LocationIntroOutcome.granted:
+        _finish();
+      case LocationIntroOutcome.denied:
+      case LocationIntroOutcome.deniedForever:
+        setState(() => _notice = _Notice.denied);
+      case LocationIntroOutcome.serviceOff:
+      case LocationIntroOutcome.unavailable:
+      case null:
+        setState(() => _notice = _Notice.noGps);
+    }
+  }
+
+  /// The primary: ask once; after a refusal it opens Settings (never asks
+  /// again); with no GPS fix it tries again.
+  void _primary() {
+    if (_notice == _Notice.denied) {
+      ref.read(locationPermissionGatewayProvider).openAppSettings();
+      return;
+    }
+    setState(() => _notice = null);
+    ref.read(locationIntroControllerProvider.notifier).useMyLocation();
+  }
+
+  Future<void> _openCountry() {
+    return showAppSheet<void>(
+      context: context,
+      title: AppLocalizations.of(context).location_intro_country_title,
+      detent: DabblerSheetDetent.content,
+      showCloseButton: false,
+      builder: (BuildContext ctx) {
+        return Consumer(
+          builder: (BuildContext ctx, WidgetRef ref, Widget? _) {
+            final String current = normalizeServiceRegion(
+              ref.watch(selectedCountryProvider).valueOrNull,
+            );
+            final String lang = ref.watch(localeProvider).languageCode;
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                for (final (String c, String label) in serviceRegionOptions(
+                  AppLocalizations.of(ctx),
+                  lang,
+                ))
+                  DabblerInputRow.option(
+                    title: label,
+                    selected: c == current,
+                    onTap: () {
+                      ref.read(selectedCountryProvider.notifier).setCountry(c);
+                      Navigator.of(ctx).maybePop();
+                    },
+                  ),
+              ],
+            );
+          },
+        );
+      },
     );
   }
 
@@ -128,10 +164,9 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
     if (s is ActiveLocationReady || s is ActiveLocationCityOnly) _finish();
   }
 
-  void _finish([LocationIntroOutcome? outcome]) {
+  void _finish() {
     if (_finished) return;
     _finished = true;
-    _hint(outcome);
     final go = widget.onFinish;
     if (go != null) {
       go();
@@ -144,11 +179,15 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     ref.listen<LocationIntroState>(locationIntroControllerProvider, (_, next) {
-      // The OS answered (any answer): on to the destination at once.
-      if (next.phase == LocationIntroPhase.done) _finish(next.outcome);
+      if (next.phase == LocationIntroPhase.done) _onAnswer(next.outcome);
     });
-    final controller = ref.read(locationIntroControllerProvider.notifier);
-    final colors = DabblerColors.of(context);
+    final detecting =
+        ref.watch(locationIntroControllerProvider).phase ==
+        LocationIntroPhase.requesting;
+    final region = normalizeServiceRegion(
+      ref.watch(selectedCountryProvider).valueOrNull,
+    );
+    final notice = _notice;
 
     return PopScope(
       // Back behaves like "Maybe later": it finishes the intro.
@@ -157,81 +196,209 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
         if (!didPop) _maybeLater();
       },
       child: DabblerFlowPage(
-        // `Location.dc.html` prompt frame: 36 above, 24 between the tile, the
-        // text block and the banner area.
-        bodyTopPadding: DabblerSpacing.space10,
-        bodyGap: DabblerSpacing.space8,
-        content: <Widget>[
-          Align(
-            alignment: AlignmentDirectional.centerStart,
-            child: ExcludeSemantics(
-              child: DabblerSurface(
-                radius: DabblerRadius.lg,
-                fill: DabblerSurface.tintedFillOf(colors, colors.brandPrimary),
-                borderColor: DabblerSurface.tintedBorderOf(
-                  colors,
-                  colors.brandPrimary,
-                ),
-                borderWidth: DabblerSizing.borderDefault,
-                width: DabblerSpacing.space8 + DabblerSpacing.space10,
-                height: DabblerSpacing.space8 + DabblerSpacing.space10,
-                center: true,
-                child: DabblerIcon(
-                  'location',
-                  weight: DabblerIconWeight.bold,
-                  size: DabblerSizing.iconLg,
-                  color: colors.brandPrimary,
-                ),
-              ),
-            ),
+        // `Location.dc.html` prompt frame: the Location background behind a
+        // country pill, a text card, the banner and a button card.
+        background: Semantics(
+          image: true,
+          label: l.location_intro_art,
+          child: Image.asset(
+            LocationIntroScreen.artAsset,
+            fit: BoxFit.cover,
+            alignment: const Alignment(0, 0.1),
           ),
+        ),
+        spreadChildren: true,
+        bodyTopPadding: DabblerSpacing.space4,
+        bodyGap: DabblerSpacing.space4,
+        bodyBottomPadding: DabblerSpacing.space9,
+        footerBottomPadding: 0,
+        content: <Widget>[
           Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              if (_firstName != null) ...<Widget>[
-                DabblerText(
-                  l.location_intro_kicker(_firstName!),
-                  style: DabblerType.subheadline,
-                  weight: DabblerTextWeight.semibold,
-                  tone: DabblerTextTone.brand,
+              _CountryPill(
+                region: region,
+                name: serviceRegionLabel(l, region),
+                changeLabel: l.location_intro_country_change,
+                onTap: _openCountry,
+              ),
+              const DabblerGap.v(DabblerSpacing.space4),
+              DabblerCard(
+                variant: DabblerCardVariant.white,
+                borderOutside: true,
+                radius: DabblerRadius.xxl,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: DabblerSpacing.space7,
+                  vertical: DabblerSpacing.space6,
                 ),
-                const DabblerGap.v(DabblerSpacing.space3),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: <Widget>[
+                    if (_firstName != null) ...<Widget>[
+                      DabblerText(
+                        l.location_intro_kicker(_firstName!),
+                        style: DabblerType.subheadline,
+                        weight: DabblerTextWeight.semibold,
+                        tone: DabblerTextTone.brand,
+                      ),
+                      const DabblerGap.v(DabblerSpacing.space2),
+                    ],
+                    DabblerText(
+                      l.location_intro_title,
+                      style: DabblerType.displayScreen,
+                    ),
+                    const DabblerGap.v(DabblerSpacing.space2),
+                    DabblerText(
+                      l.location_intro_subtitle,
+                      style: DabblerType.lead,
+                      tone: DabblerTextTone.secondary,
+                    ),
+                  ],
+                ),
+              ),
+              if (notice != null) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerBanner(
+                  tone: notice == _Notice.denied
+                      ? DabblerBannerTone.error
+                      : DabblerBannerTone.warning,
+                  title: notice == _Notice.denied
+                      ? l.location_intro_denied_title
+                      : l.location_intro_no_gps_title,
+                  message: notice == _Notice.denied
+                      ? l.location_intro_denied_message
+                      : l.location_intro_no_gps_message,
+                ),
               ],
-              DabblerText(
-                l.location_intro_title,
-                style: DabblerType.displayScreen,
-              ),
-              const DabblerGap.v(DabblerSpacing.space3),
-              DabblerText(
-                l.location_intro_subtitle,
-                style: DabblerType.lead,
-                tone: DabblerTextTone.secondary,
-              ),
             ],
           ),
+          DabblerCard(
+            variant: DabblerCardVariant.white,
+            borderOutside: true,
+            radius: DabblerRadius.xxl,
+            padding: const EdgeInsets.all(DabblerSpacing.space7),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: <Widget>[
+                DabblerButton(
+                  label: detecting
+                      ? l.location_intro_detecting
+                      : switch (notice) {
+                          _Notice.denied => l.location_intro_open_settings,
+                          _Notice.noGps => l.location_intro_try_again,
+                          null => l.location_intro_cta,
+                        },
+                  fullWidth: true,
+                  loading: detecting,
+                  onPressed: _primary,
+                ),
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerButton(
+                  label: l.location_intro_manual,
+                  tone: DabblerButtonTone.outlined,
+                  fullWidth: true,
+                  onPressed: _setManually,
+                ),
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerButton(
+                  label: l.location_intro_later,
+                  tone: DabblerButtonTone.neutral,
+                  fullWidth: true,
+                  onPressed: _maybeLater,
+                ),
+              ],
+            ),
+          ),
         ],
-        primaryLabel: l.location_intro_cta,
-        onPrimary: controller.useMyLocation,
-        // Secondary buttons (KAN-583), not pills: Maybe later is a button too.
-        secondary: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: <Widget>[
-            DabblerButton(
-              label: l.location_intro_manual,
-              tone: DabblerButtonTone.outlined,
-              fullWidth: true,
-              onPressed: _setManually,
+      ),
+    );
+  }
+}
+
+/// The two notices the permission answer can leave on screen.
+enum _Notice { denied, noGps }
+
+/// The country pill (`Location.dc.html`): flag circle, country, and a tinted
+/// circle with the down arrow. Opens the country sheet.
+class _CountryPill extends StatelessWidget {
+  const _CountryPill({
+    required this.region,
+    required this.name,
+    required this.changeLabel,
+    required this.onTap,
+  });
+
+  final String region;
+  final String name;
+  final String changeLabel;
+  final VoidCallback onTap;
+
+  static const Map<String, String> _flags = <String, String>{
+    'Egypt': '\u{1F1EA}\u{1F1EC}',
+    'Morocco': '\u{1F1F2}\u{1F1E6}',
+    'Qatar': '\u{1F1F6}\u{1F1E6}',
+    'Saudi Arabia': '\u{1F1F8}\u{1F1E6}',
+    'United Arab Emirates': '\u{1F1E6}\u{1F1EA}',
+  };
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final flag = _flags[region];
+    return DabblerCard(
+      variant: DabblerCardVariant.white,
+      borderOutside: true,
+      radius: DabblerRadius.pill,
+      padding: const EdgeInsets.all(DabblerSpacing.space3),
+      onTap: onTap,
+      semanticLabel: changeLabel,
+      child: Row(
+        children: <Widget>[
+          ExcludeSemantics(
+            child: DabblerSurface(
+              radius: DabblerRadius.pill,
+              fill: colors.surfaceSunken,
+              borderColor: colors.borderDefault,
+              borderWidth: DabblerSizing.borderDefault,
+              width: DabblerSpacing.space10,
+              height: DabblerSpacing.space10,
+              center: true,
+              child: flag == null
+                  ? DabblerIcon(
+                      'global',
+                      weight: DabblerIconWeight.bold,
+                      size: DabblerSizing.iconSm,
+                      color: colors.brandPrimary,
+                    )
+                  : DabblerText(flag, style: DabblerType.title3),
             ),
-            const DabblerGap.v(DabblerSpacing.space4),
-            DabblerButton(
-              label: l.location_intro_later,
-              tone: DabblerButtonTone.neutral,
-              fullWidth: true,
-              onPressed: _maybeLater,
+          ),
+          const DabblerGap.h(DabblerSpacing.space5),
+          Expanded(
+            child: DabblerText(
+              name,
+              style: DabblerType.body,
+              weight: DabblerTextWeight.medium,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-          ],
-        ),
+          ),
+          ExcludeSemantics(
+            child: DabblerSurface(
+              radius: DabblerRadius.pill,
+              fill: DabblerSurface.tintedFillOf(colors, colors.brandPrimary),
+              width: DabblerSpacing.space10,
+              height: DabblerSpacing.space10,
+              center: true,
+              child: DabblerIcon(
+                'arrow-circle-down',
+                size: DabblerSizing.iconSm,
+                color: colors.brandPrimary,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

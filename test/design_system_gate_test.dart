@@ -100,6 +100,14 @@ const List<GateAllow> allowList = [
     match: 'static const Duration fixCap',
   ),
   GateAllow(
+    'lib/features/auth_onboarding/presentation/screens/location_intro_screen.dart',
+    ['Image.'],
+    'Bundled full-bleed illustration (KAN-489): DabblerImage loads network '
+        'URLs only and the design system has no asset-image role yet (filed '
+        'as a DS gap).',
+    match: 'Image.asset(',
+  ),
+  GateAllow(
     'lib/core/constants/timing/',
     ['Duration literal', 'Domain duration literal'],
     'Named domain and mock timing constants; the one directory where a '
