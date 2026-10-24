@@ -37,3 +37,38 @@ Widget? sportBackgroundWidget(String? key, {Key? widgetKey}) {
     artwork: DabblerSportArtwork.asset(asset),
   );
 }
+
+/// The venue Spaces card photos (`assets/images/card/<key>_card.png`), one per
+/// design-system sport key. Only the Spaces cards use them; Welcome and every
+/// other surface keep [sportBackgroundAssets].
+const Map<String, String> sportCardAssets = <String, String>{
+  'football': 'assets/images/card/football_card.png',
+  'basketball': 'assets/images/card/basketball_card.png',
+  'badminton': 'assets/images/card/badminton_card.png',
+  'cycling': 'assets/images/card/cycling_card.png',
+  'cricket': 'assets/images/card/cricket_card.png',
+  'gym': 'assets/images/card/gym_card.png',
+  'tennis': 'assets/images/card/tennis_card.png',
+  'padel': 'assets/images/card/padel_card.png',
+  'swimming': 'assets/images/card/swimming_card.png',
+  'running': 'assets/images/card/running_card.png',
+  'volleyball': 'assets/images/card/volleyball_card.png',
+};
+
+/// The card photo asset for a design-system sport [key], or null.
+String? sportCardAsset(String? key) {
+  if (key == null) return null;
+  final sport = DabblerSport.fromKey(key.trim().toLowerCase());
+  return sport == null ? null : sportCardAssets[sport.key];
+}
+
+/// The cover-fit card photo for [key], or null when the sport has none.
+Widget? sportCardWidget(String? key, {Key? widgetKey}) {
+  final asset = sportCardAsset(key);
+  if (asset == null) return null;
+  return DabblerSportBackground.maybe(
+    DabblerSport.fromKey(key!.trim().toLowerCase())!,
+    key: widgetKey ?? ValueKey<String>('sport-card-$asset'),
+    artwork: DabblerSportArtwork.asset(asset),
+  );
+}
