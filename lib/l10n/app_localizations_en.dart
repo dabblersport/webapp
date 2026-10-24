@@ -7290,6 +7290,25 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_intro_country_change => 'Change country';
 
   @override
+  String get manual_location_search_city => 'Search for a city';
+
+  @override
+  String get manual_location_change_city => 'Change city';
+
+  @override
+  String get manual_location_area_hint => 'Only areas in this city are listed.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'Search areas in $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'Areas in $city';
+  }
+
+  @override
   String get location_settings_device_title => 'Device location';
 
   @override

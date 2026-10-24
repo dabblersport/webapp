@@ -14,17 +14,29 @@ class MapPlaceResults extends ConsumerWidget {
     required String query,
     required this.onPick,
   }) : _cityQuery = query,
-       _areaQuery = null;
+       _areaQuery = null,
+       _countryCityQuery = null;
 
   const MapPlaceResults.areas({
     super.key,
     required AreaQuery query,
     required this.onPick,
   }) : _areaQuery = query,
-       _cityQuery = null;
+       _cityQuery = null,
+       _countryCityQuery = null;
+
+  /// KAN-640: cities of one country only.
+  const MapPlaceResults.countryCities({
+    super.key,
+    required CountryCityQuery query,
+    required this.onPick,
+  }) : _countryCityQuery = query,
+       _cityQuery = null,
+       _areaQuery = null;
 
   final String? _cityQuery;
   final AreaQuery? _areaQuery;
+  final CountryCityQuery? _countryCityQuery;
   final void Function(MapboxPlace place) onPick;
 
   @override
@@ -32,6 +44,8 @@ class MapPlaceResults extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final AsyncValue<List<MapboxPlace>> results = _cityQuery != null
         ? ref.watch(mapboxCityProvider(_cityQuery))
+        : _countryCityQuery != null
+        ? ref.watch(mapboxCountryCityProvider(_countryCityQuery))
         : ref.watch(mapboxAreaProvider(_areaQuery!));
     return results.when(
       loading: () => const Padding(
@@ -46,6 +60,8 @@ class MapPlaceResults extends ConsumerWidget {
           retryLabel: l.feed_retry,
           onRetry: () => _cityQuery != null
               ? ref.invalidate(mapboxCityProvider(_cityQuery))
+              : _countryCityQuery != null
+              ? ref.invalidate(mapboxCountryCityProvider(_countryCityQuery))
               : ref.invalidate(mapboxAreaProvider(_areaQuery!)),
         ),
       ),

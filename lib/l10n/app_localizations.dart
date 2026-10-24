@@ -13079,6 +13079,36 @@ abstract class AppLocalizations {
   /// **'Change country'**
   String get location_intro_country_change;
 
+  /// No description provided for @manual_location_search_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a city'**
+  String get manual_location_search_city;
+
+  /// No description provided for @manual_location_change_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get manual_location_change_city;
+
+  /// No description provided for @manual_location_area_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only areas in this city are listed.'**
+  String get manual_location_area_hint;
+
+  /// No description provided for @manual_location_search_area.
+  ///
+  /// In en, this message translates to:
+  /// **'Search areas in {city}'**
+  String manual_location_search_area(String city);
+
+  /// No description provided for @manual_location_areas_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas in {city}'**
+  String manual_location_areas_in(String city);
+
   /// KAN-628 section title of the device location block in Settings > Location.
   ///
   /// In en, this message translates to:

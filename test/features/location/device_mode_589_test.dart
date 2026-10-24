@@ -14,6 +14,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'manual_location_surfaces_support.dart';
 
 /// KAN-589: Settings > Location "Location on this device". Auto / Manual is
 /// per device and persists; Auto asks the OS at most once; a denial opens the
@@ -109,6 +110,7 @@ Future<_Platform> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
         profileLocationNotifierProvider.overrideWith(_NoSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_Areas()),
       ],
@@ -219,6 +221,7 @@ void main() {
     );
     final c = ProviderContainer(
       overrides: [
+        fakeCatalogOverride,
         profileLocationNotifierProvider.overrideWith(_NoSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_Areas()),
       ],
@@ -239,6 +242,7 @@ void main() {
     );
     final c = ProviderContainer(
       overrides: [
+        fakeCatalogOverride,
         profileLocationNotifierProvider.overrideWith(_NoSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_Areas()),
       ],

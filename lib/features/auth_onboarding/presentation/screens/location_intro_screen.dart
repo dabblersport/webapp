@@ -2,6 +2,7 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
+import 'package:dabbler/features/location/presentation/widgets/country_flag.dart';
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -334,18 +335,9 @@ class _CountryPill extends StatelessWidget {
   final String changeLabel;
   final VoidCallback onTap;
 
-  static const Map<String, String> _flags = <String, String>{
-    'Egypt': '\u{1F1EA}\u{1F1EC}',
-    'Morocco': '\u{1F1F2}\u{1F1E6}',
-    'Qatar': '\u{1F1F6}\u{1F1E6}',
-    'Saudi Arabia': '\u{1F1F8}\u{1F1E6}',
-    'United Arab Emirates': '\u{1F1E6}\u{1F1EA}',
-  };
-
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final flag = _flags[region];
     return DabblerCard(
       variant: DabblerCardVariant.white,
       borderOutside: true,
@@ -364,14 +356,7 @@ class _CountryPill extends StatelessWidget {
               width: DabblerSpacing.space10,
               height: DabblerSpacing.space10,
               center: true,
-              child: flag == null
-                  ? DabblerIcon(
-                      'global',
-                      weight: DabblerIconWeight.bold,
-                      size: DabblerSizing.iconSm,
-                      color: colors.brandPrimary,
-                    )
-                  : DabblerText(flag, style: DabblerType.title3),
+              child: CountryFlag(region: region, size: DabblerSpacing.space9),
             ),
           ),
           const DabblerGap.h(DabblerSpacing.space5),

@@ -7335,6 +7335,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_intro_country_change => 'تغيير الدولة';
 
   @override
+  String get manual_location_search_city => 'ابحث عن مدينة';
+
+  @override
+  String get manual_location_change_city => 'غيّر المدينة';
+
+  @override
+  String get manual_location_area_hint => 'تظهر مناطق هذه المدينة فقط.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'ابحث في مناطق $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'مناطق $city';
+  }
+
+  @override
   String get location_settings_device_title => 'موقع الجهاز';
 
   @override
