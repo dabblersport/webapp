@@ -4275,6 +4275,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get composer_create_post => 'منشور جديد';
 
   @override
+  String get composer_post_failed => 'تعذّر النشر. حاول مرة أخرى.';
+
+  @override
   String get composer_post_cta => 'نشر';
 
   @override

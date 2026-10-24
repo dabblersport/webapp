@@ -1045,7 +1045,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         final res = await _db.rpc(
           'create_post',
           params: buildCreatePostRpcParams(
-            kind: 'moment',
+            kind: 'original',
             postType: postType,
             originType: 'manual',
             body: body,
@@ -1076,7 +1076,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       final data = <String, dynamic>{
         if (body != null) 'body': body,
         'visibility': visibility,
-        'kind': 'moment',
+        'kind': 'original',
         'post_type': postType,
         'origin_type': 'manual',
         'content_class': 'social',

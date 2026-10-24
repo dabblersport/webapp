@@ -1637,6 +1637,7 @@
   "composer_select": "اختيار",
   "composer_tap_to_change": "اضغط للتغيير.",
   "composer_create_post": "منشور جديد",
+  "composer_post_failed": "تعذّر النشر. حاول مرة أخرى.",
   "composer_post_cta": "نشر",
   "composer_you": "أنت",
   "composer_post_as": "النشر باسم",

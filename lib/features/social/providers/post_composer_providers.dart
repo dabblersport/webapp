@@ -27,6 +27,34 @@ import 'package:dabbler/features/social/domain/posted_from.dart';
 // =============================================================================
 
 /// Holds all composer field values. Managed by [PostComposerNotifier].
+/// KAN-639: the composer error for a post the server refused. The screen
+/// shows its own localized words for it, never the database's text.
+const String kPostFailed = 'post-failed';
+
+/// KAN-639: the error the composer keeps for a failed post. Connection and
+/// rate-limit failures carry words the app wrote; anything else may be raw
+/// database text, so it becomes [kPostFailed].
+String composerFailureText(Failure f) {
+  switch (f.category) {
+    case FailureCode.network:
+    case FailureCode.noInternet:
+    case FailureCode.timeout:
+    case FailureCode.rateLimited:
+      return f.message;
+    default:
+      return kPostFailed;
+  }
+}
+
+/// KAN-639: origin of a post made in the composer. `posts_content_model_check`
+/// allows `venue` and `game` origins only for allocated (system) posts, so a
+/// post a person writes stays `manual` even with a venue or game attached;
+/// the link lives in `venue_id` and `game_id`.
+({OriginType type, String? id}) resolveComposerOrigin({
+  required OriginType originType,
+  String? originId,
+}) => (type: originType, id: originId);
+
 class PostComposerState {
   const PostComposerState({
     this.visibility = PostVisibility.public,
@@ -686,16 +714,13 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       linkToken = const Uuid().v4();
     }
 
-    // 5. Auto-resolve origin_type + origin_id from linked entities
-    OriginType resolvedOriginType = s.originType;
-    String? resolvedOriginId = s.originId;
-    if (s.gameId != null && resolvedOriginType == OriginType.manual) {
-      resolvedOriginType = OriginType.game;
-      resolvedOriginId ??= s.gameId;
-    } else if (s.venueId != null && resolvedOriginType == OriginType.manual) {
-      resolvedOriginType = OriginType.venue;
-      resolvedOriginId ??= s.venueId;
-    }
+    // 5. origin_type + origin_id (KAN-639: see [resolveComposerOrigin])
+    final origin = resolveComposerOrigin(
+      originType: s.originType,
+      originId: s.originId,
+    );
+    final resolvedOriginType = origin.type;
+    final resolvedOriginId = origin.id;
 
     // 6. Capture persona_type_snapshot from active profile
     String? persona = s.personaTypeSnapshot;
@@ -761,7 +786,12 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     result.fold(
       (err) {
         debugPrint('[PostComposer] submit FAILED: ${err.message}');
-        state = state.copyWith(isSubmitting: false, error: err.message);
+        // KAN-639: the database's own text is never shown; see
+        // [composerFailureText].
+        state = state.copyWith(
+          isSubmitting: false,
+          error: composerFailureText(err),
+        );
       },
       (_) {
         _requestId.clear();

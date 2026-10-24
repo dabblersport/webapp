@@ -7679,6 +7679,12 @@ abstract class AppLocalizations {
   /// **'Create post'**
   String get composer_create_post;
 
+  /// No description provided for @composer_post_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t post. Please try again.'**
+  String get composer_post_failed;
+
   /// No description provided for @composer_post_cta.
   ///
   /// In en, this message translates to:

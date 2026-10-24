@@ -1541,6 +1541,7 @@
   "composer_select": "Select",
   "composer_tap_to_change": "Tap to change.",
   "composer_create_post": "Create post",
+  "composer_post_failed": "Couldn't post. Please try again.",
   "composer_post_cta": "Post",
   "composer_you": "You",
   "composer_post_as": "Post As",

@@ -4273,6 +4273,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get composer_create_post => 'Create post';
 
   @override
+  String get composer_post_failed => 'Couldn\'t post. Please try again.';
+
+  @override
   String get composer_post_cta => 'Post';
 
   @override

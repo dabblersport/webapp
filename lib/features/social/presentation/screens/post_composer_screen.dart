@@ -117,6 +117,8 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
           _errorToast(AppLocalizations.of(context).offline_create_refused);
           return;
         }
+        // KAN-639: the banner already shows this failure; it is shown once.
+        if (ref.read(postComposerProvider).error != null) return;
         _errorToast(err.message);
       },
       (post) {
@@ -459,7 +461,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       canSubmit: composerState.canSubmit,
       isSubmitting: composerState.isSubmitting,
       onCtaTap: _submit,
-      errorMessage: composerState.error,
+      errorMessage: composerState.error == kPostFailed
+          ? AppLocalizations.of(context).composer_post_failed
+          : composerState.error,
       designFrame: true,
       children: [
         Padding(
