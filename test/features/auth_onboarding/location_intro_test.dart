@@ -371,50 +371,57 @@ void main() {
       expect(await const LocationIntroStore().seen('user-1'), isTrue);
       await _shoot(tester, 'intro-$dir-$mode');
 
-      // KAN-587: Maybe later asks for a City first; nothing finishes without one.
+      // KAN-640: Maybe later finishes at once: no sheet, no prompt, no city.
       expect(find.text(l.location_intro_select_city), findsOneWidget);
       await tester.tap(find.text(l.location_intro_later));
       await tester.pumpAndSettle();
-      expect(finished, 0, reason: 'Maybe later needs a city');
-      expect(find.byType(CityRequiredSheet), findsOneWidget);
+      expect(finished, 1, reason: 'Maybe later finishes without a city');
+      expect(find.byType(CityRequiredSheet), findsNothing);
       expect(g.requests, 0, reason: 'Maybe later must not prompt');
-      // A search with no match shows the empty state, and no area rows exist.
-      await tester.enterText(find.byType(EditableText).last, 'zzzz');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      expect(find.text(l.manual_location_empty_title), findsOneWidget);
-      await tester.enterText(find.byType(EditableText).last, '');
-      await tester.pumpAndSettle();
-      // A city outside the UAE comes from the map service, with its country.
-      await tester.enterText(find.byType(EditableText).last, 'par');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      expect(find.text('Paris'), findsOneWidget);
-      expect(find.text('Paris, France'), findsOneWidget);
-      await tester.enterText(find.byType(EditableText).last, '');
-      await tester.pumpAndSettle();
-      // Dismissed without a city: still on the intro.
-      Navigator.of(
-        tester.element(find.byType(CityRequiredSheet)),
-        rootNavigator: true,
-      ).pop();
-      await tester.pumpAndSettle();
-      expect(finished, 0);
-      // Choosing a canonical city (City-only: no area, no GPS) finishes.
-      await tester.tap(find.text(l.location_intro_later));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(EditableText).last, 'par');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Paris'));
-      await tester.pumpAndSettle();
-      expect(finished, 1);
-      expect(g.requests, 0);
       final s = ProviderScope.containerOf(
         tester.element(find.byType(LocationIntroScreen)),
       ).read(activeLocationProvider).valueOrNull;
-      expect(s, isA<ActiveLocationCityOnly>());
-      expect((s as ActiveLocationCityOnly).city, 'Paris');
+      expect(s, isNot(isA<ActiveLocationCityOnly>()));
+      expect(s, isNot(isA<ActiveLocationReady>()));
+      await tester.pump(const Duration(seconds: 1)); // flush zero timers
+    });
+
+    testWidgets('an existing city is kept by Maybe later; a changed city is '
+        'observed - $dir', (tester) async {
+      final g = FakeGateway();
+      var finished = 0;
+      await _pump(tester, g, locale, onFinish: () => finished++);
+      final c = ProviderScope.containerOf(
+        tester.element(find.byType(LocationIntroScreen)),
+      );
+      final n = c.read(activeLocationProvider.notifier);
+      await tester.runAsync(() => n.useManualCity('Dubai'));
+      await tester.runAsync(() => n.useManualCity('Paris'));
+      var s = c.read(activeLocationProvider).valueOrNull;
+      expect((s as ActiveLocationCityOnly).city, 'Paris', reason: 'changed');
+      await tester.tap(find.text(l.location_intro_later));
+      await tester.pumpAndSettle();
+      expect(finished, 1);
+      s = c.read(activeLocationProvider).valueOrNull;
+      expect((s as ActiveLocationCityOnly).city, 'Paris', reason: 'kept');
+      expect(g.requests, 0);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('back finishes like Maybe later, once, no prompt - $dir', (
+      tester,
+    ) async {
+      final g = FakeGateway();
+      var finished = 0;
+      await _pump(tester, g, locale, onFinish: () => finished++);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(finished, 1);
+      expect(find.byType(CityRequiredSheet), findsNothing);
+      expect(g.requests, 0);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(finished, 1, reason: 'no completion loop');
     });
 
     testWidgets('Use my location, GPS never answers: Home at once, nothing '

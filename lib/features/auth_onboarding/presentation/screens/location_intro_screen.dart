@@ -1,6 +1,5 @@
 import 'package:dabbler/features/location/location_intro/location_intro.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
-import 'package:dabbler/features/location/presentation/widgets/city_required_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -13,9 +12,9 @@ import 'package:go_router/go_router.dart';
 /// The full-screen location introduction that follows Welcome / Welcome Back
 /// (KAN-489): the illustrated map, the approved copy, and two actions. The
 /// system permission prompt appears only when the user taps "Use my location";
-/// "Set location" opens the manual drawer; "Maybe later" (and back) asks for a
-/// City only (KAN-587): no GPS, no area, and nothing is asked of the OS. Setup
-/// does not finish until a city is set.
+/// "Select city" opens the manual drawer; "Maybe later" (and back) finishes the
+/// intro at once (KAN-640): no GPS, no area, no city, nothing asked of the OS.
+/// A city already chosen is kept; listings gate on a city at point of use.
 class LocationIntroScreen extends ConsumerStatefulWidget {
   const LocationIntroScreen({super.key, this.userId, this.onFinish});
 
@@ -85,11 +84,8 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
     );
   }
 
-  /// KAN-587: Maybe later needs a City. Dismissing the sheet keeps the user here.
-  Future<void> _maybeLater() async {
-    final city = await showCityRequiredSheet(context);
-    if (city != null && mounted) _finish();
-  }
+  /// KAN-640: Maybe later finishes with whatever is set (possibly nothing).
+  void _maybeLater() => _finish();
 
   /// Manual entry: finish once the drawer left a usable location behind.
   Future<void> _setManually() async {
@@ -121,7 +117,7 @@ class _LocationIntroScreenState extends ConsumerState<LocationIntroScreen> {
     final controller = ref.read(locationIntroControllerProvider.notifier);
 
     return PopScope(
-      // Back behaves like "Maybe later": a City is still needed.
+      // Back behaves like "Maybe later": it finishes the intro.
       canPop: false,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _maybeLater();
