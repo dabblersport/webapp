@@ -11,17 +11,17 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 /// its normal background. The bundled files are WebP copies of the supplied
 /// PNGs, which stay unchanged under `assets/images/` and are not bundled.
 const Map<String, String> welcomeSportPosters = <String, String>{
-  'football': 'assets/images/sport_welcome/football.webp',
-  'basketball': 'assets/images/sport_welcome/basketball.webp',
-  'badminton': 'assets/images/sport_welcome/badminton.webp',
-  'cycling': 'assets/images/sport_welcome/cycling.webp',
-  'cricket': 'assets/images/sport_welcome/cricket.webp',
-  'gym': 'assets/images/sport_welcome/gym.webp',
-  'tennis': 'assets/images/sport_welcome/tennis.webp',
-  'padel': 'assets/images/sport_welcome/padel.webp',
-  'swimming': 'assets/images/sport_welcome/swimming.webp',
-  'running': 'assets/images/sport_welcome/running.webp',
-  'volleyball': 'assets/images/sport_welcome/volleyball.webp',
+  'football': 'assets/images/sport_background/football.webp',
+  'basketball': 'assets/images/sport_background/basketball.webp',
+  'badminton': 'assets/images/sport_background/badminton.webp',
+  'cycling': 'assets/images/sport_background/cycling.webp',
+  'cricket': 'assets/images/sport_background/cricket.webp',
+  'gym': 'assets/images/sport_background/gym.webp',
+  'tennis': 'assets/images/sport_background/tennis.webp',
+  'padel': 'assets/images/sport_background/padel.webp',
+  'swimming': 'assets/images/sport_background/swimming.webp',
+  'running': 'assets/images/sport_background/running.webp',
+  'volleyball': 'assets/images/sport_background/volleyball.webp',
 };
 
 /// The poster asset for a design-system sport [key], or null (no key, unknown
