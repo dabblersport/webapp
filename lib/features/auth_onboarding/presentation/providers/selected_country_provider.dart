@@ -1,9 +1,11 @@
+import 'package:dabbler/core/constants/timing/location_timing.dart';
 import 'package:dabbler/core/sync/settings_sync.dart';
 import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/features/auth_onboarding/data/services/ip_country_detection_service.dart';
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
@@ -59,19 +61,39 @@ class SupabaseServiceRegionRemote implements ServiceRegionRemote {
   }
 }
 
-/// The service region of the signed-in account. Chosen by the user only: never
-/// from VPN, IP or the device locale. A missing or unsupported value is Global.
+/// Detects the visitor's country from the IP (the `detect-country` edge
+/// function); returns an English country name, or Global when it cannot.
+typedef CountryDetector = Future<String> Function();
+
+Future<String> _detectFromIp() =>
+    IpCountryDetectionService().detectCountryFromIp();
+
+/// The app's service region. KAN-640 R6 (CEO): on the very first run, with no
+/// country saved on the device (or account), the country is detected once from
+/// the IP and preselected when it is a supported country, otherwise Global; a
+/// failed detection is Global and is tried again next launch. Once a country is
+/// saved (detected or picked) it is never detected again, and a manual choice
+/// always wins. Never from the device locale. A missing or unsupported value is
+/// Global.
 class SelectedLocationNotifier
     extends StateNotifier<AsyncValue<LocationState>> {
-  SelectedLocationNotifier({String? userId, ServiceRegionRemote? remote})
-    : _userId = userId,
-      _remote = remote ?? SupabaseServiceRegionRemote(),
-      super(const AsyncValue.loading()) {
+  SelectedLocationNotifier({
+    String? userId,
+    ServiceRegionRemote? remote,
+    CountryDetector? detect,
+  }) : _userId = userId,
+       _remote = remote ?? SupabaseServiceRegionRemote(),
+       _detect = detect ?? _detectFromIp,
+       super(const AsyncValue.loading()) {
     _load();
   }
 
   final String? _userId;
   final ServiceRegionRemote _remote;
+  final CountryDetector _detect;
+
+  /// Set by any manual choice, so a late detection never overrides it.
+  bool _chosen = false;
 
   /// Per account on this device, so another account never inherits it.
   String get _countryKey => _userId == null
@@ -94,12 +116,14 @@ class SelectedLocationNotifier
       }
 
       final uid = _userId;
+      var accountHasRegion = false;
       if (uid != null) {
         // KAN-608: a region change still waiting for the server is newer.
         final queued = await SettingsSyncBridge.hasPendingEdit(
           SettingKeys.region,
         );
         final String? remote = queued ? null : await _remote.fetch(uid);
+        accountHasRegion = queued || remote != null;
         if (remote != null) {
           region = normalizeServiceRegion(remote);
           await prefs.setString(_countryKey, region);
@@ -109,14 +133,40 @@ class SelectedLocationNotifier
         }
       }
       state = AsyncValue.data(LocationState(country: region, city: savedCity));
+      if (saved == null && !accountHasRegion && !_chosen) {
+        await _detectFirstRun(prefs);
+      }
     } catch (e, st) {
       // Safe fallback: keep UX working even if prefs access fails.
       state = AsyncValue.error(e, st);
     }
   }
 
+  /// The one-time IP detection. A supported country is saved and preselected; a
+  /// country the app does not serve is saved as Global; a failure saves nothing
+  /// (Global shows, and the next launch tries again).
+  Future<void> _detectFirstRun(SharedPreferences prefs) async {
+    String detected;
+    try {
+      detected = await _detect().timeout(ipCountryDetectionTimeout);
+    } catch (_) {
+      return;
+    }
+    if (_chosen || !mounted) return;
+    final String name = detected.trim();
+    if (name.isEmpty || name == kGlobalRegion) return;
+    final String region = normalizeServiceRegion(name);
+    await prefs.setString(_countryKey, region);
+    if (_chosen || !mounted) return;
+    final String? city = state.valueOrNull?.city;
+    state = AsyncValue.data(LocationState(country: region, city: city));
+    final uid = _userId;
+    if (uid != null && region != kGlobalRegion) await _remote.save(uid, region);
+  }
+
   Future<void> setLocation({required String country, String? city}) async {
     if (country.trim().isEmpty) return;
+    _chosen = true;
     final String region = normalizeServiceRegion(country);
 
     state = AsyncValue.data(LocationState(country: region, city: city?.trim()));
