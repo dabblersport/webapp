@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/mapbox_place.dart';
@@ -10,6 +12,7 @@ import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 
@@ -23,42 +26,56 @@ const SportInfo _tennis = SportInfo(
   sportKey: 'tennis',
 );
 
-Finder _tab(String label) => find.descendant(
-  of: find.byType(DabblerTabs).first,
-  matching: find.text(label),
-);
-
-Future<void> _openTab(WidgetTester tester, String label) async {
-  await tester.tap(_tab(label));
+/// KAN-591 drew the page as Sport Overview v2: no tab strip. The Overview is a
+/// bento of counter tiles and rails; a tile or a "See all" opens a sub-view
+/// with an "Overview" back link.
+Future<void> _tap(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.tap(finder);
   await settle(tester);
 }
+
+Future<void> _tapText(WidgetTester tester, String text) =>
+    _tap(tester, find.text(text).first);
+
+Future<void> _openGames(WidgetTester tester) =>
+    _tapText(tester, 'Games & meetups');
+
+Future<void> _openVenues(WidgetTester tester) => _tapText(tester, 'Venues');
+
+Future<void> _openSpaces(WidgetTester tester) => _tapText(tester, 'Spaces');
+
+Future<void> _openPosts(WidgetTester tester) => _tapText(tester, 'Posts');
+
+Future<void> _back(WidgetTester tester) => _tapText(tester, 'Overview');
+
+const SportVenue _ratedArena = SportVenue(
+  id: 'v1',
+  nameEn: 'Rated Arena',
+  areaName: 'Marina',
+  rating: 4.6,
+);
 
 void main() {
   setUpAll(loadRenderFonts);
 
-  group('AC1/AC2 route, identity, header and tabs', () {
-    testWidgets('shows identity, follower count and exactly the five tabs', (
-      tester,
-    ) async {
+  group('AC1/AC2 route, identity and header', () {
+    testWidgets('shows the identity block and no tab strip', (tester) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       await pumpSport(tester, h);
 
       expect(find.text('Football'), findsWidgets);
-      expect(find.text('5-a-side · 7-a-side'), findsOneWidget);
-      expect(find.text('1204 followers'), findsOneWidget);
+      expect(find.text('Sport · 5-a-side, 7-a-side'), findsOneWidget);
+      expect(find.text('Public sport page'), findsOneWidget);
+      expect(find.text('Dubai'), findsOneWidget);
+      expect(find.text('1,204'), findsOneWidget);
+      expect(find.text('Followers'), findsOneWidget);
       expect(find.text('Following'), findsOneWidget);
-      for (final String label in <String>[
-        'Overview',
-        'Games',
-        'Meetups',
-        'Venues',
-        'Posts',
-      ]) {
-        expect(_tab(label), findsOneWidget, reason: label);
-      }
-      // No Places tab or tile, no News tab (no readable source), and none of
-      // the unspecified controls is drawn as a dead button.
-      expect(find.textContaining('Places'), findsNothing);
+      expect(find.text('Create game or meetup'), findsOneWidget);
+      // The design has no tab strip, and Places and News have no readable
+      // source: neither is drawn, and Share/More stay out until their
+      // destination is decided (no dead control).
+      expect(find.byType(DabblerTabs), findsNothing);
       expect(find.textContaining('Place'), findsNothing);
       expect(find.text('News'), findsNothing);
       expect(find.text('Share'), findsNothing);
@@ -66,13 +83,32 @@ void main() {
       expect(h.repo.calls, contains('sport:$kFootball'));
     });
 
-    testWidgets('an unfollowed sport can be browsed', (tester) async {
+    testWidgets(
+      'an unfollowed sport can be browsed and says what Follow does',
+      (tester) async {
+        final SportHarness h = SportHarness(following: <String>[kFootball]);
+        h.repo.sportResult = const Ok(_tennis);
+        await pumpSport(tester, h, sportId: kTennis);
+        expect(find.text('Tennis'), findsWidgets);
+        expect(find.text('Follow'), findsOneWidget);
+        expect(find.text('Sport'), findsOneWidget);
+        // The note belongs to the Following state, not to the browse state.
+        expect(find.textContaining('your sports profile'), findsNothing);
+      },
+    );
+
+    testWidgets('Following says Follow never adds the sport to the profile', (
+      tester,
+    ) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
-      h.repo.sportResult = const Ok(_tennis);
-      await pumpSport(tester, h, sportId: kTennis);
-      expect(find.text('Tennis'), findsWidgets);
-      expect(find.text('Follow'), findsOneWidget);
-      expect(_tab('Overview'), findsOneWidget);
+      await pumpSport(tester, h);
+      expect(
+        find.text(
+          'Football posts, games and news will show in your feed. '
+          'This doesn’t add Football to your sports profile.',
+        ),
+        findsOneWidget,
+      );
     });
 
     testWidgets('an unknown sport id shows the error state, not a crash', (
@@ -85,7 +121,7 @@ void main() {
       await pumpSport(tester, h, sportId: 'not-a-sport');
       expect(find.text("This sport isn't available"), findsOneWidget);
       expect(find.text('Retry'), findsOneWidget);
-      expect(find.byType(DabblerTabs), findsNothing);
+      expect(find.text('Next 7 days'), findsNothing);
       expect(tester.takeException(), isNull);
     });
 
@@ -153,60 +189,123 @@ void main() {
     });
   });
 
-  group('AC3 counts and navigation', () {
-    testWidgets('tiles show the RPC counts, separately for venues and spaces', (
+  group('AC3 overview tiles and navigation', () {
+    testWidgets('tiles show the RPC counts; venues and spaces are not summed', (
       tester,
     ) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       await pumpSport(tester, h);
-      for (final String v in <String>['3', '2', '4', '9', '17']) {
-        expect(find.text(v), findsWidgets, reason: v);
-      }
-      expect(find.text('Venues'), findsWidgets);
-      expect(find.text('Spaces'), findsOneWidget);
-      expect(find.text('Games in 7 days'), findsOneWidget);
-      expect(find.text('Meetups in 7 days'), findsOneWidget);
+      expect(find.text('Play Football in Dubai'), findsOneWidget);
+      expect(find.text('Next 7 days'), findsOneWidget);
+      // Hero: games + meetups, spelled out under it.
+      expect(find.text('Games & meetups'), findsOneWidget);
+      expect(find.text('5'), findsOneWidget);
+      expect(find.text('3 games · 2 meetups'), findsOneWidget);
+      expect(find.text('4'), findsOneWidget);
+      expect(find.text('To book'), findsOneWidget);
+      expect(find.text('9'), findsOneWidget);
+      expect(find.text('Inside venues'), findsOneWidget);
+      // Posts: the header counter and the tile.
+      expect(find.text('17'), findsNWidgets(2));
+      expect(find.text('13'), findsNothing, reason: 'venues + spaces summed');
     });
 
-    testWidgets('tapping a counter tile or See all opens that tab', (
-      tester,
-    ) async {
+    testWidgets('a tile opens its view and "Overview" returns', (tester) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.gamesResult = Ok([game('g1')]);
       h.repo.meetupsResult = Ok([meetup('m1')]);
       await pumpSport(tester, h);
 
-      await tester.tap(find.text('Meetups in 7 days'));
-      await settle(tester);
-      expect(find.text('Sunday kickabout'), findsOneWidget);
-
-      await _openTab(tester, 'Overview');
-      await tester.tap(find.text('Spaces'));
-      await settle(tester);
-      // Spaces side of the Venues tab: its switch is on screen.
-      expect(find.text('No spaces yet'), findsOneWidget);
-
-      await _openTab(tester, 'Overview');
-      await tester.tap(find.text('See all').first);
-      await settle(tester);
+      await _openGames(tester);
       expect(find.text('Friday five-a-side'), findsOneWidget);
+      expect(find.text('Sunday kickabout'), findsOneWidget);
+      expect(find.text('1 game · 1 meetup'), findsOneWidget);
+      expect(find.text('Play Football in Dubai'), findsNothing);
+
+      await _back(tester);
+      expect(find.text('Play Football in Dubai'), findsOneWidget);
+
+      await _openSpaces(tester);
+      expect(find.text('0 bookable spaces'), findsOneWidget);
+      await _back(tester);
+
+      await _openVenues(tester);
+      expect(find.text('0 venues'), findsOneWidget);
     });
 
-    testWidgets('a failed aggregate shows Retry, never a sample number', (
+    testWidgets('a rail shows at most three and "See all" opens the list', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.gamesResult = Ok([
+        for (int i = 1; i <= 4; i++) game('g$i', title: 'Game $i'),
+      ]);
+      await pumpSport(tester, h);
+      expect(find.text('Next games'), findsOneWidget);
+      expect(find.text('Game 1'), findsOneWidget);
+      expect(find.text('Game 3'), findsOneWidget);
+      expect(find.text('Game 4'), findsNothing);
+
+      await _tapText(tester, 'See all');
+      expect(find.text('Game 4'), findsOneWidget);
+    });
+
+    testWidgets('a rail with nothing in it is not drawn', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      await pumpSport(tester, h);
+      expect(find.text('Next games'), findsNothing);
+      expect(find.text('Top venues'), findsNothing);
+    });
+
+    testWidgets('top venues rail uses real venues only', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.venuesResult = const Ok(<SportVenue>[_ratedArena]);
+      await pumpSport(tester, h);
+      expect(find.text('Top venues'), findsOneWidget);
+      expect(find.text('Rated Arena'), findsOneWidget);
+      expect(find.text('4.6'), findsOneWidget);
+    });
+
+    testWidgets('a failed aggregate shows the banner, never a sample number', (
       tester,
     ) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.overviewResult = const Err(Failure(message: 'offline'));
       await pumpSport(tester, h);
-      expect(find.text("Couldn't load this"), findsOneWidget);
-      expect(find.text('Games in 7 days'), findsNothing);
-      expect(find.textContaining('followers'), findsNothing);
+      expect(find.text('Couldn’t load Football in Dubai'), findsOneWidget);
+      expect(find.text('Games & meetups'), findsNothing);
+      expect(find.text('Followers'), findsNothing);
 
       h.repo.overviewResult = Ok(counts(games: 5));
-      await tester.tap(find.text('Retry'));
+      await _tapText(tester, 'Try again');
+      expect(find.text('Games & meetups'), findsOneWidget);
+      expect(find.text('Couldn’t load Football in Dubai'), findsNothing);
+    });
+
+    testWidgets('every count at zero shows the empty card with Change city', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.overviewResult = Ok(
+        counts(games: 0, meetups: 0, venues: 0, spaces: 0, posts: 0),
+      );
+      await pumpSport(tester, h);
+      expect(find.text('Nothing for Football in Dubai yet'), findsOneWidget);
+      expect(find.text('Change city'), findsOneWidget);
+      expect(find.text('Games & meetups'), findsNothing);
+    });
+
+    testWidgets('while the counts load a skeleton shows, not zeros', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.overviewGate = Completer<void>();
+      await pumpSport(tester, h);
+      expect(find.text('Games & meetups'), findsNothing);
+      expect(find.byType(DabblerSkeleton), findsWidgets);
+      h.repo.overviewGate!.complete();
       await settle(tester);
-      expect(find.text('5'), findsWidgets);
-      expect(find.text("Couldn't load this"), findsNothing);
+      expect(find.text('Games & meetups'), findsOneWidget);
     });
   });
 
@@ -220,23 +319,27 @@ void main() {
         game('g2', title: 'Unpriced game'),
       ]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Games');
+      await _openGames(tester);
       expect(find.text('Priced game'), findsOneWidget);
       expect(find.text('Unpriced game'), findsOneWidget);
-      expect(find.textContaining('40'), findsWidgets);
-      // The unpriced game draws no price at all: not "Free", not "Ask".
-      expect(find.text('Ask'), findsNothing);
       expect(find.text('Free'), findsNothing);
-      expect(find.text('Al Wasl Club'), findsWidgets);
+      expect(find.text('Ask'), findsNothing);
     });
 
     testWidgets('a game opens the real detail route', (tester) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.gamesResult = Ok([game('g1', title: 'Priced game')]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Games');
-      await tester.tap(find.text('Priced game'));
-      await settle(tester);
+      await _openGames(tester);
+      await _tapText(tester, 'Priced game');
+      expect(h.pushed, contains(RoutePaths.gameDetail('g1')));
+    });
+
+    testWidgets('a rail game opens the real detail route', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.gamesResult = Ok([game('g1', title: 'Priced game')]);
+      await pumpSport(tester, h);
+      await _tapText(tester, 'Priced game');
       expect(h.pushed, contains(RoutePaths.gameDetail('g1')));
     });
 
@@ -244,21 +347,21 @@ void main() {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.meetupsResult = Ok([meetup('m1')]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Meetups');
-      await tester.tap(find.text('Sunday kickabout'));
-      await settle(tester);
+      await _openGames(tester);
+      await _tapText(tester, 'Sunday kickabout');
       expect(h.pushed, contains(RoutePaths.meetupDetail('m1')));
     });
 
-    testWidgets('empty states are per section', (tester) async {
+    testWidgets('empty states name the sport and the city', (tester) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Games');
-      expect(find.text('No games in the next 7 days'), findsOneWidget);
-      await _openTab(tester, 'Meetups');
-      expect(find.text('No meetups in the next 7 days'), findsOneWidget);
-      await _openTab(tester, 'Venues');
-      expect(find.text('No venues yet'), findsOneWidget);
+      await _openGames(tester);
+      expect(find.text('No Football games in Dubai'), findsOneWidget);
+      await _back(tester);
+      await _openVenues(tester);
+      expect(find.text('No Football venues in Dubai'), findsOneWidget);
+      await _openSpaces(tester);
+      expect(find.text('No Football spaces in Dubai'), findsOneWidget);
     });
 
     testWidgets('a failing list shows error with Retry and recovers', (
@@ -267,13 +370,12 @@ void main() {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.gamesResult = const Err(Failure(message: 'offline'));
       await pumpSport(tester, h);
-      await _openTab(tester, 'Games');
+      await _openGames(tester);
       expect(find.text("Couldn't load this"), findsOneWidget);
-      expect(find.text('No games in the next 7 days'), findsNothing);
+      expect(find.text('No Football games in Dubai'), findsNothing);
 
       h.repo.gamesResult = Ok([game('g1', title: 'Back online')]);
-      await tester.tap(find.text('Retry'));
-      await settle(tester);
+      await _tapText(tester, 'Retry');
       expect(find.text('Back online'), findsOneWidget);
     });
 
@@ -282,12 +384,7 @@ void main() {
     ) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.venuesResult = const Ok(<SportVenue>[
-        SportVenue(
-          id: 'v1',
-          nameEn: 'Rated Arena',
-          areaName: 'Marina',
-          rating: 4.6,
-        ),
+        _ratedArena,
         SportVenue(id: 'v2', nameEn: 'Unrated Hall'),
       ]);
       h.repo.spacesResult = const Ok(<SportSpace>[
@@ -307,28 +404,44 @@ void main() {
         ),
       ]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Venues');
+      await _openVenues(tester);
 
-      expect(find.text('Rated Arena'), findsOneWidget);
+      expect(find.text('2 venues'), findsOneWidget);
       expect(find.text('Unrated Hall'), findsOneWidget);
       expect(find.text('Court 1'), findsNothing);
-      expect(find.text('4.6'), findsOneWidget);
       // A venue without a rating draws none (not 0.0).
+      expect(find.text('4.6'), findsOneWidget);
       expect(find.text('0.0'), findsNothing);
 
-      await tester.tap(
-        find.descendant(
-          of: find.byType(DabblerTabs).last,
-          matching: find.text('Spaces'),
-        ),
-      );
-      await settle(tester);
+      // The pill switch moves to Spaces and back; the two are never merged.
+      await _openSpaces(tester);
+      expect(find.text('2 bookable spaces'), findsOneWidget);
       expect(find.text('Court 1'), findsOneWidget);
       expect(find.text('Court 2'), findsOneWidget);
-      expect(find.text('Rated Arena'), findsOneWidget);
-      expect(find.text('120 AED / hour'), findsOneWidget);
-      expect(find.textContaining('AED'), findsOneWidget);
+      expect(find.text('120'), findsOneWidget);
       expect(find.text('Unrated Hall'), findsOneWidget);
+
+      await _openVenues(tester);
+      expect(find.text('2 venues'), findsOneWidget);
+      expect(find.text('Court 1'), findsNothing);
+    });
+
+    testWidgets('the Spaces tile opens the Spaces side directly', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.spacesResult = const Ok(<SportSpace>[
+        SportSpace(
+          id: 's1',
+          venueId: 'v1',
+          nameEn: 'Court 1',
+          venueNameEn: 'Rated Arena',
+        ),
+      ]);
+      await pumpSport(tester, h);
+      await _openSpaces(tester);
+      expect(find.text('1 bookable space'), findsOneWidget);
+      expect(find.text('Court 1'), findsOneWidget);
     });
   });
 
@@ -345,10 +458,23 @@ void main() {
         post('p2', body: 'Tennis post two'),
       ];
       await pumpSport(tester, h, sportId: kTennis);
-      await _openTab(tester, 'Posts');
+      await _openPosts(tester);
+      expect(find.text('17 posts'), findsOneWidget);
       expect(find.text('Tennis post one'), findsOneWidget);
       expect(find.text('Tennis post two'), findsOneWidget);
       expect(h.repo.calls, contains('postIds:$kTennis:0'));
+    });
+
+    testWidgets('the Overview previews posts and "See all" opens them', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.postIdsResult = const Ok(<String>['p1']);
+      h.postsToReturn = [post('p1', body: 'Preview post')];
+      await pumpSport(tester, h);
+      expect(find.text('Preview post'), findsOneWidget);
+      await _tapText(tester, 'See all');
+      expect(find.text('17 posts'), findsOneWidget);
     });
 
     testWidgets('posts keep the order the query gave, newest first', (
@@ -362,16 +488,28 @@ void main() {
         post('new', body: 'Newer post'),
       ];
       await pumpSport(tester, h);
-      await _openTab(tester, 'Posts');
+      await _openPosts(tester);
       final double newer = tester.getTopLeft(find.text('Newer post')).dy;
       final double older = tester.getTopLeft(find.text('Older post')).dy;
       expect(newer, lessThan(older));
     });
 
+    testWidgets('posts do not wait for a city', (tester) async {
+      final SportHarness h = SportHarness(
+        following: <String>[kFootball],
+        city: null,
+      );
+      h.repo.postIdsResult = const Ok(<String>['p1']);
+      h.postsToReturn = [post('p1', body: 'City-free post')];
+      await pumpSport(tester, h);
+      await _openPosts(tester);
+      expect(find.text('City-free post'), findsOneWidget);
+    });
+
     testWidgets('empty posts show the empty state', (tester) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Posts');
+      await _openPosts(tester);
       expect(find.text('No posts yet'), findsOneWidget);
     });
 
@@ -381,12 +519,11 @@ void main() {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       h.repo.postIdsResult = const Err(Failure(message: 'offline'));
       await pumpSport(tester, h);
-      await _openTab(tester, 'Posts');
+      await _openPosts(tester);
       expect(find.text("Couldn't load this"), findsOneWidget);
       h.repo.postIdsResult = const Ok(<String>['p1']);
       h.postsToReturn = [post('p1', body: 'Recovered post')];
-      await tester.tap(find.text('Retry'));
-      await settle(tester);
+      await _tapText(tester, 'Retry');
       expect(find.text('Recovered post'), findsOneWidget);
     });
   });
@@ -401,12 +538,26 @@ void main() {
       await pumpSport(tester, h, sportId: kTennis);
       expect(find.text('Follow'), findsOneWidget);
 
-      await tester.tap(find.text('Follow'));
-      await settle(tester);
+      await _tapText(tester, 'Follow');
       expect(h.follow.follows, <String>['me:$kTennis']);
       expect(find.text('Following'), findsOneWidget);
       expect(h.repo.createdProfiles, isEmpty);
       expect(h.follow.unfollows, isEmpty);
+    });
+
+    testWidgets('Unfollow asks first; Cancel keeps it and writes nothing', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(
+        following: <String>[kFootball, kTennis],
+      );
+      h.repo.sportResult = const Ok(_tennis);
+      await pumpSport(tester, h, sportId: kTennis);
+      await _tapText(tester, 'Following');
+      expect(find.text('Unfollow Tennis?'), findsOneWidget);
+      await _tapText(tester, 'Cancel');
+      expect(h.follow.unfollows, isEmpty);
+      expect(find.text('Following'), findsOneWidget);
     });
 
     testWidgets('Unfollow removes from Following only', (tester) async {
@@ -416,8 +567,8 @@ void main() {
       h.repo.sportResult = const Ok(_tennis);
       h.profile.interestsOnRefresh = <String>[kFootball];
       await pumpSport(tester, h, sportId: kTennis);
-      await tester.tap(find.text('Following'));
-      await settle(tester);
+      await _tapText(tester, 'Following');
+      await _tapText(tester, 'Unfollow');
       expect(h.follow.unfollows, <String>['me:$kTennis']);
       expect(find.text('Follow'), findsOneWidget);
       expect(h.repo.createdProfiles, isEmpty);
@@ -440,8 +591,8 @@ void main() {
         final SportHarness h = SportHarness(following: <String>[kFootball]);
         h.follow.unfollowResult = Ok(c.$1);
         await pumpSport(tester, h);
-        await tester.tap(find.text('Following'));
-        await settle(tester);
+        await _tapText(tester, 'Following');
+        await _tapText(tester, 'Unfollow');
         expect(find.text(c.$2), findsOneWidget);
         expect(find.text('Following'), findsOneWidget);
         // Nothing was reloaded or written: the guard refused first.
@@ -457,8 +608,7 @@ void main() {
         h.repo.sportResult = const Ok(_tennis);
         h.follow.followResult = const Err(Failure(message: 'offline'));
         await pumpSport(tester, h, sportId: kTennis);
-        await tester.tap(find.text('Follow'));
-        await settle(tester);
+        await _tapText(tester, 'Follow');
         expect(
           find.text("Couldn't update your Following. Try again."),
           findsOneWidget,
@@ -489,7 +639,7 @@ void main() {
       h.repo.hasProfileResult = Ok(hasProfile);
       h.repo.gamesResult = Ok([game('g1', title: 'Join me')]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Games');
+      await _openGames(tester);
       return h;
     }
 
@@ -497,34 +647,37 @@ void main() {
       tester,
     ) async {
       final SportHarness h = await pumpWithGame(tester, hasProfile: true);
-      await tester.tap(find.text('Join game'));
-      await settle(tester);
+      await _tapText(tester, 'Join');
       expect(find.text('Do you want to create profile?'), findsNothing);
+      expect(h.joinedGames, <String>['g1']);
+    });
+
+    testWidgets('a rail card joins the same way', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.gamesResult = Ok([game('g1', title: 'Join me')]);
+      await pumpSport(tester, h);
+      await _tapText(tester, 'Join');
       expect(h.joinedGames, <String>['g1']);
     });
 
     testWidgets('No performs no join and creates no profile', (tester) async {
       final SportHarness h = await pumpWithGame(tester, hasProfile: false);
-      await tester.tap(find.text('Join game'));
-      await settle(tester);
+      await _tapText(tester, 'Join');
       expect(find.text('Do you want to create profile?'), findsOneWidget);
-      await tester.tap(find.text('No'));
-      await settle(tester);
+      await _tapText(tester, 'No');
       expect(h.repo.createdProfiles, isEmpty);
       expect(h.joinedGames, isEmpty);
       expect(h.follow.follows, isEmpty);
       // The button is usable again.
-      expect(find.text('Join game'), findsOneWidget);
+      expect(find.text('Join'), findsOneWidget);
     });
 
     testWidgets('Yes creates the profile, adds Following, then joins', (
       tester,
     ) async {
       final SportHarness h = await pumpWithGame(tester, hasProfile: false);
-      await tester.tap(find.text('Join game'));
-      await settle(tester);
-      await tester.tap(find.text('Yes'));
-      await settle(tester);
+      await _tapText(tester, 'Join');
+      await _tapText(tester, 'Yes');
       expect(h.repo.createdProfiles, <String>['me:$kFootball']);
       expect(h.follow.follows, <String>['me:$kFootball']);
       expect(h.joinedGames, <String>['g1']);
@@ -535,10 +688,8 @@ void main() {
     ) async {
       final SportHarness h = await pumpWithGame(tester, hasProfile: false);
       h.repo.createProfileResult = const Err(Failure(message: 'nope'));
-      await tester.tap(find.text('Join game'));
-      await settle(tester);
-      await tester.tap(find.text('Yes'));
-      await settle(tester);
+      await _tapText(tester, 'Join');
+      await _tapText(tester, 'Yes');
       expect(h.joinedGames, isEmpty);
       expect(
         find.text(
@@ -553,12 +704,10 @@ void main() {
       h.repo.hasProfileResult = const Ok(false);
       h.repo.meetupsResult = Ok([meetup('m1')]);
       await pumpSport(tester, h);
-      await _openTab(tester, 'Meetups');
-      await tester.tap(find.text('Join meetup'));
-      await settle(tester);
+      await _openGames(tester);
+      await _tap(tester, find.byType(DabblerRsvpCta).first);
       expect(find.text('Do you want to create profile?'), findsOneWidget);
-      await tester.tap(find.text('No'));
-      await settle(tester);
+      await _tapText(tester, 'No');
       expect(h.rsvpMeetups, isEmpty);
       expect(h.repo.createdProfiles, isEmpty);
     });
@@ -592,7 +741,7 @@ void main() {
       );
     });
 
-    testWidgets('no city shows the designed CTA and queries every city', (
+    testWidgets('no city shows the designed card and queries every city', (
       tester,
     ) async {
       final SportHarness h = SportHarness(
@@ -600,60 +749,96 @@ void main() {
         city: null,
       );
       await pumpSport(tester, h);
-      expect(find.text("Pick a city to see what's on"), findsOneWidget);
-      expect(find.text('Choose a city'), findsOneWidget);
+      expect(
+        find.text('Select a city to see Football near you'),
+        findsOneWidget,
+      );
+      // The header chip and the card's button both say it.
+      expect(find.text('Select city'), findsNWidgets(2));
+      expect(find.text('Games & meetups'), findsNothing);
       expect(h.repo.overviewCities, <String?>[null]);
     });
 
-    testWidgets('Clear city returns to the no-city state', (tester) async {
-      final SportHarness h = SportHarness(following: <String>[kFootball]);
+    testWidgets('the no-city button opens the city sheet', (tester) async {
+      final SportHarness h = SportHarness(
+        following: <String>[kFootball],
+        city: null,
+      );
       await pumpSport(tester, h);
-      await tester.tap(find.text('Clear city'));
-      await settle(tester);
-      expect(find.text("Pick a city to see what's on"), findsOneWidget);
-      expect(h.repo.overviewCities.last, isNull);
-      expect(h.location.manualCityCalls, 0);
+      await _tapText(tester, 'Select city');
+      expect(find.text('Choose city'), findsOneWidget);
+      expect(
+        find.text(
+          'Changes this page only. Your location on this device isn’t changed.',
+        ),
+        findsOneWidget,
+      );
     });
+
+    Future<void> pickAbuDhabi(WidgetTester tester, SportHarness h) async {
+      h.repo.cityCodes['Abu Dhabi'] = 'abu-dhabi';
+      await _tapText(tester, 'Dubai');
+      await tester.enterText(find.byType(EditableText).last, 'abu');
+      await tester.pump(const Duration(milliseconds: 600));
+      await settle(tester);
+      await _tapText(tester, 'Abu Dhabi');
+    }
+
+    final List<Override> abuDhabiResults = <Override>[
+      mapboxCityProvider.overrideWith(
+        (ref, String q) async => <MapboxPlace>[
+          const MapboxPlace(
+            id: 'place.1',
+            name: 'Abu Dhabi',
+            fullAddress: 'Abu Dhabi, UAE',
+            lat: 24.45,
+            lng: 54.37,
+            country: 'United Arab Emirates',
+            countryCode: 'AE',
+          ),
+        ],
+      ),
+    ];
 
     testWidgets('picking another city re-queries this page only', (
       tester,
     ) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
-      h.repo.cityCodes['Abu Dhabi'] = 'abu-dhabi';
-      await pumpSport(
-        tester,
-        h,
-        overrides: [
-          mapboxCityProvider.overrideWith(
-            (ref, String q) async => <MapboxPlace>[
-              const MapboxPlace(
-                id: 'place.1',
-                name: 'Abu Dhabi',
-                fullAddress: 'Abu Dhabi, UAE',
-                lat: 24.45,
-                lng: 54.37,
-                country: 'United Arab Emirates',
-                countryCode: 'AE',
-              ),
-            ],
-          ),
-        ],
-      );
-      await tester.tap(find.text('Dubai'));
-      await settle(tester);
-      await tester.enterText(find.byType(EditableText).last, 'abu');
-      await tester.pump(const Duration(milliseconds: 600));
-      await settle(tester);
-      await tester.tap(find.text('Abu Dhabi'));
-      await settle(tester);
+      await pumpSport(tester, h, overrides: abuDhabiResults);
+      await pickAbuDhabi(tester, h);
 
       expect(h.repo.overviewCities.last, 'abu-dhabi');
       expect(find.text('Abu Dhabi'), findsOneWidget);
+      expect(find.text('Play Football in Abu Dhabi'), findsOneWidget);
       // Device location, saved places and the profile are untouched.
       expect(h.location.manualCityCalls, 0);
       expect(h.profile.refreshes, 0);
       expect(h.follow.follows, isEmpty);
       expect(h.follow.unfollows, isEmpty);
+    });
+
+    testWidgets('"Use my location" goes back to the device city', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      await pumpSport(tester, h, overrides: abuDhabiResults);
+      await pickAbuDhabi(tester, h);
+      expect(h.repo.overviewCities.last, 'abu-dhabi');
+
+      await _tapText(tester, 'Abu Dhabi');
+      await _tapText(tester, 'Use my location · Dubai');
+      expect(h.repo.overviewCities.last, 'dubai');
+      expect(find.text('Play Football in Dubai'), findsOneWidget);
+      expect(h.location.manualCityCalls, 0);
+    });
+
+    testWidgets('a sub-view keeps the chosen city', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      await pumpSport(tester, h, overrides: abuDhabiResults);
+      await pickAbuDhabi(tester, h);
+      await _openGames(tester);
+      expect(h.repo.calls, contains('games:$kFootball:abu-dhabi'));
+      expect(find.text('No Football games in Abu Dhabi'), findsOneWidget);
     });
   });
 
@@ -687,12 +872,14 @@ void main() {
       );
     });
 
-    testWidgets('Create game opens the existing create flow', (tester) async {
+    testWidgets('Create game or meetup opens the existing create flow', (
+      tester,
+    ) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       await pumpSport(tester, h);
-      await tester.tap(find.text('Create game'));
-      await settle(tester);
+      await _tapText(tester, 'Create game or meetup');
       expect(h.pushed.single, startsWith(RoutePaths.createGame));
+      expect(h.pushed.single, contains('sport='));
     });
   });
 
@@ -701,9 +888,10 @@ void main() {
       for (final Brightness b in Brightness.values) {
         for (final Size size in const <Size>[Size(360, 640), Size(390, 844)]) {
           testWidgets(
-            'every tab at ${size.width.toInt()}x${size.height.toInt()} '
+            'every view at ${size.width.toInt()}x${size.height.toInt()} '
             '${locale.languageCode} ${b.name}',
             (tester) async {
+              final AppLocalizations l = lookupAppLocalizations(locale);
               final SportHarness h = SportHarness(
                 following: <String>[kFootball],
               );
@@ -746,17 +934,27 @@ void main() {
               );
               final bool rtl = locale.languageCode == 'ar';
               expect(
-                Directionality.of(tester.element(find.byType(DabblerTabs))),
+                Directionality.of(
+                  tester.element(find.text(l.sport_overview_next_7_days)),
+                ),
                 rtl ? TextDirection.rtl : TextDirection.ltr,
               );
               expect(tester.takeException(), isNull, reason: 'overview');
 
-              final List<String> labels = rtl
-                  ? <String>['المباريات', 'اللقاءات', 'الأماكن', 'المنشورات']
-                  : <String>['Games', 'Meetups', 'Venues', 'Posts'];
-              for (final String label in labels) {
-                await _openTab(tester, label);
+              final List<String> tiles = <String>[
+                l.sport_overview_tile_games_meetups,
+                l.sport_overview_stat_posts,
+                l.sport_overview_stat_venues,
+                l.sport_overview_stat_spaces,
+              ];
+              for (final String label in tiles) {
+                await _tap(tester, find.text(label).first);
                 expect(tester.takeException(), isNull, reason: label);
+                await _tap(
+                  tester,
+                  find.text(l.sport_overview_tab_overview).first,
+                );
+                expect(tester.takeException(), isNull, reason: 'back $label');
               }
             },
           );
@@ -765,6 +963,7 @@ void main() {
     }
 
     testWidgets('Arabic labels render on the page', (tester) async {
+      final AppLocalizations l = lookupAppLocalizations(const Locale('ar'));
       final SportHarness h = SportHarness(following: <String>[kFootball]);
       await pumpSport(
         tester,
@@ -774,8 +973,8 @@ void main() {
       );
       expect(find.text('كرة القدم'), findsWidgets);
       expect(find.text('تتابعها'), findsOneWidget);
-      expect(_tab('نظرة عامة'), findsOneWidget);
-      expect(_tab('المباريات'), findsOneWidget);
+      expect(find.text(l.sport_overview_tile_games_meetups), findsOneWidget);
+      expect(find.text(l.sport_overview_public_chip), findsOneWidget);
     });
   });
 }

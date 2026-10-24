@@ -64,7 +64,10 @@ dependencies:
   # GoRouter - Clean, minimal navigation
   go_router: ^12.0.0
 
-  # Flutter SVG - Beautiful scalable graphics
+  # Flutter SVG - Beautiful scalable graphics. KAN-591: renders the supplied
+  # sport artwork (assets/sport-icon/). Already locked at 2.3.0 through the
+  # design system; declared here because the app now imports it directly.
+  flutter_svg: ^2.3.0
 
   # Riverpod - Minimal, powerful state management
   riverpod: ^2.5.0
@@ -207,6 +210,8 @@ flutter:
     # assets/images/ ("Retro ... .png") stay unchanged and are not bundled.
     - assets/images/sport_background/
     - assets/images/card/
+    # KAN-591: the supplied sport artwork, unchanged (case-sensitive names).
+    - assets/sport-icon/
     - assets/images/logoTypo.svg
     - assets/images/undraw/
     # Local client configuration for plain `flutter run` (docs/LOCAL_RUN.md): the
