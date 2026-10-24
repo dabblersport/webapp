@@ -7505,6 +7505,32 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_intro_manual => 'Enter location manually';
 
   @override
+  String get location_intro_detecting => 'Finding your area';
+
+  @override
+  String get location_intro_try_again => 'Try again';
+
+  @override
+  String get location_intro_denied_title => 'Location access is off';
+
+  @override
+  String get location_intro_denied_message =>
+      'Turn it on in Settings, or enter your city yourself.';
+
+  @override
+  String get location_intro_no_gps_title => 'We couldn’t get a GPS fix';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'Location services may be off or the signal is weak. Try again, or enter your city.';
+
+  @override
+  String get location_intro_country_title => 'Choose your country';
+
+  @override
+  String get location_intro_country_change => 'Change country';
+
+  @override
   String get location_settings_device_title => 'Device location';
 
   @override

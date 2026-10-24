@@ -6297,7 +6297,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_intro_cta => 'استخدم موقعي';
 
   @override
-  String get location_intro_later => 'ربما لاحقًا';
+  String get location_intro_later => 'لاحقًا';
 
   @override
   String get location_intro_denied =>
@@ -6312,7 +6312,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.';
 
   @override
-  String get location_intro_open_settings => 'فتح الإعدادات';
+  String get location_intro_open_settings => 'افتح الإعدادات';
 
   @override
   String get location_intro_art => 'خريطة عليها دبوس موقع أحمر';
@@ -7563,6 +7563,32 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_intro_manual => 'أدخل الموقع يدويًا';
+
+  @override
+  String get location_intro_detecting => 'جارٍ تحديد منطقتك';
+
+  @override
+  String get location_intro_try_again => 'حاول مجددًا';
+
+  @override
+  String get location_intro_denied_title => 'الوصول إلى الموقع متوقف';
+
+  @override
+  String get location_intro_denied_message =>
+      'فعّله من الإعدادات، أو أدخل مدينتك بنفسك.';
+
+  @override
+  String get location_intro_no_gps_title => 'تعذّر تحديد الموقع';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'قد تكون خدمات الموقع متوقفة أو الإشارة ضعيفة. حاول مجددًا أو أدخل مدينتك.';
+
+  @override
+  String get location_intro_country_title => 'اختر دولتك';
+
+  @override
+  String get location_intro_country_change => 'تغيير الدولة';
 
   @override
   String get location_settings_device_title => 'موقع الجهاز';

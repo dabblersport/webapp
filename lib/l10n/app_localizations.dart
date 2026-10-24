@@ -13325,6 +13325,54 @@ abstract class AppLocalizations {
   /// **'Enter location manually'**
   String get location_intro_manual;
 
+  /// No description provided for @location_intro_detecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your area'**
+  String get location_intro_detecting;
+
+  /// No description provided for @location_intro_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get location_intro_try_again;
+
+  /// No description provided for @location_intro_denied_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is off'**
+  String get location_intro_denied_title;
+
+  /// No description provided for @location_intro_denied_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn it on in Settings, or enter your city yourself.'**
+  String get location_intro_denied_message;
+
+  /// No description provided for @location_intro_no_gps_title.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t get a GPS fix'**
+  String get location_intro_no_gps_title;
+
+  /// No description provided for @location_intro_no_gps_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services may be off or the signal is weak. Try again, or enter your city.'**
+  String get location_intro_no_gps_message;
+
+  /// No description provided for @location_intro_country_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your country'**
+  String get location_intro_country_title;
+
+  /// No description provided for @location_intro_country_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change country'**
+  String get location_intro_country_change;
+
   /// KAN-628 section title of the device location block in Settings > Location.
   ///
   /// In en, this message translates to:
