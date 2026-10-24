@@ -81,8 +81,9 @@ void main() {
     expect(sportArtworkAsset('Football'), isNull);
   });
 
-  test('Frame 5.svg is shipped but mapped to no sport', () {
-    expect(kSportArtworkFiles.values, isNot(contains('Frame 5.svg')));
+  test('Frame 5.svg is baseball (CEO ruling, KAN-591 R2)', () {
+    expect(kSportArtworkFiles['baseball'], 'Frame 5.svg');
+    expect(sportArtworkAsset('baseball'), '$kSportArtworkFolder/Frame 5.svg');
   });
 
   test('every shipped file is registered by the folder entry in pubspec', () {

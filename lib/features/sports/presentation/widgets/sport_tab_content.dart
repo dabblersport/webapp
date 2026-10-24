@@ -424,7 +424,6 @@ class SportOverviewContent extends ConsumerWidget {
         if (c.gamesNext7 == 0 &&
             c.meetupsNext7 == 0 &&
             c.venues == 0 &&
-            c.spaces == 0 &&
             c.posts == 0) {
           return SportEmptyCard(
             icon: 'calendar',
@@ -577,16 +576,6 @@ class _Loaded extends ConsumerWidget {
                 onTap: () => onOpen(
                   SportView.venues,
                   venuesMode: SportVenuesMode.venues,
-                ),
-              ),
-              DabblerStatTile(
-                value: num(counts.spaces),
-                label: l.sport_overview_stat_spaces,
-                sub: l.sport_overview_tile_spaces_sub,
-                tone: DabblerStatTileTone.info,
-                onTap: () => onOpen(
-                  SportView.venues,
-                  venuesMode: SportVenuesMode.spaces,
                 ),
               ),
             ],

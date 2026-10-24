@@ -395,48 +395,45 @@ class _CityChip extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: DabblerSizing.touchTargetMin,
-          ),
-          child: Center(
-            widthFactor: 1,
-            child: DabblerSurface(
-              radius: DabblerRadius.pill,
-              borderColor: unset ? colors.brandPrimary : null,
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space3,
-                vertical: DabblerSpacing.space2,
-              ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: <Widget>[
-                  DabblerIcon(
-                    'location',
-                    size: DabblerSizing.iconInline,
-                    color: fg,
+        child: Align(
+          alignment: AlignmentDirectional.centerStart,
+          widthFactor: 1,
+          heightFactor: 1,
+          child: DabblerSurface(
+            radius: DabblerRadius.pill,
+            borderColor: unset ? colors.brandPrimary : null,
+            padding: const EdgeInsetsDirectional.symmetric(
+              horizontal: DabblerSpacing.space3,
+              vertical: DabblerSpacing.space2,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                DabblerIcon(
+                  'location',
+                  size: DabblerSizing.iconInline,
+                  color: fg,
+                ),
+                const DabblerGap.h(DabblerSpacing.space2),
+                Flexible(
+                  child: DabblerText(
+                    label,
+                    style: DabblerType.caption1,
+                    weight: DabblerTextWeight.semibold,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    tone: unset
+                        ? DabblerTextTone.brand
+                        : DabblerTextTone.secondary,
                   ),
-                  const DabblerGap.h(DabblerSpacing.space2),
-                  Flexible(
-                    child: DabblerText(
-                      label,
-                      style: DabblerType.caption1,
-                      weight: DabblerTextWeight.semibold,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      tone: unset
-                          ? DabblerTextTone.brand
-                          : DabblerTextTone.secondary,
-                    ),
-                  ),
-                  const DabblerGap.h(DabblerSpacing.space2),
-                  DabblerIcon(
-                    'arrow-circle-down',
-                    size: DabblerSizing.iconXs,
-                    color: fg,
-                  ),
-                ],
-              ),
+                ),
+                const DabblerGap.h(DabblerSpacing.space2),
+                DabblerIcon(
+                  'arrow-circle-down',
+                  size: DabblerSizing.iconXs,
+                  color: fg,
+                ),
+              ],
             ),
           ),
         ),
@@ -479,12 +476,7 @@ class _Counter extends StatelessWidget {
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: DabblerSizing.touchTargetMin,
-          ),
-          child: Center(widthFactor: 1, child: row),
-        ),
+        child: row,
       ),
     );
   }

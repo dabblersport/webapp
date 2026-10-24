@@ -7,11 +7,10 @@ import 'package:flutter_svg/flutter_svg.dart';
 /// misspellings included (`Badmition`, `Volyball`, `Rakby`, `Bowloing`): they
 /// are never renamed, and the artwork is never edited.
 ///
-/// Only a sport the data names is mapped. `Frame 5.svg` ships in the folder but
-/// is not mapped: nothing in the supplied set says which sport it is for, and
-/// a sport is never guessed from a drawing. `Golf` and `Bowloing` are named by
-/// their files; no `sports` row has those keys yet, so they are inert until one
-/// does.
+/// Only a sport the data names is mapped. `Frame 5.svg` is baseball (CEO
+/// ruling on KAN-591 R2); no `sports` row has that key yet, so it is inert
+/// until one does. `Golf` and `Bowloing` are named by their files and are inert
+/// for the same reason.
 const Map<String, String> kSportArtworkFiles = <String, String>{
   'football': 'Football.svg',
   'basketball': 'Basketball.svg',
@@ -30,6 +29,7 @@ const Map<String, String> kSportArtworkFiles = <String, String>{
   'volleyball': 'Volyball.svg',
   'rugby_union': 'Rakby.svg',
   'bowling': 'Bowloing.svg',
+  'baseball': 'Frame 5.svg',
 };
 
 const String kSportArtworkFolder = 'assets/sport-icon';

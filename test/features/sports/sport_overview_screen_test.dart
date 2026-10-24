@@ -203,11 +203,41 @@ void main() {
       expect(find.text('3 games · 2 meetups'), findsOneWidget);
       expect(find.text('4'), findsOneWidget);
       expect(find.text('To book'), findsOneWidget);
-      expect(find.text('9'), findsOneWidget);
-      expect(find.text('Inside venues'), findsOneWidget);
+      expect(find.text('Inside venues'), findsNothing, reason: 'Spaces dropped');
       // Posts: the header counter and the tile.
       expect(find.text('17'), findsNWidgets(2));
       expect(find.text('13'), findsNothing, reason: 'venues + spaces summed');
+    });
+
+    testWidgets('the stat grid has three tiles, no Spaces, no gap or orphan', (
+      tester,
+    ) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      await pumpSport(tester, h);
+      final Finder grid = find.byType(DabblerStatGrid);
+      expect(grid, findsOneWidget);
+      final List<DabblerStatTile> tiles = tester
+          .widgetList<DabblerStatTile>(
+            find.descendant(of: grid, matching: find.byType(DabblerStatTile)),
+          )
+          .toList();
+      expect(tiles, hasLength(3));
+      expect(find.text('Spaces'), findsNothing);
+      // Every cell of the 6-column grid is covered: no hole, no lone tile.
+      final layout = DabblerStatGrid.place(<(int, int)>[
+        for (final DabblerStatTile t in tiles)
+          (t.effectiveSpan, t.effectiveRows),
+      ]);
+      final Set<(int, int)> covered = <(int, int)>{};
+      for (int i = 0; i < tiles.length; i++) {
+        final (int c, int r) = layout.origins[i];
+        for (int y = r; y < r + tiles[i].effectiveRows; y++) {
+          for (int x = c; x < c + tiles[i].effectiveSpan; x++) {
+            covered.add((x, y));
+          }
+        }
+      }
+      expect(covered, hasLength(DabblerStatGrid.columns * layout.rows));
     });
 
     testWidgets('a tile opens its view and "Overview" returns', (tester) async {
@@ -225,6 +255,7 @@ void main() {
       await _back(tester);
       expect(find.text('Play Football in Dubai'), findsOneWidget);
 
+      await _openVenues(tester);
       await _openSpaces(tester);
       expect(find.text('0 bookable spaces'), findsOneWidget);
       await _back(tester);
@@ -424,24 +455,6 @@ void main() {
       await _openVenues(tester);
       expect(find.text('2 venues'), findsOneWidget);
       expect(find.text('Court 1'), findsNothing);
-    });
-
-    testWidgets('the Spaces tile opens the Spaces side directly', (
-      tester,
-    ) async {
-      final SportHarness h = SportHarness(following: <String>[kFootball]);
-      h.repo.spacesResult = const Ok(<SportSpace>[
-        SportSpace(
-          id: 's1',
-          venueId: 'v1',
-          nameEn: 'Court 1',
-          venueNameEn: 'Rated Arena',
-        ),
-      ]);
-      await pumpSport(tester, h);
-      await _openSpaces(tester);
-      expect(find.text('1 bookable space'), findsOneWidget);
-      expect(find.text('Court 1'), findsOneWidget);
     });
   });
 
@@ -865,9 +878,8 @@ void main() {
       await pumpSport(tester, h);
       expect(find.textContaining('Followed by'), findsNothing);
       expect(
-        SportOverviewCounts.fromJson(const <String, dynamic>{
-          'followers': 1,
-        }).mutualFollowers,
+        SportOverviewCounts.fromJson(const <String, dynamic>{'followers': 1})
+            .mutualFollowers,
         isEmpty,
       );
     });
@@ -945,7 +957,6 @@ void main() {
                 l.sport_overview_tile_games_meetups,
                 l.sport_overview_stat_posts,
                 l.sport_overview_stat_venues,
-                l.sport_overview_stat_spaces,
               ];
               for (final String label in tiles) {
                 await _tap(tester, find.text(label).first);
