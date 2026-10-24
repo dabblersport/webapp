@@ -4,9 +4,11 @@ import 'package:dabbler/features/sports/data/sport_overview_models.dart';
 import 'package:dabbler/features/sports/presentation/providers/sport_overview_providers.dart';
 import 'package:dabbler/features/sports/presentation/widgets/sport_artwork.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/material.dart' show Theme, ThemeData;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -129,184 +131,203 @@ class SportHeader extends ConsumerWidget {
         if (m.label != null) m.label!,
     ];
     final String? cityName = city?.name;
-    // `color-mix(brand 14%, white)`: the DS full-bleed band, the ground the
-    // profile hero uses; the sport route renders under the sport theme.
-    return DabblerSurface.brandTintBleed(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
-        DabblerSpacing.space7,
+    // The design tints the band `color-mix(var(--sport-p-600) 14%, white)` in
+    // every theme: the DS full-bleed band resolved under the sport theme, with
+    // the content put back under the app's own theme (purple Follow).
+    final ThemeData appTheme = Theme.of(context);
+    return Theme(
+      data: DabblerDesignSystemTheme.withTokens(
+        appTheme,
+        theme: DabblerTheme.sport,
       ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
+      child: DabblerSurface.brandTintBleed(
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerSpacing.space6,
+          DabblerSpacing.space4,
+          DabblerSpacing.space6,
+          DabblerSpacing.space7,
+        ),
+        child: Theme(
+          data: appTheme,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              SizedBox.square(
-                dimension: DabblerSizing.iconLg + DabblerSizing.iconLg,
-                child: SportArtwork(
-                  sportKey: sport.sportKey,
-                  size: DabblerSizing.iconLg + DabblerSizing.iconLg,
-                  semanticLabel: name,
-                ),
-              ),
-              const DabblerGap.h(DabblerSpacing.space5),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: <Widget>[
-                    DabblerText(
-                      name,
-                      style: DabblerType.displayScreen,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const DabblerGap.v(DabblerSpacing.space1),
-                    DabblerText(
-                      formats.isEmpty
-                          ? l.sport_overview_kind_plain
-                          : l.sport_overview_kind_formats(formats.join(', ')),
-                      style: DabblerType.smallTight,
-                      tone: DabblerTextTone.secondary,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const DabblerGap.v(DabblerSpacing.space4),
-          Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            children: <Widget>[
-              _PublicChip(sportKey: sport.sportKey),
-              if (city != null)
-                _CityChip(
-                  label: cityName ?? l.listing_select_city,
-                  unset: cityName == null,
-                  onTap: onPickCity,
-                ),
-            ],
-          ),
-          if (counts != null) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space4),
-            Row(
-              children: <Widget>[
-                _Counter(
-                  value: sportShortCount(counts!.followers, locale),
-                  label: l.sport_overview_followers_label(counts!.followers),
-                ),
-                const DabblerGap.h(DabblerSpacing.space6),
-                _Counter(
-                  value: sportShortCount(counts!.posts, locale),
-                  label: l.sport_overview_posts_label,
-                  onTap: onOpenPosts,
-                ),
-              ],
-            ),
-          ],
-          const DabblerGap.v(DabblerSpacing.space4),
-          Row(
-            children: <Widget>[
-              Expanded(
-                child: DabblerButton(
-                  label: following
-                      ? l.sport_overview_following
-                      : l.sport_overview_follow,
-                  tone: following
-                      ? DabblerButtonTone.outlined
-                      : DabblerButtonTone.primary,
-                  fullWidth: true,
-                  loading: follow.busy,
-                  leadingWidget: DabblerIcon(
-                    following ? 'tick-circle' : 'add',
-                    weight: DabblerIconWeight.bold,
-                    size: DabblerSizing.iconSm,
-                  ),
-                  onPressed: () => _toggle(context, ref, following),
-                ),
-              ),
-              if (canCreate) ...<Widget>[
-                const DabblerGap.h(DabblerSpacing.space3),
-                DabblerButton(
-                  label: l.sport_overview_create_game_or_meetup,
-                  tone: DabblerButtonTone.outlined,
-                  leadingWidget: const DabblerIcon(
-                    'calendar-add',
-                    size: DabblerSizing.iconSm,
-                  ),
-                  onPressed: () => context.push(
-                    '${RoutePaths.createGame}?sport=${Uri.encodeQueryComponent(sport.id)}',
-                  ),
-                ),
-              ],
-            ],
-          ),
-          if (following) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space4),
-            DabblerSurface(
-              radius: DabblerRadius.md,
-              padding: const EdgeInsetsDirectional.symmetric(
-                horizontal: DabblerSpacing.space4,
-                vertical: DabblerSpacing.space3,
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              Row(
                 children: <Widget>[
-                  DabblerIcon(
-                    'info-circle',
-                    weight: DabblerIconWeight.bold,
-                    size: DabblerSizing.iconInline,
-                    color: colors.brandPrimary,
+                  SizedBox.square(
+                    dimension: DabblerSizing.iconLg + DabblerSizing.iconLg,
+                    child: SportArtwork(
+                      sportKey: sport.sportKey,
+                      size: DabblerSizing.iconLg + DabblerSizing.iconLg,
+                      semanticLabel: name,
+                    ),
                   ),
-                  const DabblerGap.h(DabblerSpacing.space3),
+                  const DabblerGap.h(DabblerSpacing.space5),
                   Expanded(
-                    child: DabblerText(
-                      l.sport_overview_follow_note(name),
-                      style: DabblerType.caption1,
-                      tone: DabblerTextTone.secondary,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: <Widget>[
+                        DabblerText(
+                          name,
+                          style: DabblerType.displayScreen,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const DabblerGap.v(DabblerSpacing.space1),
+                        DabblerText(
+                          formats.isEmpty
+                              ? l.sport_overview_kind_plain
+                              : l.sport_overview_kind_formats(
+                                  formats.join(', '),
+                                ),
+                          style: DabblerType.smallTight,
+                          tone: DabblerTextTone.secondary,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
                     ),
                   ),
                 ],
               ),
-            ),
-          ],
-          if (mutual.isNotEmpty) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space4),
-            Row(
-              children: <Widget>[
-                DabblerAvatarGroup(
-                  people: mutual,
-                  imageUrls: <String?>[
-                    for (final MutualFollower m
-                        in counts?.mutualFollowers ?? const <MutualFollower>[])
-                      if (m.label != null) m.avatarUrl,
+              const DabblerGap.v(DabblerSpacing.space4),
+              Wrap(
+                spacing: DabblerSpacing.space2,
+                runSpacing: DabblerSpacing.space2,
+                crossAxisAlignment: WrapCrossAlignment.center,
+                children: <Widget>[
+                  _PublicChip(sportKey: sport.sportKey),
+                  if (city != null)
+                    _CityChip(
+                      label: cityName ?? l.listing_select_city,
+                      unset: cityName == null,
+                      onTap: onPickCity,
+                    ),
+                ],
+              ),
+              if (counts != null) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space4),
+                Row(
+                  children: <Widget>[
+                    _Counter(
+                      value: sportShortCount(counts!.followers, locale),
+                      label: l.sport_overview_followers_label(
+                        counts!.followers,
+                      ),
+                    ),
+                    const DabblerGap.h(DabblerSpacing.space6),
+                    _Counter(
+                      value: sportShortCount(counts!.posts, locale),
+                      label: l.sport_overview_posts_label,
+                      onTap: onOpenPosts,
+                    ),
                   ],
                 ),
-                const DabblerGap.h(DabblerSpacing.space4),
-                Expanded(
-                  child: DabblerText(
-                    switch (mutual.length) {
-                      1 => l.sport_overview_mutual_one(mutual[0]),
-                      2 => l.sport_overview_mutual_two(mutual[0], mutual[1]),
-                      _ => l.sport_overview_mutual_three(
-                        mutual[0],
-                        mutual[1],
-                        mutual[2],
+              ],
+              const DabblerGap.v(DabblerSpacing.space4),
+              Row(
+                children: <Widget>[
+                  Expanded(
+                    child: DabblerButton(
+                      label: following
+                          ? l.sport_overview_following
+                          : l.sport_overview_follow,
+                      tone: following
+                          ? DabblerButtonTone.outlined
+                          : DabblerButtonTone.primary,
+                      fullWidth: true,
+                      loading: follow.busy,
+                      leadingWidget: DabblerIcon(
+                        following ? 'tick-circle' : 'add',
+                        weight: DabblerIconWeight.bold,
+                        size: DabblerSizing.iconSm,
                       ),
-                    },
-                    style: DabblerType.footnote,
-                    tone: DabblerTextTone.secondary,
+                      onPressed: () => _toggle(context, ref, following),
+                    ),
+                  ),
+                  if (canCreate) ...<Widget>[
+                    const DabblerGap.h(DabblerSpacing.space3),
+                    DabblerButton(
+                      label: l.sport_overview_create_game_or_meetup,
+                      tone: DabblerButtonTone.outlined,
+                      leadingWidget: const DabblerIcon(
+                        'calendar-add',
+                        size: DabblerSizing.iconSm,
+                      ),
+                      onPressed: () => context.push(
+                        '${RoutePaths.createGame}?sport=${Uri.encodeQueryComponent(sport.id)}',
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+              if (following) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerSurface(
+                  radius: DabblerRadius.md,
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: DabblerSpacing.space4,
+                    vertical: DabblerSpacing.space3,
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: <Widget>[
+                      DabblerIcon(
+                        'info-circle',
+                        weight: DabblerIconWeight.bold,
+                        size: DabblerSizing.iconInline,
+                        color: colors.brandPrimary,
+                      ),
+                      const DabblerGap.h(DabblerSpacing.space3),
+                      Expanded(
+                        child: DabblerText(
+                          l.sport_overview_follow_note(name),
+                          style: DabblerType.caption1,
+                          tone: DabblerTextTone.secondary,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ],
-            ),
-          ],
-        ],
+              if (mutual.isNotEmpty) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space4),
+                Row(
+                  children: <Widget>[
+                    DabblerAvatarGroup(
+                      people: mutual,
+                      imageUrls: <String?>[
+                        for (final MutualFollower m
+                            in counts?.mutualFollowers ??
+                                const <MutualFollower>[])
+                          if (m.label != null) m.avatarUrl,
+                      ],
+                    ),
+                    const DabblerGap.h(DabblerSpacing.space4),
+                    Expanded(
+                      child: DabblerText(
+                        switch (mutual.length) {
+                          1 => l.sport_overview_mutual_one(mutual[0]),
+                          2 => l.sport_overview_mutual_two(
+                            mutual[0],
+                            mutual[1],
+                          ),
+                          _ => l.sport_overview_mutual_three(
+                            mutual[0],
+                            mutual[1],
+                            mutual[2],
+                          ),
+                        },
+                        style: DabblerType.footnote,
+                        tone: DabblerTextTone.secondary,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }

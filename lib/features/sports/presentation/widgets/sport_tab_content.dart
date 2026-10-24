@@ -12,7 +12,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:intl/intl.dart' show DateFormat;
+import 'package:intl/intl.dart' show DateFormat, NumberFormat;
 
 // KAN-591: the content under the Sport Overview v2 identity block. The design
 // has no tab bar: the Overview is a bento of counters plus rails, and each
@@ -501,6 +501,7 @@ class _Loaded extends ConsumerWidget {
     final List<SportVenue>? venues = ref
         .watch(sportVenuesProvider(scope))
         .valueOrNull;
+    String num(int n) => NumberFormat.decimalPattern(locale).format(n);
     final String next = _next(l, locale, games, meetups) ?? '';
     final String heroSub = <String>[
       l.sport_overview_count_games(counts.gamesNext7),
@@ -549,7 +550,7 @@ class _Loaded extends ConsumerWidget {
           DabblerStatGrid(
             children: <DabblerStatTile>[
               DabblerStatTile(
-                value: '${counts.gamesNext7 + counts.meetupsNext7}',
+                value: num(counts.gamesNext7 + counts.meetupsNext7),
                 label: l.sport_overview_tile_games_meetups,
                 sub: heroSub,
                 size: DabblerStatTileSize.hero,
@@ -563,13 +564,13 @@ class _Loaded extends ConsumerWidget {
                 onTap: () => onOpen(SportView.games),
               ),
               DabblerStatTile(
-                value: '${counts.posts}',
+                value: num(counts.posts),
                 label: l.sport_overview_stat_posts,
                 tone: DabblerStatTileTone.ink,
                 onTap: () => onOpen(SportView.posts),
               ),
               DabblerStatTile(
-                value: '${counts.venues}',
+                value: num(counts.venues),
                 label: l.sport_overview_stat_venues,
                 sub: l.sport_overview_tile_venues_sub,
                 tone: DabblerStatTileTone.amber,
@@ -579,7 +580,7 @@ class _Loaded extends ConsumerWidget {
                 ),
               ),
               DabblerStatTile(
-                value: '${counts.spaces}',
+                value: num(counts.spaces),
                 label: l.sport_overview_stat_spaces,
                 sub: l.sport_overview_tile_spaces_sub,
                 tone: DabblerStatTileTone.info,
