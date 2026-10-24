@@ -74,6 +74,27 @@ final mapboxCityProvider = FutureProvider.family<List<MapboxPlace>, String>((
   ];
 });
 
+/// City search inside one country (KAN-640): the manual flow picks the country
+/// first, so only that country's cities are searched.
+typedef CountryCityQuery = ({String query, String countryCode});
+
+final mapboxCountryCityProvider =
+    FutureProvider.family<List<MapboxPlace>, CountryCityQuery>((ref, q) async {
+      if (q.query.trim().length < 2) return [];
+      final List<MapboxPlace> all = await _forward(<String, String>{
+        'q': q.query,
+        'limit': '8',
+        'types': 'place',
+        'language': 'en',
+        'country': q.countryCode.toLowerCase(),
+      });
+      final seen = <String>{};
+      return [
+        for (final p in all)
+          if (seen.add(p.fullAddress)) p,
+      ];
+    });
+
 /// Area search inside a chosen city (KAN-587): Mapbox neighborhoods, localities
 /// and districts, limited to the city's country and biased to its point.
 typedef AreaQuery = ({String query, String? countryCode, String? proximity});

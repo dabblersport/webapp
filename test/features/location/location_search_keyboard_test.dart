@@ -119,6 +119,7 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
         activeLocationProvider.overrideWith(_FakeActive.new),
         profileLocationNotifierProvider.overrideWith(_FakeSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_FakeAreaRepo()),
@@ -274,6 +275,11 @@ void main() {
       installGeo();
       await _pump(tester, locale: l, brightness: b);
       showSetLocationDrawer(_host);
+      await frames(tester);
+      // KAN-640: the search box and the cities appear after a country.
+      final uae = find.text(lookupAppLocalizations(l).region_country_UAE);
+      await tester.ensureVisible(uae);
+      await tester.tap(uae);
       await frames(tester);
       await _expectAboveKeyboard(
         tester,

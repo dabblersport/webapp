@@ -20,6 +20,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../location/manual_location_surfaces_support.dart';
 
 /// A recording fake of the meetup repository.
 class FakeMeetupRepository implements MeetupRepository {
@@ -247,6 +248,7 @@ Future<void> pumpMeetups(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
         meetupRepositoryProvider.overrideWithValue(repo),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(

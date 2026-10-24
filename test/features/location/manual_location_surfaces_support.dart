@@ -1,5 +1,6 @@
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
+import 'package:dabbler/features/location/data/manual_location_catalog.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -51,6 +52,58 @@ CountingGeoPlatform installGeo({
   return fake;
 }
 
+/// KAN-640: the app's own city and area lists, as the manual flow reads them.
+class FakeManualCatalog implements ManualLocationCatalog {
+  static const dubai = CatalogCity(
+    code: 'dubai',
+    nameEn: 'Dubai',
+    nameAr: 'دبي',
+  );
+
+  @override
+  Future<List<CatalogCity>> citiesOf(String countryName) async =>
+      countryName == 'United Arab Emirates'
+      ? const <CatalogCity>[
+          CatalogCity(code: 'abu_dhabi', nameEn: 'Abu Dhabi', nameAr: 'أبوظبي'),
+          dubai,
+        ]
+      : const <CatalogCity>[];
+
+  @override
+  Future<List<CatalogArea>> areasOf(CatalogCity city) async =>
+      city.code == 'dubai'
+      ? const <CatalogArea>[
+          CatalogArea(name: 'Downtown Dubai', lat: 25.1972, lng: 55.2744),
+          CatalogArea(name: 'Dubai Marina', lat: 25.0805, lng: 55.1403),
+        ]
+      : const <CatalogArea>[];
+}
+
+final fakeCatalogOverride = manualLocationCatalogProvider.overrideWithValue(
+  FakeManualCatalog(),
+);
+
+/// Walks the drawer: country (when it asks), then the city, then the area.
+Future<void> pickDubaiArea(
+  WidgetTester tester, {
+  String country = 'United Arab Emirates',
+  String city = 'Dubai',
+  String area = 'Downtown Dubai',
+}) async {
+  if (find.text(country).evaluate().isNotEmpty &&
+      find.text(city).evaluate().isEmpty) {
+    await tester.ensureVisible(find.text(country).last);
+    await tester.tap(find.text(country).last);
+    await frames(tester, 5);
+  }
+  await tester.ensureVisible(find.text(city).last);
+  await tester.tap(find.text(city).last);
+  await frames(tester, 5);
+  final tile = find.text(area).last;
+  await tester.ensureVisible(tile);
+  await tester.tap(tile);
+}
+
 Future<void> frames(WidgetTester tester, [int n = 10]) async {
   for (var i = 0; i < n; i++) {
     await tester.pump(const Duration(milliseconds: 100));
@@ -71,9 +124,7 @@ Future<void> expectPickFlow(
   expect(find.byType(ManualLocationDrawer), findsOneWidget);
   expect(find.text('Set location'), findsWidgets);
 
-  final tile = find.text('Downtown Dubai').last;
-  await tester.ensureVisible(tile);
-  await tester.tap(tile);
+  await pickDubaiArea(tester);
   await frames(tester);
   // Let the success toast finish.
   await tester.pump(const Duration(seconds: 6));
