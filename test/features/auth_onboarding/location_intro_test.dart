@@ -193,17 +193,14 @@ Future<void> _pump(
           DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
-        home: LocationIntroScreen(userId: userId, onFinish: onFinish),
+        home: LocationIntroScreen(
+          userId: userId,
+          onFinish: onFinish,
+          displayNameLoader: () async => 'Sara Ali',
+        ),
       ),
     ),
   );
-  // Let the bundled artwork decode before the frame is captured.
-  await tester.runAsync(() async {
-    await precacheImage(
-      const AssetImage(LocationIntroScreen.artAsset),
-      tester.element(find.byType(LocationIntroScreen)),
-    );
-  });
   await tester.pump(const Duration(milliseconds: 300));
 }
 
@@ -360,8 +357,9 @@ void main() {
       final g = FakeGateway();
       var finished = 0;
       await _pump(tester, g, locale, onFinish: () => finished++);
-      expect(find.text(l.location_intro_headline), findsOneWidget);
-      expect(find.text(l.location_intro_body), findsOneWidget);
+      expect(find.text(l.location_intro_kicker('Sara')), findsOneWidget);
+      expect(find.text(l.location_intro_title), findsOneWidget);
+      expect(find.text(l.location_intro_subtitle), findsOneWidget);
       expect(find.text(l.location_intro_cta), findsOneWidget);
       expect(find.text(l.location_intro_later), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -372,7 +370,7 @@ void main() {
       await _shoot(tester, 'intro-$dir-$mode');
 
       // KAN-640: Maybe later finishes at once: no sheet, no prompt, no city.
-      expect(find.text(l.location_intro_select_city), findsOneWidget);
+      expect(find.text(l.location_intro_manual), findsOneWidget);
       await tester.tap(find.text(l.location_intro_later));
       await tester.pumpAndSettle();
       expect(finished, 1, reason: 'Maybe later finishes without a city');
@@ -592,14 +590,16 @@ void main() {
     });
   });
 
-  test('copy matches the approved English text exactly', () {
+  test('copy matches the Location.dc.html English text exactly', () {
     final l = lookupAppLocalizations(const Locale('en'));
-    expect(l.location_intro_headline, 'See what’s playing nearby.');
+    expect(l.location_intro_kicker('Sara'), 'Welcome, Sara');
+    expect(l.location_intro_title, 'Where do you play?');
     expect(
-      l.location_intro_body,
-      'Your location is used to show nearby games and venues. '
-      'Turn it on and we’ll keep things local.',
+      l.location_intro_subtitle,
+      'Your city decides which games, venues and meetups you see. '
+      'Adding an area turns on distances.',
     );
+    expect(l.location_intro_manual, 'Enter location manually');
     expect(l.location_intro_cta, 'Use my location');
     expect(l.location_intro_later, 'Maybe later');
   });

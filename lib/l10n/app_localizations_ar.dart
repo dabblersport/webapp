@@ -7550,6 +7550,21 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_intro_select_city => 'اختر مدينتك';
 
   @override
+  String location_intro_kicker(String name) {
+    return 'أهلًا، $name';
+  }
+
+  @override
+  String get location_intro_title => 'أين تلعب؟';
+
+  @override
+  String get location_intro_subtitle =>
+      'مدينتك تحدد المباريات والملاعب واللقاءات التي تراها. إضافة المنطقة تُفعّل المسافات.';
+
+  @override
+  String get location_intro_manual => 'أدخل الموقع يدويًا';
+
+  @override
   String get location_settings_device_title => 'موقع الجهاز';
 
   @override

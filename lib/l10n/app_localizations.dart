@@ -13301,6 +13301,30 @@ abstract class AppLocalizations {
   /// **'Select city'**
   String get location_intro_select_city;
 
+  /// KAN-640 first line of the Location intro (Location.dc.html `welcome`), first name only.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String location_intro_kicker(String name);
+
+  /// No description provided for @location_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Where do you play?'**
+  String get location_intro_title;
+
+  /// No description provided for @location_intro_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your city decides which games, venues and meetups you see. Adding an area turns on distances.'**
+  String get location_intro_subtitle;
+
+  /// No description provided for @location_intro_manual.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter location manually'**
+  String get location_intro_manual;
+
   /// KAN-628 section title of the device location block in Settings > Location.
   ///
   /// In en, this message translates to:
