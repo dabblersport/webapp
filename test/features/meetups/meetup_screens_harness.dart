@@ -249,6 +249,7 @@ Future<void> pumpMeetups(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         meetupRepositoryProvider.overrideWithValue(repo),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(

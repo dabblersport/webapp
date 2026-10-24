@@ -25,7 +25,7 @@ Future<AppLocalizations> _open(WidgetTester tester, Locale locale) async {
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [fakeCatalogOverride],
+      overrides: [fakeCatalogOverride, fakeCountryOverride],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
         builder: (context, child) => RepaintBoundary(

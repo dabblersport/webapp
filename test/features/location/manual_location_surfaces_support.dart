@@ -1,4 +1,5 @@
 import 'package:dabbler/core/services/location_service.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
 import 'package:dabbler/features/location/data/manual_location_catalog.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
@@ -81,6 +82,24 @@ class FakeManualCatalog implements ManualLocationCatalog {
 
 final fakeCatalogOverride = manualLocationCatalogProvider.overrideWithValue(
   FakeManualCatalog(),
+);
+
+/// KAN-640 R5: the app's shared country, without Supabase. Starts on [country]
+/// (Global by default) and `setCountry` updates it like the real notifier.
+class FakeCountry extends StateNotifier<AsyncValue<String>>
+    implements SelectedCountryNotifier {
+  FakeCountry([String country = 'Global']) : super(AsyncValue.data(country));
+
+  @override
+  Future<void> setCountry(String country) async =>
+      state = AsyncValue.data(country);
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => null;
+}
+
+final fakeCountryOverride = selectedCountryProvider.overrideWith(
+  (ref) => FakeCountry(),
 );
 
 /// Walks the drawer: country (when it asks), then the city, then the area.

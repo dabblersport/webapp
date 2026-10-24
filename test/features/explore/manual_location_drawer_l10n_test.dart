@@ -18,6 +18,7 @@ Future<AppLocalizations> _pump(WidgetTester tester, Locale locale) async {
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         // KAN-587: typed searches go to the map service; none matches here.
         mapboxCountryCityProvider.overrideWith((ref, q) async => const []),
       ],

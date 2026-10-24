@@ -46,6 +46,7 @@ Future<AppLocalizations> _pump(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         mapboxCityProvider.overrideWith((ref, q) => cities(q)),
         mapboxCountryCityProvider.overrideWith((ref, q) => cities(q.query)),
       ],

@@ -108,6 +108,7 @@ Future<List<NearbyGamesParams>> _pump(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         activeLocationProvider.overrideWith(ready ? _Ready.new : _Denied.new),
         activeChallengeSportsByProfileCountryProvider.overrideWith(
           (ref) async => _sports,
