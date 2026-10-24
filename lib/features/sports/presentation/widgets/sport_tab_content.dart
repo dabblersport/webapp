@@ -419,10 +419,13 @@ class _PostsBody extends ConsumerWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
         for (final Post p in posts) ...<Widget>[
-          HomePostRow.resolve(
-            p,
-            metrics: DabblerFeedMetrics.drawn,
-            currentSportId: sportId,
+          Padding(
+            padding: DabblerInsets.feedScreen,
+            child: HomePostRow.resolve(
+              p,
+              metrics: DabblerFeedMetrics.drawn,
+              currentSportId: sportId,
+            ),
           ),
           const DabblerDivider(),
         ],
