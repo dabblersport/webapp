@@ -226,6 +226,7 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         initializeProfileDataProvider.overrideWith((ref) async => false),
         userUpcomingGamesProvider.overrideWith((ref) async => upcoming),
         feedNotifierProvider.overrideWith((ref) => feed),

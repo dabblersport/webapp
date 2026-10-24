@@ -120,6 +120,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         activeLocationProvider.overrideWith(_FakeActive.new),
         profileLocationNotifierProvider.overrideWith(_FakeSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_FakeAreaRepo()),

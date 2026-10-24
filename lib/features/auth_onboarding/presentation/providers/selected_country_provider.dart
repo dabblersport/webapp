@@ -82,7 +82,12 @@ class SelectedLocationNotifier
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedCity = prefs.getString(_selectedCityPrefsKey);
-      final String? saved = prefs.getString(_countryKey);
+      // KAN-640 R5: the country picked on the signed-out screens (landing,
+      // email entry) is the app's country; a first sign-in on this device
+      // keeps it instead of falling back to Global.
+      final String? saved =
+          prefs.getString(_countryKey) ??
+          (_userId == null ? null : prefs.getString(_selectedCountryPrefsKey));
       String region = normalizeServiceRegion(saved);
       if (saved != null && saved != region) {
         await prefs.setString(_countryKey, region);

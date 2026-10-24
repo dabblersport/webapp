@@ -111,6 +111,7 @@ Future<_Platform> _pump(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         profileLocationNotifierProvider.overrideWith(_NoSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_Areas()),
       ],
@@ -222,6 +223,7 @@ void main() {
     final c = ProviderContainer(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         profileLocationNotifierProvider.overrideWith(_NoSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_Areas()),
       ],
@@ -243,6 +245,7 @@ void main() {
     final c = ProviderContainer(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         profileLocationNotifierProvider.overrideWith(_NoSaved.new),
         areaRepositoryV2Provider.overrideWithValue(_Areas()),
       ],

@@ -264,6 +264,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         fakeCatalogOverride,
+        fakeCountryOverride,
         activeLocationProvider.overrideWith(
           locationReady ? _ReadyLocation.new : _Location.new,
         ),

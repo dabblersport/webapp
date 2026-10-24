@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:dabbler/core/services/location_service.dart';
 import 'package:dabbler/data/models/mapbox_place.dart';
 import 'package:dabbler/features/auth_onboarding/domain/location/service_region.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/features/location/data/manual_location_catalog.dart';
 import 'package:dabbler/features/location/presentation/widgets/country_flag.dart';
@@ -50,10 +51,17 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
   /// only the app's own list.
   String _mapQuery = '';
 
-  /// The canonical English country name; null until one is chosen. Always
-  /// starts empty, whatever the app's service region is.
-  String? _country;
   _City? _city;
+
+  /// KAN-640 R5: the drawer's country IS the app's country (the one shared
+  /// `selectedCountryProvider`, also behind the Location screen's selector).
+  /// Null when it is Global, which shows the country list first.
+  String? get _country {
+    final String c = normalizeServiceRegion(
+      ref.read(selectedCountryProvider).valueOrNull,
+    );
+    return c == kGlobalRegion ? null : c;
+  }
 
   @override
   void initState() {
@@ -91,17 +99,17 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
   void _pickCountry(String country) {
     setState(() {
       _resetSearch();
-      _country = country;
       _city = null;
     });
+    ref.read(selectedCountryProvider.notifier).setCountry(country);
   }
 
   void _changeCountry() {
     setState(() {
       _resetSearch();
-      _country = null;
       _city = null;
     });
+    ref.read(selectedCountryProvider.notifier).setCountry(kGlobalRegion);
   }
 
   void _pickCity(_City city) {
@@ -211,6 +219,8 @@ class _ManualLocationDrawerState extends ConsumerState<ManualLocationDrawer> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
+    // Rebuild when the app's country changes (the Location screen's selector).
+    ref.watch(selectedCountryProvider);
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
