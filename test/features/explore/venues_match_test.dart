@@ -27,7 +27,7 @@ import '../../support/geometry_dump.dart';
 import '../../support/render_mode.dart';
 
 /// Venues listing match (Listings.dc.html:750-810, filters :1832-1839): the
-/// card's cover placeholder, aggregate rating, badges, distance chip, all
+/// card's details-only layout (KAN-638), aggregate rating, badges, distance chip, all
 /// sports and keyed facilities; the venue filters, sorts and the empty state.
 /// Rendered LTR/RTL, with and without filters, into
 /// `venues-match/app/<mode>/`.
@@ -287,8 +287,8 @@ void main() {
       testWidgets('venues $mode $dir $fs', (tester) async {
         await _pump(tester, locale, filters: filters);
         expect(tester.takeException(), isNull);
-        // Cover slot always draws, with the gallery glyph (no photos here).
-        expect(find.byType(DabblerImage), findsWidgets);
+        // KAN-638: details-only card, no cover slot or gallery glyph.
+        expect(find.byType(DabblerImage), findsNothing);
         // Rating, badges, distance chip, all sports, keyed facilities.
         expect(find.text(ar ? '4.8' : '4.8'), findsOneWidget);
         expect(find.text(ar ? '(126 تقييم)' : '(126)'), findsOneWidget);

@@ -134,6 +134,10 @@ void main() {
       expect(find.textContaining('#padel'), findsWidgets);
       expect(find.text(lookupAppLocalizations(locale).sfx_posts_count(2)), findsOneWidget);
       expect(find.byType(DabblerPostRow), findsNWidgets(2));
+      // The rows sit inside the Home gutter, not edge to edge.
+      final Rect row = tester.getRect(find.byType(DabblerPostRow).first);
+      expect(row.left, DabblerSpacing.space6);
+      expect(row.right, 393 - DabblerSpacing.space6);
       expect(find.text(lookupAppLocalizations(locale).post_card_persona_player), findsNWidgets(2));
       expect(find.text('Nad Al Sheba'), findsNWidgets(2));
       await _shoot(tester, key, 'hashtag-feed-posts-$dir');
