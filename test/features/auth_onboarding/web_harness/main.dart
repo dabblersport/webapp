@@ -1,7 +1,7 @@
 // Chrome harness for KAN-489 (run: flutter run -d web-server -t this file).
 // Real WelcomeScreen / LocationIntroScreen / routes / browser permission
 // adapter; only auth is faked (fixed user id, no sign-in, no live writes).
-// Query: ?sport=<key> (sign-up) &saved=<key> (Welcome Back) ?mode=back|first  &lang=en|ar  &dark=1  &reset=1 (clear the flag).
+// Query: ?sport=<key> (sign-up) &saved=<key> (Welcome Back), both default to football so the poster shows; ?mode=back|first  &lang=en|ar  &dark=1  &reset=1 (clear the flag).
 import 'package:dabbler/app/app_router.dart' show rootNavigatorKey;
 import 'package:dabbler/app/routes/identity_routes.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
@@ -53,8 +53,8 @@ Future<void> main() async {
           displayName: 'Sam Player',
           personaType: 'player',
           isFirstTime: !returning,
-          primarySportKey: returning ? null : q['sport'],
-          savedSportLoader: () async => q['saved'],
+          primarySportKey: returning ? null : (q['sport'] ?? 'football'),
+          savedSportLoader: () async => q['saved'] ?? 'football',
         ),
       ),
       locationIntroRoute,
