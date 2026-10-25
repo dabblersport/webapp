@@ -87,16 +87,20 @@ void main() {
       expect(_country(n), 'Global');
     });
 
-    test('a second launch after a detection does not detect', () async {
-      final d = _Detector(() async => 'Qatar');
-      await _make(d);
-      expect(d.calls, 1);
-      // Same device storage, a new launch.
-      final again = SelectedLocationNotifier(detect: d.call);
-      await _settle(again);
-      expect(d.calls, 1);
-      expect(_country(again), 'Qatar');
-    });
+    test(
+      'a new session detects again (R8), a failure keeps the saved one',
+      () async {
+        final d = _Detector(() async => 'Qatar');
+        await _make(d);
+        expect(d.calls, 1);
+        // Same device storage, a new launch, detection now fails.
+        final failing = _Detector(() async => throw Exception('offline'));
+        final again = SelectedLocationNotifier(detect: failing.call);
+        await _settle(again);
+        expect(failing.calls, 1);
+        expect(_country(again), 'Qatar');
+      },
+    );
   });
 
   group('manual wins', () {
