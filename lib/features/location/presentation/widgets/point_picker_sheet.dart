@@ -149,9 +149,7 @@ class _PointPickerSheetState extends ConsumerState<PointPickerSheet> {
                   options: MapOptions(
                     initialCenter: centre,
                     initialZoom: _pin == null ? 11 : _zoom,
-                    interactionOptions: const InteractionOptions(
-                      flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
-                    ),
+                    interactionOptions: kLocationMapInteraction,
                     onTap: (_, point) => _pick(point),
                   ),
                   children: [

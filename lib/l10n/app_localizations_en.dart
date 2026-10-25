@@ -7658,4 +7658,18 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get location_point_hint =>
       'Search a place, or tap the map to move the pin.';
+
+  @override
+  String get saved_places_duplicate =>
+      'You already have a saved place at this location.';
+
+  @override
+  String get saved_places_delete_failed =>
+      'Couldn’t delete this place. Try again.';
+
+  @override
+  String get location_search_no_results => 'No results found';
+
+  @override
+  String get location_search_failed => 'Couldn’t load results';
 }

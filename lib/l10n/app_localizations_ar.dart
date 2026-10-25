@@ -7717,4 +7717,17 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get location_point_hint =>
       'ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس.';
+
+  @override
+  String get saved_places_duplicate => 'لديك مكان محفوظ في هذا الموقع بالفعل.';
+
+  @override
+  String get saved_places_delete_failed =>
+      'تعذّر حذف هذا المكان. حاول مرة أخرى.';
+
+  @override
+  String get location_search_no_results => 'لا توجد نتائج';
+
+  @override
+  String get location_search_failed => 'تعذّر تحميل النتائج';
 }

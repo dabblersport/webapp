@@ -4,6 +4,7 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/profile_location_repository.dart';
 import 'package:dabbler/data/repositories/profile_location_repository_impl.dart';
+import 'package:dabbler/features/location/domain/saved_place_rules.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
@@ -23,6 +24,15 @@ final profileLocationRepositoryProvider = Provider<ProfileLocationRepository>((
 // =============================================================================
 // NOTIFIER
 // =============================================================================
+
+/// What saving a place did (KAN-589).
+enum SavePlaceOutcome {
+  saved,
+
+  /// Another saved place is already at this location: nothing was written.
+  duplicate,
+  failed,
+}
 
 class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
   ProfileLocationRepository get _repo =>
@@ -44,9 +54,44 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
     required ProfileLocationLabel label,
     String? labelCustom,
     bool isPrimary = false,
+  }) async =>
+      await savePlace(
+        lat: lat,
+        lng: lng,
+        areaId: areaId,
+        label: label,
+        labelCustom: labelCustom,
+        isPrimary: isPrimary,
+      ) ==
+      SavePlaceOutcome.saved;
+
+  /// Whether another saved place already sits at ([lat], [lng]) (KAN-589).
+  /// [exceptId] is the place being edited.
+  Future<bool> hasPlaceAt(double lat, double lng, {String? exceptId}) async {
+    List<ProfileLocation> places;
+    try {
+      places = await future;
+    } catch (_) {
+      places = state.valueOrNull ?? const <ProfileLocation>[];
+    }
+    return savedPlaceAt(places, lat, lng, exceptId: exceptId) != null;
+  }
+
+  /// Saves a place. Two saved places never share one location, whatever their
+  /// labels (KAN-589): a place within [kSamePlaceToleranceMeters] of another
+  /// is refused before anything is written.
+  Future<SavePlaceOutcome> savePlace({
+    required double lat,
+    required double lng,
+    required String areaId,
+    required ProfileLocationLabel label,
+    String? labelCustom,
+    bool isPrimary = false,
   }) async {
+    if (await hasPlaceAt(lat, lng)) return SavePlaceOutcome.duplicate;
+
     final profileId = ref.read(profileControllerProvider).profile?.id;
-    if (profileId == null) return false;
+    if (profileId == null) return SavePlaceOutcome.failed;
 
     // 1. Insert geo_location and get its id
     final geoResult = await _repo.resolveGeoLocationId(
@@ -56,7 +101,7 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
     );
 
     final geoLocationId = geoResult.fold((_) => null, (id) => id);
-    if (geoLocationId == null) return false;
+    if (geoLocationId == null) return SavePlaceOutcome.failed;
 
     // 2. Insert profile_location
     final saveResult = await _repo.saveLocation(
@@ -70,14 +115,18 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
       isPrimary: isPrimary,
     );
 
-    return saveResult.fold((_) => false, (saved) {
+    return saveResult.fold((_) => SavePlaceOutcome.failed, (row) {
+      // The server fills the point from the geo location; until a reload the
+      // local row carries the point that was saved, so the same-place rule
+      // sees it at once.
+      final saved = row.copyWith(lat: row.lat ?? lat, lng: row.lng ?? lng);
       final current = state.valueOrNull ?? [];
       // Demote previous primary in local state if this one is primary
       final updated = isPrimary
           ? [saved, ...current.map((l) => l.copyWith(isPrimary: false))]
           : [saved, ...current];
       state = AsyncData(updated);
-      return true;
+      return SavePlaceOutcome.saved;
     });
   }
 
@@ -107,11 +156,19 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
 
   // ── Delete ────────────────────────────────────────────────────────────────
 
-  Future<void> deleteLocation(String locationId) async {
+  /// Deletes a saved place and refreshes the list from the server (KAN-589).
+  /// Returns whether the place is gone: a failed delete, or one the server did
+  /// not apply (the place comes back on the refresh), reports false and the
+  /// list shows what the server holds.
+  Future<bool> deleteLocation(String locationId) async {
     final result = await _repo.deleteLocation(locationId);
-    result.fold((_) => null, (_) {
-      final current = state.valueOrNull ?? [];
-      state = AsyncData(current.where((l) => l.id != locationId).toList());
+    if (result.isFailure) return false;
+    final current = state.valueOrNull ?? [];
+    state = AsyncData(current.where((l) => l.id != locationId).toList());
+    final fresh = await _repo.getLocations();
+    return fresh.fold((_) => true, (list) {
+      state = AsyncData(list);
+      return list.every((l) => l.id != locationId);
     });
   }
 

@@ -140,7 +140,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   Future<ActiveLocationState> _initialise() async {
     // 0. This device's own choice (KAN-586): it wins over the saved primary
     // and over any GPS upgrade, whatever its mode, and survives a restart.
-    final stored = (await _store())?.read();
+    final stored = await _storedOrCarriedOver();
     if (stored != null) {
       if (stored.mode == DeviceLocationMode.manual || !stored.hasPoint) {
         return _fromDeviceLocation(stored);
@@ -164,6 +164,31 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     // intro screen is where the system prompt is asked for).
     _backgroundGpsRefresh(settleWhenUnsaved: true);
     return ActiveLocationLoading();
+  }
+
+  /// This account's stored choice on this device. When the account has none
+  /// yet, a Manual choice made on this device while signed out (before this
+  /// sign-in) is carried over and becomes the account's (KAN-589): a manual
+  /// location survives signing in and a saved place never overrides it.
+  /// Another account's choice is never carried over.
+  Future<DeviceLocation?> _storedOrCarriedOver() async {
+    final DeviceLocationStore? store = await _store();
+    if (store == null) return null;
+    final DeviceLocation? own = store.read();
+    if (own != null || _accountId == null) return own;
+    try {
+      final DeviceLocation? signedOut = DeviceLocationStore(
+        await SharedPreferences.getInstance(),
+        accountId: null,
+      ).read();
+      if (signedOut == null || signedOut.mode != DeviceLocationMode.manual) {
+        return null;
+      }
+      await store.adopt(signedOut);
+      return signedOut;
+    } catch (_) {
+      return null;
+    }
   }
 
   /// The saved place Auto shows for [area] (KAN-589): its label when exactly
@@ -505,18 +530,34 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
   }
 
   /// Switch to a point picked on the map or found by a place search (KAN-589).
-  /// The coordinates are always kept; the nearest Area, when there is one, only
-  /// adds its city and name.
+  /// The choice applies AT ONCE (the line under the logo, the lists and nearby
+  /// follow it before any network lookup) and is stored as Manual; the nearest
+  /// Area, when the lookup finds one, then only adds its city and name.
   Future<void> useMapPoint(double lat, double lng, {String? label}) async {
+    final String given = (label ?? '').trim();
+    await useManualPoint(
+      lat,
+      lng,
+      given,
+      city: '',
+      area: given.isEmpty ? null : given,
+    );
     final Area? near = await _resolveArea(lat, lng);
-    final String name = (label ?? '').trim().isNotEmpty
-        ? label!.trim()
-        : (near?.name ?? '');
+    if (near == null) return;
+    // Another choice may have been made while the lookup ran: it wins.
+    final ActiveLocationState? now = state.valueOrNull;
+    if (now is! ActiveLocationReady ||
+        now.location.source != ActiveLocationSource.manual ||
+        now.location.lat != lat ||
+        now.location.lng != lng) {
+      return;
+    }
+    final String name = given.isNotEmpty ? given : near.name;
     await useManualPoint(
       lat,
       lng,
       name,
-      city: near?.city ?? '',
+      city: near.city,
       area: name.isEmpty ? null : name,
     );
   }

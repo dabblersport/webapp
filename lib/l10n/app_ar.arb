@@ -2668,5 +2668,9 @@
   "location_current_label": "الموقع الحالي",
   "location_point_use": "استخدم هذا الموقع",
   "location_point_selected": "الموقع المحدد",
-  "location_point_hint": "ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس."
+  "location_point_hint": "ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس.",
+  "saved_places_duplicate": "لديك مكان محفوظ في هذا الموقع بالفعل.",
+  "saved_places_delete_failed": "تعذّر حذف هذا المكان. حاول مرة أخرى.",
+  "location_search_no_results": "لا توجد نتائج",
+  "location_search_failed": "تعذّر تحميل النتائج"
 }

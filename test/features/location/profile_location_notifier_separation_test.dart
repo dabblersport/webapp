@@ -132,8 +132,10 @@ void main() {
     await container.read(profileLocationNotifierProvider.future);
 
     final saved = await notifier.saveLocation(
-      lat: 25.2,
-      lng: 55.3,
+      // A point of its own: the fixture rows sit at 25.2, 55.3 and a
+      // second place there is refused (KAN-589, same-location rule).
+      lat: 25.25,
+      lng: 55.35,
       areaId: 'area-c',
       label: ProfileLocationLabel.custom,
       labelCustom: 'Gym',
@@ -155,8 +157,10 @@ void main() {
     sent.clear();
 
     final saved = await notifier.saveLocation(
-      lat: 25.2,
-      lng: 55.3,
+      // A point of its own: the fixture rows sit at 25.2, 55.3 and a
+      // second place there is refused (KAN-589, same-location rule).
+      lat: 25.25,
+      lng: 55.35,
       areaId: 'area-c',
       label: ProfileLocationLabel.home,
     );
@@ -170,8 +174,10 @@ void main() {
     await container.read(profileLocationNotifierProvider.future);
 
     await notifier.saveLocation(
-      lat: 25.2,
-      lng: 55.3,
+      // A point of its own: the fixture rows sit at 25.2, 55.3 and a
+      // second place there is refused (KAN-589, same-location rule).
+      lat: 25.25,
+      lng: 55.35,
       areaId: 'area-c',
       label: ProfileLocationLabel.custom,
       labelCustom: 'Gym',

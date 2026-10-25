@@ -1,4 +1,5 @@
 import 'package:dabbler/data/models/active_location.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
@@ -22,6 +23,7 @@ import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../support/render_mode.dart';
+import 'manual_location_surfaces_support.dart';
 
 /// KAN-589 (CPO decision, D-035): the device location is the point itself.
 /// Three paths: access granted, access denied, and a point outside every
@@ -99,6 +101,9 @@ ProviderContainer _container(AreaRepository areas) {
       mapTileLayerBuilderProvider.overrideWithValue(
         () => const SizedBox.shrink(),
       ),
+      // The manual drawer reads the shared country; keep it off Supabase.
+      selectedCountryProvider.overrideWith((ref) => FakeCountry()),
+      fakeCatalogOverride,
     ],
   );
   addTearDown(c.dispose);
