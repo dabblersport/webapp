@@ -23,8 +23,12 @@ sealed class ActiveLocationState {}
 class ActiveLocationLoading extends ActiveLocationState {}
 
 class ActiveLocationReady extends ActiveLocationState {
-  ActiveLocationReady(this.location);
+  ActiveLocationReady(this.location, {this.fixedAt});
   final ActiveLocation location;
+
+  /// When the point was fixed (KAN-594): a last-known point is only a Nearby
+  /// origin for 24 h. Null when it is not known.
+  final DateTime? fixedAt;
 }
 
 /// GPS denied and no saved location to fall back to.
@@ -589,6 +593,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
             ? ActiveLocationSource.lastKnown
             : ActiveLocationSource.gps,
       ),
+      fixedAt: l.updatedAt,
     );
   }
 
