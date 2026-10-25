@@ -2,9 +2,8 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/features/sports/data/sport_follow_repository.dart';
 import 'package:dabbler/features/sports/data/sport_overview_models.dart';
 import 'package:dabbler/features/sports/presentation/providers/sport_overview_providers.dart';
-import 'package:dabbler/features/sports/presentation/widgets/sport_city_bar.dart';
+import 'package:dabbler/features/sports/presentation/widgets/sport_city_sheet.dart';
 import 'package:dabbler/features/sports/presentation/widgets/sport_header.dart';
-import 'package:dabbler/features/sports/presentation/widgets/sport_section_states.dart';
 import 'package:dabbler/features/sports/presentation/widgets/sport_tab_content.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -12,15 +11,16 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-/// KAN-622: the public page of one sport (not any user's Sport Profile): its
-/// identity with Follow, tabs for Overview, Games, Meetups, Venues and Posts,
-/// and a page-local City. Reached by sport id from a sport tile or a deep
-/// route, behind `FeatureFlags.sportOverview`.
+/// KAN-591: the public page of one sport (not any user's Sport Profile), drawn
+/// as Sport Overview v2: its identity with Follow, then an Overview of the
+/// next seven days in the page's city (a bento of counters and rails), and a
+/// sub-view each for Games & meetups, Venues and Spaces, and Posts, opened
+/// from a counter tile or a "See all". The city is page-local. Reached by sport
+/// id from a sport tile or a deep route, behind `FeatureFlags.sportOverview`.
 ///
-/// The identity block scrolls away into the top bar's pinned title and the
-/// tabs stay pinned. An unknown sport id shows the page error state with
-/// Retry, never a crash. Browsing a sport the viewer does not follow is
-/// allowed.
+/// The identity block scrolls away into the top bar's pinned title. An unknown
+/// sport id shows the page error state with Retry, never a crash. Browsing a
+/// sport the viewer does not follow is allowed.
 class SportOverviewScreen extends ConsumerStatefulWidget {
   const SportOverviewScreen({super.key, required this.sportId});
 
@@ -33,11 +33,9 @@ class SportOverviewScreen extends ConsumerStatefulWidget {
 
 class _SportOverviewScreenState extends ConsumerState<SportOverviewScreen> {
   final ScrollController _scroll = ScrollController();
-  SportTab _tab = SportTab.overview;
+  final GlobalKey _anchor = GlobalKey();
+  SportView _view = SportView.overview;
   SportVenuesMode _venuesMode = SportVenuesMode.venues;
-
-  /// The header and tab strip are a fixed height; the tab strip is pinned.
-  static const double _tabsExtent = 60;
 
   @override
   void dispose() {
@@ -45,16 +43,24 @@ class _SportOverviewScreenState extends ConsumerState<SportOverviewScreen> {
     super.dispose();
   }
 
-  void _openTab(SportTab tab, {SportVenuesMode? venuesMode}) {
+  void _open(SportView view, {SportVenuesMode? venuesMode}) {
     setState(() {
-      _tab = tab;
+      _view = view;
       if (venuesMode != null) _venuesMode = venuesMode;
     });
-    // Land on the section, with the tabs still pinned.
-    if (_scroll.hasClients && _scroll.offset > 0) {
-      _scroll.jumpTo(0);
-    }
+    // Keep the start of the new view on screen when the header has scrolled
+    // away; a view opened from the top leaves the identity block in place.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final BuildContext? target = _anchor.currentContext;
+      if (!mounted || target == null) return;
+      Scrollable.ensureVisible(
+        target,
+        alignmentPolicy: ScrollPositionAlignmentPolicy.keepVisibleAtStart,
+      );
+    });
   }
+
+  void _back() => _open(SportView.overview);
 
   void _noticeFollow(SportFollowState? previous, SportFollowState next) {
     if (!mounted) return;
@@ -119,8 +125,7 @@ class _SportOverviewScreenState extends ConsumerState<SportOverviewScreen> {
       body: info.when(
         loading: () => const SingleChildScrollView(
           physics: NeverScrollableScrollPhysics(),
-          padding: kSportGutter,
-          child: SportSectionSkeleton(rows: 3),
+          child: SportPendingContent(),
         ),
         error: (Object e, _) => _PageError(
           notFound: e is Failure && e.isNotFound,
@@ -132,149 +137,93 @@ class _SportOverviewScreenState extends ConsumerState<SportOverviewScreen> {
   }
 
   Widget _body(SportInfo sport) {
-    final AppLocalizations l = AppLocalizations.of(context);
     final SportPageCity? city = ref
         .watch(sportPageCityProvider(sport.id))
         .valueOrNull;
+    final SportScope scope = (sportId: sport.id, cityCode: city?.code);
     // The city is still being worked out: the sections wait with a skeleton
     // rather than asking for every city and then again for one.
-    final bool cityPending = city == null;
-    final SportScope scope = (sportId: sport.id, cityCode: city?.code);
-    final SportOverviewCounts? counts = cityPending
+    final SportOverviewCounts? counts = city == null
         ? null
         : ref.watch(sportOverviewCountsProvider(scope)).valueOrNull;
 
-    return CustomScrollView(
+    return SingleChildScrollView(
       controller: _scroll,
-      slivers: <Widget>[
-        SliverToBoxAdapter(
-          child: SportHeader(sport: sport, counts: counts),
-        ),
-        const SliverToBoxAdapter(child: DabblerGap.v(DabblerSpacing.space4)),
-        SliverPersistentHeader(
-          pinned: true,
-          delegate: _TabsDelegate(
-            extent: _tabsExtent,
-            child: _TabStrip(
-              tab: _tab,
-              onChanged: (SportTab t) => _openTab(t),
-              labels: <SportTab, String>{
-                for (final SportTab t in SportTab.values)
-                  t: sportTabLabel(l, t),
-              },
-            ),
-          ),
-        ),
-        SliverToBoxAdapter(
-          child: Padding(
-            padding: const EdgeInsetsDirectional.only(
-              top: DabblerSpacing.space4,
-              bottom: DabblerSpacing.space11,
-            ),
-            child: cityPending
-                ? const Padding(
-                    padding: kSportGutter,
-                    child: SportSectionSkeleton(rows: 3),
-                  )
-                : _content(sport, scope),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _content(SportInfo sport, SportScope scope) {
-    final bool cityScoped = _tab != SportTab.posts;
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: <Widget>[
-        if (cityScoped) ...<Widget>[
-          SportCityBar(sportId: sport.id),
-          const DabblerGap.v(DabblerSpacing.space4),
-        ],
-        switch (_tab) {
-          SportTab.overview => SportOverviewTab(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          SportHeader(
             sport: sport,
-            scope: scope,
-            onOpenTab: _openTab,
+            counts: counts,
+            city: city,
+            onPickCity: () => pickSportCity(context, ref, sport.id),
+            onOpenPosts: () => _open(SportView.posts),
           ),
-          SportTab.games => SportGamesTab(sport: sport, scope: scope),
-          SportTab.meetups => SportMeetupsTab(sport: sport, scope: scope),
-          SportTab.venues => SportVenuesTab(
-            scope: scope,
-            mode: _venuesMode,
-            onModeChanged: (SportVenuesMode m) =>
-                setState(() => _venuesMode = m),
-          ),
-          SportTab.posts => SportPostsTab(sportId: sport.id),
-        },
-      ],
-    );
-  }
-}
-
-class _TabStrip extends StatelessWidget {
-  const _TabStrip({
-    required this.tab,
-    required this.onChanged,
-    required this.labels,
-  });
-
-  final SportTab tab;
-  final ValueChanged<SportTab> onChanged;
-  final Map<SportTab, String> labels;
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: kSportGutter.add(
-        const EdgeInsetsDirectional.symmetric(vertical: DabblerSpacing.space2),
-      ),
-      child: DabblerTabs(
-        variant: DabblerTabsVariant.segmented,
-        scrollable: true,
-        value: tab.name,
-        onChanged: (String id) =>
-            onChanged(SportTab.values.firstWhere((t) => t.name == id)),
-        items: <DabblerTabItem>[
-          for (final SportTab t in SportTab.values)
-            DabblerTabItem(id: t.name, label: labels[t]!),
+          const DabblerGap.v(DabblerSpacing.space3),
+          SizedBox.shrink(key: _anchor),
+          _content(sport, scope, city, counts),
+          const DabblerGap.v(DabblerSpacing.space10),
         ],
       ),
     );
   }
-}
 
-/// Pins the tab strip under the top bar while the content scrolls.
-class _TabsDelegate extends SliverPersistentHeaderDelegate {
-  _TabsDelegate({required this.extent, required this.child});
-
-  final double extent;
-  final Widget child;
-
-  @override
-  double get minExtent => extent;
-
-  @override
-  double get maxExtent => extent;
-
-  @override
-  Widget build(
-    BuildContext context,
-    double shrinkOffset,
-    bool overlapsContent,
+  Widget _content(
+    SportInfo sport,
+    SportScope scope,
+    SportPageCity? city,
+    SportOverviewCounts? counts,
   ) {
-    return DabblerSurface.sunken(
-      fill: DabblerColors.of(context).bgPrimary,
-      borderWidth: 0,
-      center: true,
-      child: child,
-    );
-  }
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String lang = Localizations.localeOf(context).languageCode;
+    void changeCity() => pickSportCity(context, ref, sport.id);
 
-  @override
-  bool shouldRebuild(covariant _TabsDelegate old) =>
-      old.child != child || old.extent != extent;
+    // Posts are tagged to the sport, not to a city: they never wait on one.
+    if (_view == SportView.posts) {
+      return SportPostsView(sport: sport, counts: counts, onBack: _back);
+    }
+    if (city == null) return const SportPendingContent();
+    if (city.isNone) {
+      return SportEmptyCard(
+        brand: true,
+        icon: 'location',
+        title: l.sport_overview_nocity_title(sport.name(lang)),
+        text: l.sport_overview_nocity_text,
+        actionLabel: l.listing_select_city,
+        onAction: changeCity,
+      );
+    }
+    return switch (_view) {
+      SportView.overview => SportOverviewContent(
+        sport: sport,
+        scope: scope,
+        city: city,
+        onOpen: _open,
+        onChangeCity: changeCity,
+      ),
+      SportView.games => SportGamesView(
+        sport: sport,
+        scope: scope,
+        city: city,
+        onBack: _back,
+        onChangeCity: changeCity,
+      ),
+      SportView.venues => SportVenuesView(
+        sport: sport,
+        scope: scope,
+        city: city,
+        mode: _venuesMode,
+        onModeChanged: (SportVenuesMode m) => setState(() => _venuesMode = m),
+        onBack: _back,
+        onChangeCity: changeCity,
+      ),
+      SportView.posts => SportPostsView(
+        sport: sport,
+        counts: counts,
+        onBack: _back,
+      ),
+    };
+  }
 }
 
 class _PageError extends StatelessWidget {

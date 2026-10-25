@@ -30,6 +30,7 @@ import '../home/home_test_harness.dart';
 import '../../support/geometry_dump.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import '../../support/render_mode.dart';
+import '../location/manual_location_surfaces_support.dart';
 
 /// Renders the Games and Venues listings (content, loading, empty, filter
 /// sheet) and the explore drawers/widgets under the design-system theme in LTR
@@ -262,6 +263,8 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
+        fakeCountryOverride,
         activeLocationProvider.overrideWith(
           locationReady ? _ReadyLocation.new : _Location.new,
         ),
@@ -628,7 +631,7 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(find.text('Select Location'), findsOneWidget);
-      expect(find.text('Downtown Dubai'), findsOneWidget);
+      expect(find.text(l.region_country_UAE), findsOneWidget);
       await _shoot(tester, key, 'manual-location-$dir');
     }, variant: desktop);
 

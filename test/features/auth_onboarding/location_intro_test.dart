@@ -9,6 +9,7 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/mapbox_place.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/screens/location_intro_screen.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
@@ -137,6 +138,13 @@ LocationIntroController _controller(
 Future<void> _shoot(WidgetTester tester, String name) async {
   if (_dir.isEmpty) return;
   await tester.runAsync(() async {
+    await precacheImage(
+      const AssetImage(LocationIntroScreen.artAsset),
+      tester.element(find.byType(LocationIntroScreen)),
+    );
+  });
+  await tester.pump();
+  await tester.runAsync(() async {
     final b =
         tester.renderObject(find.byKey(const Key('shot')))
             as RenderRepaintBoundary;
@@ -193,17 +201,14 @@ Future<void> _pump(
           DabblerDesignSystemTheme.withTokens(renderThemeBase()),
           locale: locale,
         ),
-        home: LocationIntroScreen(userId: userId, onFinish: onFinish),
+        home: LocationIntroScreen(
+          userId: userId,
+          onFinish: onFinish,
+          displayNameLoader: () async => 'Sara Ali',
+        ),
       ),
     ),
   );
-  // Let the bundled artwork decode before the frame is captured.
-  await tester.runAsync(() async {
-    await precacheImage(
-      const AssetImage(LocationIntroScreen.artAsset),
-      tester.element(find.byType(LocationIntroScreen)),
-    );
-  });
   await tester.pump(const Duration(milliseconds: 300));
 }
 
@@ -360,8 +365,9 @@ void main() {
       final g = FakeGateway();
       var finished = 0;
       await _pump(tester, g, locale, onFinish: () => finished++);
-      expect(find.text(l.location_intro_headline), findsOneWidget);
-      expect(find.text(l.location_intro_body), findsOneWidget);
+      expect(find.text(l.location_intro_kicker('Sara')), findsOneWidget);
+      expect(find.text(l.location_intro_title), findsOneWidget);
+      expect(find.text(l.location_intro_subtitle), findsOneWidget);
       expect(find.text(l.location_intro_cta), findsOneWidget);
       expect(find.text(l.location_intro_later), findsOneWidget);
       expect(tester.takeException(), isNull);
@@ -371,50 +377,57 @@ void main() {
       expect(await const LocationIntroStore().seen('user-1'), isTrue);
       await _shoot(tester, 'intro-$dir-$mode');
 
-      // KAN-587: Maybe later asks for a City first; nothing finishes without one.
-      expect(find.text(l.location_intro_select_city), findsOneWidget);
+      // KAN-640: Maybe later finishes at once: no sheet, no prompt, no city.
+      expect(find.text(l.location_intro_manual), findsOneWidget);
       await tester.tap(find.text(l.location_intro_later));
       await tester.pumpAndSettle();
-      expect(finished, 0, reason: 'Maybe later needs a city');
-      expect(find.byType(CityRequiredSheet), findsOneWidget);
+      expect(finished, 1, reason: 'Maybe later finishes without a city');
+      expect(find.byType(CityRequiredSheet), findsNothing);
       expect(g.requests, 0, reason: 'Maybe later must not prompt');
-      // A search with no match shows the empty state, and no area rows exist.
-      await tester.enterText(find.byType(EditableText).last, 'zzzz');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      expect(find.text(l.manual_location_empty_title), findsOneWidget);
-      await tester.enterText(find.byType(EditableText).last, '');
-      await tester.pumpAndSettle();
-      // A city outside the UAE comes from the map service, with its country.
-      await tester.enterText(find.byType(EditableText).last, 'par');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      expect(find.text('Paris'), findsOneWidget);
-      expect(find.text('Paris, France'), findsOneWidget);
-      await tester.enterText(find.byType(EditableText).last, '');
-      await tester.pumpAndSettle();
-      // Dismissed without a city: still on the intro.
-      Navigator.of(
-        tester.element(find.byType(CityRequiredSheet)),
-        rootNavigator: true,
-      ).pop();
-      await tester.pumpAndSettle();
-      expect(finished, 0);
-      // Choosing a canonical city (City-only: no area, no GPS) finishes.
-      await tester.tap(find.text(l.location_intro_later));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byType(EditableText).last, 'par');
-      await tester.pump(const Duration(seconds: 1));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Paris'));
-      await tester.pumpAndSettle();
-      expect(finished, 1);
-      expect(g.requests, 0);
       final s = ProviderScope.containerOf(
         tester.element(find.byType(LocationIntroScreen)),
       ).read(activeLocationProvider).valueOrNull;
-      expect(s, isA<ActiveLocationCityOnly>());
-      expect((s as ActiveLocationCityOnly).city, 'Paris');
+      expect(s, isNot(isA<ActiveLocationCityOnly>()));
+      expect(s, isNot(isA<ActiveLocationReady>()));
+      await tester.pump(const Duration(seconds: 1)); // flush zero timers
+    });
+
+    testWidgets('an existing city is kept by Maybe later; a changed city is '
+        'observed - $dir', (tester) async {
+      final g = FakeGateway();
+      var finished = 0;
+      await _pump(tester, g, locale, onFinish: () => finished++);
+      final c = ProviderScope.containerOf(
+        tester.element(find.byType(LocationIntroScreen)),
+      );
+      final n = c.read(activeLocationProvider.notifier);
+      await tester.runAsync(() => n.useManualCity('Dubai'));
+      await tester.runAsync(() => n.useManualCity('Paris'));
+      var s = c.read(activeLocationProvider).valueOrNull;
+      expect((s as ActiveLocationCityOnly).city, 'Paris', reason: 'changed');
+      await tester.tap(find.text(l.location_intro_later));
+      await tester.pumpAndSettle();
+      expect(finished, 1);
+      s = c.read(activeLocationProvider).valueOrNull;
+      expect((s as ActiveLocationCityOnly).city, 'Paris', reason: 'kept');
+      expect(g.requests, 0);
+      await tester.pump(const Duration(seconds: 1));
+    });
+
+    testWidgets('back finishes like Maybe later, once, no prompt - $dir', (
+      tester,
+    ) async {
+      final g = FakeGateway();
+      var finished = 0;
+      await _pump(tester, g, locale, onFinish: () => finished++);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(finished, 1);
+      expect(find.byType(CityRequiredSheet), findsNothing);
+      expect(g.requests, 0);
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+      expect(finished, 1, reason: 'no completion loop');
     });
 
     testWidgets('Use my location, GPS never answers: Home at once, nothing '
@@ -429,51 +442,82 @@ void main() {
       expect(g.requests, 1);
       expect(finished, 1, reason: 'continued with a GPS that never answers');
       expect(find.byType(DabblerBanner), findsNothing);
-      expect(find.byType(DabblerSpinner), findsNothing);
-      // No toast hint for an allowed permission.
-      expect(find.text(l.location_intro_denied), findsNothing);
       await tester.pump(const Duration(seconds: 1)); // flush zero timers
     });
 
     for (final c
-        in <(String, FakeGateway, String Function(AppLocalizations), bool)>[
+        in <(String, FakeGateway, bool, String Function(AppLocalizations))>[
           (
             'denied',
             FakeGateway(afterRequest: LocationPermission.denied),
-            (l) => l.location_intro_denied,
-            false,
+            true,
+            (l) => l.location_intro_denied_title,
           ),
           (
             'permanently denied',
             FakeGateway(current: LocationPermission.deniedForever),
-            (l) => l.location_intro_denied_forever,
             true,
+            (l) => l.location_intro_denied_title,
           ),
           (
             'services off',
             FakeGateway(services: false),
-            (l) => l.location_intro_service_off,
-            true,
+            false,
+            (l) => l.location_intro_no_gps_title,
           ),
         ]) {
-      testWidgets('${c.$1}: Home at once with a one-time toast hint, no '
-          'banner on the page - $dir', (tester) async {
+      testWidgets('${c.$1}: stays on the page with the banner, the primary '
+          'changes, Manual and Maybe later stay - $dir', (tester) async {
         var finished = 0;
         await _pump(tester, c.$2, locale, onFinish: () => finished++);
         await tester.tap(find.text(l.location_intro_cta));
         await tester.pump();
         await tester.pump(const Duration(milliseconds: 50));
-        expect(finished, 1);
-        expect(find.byType(DabblerBanner), findsNothing);
-        expect(find.text(c.$3(l)), findsOneWidget, reason: 'toast hint');
-        // Settings action only where the platform has settings.
+        expect(finished, 0, reason: 'the user stays to choose');
+        expect(find.byType(DabblerBanner), findsOneWidget);
+        expect(find.text(c.$4(l)), findsOneWidget);
+        expect(find.text(l.location_intro_cta), findsNothing);
         expect(
-          find.text(l.location_intro_open_settings),
-          c.$4 ? findsOneWidget : findsNothing,
+          find.text(
+            c.$3 ? l.location_intro_open_settings : l.location_intro_try_again,
+          ),
+          findsOneWidget,
         );
-        await _shoot(tester, 'hint-${c.$1.replaceAll(' ', '-')}-$dir-$mode');
+        expect(find.text(l.location_intro_manual), findsOneWidget);
+        expect(find.text(l.location_intro_later), findsOneWidget);
+        await _shoot(tester, 'banner-${c.$1.replaceAll(' ', '-')}-$dir-$mode');
+        final asked = c.$2.requests;
+        if (c.$3) {
+          await tester.tap(find.text(l.location_intro_open_settings));
+          await tester.pump();
+          expect(c.$2.appSettings, 1);
+          expect(c.$2.requests, asked, reason: 'never asks the OS again');
+        } else {
+          c.$2.services = true;
+          await tester.tap(find.text(l.location_intro_try_again));
+          await tester.pump();
+          await tester.pump();
+          expect(finished, 1, reason: 'a fix this time: on to Home');
+        }
+        await tester.pump(const Duration(seconds: 1));
       });
     }
+
+    testWidgets('country pill opens the country sheet and changes the '
+        'country - $dir', (tester) async {
+      await _pump(tester, FakeGateway(), locale);
+      await tester.tap(find.bySemanticsLabel(l.location_intro_country_change));
+      await tester.pumpAndSettle();
+      expect(find.text(l.location_intro_country_title), findsOneWidget);
+      await _shoot(tester, 'country-sheet-$dir-$mode');
+      await tester.tap(find.text(l.region_country_Egypt));
+      await tester.pumpAndSettle();
+      final c = ProviderScope.containerOf(
+        tester.element(find.byType(LocationIntroScreen)),
+      );
+      expect(c.read(selectedCountryProvider).valueOrNull, 'Egypt');
+      await tester.pump(const Duration(seconds: 1));
+    });
   }
 
   group('active location in the background (KAN-489 follow-up)', () {
@@ -585,16 +629,26 @@ void main() {
     });
   });
 
-  test('copy matches the approved English text exactly', () {
+  test('copy matches the Location.dc.html English text exactly', () {
     final l = lookupAppLocalizations(const Locale('en'));
-    expect(l.location_intro_headline, 'See what’s playing nearby.');
+    expect(l.location_intro_kicker('Sara'), 'Welcome, Sara');
+    expect(l.location_intro_title, 'Where do you play?');
     expect(
-      l.location_intro_body,
-      'Your location is used to show nearby games and venues. '
-      'Turn it on and we’ll keep things local.',
+      l.location_intro_subtitle,
+      'Your city decides which games, venues and meetups you see. '
+      'Adding an area turns on distances.',
     );
+    expect(l.location_intro_manual, 'Enter location manually');
     expect(l.location_intro_cta, 'Use my location');
     expect(l.location_intro_later, 'Maybe later');
+    expect(l.location_intro_detecting, 'Finding your area');
+    expect(l.location_intro_try_again, 'Try again');
+    expect(l.location_intro_open_settings, 'Open Settings');
+    expect(l.location_intro_denied_title, 'Location access is off');
+    expect(l.location_intro_country_title, 'Choose your country');
+    final ar = lookupAppLocalizations(const Locale('ar'));
+    expect(ar.location_intro_later, 'لاحقًا');
+    expect(ar.location_intro_country_title, 'اختر دولتك');
   });
 
   test('the supplied artwork source is unchanged and not bundled', () {

@@ -24,6 +24,16 @@ const MapboxPlace _paris = MapboxPlace(
   countryCode: 'FR',
 );
 
+const MapboxPlace _ajman = MapboxPlace(
+  id: 'ae-ajman',
+  name: 'Ajman',
+  fullAddress: 'Ajman, United Arab Emirates',
+  lat: 25.4,
+  lng: 55.45,
+  country: 'United Arab Emirates',
+  countryCode: 'AE',
+);
+
 Future<AppLocalizations> _pump(
   WidgetTester tester,
   Widget body,
@@ -34,7 +44,12 @@ Future<AppLocalizations> _pump(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [mapboxCityProvider.overrideWith((ref, q) => cities(q))],
+      overrides: [
+        fakeCatalogOverride,
+        fakeCountryOverride,
+        mapboxCityProvider.overrideWith((ref, q) => cities(q)),
+        mapboxCountryCityProvider.overrideWith((ref, q) => cities(q.query)),
+      ],
       child: MaterialApp(
         builder: (context, child) => DabblerToastProvider(child: child!),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
@@ -55,26 +70,29 @@ Future<void> _type(WidgetTester tester, String text) async {
 }
 
 void main() {
-  testWidgets('drawer: a city outside the UAE appears and commits City-only '
-      'with its identity', (tester) async {
+  testWidgets('drawer: a city missing from the list is found inside the '
+      'chosen country, and still needs an area', (tester) async {
     installGeo();
-    await _pump(
+    final l = await _pump(
       tester,
       const ManualLocationDrawer(),
-      (q) async => q.toLowerCase().startsWith('par') ? [_paris] : [],
+      (q) async => q.toLowerCase().startsWith('ajm') ? [_ajman] : [],
     );
-    await _type(tester, 'par');
-    expect(find.text('Paris, France'), findsOneWidget);
+    await tester.tap(find.text('United Arab Emirates'));
+    await frames(tester);
+    await _type(tester, 'ajm');
+    expect(find.text('Ajman, United Arab Emirates'), findsOneWidget);
 
     final container = ProviderScope.containerOf(
       tester.element(find.byType(Scaffold)),
     );
-    await tester.tap(find.text('Paris, France'));
+    await tester.tap(find.text('Ajman, United Arab Emirates'));
     await frames(tester);
+    // The city alone is not an address: the area step is next, nothing saved.
+    expect(find.text(l.manual_location_change_city), findsOneWidget);
     final s = container.read(activeLocationProvider).valueOrNull;
-    expect(s, isA<ActiveLocationCityOnly>());
-    final c = s as ActiveLocationCityOnly;
-    expect((c.city, c.cityId, c.countryCode), ('Paris', 'fr-paris', 'FR'));
+    expect(s, isNot(isA<ActiveLocationReady>()));
+    expect(s, isNot(isA<ActiveLocationCityOnly>()));
     await tester.pump(const Duration(seconds: 6));
   });
 
@@ -85,9 +103,11 @@ void main() {
     final l = await _pump(tester, const ManualLocationDrawer(), (q) async {
       calls++;
       if (calls == 1) throw StateError('offline');
-      return [_paris];
+      return [_ajman];
     });
-    await _type(tester, 'par');
+    await tester.tap(find.text('United Arab Emirates'));
+    await frames(tester);
+    await _type(tester, 'ajm');
     expect(find.text(l.feed_retry), findsOneWidget);
     expect(
       find.text(l.manual_location_empty_title),
@@ -96,7 +116,7 @@ void main() {
     );
     await tester.tap(find.text(l.feed_retry));
     await frames(tester);
-    expect(find.text('Paris, France'), findsOneWidget);
+    expect(find.text('Ajman, United Arab Emirates'), findsOneWidget);
     expect(find.text(l.feed_retry), findsNothing);
   });
 

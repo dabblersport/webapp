@@ -7240,6 +7240,247 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get sport_overview_kind_plain => 'Sport';
+
+  @override
+  String sport_overview_kind_formats(String formats) {
+    return 'Sport · $formats';
+  }
+
+  @override
+  String get sport_overview_public_chip => 'Public sport page';
+
+  @override
+  String sport_overview_followers_label(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Followers',
+      one: 'Follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sport_overview_posts_label => 'Posts';
+
+  @override
+  String get sport_overview_create_game_or_meetup => 'Create game or meetup';
+
+  @override
+  String sport_overview_follow_note(String sport) {
+    return '$sport posts, games and news will show in your feed. This doesn’t add $sport to your sports profile.';
+  }
+
+  @override
+  String sport_overview_nocity_title(String sport) {
+    return 'Select a city to see $sport near you';
+  }
+
+  @override
+  String get sport_overview_nocity_text =>
+      'Games, venues, places and posts are listed per city.';
+
+  @override
+  String sport_overview_banner_title(String sport, String city) {
+    return 'Couldn’t load $sport in $city';
+  }
+
+  @override
+  String get sport_overview_banner_text =>
+      'Check your connection and try again. Following still works.';
+
+  @override
+  String get sport_overview_banner_action => 'Try again';
+
+  @override
+  String sport_overview_empty_all_title(String sport, String city) {
+    return 'Nothing for $sport in $city yet';
+  }
+
+  @override
+  String get sport_overview_empty_all_text =>
+      'No games, venues, places or posts here so far. Try another city.';
+
+  @override
+  String get sport_overview_change_city => 'Change city';
+
+  @override
+  String sport_overview_empty_games_city_title(String sport, String city) {
+    return 'No $sport games in $city';
+  }
+
+  @override
+  String sport_overview_empty_meetups_city_title(String sport, String city) {
+    return 'No $sport meetups in $city';
+  }
+
+  @override
+  String get sport_overview_empty_next7_text =>
+      'Nothing scheduled in the next 7 days. Try another city.';
+
+  @override
+  String sport_overview_empty_venues_city_title(String sport, String city) {
+    return 'No $sport venues in $city';
+  }
+
+  @override
+  String sport_overview_empty_venues_city_text(String sport) {
+    return 'Venues are businesses with bookable spaces for $sport.';
+  }
+
+  @override
+  String sport_overview_empty_spaces_city_title(String sport, String city) {
+    return 'No $sport spaces in $city';
+  }
+
+  @override
+  String get sport_overview_empty_spaces_city_text =>
+      'Spaces are the pitches and courts you book inside a venue.';
+
+  @override
+  String sport_overview_play_in(String sport, String city) {
+    return 'Play $sport in $city';
+  }
+
+  @override
+  String get sport_overview_next_7_days => 'Next 7 days';
+
+  @override
+  String get sport_overview_tile_games_meetups => 'Games & meetups';
+
+  @override
+  String get sport_overview_tile_venues_sub => 'To book';
+
+  @override
+  String get sport_overview_tile_spaces_sub => 'Inside venues';
+
+  @override
+  String sport_overview_count_games(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_meetups(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count meetups',
+      one: '1 meetup',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_venues(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count venues',
+      one: '1 venue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_spaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bookable spaces',
+      one: '1 bookable space',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_posts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts',
+      one: '1 post',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_hero_next(String when) {
+    return 'Next: $when';
+  }
+
+  @override
+  String get sport_overview_section_top_venues => 'Top venues';
+
+  @override
+  String sport_overview_sub_next7(String city) {
+    return 'Next 7 days in $city · soonest first';
+  }
+
+  @override
+  String sport_overview_sub_venues(String sport, String city) {
+    return 'Businesses with $sport spaces in $city · top rated first';
+  }
+
+  @override
+  String sport_overview_sub_spaces(String city) {
+    return 'Pitches inside venues in $city · lowest price first';
+  }
+
+  @override
+  String sport_overview_sub_posts(String sport) {
+    return 'Tagged $sport · newest first';
+  }
+
+  @override
+  String get sport_overview_join => 'Join';
+
+  @override
+  String get sport_overview_book => 'Book';
+
+  @override
+  String get sport_overview_per_hour => 'per hour';
+
+  @override
+  String get sport_overview_currency => 'AED';
+
+  @override
+  String sport_overview_city_sheet_note_device(String city) {
+    return 'Changes this page only. Your location on this device stays $city.';
+  }
+
+  @override
+  String get sport_overview_city_sheet_note =>
+      'Changes this page only. Your location on this device isn’t changed.';
+
+  @override
+  String sport_overview_city_use_device(String city) {
+    return 'Use my location · $city';
+  }
+
+  @override
+  String sport_overview_unfollow_title(String sport) {
+    return 'Unfollow $sport?';
+  }
+
+  @override
+  String sport_overview_unfollow_text(String sport) {
+    return '$sport posts and games stop appearing in your feed. Your sports profile isn’t affected.';
+  }
+
+  @override
+  String get sport_overview_unfollow_confirm => 'Unfollow';
+
+  @override
+  String get sport_overview_unfollow_cancel => 'Cancel';
+
+  @override
   String get listing_choose_city_title => 'Choose city';
 
   @override
@@ -7247,6 +7488,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_intro_select_city => 'Select city';
+
+  @override
+  String location_intro_kicker(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
+  String get location_intro_title => 'Where do you play?';
+
+  @override
+  String get location_intro_subtitle =>
+      'Your city decides which games, venues and meetups you see. Adding an area turns on distances.';
+
+  @override
+  String get location_intro_manual => 'Enter location manually';
+
+  @override
+  String get location_intro_detecting => 'Finding your area';
+
+  @override
+  String get location_intro_try_again => 'Try again';
+
+  @override
+  String get location_intro_denied_title => 'Location access is off';
+
+  @override
+  String get location_intro_denied_message =>
+      'Turn it on in Settings, or enter your city yourself.';
+
+  @override
+  String get location_intro_no_gps_title => 'We couldn’t get a GPS fix';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'Location services may be off or the signal is weak. Try again, or enter your city.';
+
+  @override
+  String get location_intro_country_title => 'Choose your country';
+
+  @override
+  String get location_intro_country_change => 'Change country';
+
+  @override
+  String get manual_location_search_city => 'Search for a city';
+
+  @override
+  String get manual_location_change_city => 'Change city';
+
+  @override
+  String get manual_location_area_hint => 'Only areas in this city are listed.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'Search areas in $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'Areas in $city';
+  }
 
   @override
   String get location_settings_device_title => 'Device location';

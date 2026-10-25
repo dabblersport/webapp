@@ -23,7 +23,7 @@ class LocationDetector {
   ///
   /// Priority order:
   /// 1. **IP-derived location**: Calls Supabase edge function to detect country
-  ///    and city from the user's IP address using ipapi.co.
+  ///    and city from the user's IP address (the `detect-country` function only).
   ///
   /// 2. **Device locale country**: Reads the device's locale settings to extract
   ///    the country code (e.g., "US", "AE", "GB"). This is converted to a full

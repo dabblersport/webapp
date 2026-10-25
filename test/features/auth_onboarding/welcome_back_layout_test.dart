@@ -26,6 +26,7 @@ Future<void> _pump(
   String persona = 'player',
   String? sport,
   Locale locale = const Locale('en'),
+  bool first = false,
 }) async {
   tester.view.physicalSize = const Size(402, 874);
   tester.view.devicePixelRatio = 1;
@@ -48,7 +49,7 @@ Future<void> _pump(
         home: WelcomeScreen(
           displayName: 'Sam Player',
           personaType: persona,
-          isFirstTime: false,
+          isFirstTime: first,
           savedSportLoader: () async => sport,
         ),
       ),
@@ -107,27 +108,36 @@ void main() {
           of: find.text(l.auth_welcome_back_title('Sam')),
           matching: find.byType(DabblerCard),
         );
+        final pill = find.ancestor(
+          of: avatar,
+          matching: find.byType(DabblerCard),
+        );
         final button = find.byType(DabblerButton);
         expect(avatar, findsOneWidget);
         expect(card, findsOneWidget);
+        expect(pill, findsOneWidget);
         final a = rectOf(tester, avatar);
+        final p = rectOf(tester, pill);
         final c = rectOf(tester, card);
         final b = rectOf(tester, button);
-        // Avatar near the top, under the status bar, on the start side.
-        expect(a.top, greaterThan(59));
-        expect(a.top, lessThan(140));
+        // Poster welcome back: the identity pill sits under the status bar and
+        // the avatar on its start side; the card rests at the bottom with
+        // Continue inside it, the poster showing between.
+        expect(p.top, greaterThan(59));
+        expect(p.top, lessThan(100));
         if (rtl) {
-          expect(a.right, closeTo(c.right, 1), reason: 'avatar top-right');
+          expect(a.right, lessThan(p.right));
+          expect(a.right, greaterThan(p.right - 16));
         } else {
-          expect(a.left, closeTo(c.left, 1), reason: 'avatar top-left');
+          expect(a.left, greaterThan(p.left));
+          expect(a.left, lessThan(p.left + 16));
         }
-        // Card directly under the avatar; Continue pinned at the bottom.
-        expect(c.top, greaterThan(a.bottom));
-        expect(c.top - a.bottom, lessThan(48));
-        expect(c.bottom, lessThan(b.top - 200), reason: 'poster fills the gap');
-        expect(b.bottom, greaterThan(874 - 34 - 80));
-        // Heading and quote live in the same single card.
-        expect(find.byType(DabblerCard), findsOneWidget);
+        expect(c.top, greaterThan(p.bottom + 100), reason: 'poster shows');
+        expect(b.top, greaterThan(c.top));
+        expect(b.bottom, lessThan(c.bottom));
+        expect(c.bottom, greaterThan(874 - 34 - 60));
+        // Pill + one card; heading and quote live in the same card.
+        expect(find.byType(DabblerCard), findsNWidgets(2));
         expect(
           find.descendant(
             of: card,
@@ -139,6 +149,41 @@ void main() {
         await _shoot(tester, 'wb-${sport ?? 'plain'}-$lang-$mode');
       });
     }
+  }
+
+  for (final (String lang, Locale locale) in <(String, Locale)>[
+    ('en', const Locale('en')),
+    ('ar', const Locale('ar')),
+  ]) {
+    testWidgets('poster welcome: pill, headline card, list card with the '
+        'action inside - $lang', (tester) async {
+      await _pump(tester, sport: 'football', locale: locale, first: true);
+      final l = lookupAppLocalizations(locale);
+      final pill = find.ancestor(
+        of: find.byType(DabblerAvatar),
+        matching: find.byType(DabblerCard),
+      );
+      final head = find.ancestor(
+        of: find.text(l.persona_player_headline),
+        matching: find.byType(DabblerCard),
+      );
+      final list = find.ancestor(
+        of: find.byType(DabblerButton),
+        matching: find.byType(DabblerCard),
+      );
+      expect(find.byType(DabblerCard), findsNWidgets(3));
+      expect(
+        rectOf(tester, head).top,
+        greaterThan(rectOf(tester, pill).bottom),
+      );
+      expect(
+        rectOf(tester, list).top,
+        greaterThan(rectOf(tester, head).bottom),
+      );
+      expect(find.text(l.persona_player_cta), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      await _shoot(tester, 'w-football-$lang-$mode');
+    });
   }
 
   group('persona quote', () {
