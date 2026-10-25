@@ -12989,6 +12989,300 @@ abstract class AppLocalizations {
   /// **'Open {sport} page'**
   String sport_overview_open_page(String sport);
 
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get sport_overview_kind_plain;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport · {formats}'**
+  String sport_overview_kind_formats(String formats);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Public sport page'**
+  String get sport_overview_public_chip;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Follower} other{Followers}}'**
+  String sport_overview_followers_label(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_posts_label;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game or meetup'**
+  String get sport_overview_create_game_or_meetup;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} posts, games and news will show in your feed. This doesn’t add {sport} to your sports profile.'**
+  String sport_overview_follow_note(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a city to see {sport} near you'**
+  String sport_overview_nocity_title(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Games, venues, places and posts are listed per city.'**
+  String get sport_overview_nocity_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load {sport} in {city}'**
+  String sport_overview_banner_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again. Following still works.'**
+  String get sport_overview_banner_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get sport_overview_banner_action;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing for {sport} in {city} yet'**
+  String sport_overview_empty_all_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No games, venues, places or posts here so far. Try another city.'**
+  String get sport_overview_empty_all_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get sport_overview_change_city;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} games in {city}'**
+  String sport_overview_empty_games_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} meetups in {city}'**
+  String sport_overview_empty_meetups_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled in the next 7 days. Try another city.'**
+  String get sport_overview_empty_next7_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} venues in {city}'**
+  String sport_overview_empty_venues_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues are businesses with bookable spaces for {sport}.'**
+  String sport_overview_empty_venues_city_text(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} spaces in {city}'**
+  String sport_overview_empty_spaces_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces are the pitches and courts you book inside a venue.'**
+  String get sport_overview_empty_spaces_city_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Play {sport} in {city}'**
+  String sport_overview_play_in(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days'**
+  String get sport_overview_next_7_days;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Games & meetups'**
+  String get sport_overview_tile_games_meetups;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'To book'**
+  String get sport_overview_tile_venues_sub;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Inside venues'**
+  String get sport_overview_tile_spaces_sub;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
+  String sport_overview_count_games(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 meetup} other{{count} meetups}}'**
+  String sport_overview_count_meetups(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 venue} other{{count} venues}}'**
+  String sport_overview_count_venues(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 bookable space} other{{count} bookable spaces}}'**
+  String sport_overview_count_spaces(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post} other{{count} posts}}'**
+  String sport_overview_count_posts(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {when}'**
+  String sport_overview_hero_next(String when);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Top venues'**
+  String get sport_overview_section_top_venues;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days in {city} · soonest first'**
+  String sport_overview_sub_next7(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Businesses with {sport} spaces in {city} · top rated first'**
+  String sport_overview_sub_venues(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pitches inside venues in {city} · lowest price first'**
+  String sport_overview_sub_spaces(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tagged {sport} · newest first'**
+  String sport_overview_sub_posts(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get sport_overview_join;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get sport_overview_book;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'per hour'**
+  String get sport_overview_per_hour;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'AED'**
+  String get sport_overview_currency;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes this page only. Your location on this device stays {city}.'**
+  String sport_overview_city_sheet_note_device(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes this page only. Your location on this device isn’t changed.'**
+  String get sport_overview_city_sheet_note;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my location · {city}'**
+  String sport_overview_city_use_device(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow {sport}?'**
+  String sport_overview_unfollow_title(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} posts and games stop appearing in your feed. Your sports profile isn’t affected.'**
+  String sport_overview_unfollow_text(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get sport_overview_unfollow_confirm;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get sport_overview_unfollow_cancel;
+
   /// No description provided for @listing_choose_city_title.
   ///
   /// In en, this message translates to:
