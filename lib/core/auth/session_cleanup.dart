@@ -15,6 +15,7 @@ import 'package:dabbler/features/social/providers.dart' as squads_p;
 import 'package:dabbler/features/social/providers/community_providers.dart';
 import 'package:dabbler/features/social/circles_providers.dart';
 import 'package:dabbler/features/rewards/providers/check_in_providers.dart';
+import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 
 /// Invalidates every provider that holds data scoped to the currently
 /// signed-in user. Call this on sign-out and on sign-in so that stale data
@@ -82,4 +83,7 @@ void resetUserScopedProviders(Ref ref) {
   ref.invalidate(checkInStatusDetailProvider);
   ref.invalidate(checkInRecordProvider);
   ref.invalidate(watchCheckInStatusProvider);
+
+  // --- Saved places (owner-private; KAN-589) ---
+  ref.invalidate(profileLocationNotifierProvider);
 }

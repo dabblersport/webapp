@@ -2924,5 +2924,13 @@
   "location_point_selected": "Selected location",
   "@location_point_selected": {"description": "KAN-589 label of a point picked on the map without a place name. AR pending content review."},
   "location_point_hint": "Search a place, or tap the map to move the pin.",
-  "@location_point_hint": {"description": "KAN-589 hint under the Set location map. AR pending content review."}
+  "@location_point_hint": {"description": "KAN-589 hint under the Set location map. AR pending content review."},
+  "saved_places_duplicate": "You already have a saved place at this location.",
+  "@saved_places_duplicate": {"description": "KAN-589 toast when a new saved place is within 25 m of another saved place; nothing is saved. AR pending content review."},
+  "saved_places_delete_failed": "Couldn’t delete this place. Try again.",
+  "@saved_places_delete_failed": {"description": "KAN-589 toast when deleting a saved place fails. AR pending content review."},
+  "location_search_no_results": "No results found",
+  "@location_search_no_results": {"description": "KAN-589 place search dropdown with no match. AR pending content review."},
+  "location_search_failed": "Couldn’t load results",
+  "@location_search_failed": {"description": "KAN-589 place search dropdown when the search request failed. AR pending content review."}
 }

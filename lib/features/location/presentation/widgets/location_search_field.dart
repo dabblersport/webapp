@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:dabbler/data/models/mapbox_place.dart';
 import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Reusable Mapbox-powered location search field with dropdown overlay.
 class LocationSearchField extends ConsumerStatefulWidget {
@@ -205,7 +206,7 @@ class _ResultsDropdown extends ConsumerWidget {
           error: (_, __) => Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space5),
             child: DabblerText(
-              'Couldn’t load results',
+              AppLocalizations.of(context).location_search_failed,
               style: DabblerType.subheadline,
               tone: DabblerTextTone.secondary,
             ),
@@ -215,7 +216,7 @@ class _ResultsDropdown extends ConsumerWidget {
               return Padding(
                 padding: const EdgeInsets.all(DabblerSpacing.space5),
                 child: DabblerText(
-                  'No results found',
+                  AppLocalizations.of(context).location_search_no_results,
                   style: DabblerType.subheadline,
                   tone: DabblerTextTone.secondary,
                 ),

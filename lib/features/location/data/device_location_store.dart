@@ -124,6 +124,10 @@ class DeviceLocationStore {
     }
   }
 
+  /// Stores [l] as this account's location unchanged: a Manual choice made
+  /// while signed out carried over at sign-in (KAN-589).
+  Future<void> adopt(DeviceLocation l) => _write(l);
+
   /// The user chose a city, and an area with its point. Mode becomes Manual.
   Future<DeviceLocation> setManual({
     required String city,

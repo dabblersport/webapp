@@ -4,26 +4,22 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
-import 'package:dabbler/core/config/environment.dart';
-import 'package:dabbler/core/config/mapbox_config.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart'
+    show mapTokenProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
+
+export 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart'
+    show mapTokenProvider, mapboxTileToken;
 
 /// Dubai city centre: the map centre while the device has no location yet.
 const LatLng kDefaultMapCentre = LatLng(25.2048, 55.2708);
 
-/// The Mapbox public token, from the same sources the place search uses.
-String mapboxTileToken() {
-  if (MapboxConfig.accessToken.isNotEmpty) return MapboxConfig.accessToken;
-  try {
-    return Environment.mapboxAccessToken;
-  } catch (_) {
-    return '';
-  }
-}
-
-/// The Mapbox token the map uses. Tests override it.
-final mapTokenProvider = Provider<String>((ref) => mapboxTileToken());
+/// Every location map pans and zooms (KAN-589): drag, pinch, double-tap and
+/// mouse-wheel / trackpad zoom on web. Rotation stays off so north stays up.
+const InteractionOptions kLocationMapInteraction = InteractionOptions(
+  flags: InteractiveFlag.all & ~InteractiveFlag.rotate,
+);
 
 /// Replaces the network [TileLayer] (render tests stub tiles). Null in the app.
 final mapTileLayerBuilderProvider = Provider<Widget Function()?>((ref) => null);
@@ -77,9 +73,7 @@ class LocationMapPreview extends ConsumerWidget {
               options: MapOptions(
                 initialCenter: centre,
                 initialZoom: pin != null ? _zoomPlace : _zoomDefault,
-                interactionOptions: const InteractionOptions(
-                  flags: InteractiveFlag.none,
-                ),
+                interactionOptions: kLocationMapInteraction,
               ),
               children: [
                 mapboxTileLayer(accessToken, tileLayerBuilder),

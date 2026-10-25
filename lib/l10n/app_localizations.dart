@@ -13612,6 +13612,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Search a place, or tap the map to move the pin.'**
   String get location_point_hint;
+
+  /// KAN-589 toast when a new saved place is within 25 m of another saved place; nothing is saved. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a saved place at this location.'**
+  String get saved_places_duplicate;
+
+  /// KAN-589 toast when deleting a saved place fails. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t delete this place. Try again.'**
+  String get saved_places_delete_failed;
+
+  /// KAN-589 place search dropdown with no match. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get location_search_no_results;
+
+  /// KAN-589 place search dropdown when the search request failed. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load results'**
+  String get location_search_failed;
 }
 
 class _AppLocalizationsDelegate
