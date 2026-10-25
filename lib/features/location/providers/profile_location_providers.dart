@@ -44,6 +44,20 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
     return result.fold((_) => [], (list) => list);
   }
 
+  /// The signed-in user's active profile id (KAN-589). The profile
+  /// controller holds it only after a profile screen has loaded it, so a user
+  /// who opens Location settings straight away had none and every save failed
+  /// before anything was written; the active-persona lookup fills the gap.
+  Future<String?> _profileId() async {
+    final loaded = ref.read(profileControllerProvider).profile?.id;
+    if (loaded != null) return loaded;
+    try {
+      return await ref.read(myProfileIdProvider.future);
+    } catch (_) {
+      return null;
+    }
+  }
+
   // ── Save ──────────────────────────────────────────────────────────────────
 
   /// Returns whether the place was saved. A failure leaves the list as it was.
@@ -90,7 +104,7 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
   }) async {
     if (await hasPlaceAt(lat, lng)) return SavePlaceOutcome.duplicate;
 
-    final profileId = ref.read(profileControllerProvider).profile?.id;
+    final profileId = await _profileId();
     if (profileId == null) return SavePlaceOutcome.failed;
 
     // 1. Insert geo_location and get its id
@@ -137,7 +151,7 @@ class ProfileLocationNotifier extends AsyncNotifier<List<ProfileLocation>> {
     final target = current.where((l) => l.id == locationId).firstOrNull;
     if (target == null || target.lat == null || target.lng == null) return;
 
-    final profileId = ref.read(profileControllerProvider).profile?.id;
+    final profileId = await _profileId();
     if (profileId == null) return;
 
     final result = await _repo.setPrimary(

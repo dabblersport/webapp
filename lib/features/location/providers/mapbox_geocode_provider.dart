@@ -32,6 +32,11 @@ final mapboxHttpClientProvider = Provider<http.Client>((ref) => http.Client());
 /// toward the active location. Queries shorter than 2 characters return empty.
 /// A failed request is an error (the dropdown says so), never "no results".
 /// Results are cached per query string (Riverpod's family cache).
+///
+/// It asks the Search Box API, not Geocoding v6: v6 has no points of
+/// interest, so a venue or mall name came back as unrelated streets in other
+/// countries. City and area searches below stay on v6, where `types` limits
+/// them to places and neighbourhoods.
 final mapboxGeocodeProvider = FutureProvider.family<List<MapboxPlace>, String>((
   ref,
   query,
@@ -47,7 +52,7 @@ final mapboxGeocodeProvider = FutureProvider.family<List<MapboxPlace>, String>((
     params['proximity'] = '${loc.lng},${loc.lat}';
   }
 
-  return _forward(ref, params);
+  return _forward(ref, params, baseUrl: MapboxConfig.searchBoxForwardUrl);
 });
 
 /// City-only search (KAN-587): Mapbox `place` results worldwide, no country
@@ -113,12 +118,16 @@ final mapboxAreaProvider = FutureProvider.family<List<MapboxPlace>, AreaQuery>((
   });
 });
 
-Future<List<MapboxPlace>> _forward(Ref ref, Map<String, String> params) async {
+Future<List<MapboxPlace>> _forward(
+  Ref ref,
+  Map<String, String> params, {
+  String baseUrl = MapboxConfig.geocodeBaseUrl,
+}) async {
   final String token = ref.read(mapTokenProvider);
   if (token.isEmpty) {
     throw StateError('Map service is not configured');
   }
-  final uri = Uri.parse(MapboxConfig.geocodeBaseUrl).replace(
+  final uri = Uri.parse(baseUrl).replace(
     queryParameters: <String, String>{...params, 'access_token': token},
   );
   final response = await ref.read(mapboxHttpClientProvider).get(uri);
