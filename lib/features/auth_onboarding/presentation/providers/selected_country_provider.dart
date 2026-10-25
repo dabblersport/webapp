@@ -13,6 +13,10 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_pro
 const _selectedCountryPrefsKey = 'selected_country';
 const _selectedCityPrefsKey = 'selected_city';
 
+/// The saved country's source (KAN-640 R8): only a pick beats the account.
+const String kCountrySourcePicked = 'picked';
+const String kCountrySourceDetected = 'detected';
+
 /// Location state containing both country and city
 class LocationState {
   final String country;
@@ -68,13 +72,13 @@ typedef CountryDetector = Future<String> Function();
 Future<String> _detectFromIp() =>
     IpCountryDetectionService().detectCountryFromIp();
 
-/// The app's service region. KAN-640 R6 (CEO): on the very first run, with no
-/// country saved on the device (or account), the country is detected once from
-/// the IP and preselected when it is a supported country, otherwise Global; a
-/// failed detection is Global and is tried again next launch. Once a country is
-/// saved (detected or picked) it is never detected again, and a manual choice
-/// always wins. Never from the device locale. A missing or unsupported value is
-/// Global.
+/// The app's service region, one value for the whole app. KAN-640 R8 (CEO):
+/// 1. a country the user explicitly picked, on any screen, wins over all;
+/// 2. otherwise the country detected from the IP on this session wins over the
+///    account's stored region and is written to the account;
+/// 3. if detection fails, the account region stands; with none, Global (the
+///    "Set location" selector), never the first list item.
+/// Never from the device locale. A missing or unsupported value is Global.
 class SelectedLocationNotifier
     extends StateNotifier<AsyncValue<LocationState>> {
   SelectedLocationNotifier({
@@ -100,41 +104,83 @@ class SelectedLocationNotifier
       ? _selectedCountryPrefsKey
       : '$_selectedCountryPrefsKey.$_userId';
 
+  /// How the saved country got there: picked by the user or detected.
+  String get _sourceKey => '$_countryKey.source';
+  static const String _signedOutSourceKey = '$_selectedCountryPrefsKey.source';
+
+  /// Sends the region to the account; true once it is safely on its way (the
+  /// offline queue owns it) or confirmed stored.
+  Future<bool> _writeAccountRegion(String uid, String region) async {
+    if (await SettingsSyncBridge.submit(SettingKeys.region, {
+      'region': region,
+    })) {
+      return true;
+    }
+    await _remote.save(uid, region);
+    return await _remote.fetch(uid) == region;
+  }
+
   Future<void> _load() async {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedCity = prefs.getString(_selectedCityPrefsKey);
-      // KAN-640 R5: the country picked on the signed-out screens (landing,
-      // email entry) is the app's country; a first sign-in on this device
-      // keeps it instead of falling back to Global.
+      final uid = _userId;
+
+      // KAN-640 R8 (CEO): an explicit pick, on any screen, beats everything.
+      // One picked on the signed-out screens goes to the account at sign-in.
+      if (uid != null &&
+          prefs.getString(_signedOutSourceKey) == kCountrySourcePicked) {
+        final String pick = normalizeServiceRegion(
+          prefs.getString(_selectedCountryPrefsKey),
+        );
+        await prefs.setString(_countryKey, pick);
+        await prefs.setString(_sourceKey, kCountrySourcePicked);
+        if (await _writeAccountRegion(uid, pick)) {
+          await prefs.remove(_selectedCountryPrefsKey);
+          await prefs.remove(_signedOutSourceKey);
+        }
+        state = AsyncValue.data(LocationState(country: pick, city: savedCity));
+        return;
+      }
+      if (prefs.getString(_sourceKey) == kCountrySourcePicked) {
+        final String pick = normalizeServiceRegion(
+          prefs.getString(_countryKey),
+        );
+        state = AsyncValue.data(LocationState(country: pick, city: savedCity));
+        return;
+      }
+
+      // No pick: the country detected on this session wins over the account's
+      // region; if detection fails the account region stands, else Global.
       final String? saved =
           prefs.getString(_countryKey) ??
-          (_userId == null ? null : prefs.getString(_selectedCountryPrefsKey));
+          (uid == null ? null : prefs.getString(_selectedCountryPrefsKey));
+      // A value saved before sources were recorded keeps its old behaviour:
+      // the account wins and nothing is detected again.
+      final bool legacy =
+          saved != null &&
+          prefs.getString(_sourceKey) == null &&
+          prefs.getString(_signedOutSourceKey) == null;
       String region = normalizeServiceRegion(saved);
       if (saved != null && saved != region) {
         await prefs.setString(_countryKey, region);
       }
-
-      final uid = _userId;
-      var accountHasRegion = false;
+      var queued = false;
       if (uid != null) {
         // KAN-608: a region change still waiting for the server is newer.
-        final queued = await SettingsSyncBridge.hasPendingEdit(
-          SettingKeys.region,
-        );
+        queued = await SettingsSyncBridge.hasPendingEdit(SettingKeys.region);
         final String? remote = queued ? null : await _remote.fetch(uid);
-        accountHasRegion = queued || remote != null;
         if (remote != null) {
           region = normalizeServiceRegion(remote);
           await prefs.setString(_countryKey, region);
-        } else if (saved != null && region != kGlobalRegion) {
+        } else if (legacy && region != kGlobalRegion) {
           // A choice made before this account had a stored region.
           await _remote.save(uid, region);
         }
       }
       state = AsyncValue.data(LocationState(country: region, city: savedCity));
-      if (saved == null && !accountHasRegion && !_chosen) {
-        await _detectFirstRun(prefs);
+      if (!legacy && !queued && !_chosen) {
+        await _detectSession(prefs);
       }
     } catch (e, st) {
       // Safe fallback: keep UX working even if prefs access fails.
@@ -142,10 +188,10 @@ class SelectedLocationNotifier
     }
   }
 
-  /// The one-time IP detection. A supported country is saved and preselected; a
-  /// country the app does not serve is saved as Global; a failure saves nothing
-  /// (Global shows, and the next launch tries again).
-  Future<void> _detectFirstRun(SharedPreferences prefs) async {
+  /// The IP detection of this session. A supported country wins over the
+  /// account's region and is written to the account; a failure, or a country
+  /// the app does not serve, leaves the account region (else Global) standing.
+  Future<void> _detectSession(SharedPreferences prefs) async {
     String detected;
     try {
       detected = await _detect().timeout(ipCountryDetectionTimeout);
@@ -156,12 +202,20 @@ class SelectedLocationNotifier
     final String name = detected.trim();
     if (name.isEmpty || name == kGlobalRegion) return;
     final String region = normalizeServiceRegion(name);
-    await prefs.setString(_countryKey, region);
-    if (_chosen || !mounted) return;
     final String? city = state.valueOrNull?.city;
+    if (region == kGlobalRegion) {
+      // Not served here: only fills an empty slot, never replaces a region.
+      if (state.valueOrNull?.country != kGlobalRegion) return;
+      await prefs.setString(_countryKey, region);
+      await prefs.setString(_sourceKey, kCountrySourceDetected);
+      return;
+    }
+    await prefs.setString(_countryKey, region);
+    await prefs.setString(_sourceKey, kCountrySourceDetected);
+    if (_chosen || !mounted) return;
     state = AsyncValue.data(LocationState(country: region, city: city));
     final uid = _userId;
-    if (uid != null && region != kGlobalRegion) await _remote.save(uid, region);
+    if (uid != null) await _remote.save(uid, region);
   }
 
   Future<void> setLocation({required String country, String? city}) async {
@@ -174,6 +228,7 @@ class SelectedLocationNotifier
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_countryKey, region);
+      await prefs.setString(_sourceKey, kCountrySourcePicked);
       if (city != null && city.trim().isNotEmpty) {
         await prefs.setString(_selectedCityPrefsKey, city.trim());
       } else {
