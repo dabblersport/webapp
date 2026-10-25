@@ -15,7 +15,8 @@ class IpLocationResult {
 /// Service to detect user's country and city from IP address via Supabase Edge Function.
 ///
 /// This service calls the `detect-country` edge function which uses
-/// Cloudflare's IP geolocation headers and ipapi.co to determine the user's location.
+/// Cloudflare's IP geolocation headers to determine the user's location. Web and
+/// native both call it (KAN-640 R7): the IP goes to no other service.
 class IpCountryDetectionService {
   /// Detects the user's country and city from their IP address.
   ///
@@ -26,10 +27,6 @@ class IpCountryDetectionService {
   ///
   /// This method is safe to call and will never throw - always returns a fallback.
   Future<IpLocationResult> detectLocationFromIp() async {
-    // The edge function sends no `Access-Control-Allow-Origin` header, so a
-    // browser blocks the call; on the web the free, keyless ipwho.is
-    // endpoint (CORS open) answers instead. Native builds use the function.
-    if (kIsWeb) return _detectFromWeb();
     try {
       // Use direct HTTP call instead of Supabase Functions client
       // to avoid automatic JWT authorization header.
@@ -101,34 +98,5 @@ class IpCountryDetectionService {
   Future<String> detectCountryFromIp() async {
     final result = await detectLocationFromIp();
     return result.country;
-  }
-
-  /// ISO code -> the English name the app stores, for the supported countries
-  /// only. Anything else is reported as Global (the app does not serve it).
-  static const Map<String, String> _isoToName = <String, String>{
-    'EG': 'Egypt',
-    'MA': 'Morocco',
-    'QA': 'Qatar',
-    'SA': 'Saudi Arabia',
-    'AE': 'United Arab Emirates',
-  };
-
-  /// Web path: `GET https://ipwho.is/?fields=success,country_code` answers
-  /// `{"country_code":"AE",...}`
-  /// for the caller's IP. Free, no key. Never throws.
-  Future<IpLocationResult> _detectFromWeb() async {
-    try {
-      final response = await http.get(
-        Uri.parse('https://ipwho.is/?fields=success,country_code'),
-      );
-      if (response.statusCode != 200) {
-        return IpLocationResult(country: 'Global');
-      }
-      final data = json.decode(response.body) as Map<String, dynamic>;
-      final code = (data['country_code'] as String?)?.toUpperCase();
-      return IpLocationResult(country: _isoToName[code] ?? 'Global');
-    } catch (_) {
-      return IpLocationResult(country: 'Global');
-    }
   }
 }
