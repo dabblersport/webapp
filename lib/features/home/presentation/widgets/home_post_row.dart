@@ -10,7 +10,6 @@ import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
-import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_sport_tap.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
@@ -133,40 +132,28 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   }
 
   /// The reaction-breakdown chips: tapping one toggles that vibe, as before.
-  /// KAN-642: the vibe the author posted with, as the design's vibe chip
-  /// (`Home Feed.dc.html:674`): the vibe's colours, its emoji and its label in
-  /// the viewer's language. Null when the post has no vibe.
-  Widget? _postVibeChip(Post post) {
+  /// KAN-642: the vibe the author posted with, in the viewer's language; the
+  /// first pill of the post row's pill row (the same pill as sport and venue).
+  /// Null when the post has no vibe.
+  String? _postVibeLabel(Post post) {
     final vibe = post.vibes.firstOrNull;
     if (vibe == null) return null;
     final ar = Localizations.localeOf(context).languageCode == 'ar';
-    final label = ar && vibe.labelAr.isNotEmpty
+    return ar && vibe.labelAr.isNotEmpty
         ? vibe.labelAr
         : (vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key);
-    return DabblerChip(
-      key: const ValueKey('post-vibe-chip'),
-      label: label,
-      vibe: DabblerVibe.fromKey(vibe.key),
-      emoji: composerVibeEmoji(vibe.key),
-      selected: true,
-      labelWeight: DabblerType.regular,
-      metrics: widget.metrics,
-      ellipsize: true,
-    );
   }
 
   Widget? _reactionSummary(Post post, Set<String> myReactions) {
-    final postVibe = _postVibeChip(post);
     final entries = widget.showActions
         ? _reactionBreakdownEntries(post)
         : const <MapEntry<dynamic, dynamic>>[];
-    if (entries.isEmpty && postVibe == null) return null;
+    if (entries.isEmpty) return null;
     final vibes = ref.watch(vibesProvider).valueOrNull ?? const [];
     return Wrap(
       spacing: DabblerSpacing.space2,
       runSpacing: DabblerSpacing.space1,
       children: [
-        ?postVibe,
         for (final entry in entries.take(5))
           Builder(
             builder: (context) {
@@ -540,6 +527,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   post,
                   currentSportId: widget.currentSportId,
                 ),
+          vibeTagLabel: _postVibeLabel(post),
           placeTagLabel: placeTag,
           placeTagLeading: placeTag == null
               ? null

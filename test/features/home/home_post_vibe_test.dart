@@ -81,30 +81,28 @@ Future<void> _pump(WidgetTester tester, Post post, Locale locale) async {
   await tester.pump(const Duration(milliseconds: 50));
 }
 
+DabblerPostRow _row(WidgetTester tester) =>
+    tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
+
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(initHomeTestSupabase);
 
-  const chip = ValueKey('post-vibe-chip');
-
-  testWidgets('[en] a post with a vibe renders the vibe chip', (tester) async {
+  testWidgets('[en] a post with a vibe renders the vibe pill', (tester) async {
     await _pump(tester, _post(vibes: const [_motivated]), const Locale('en'));
-    expect(find.byKey(chip), findsOneWidget);
     expect(find.text('Motivated'), findsOneWidget);
+    expect(_row(tester).vibeTagLabel, 'Motivated');
   });
 
-  testWidgets('[ar] the vibe chip reads in Arabic', (tester) async {
+  testWidgets('[ar] the vibe pill reads in Arabic', (tester) async {
     await _pump(tester, _post(vibes: const [_motivated]), const Locale('ar'));
-    expect(find.byKey(chip), findsOneWidget);
     expect(find.text('متحمس'), findsOneWidget);
+    expect(_row(tester).vibeTagLabel, 'متحمس');
   });
 
-  testWidgets('a post without a vibe renders no vibe slot', (tester) async {
+  testWidgets('a post without a vibe renders no vibe pill', (tester) async {
     await _pump(tester, _post(), const Locale('en'));
-    expect(find.byKey(chip), findsNothing);
-    expect(
-      tester.widget<DabblerPostRow>(find.byType(DabblerPostRow)).reactions,
-      isNull,
-    );
+    expect(_row(tester).vibeTagLabel, isNull);
+    expect(_row(tester).reactions, isNull);
   });
 }
