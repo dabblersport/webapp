@@ -1,3 +1,6 @@
+import 'package:dabbler/core/sync/pending_settings_store.dart';
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -17,6 +20,15 @@ class _Remote implements ServiceRegionRemote {
 
   @override
   Future<void> save(String userId, String region) async => stored = region;
+}
+
+class _QueueHandler extends SettingSyncHandler {
+  @override
+  Future<DateTime?> serverUpdatedAt(String accountId) async => null;
+  @override
+  Future<void> push(String accountId, PendingSettingEdit edit) async {}
+  @override
+  Future<void> adoptServer(String accountId) async {}
 }
 
 Future<String?> _signIn(_Remote remote, {String? detected}) async {
@@ -85,6 +97,30 @@ void main() {
     final remote = _Remote(null);
     expect(await _signIn(remote), 'Global');
     expect(remote.stored, isNull);
+  });
+
+  test('the detected-country account write goes through the offline queue, '
+      'so a failed write is not dropped', () async {
+    SharedPreferences.setMockInitialValues({});
+    final sync = SettingsSyncNotifier(
+      accountId: 'u1',
+      handlers: {SettingKeys.region: _QueueHandler()},
+      isOffline: () => true,
+      observeLifecycle: false,
+    );
+    addTearDown(sync.dispose);
+    await pumpEventQueue(times: 20);
+    final remote = _Remote('Egypt');
+    expect(
+      await _signIn(remote, detected: 'United Arab Emirates'),
+      'United Arab Emirates',
+    );
+    // Queued for later, not written straight to the table.
+    expect(remote.stored, 'Egypt');
+    expect(
+      (await sync.pendingValue(SettingKeys.region))!['region'],
+      'United Arab Emirates',
+    );
   });
 
   test('a detected country is recorded as detected', () async {

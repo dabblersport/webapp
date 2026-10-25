@@ -175,7 +175,7 @@ class SelectedLocationNotifier
           await prefs.setString(_countryKey, region);
         } else if (legacy && region != kGlobalRegion) {
           // A choice made before this account had a stored region.
-          await _remote.save(uid, region);
+          await _writeAccountRegion(uid, region);
         }
       }
       state = AsyncValue.data(LocationState(country: region, city: savedCity));
@@ -215,7 +215,8 @@ class SelectedLocationNotifier
     if (_chosen || !mounted) return;
     state = AsyncValue.data(LocationState(country: region, city: city));
     final uid = _userId;
-    if (uid != null) await _remote.save(uid, region);
+    // Same path as a pick: the offline queue keeps a write that fails.
+    if (uid != null) await _writeAccountRegion(uid, region);
   }
 
   Future<void> setLocation({required String country, String? city}) async {
