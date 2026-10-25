@@ -35,10 +35,16 @@ class MapboxPlace {
     final context = properties['context'] as Map<String, dynamic>? ?? {};
     final countryCtx = context['country'] as Map<String, dynamic>? ?? {};
 
+    // Search Box features carry no top-level id: theirs is
+    // `properties.mapbox_id` (KAN-589). A POI may have no full_address, only
+    // `place_formatted`.
     return MapboxPlace(
-      id: json['id'] as String? ?? '',
+      id: json['id'] as String? ?? properties['mapbox_id'] as String? ?? '',
       name: properties['name'] as String? ?? '',
-      fullAddress: properties['full_address'] as String? ?? '',
+      fullAddress:
+          properties['full_address'] as String? ??
+          properties['place_formatted'] as String? ??
+          '',
       lat: (coords[1] as num).toDouble(),
       lng: (coords[0] as num).toDouble(),
       country: countryCtx['name'] as String?,
