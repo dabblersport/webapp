@@ -2,6 +2,7 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 // @ts-ignore: Deno types
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { corsHeaders } from "./cors.ts";
 
 /**
  * Supabase Edge Function to detect user's country and city from IP address.
@@ -21,25 +22,6 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
  * - city: City name from IP (e.g., "Dubai", "New York")
  * - countryCode: ISO country code (e.g., "AE", "US") or "XX" if unknown
  */
-
-// Origins allowed to call this from a browser. Native app requests carry no
-// Origin header and are unaffected either way -- CORS only gates browsers.
-const ALLOWED_ORIGINS = new Set([
-  "https://app.dabbler.pro",
-  "https://canary.dabbler.pro",
-]);
-
-function corsHeaders(req: Request): Record<string, string> {
-  const origin = req.headers.get("Origin");
-  const headers: Record<string, string> = {
-    "Access-Control-Allow-Methods": "GET, OPTIONS",
-    "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  };
-  if (origin && ALLOWED_ORIGINS.has(origin)) {
-    headers["Access-Control-Allow-Origin"] = origin;
-  }
-  return headers;
-}
 
 // @ts-ignore: Deno global is available in Supabase edge runtime
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
