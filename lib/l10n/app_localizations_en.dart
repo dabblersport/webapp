@@ -7341,4 +7341,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'Use once';
+
+  @override
+  String get location_map_unavailable => 'Map unavailable';
+
+  @override
+  String get location_current_label => 'Current location';
+
+  @override
+  String get location_point_use => 'Use this location';
+
+  @override
+  String get location_point_selected => 'Selected location';
+
+  @override
+  String get location_point_hint =>
+      'Search a place, or tap the map to move the pin.';
 }

@@ -239,7 +239,9 @@ void main() {
         ], _marina);
         await c.read(activeLocationProvider.future);
         await c.read(activeLocationProvider.notifier).useGpsLocation();
-        expect(_label(c), 'Gym');
+        // A device fix reads "Current location" (KAN-589, CPO); the matching
+        // saved label is still kept with the stored fix.
+        expect(_label(c), 'Current location');
         final stored = await _stored();
         expect(stored.mode, DeviceLocationMode.auto);
         expect(stored.savedLabel, 'Gym');
@@ -255,7 +257,7 @@ void main() {
       final c = _container(places, _marina);
       await c.read(activeLocationProvider.future);
       await c.read(activeLocationProvider.notifier).useGpsLocation();
-      expect(_label(c), 'Dubai Marina');
+      expect(_label(c), 'Current location');
 
       await c
           .read(activeLocationProvider.notifier)
@@ -267,7 +269,7 @@ void main() {
       final c = _container([_place('w', 'area-deira')], _marina);
       await c.read(activeLocationProvider.future);
       await c.read(activeLocationProvider.notifier).useGpsLocation();
-      expect(_label(c), 'Dubai Marina');
+      expect(_label(c), 'Current location');
     });
   });
 

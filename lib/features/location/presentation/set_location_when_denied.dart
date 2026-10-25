@@ -1,24 +1,54 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/services/location_permission_state.dart';
 import 'package:dabbler/features/explore/presentation/widgets/manual_location_drawer.dart';
+import 'package:dabbler/features/location/presentation/widgets/point_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 
 /// KAN-526: when location permission is denied and there is no active
 /// location, a location surface offers the manual "Set location" drawer
 /// ([ManualLocationDrawer]) instead of failing silently or asking the OS again.
 /// Nothing here ever requests permission.
 
-/// Opens the one manual location drawer, titled "Set location".
-Future<void> showSetLocationDrawer(BuildContext context) {
+/// Whether location access is denied or unavailable on this device, so the
+/// city / area list is the only way left to set a location. Reads the platform
+/// state and never asks: a first-time "denied" is not a refusal until the one
+/// prompt was used (KAN-521).
+Future<bool> locationAccessDenied() async {
+  try {
+    if (!await Geolocator.isLocationServiceEnabled()) return true;
+    final LocationPermission p = await Geolocator.checkPermission();
+    if (p == LocationPermission.deniedForever) return true;
+    if (p == LocationPermission.denied) return await LocationPermissionState.asked();
+    return false;
+  } catch (_) {
+    return false;
+  }
+}
+
+/// Opens the one "Set location" drawer (KAN-589): a point picker (search a
+/// place or move the pin). The city / area list is its fallback, shown only
+/// when location access is denied or unavailable.
+Future<void> showSetLocationDrawer(BuildContext context) async {
+  final ProviderContainer container = ProviderScope.containerOf(
+    context,
+    listen: false,
+  );
+  final bool list =
+      container.read(activeLocationProvider).valueOrNull
+          is ActiveLocationDenied ||
+      await locationAccessDenied();
+  if (!context.mounted) return;
   return showAppSheet<void>(
     context: context,
     title: AppLocalizations.of(context).listing_set_location,
     detent: DabblerSheetDetent.content,
-    builder: (_) => const ManualLocationDrawer(),
+    builder: (_) =>
+        list ? const ManualLocationDrawer() : const PointPickerSheet(),
   );
 }
 

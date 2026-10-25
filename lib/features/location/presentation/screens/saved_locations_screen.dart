@@ -7,6 +7,7 @@ import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/features/location/presentation/add_saved_place.dart';
 import 'package:dabbler/features/location/presentation/device_location_section.dart';
 import 'package:dabbler/features/location/presentation/saved_place_labels.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_map_preview.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -61,6 +62,8 @@ class SavedLocationsScreen extends ConsumerWidget {
                 style: DabblerType.footnote,
                 tone: DabblerTextTone.secondary,
               ),
+              const DabblerGap.v(DabblerSpacing.space5),
+              const LocationMapPreview(),
               const DabblerGap.v(DabblerSpacing.space5),
               const DeviceLocationSection(),
               const DabblerGap.v(DabblerSpacing.space6),

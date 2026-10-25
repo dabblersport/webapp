@@ -50,7 +50,9 @@ List<Area> scopeAreasToCity(List<Area> areas, ActiveLocationState? loc) {
     code = loc.countryCode;
   } else if (loc is ActiveLocationReady &&
       loc.location.source == ActiveLocationSource.manual) {
-    city = loc.location.area.city;
+    city = loc.location.area.city.trim().isEmpty
+        ? null
+        : loc.location.area.city;
     country = loc.location.area.country;
   }
   if (city == null) return areas;
