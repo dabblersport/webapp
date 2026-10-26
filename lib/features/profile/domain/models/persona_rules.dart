@@ -4,7 +4,11 @@ enum PersonaType {
   player,
   organiser,
   host,
-  socialiser;
+  socialiser,
+  // Unified single-profile personas (KAN-647). Player/organiser/host are
+  // extension records of these; the four legacy values stay supported.
+  contributor,
+  partner;
 
   String get displayName {
     switch (this) {
@@ -16,8 +20,28 @@ enum PersonaType {
         return 'Host';
       case PersonaType.socialiser:
         return 'Socialiser';
+      case PersonaType.contributor:
+        return 'Contributor';
+      case PersonaType.partner:
+        return 'Partner';
     }
   }
+
+  /// A unified single-profile persona: no second profile, conversion or
+  /// persona switch exists for it.
+  bool get isUnified =>
+      this == PersonaType.contributor || this == PersonaType.partner;
+
+  /// Union of the Player and Organiser product capabilities (a Contributor
+  /// is one identity holding both extensions).
+  bool get hasPlayerCapabilities =>
+      this == PersonaType.player || this == PersonaType.contributor;
+  bool get hasOrganiserCapabilities =>
+      this == PersonaType.organiser || this == PersonaType.contributor;
+
+  /// Host-equivalent: the legacy host and the unified Partner.
+  bool get hasHostCapabilities =>
+      this == PersonaType.host || this == PersonaType.partner;
 
   String get description {
     switch (this) {
@@ -29,17 +53,16 @@ enum PersonaType {
         return 'List your venue for sports activities';
       case PersonaType.socialiser:
         return 'Connect with other sports enthusiasts';
+      case PersonaType.contributor:
+        return 'Find, join and organise games';
+      case PersonaType.partner:
+        return 'List your venue for sports activities';
     }
   }
 
-  /// Convert from database string value
-  static PersonaType? fromString(String? value) {
-    if (value == null) return null;
-    return PersonaType.values.firstWhere(
-      (e) => e.name == value.toLowerCase(),
-      orElse: () => PersonaType.player,
-    );
-  }
+  /// Convert from database string value. Unknown values are `null` (an
+  /// explicit unknown state), never a silent Player.
+  static PersonaType? fromString(String? value) => personaTypeOrNull(value);
 }
 
 /// Result of persona rule evaluation
@@ -169,6 +192,19 @@ class PersonaRules {
     required Set<PersonaType> currentPersonas,
     required PersonaType targetPersona,
   }) {
+    // One-profile rule (KAN-647): a unified account never gains, converts
+    // to or switches between profiles, and a unified persona is never
+    // created through this add/convert flow (onboarding creates it).
+    if (targetPersona.isUnified || currentPersonas.any((p) => p.isUnified)) {
+      return PersonaAvailability(
+        targetPersona: targetPersona,
+        actionType: currentPersonas.contains(targetPersona)
+            ? PersonaActionType.alreadyActive
+            : PersonaActionType.forbidden,
+        reason: 'Your account has a single profile',
+      );
+    }
+
     // Already has this persona
     if (currentPersonas.contains(targetPersona)) {
       return PersonaAvailability(
@@ -286,7 +322,7 @@ class PersonaRules {
 }
 
 /// Parses a persona name exactly: `null` for anything that is not one of the
-/// four `persona_type` values (unlike [PersonaType.fromString], which falls
+/// six `persona_type` values (unlike [PersonaType.fromString], which falls
 /// back to player). A persona that is not known must not be guessed.
 PersonaType? personaTypeOrNull(String? value) {
   if (value == null) return null;
@@ -307,4 +343,10 @@ PersonaType? personaTypeOrNull(String? value) {
 /// flash of them. The server stays the authority and refuses a disallowed
 /// persona itself (`persona_not_allowed`).
 bool canCreateGameOrMeetup(PersonaType? persona) =>
-    persona == PersonaType.player || persona == PersonaType.organiser;
+    persona != null &&
+    (persona.hasPlayerCapabilities || persona.hasOrganiserCapabilities);
+
+/// True when any of [personas] is a unified single-profile persona. Such an
+/// account must not see or reach Add / Convert / duplicate-profile flows.
+bool isUnifiedAccount(Iterable<PersonaType?> personas) =>
+    personas.any((p) => p != null && p.isUnified);
