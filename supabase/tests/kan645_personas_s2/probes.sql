@@ -1,7 +1,8 @@
 -- KAN-645 probes. Run AFTER KAN-644 and 20261026110000_kan645_rpc_onboard_unified_profile.sql are applied,
 -- as postgres, in ONE transaction that ends in ROLLBACK (nothing persists; fixtures live only inside it).
 -- Output: one row per probe (ok true/false); the last statement raises if any probe failed.
--- Real two-session concurrency (P-C) is the manual block at the bottom.
+-- Hook-safe: no drops, no auth-user inserts, no commit. Fixture users = existing auth users with no profile (>= 20 needed; the DO block
+-- says so if fewer exist). Two-session concurrency (P-C) is NOT run here: manual block at the bottom.
 BEGIN;
 CREATE TEMP TABLE _r(name text, ok boolean, detail text);
 
@@ -18,10 +19,17 @@ END $f$;
 CREATE FUNCTION pg_temp.chk(p_name text, p_cond boolean, p_detail text DEFAULT '') RETURNS void LANGUAGE sql AS $f$
   INSERT INTO _r VALUES (p_name, COALESCE(p_cond,false), p_detail) $f$;
 
-CREATE FUNCTION pg_temp.mk_user() RETURNS uuid LANGUAGE sql AS $f$
-  WITH u AS (SELECT gen_random_uuid() id)
-  INSERT INTO auth.users(id, instance_id, aud, role, email)
-  SELECT id,'00000000-0000-0000-0000-000000000000','authenticated','authenticated', id||'@probe.invalid' FROM u RETURNING id $f$;
+-- No auth.users insert: fixture users are existing auth users that have NO profile yet (read-only pick of ids).
+-- Every profile created for them lives only inside this transaction and is rolled back.
+CREATE TEMP TABLE _pool(id uuid, used boolean NOT NULL DEFAULT false);
+INSERT INTO _pool(id) SELECT u.id FROM auth.users u WHERE NOT EXISTS (SELECT 1 FROM public.profiles p WHERE p.user_id = u.id) ORDER BY u.id LIMIT 40;
+CREATE FUNCTION pg_temp.mk_user() RETURNS uuid LANGUAGE plpgsql AS $f$
+DECLARE v uuid;
+BEGIN
+  UPDATE _pool SET used = true WHERE id = (SELECT id FROM _pool WHERE NOT used ORDER BY id LIMIT 1) RETURNING id INTO v;
+  IF v IS NULL THEN RAISE EXCEPTION 'kan645_probe_pool_exhausted: need more auth users without a profile'; END IF;
+  RETURN v;
+END $f$;
 CREATE FUNCTION pg_temp.as_user(p_user uuid) RETURNS void LANGUAGE sql AS $f$
   SELECT set_config('request.jwt.claims', json_build_object('sub', p_user, 'role','authenticated')::text, true),
          set_config('request.jwt.claim.sub', COALESCE(p_user::text,''), true) $f$;
@@ -38,8 +46,19 @@ BEGIN
   v := public.rpc_onboard_unified_profile(p_user, p_name, p_un, 25, 'male', p_int, p_sport, p_interests, NULL, 'Probe City');
   RETURN v;
 END $f$;
--- forced-failure trigger (rolled back with the transaction)
-CREATE FUNCTION public.kan645_probe_fail() RETURNS trigger LANGUAGE plpgsql AS $f$ BEGIN RAISE EXCEPTION 'kan645_forced_failure'; END $f$;
+-- forced-failure triggers (rolled back with the transaction). Inert unless the transaction-local setting
+-- kan645.fail_on names the table they fire on; nothing has to be removed, the setting is just cleared.
+CREATE FUNCTION public.kan645_probe_fail() RETURNS trigger LANGUAGE plpgsql AS $f$
+BEGIN
+  IF current_setting('kan645.fail_on', true) = TG_TABLE_NAME THEN RAISE EXCEPTION 'kan645_forced_failure'; END IF;
+  RETURN NEW;
+END $f$;
+CREATE TRIGGER kan645_force BEFORE INSERT ON public.player FOR EACH ROW EXECUTE FUNCTION public.kan645_probe_fail();
+CREATE TRIGGER kan645_force BEFORE INSERT ON public.organiser FOR EACH ROW EXECUTE FUNCTION public.kan645_probe_fail();
+CREATE TRIGGER kan645_force BEFORE INSERT ON public.sport_profiles FOR EACH ROW EXECUTE FUNCTION public.kan645_probe_fail();
+CREATE TRIGGER kan645_force BEFORE INSERT ON public.host FOR EACH ROW EXECUTE FUNCTION public.kan645_probe_fail();
+CREATE TRIGGER kan645_force BEFORE INSERT ON public.profile_tiers FOR EACH ROW EXECUTE FUNCTION public.kan645_probe_fail();
+CREATE TRIGGER kan645_force BEFORE UPDATE OF onboard ON public.profiles FOR EACH ROW WHEN (NEW.onboard) EXECUTE FUNCTION public.kan645_probe_fail();
 
 DO $$
 DECLARE
@@ -52,6 +71,7 @@ BEGIN
   SELECT id, sport_key INTO s1, k1 FROM public.sports WHERE is_active ORDER BY sport_key LIMIT 1;
   SELECT id INTO s2 FROM public.sports WHERE is_active AND id <> s1 ORDER BY sport_key LIMIT 1;
   SELECT id INTO s3 FROM public.sports WHERE is_active AND id NOT IN (s1,s2) ORDER BY sport_key LIMIT 1;
+  IF (SELECT count(*) FROM _pool) < 20 THEN RAISE EXCEPTION 'kan645_probe_pool_too_small: need >= 20 auth users without a profile, found %', (SELECT count(*) FROM _pool); END IF;
   SELECT code INTO tier FROM public.tiers WHERE is_default LIMIT 1;
   SELECT count(*)||md5(string_agg(p::text,'' ORDER BY id)) INTO legacy_before FROM public.profiles p
     WHERE persona_type IN ('player','organiser','host','socialiser') AND created_at < now();
@@ -165,22 +185,22 @@ BEGIN
   PERFORM pg_temp.expect('P5e username already taken by another profile', format('SELECT pg_temp.call(%L,''connect_play'',%L,%L)',pg_temp.mk_user(),(SELECT username::text FROM public.profiles WHERE id=v),s1),'username_taken');
 
   -- P6 forced failure of each required insert leaves no partial record set --------------------------
+  -- a failed call rolls back completely, so ONE user serves every iteration
+  u := pg_temp.mk_user();
   FOREACH t IN ARRAY tbls LOOP
     FOR i IN 1..4 LOOP
       CONTINUE WHEN (t IN ('player','organiser','sport_profiles') AND i = 4) OR (t = 'host' AND i < 4) OR (t = 'profile_tiers' AND tier IS NULL);
-      u := pg_temp.mk_user();
-      EXECUTE format('CREATE TRIGGER kan645_force BEFORE INSERT ON public.%I FOR EACH ROW EXECUTE FUNCTION public.kan645_probe_fail()', t);
+      PERFORM set_config('kan645.fail_on', t, true);
       PERFORM pg_temp.expect('P6 '||t||' failure ('||ints[i]||')', format('SELECT pg_temp.call(%L,%L,%L,%L)',u,ints[i],'probe_p6'||t||i||substr(md5(random()::text),1,4),s1),'kan645_forced_failure');
-      EXECUTE format('DROP TRIGGER kan645_force ON public.%I', t);
+      PERFORM set_config('kan645.fail_on', '', true);
       PERFORM pg_temp.chk('P6 '||t||'/'||ints[i]||' nothing left behind',
         NOT EXISTS (SELECT 1 FROM public.profiles WHERE user_id=u));
     END LOOP;
   END LOOP;
   -- failure at the final onboard=true step
-  u := pg_temp.mk_user();
-  CREATE TRIGGER kan645_force BEFORE UPDATE OF onboard ON public.profiles FOR EACH ROW WHEN (NEW.onboard) EXECUTE FUNCTION public.kan645_probe_fail();
+  PERFORM set_config('kan645.fail_on', 'profiles', true);
   PERFORM pg_temp.expect('P6 final onboard=true failure', format('SELECT pg_temp.call(%L,''connect_play'',%L,%L)',u,'probe_p6z'||substr(md5(random()::text),1,5),s1),'kan645_forced_failure');
-  DROP TRIGGER kan645_force ON public.profiles;
+  PERFORM set_config('kan645.fail_on', '', true);
   PERFORM pg_temp.chk('P6 final-step failure left no profile and no onboard=true', NOT EXISTS (SELECT 1 FROM public.profiles WHERE user_id=u));
   -- replay after a failure succeeds cleanly (no duplicate, no reset)
   v := pg_temp.call(u,'connect_play','probe_p6r'||substr(md5(random()::text),1,5), s1);
