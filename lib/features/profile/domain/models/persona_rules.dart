@@ -350,3 +350,16 @@ bool canCreateGameOrMeetup(PersonaType? persona) =>
 /// account must not see or reach Add / Convert / duplicate-profile flows.
 bool isUnifiedAccount(Iterable<PersonaType?> personas) =>
     personas.any((p) => p != null && p.isUnified);
+
+/// Route guard for the Add / Convert persona flow: a one-profile account that
+/// deep-links into `/add-persona/*` is sent to settings. Null means no redirect.
+String? singleProfileRedirect({
+  required String location,
+  required bool isAuthenticated,
+  required Iterable<PersonaType?> personas,
+}) =>
+    isAuthenticated &&
+        location.startsWith('/add-persona/') &&
+        isUnifiedAccount(personas)
+    ? '/settings'
+    : null;

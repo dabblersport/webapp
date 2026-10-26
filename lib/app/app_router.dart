@@ -169,16 +169,20 @@ class AppRouter {
       // (Cold links before the profile loads are refused by the creation
       // service and the server, which never create a second profile.)
       if (isAuthenticated && loc.startsWith('/add-persona/')) {
-        final unified = isUnifiedAccount([
-          container.read(activePersonaProvider),
-          ...container
-              .read(personaServiceProvider)
-              .activeProfiles
-              .map((p) => p.personaType),
-        ]);
-        if (unified) {
-          logRoute('redirect (single-profile account, $loc) -> /settings');
-          return '/settings';
+        final target = singleProfileRedirect(
+          location: loc,
+          isAuthenticated: isAuthenticated,
+          personas: [
+            container.read(activePersonaProvider),
+            ...container
+                .read(personaServiceProvider)
+                .activeProfiles
+                .map((p) => p.personaType),
+          ],
+        );
+        if (target != null) {
+          logRoute('redirect (single-profile account, $loc) -> $target');
+          return target;
         }
       }
 
