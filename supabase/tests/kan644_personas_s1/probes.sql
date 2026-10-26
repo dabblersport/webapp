@@ -4,7 +4,7 @@
 -- if any probe failed. P9 (true concurrency) needs two sessions: see the manual block at the bottom.
 BEGIN;
 CREATE TEMP TABLE _r(name text, ok boolean, detail text);
-GRANT ALL ON _r TO PUBLIC;
+GRANT ALL ON _r TO authenticated;
 CREATE POLICY kan644_probe_all ON public.profiles TO authenticated USING (true) WITH CHECK (true);
 
 -- expect(name, sql, fragment): fragment NULL = must succeed; otherwise must fail with a message containing it.
