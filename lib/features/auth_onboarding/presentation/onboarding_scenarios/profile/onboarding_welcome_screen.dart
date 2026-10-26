@@ -2,8 +2,11 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/features/auth_onboarding/data/unified_onboarding_client.dart';
+import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_intention.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/controllers/onboarding_controller.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/services/onboarding_completion_path.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -31,7 +34,13 @@ class ProfileOnboardingWelcomeScreen extends ConsumerStatefulWidget {
 class _ProfileOnboardingWelcomeScreenState
     extends ConsumerState<ProfileOnboardingWelcomeScreen> {
   _Step _step = const _Step();
-  bool _didStart = false;
+
+  /// KAN-648: true while a request is in flight; a second tap does nothing.
+  bool _pending = false;
+
+  /// The id the unified RPC returned. A retry after a failed avatar step
+  /// reuses it instead of calling the RPC again.
+  String? _profileId;
 
   @override
   void initState() {
@@ -67,9 +76,12 @@ class _ProfileOnboardingWelcomeScreenState
     return 'Something went wrong. Please try again.';
   }
 
+  /// A second submit while one is pending must do nothing (tests drive it).
+  @visibleForTesting
+  Future<void> submit() => _runCreation();
+
   Future<void> _runCreation() async {
-    if (_didStart) return;
-    _didStart = true;
+    if (_pending) return;
 
     final data = ref.read(onboardingDataProvider);
     if (!mounted) return;
@@ -86,7 +98,7 @@ class _ProfileOnboardingWelcomeScreenState
       return;
     }
 
-    final authService = AuthService();
+    final gateway = ref.read(onboardingCompletionGatewayProvider);
     final locationState = ref.read(selectedLocationProvider);
     final country = locationState.maybeWhen(
       data: (loc) => loc.country,
@@ -97,35 +109,52 @@ class _ProfileOnboardingWelcomeScreenState
       orElse: () => null,
     );
 
-    // One call: rpc_onboard_profile creates the profile, the persona
-    // extension row, and (for players) the sport_profiles row, all in one
-    // transaction (T-037/KAN-48). There is no longer a separate persona or
-    // sport step to run — one step either fully succeeds or fully fails.
+    final path = onboardingCompletionPath(
+      data,
+      resumingLegacyProfile:
+          ref.read(onboardingControllerProvider).hasIncompleteOnboarding ??
+          false,
+    );
+
+    _pending = true;
     _setStep(_StepStatus.running);
-    if (widget.holdRunning) return;
+    if (widget.holdRunning) {
+      _pending = false;
+      return;
+    }
+    final String persona;
     try {
-      await authService.createProfileStep(
-        displayName: data.displayName ?? '',
-        username: data.username ?? '',
-        age: data.age ?? 18,
-        gender: data.gender,
-        intention: data.intention ?? 'player',
-        preferredSport: data.preferredSport ?? '',
-        interests: data.interests,
-        country: country,
-        city: city,
-        password: null,
+      persona = switch (path) {
+        OnboardingCompletionPath.unified => await _createUnified(
+          gateway,
+          data,
+          country: country,
+          city: city,
+        ),
+        OnboardingCompletionPath.legacyContinuation => await _createLegacy(
+          gateway,
+          data,
+          country: country,
+          city: city,
+        ),
+      };
+    } on UnifiedOnboardingFailure catch (f) {
+      _pending = false;
+      _setStep(
+        _StepStatus.error,
+        error: f.error.message(AppLocalizations.of(context)),
       );
-      _setStep(_StepStatus.done);
+      return;
     } catch (e) {
+      _pending = false;
       _setStep(_StepStatus.error, error: _friendlyError(e));
       return;
     }
+    _setStep(_StepStatus.done);
 
     // Navigate
     if (!mounted) return;
     final displayName = data.displayName ?? '';
-    final intention = data.intention ?? 'player';
     final primarySportKey = await _primarySportKey(data.preferredSport);
     ref.read(onboardingDataProvider.notifier).clear();
     await ref.read(simpleAuthProvider.notifier).refreshAuthState();
@@ -137,12 +166,62 @@ class _ProfileOnboardingWelcomeScreenState
         RoutePaths.welcome,
         extra: {
           'displayName': displayName,
-          'personaType': intention,
+          'personaType': persona,
           'isFirstTime': true,
           'primarySportKey': primarySportKey,
         },
       );
     }
+  }
+
+  /// KAN-648: new account. Completion waits for the UUID the unified RPC
+  /// returns; nothing here sets `onboard` or writes extension or tier rows.
+  /// Returns the legacy persona string the welcome screen keys its copy on.
+  Future<String> _createUnified(
+    OnboardingCompletionGateway gateway,
+    RegistrationOnboardingData data, {
+    String? country,
+    String? city,
+  }) async {
+    final input = unifiedInputFor(data, country: country, city: city);
+    if (input == null) {
+      throw const UnifiedOnboardingFailure(UnifiedOnboardingError.unknown);
+    }
+    var profileId = _profileId;
+    if (profileId == null) {
+      try {
+        await gateway.syncAuthMetadata(
+          displayName: input.displayName,
+          username: input.username,
+        );
+      } catch (e) {
+        throw UnifiedOnboardingFailure(
+          UnifiedOnboardingError.unknown,
+          cause: e,
+        );
+      }
+      final result = await gateway.onboardUnified(input);
+      profileId = result.fold<String>((failure) => throw failure, (id) => id);
+      _profileId = profileId;
+    }
+    try {
+      await gateway.ensureAvatar(profileId);
+    } catch (e) {
+      throw UnifiedOnboardingFailure(UnifiedOnboardingError.unknown, cause: e);
+    }
+    return input.intention == OnboardingIntention.hostGames ? 'host' : 'player';
+  }
+
+  /// An explicitly existing legacy profile resuming its old flow. The
+  /// persona is the one already on the profile; none is guessed.
+  Future<String> _createLegacy(
+    OnboardingCompletionGateway gateway,
+    RegistrationOnboardingData data, {
+    String? country,
+    String? city,
+  }) async {
+    await gateway.createLegacy(data: data, country: country, city: city);
+    return data.intention ?? 'player';
   }
 
   /// The DS key of the primary sport, which the welcome draws behind it.
@@ -170,6 +249,12 @@ class _ProfileOnboardingWelcomeScreenState
       subtitle: l10n.onb_setup_subtitle,
       titleStyle: DabblerType.displayStep,
       subtitleStyle: DabblerType.copy,
+      primaryLabel: _step.status == _StepStatus.error
+          ? l10n.interests_retry
+          : null,
+      onPrimary: _step.status == _StepStatus.error && !_pending
+          ? _runCreation
+          : null,
       content: [
         switch (_step.status) {
           _StepStatus.running => const DabblerProgressBar.indeterminate(),
