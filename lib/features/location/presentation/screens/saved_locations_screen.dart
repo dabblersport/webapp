@@ -7,6 +7,7 @@ import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/features/location/presentation/add_saved_place.dart';
 import 'package:dabbler/features/location/presentation/device_location_section.dart';
 import 'package:dabbler/features/location/presentation/saved_place_labels.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_map_preview.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -61,6 +62,8 @@ class SavedLocationsScreen extends ConsumerWidget {
                 style: DabblerType.footnote,
                 tone: DabblerTextTone.secondary,
               ),
+              const DabblerGap.v(DabblerSpacing.space5),
+              const LocationMapPreview(),
               const DabblerGap.v(DabblerSpacing.space5),
               const DeviceLocationSection(),
               const DabblerGap.v(DabblerSpacing.space6),
@@ -121,10 +124,7 @@ class _LocationTile extends ConsumerWidget {
           label: AppLocalizations.of(context).saved_places_delete,
           icon: 'trash',
           tone: DabblerSwipeActionTone.destructive,
-          onPressed: () async {
-            final confirmed = await _confirmDelete(context);
-            if (confirmed == true) notifier.deleteLocation(location.id);
-          },
+          onPressed: () => _delete(context, ref),
         ),
       ],
       child: DabblerSurface(
@@ -211,10 +211,30 @@ class _LocationTile extends ConsumerWidget {
               semanticLabel: AppLocalizations.of(context).saved_places_rename,
               onPressed: () => _rename(context, ref),
             ),
+            // Delete (KAN-589): always visible; a swipe alone cannot be done
+            // with a mouse on web.
+            DabblerButton.icon(
+              tone: DabblerButtonTone.text,
+              icon: 'trash',
+              semanticLabel: AppLocalizations.of(context).saved_places_delete,
+              onPressed: () => _delete(context, ref),
+            ),
           ],
         ),
       ),
     );
+  }
+
+  /// Confirm, delete, refresh; a failed delete says so (KAN-589).
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await _confirmDelete(context);
+    if (confirmed != true || !context.mounted) return;
+    final toast = DabblerToastProvider.of(context);
+    final message = AppLocalizations.of(context).saved_places_delete_failed;
+    final bool gone = await ref
+        .read(profileLocationNotifierProvider.notifier)
+        .deleteLocation(location.id);
+    if (!gone) toast.show(DabblerToastSpec(message: message));
   }
 
   Future<bool?> _confirmDelete(BuildContext context) {

@@ -8,8 +8,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// KAN-607: offline, the saved location stays, an area that cannot be
-/// resolved keeps the last saved area, and no permission prompt appears.
+/// KAN-607: offline, the saved location stays and no permission prompt
+/// appears. KAN-589 (CPO): a fix whose area cannot be resolved is still the
+/// location, kept as its coordinates.
 class _Platform extends GeolocatorPlatform {
   _Platform({this.permission = LocationPermission.always});
   final LocationPermission permission;
@@ -95,29 +96,28 @@ void main() {
     expect(platform.requestCalls, 0);
   });
 
-  test(
-    'GPS fix whose area cannot be resolved keeps the last saved area',
-    () async {
-      GeolocatorPlatform.instance = _Platform();
-      SharedPreferences.setMockInitialValues({
-        'device_location.-.city': 'Dubai',
-        'device_location.-.area': 'Dubai Marina',
-        'device_location.-.lat': 25.0805,
-        'device_location.-.lng': 55.1396,
-        'device_location.-.mode': 'auto',
-        'device_location.-.provenance': 'gps',
-        'device_location.-.updatedAt': '2026-10-20T10:00:00.000',
-      });
-      final c = _container();
-      await c.read(activeLocationProvider.future);
-      await c.read(activeLocationProvider.notifier).useGpsLocation();
-      final s = c.read(activeLocationProvider).valueOrNull;
-      expect(s, isA<ActiveLocationReady>());
-      expect((s as ActiveLocationReady).location.area.name, 'Dubai Marina');
-    },
-  );
+  test('GPS fix whose area cannot be resolved is still the location', () async {
+    GeolocatorPlatform.instance = _Platform();
+    SharedPreferences.setMockInitialValues({
+      'device_location.-.city': 'Dubai',
+      'device_location.-.area': 'Dubai Marina',
+      'device_location.-.lat': 25.0805,
+      'device_location.-.lng': 55.1396,
+      'device_location.-.mode': 'auto',
+      'device_location.-.provenance': 'gps',
+      'device_location.-.updatedAt': '2026-10-20T10:00:00.000',
+    });
+    final c = _container();
+    await c.read(activeLocationProvider.future);
+    await c.read(activeLocationProvider.notifier).useGpsLocation();
+    final s = c.read(activeLocationProvider).valueOrNull;
+    expect(s, isA<ActiveLocationReady>());
+    final loc = (s as ActiveLocationReady).location;
+    expect(loc.lat, 25.0805);
+    expect(loc.area.id, 'point');
+  });
 
-  test('nothing saved and the area unresolved is "Set location", not an '
+  test('nothing saved and the area unresolved still uses the fix, never an '
       'English error', () async {
     GeolocatorPlatform.instance = _Platform();
     SharedPreferences.setMockInitialValues({});
@@ -126,6 +126,6 @@ void main() {
     await c.read(activeLocationProvider.notifier).useGpsLocation();
     final s = c.read(activeLocationProvider).valueOrNull;
     expect(s, isNot(isA<ActiveLocationError>()));
-    expect(s, isA<ActiveLocationDenied>());
+    expect(s, isA<ActiveLocationReady>());
   });
 }

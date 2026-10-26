@@ -5,9 +5,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:latlong2/latlong.dart';
 
+import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/location/presentation/saved_place_labels.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_map_preview.dart'
+    show kLocationMapInteraction;
 import 'package:dabbler/features/location/presentation/widgets/location_search_field.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -136,9 +139,9 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
     if (!_canSave) return;
     setState(() => _isSaving = true);
 
-    final saved = await ref
+    final outcome = await ref
         .read(profileLocationNotifierProvider.notifier)
-        .saveLocation(
+        .savePlace(
           lat: _lat,
           lng: _lng,
           areaId: _areaId,
@@ -151,15 +154,43 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
 
     if (!mounted) return;
     setState(() => _isSaving = false);
-    if (!saved) {
+    if (outcome != SavePlaceOutcome.saved) {
+      final l10n = AppLocalizations.of(context);
       DabblerToastProvider.of(context).show(
         DabblerToastSpec(
-          message: AppLocalizations.of(context).saved_places_save_failed,
+          message: outcome == SavePlaceOutcome.duplicate
+              ? l10n.saved_places_duplicate
+              : l10n.saved_places_save_failed,
         ),
       );
       return;
     }
     Navigator.of(context).pop();
+  }
+
+  /// Moves the pin to a searched place or a tapped point (KAN-589), and takes
+  /// the nearest Area's id (and name, when the point has none of its own).
+  Future<void> _movePin(double lat, double lng, {String? name}) async {
+    setState(() {
+      _lat = lat;
+      _lng = lng;
+      if (name != null) _areaName = name;
+    });
+    Area? resolved;
+    try {
+      resolved = await ref
+          .read(areaRepositoryV2Provider)
+          .resolveNearest(lat, lng);
+    } catch (_) {
+      resolved = null; // offline: the pin moves, the Area id stays
+    }
+    if (!mounted || _lat != lat || _lng != lng) return;
+    final Area? area = resolved;
+    if (area == null) return;
+    setState(() {
+      _areaId = area.id;
+      if (name == null) _areaName = area.name;
+    });
   }
 
   void _useOnce() {
@@ -184,15 +215,8 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
           hintText: l10n.saved_places_search_hint,
           proximity: _activeProximity,
           onSelected: (place) async {
-            final repo = ref.read(areaRepositoryV2Provider);
-            final resolved = await repo.resolveNearest(place.lat, place.lng);
+            await _movePin(place.lat, place.lng, name: place.name);
             if (!mounted) return;
-            setState(() {
-              _lat = place.lat;
-              _lng = place.lng;
-              _areaName = place.name;
-              if (resolved != null) _areaId = resolved.id;
-            });
             _mapController.move(LatLng(place.lat, place.lng), 15);
           },
         ),
@@ -208,9 +232,8 @@ class _SaveLocationSheetState extends ConsumerState<SaveLocationSheet> {
             options: MapOptions(
               initialCenter: LatLng(_lat, _lng),
               initialZoom: 15,
-              interactionOptions: const InteractionOptions(
-                flags: InteractiveFlag.none,
-              ),
+              interactionOptions: kLocationMapInteraction,
+              onTap: (_, point) => _movePin(point.latitude, point.longitude),
             ),
             children: [
               if (widget.tileLayerBuilder != null)

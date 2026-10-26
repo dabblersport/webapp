@@ -7490,6 +7490,66 @@ class AppLocalizationsEn extends AppLocalizations {
   String get location_intro_select_city => 'Select city';
 
   @override
+  String location_intro_kicker(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
+  String get location_intro_title => 'Where do you play?';
+
+  @override
+  String get location_intro_subtitle =>
+      'Your city decides which games, venues and meetups you see. Adding an area turns on distances.';
+
+  @override
+  String get location_intro_manual => 'Enter location manually';
+
+  @override
+  String get location_intro_detecting => 'Finding your area';
+
+  @override
+  String get location_intro_try_again => 'Try again';
+
+  @override
+  String get location_intro_denied_title => 'Location access is off';
+
+  @override
+  String get location_intro_denied_message =>
+      'Turn it on in Settings, or enter your city yourself.';
+
+  @override
+  String get location_intro_no_gps_title => 'We couldn’t get a GPS fix';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'Location services may be off or the signal is weak. Try again, or enter your city.';
+
+  @override
+  String get location_intro_country_title => 'Choose your country';
+
+  @override
+  String get location_intro_country_change => 'Change country';
+
+  @override
+  String get manual_location_search_city => 'Search for a city';
+
+  @override
+  String get manual_location_change_city => 'Change city';
+
+  @override
+  String get manual_location_area_hint => 'Only areas in this city are listed.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'Search areas in $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'Areas in $city';
+  }
+
+  @override
   String get location_settings_device_title => 'Device location';
 
   @override
@@ -7582,4 +7642,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'Use once';
+
+  @override
+  String get location_map_unavailable => 'Map unavailable';
+
+  @override
+  String get location_current_label => 'Current location';
+
+  @override
+  String get location_point_use => 'Use this location';
+
+  @override
+  String get location_point_selected => 'Selected location';
+
+  @override
+  String get location_point_hint =>
+      'Search a place, or tap the map to move the pin.';
+
+  @override
+  String get saved_places_duplicate =>
+      'You already have a saved place at this location.';
+
+  @override
+  String get saved_places_delete_failed =>
+      'Couldn’t delete this place. Try again.';
+
+  @override
+  String get location_search_no_results => 'No results found';
+
+  @override
+  String get location_search_failed => 'Couldn’t load results';
 }

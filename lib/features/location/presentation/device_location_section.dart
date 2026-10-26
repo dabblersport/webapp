@@ -5,7 +5,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
-import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -72,7 +71,7 @@ class DeviceLocationSection extends ConsumerWidget {
               DabblerButton(
                 label: l10n.location_mode_change,
                 tone: DabblerButtonTone.text,
-                onPressed: () => HomeLocationPickerSheet.show(context),
+                onPressed: () => showSetLocationDrawer(context),
               ),
             ],
           ),
@@ -94,7 +93,15 @@ class DeviceLocationSection extends ConsumerWidget {
         .read(activeLocationProvider.notifier)
         .switchToAuto();
     if (!context.mounted || r == AutoSwitchResult.applied) return;
-    if (r == AutoSwitchResult.denied) await showSetLocationDrawer(context);
+    if (r == AutoSwitchResult.denied) {
+      await showSetLocationDrawer(context);
+    } else {
+      DabblerToastProvider.of(context).show(
+        DabblerToastSpec(
+          message: AppLocalizations.of(context).location_timeout,
+        ),
+      );
+    }
   }
 
   /// Manual keeps the place the device shows now (written as this device's
@@ -108,9 +115,11 @@ class DeviceLocationSection extends ConsumerWidget {
           .useManualPoint(
             l.lat,
             l.lng,
-            l.area.name,
+            l.area.name.trim().isEmpty
+                ? AppLocalizations.of(context).location_current_label
+                : l.area.name,
             city: l.area.city,
-            area: l.area.name,
+            area: l.area.name.trim().isEmpty ? null : l.area.name,
           );
       return;
     }

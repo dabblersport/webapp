@@ -17,8 +17,10 @@ Future<AppLocalizations> _pump(WidgetTester tester, Locale locale) async {
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
+        fakeCountryOverride,
         // KAN-587: typed searches go to the map service; none matches here.
-        mapboxCityProvider.overrideWith((ref, q) async => const []),
+        mapboxCountryCityProvider.overrideWith((ref, q) async => const []),
       ],
       child: MaterialApp(
         builder: (context, child) => DabblerToastProvider(child: child!),
@@ -45,8 +47,13 @@ void main() {
     ) async {
       installGeo();
       final l = await _pump(tester, locale);
+      // Country first: no city and no search box until a country is chosen.
       expect(find.text(l.manual_location_divider), findsOneWidget);
-      expect(find.text(l.manual_location_search_placeholder), findsOneWidget);
+      expect(find.text(l.location_intro_country_title), findsOneWidget);
+      expect(find.byType(EditableText), findsNothing);
+      await tester.tap(find.text(l.region_country_UAE));
+      await frames(tester);
+      expect(find.text(l.manual_location_search_city), findsOneWidget);
 
       await tester.enterText(find.byType(EditableText), 'zzqqxx-nowhere');
       await tester.pump(const Duration(seconds: 1));
@@ -54,29 +61,27 @@ void main() {
       expect(find.text(l.manual_location_empty_title), findsOneWidget);
       expect(find.text(l.manual_location_empty_text), findsOneWidget);
 
-      seen[locale.languageCode] = [
+      final values = [
         l.manual_location_divider,
-        l.manual_location_search_placeholder,
+        l.location_intro_country_title,
+        l.manual_location_search_city,
         l.manual_location_empty_title,
-        l.manual_location_empty_text,
       ];
+      seen[locale.languageCode] = values;
       if (locale.languageCode == 'en') {
         expect(seen['en'], const [
           'or choose from list',
-          'Search locations...',
+          'Choose your country',
+          'Search for a city',
           'No locations found',
-          'Try a different search term',
         ]);
       } else {
-        final en = lookupAppLocalizations(const Locale('en'));
-        final enValues = [
-          en.manual_location_divider,
-          en.manual_location_search_placeholder,
-          en.manual_location_empty_title,
-          en.manual_location_empty_text,
-        ];
-        for (var i = 0; i < 4; i++) {
-          expect(seen['ar']![i], isNot(enValues[i]));
+        for (var i = 0; i < values.length; i++) {
+          expect(
+            values[i],
+            isNot(seen['en']![i]),
+            reason: 'Arabic copy must differ from English',
+          );
         }
       }
     });

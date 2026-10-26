@@ -15,7 +15,8 @@ class IpLocationResult {
 /// Service to detect user's country and city from IP address via Supabase Edge Function.
 ///
 /// This service calls the `detect-country` edge function which uses
-/// Cloudflare's IP geolocation headers and ipapi.co to determine the user's location.
+/// Cloudflare's IP geolocation headers to determine the user's location. Web and
+/// native both call it (KAN-640 R7): the IP goes to no other service.
 class IpCountryDetectionService {
   /// Detects the user's country and city from their IP address.
   ///

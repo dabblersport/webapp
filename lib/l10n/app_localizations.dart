@@ -13301,6 +13301,108 @@ abstract class AppLocalizations {
   /// **'Select city'**
   String get location_intro_select_city;
 
+  /// KAN-640 first line of the Location intro (Location.dc.html `welcome`), first name only.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String location_intro_kicker(String name);
+
+  /// No description provided for @location_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Where do you play?'**
+  String get location_intro_title;
+
+  /// No description provided for @location_intro_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your city decides which games, venues and meetups you see. Adding an area turns on distances.'**
+  String get location_intro_subtitle;
+
+  /// No description provided for @location_intro_manual.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter location manually'**
+  String get location_intro_manual;
+
+  /// No description provided for @location_intro_detecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your area'**
+  String get location_intro_detecting;
+
+  /// No description provided for @location_intro_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get location_intro_try_again;
+
+  /// No description provided for @location_intro_denied_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is off'**
+  String get location_intro_denied_title;
+
+  /// No description provided for @location_intro_denied_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn it on in Settings, or enter your city yourself.'**
+  String get location_intro_denied_message;
+
+  /// No description provided for @location_intro_no_gps_title.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t get a GPS fix'**
+  String get location_intro_no_gps_title;
+
+  /// No description provided for @location_intro_no_gps_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services may be off or the signal is weak. Try again, or enter your city.'**
+  String get location_intro_no_gps_message;
+
+  /// No description provided for @location_intro_country_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your country'**
+  String get location_intro_country_title;
+
+  /// No description provided for @location_intro_country_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change country'**
+  String get location_intro_country_change;
+
+  /// No description provided for @manual_location_search_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a city'**
+  String get manual_location_search_city;
+
+  /// No description provided for @manual_location_change_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get manual_location_change_city;
+
+  /// No description provided for @manual_location_area_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only areas in this city are listed.'**
+  String get manual_location_area_hint;
+
+  /// No description provided for @manual_location_search_area.
+  ///
+  /// In en, this message translates to:
+  /// **'Search areas in {city}'**
+  String manual_location_search_area(String city);
+
+  /// No description provided for @manual_location_areas_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas in {city}'**
+  String manual_location_areas_in(String city);
+
   /// KAN-628 section title of the device location block in Settings > Location.
   ///
   /// In en, this message translates to:
@@ -13480,6 +13582,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use once'**
   String get saved_places_use_once;
+
+  /// KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Map unavailable'**
+  String get location_map_unavailable;
+
+  /// KAN-589 label of a location that comes from the device GPS. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get location_current_label;
+
+  /// KAN-589 confirm button of the Set location point picker. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this location'**
+  String get location_point_use;
+
+  /// KAN-589 label of a point picked on the map without a place name. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location'**
+  String get location_point_selected;
+
+  /// KAN-589 hint under the Set location map. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search a place, or tap the map to move the pin.'**
+  String get location_point_hint;
+
+  /// KAN-589 toast when a new saved place is within 25 m of another saved place; nothing is saved. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a saved place at this location.'**
+  String get saved_places_duplicate;
+
+  /// KAN-589 toast when deleting a saved place fails. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t delete this place. Try again.'**
+  String get saved_places_delete_failed;
+
+  /// KAN-589 place search dropdown with no match. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get location_search_no_results;
+
+  /// KAN-589 place search dropdown when the search request failed. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load results'**
+  String get location_search_failed;
 }
 
 class _AppLocalizationsDelegate

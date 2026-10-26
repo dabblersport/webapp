@@ -6297,7 +6297,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_intro_cta => 'استخدم موقعي';
 
   @override
-  String get location_intro_later => 'ربما لاحقًا';
+  String get location_intro_later => 'لاحقًا';
 
   @override
   String get location_intro_denied =>
@@ -6312,7 +6312,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.';
 
   @override
-  String get location_intro_open_settings => 'فتح الإعدادات';
+  String get location_intro_open_settings => 'افتح الإعدادات';
 
   @override
   String get location_intro_art => 'خريطة عليها دبوس موقع أحمر';
@@ -7550,6 +7550,66 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_intro_select_city => 'اختر مدينتك';
 
   @override
+  String location_intro_kicker(String name) {
+    return 'أهلًا، $name';
+  }
+
+  @override
+  String get location_intro_title => 'أين تلعب؟';
+
+  @override
+  String get location_intro_subtitle =>
+      'مدينتك تحدد المباريات والملاعب واللقاءات التي تراها. إضافة المنطقة تُفعّل المسافات.';
+
+  @override
+  String get location_intro_manual => 'أدخل الموقع يدويًا';
+
+  @override
+  String get location_intro_detecting => 'جارٍ تحديد منطقتك';
+
+  @override
+  String get location_intro_try_again => 'حاول مجددًا';
+
+  @override
+  String get location_intro_denied_title => 'الوصول إلى الموقع متوقف';
+
+  @override
+  String get location_intro_denied_message =>
+      'فعّله من الإعدادات، أو أدخل مدينتك بنفسك.';
+
+  @override
+  String get location_intro_no_gps_title => 'تعذّر تحديد الموقع';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'قد تكون خدمات الموقع متوقفة أو الإشارة ضعيفة. حاول مجددًا أو أدخل مدينتك.';
+
+  @override
+  String get location_intro_country_title => 'اختر دولتك';
+
+  @override
+  String get location_intro_country_change => 'تغيير الدولة';
+
+  @override
+  String get manual_location_search_city => 'ابحث عن مدينة';
+
+  @override
+  String get manual_location_change_city => 'غيّر المدينة';
+
+  @override
+  String get manual_location_area_hint => 'تظهر مناطق هذه المدينة فقط.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'ابحث في مناطق $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'مناطق $city';
+  }
+
+  @override
   String get location_settings_device_title => 'موقع الجهاز';
 
   @override
@@ -7641,4 +7701,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'استخدمه مرة واحدة';
+
+  @override
+  String get location_map_unavailable => 'الخريطة غير متاحة';
+
+  @override
+  String get location_current_label => 'الموقع الحالي';
+
+  @override
+  String get location_point_use => 'استخدم هذا الموقع';
+
+  @override
+  String get location_point_selected => 'الموقع المحدد';
+
+  @override
+  String get location_point_hint =>
+      'ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس.';
+
+  @override
+  String get saved_places_duplicate => 'لديك مكان محفوظ في هذا الموقع بالفعل.';
+
+  @override
+  String get saved_places_delete_failed =>
+      'تعذّر حذف هذا المكان. حاول مرة أخرى.';
+
+  @override
+  String get location_search_no_results => 'لا توجد نتائج';
+
+  @override
+  String get location_search_failed => 'تعذّر تحميل النتائج';
 }
