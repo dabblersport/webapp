@@ -80,7 +80,7 @@ BEGIN
   FOR i IN 1..4 LOOP
     u := pg_temp.mk_user();
     v := pg_temp.call(u, ints[i], 'probe_p1_'||i||substr(md5(random()::text),1,6), s1, CASE WHEN i < 4 THEN ARRAY[s2,s3] ELSE NULL END);
-    SELECT * INTO r FROM public.profiles WHERE id = v;
+    SELECT persona_type, onboarding_intention, onboard, is_active, primary_sport, preferred_sport, profile_type, is_player, intention, interests INTO r FROM public.profiles WHERE id = v;
     PERFORM pg_temp.chk('P1.'||i||' persona/intention/onboard', r.persona_type = CASE WHEN i<4 THEN 'contributor' ELSE 'partner' END
       AND r.onboarding_intention = ints[i] AND r.onboard AND r.is_active AND r.primary_sport = s1 AND r.preferred_sport = s1, ints[i]);
     PERFORM pg_temp.chk('P1.'||i||' exactly one profile row', (SELECT count(*) FROM public.profiles WHERE user_id=u) = 1);
