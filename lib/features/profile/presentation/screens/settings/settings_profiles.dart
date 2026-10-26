@@ -199,6 +199,8 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
       PersonaType.organiser => 'calendar-edit',
       PersonaType.host => 'building',
       PersonaType.socialiser => 'message',
+      PersonaType.contributor => 'people',
+      PersonaType.partner => 'building',
     };
 
     final title = isConversion
