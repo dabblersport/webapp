@@ -17,12 +17,9 @@ DROP TRIGGER IF EXISTS trg_contributor_sports_profiles ON public.profiles;
 DROP TRIGGER IF EXISTS trg_unified_persona_guard_upd ON public.profiles;
 DROP TRIGGER IF EXISTS trg_unified_persona_guard_ins ON public.profiles;
 -- re-point the extension guards at the ORIGINAL, never-edited functions
-DROP TRIGGER IF EXISTS trg_player_profile_persona_guard ON public.player;
-CREATE TRIGGER trg_player_profile_persona_guard BEFORE INSERT OR UPDATE ON public.player FOR EACH ROW EXECUTE FUNCTION public.trgfn_player_profile_persona_guard();
-DROP TRIGGER IF EXISTS trg_organiser_profile_persona_guard ON public.organiser;
-CREATE TRIGGER trg_organiser_profile_persona_guard BEFORE INSERT OR UPDATE ON public.organiser FOR EACH ROW EXECUTE FUNCTION public.trgfn_organiser_profile_persona_guard();
-DROP TRIGGER IF EXISTS trg_host_profile_persona_guard ON public.host;
-CREATE TRIGGER trg_host_profile_persona_guard BEFORE INSERT OR UPDATE ON public.host FOR EACH ROW EXECUTE FUNCTION public.trgfn_host_profile_persona_guard();
+CREATE OR REPLACE TRIGGER trg_player_profile_persona_guard BEFORE INSERT OR UPDATE ON public.player FOR EACH ROW EXECUTE FUNCTION public.trgfn_player_profile_persona_guard();
+CREATE OR REPLACE TRIGGER trg_organiser_profile_persona_guard BEFORE INSERT OR UPDATE ON public.organiser FOR EACH ROW EXECUTE FUNCTION public.trgfn_organiser_profile_persona_guard();
+CREATE OR REPLACE TRIGGER trg_host_profile_persona_guard BEFORE INSERT OR UPDATE ON public.host FOR EACH ROW EXECUTE FUNCTION public.trgfn_host_profile_persona_guard();
 DROP FUNCTION IF EXISTS public.trgfn_contributor_sports_check();
 DROP FUNCTION IF EXISTS public.trgfn_unified_persona_guard();
 DROP FUNCTION IF EXISTS public.trgfn_player_persona_guard_v2();

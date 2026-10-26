@@ -64,14 +64,11 @@ BEGIN
   RETURN NEW;
 END $$;
 
-DROP TRIGGER IF EXISTS trg_player_profile_persona_guard ON public.player;
-CREATE TRIGGER trg_player_profile_persona_guard BEFORE INSERT OR UPDATE ON public.player
+CREATE OR REPLACE TRIGGER trg_player_profile_persona_guard BEFORE INSERT OR UPDATE ON public.player
   FOR EACH ROW EXECUTE FUNCTION public.trgfn_player_persona_guard_v2();
-DROP TRIGGER IF EXISTS trg_organiser_profile_persona_guard ON public.organiser;
-CREATE TRIGGER trg_organiser_profile_persona_guard BEFORE INSERT OR UPDATE ON public.organiser
+CREATE OR REPLACE TRIGGER trg_organiser_profile_persona_guard BEFORE INSERT OR UPDATE ON public.organiser
   FOR EACH ROW EXECUTE FUNCTION public.trgfn_organiser_persona_guard_v2();
-DROP TRIGGER IF EXISTS trg_host_profile_persona_guard ON public.host;
-CREATE TRIGGER trg_host_profile_persona_guard BEFORE INSERT OR UPDATE ON public.host
+CREATE OR REPLACE TRIGGER trg_host_profile_persona_guard BEFORE INSERT OR UPDATE ON public.host
   FOR EACH ROW EXECUTE FUNCTION public.trgfn_host_persona_guard_v2();
 
 -- 4. One public profile per unified account. ONE lock discipline (reuse in story 2):
