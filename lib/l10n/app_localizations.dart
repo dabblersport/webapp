@@ -13636,6 +13636,102 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t load results'**
   String get location_search_failed;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'What brings you to Dabbler?'**
+  String get onb_intention_title;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what brings you here. Your choice helps us understand your goals.'**
+  String get onb_intention_subtitle;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect & play'**
+  String get onb_intention_connect_play;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Play & organise'**
+  String get onb_intention_play_organise;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Organise'**
+  String get onb_intention_organise;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Host games'**
+  String get onb_intention_host_games;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onb_intention_continue;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a profile. Please continue with the existing sign-in flow.'**
+  String get onb_error_legacy_profile_requires_existing_flow;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile needs an update before you can continue. Please try again later.'**
+  String get onb_error_profile_migration_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the account type isn’t supported yet.'**
+  String get onb_error_persona_change_not_supported;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'An account can have only one profile.'**
+  String get onb_error_single_profile_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This profile can’t be converted right now.'**
+  String get onb_error_persona_conversion_blocked;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t save that change. Please try again.'**
+  String get onb_error_persona_write_via_rpc_only;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your choice doesn’t match what we saved. Please choose again.'**
+  String get onb_error_onboarding_intention_mismatch;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one sport to continue.'**
+  String get onb_error_contributor_sports_incomplete;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get onb_error_generic;
 }
 
 class _AppLocalizationsDelegate

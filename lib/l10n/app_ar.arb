@@ -2672,5 +2672,21 @@
   "saved_places_duplicate": "لديك مكان محفوظ في هذا الموقع بالفعل.",
   "saved_places_delete_failed": "تعذّر حذف هذا المكان. حاول مرة أخرى.",
   "location_search_no_results": "لا توجد نتائج",
-  "location_search_failed": "تعذّر تحميل النتائج"
+  "location_search_failed": "تعذّر تحميل النتائج",
+  "onb_intention_title": "What brings you to Dabbler?",
+  "onb_intention_subtitle": "Choose what brings you here. Your choice helps us understand your goals.",
+  "onb_intention_connect_play": "Connect & play",
+  "onb_intention_play_organise": "Play & organise",
+  "onb_intention_organise": "نظّم",
+  "onb_intention_host_games": "Host games",
+  "onb_intention_continue": "المتابعة",
+  "onb_error_legacy_profile_requires_existing_flow": "This account already has a profile. Please continue with the existing sign-in flow.",
+  "onb_error_profile_migration_required": "Your profile needs an update before you can continue. Please try again later.",
+  "onb_error_persona_change_not_supported": "Changing the account type isn’t supported yet.",
+  "onb_error_single_profile_required": "An account can have only one profile.",
+  "onb_error_persona_conversion_blocked": "This profile can’t be converted right now.",
+  "onb_error_persona_write_via_rpc_only": "We couldn’t save that change. Please try again.",
+  "onb_error_onboarding_intention_mismatch": "Your choice doesn’t match what we saved. Please choose again.",
+  "onb_error_contributor_sports_incomplete": "Choose at least one sport to continue.",
+  "onb_error_generic": "Something went wrong. Please try again."
 }
