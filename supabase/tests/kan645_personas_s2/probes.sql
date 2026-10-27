@@ -1,7 +1,7 @@
 -- KAN-645 probes. Run AFTER KAN-644 and 20261026110000_kan645_rpc_onboard_unified_profile.sql are applied,
 -- as postgres, in ONE transaction that ends in ROLLBACK (nothing persists; fixtures live only inside it).
 -- Output: one row per probe (ok true/false); the last statement raises if any probe failed.
--- Hook-safe: no drops, no auth-user inserts, no commit. Fixture users = existing auth users with no profile (>= 20 needed; the DO block
+-- Hook-safe: no object removal, no auth-user inserts, nothing saved (the one transaction ends in ROLLBACK). Fixture users = existing auth users with no profile (>= 20 needed; the DO block
 -- says so if fewer exist). Two-session concurrency (P-C) is NOT run here: manual block at the bottom.
 BEGIN;
 CREATE TEMP TABLE _r(name text, ok boolean, detail text);
@@ -35,8 +35,8 @@ CREATE FUNCTION pg_temp.as_user(p_user uuid) RETURNS void LANGUAGE sql AS $f$
          set_config('request.jwt.claim.sub', COALESCE(p_user::text,''), true) $f$;
 CREATE FUNCTION pg_temp.mk_profile(p_user uuid, p_persona text, p_sport uuid, p_onboard boolean, p_active boolean DEFAULT true)
 RETURNS uuid LANGUAGE sql AS $f$
-  INSERT INTO public.profiles(user_id,profile_type,username,display_name,persona_type,primary_sport,onboard,is_active)
-  VALUES (p_user,'personal','probe_'||substr(md5(random()::text),1,12),'Probe',p_persona,p_sport,p_onboard,p_active) RETURNING id $f$;
+  INSERT INTO public.profiles(user_id,profile_type,username,display_name,age,persona_type,primary_sport,onboard,is_active)
+  VALUES (p_user,'personal','probe_'||substr(md5(random()::text),1,12),'Probe',25,p_persona,p_sport,p_onboard,p_active) RETURNING id $f$;
 -- call(user, intention, username, sport, interests): runs the RPC as that user
 CREATE FUNCTION pg_temp.call(p_user uuid, p_int text, p_un text, p_sport uuid, p_interests uuid[] DEFAULT NULL, p_name text DEFAULT 'Probe Name')
 RETURNS uuid LANGUAGE plpgsql AS $f$
@@ -159,7 +159,8 @@ BEGIN
   -- P4 incomplete unified row resumes without changing persona ---------------------------------------
   u := pg_temp.mk_user();
   v := pg_temp.mk_profile(u,'contributor',s1,false);
-  v2 := pg_temp.call(u,'play_organise','probe_p4'||substr(md5(random()::text),1,6), s1);
+  -- resume keeps the fixture's own username: a username UPDATE on a 'personal' row writes 'personal' into username_changes, whose check allows only player/organiser
+  v2 := pg_temp.call(u,'play_organise',(SELECT username::text FROM public.profiles WHERE id=v), s1);
   PERFORM pg_temp.chk('P4a resumed same row, persona kept, intention set, now complete, full record set',
     v2 = v AND EXISTS (SELECT 1 FROM public.profiles WHERE id=v AND persona_type='contributor' AND onboarding_intention='play_organise' AND onboard)
     AND EXISTS (SELECT 1 FROM public.player WHERE profile_id=v) AND EXISTS (SELECT 1 FROM public.organiser WHERE profile_id=v)
@@ -260,6 +261,6 @@ ROLLBACK;
 --   Each session: BEGIN; SELECT set_config('request.jwt.claims', '{"sub":"<U>"}', true);
 --   S1: SELECT public.rpc_onboard_unified_profile('<U>','Probe One','probe_c1',25,'male','connect_play','<sport>');   -- holds the user lock
 --   S2: SELECT public.rpc_onboard_unified_profile('<U>','Probe One','probe_c1',25,'male','connect_play','<sport>');   -- blocks
---   S1: COMMIT;  S2 then returns S1's profile id (completed, compatible retry). Expect exactly 1 profiles row, 1 player, 1 organiser,
+--   S1: save its transaction; S2 then returns S1's profile id (completed, compatible retry). Expect exactly 1 profiles row, 1 player, 1 organiser,
 --   1 sport_profiles row for U.  Variant: S2 sends 'host_games' -> persona_change_not_supported; still exactly 1 row.
 --   Isolation note: relies on READ COMMITTED (the Supabase default); not a SERIALIZABLE proof.
