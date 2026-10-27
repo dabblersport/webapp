@@ -2688,5 +2688,6 @@
   "onb_error_persona_write_via_rpc_only": "تعذّر حفظ هذا التغيير. يرجى المحاولة مرة أخرى.",
   "onb_error_onboarding_intention_mismatch": "اختيارك لا يطابق ما تم حفظه. يرجى الاختيار مرة أخرى.",
   "onb_error_contributor_sports_incomplete": "اختر رياضة واحدة على الأقل للمتابعة.",
-  "onb_error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى."
+  "onb_error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
+  "map_attribution_osm": "© مساهمو OpenStreetMap"
 }

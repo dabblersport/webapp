@@ -2964,5 +2964,7 @@
   "onb_error_contributor_sports_incomplete": "Choose at least one sport to continue.",
   "@onb_error_contributor_sports_incomplete": {"description": "KAN-650 onboarding intention/error copy. AR pending content review unless reused."},
   "onb_error_generic": "Something went wrong. Please try again.",
-  "@onb_error_generic": {"description": "KAN-650 onboarding intention/error copy. AR pending content review unless reused."}
+  "@onb_error_generic": {"description": "KAN-650 onboarding intention/error copy. AR pending content review unless reused."},
+  "map_attribution_osm": "© OpenStreetMap contributors",
+  "@map_attribution_osm": {"description": "KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign."}
 }

@@ -1,5 +1,6 @@
 // ignore: unused_import
 import 'package:intl/intl.dart' as intl;
+
 import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
@@ -7729,4 +7730,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get onb_error_generic => 'Something went wrong. Please try again.';
+
+  @override
+  String get map_attribution_osm => '© OpenStreetMap contributors';
 }
