@@ -2932,5 +2932,7 @@
   "location_search_no_results": "No results found",
   "@location_search_no_results": {"description": "KAN-589 place search dropdown with no match. AR pending content review."},
   "location_search_failed": "Couldn’t load results",
-  "@location_search_failed": {"description": "KAN-589 place search dropdown when the search request failed. AR pending content review."}
+  "@location_search_failed": {"description": "KAN-589 place search dropdown when the search request failed. AR pending content review."},
+  "map_attribution_osm": "© OpenStreetMap contributors",
+  "@map_attribution_osm": {"description": "KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign."}
 }

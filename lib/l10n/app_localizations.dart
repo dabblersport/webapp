@@ -13636,6 +13636,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t load results'**
   String get location_search_failed;
+
+  /// KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get map_attribution_osm;
 }
 
 class _AppLocalizationsDelegate

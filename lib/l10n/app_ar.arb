@@ -2672,5 +2672,6 @@
   "saved_places_duplicate": "لديك مكان محفوظ في هذا الموقع بالفعل.",
   "saved_places_delete_failed": "تعذّر حذف هذا المكان. حاول مرة أخرى.",
   "location_search_no_results": "لا توجد نتائج",
-  "location_search_failed": "تعذّر تحميل النتائج"
+  "location_search_failed": "تعذّر تحميل النتائج",
+  "map_attribution_osm": "© مساهمو OpenStreetMap"
 }
