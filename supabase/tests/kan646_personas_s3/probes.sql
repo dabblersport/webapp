@@ -3,6 +3,7 @@
 -- Stands on S1 alone: rpc_onboard_unified_profile (S2) is never called. Contributor/Partner fixtures are
 -- built here, in-transaction, as the migration owner, in S2's order: profile (onboard=false) -> extension
 -- rows -> sport_profiles + Following (profiles.interests) -> onboard=true last.
+-- KAN-678: P4 and L7..L7e call the 5-arg rpc_challenge_create (migration 20261027150000: apply it first).
 -- Output: one row per probe (ok true/false); the last statement raises if any probe failed.
 -- Hook-safe: no drops, no auth-user writes, no commit, named column lists only. Fixture users are
 -- existing auth users with NO profile (>= 24 needed; the DO block says so if fewer exist).
@@ -249,7 +250,7 @@ BEGIN
   PERFORM pg_temp.as_user(uP);
   PERFORM pg_temp.expect('P3 partner cannot post as host', pg_temp.q_as('SELECT public.rpc_post_as(''host'', ''{}''::jsonb)'), 'ERR:actor_not_allowed');
   PERFORM pg_temp.as_user(uA);
-  PERFORM pg_temp.expect('P4 contributor passes the challenge gate as organiser [auth]; trgfn_set_challenge_sport_id then needs a sport', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''Probe challenge'', ''public'', NULL)'), 'ERR:invalid_sport');
+  PERFORM pg_temp.expect('P4 contributor creates a challenge as organiser with an active sport key (KAN-678, 5-arg) [auth]', pg_temp.q_as(format('SELECT id FROM public.rpc_challenge_create(''organiser'', ''Probe challenge'', ''public'', %L, NULL)', k1)), NULL);
   PERFORM pg_temp.as_user(uNO);
   PERFORM pg_temp.expect('P5 contributor without organiser row cannot create a challenge', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL)'), 'ERR:no_profile_of_requested_type');
   PERFORM pg_temp.as_user(uP);
@@ -297,7 +298,12 @@ BEGIN
   PERFORM pg_temp.expect('L4 legacy organiser: choose_actor exact', pg_temp.q_as('SELECT public.choose_actor(''organiser'')'), lO::text);
   PERFORM pg_temp.expect('L5 legacy organiser: game gate passed', pg_temp.q_as('SELECT '||format(game_sig,'organiser',gs,gv)), 'ERR:invalid_time_range');
   PERFORM pg_temp.chk('L6 legacy organiser: actor_is_organiser true (F1 fixed) and not player', public.actor_is_organiser(lO) AND NOT public.actor_is_player(lO));
-  PERFORM pg_temp.expect('L7 legacy organiser: challenge gate passed (F1 fixed); trgfn_set_challenge_sport_id then needs a sport', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL)'), 'ERR:invalid_sport');
+  PERFORM pg_temp.expect('L7 legacy organiser creates a challenge with an active sport key (F1 fixed, KAN-678 5-arg) [auth]', pg_temp.q_as(format('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', %L, NULL)', k1)), NULL);
+  PERFORM pg_temp.expect('L7b legacy organiser: blank sport -> sport_required [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', ''  '', NULL)'), 'ERR:sport_required');
+  PERFORM pg_temp.expect('L7c legacy organiser: NULL sport -> sport_required [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL, NULL)'), 'ERR:sport_required');
+  PERFORM pg_temp.expect('L7d legacy organiser: unknown sport key -> invalid_sport (existing trigger) [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', ''no_such_sport_kan678'', NULL)'), 'ERR:invalid_sport');
+  PERFORM pg_temp.as_user(uLP);
+  PERFORM pg_temp.expect('L7e legacy player still cannot create a challenge (5-arg) [auth]', pg_temp.q_as(format('SELECT id FROM public.rpc_challenge_create(''player'', ''x'', ''public'', %L, NULL)', k1)), 'ERR:organiser_required');
   PERFORM pg_temp.as_user(uLH);
   PERFORM pg_temp.expect('L8 legacy host: choose_actor exact', pg_temp.q_as('SELECT public.choose_actor(''host'')'), lH::text);
   PERFORM pg_temp.expect('L9 legacy host: game gate refuses', pg_temp.q_as('SELECT '||format(game_sig,'host',gs,gv)), 'ERR:persona_not_allowed');
@@ -312,7 +318,7 @@ BEGIN
 
   -- R grants / signature diff against the pre-migration live values (read 2026-10-27) ----------------------
   PERFORM pg_temp.chk('R1 choose_actor ACL unchanged', (SELECT proacl::text FROM pg_proc WHERE oid='public.choose_actor(text)'::regprocedure)
-    = '{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}');
+    = '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}');  -- anon removed by KAN-679 (applied live 2026-10-27)
   PERFORM pg_temp.chk('R2 helper ACLs unchanged (PUBLIC/anon were already granted; not expanded)',
     (SELECT bool_and(proacl::text = '{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}') FROM pg_proc
       WHERE oid IN ('public.actor_is_player(uuid)'::regprocedure, 'public.actor_is_organiser(uuid)'::regprocedure, 'public.can_create_meetup(uuid)'::regprocedure)));
