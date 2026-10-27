@@ -318,7 +318,7 @@ BEGIN
 
   -- R grants / signature diff against the pre-migration live values (read 2026-10-27) ----------------------
   PERFORM pg_temp.chk('R1 choose_actor ACL unchanged', (SELECT proacl::text FROM pg_proc WHERE oid='public.choose_actor(text)'::regprocedure)
-    = '{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}');
+    = '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}');  -- anon removed by KAN-679 (applied live 2026-10-27)
   PERFORM pg_temp.chk('R2 helper ACLs unchanged (PUBLIC/anon were already granted; not expanded)',
     (SELECT bool_and(proacl::text = '{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}') FROM pg_proc
       WHERE oid IN ('public.actor_is_player(uuid)'::regprocedure, 'public.actor_is_organiser(uuid)'::regprocedure, 'public.can_create_meetup(uuid)'::regprocedure)));
