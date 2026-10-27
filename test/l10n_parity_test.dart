@@ -16,20 +16,6 @@ const Map<String, String> _identicalAllowed = {
   'post_card_kick_in_label': 'brand term "Kick-in"',
   'notif_quiet_hours_range': 'time range placeholders only',
   'composer_media_gif': 'format name "GIF", LTR token',
-  'onb_intention_title': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_intention_subtitle': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_intention_connect_play': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_intention_play_organise': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_intention_host_games': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_legacy_profile_requires_existing_flow': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_profile_migration_required': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_persona_change_not_supported': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_single_profile_required': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_persona_conversion_blocked': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_persona_write_via_rpc_only': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_onboarding_intention_mismatch': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_contributor_sports_incomplete': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
-  'onb_error_generic': 'KAN-650 AR pending content review (EN placeholder, no screen shows it yet)',
 };
 
 const _validCategories = {'zero', 'one', 'two', 'few', 'many', 'other'};

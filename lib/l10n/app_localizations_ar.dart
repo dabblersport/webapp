@@ -7732,59 +7732,59 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_search_failed => 'تعذّر تحميل النتائج';
 
   @override
-  String get onb_intention_title => 'What brings you to Dabbler?';
+  String get onb_intention_title => 'ما الذي أتى بك إلى Dabbler؟';
 
   @override
   String get onb_intention_subtitle =>
-      'Choose what brings you here. Your choice helps us understand your goals.';
+      'اختر ما أتى بك إلى هنا. اختيارك يساعدنا على فهم أهدافك.';
 
   @override
-  String get onb_intention_connect_play => 'Connect & play';
+  String get onb_intention_connect_play => 'تواصل والعب';
 
   @override
-  String get onb_intention_play_organise => 'Play & organise';
+  String get onb_intention_play_organise => 'العب ونظّم';
 
   @override
   String get onb_intention_organise => 'نظّم';
 
   @override
-  String get onb_intention_host_games => 'Host games';
+  String get onb_intention_host_games => 'استضف المباريات';
 
   @override
   String get onb_intention_continue => 'المتابعة';
 
   @override
   String get onb_error_legacy_profile_requires_existing_flow =>
-      'This account already has a profile. Please continue with the existing sign-in flow.';
+      'لدى هذا الحساب ملف شخصي بالفعل. يرجى المتابعة عبر مسار تسجيل الدخول الحالي.';
 
   @override
   String get onb_error_profile_migration_required =>
-      'Your profile needs an update before you can continue. Please try again later.';
+      'يحتاج ملفك الشخصي إلى تحديث قبل أن تتمكن من المتابعة. يرجى المحاولة لاحقًا.';
 
   @override
   String get onb_error_persona_change_not_supported =>
-      'Changing the account type isn’t supported yet.';
+      'تغيير نوع الحساب غير مدعوم حاليًا.';
 
   @override
   String get onb_error_single_profile_required =>
-      'An account can have only one profile.';
+      'يمكن أن يحتوي الحساب على ملف شخصي واحد فقط.';
 
   @override
   String get onb_error_persona_conversion_blocked =>
-      'This profile can’t be converted right now.';
+      'لا يمكن تحويل هذا الملف الشخصي حاليًا.';
 
   @override
   String get onb_error_persona_write_via_rpc_only =>
-      'We couldn’t save that change. Please try again.';
+      'تعذّر حفظ هذا التغيير. يرجى المحاولة مرة أخرى.';
 
   @override
   String get onb_error_onboarding_intention_mismatch =>
-      'Your choice doesn’t match what we saved. Please choose again.';
+      'اختيارك لا يطابق ما تم حفظه. يرجى الاختيار مرة أخرى.';
 
   @override
   String get onb_error_contributor_sports_incomplete =>
-      'Choose at least one sport to continue.';
+      'اختر رياضة واحدة على الأقل للمتابعة.';
 
   @override
-  String get onb_error_generic => 'Something went wrong. Please try again.';
+  String get onb_error_generic => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 }

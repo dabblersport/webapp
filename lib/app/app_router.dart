@@ -5,6 +5,10 @@ import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/domain/services/persona_service.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show activePersonaProvider;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -158,6 +162,28 @@ class AppRouter {
       if (authState.isLoading) {
         logRoute('allow (auth loading)');
         return null;
+      }
+
+      // KAN-647: one-profile accounts (contributor/partner) have no Add /
+      // Convert persona flow. A deep link into it is sent back to settings.
+      // (Cold links before the profile loads are refused by the creation
+      // service and the server, which never create a second profile.)
+      if (isAuthenticated && loc.startsWith('/add-persona/')) {
+        final target = singleProfileRedirect(
+          location: loc,
+          isAuthenticated: isAuthenticated,
+          personas: [
+            container.read(activePersonaProvider),
+            ...container
+                .read(personaServiceProvider)
+                .activeProfiles
+                .map((p) => p.personaType),
+          ],
+        );
+        if (target != null) {
+          logRoute('redirect (single-profile account, $loc) -> $target');
+          return target;
+        }
       }
 
       // KAN-602: a sign-in screen is checking the profile; stay on it until it

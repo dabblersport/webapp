@@ -1318,6 +1318,35 @@ class AuthService {
     ).onboard(input);
   }
 
+  /// KAN-648: the auth-metadata half of onboarding, run before the unified
+  /// RPC exactly as the legacy path runs it. Throws if the user is signed out.
+  Future<void> syncOnboardingAuthMetadata({
+    required String displayName,
+    required String username,
+  }) async {
+    if (_supabase.auth.currentUser == null) {
+      throw Exception('User not authenticated');
+    }
+    await _supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'display_name': displayName,
+          if (username.isNotEmpty) 'username': username,
+        },
+      ),
+    );
+  }
+
+  /// KAN-648: the avatar step for a profile the unified RPC returned. It is
+  /// idempotent, so a retry with the same [profileId] is safe.
+  Future<void> ensureOnboardingAvatar(String profileId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+    await DefaultAvatarService(
+      client: _supabase,
+    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
+  }
+
   /// Check if username already exists — uses RPC to avoid btrim(uuid) when
   /// PostgREST infers uuid type for UUID-formatted strings against citext column.
   Future<bool> checkUsernameExists(String username) async {
