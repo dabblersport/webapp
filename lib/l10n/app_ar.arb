@@ -2688,5 +2688,9 @@
   "onb_error_persona_write_via_rpc_only": "We couldn’t save that change. Please try again.",
   "onb_error_onboarding_intention_mismatch": "Your choice doesn’t match what we saved. Please choose again.",
   "onb_error_contributor_sports_incomplete": "Choose at least one sport to continue.",
-  "onb_error_generic": "Something went wrong. Please try again."
+  "onb_error_generic": "Something went wrong. Please try again.",
+  "ratings_summary_from_count": "من {count, plural, =1{تقييم واحد} =2{تقييمين} few{{count} تقييمات} many{{count} تقييمًا} other{{count} تقييم}}",
+  "@ratings_summary_from_count": {"description": "KAN-666 profile rating summary.", "placeholders": {"count": {"type": "int"}}},
+  "ratings_summary_semantics": "التقييم {average} من 5",
+  "@ratings_summary_semantics": {"description": "KAN-666 profile rating summary, screen reader label.", "placeholders": {"average": {"type": "String"}}}
 }

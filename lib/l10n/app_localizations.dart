@@ -13732,6 +13732,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Something went wrong. Please try again.'**
   String get onb_error_generic;
+
+  /// KAN-666 profile rating summary.
+  ///
+  /// In en, this message translates to:
+  /// **'from {count, plural, =1{1 rating} other{{count} ratings}}'**
+  String ratings_summary_from_count(int count);
+
+  /// KAN-666 profile rating summary, screen reader label.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating {average} out of 5'**
+  String ratings_summary_semantics(String average);
 }
 
 class _AppLocalizationsDelegate

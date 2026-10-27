@@ -7787,4 +7787,23 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onb_error_generic => 'Something went wrong. Please try again.';
+
+  @override
+  String ratings_summary_from_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقييم',
+      many: '$count تقييمًا',
+      few: '$count تقييمات',
+      two: 'تقييمين',
+      one: 'تقييم واحد',
+    );
+    return 'من $_temp0';
+  }
+
+  @override
+  String ratings_summary_semantics(String average) {
+    return 'التقييم $average من 5';
+  }
 }

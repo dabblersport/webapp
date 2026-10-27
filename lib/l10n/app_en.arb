@@ -2964,5 +2964,9 @@
   "onb_error_contributor_sports_incomplete": "Choose at least one sport to continue.",
   "@onb_error_contributor_sports_incomplete": {"description": "KAN-650 onboarding intention/error copy. AR pending content review unless reused."},
   "onb_error_generic": "Something went wrong. Please try again.",
-  "@onb_error_generic": {"description": "KAN-650 onboarding intention/error copy. AR pending content review unless reused."}
+  "@onb_error_generic": {"description": "KAN-650 onboarding intention/error copy. AR pending content review unless reused."},
+  "ratings_summary_from_count": "from {count, plural, =1{1 rating} other{{count} ratings}}",
+  "@ratings_summary_from_count": {"description": "KAN-666 profile rating summary.", "placeholders": {"count": {"type": "int"}}},
+  "ratings_summary_semantics": "Rating {average} out of 5",
+  "@ratings_summary_semantics": {"description": "KAN-666 profile rating summary, screen reader label.", "placeholders": {"average": {"type": "String"}}}
 }
