@@ -273,6 +273,8 @@ class SupabaseConfig {
   static const String processQueuedEventsFn = 'process_queued_events';
   static const String rpcCreateGameFn = 'rpc_create_game';
   static const String rpcCreateSportProfileFn = 'rpc_create_sport_profile';
+  /// KAN-678/KAN-680: the 5-argument overload that carries the sport key.
+  static const String rpcChallengeCreateFn = 'rpc_challenge_create';
   static const String rpcJoinGameFn = 'rpc_join_game';
   /// KAN-621/KAN-622: the Sport Overview aggregates (followers, city-scoped counts).
   static const String rpcSportOverviewFn = 'rpc_sport_overview';

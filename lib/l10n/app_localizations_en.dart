@@ -7761,4 +7761,16 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get games_map_empty_text =>
       'No upcoming public games match your filters. Change the filters or switch back to the list.';
+
+  @override
+  String get challenge_error_sport_required =>
+      'Pick a sport for your challenge, then try again.';
+
+  @override
+  String get challenge_error_invalid_sport =>
+      'That sport isn\'t available. Choose one from the list.';
+
+  @override
+  String get challenge_error_organiser_required =>
+      'Only organiser accounts can create challenges.';
 }

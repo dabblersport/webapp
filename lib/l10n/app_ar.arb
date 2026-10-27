@@ -2697,5 +2697,8 @@
   "games_view_map": "عرض الخريطة",
   "games_view_list": "عرض القائمة",
   "games_map_empty_title": "لا توجد مباريات على الخريطة",
-  "games_map_empty_text": "لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة."
+  "games_map_empty_text": "لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة.",
+  "challenge_error_sport_required": "اختر رياضة لتحديك ثم حاول مرة أخرى.",
+  "challenge_error_invalid_sport": "هذه الرياضة غير متاحة. اختر رياضة من القائمة.",
+  "challenge_error_organiser_required": "إنشاء التحديات متاح لحسابات المنظّمين فقط."
 }
