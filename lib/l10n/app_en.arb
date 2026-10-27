@@ -2968,5 +2968,7 @@
   "ratings_summary_from_count": "from {count, plural, =1{1 rating} other{{count} ratings}}",
   "@ratings_summary_from_count": {"description": "KAN-666 profile rating summary.", "placeholders": {"count": {"type": "int"}}},
   "ratings_summary_semantics": "Rating {average} out of 5",
-  "@ratings_summary_semantics": {"description": "KAN-666 profile rating summary, screen reader label.", "placeholders": {"average": {"type": "String"}}}
+  "@ratings_summary_semantics": {"description": "KAN-666 profile rating summary, screen reader label.", "placeholders": {"average": {"type": "String"}}},
+  "map_attribution_osm": "© OpenStreetMap contributors",
+  "@map_attribution_osm": {"description": "KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign."}
 }

@@ -13744,6 +13744,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Rating {average} out of 5'**
   String ratings_summary_semantics(String average);
+
+  /// KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get map_attribution_osm;
 }
 
 class _AppLocalizationsDelegate

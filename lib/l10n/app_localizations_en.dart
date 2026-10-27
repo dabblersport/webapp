@@ -7745,4 +7745,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String ratings_summary_semantics(String average) {
     return 'Rating $average out of 5';
   }
+
+  @override
+  String get map_attribution_osm => '© OpenStreetMap contributors';
 }
