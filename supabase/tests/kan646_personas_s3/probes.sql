@@ -62,9 +62,9 @@ CREATE FUNCTION pg_temp.mk_contrib(p_user uuid, p_sport uuid, p_key text, p_play
 RETURNS uuid LANGUAGE plpgsql AS $f$
 DECLARE v uuid;
 BEGIN
-  INSERT INTO public.profiles(user_id, profile_type, is_player, intention, username, display_name, persona_type,
+  INSERT INTO public.profiles(user_id, profile_type, is_player, intention, username, display_name, age, persona_type,
                               onboarding_intention, primary_sport, preferred_sport, interests, onboard, is_active)
-  VALUES (p_user, 'personal', true, 'player', 'probe_c_'||substr(md5(random()::text),1,12), 'Probe C', 'contributor',
+  VALUES (p_user, 'personal', true, 'player', 'probe_c_'||substr(md5(random()::text),1,12), 'Probe C', 30, 'contributor',
           'play_organise', p_sport, p_sport, ARRAY[p_sport], false, true)
   RETURNING id INTO v;
   IF p_player THEN INSERT INTO public.player(profile_id) VALUES (v); END IF;
@@ -77,9 +77,9 @@ CREATE FUNCTION pg_temp.mk_partner(p_user uuid, p_sport uuid, p_host boolean DEF
 RETURNS uuid LANGUAGE plpgsql AS $f$
 DECLARE v uuid;
 BEGIN
-  INSERT INTO public.profiles(user_id, profile_type, is_player, intention, username, display_name, persona_type,
+  INSERT INTO public.profiles(user_id, profile_type, is_player, intention, username, display_name, age, persona_type,
                               onboarding_intention, primary_sport, preferred_sport, interests, onboard, is_active)
-  VALUES (p_user, 'venue', false, 'host', 'probe_p_'||substr(md5(random()::text),1,12), 'Probe P', 'partner',
+  VALUES (p_user, 'venue', false, 'host', 'probe_p_'||substr(md5(random()::text),1,12), 'Probe P', 30, 'partner',
           'host_games', p_sport, p_sport, ARRAY[p_sport], false, true)
   RETURNING id INTO v;
   IF p_host THEN INSERT INTO public.host(profile_id) VALUES (v); END IF;
@@ -88,16 +88,16 @@ BEGIN
 END $f$;
 -- Legacy fixture: the live carrier for each legacy persona (player/socialiser personal, organiser business, host venue).
 CREATE FUNCTION pg_temp.mk_legacy(p_user uuid, p_persona text, p_sport uuid) RETURNS uuid LANGUAGE sql AS $f$
-  INSERT INTO public.profiles(user_id, profile_type, username, display_name, persona_type, primary_sport, onboard, is_active)
+  INSERT INTO public.profiles(user_id, profile_type, username, display_name, age, persona_type, primary_sport, onboard, is_active)
   VALUES (p_user, CASE p_persona WHEN 'organiser' THEN 'business' WHEN 'host' THEN 'venue' ELSE 'personal' END,
-          'probe_l_'||substr(md5(random()::text),1,12), 'Probe L', p_persona, p_sport, true, true) RETURNING id $f$;
+          'probe_l_'||substr(md5(random()::text),1,12), 'Probe L', 30, p_persona, p_sport, true, true) RETURNING id $f$;
 
 DO $$
 DECLARE
   s1 uuid; k1 text; s2 uuid; k2 text; s3 uuid; k3 text; gs uuid; gv uuid;
   uA uuid; cA uuid; uB uuid; cB uuid; uC uuid; cC uuid; uD uuid; cD uuid;
   uNP uuid; cNP uuid; uNO uuid; cNO uuid; uNX uuid; cNX uuid; uIn uuid; cIn uuid;
-  uP uuid; pP uuid; uPN uuid; pPN uuid; uNo uuid;
+  uP uuid; pP uuid; uPN uuid; pPN uuid; uNoProf uuid;
   uLP uuid; lP uuid; uLO uuid; lO uuid; uLH uuid; lH uuid; uLS uuid; lS uuid;
   g_org text; g_ply text; g_bad text; legacy_before text; r text;
   game_sig text := 'public.rpc_create_game(p_actor_type=>%L, p_sport_id=>%L, p_sport_variant_id=>%L, p_start_at=>now()+interval ''2 hours'', p_end_at=>now()+interval ''1 hour'', p_price_aed=>0)';
@@ -125,7 +125,7 @@ BEGIN
   UPDATE public.profiles SET is_active = false WHERE id = cIn;
   uP := pg_temp.mk_user(); pP := pg_temp.mk_partner(uP, s1);                      -- partner with host row
   uPN := pg_temp.mk_user(); pPN := pg_temp.mk_partner(uPN, s1, false);            -- partner, no host row
-  uNo := pg_temp.mk_user();                                                       -- authenticated, no profile
+  uNoProf := pg_temp.mk_user();                                                       -- authenticated, no profile
   uLP := pg_temp.mk_user(); lP := pg_temp.mk_legacy(uLP, 'player', s1);
   uLO := pg_temp.mk_user(); lO := pg_temp.mk_legacy(uLO, 'organiser', s1);
   uLH := pg_temp.mk_user(); lH := pg_temp.mk_legacy(uLH, 'host', s1);
@@ -172,7 +172,7 @@ BEGIN
   PERFORM pg_temp.expect('A10 contributor without player row requests player -> refused', pg_temp.q_as('SELECT public.choose_actor(''player'')'), 'ERR:no_profile_of_requested_type');
   PERFORM pg_temp.as_user(uIn);
   PERFORM pg_temp.expect('A11 inactive contributor -> refused', pg_temp.q_as('SELECT public.choose_actor(''player'')'), 'ERR:no_profile_of_requested_type');
-  PERFORM pg_temp.as_user(uNo);
+  PERFORM pg_temp.as_user(uNoProf);
   PERFORM pg_temp.expect('A12 caller with no profile never gets another owner''s id', pg_temp.q_as('SELECT public.choose_actor(''player'')'), 'ERR:no_profile_of_requested_type');
   PERFORM pg_temp.as_user(uB);
   PERFORM pg_temp.expect('A13 contributor B gets B, never A', pg_temp.q_as('SELECT public.choose_actor(''organiser'')'), cB::text);
@@ -243,7 +243,7 @@ BEGIN
   PERFORM pg_temp.as_user(uP);
   PERFORM pg_temp.expect('P3 partner cannot post as host', pg_temp.q_as('SELECT public.rpc_post_as(''host'', ''{}''::jsonb)'), 'ERR:actor_not_allowed');
   PERFORM pg_temp.as_user(uA);
-  PERFORM pg_temp.expect('P4 contributor creates a challenge as organiser [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''Probe challenge'', ''public'', NULL)'), NULL);
+  PERFORM pg_temp.expect('P4 contributor passes the challenge gate as organiser [auth]; trgfn_set_challenge_sport_id then needs a sport', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''Probe challenge'', ''public'', NULL)'), 'ERR:invalid_sport');
   PERFORM pg_temp.as_user(uNO);
   PERFORM pg_temp.expect('P5 contributor without organiser row cannot create a challenge', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL)'), 'ERR:no_profile_of_requested_type');
   PERFORM pg_temp.as_user(uP);
@@ -268,12 +268,12 @@ BEGIN
   END;
   SET CONSTRAINTS trg_contributor_sports_sp DEFERRED;
   PERFORM pg_temp.as_user(uB);
-  PERFORM pg_temp.expect('S5 another owner cannot add to A''s contributor [auth]', pg_temp.q_as(format('SELECT public.rpc_create_sport_profile(%L::uuid, %L::uuid, %L, 5)', cA, s2, k2)), 'ERR:sport_profile requires persona_type=player');
+  PERFORM pg_temp.expect('S5 another owner cannot add to A''s contributor [auth]', pg_temp.q_as(format('SELECT public.rpc_create_sport_profile(%L::uuid, %L::uuid, %L, 5)', cA, s2, k2)), 'ERR:sport_profile requires owned player profile');
   PERFORM pg_temp.chk('S5b ...and A''s skill was not overwritten', EXISTS (SELECT 1 FROM public.sport_profiles WHERE profile_id = cA AND sport_id = s2 AND skill_level = 2));
   PERFORM pg_temp.as_user(uNP);
-  PERFORM pg_temp.expect('S6 contributor without player row refused', pg_temp.q_as(format('SELECT public.rpc_create_sport_profile(%L::uuid, %L::uuid, %L, 1)', cNP, s1, k1)), 'ERR:sport_profile requires persona_type=player');
+  PERFORM pg_temp.expect('S6 contributor without player row refused', pg_temp.q_as(format('SELECT public.rpc_create_sport_profile(%L::uuid, %L::uuid, %L, 1)', cNP, s1, k1)), 'ERR:sport_profile requires owned player profile');
   PERFORM pg_temp.as_user(uP);
-  PERFORM pg_temp.expect('S7 partner refused', pg_temp.q_as(format('SELECT public.rpc_create_sport_profile(%L::uuid, %L::uuid, %L, 1)', pP, s1, k1)), 'ERR:sport_profile requires persona_type=player');
+  PERFORM pg_temp.expect('S7 partner refused', pg_temp.q_as(format('SELECT public.rpc_create_sport_profile(%L::uuid, %L::uuid, %L, 1)', pP, s1, k1)), 'ERR:sport_profile requires owned player profile');
 
   -- Q squads: unchanged (blocker B1). Contributor gets exactly what a live legacy player gets today. -----------
   PERFORM pg_temp.as_user(uA);
@@ -290,8 +290,8 @@ BEGIN
   PERFORM pg_temp.as_user(uLO);
   PERFORM pg_temp.expect('L4 legacy organiser: choose_actor exact', pg_temp.q_as('SELECT public.choose_actor(''organiser'')'), lO::text);
   PERFORM pg_temp.expect('L5 legacy organiser: game gate passed', pg_temp.q_as('SELECT '||format(game_sig,'organiser',gs,gv)), 'ERR:invalid_time_range');
-  PERFORM pg_temp.chk('L6 legacy organiser: actor_is_organiser unchanged (false, F1) and not player', NOT public.actor_is_organiser(lO) AND NOT public.actor_is_player(lO));
-  PERFORM pg_temp.expect('L7 legacy organiser: challenge still organiser_required (F1 unchanged)', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL)'), 'ERR:organiser_required');
+  PERFORM pg_temp.chk('L6 legacy organiser: actor_is_organiser true (F1 fixed) and not player', public.actor_is_organiser(lO) AND NOT public.actor_is_player(lO));
+  PERFORM pg_temp.expect('L7 legacy organiser: challenge gate passed (F1 fixed); trgfn_set_challenge_sport_id then needs a sport', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL)'), 'ERR:invalid_sport');
   PERFORM pg_temp.as_user(uLH);
   PERFORM pg_temp.expect('L8 legacy host: choose_actor exact', pg_temp.q_as('SELECT public.choose_actor(''host'')'), lH::text);
   PERFORM pg_temp.expect('L9 legacy host: game gate refuses', pg_temp.q_as('SELECT '||format(game_sig,'host',gs,gv)), 'ERR:persona_not_allowed');
@@ -309,8 +309,10 @@ BEGIN
     = '{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}');
   PERFORM pg_temp.chk('R2 helper ACLs unchanged (PUBLIC/anon were already granted; not expanded)',
     (SELECT bool_and(proacl::text = '{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}') FROM pg_proc
-      WHERE oid IN ('public.actor_is_player(uuid)'::regprocedure, 'public.actor_is_organiser(uuid)'::regprocedure, 'public.can_create_meetup(uuid)'::regprocedure,
-                    'public.rpc_create_sport_profile(uuid,uuid,text,integer)'::regprocedure)));
+      WHERE oid IN ('public.actor_is_player(uuid)'::regprocedure, 'public.actor_is_organiser(uuid)'::regprocedure, 'public.can_create_meetup(uuid)'::regprocedure)));
+  PERFORM pg_temp.chk('R2b rpc_create_sport_profile ACL is the KAN-673 value: no PUBLIC, no anon; authenticated + service_role',
+    (SELECT proacl::text FROM pg_proc WHERE oid='public.rpc_create_sport_profile(uuid,uuid,text,integer)'::regprocedure)
+    = '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}');
   PERFORM pg_temp.chk('R3 rpc_create_game_legacy_v2 still owner/service_role only', (SELECT proacl::text FROM pg_proc WHERE proname='rpc_create_game_legacy_v2')
     = '{postgres=X/postgres,service_role=X/postgres}');
   PERFORM pg_temp.chk('R4 actor_is_host: no PUBLIC, no anon; authenticated + service_role',
