@@ -5549,6 +5549,24 @@ abstract class AppLocalizations {
   /// **'Not synced. Tap to retry.'**
   String get settings_not_synced_retry;
 
+  /// No description provided for @settings_will_sync_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Will sync when online'**
+  String get settings_will_sync_online;
+
+  /// No description provided for @settings_updated_elsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting was updated on another device. Showing the newer value.'**
+  String get settings_updated_elsewhere;
+
+  /// No description provided for @settings_change_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'This change could not be saved. Showing the saved value.'**
+  String get settings_change_rejected;
+
   /// No description provided for @priv_saved.
   ///
   /// In en, this message translates to:
