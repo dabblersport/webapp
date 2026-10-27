@@ -2977,5 +2977,11 @@
   "@games_view_list": {"description": "KAN-669 Games discovery: switch back to the list view (semantic label of the toggle)."},
   "games_map_empty_title": "No games on the map",
   "@games_map_empty_title": {"description": "KAN-669 empty state title when no upcoming public game matches the filters."},
-  "games_map_empty_text": "No upcoming public games match your filters. Change the filters or switch back to the list."
+  "games_map_empty_text": "No upcoming public games match your filters. Change the filters or switch back to the list.",
+  "challenge_error_sport_required": "Pick a sport for your challenge, then try again.",
+  "@challenge_error_sport_required": {"description": "KAN-680 shown when creating a challenge without a sport."},
+  "challenge_error_invalid_sport": "That sport isn't available. Choose one from the list.",
+  "@challenge_error_invalid_sport": {"description": "KAN-680 shown when the chosen sport key is not a known sport."},
+  "challenge_error_organiser_required": "Only organiser accounts can create challenges.",
+  "@challenge_error_organiser_required": {"description": "KAN-680 shown when a non-organiser tries to create a challenge."}
 }

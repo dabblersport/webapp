@@ -7822,4 +7822,16 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get games_map_empty_text =>
       'لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة.';
+
+  @override
+  String get challenge_error_sport_required =>
+      'اختر رياضة لتحديك ثم حاول مرة أخرى.';
+
+  @override
+  String get challenge_error_invalid_sport =>
+      'هذه الرياضة غير متاحة. اختر رياضة من القائمة.';
+
+  @override
+  String get challenge_error_organiser_required =>
+      'إنشاء التحديات متاح لحسابات المنظّمين فقط.';
 }

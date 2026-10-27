@@ -13774,6 +13774,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No upcoming public games match your filters. Change the filters or switch back to the list.'**
   String get games_map_empty_text;
+
+  /// KAN-680 shown when creating a challenge without a sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a sport for your challenge, then try again.'**
+  String get challenge_error_sport_required;
+
+  /// KAN-680 shown when the chosen sport key is not a known sport.
+  ///
+  /// In en, this message translates to:
+  /// **'That sport isn\'t available. Choose one from the list.'**
+  String get challenge_error_invalid_sport;
+
+  /// KAN-680 shown when a non-organiser tries to create a challenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Only organiser accounts can create challenges.'**
+  String get challenge_error_organiser_required;
 }
 
 class _AppLocalizationsDelegate
