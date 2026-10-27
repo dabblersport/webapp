@@ -7748,4 +7748,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get map_attribution_osm => '© OpenStreetMap contributors';
+
+  @override
+  String get games_view_map => 'Show map';
+
+  @override
+  String get games_view_list => 'Show list';
+
+  @override
+  String get games_map_empty_title => 'No games on the map';
+
+  @override
+  String get games_map_empty_text =>
+      'No upcoming public games match your filters. Change the filters or switch back to the list.';
 }

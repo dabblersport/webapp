@@ -13750,6 +13750,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'© OpenStreetMap contributors'**
   String get map_attribution_osm;
+
+  /// KAN-669 Games discovery: switch to the map view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show map'**
+  String get games_view_map;
+
+  /// KAN-669 Games discovery: switch back to the list view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show list'**
+  String get games_view_list;
+
+  /// KAN-669 empty state title when no upcoming public game matches the filters.
+  ///
+  /// In en, this message translates to:
+  /// **'No games on the map'**
+  String get games_map_empty_title;
+
+  /// No description provided for @games_map_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming public games match your filters. Change the filters or switch back to the list.'**
+  String get games_map_empty_text;
 }
 
 class _AppLocalizationsDelegate

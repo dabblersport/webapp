@@ -7809,4 +7809,17 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get map_attribution_osm => '© مساهمو OpenStreetMap';
+
+  @override
+  String get games_view_map => 'عرض الخريطة';
+
+  @override
+  String get games_view_list => 'عرض القائمة';
+
+  @override
+  String get games_map_empty_title => 'لا توجد مباريات على الخريطة';
+
+  @override
+  String get games_map_empty_text =>
+      'لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة.';
 }
