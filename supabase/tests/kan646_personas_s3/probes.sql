@@ -194,7 +194,10 @@ BEGIN
   PERFORM pg_temp.as_user(uA);
   PERFORM pg_temp.expect('G7 price rule preserved for contributor (price NULL)', pg_temp.q_as(format('SELECT public.rpc_create_game(p_actor_type=>''organiser'', p_sport_id=>%L, p_sport_variant_id=>%L, p_start_at=>now()+interval ''1 day'', p_end_at=>now()+interval ''1 day 2 hours'')', gs, gv)), 'ERR:price_required');
   g_org := pg_temp.q_as(format('SELECT public.rpc_create_game(p_actor_type=>''organiser'', p_sport_id=>%L, p_sport_variant_id=>%L, p_title=>''Probe hosted'', p_start_at=>now()+interval ''1 day'', p_end_at=>now()+interval ''1 day 2 hours'', p_max_players=>20, p_price_aed=>0)', gs, gv));
-  PERFORM pg_temp.expect('G8 contributor creates a real game as organiser [auth]', g_org, NULL);
+  -- G8 asserts g_org is a real games row (a bare non-error text would pass for any value).
+  PERFORM pg_temp.chk('G8 contributor creates a real game as organiser [auth]: g_org is a uuid that exists in games',
+    g_org ~* '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$'
+    AND EXISTS (SELECT 1 FROM public.games g WHERE g.id::text = g_org), g_org);
   PERFORM pg_temp.chk('G9 organiser request -> hosted, creator = SAME profile id, host roster row',
     EXISTS (SELECT 1 FROM public.games g WHERE g.id::text = g_org AND g.game_type = 'hosted' AND g.creator_profile_id = cA AND g.creator_user_id = uA)
     AND EXISTS (SELECT 1 FROM public.game_roster r WHERE r.game_id::text = g_org AND r.profile_id = cA AND r.role = 'host'), g_org);
@@ -202,11 +205,14 @@ BEGIN
   PERFORM pg_temp.chk('G10 player request on the SAME id -> casual', EXISTS (SELECT 1 FROM public.games g WHERE g.id::text = g_ply AND g.game_type = 'casual' AND g.creator_profile_id = cA), g_ply);
 
   -- J join / leave / roster, on the real game g_org ----------------------------------------------------------
+  -- J1/J4 call the INVOKER function can_current_user_join_game through q (session role, JWT = B): public.games has RLS
+  -- enabled and no SELECT policy (reads go through definer RPCs; kan595 note), so under SET LOCAL ROLE authenticated the
+  -- function's own SELECT sees no row and answers reason not_found. rpc_join_game (definer, J2) reaches it the same way q does.
   PERFORM pg_temp.as_user(uB);
-  PERFORM pg_temp.expect('J1 contributor B can join (precheck) [auth]', pg_temp.q_as(format('SELECT public.can_current_user_join_game(%L::uuid, ''player'')->>''cta''', g_org)), 'join');
+  PERFORM pg_temp.expect('J1 contributor B can join (precheck) [auth]', pg_temp.q(format('SELECT public.can_current_user_join_game(%L::uuid, ''player'')->>''cta''', g_org)), 'join');
   PERFORM pg_temp.expect('J2 contributor B joins [auth]', pg_temp.q_as(format('SELECT result FROM public.rpc_join_game(''player'', %L::uuid)', g_org)), 'joined');
   PERFORM pg_temp.chk('J3 roster row is B''s SAME profile id as player', EXISTS (SELECT 1 FROM public.game_roster r WHERE r.game_id::text = g_org AND r.profile_id = cB AND r.role = 'player' AND r.status = 'active'));
-  PERFORM pg_temp.expect('J4 joined twice -> joined cta [auth]', pg_temp.q_as(format('SELECT public.can_current_user_join_game(%L::uuid, ''player'')->>''cta''', g_org)), 'joined');
+  PERFORM pg_temp.expect('J4 joined twice -> joined cta [auth]', pg_temp.q(format('SELECT public.can_current_user_join_game(%L::uuid, ''player'')->>''cta''', g_org)), 'joined');
   PERFORM pg_temp.expect('J5 contributor B leaves [auth]', pg_temp.q_as(format('SELECT public.rpc_leave_game(''player'', %L::uuid)', g_org)), 'left');
   PERFORM pg_temp.as_user(uA);
   PERFORM pg_temp.expect('J6 creator cannot join own game', pg_temp.q_as(format('SELECT result FROM public.rpc_join_game(''player'', %L::uuid)', g_org)), 'ERR:host');
