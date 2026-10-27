@@ -2689,5 +2689,9 @@
   "onb_error_onboarding_intention_mismatch": "اختيارك لا يطابق ما تم حفظه. يرجى الاختيار مرة أخرى.",
   "onb_error_contributor_sports_incomplete": "اختر رياضة واحدة على الأقل للمتابعة.",
   "onb_error_generic": "حدث خطأ ما. يرجى المحاولة مرة أخرى.",
-  "map_attribution_osm": "© مساهمو OpenStreetMap"
+  "map_attribution_osm": "© مساهمو OpenStreetMap",
+  "games_view_map": "عرض الخريطة",
+  "games_view_list": "عرض القائمة",
+  "games_map_empty_title": "لا توجد مباريات على الخريطة",
+  "games_map_empty_text": "لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة."
 }
