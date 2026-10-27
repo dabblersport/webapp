@@ -54,7 +54,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
   void initState() {
     super.initState();
     _profileFuture = AuthService().getUserProfile(
-      fields: const ['avatar_url', 'display_name'],
+      fields: const ['avatar_url', 'display_name', 'username'],
     );
     _resolvePosterSport();
     // KAN-597: a shared-link entry (including a first sign-up) does not stop on Welcome; it continues straight to the
@@ -154,102 +154,81 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
         final profile = snapshot.data;
         final avatarUrl = profile?['avatar_url'] as String?;
         final profileName = (profile?['display_name'] as String?)?.trim();
+        final username = (profile?['username'] as String?)?.trim();
         final name = (profileName != null && profileName.isNotEmpty)
             ? profileName
             : widget.displayName;
+        final identity = _identityPill(
+          name: name,
+          username: username,
+          avatarUrl: avatarUrl,
+          emoji: returning ? '\u{1F44B}' : '\u{1F389}',
+        );
 
+        // "Poster welcome back" / "Poster welcome": a pill with who is signed
+        // in at the top, text cards resting on the sport poster, and the one
+        // action inside the last card.
         if (returning) {
           final quote = _returningQuote(l10n);
-          // Avatar at the top (start side), the greeting and the persona's
-          // line in one white card under it, Continue at the bottom; the
-          // poster (when there is one) fills the rest.
           return DabblerFlowPage(
-            leading: Align(
-              alignment: AlignmentDirectional.centerStart,
-              child: DabblerAvatar(
-                seed: name,
-                imageUrl: avatarUrl,
-                size: DabblerAvatarSize.xl,
-              ),
-            ),
-            bodyTopPadding: DabblerSpacing.space6,
+            leading: identity,
+            background: background,
+            spreadChildren: true,
+            bodyTopPadding: DabblerSpacing.space4,
+            bodyBottomPadding: DabblerSpacing.space9,
             content: <Widget>[
-              DabblerCard(
-                variant: DabblerCardVariant.white,
-                borderOutside: true,
-                radius: DabblerRadius.xl,
-                padding: DabblerInsets.card,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: <Widget>[
-                    // The frame greets by first name only.
+              const SizedBox.shrink(),
+              _posterCard(
+                children: <Widget>[
+                  // The frame greets by first name only.
+                  DabblerText(
+                    l10n.auth_welcome_back_title(_firstName(name)),
+                    style: DabblerType.displayWelcome,
+                  ),
+                  if (quote != null) ...<Widget>[
+                    const DabblerGap.v(DabblerSpacing.space3),
                     DabblerText(
-                      l10n.auth_welcome_back_title(_firstName(name)),
-                      style: DabblerType.displayScreen,
+                      quote,
+                      style: DabblerType.leadLarge,
+                      tone: DabblerTextTone.secondary,
                     ),
-                    if (quote != null) ...<Widget>[
-                      const DabblerGap.v(DabblerSpacing.space4),
-                      DabblerText(
-                        quote,
-                        style: DabblerType.leadLarge,
-                        weight: DabblerTextWeight.semibold,
-                      ),
-                    ],
                   ],
-                ),
+                  const DabblerGap.v(DabblerSpacing.space4),
+                  _action(l10n.auth_welcome_continue),
+                ],
               ),
             ],
-            background: background,
-            primaryLabel: l10n.auth_welcome_continue,
-            onPrimary: _continue,
-            footerBottomPadding: DabblerSpacing.space9,
           );
         }
 
         return DabblerFlowPage(
+          leading: identity,
           background: background,
           spreadChildren: true,
-          bodyTopPadding: DabblerSpacing.space8,
-          bodyBottomPadding: DabblerSpacing.space8,
-          footerBottomPadding: DabblerSpacing.space9,
-          primaryLabel: persona.cta,
-          onPrimary: _continue,
-          leading: _header(
-            persona,
-            name,
-            avatarUrl,
-            onArtwork: background != null,
-          ),
-          content: [
-            DabblerCard(
-              variant: DabblerCardVariant.white,
-              borderOutside: true,
-              radius: DabblerRadius.xl,
-              padding: DabblerInsets.card,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  DabblerText(
-                    persona.headline,
-                    style: DabblerType.displayWelcome,
-                  ),
-                  const DabblerGap.v(DabblerSpacing.space4),
-                  DabblerText(
-                    persona.principle,
-                    style: DabblerType.leadLarge,
-                    weight: DabblerTextWeight.semibold,
-                  ),
-                ],
-              ),
+          bodyTopPadding: DabblerSpacing.space4,
+          bodyBottomPadding: DabblerSpacing.space9,
+          content: <Widget>[
+            _posterCard(
+              vertical: DabblerSpacing.space6,
+              gap: DabblerSpacing.space2,
+              children: <Widget>[
+                DabblerText(
+                  persona.headline,
+                  style: DabblerType.displayWelcome,
+                ),
+                DabblerText(
+                  persona.principle,
+                  style: DabblerType.leadLarge,
+                  tone: DabblerTextTone.secondary,
+                ),
+              ],
             ),
-            DabblerCard(
-              variant: DabblerCardVariant.white,
-              borderOutside: true,
-              padding: DabblerInsets.card,
-              child: DabblerIconList(
-                title: persona.listTitle,
-                items: persona.items,
-              ),
+            _posterCard(
+              children: <Widget>[
+                DabblerIconList(title: persona.listTitle, items: persona.items),
+                const DabblerGap.v(DabblerSpacing.space4),
+                _action(persona.cta),
+              ],
             ),
           ],
         );
@@ -257,58 +236,96 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  /// Avatar, name and persona badge.
-  Widget _header(
-    _PersonaContent persona,
-    String name,
-    String? avatarUrl, {
-    required bool onArtwork,
+  /// A white poster card: 24 corner, 21 padding, [gap] between its children.
+  Widget _posterCard({
+    required List<Widget> children,
+    double vertical = DabblerSpacing.space7,
+    double gap = DabblerSpacing.space3,
   }) {
-    final row = Row(
-      children: [
-        DabblerAvatar(
-          size: DabblerAvatarSize.lg,
-          seed: name,
-          imageUrl: avatarUrl,
-        ),
-        const DabblerGap.h(DabblerSpacing.space5),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              DabblerText(
-                name,
-                style: DabblerType.rowTitle,
-                weight: DabblerTextWeight.semibold,
-                tone: DabblerTextTone.primary,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              const DabblerGap.v(DabblerSpacing.space2),
-              DabblerBadge(
-                label: persona.name,
-                tone: DabblerBadgeTone.defaultTone,
-                icon: DabblerIcon(
-                  persona.icon,
-                  weight: DabblerIconWeight.bold,
-                  size: DabblerSizing.iconXs,
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-    // Over a poster the header sits on a white card (like the cards below it)
-    // so the name stays legible on every artwork.
-    if (!onArtwork) return row;
     return DabblerCard(
       variant: DabblerCardVariant.white,
       borderOutside: true,
-      radius: DabblerRadius.xl,
-      padding: DabblerInsets.card,
-      child: row,
+      radius: DabblerRadius.xxl,
+      padding: EdgeInsets.symmetric(
+        horizontal: DabblerSpacing.space7,
+        vertical: vertical,
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: <Widget>[
+          for (int i = 0; i < children.length; i++) ...<Widget>[
+            if (i > 0 && children[i] is! DabblerGap) DabblerGap.v(gap),
+            children[i],
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _action(String label) => DabblerButton(
+    label: label,
+    size: DabblerButtonSize.full,
+    fullWidth: true,
+    onPressed: _continue,
+  );
+
+  /// The pill at the top: avatar, name, @username and the greeting emoji.
+  Widget _identityPill({
+    required String name,
+    required String? username,
+    required String? avatarUrl,
+    required String emoji,
+  }) {
+    return DabblerCard(
+      variant: DabblerCardVariant.white,
+      borderOutside: true,
+      radius: DabblerRadius.pill,
+      padding: const EdgeInsetsDirectional.fromSTEB(
+        DabblerSpacing.space3,
+        DabblerSpacing.space3,
+        DabblerSpacing.space6,
+        DabblerSpacing.space3,
+      ),
+      child: Row(
+        children: <Widget>[
+          DabblerAvatar(
+            size: DabblerAvatarSize.lg,
+            seed: name,
+            imageUrl: avatarUrl,
+          ),
+          const DabblerGap.h(DabblerSpacing.space5),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: <Widget>[
+                DabblerText(
+                  name,
+                  style: DabblerType.rowTitle,
+                  weight: DabblerTextWeight.medium,
+                  tone: DabblerTextTone.primary,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                if (username != null && username.isNotEmpty) ...<Widget>[
+                  const DabblerGap.v(DabblerSpacing.space1),
+                  DabblerText(
+                    '@$username',
+                    style: DabblerType.subheadline,
+                    tone: DabblerTextTone.secondary,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ],
+            ),
+          ),
+          const DabblerGap.h(DabblerSpacing.space3),
+          ExcludeSemantics(
+            child: DabblerText(emoji, style: DabblerType.title1),
+          ),
+        ],
+      ),
     );
   }
 

@@ -12989,6 +12989,300 @@ abstract class AppLocalizations {
   /// **'Open {sport} page'**
   String sport_overview_open_page(String sport);
 
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get sport_overview_kind_plain;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport · {formats}'**
+  String sport_overview_kind_formats(String formats);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Public sport page'**
+  String get sport_overview_public_chip;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Follower} other{Followers}}'**
+  String sport_overview_followers_label(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_posts_label;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game or meetup'**
+  String get sport_overview_create_game_or_meetup;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} posts, games and news will show in your feed. This doesn’t add {sport} to your sports profile.'**
+  String sport_overview_follow_note(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a city to see {sport} near you'**
+  String sport_overview_nocity_title(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Games, venues, places and posts are listed per city.'**
+  String get sport_overview_nocity_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load {sport} in {city}'**
+  String sport_overview_banner_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again. Following still works.'**
+  String get sport_overview_banner_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get sport_overview_banner_action;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing for {sport} in {city} yet'**
+  String sport_overview_empty_all_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No games, venues, places or posts here so far. Try another city.'**
+  String get sport_overview_empty_all_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get sport_overview_change_city;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} games in {city}'**
+  String sport_overview_empty_games_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} meetups in {city}'**
+  String sport_overview_empty_meetups_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled in the next 7 days. Try another city.'**
+  String get sport_overview_empty_next7_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} venues in {city}'**
+  String sport_overview_empty_venues_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues are businesses with bookable spaces for {sport}.'**
+  String sport_overview_empty_venues_city_text(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} spaces in {city}'**
+  String sport_overview_empty_spaces_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces are the pitches and courts you book inside a venue.'**
+  String get sport_overview_empty_spaces_city_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Play {sport} in {city}'**
+  String sport_overview_play_in(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days'**
+  String get sport_overview_next_7_days;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Games & meetups'**
+  String get sport_overview_tile_games_meetups;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'To book'**
+  String get sport_overview_tile_venues_sub;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Inside venues'**
+  String get sport_overview_tile_spaces_sub;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
+  String sport_overview_count_games(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 meetup} other{{count} meetups}}'**
+  String sport_overview_count_meetups(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 venue} other{{count} venues}}'**
+  String sport_overview_count_venues(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 bookable space} other{{count} bookable spaces}}'**
+  String sport_overview_count_spaces(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post} other{{count} posts}}'**
+  String sport_overview_count_posts(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {when}'**
+  String sport_overview_hero_next(String when);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Top venues'**
+  String get sport_overview_section_top_venues;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days in {city} · soonest first'**
+  String sport_overview_sub_next7(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Businesses with {sport} spaces in {city} · top rated first'**
+  String sport_overview_sub_venues(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pitches inside venues in {city} · lowest price first'**
+  String sport_overview_sub_spaces(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tagged {sport} · newest first'**
+  String sport_overview_sub_posts(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get sport_overview_join;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get sport_overview_book;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'per hour'**
+  String get sport_overview_per_hour;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'AED'**
+  String get sport_overview_currency;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes this page only. Your location on this device stays {city}.'**
+  String sport_overview_city_sheet_note_device(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes this page only. Your location on this device isn’t changed.'**
+  String get sport_overview_city_sheet_note;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my location · {city}'**
+  String sport_overview_city_use_device(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow {sport}?'**
+  String sport_overview_unfollow_title(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} posts and games stop appearing in your feed. Your sports profile isn’t affected.'**
+  String sport_overview_unfollow_text(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get sport_overview_unfollow_confirm;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get sport_overview_unfollow_cancel;
+
   /// No description provided for @listing_choose_city_title.
   ///
   /// In en, this message translates to:
@@ -13006,6 +13300,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Select city'**
   String get location_intro_select_city;
+
+  /// KAN-640 first line of the Location intro (Location.dc.html `welcome`), first name only.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String location_intro_kicker(String name);
+
+  /// No description provided for @location_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Where do you play?'**
+  String get location_intro_title;
+
+  /// No description provided for @location_intro_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your city decides which games, venues and meetups you see. Adding an area turns on distances.'**
+  String get location_intro_subtitle;
+
+  /// No description provided for @location_intro_manual.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter location manually'**
+  String get location_intro_manual;
+
+  /// No description provided for @location_intro_detecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your area'**
+  String get location_intro_detecting;
+
+  /// No description provided for @location_intro_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get location_intro_try_again;
+
+  /// No description provided for @location_intro_denied_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is off'**
+  String get location_intro_denied_title;
+
+  /// No description provided for @location_intro_denied_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn it on in Settings, or enter your city yourself.'**
+  String get location_intro_denied_message;
+
+  /// No description provided for @location_intro_no_gps_title.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t get a GPS fix'**
+  String get location_intro_no_gps_title;
+
+  /// No description provided for @location_intro_no_gps_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services may be off or the signal is weak. Try again, or enter your city.'**
+  String get location_intro_no_gps_message;
+
+  /// No description provided for @location_intro_country_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your country'**
+  String get location_intro_country_title;
+
+  /// No description provided for @location_intro_country_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change country'**
+  String get location_intro_country_change;
+
+  /// No description provided for @manual_location_search_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a city'**
+  String get manual_location_search_city;
+
+  /// No description provided for @manual_location_change_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get manual_location_change_city;
+
+  /// No description provided for @manual_location_area_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only areas in this city are listed.'**
+  String get manual_location_area_hint;
+
+  /// No description provided for @manual_location_search_area.
+  ///
+  /// In en, this message translates to:
+  /// **'Search areas in {city}'**
+  String manual_location_search_area(String city);
+
+  /// No description provided for @manual_location_areas_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas in {city}'**
+  String manual_location_areas_in(String city);
 
   /// KAN-628 section title of the device location block in Settings > Location.
   ///
@@ -13186,6 +13582,186 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use once'**
   String get saved_places_use_once;
+
+  /// KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Map unavailable'**
+  String get location_map_unavailable;
+
+  /// KAN-589 label of a location that comes from the device GPS. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get location_current_label;
+
+  /// KAN-589 confirm button of the Set location point picker. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this location'**
+  String get location_point_use;
+
+  /// KAN-589 label of a point picked on the map without a place name. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location'**
+  String get location_point_selected;
+
+  /// KAN-589 hint under the Set location map. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search a place, or tap the map to move the pin.'**
+  String get location_point_hint;
+
+  /// KAN-589 toast when a new saved place is within 25 m of another saved place; nothing is saved. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a saved place at this location.'**
+  String get saved_places_duplicate;
+
+  /// KAN-589 toast when deleting a saved place fails. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t delete this place. Try again.'**
+  String get saved_places_delete_failed;
+
+  /// KAN-589 place search dropdown with no match. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get location_search_no_results;
+
+  /// KAN-589 place search dropdown when the search request failed. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load results'**
+  String get location_search_failed;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'What brings you to Dabbler?'**
+  String get onb_intention_title;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what brings you here. Your choice helps us understand your goals.'**
+  String get onb_intention_subtitle;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect & play'**
+  String get onb_intention_connect_play;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Play & organise'**
+  String get onb_intention_play_organise;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Organise'**
+  String get onb_intention_organise;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Host games'**
+  String get onb_intention_host_games;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onb_intention_continue;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a profile. Please continue with the existing sign-in flow.'**
+  String get onb_error_legacy_profile_requires_existing_flow;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile needs an update before you can continue. Please try again later.'**
+  String get onb_error_profile_migration_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the account type isn’t supported yet.'**
+  String get onb_error_persona_change_not_supported;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'An account can have only one profile.'**
+  String get onb_error_single_profile_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This profile can’t be converted right now.'**
+  String get onb_error_persona_conversion_blocked;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t save that change. Please try again.'**
+  String get onb_error_persona_write_via_rpc_only;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your choice doesn’t match what we saved. Please choose again.'**
+  String get onb_error_onboarding_intention_mismatch;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one sport to continue.'**
+  String get onb_error_contributor_sports_incomplete;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get onb_error_generic;
+
+  /// KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get map_attribution_osm;
+
+  /// KAN-669 Games discovery: switch to the map view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show map'**
+  String get games_view_map;
+
+  /// KAN-669 Games discovery: switch back to the list view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show list'**
+  String get games_view_list;
+
+  /// KAN-669 empty state title when no upcoming public game matches the filters.
+  ///
+  /// In en, this message translates to:
+  /// **'No games on the map'**
+  String get games_map_empty_title;
+
+  /// No description provided for @games_map_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming public games match your filters. Change the filters or switch back to the list.'**
+  String get games_map_empty_text;
 }
 
 class _AppLocalizationsDelegate

@@ -17,7 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 import '../../support/render_mode.dart';
 import '../home/home_test_harness.dart';
 
-/// KAN-637: each venue Spaces card shows the bundled sport background for that
+/// KAN-637: each venue Spaces card shows the CEO's card photo for that
 /// space's own sport key; an unsupported key keeps the placeholder.
 const String _shotsDir = String.fromEnvironment(
   'PLACES_SHOTS_DIR',
@@ -153,13 +153,21 @@ void main() {
 
   final desktop = TargetPlatformVariant.only(TargetPlatform.macOS);
 
-  test('the shared map covers exactly the 11 bundled files', () {
-    expect(sportBackgroundAssets.keys.toSet(), _allKeys.toSet());
-    for (final asset in sportBackgroundAssets.values) {
-      expect(File(asset).existsSync(), isTrue, reason: asset);
+  test('the card map covers exactly the 11 card photos', () {
+    expect(sportCardAssets.keys.toSet(), _allKeys.toSet());
+    for (final key in _allKeys) {
+      expect(sportCardAssets[key], 'assets/images/card/${key}_card.png');
+      expect(File(sportCardAssets[key]!).existsSync(), isTrue, reason: key);
+      expect(sportCardAsset(key), sportCardAssets[key]);
     }
-    expect(sportBackgroundAsset('yoga'), isNull);
-    expect(sportBackgroundAsset(null), isNull);
+    expect(sportCardAsset('yoga'), isNull);
+    expect(sportCardAsset(null), isNull);
+    // Welcome and every other surface keep the sport_background images.
+    expect(sportBackgroundAssets.keys.toSet(), _allKeys.toSet());
+    expect(
+      sportBackgroundAsset('football'),
+      'assets/images/sport_background/football.webp',
+    );
   });
 
   for (final key in _allKeys) {
@@ -169,7 +177,10 @@ void main() {
       final image = tester.widget<Image>(
         find.descendant(of: _bg(key), matching: find.byType(Image)),
       );
-      expect((image.image as AssetImage).assetName, sportBackgroundAssets[key]);
+      expect(
+        (image.image as AssetImage).assetName,
+        'assets/images/card/${key}_card.png',
+      );
       expect(tester.takeException(), isNull);
     }, variant: desktop);
   }

@@ -97,7 +97,7 @@ class _InterestsSelectionScreenState
       final targetPersona = ref.read(addPersonaDataProvider)?.targetPersona;
       return switch (targetPersona) {
         PersonaType.organiser => 'organiser',
-        PersonaType.host => 'host',
+        PersonaType.host || PersonaType.partner => 'host',
         PersonaType.socialiser => 'socialiser',
         _ => 'player',
       };

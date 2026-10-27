@@ -6297,7 +6297,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_intro_cta => 'استخدم موقعي';
 
   @override
-  String get location_intro_later => 'ربما لاحقًا';
+  String get location_intro_later => 'لاحقًا';
 
   @override
   String get location_intro_denied =>
@@ -6312,7 +6312,7 @@ class AppLocalizationsAr extends AppLocalizations {
       'خدمات الموقع متوقفة على هذا الجهاز. فعّلها من الإعدادات ثم عُد.';
 
   @override
-  String get location_intro_open_settings => 'فتح الإعدادات';
+  String get location_intro_open_settings => 'افتح الإعدادات';
 
   @override
   String get location_intro_art => 'خريطة عليها دبوس موقع أحمر';
@@ -7285,6 +7285,262 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get sport_overview_kind_plain => 'رياضة';
+
+  @override
+  String sport_overview_kind_formats(String formats) {
+    return 'رياضة · $formats';
+  }
+
+  @override
+  String get sport_overview_public_chip => 'صفحة رياضة عامة';
+
+  @override
+  String sport_overview_followers_label(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'متابعون',
+      one: 'متابع',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sport_overview_posts_label => 'منشورات';
+
+  @override
+  String get sport_overview_create_game_or_meetup => 'إنشاء مباراة أو لقاء';
+
+  @override
+  String sport_overview_follow_note(String sport) {
+    return 'ستظهر منشورات $sport ومبارياته وأخباره في خلاصتك. هذا لا يضيف $sport إلى ملفك الرياضي.';
+  }
+
+  @override
+  String sport_overview_nocity_title(String sport) {
+    return 'اختر مدينة لترى $sport بالقرب منك';
+  }
+
+  @override
+  String get sport_overview_nocity_text =>
+      'المباريات والأماكن والمنشورات تُعرض لكل مدينة.';
+
+  @override
+  String sport_overview_banner_title(String sport, String city) {
+    return 'تعذّر تحميل $sport في $city';
+  }
+
+  @override
+  String get sport_overview_banner_text =>
+      'تحقق من اتصالك وحاول مرة أخرى. المتابعة تعمل كالمعتاد.';
+
+  @override
+  String get sport_overview_banner_action => 'حاول مرة أخرى';
+
+  @override
+  String sport_overview_empty_all_title(String sport, String city) {
+    return 'لا يوجد شيء لـ$sport في $city بعد';
+  }
+
+  @override
+  String get sport_overview_empty_all_text =>
+      'لا مباريات أو أماكن أو منشورات هنا حتى الآن. جرّب مدينة أخرى.';
+
+  @override
+  String get sport_overview_change_city => 'تغيير المدينة';
+
+  @override
+  String sport_overview_empty_games_city_title(String sport, String city) {
+    return 'لا مباريات $sport في $city';
+  }
+
+  @override
+  String sport_overview_empty_meetups_city_title(String sport, String city) {
+    return 'لا لقاءات $sport في $city';
+  }
+
+  @override
+  String get sport_overview_empty_next7_text =>
+      'لا شيء مجدول خلال الأيام السبعة القادمة. جرّب مدينة أخرى.';
+
+  @override
+  String sport_overview_empty_venues_city_title(String sport, String city) {
+    return 'لا أماكن لـ$sport في $city';
+  }
+
+  @override
+  String sport_overview_empty_venues_city_text(String sport) {
+    return 'الأماكن هي منشآت فيها مساحات قابلة للحجز لـ$sport.';
+  }
+
+  @override
+  String sport_overview_empty_spaces_city_title(String sport, String city) {
+    return 'لا مساحات $sport في $city';
+  }
+
+  @override
+  String get sport_overview_empty_spaces_city_text =>
+      'المساحات هي الملاعب التي تحجزها داخل المكان.';
+
+  @override
+  String sport_overview_play_in(String sport, String city) {
+    return 'العب $sport في $city';
+  }
+
+  @override
+  String get sport_overview_next_7_days => 'الأيام السبعة القادمة';
+
+  @override
+  String get sport_overview_tile_games_meetups => 'المباريات واللقاءات';
+
+  @override
+  String get sport_overview_tile_venues_sub => 'للحجز';
+
+  @override
+  String get sport_overview_tile_spaces_sub => 'داخل الأماكن';
+
+  @override
+  String sport_overview_count_games(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مباراة',
+      many: '$count مباراة',
+      few: '$count مباريات',
+      two: 'مباراتان',
+      one: 'مباراة واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_meetups(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لقاء',
+      many: '$count لقاءً',
+      few: '$count لقاءات',
+      two: 'لقاءان',
+      one: 'لقاء واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_venues(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مكان',
+      many: '$count مكانًا',
+      few: '$count أماكن',
+      two: 'مكانان',
+      one: 'مكان واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_spaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مساحة قابلة للحجز',
+      many: '$count مساحة قابلة للحجز',
+      few: '$count مساحات قابلة للحجز',
+      two: 'مساحتان قابلتان للحجز',
+      one: 'مساحة واحدة قابلة للحجز',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_posts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منشور',
+      many: '$count منشورًا',
+      few: '$count منشورات',
+      two: 'منشوران',
+      one: 'منشور واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_hero_next(String when) {
+    return 'التالي: $when';
+  }
+
+  @override
+  String get sport_overview_section_top_venues => 'أفضل الأماكن';
+
+  @override
+  String sport_overview_sub_next7(String city) {
+    return 'الأيام السبعة القادمة في $city · الأقرب أولًا';
+  }
+
+  @override
+  String sport_overview_sub_venues(String sport, String city) {
+    return 'منشآت فيها مساحات $sport في $city · الأعلى تقييمًا أولًا';
+  }
+
+  @override
+  String sport_overview_sub_spaces(String city) {
+    return 'ملاعب داخل الأماكن في $city · الأقل سعرًا أولًا';
+  }
+
+  @override
+  String sport_overview_sub_posts(String sport) {
+    return 'موسومة بـ$sport · الأحدث أولًا';
+  }
+
+  @override
+  String get sport_overview_join => 'انضم';
+
+  @override
+  String get sport_overview_book => 'احجز';
+
+  @override
+  String get sport_overview_per_hour => 'للساعة';
+
+  @override
+  String get sport_overview_currency => 'درهم';
+
+  @override
+  String sport_overview_city_sheet_note_device(String city) {
+    return 'يغيّر هذه الصفحة فقط. يبقى موقعك على هذا الجهاز $city.';
+  }
+
+  @override
+  String get sport_overview_city_sheet_note =>
+      'يغيّر هذه الصفحة فقط. لا يتغير موقعك على هذا الجهاز.';
+
+  @override
+  String sport_overview_city_use_device(String city) {
+    return 'استخدم موقعي · $city';
+  }
+
+  @override
+  String sport_overview_unfollow_title(String sport) {
+    return 'إلغاء متابعة $sport؟';
+  }
+
+  @override
+  String sport_overview_unfollow_text(String sport) {
+    return 'ستتوقف منشورات $sport ومبارياته عن الظهور في خلاصتك. ملفك الرياضي لا يتأثر.';
+  }
+
+  @override
+  String get sport_overview_unfollow_confirm => 'إلغاء المتابعة';
+
+  @override
+  String get sport_overview_unfollow_cancel => 'إلغاء';
+
+  @override
   String get listing_choose_city_title => 'اختر المدينة';
 
   @override
@@ -7292,6 +7548,66 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_intro_select_city => 'اختر مدينتك';
+
+  @override
+  String location_intro_kicker(String name) {
+    return 'أهلًا، $name';
+  }
+
+  @override
+  String get location_intro_title => 'أين تلعب؟';
+
+  @override
+  String get location_intro_subtitle =>
+      'مدينتك تحدد المباريات والملاعب واللقاءات التي تراها. إضافة المنطقة تُفعّل المسافات.';
+
+  @override
+  String get location_intro_manual => 'أدخل الموقع يدويًا';
+
+  @override
+  String get location_intro_detecting => 'جارٍ تحديد منطقتك';
+
+  @override
+  String get location_intro_try_again => 'حاول مجددًا';
+
+  @override
+  String get location_intro_denied_title => 'الوصول إلى الموقع متوقف';
+
+  @override
+  String get location_intro_denied_message =>
+      'فعّله من الإعدادات، أو أدخل مدينتك بنفسك.';
+
+  @override
+  String get location_intro_no_gps_title => 'تعذّر تحديد الموقع';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'قد تكون خدمات الموقع متوقفة أو الإشارة ضعيفة. حاول مجددًا أو أدخل مدينتك.';
+
+  @override
+  String get location_intro_country_title => 'اختر دولتك';
+
+  @override
+  String get location_intro_country_change => 'تغيير الدولة';
+
+  @override
+  String get manual_location_search_city => 'ابحث عن مدينة';
+
+  @override
+  String get manual_location_change_city => 'غيّر المدينة';
+
+  @override
+  String get manual_location_area_hint => 'تظهر مناطق هذه المدينة فقط.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'ابحث في مناطق $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'مناطق $city';
+  }
 
   @override
   String get location_settings_device_title => 'موقع الجهاز';
@@ -7385,4 +7701,106 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get saved_places_use_once => 'استخدمه مرة واحدة';
+
+  @override
+  String get location_map_unavailable => 'الخريطة غير متاحة';
+
+  @override
+  String get location_current_label => 'الموقع الحالي';
+
+  @override
+  String get location_point_use => 'استخدم هذا الموقع';
+
+  @override
+  String get location_point_selected => 'الموقع المحدد';
+
+  @override
+  String get location_point_hint =>
+      'ابحث عن مكان، أو اضغط على الخريطة لتحريك الدبوس.';
+
+  @override
+  String get saved_places_duplicate => 'لديك مكان محفوظ في هذا الموقع بالفعل.';
+
+  @override
+  String get saved_places_delete_failed =>
+      'تعذّر حذف هذا المكان. حاول مرة أخرى.';
+
+  @override
+  String get location_search_no_results => 'لا توجد نتائج';
+
+  @override
+  String get location_search_failed => 'تعذّر تحميل النتائج';
+
+  @override
+  String get onb_intention_title => 'ما الذي أتى بك إلى Dabbler؟';
+
+  @override
+  String get onb_intention_subtitle =>
+      'اختر ما أتى بك إلى هنا. اختيارك يساعدنا على فهم أهدافك.';
+
+  @override
+  String get onb_intention_connect_play => 'تواصل والعب';
+
+  @override
+  String get onb_intention_play_organise => 'العب ونظّم';
+
+  @override
+  String get onb_intention_organise => 'نظّم';
+
+  @override
+  String get onb_intention_host_games => 'استضف المباريات';
+
+  @override
+  String get onb_intention_continue => 'المتابعة';
+
+  @override
+  String get onb_error_legacy_profile_requires_existing_flow =>
+      'لدى هذا الحساب ملف شخصي بالفعل. يرجى المتابعة عبر مسار تسجيل الدخول الحالي.';
+
+  @override
+  String get onb_error_profile_migration_required =>
+      'يحتاج ملفك الشخصي إلى تحديث قبل أن تتمكن من المتابعة. يرجى المحاولة لاحقًا.';
+
+  @override
+  String get onb_error_persona_change_not_supported =>
+      'تغيير نوع الحساب غير مدعوم حاليًا.';
+
+  @override
+  String get onb_error_single_profile_required =>
+      'يمكن أن يحتوي الحساب على ملف شخصي واحد فقط.';
+
+  @override
+  String get onb_error_persona_conversion_blocked =>
+      'لا يمكن تحويل هذا الملف الشخصي حاليًا.';
+
+  @override
+  String get onb_error_persona_write_via_rpc_only =>
+      'تعذّر حفظ هذا التغيير. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get onb_error_onboarding_intention_mismatch =>
+      'اختيارك لا يطابق ما تم حفظه. يرجى الاختيار مرة أخرى.';
+
+  @override
+  String get onb_error_contributor_sports_incomplete =>
+      'اختر رياضة واحدة على الأقل للمتابعة.';
+
+  @override
+  String get onb_error_generic => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get map_attribution_osm => '© مساهمو OpenStreetMap';
+
+  @override
+  String get games_view_map => 'عرض الخريطة';
+
+  @override
+  String get games_view_list => 'عرض القائمة';
+
+  @override
+  String get games_map_empty_title => 'لا توجد مباريات على الخريطة';
+
+  @override
+  String get games_map_empty_text =>
+      'لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة.';
 }

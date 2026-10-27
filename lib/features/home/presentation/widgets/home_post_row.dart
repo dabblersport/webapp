@@ -132,8 +132,22 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   }
 
   /// The reaction-breakdown chips: tapping one toggles that vibe, as before.
+  /// KAN-642: the vibe the author posted with, in the viewer's language; the
+  /// first pill of the post row's pill row (the same pill as sport and venue).
+  /// Null when the post has no vibe.
+  String? _postVibeLabel(Post post) {
+    final vibe = post.vibes.firstOrNull;
+    if (vibe == null) return null;
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    return ar && vibe.labelAr.isNotEmpty
+        ? vibe.labelAr
+        : (vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key);
+  }
+
   Widget? _reactionSummary(Post post, Set<String> myReactions) {
-    final entries = _reactionBreakdownEntries(post);
+    final entries = widget.showActions
+        ? _reactionBreakdownEntries(post)
+        : const <MapEntry<dynamic, dynamic>>[];
     if (entries.isEmpty) return null;
     final vibes = ref.watch(vibesProvider).valueOrNull ?? const [];
     return Wrap(
@@ -500,9 +514,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   }
                 }
               : null,
-          reactions: widget.showActions
-              ? _reactionSummary(post, myReactions)
-              : null,
+          reactions: _reactionSummary(post, myReactions),
           showActions: widget.showActions,
           time: homeRelativeTime(post.createdAt),
           place: place,
@@ -515,6 +527,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   post,
                   currentSportId: widget.currentSportId,
                 ),
+          vibeTagLabel: _postVibeLabel(post),
           placeTagLabel: placeTag,
           placeTagLeading: placeTag == null
               ? null

@@ -1,3 +1,4 @@
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
@@ -103,9 +104,13 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
     final maxPrice = ref.watch(venueMaxPriceFilterProvider);
     final minRating = ref.watch(venueMinRatingFilterProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
+    final activeProfile = ref.watch(profileControllerProvider).profile;
     final isOrganiser =
-        ref.watch(profileControllerProvider).profile?.profileType ==
-        'organiser';
+        activeProfile?.profileType == 'organiser' ||
+        personaTypeOrNull(
+              activeProfile?.personaType,
+            )?.hasOrganiserCapabilities ==
+            true;
     final sports = widget.sports;
 
     final active = <DabblerFilterRailItem>[

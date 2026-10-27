@@ -95,9 +95,12 @@ class AddPersonaData {
   /// Create from Map (for restoring from GoRouter extra)
   static AddPersonaData fromMap(Map<String, dynamic> map) {
     return AddPersonaData(
+      // A restored extra that names no known legacy persona is unavailable,
+      // never silently a Player: the forbidden unified target is refused by
+      // the rules and the creation service.
       targetPersona:
           PersonaType.fromString(map['targetPersona'] as String?) ??
-          PersonaType.player,
+          PersonaType.partner,
       actionType: PersonaActionType.values.firstWhere(
         (e) => e.name == map['actionType'],
         orElse: () => PersonaActionType.add,

@@ -23,6 +23,8 @@ mixin _$OnboardingData {
   // Persona
   String? get personaType =>
       throw _privateConstructorUsedError; // 'player' | 'organiser' | 'host'
+  OnboardingIntention? get onboardingIntention =>
+      throw _privateConstructorUsedError; // KAN-650: separate from the persona; never derived from a label.
   // Profile info
   String? get displayName => throw _privateConstructorUsedError;
   String? get username => throw _privateConstructorUsedError;
@@ -60,6 +62,7 @@ abstract class $OnboardingDataCopyWith<$Res> {
     int? age,
     String? gender,
     String? personaType,
+    OnboardingIntention? onboardingIntention,
     String? displayName,
     String? username,
     String? city,
@@ -92,6 +95,7 @@ class _$OnboardingDataCopyWithImpl<$Res, $Val extends OnboardingData>
     Object? age = freezed,
     Object? gender = freezed,
     Object? personaType = freezed,
+    Object? onboardingIntention = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
     Object? city = freezed,
@@ -118,6 +122,10 @@ class _$OnboardingDataCopyWithImpl<$Res, $Val extends OnboardingData>
                 ? _value.personaType
                 : personaType // ignore: cast_nullable_to_non_nullable
                       as String?,
+            onboardingIntention: freezed == onboardingIntention
+                ? _value.onboardingIntention
+                : onboardingIntention // ignore: cast_nullable_to_non_nullable
+                      as OnboardingIntention?,
             displayName: freezed == displayName
                 ? _value.displayName
                 : displayName // ignore: cast_nullable_to_non_nullable
@@ -181,6 +189,7 @@ abstract class _$$OnboardingDataImplCopyWith<$Res>
     int? age,
     String? gender,
     String? personaType,
+    OnboardingIntention? onboardingIntention,
     String? displayName,
     String? username,
     String? city,
@@ -212,6 +221,7 @@ class __$$OnboardingDataImplCopyWithImpl<$Res>
     Object? age = freezed,
     Object? gender = freezed,
     Object? personaType = freezed,
+    Object? onboardingIntention = freezed,
     Object? displayName = freezed,
     Object? username = freezed,
     Object? city = freezed,
@@ -238,6 +248,10 @@ class __$$OnboardingDataImplCopyWithImpl<$Res>
             ? _value.personaType
             : personaType // ignore: cast_nullable_to_non_nullable
                   as String?,
+        onboardingIntention: freezed == onboardingIntention
+            ? _value.onboardingIntention
+            : onboardingIntention // ignore: cast_nullable_to_non_nullable
+                  as OnboardingIntention?,
         displayName: freezed == displayName
             ? _value.displayName
             : displayName // ignore: cast_nullable_to_non_nullable
@@ -294,6 +308,7 @@ class _$OnboardingDataImpl extends _OnboardingData {
     this.age,
     this.gender,
     this.personaType,
+    this.onboardingIntention,
     this.displayName,
     this.username,
     this.city,
@@ -318,6 +333,9 @@ class _$OnboardingDataImpl extends _OnboardingData {
   @override
   final String? personaType;
   // 'player' | 'organiser' | 'host'
+  @override
+  final OnboardingIntention? onboardingIntention;
+  // KAN-650: separate from the persona; never derived from a label.
   // Profile info
   @override
   final String? displayName;
@@ -359,7 +377,7 @@ class _$OnboardingDataImpl extends _OnboardingData {
 
   @override
   String toString() {
-    return 'OnboardingData(age: $age, gender: $gender, personaType: $personaType, displayName: $displayName, username: $username, city: $city, country: $country, language: $language, preferredSport: $preferredSport, interestIds: $interestIds, primarySportId: $primarySportId, profileId: $profileId, personaExtensionCreated: $personaExtensionCreated, sportProfileCreated: $sportProfileCreated)';
+    return 'OnboardingData(age: $age, gender: $gender, personaType: $personaType, onboardingIntention: $onboardingIntention, displayName: $displayName, username: $username, city: $city, country: $country, language: $language, preferredSport: $preferredSport, interestIds: $interestIds, primarySportId: $primarySportId, profileId: $profileId, personaExtensionCreated: $personaExtensionCreated, sportProfileCreated: $sportProfileCreated)';
   }
 
   @override
@@ -371,6 +389,8 @@ class _$OnboardingDataImpl extends _OnboardingData {
             (identical(other.gender, gender) || other.gender == gender) &&
             (identical(other.personaType, personaType) ||
                 other.personaType == personaType) &&
+            (identical(other.onboardingIntention, onboardingIntention) ||
+                other.onboardingIntention == onboardingIntention) &&
             (identical(other.displayName, displayName) ||
                 other.displayName == displayName) &&
             (identical(other.username, username) ||
@@ -404,6 +424,7 @@ class _$OnboardingDataImpl extends _OnboardingData {
     age,
     gender,
     personaType,
+    onboardingIntention,
     displayName,
     username,
     city,
@@ -434,6 +455,7 @@ abstract class _OnboardingData extends OnboardingData {
     final int? age,
     final String? gender,
     final String? personaType,
+    final OnboardingIntention? onboardingIntention,
     final String? displayName,
     final String? username,
     final String? city,
@@ -456,6 +478,8 @@ abstract class _OnboardingData extends OnboardingData {
   // Persona
   @override
   String? get personaType; // 'player' | 'organiser' | 'host'
+  @override
+  OnboardingIntention? get onboardingIntention; // KAN-650: separate from the persona; never derived from a label.
   // Profile info
   @override
   String? get displayName;

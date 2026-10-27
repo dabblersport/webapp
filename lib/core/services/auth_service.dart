@@ -24,6 +24,8 @@ import '../../utils/constants/route_constants.dart';
 import '../models/google_sign_in_failure.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';
+import '../fp/result.dart';
+import '../../features/auth_onboarding/data/unified_onboarding_client.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -1301,6 +1303,48 @@ class AuthService {
     ).ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
+  }
+
+  /// KAN-650: creates the account's profile through the unified RPC. Returns
+  /// the server's profile id or a typed refusal. It does not set `onboard`,
+  /// call the legacy onboarding RPC or insert extension/tier rows; a retry
+  /// passes the same [input], so the intention key is unchanged.
+  Future<Result<String, UnifiedOnboardingFailure>> onboardUnifiedProfile(
+    UnifiedOnboardingInput input,
+  ) {
+    return UnifiedOnboardingClient(
+      _supabase,
+      resolveCountryCode: _resolveCountryCode,
+    ).onboard(input);
+  }
+
+  /// KAN-648: the auth-metadata half of onboarding, run before the unified
+  /// RPC exactly as the legacy path runs it. Throws if the user is signed out.
+  Future<void> syncOnboardingAuthMetadata({
+    required String displayName,
+    required String username,
+  }) async {
+    if (_supabase.auth.currentUser == null) {
+      throw Exception('User not authenticated');
+    }
+    await _supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'display_name': displayName,
+          if (username.isNotEmpty) 'username': username,
+        },
+      ),
+    );
+  }
+
+  /// KAN-648: the avatar step for a profile the unified RPC returned. It is
+  /// idempotent, so a retry with the same [profileId] is safe.
+  Future<void> ensureOnboardingAvatar(String profileId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+    await DefaultAvatarService(
+      client: _supabase,
+    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
   }
 
   /// Check if username already exists — uses RPC to avoid btrim(uuid) when

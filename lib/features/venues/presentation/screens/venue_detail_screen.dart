@@ -50,7 +50,7 @@ String _sportKey(String sport) {
   return key == 'soccer' ? 'football' : key;
 }
 
-/// A Spaces card's media: the bundled background for the space's own sport key
+/// A Spaces card's media: the card photo (assets/images/card) for the space's own sport key
 /// or the plain placeholder with the sport icon when the key has none.
 class _SpaceMedia extends StatelessWidget {
   final String sportKey;
@@ -62,7 +62,7 @@ class _SpaceMedia extends StatelessWidget {
       sportKey,
       size: DabblerSizing.iconRow,
     );
-    final background = sportBackgroundWidget(
+    final background = sportCardWidget(
       sportKey,
       widgetKey: ValueKey<String>('space-background-$sportKey'),
     );

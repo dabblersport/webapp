@@ -1,5 +1,3 @@
-import 'package:dabbler_design_system/dabbler_design_system.dart'
-    show DabblerMotion;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -8,12 +6,20 @@ import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/data/models/active_location.dart'
+    show ActiveLocationSource;
 import 'package:dabbler/data/models/social/post.dart';
-import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/listing_city.dart';
+import 'package:dabbler/core/data/supabase_remote_data_source.dart'
+    show supabaseServiceProvider;
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show activePersonaProvider;
+import 'package:dabbler/features/social/data/nearby_candidate_source.dart';
+import 'package:dabbler/features/social/domain/nearby_feed_loader.dart';
+import 'package:dabbler/features/social/domain/nearby_ranking.dart';
+
 import 'post_providers.dart';
 
 // =============================================================================
@@ -275,32 +281,55 @@ final followingFeedProvider =
 // NEARBY FEED PROVIDER
 // =============================================================================
 
-/// Feed of nearby original, non-system posts sorted by distance from the
-/// user's current location. Falls back to recency when location is
-/// unavailable.
+/// The Nearby candidate set (KAN-594). Overridden in tests.
+final nearbyCandidateFetchProvider = Provider<NearbyCandidateFetch>((ref) {
+  final source = NearbyCandidateSource(
+    ref.watch(supabaseServiceProvider).client,
+    personaType: ref.watch(activePersonaProvider)?.name,
+  );
+  return source.fetch;
+});
+
+/// Feed of nearby original, non-system posts (KAN-594): the selected City is
+/// the boundary; with an Area or a usable location the order blends recency
+/// and distance, City-only is newest first. See [NearbyFeedLoader].
 /// NOT autoDispose — caches across tab switches.
 final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
   (ref) {
     final repo = ref.watch(postRepositoryProvider);
     // Rebuild (and thus refetch on next view) when the app-level location
-    // selection changes. select() on the coordinates avoids rebuilds for
+    // selection changes. select() on the scope avoids rebuilds for
     // loading-state churn.
-    final coords = ref.watch(
+    final point = ref.watch(
       activeLocationProvider.select((async) {
         final s = async.valueOrNull;
         return s is ActiveLocationReady
-            ? (lat: s.location.lat, lng: s.location.lng)
+            ? (
+                lat: s.location.lat,
+                lng: s.location.lng,
+                lastKnown: s.location.source == ActiveLocationSource.lastKnown,
+                fixedAt: s.fixedAt,
+              )
             : null;
       }),
     );
-    // KAN-588: the selected city. With only a city and no point the feed is
-    // that city's posts, newest first; a change of city rebuilds this.
+    // KAN-588: the selected City is the boundary; none means no query.
     final city = ref.watch(listingCityProvider)?.name;
+    final scope = city == null
+        ? null
+        : NearbyScope(
+            city: city,
+            lat: point?.lat,
+            lng: point?.lng,
+            lastKnown: point?.lastKnown ?? false,
+            fixedAt: point?.fixedAt,
+          );
     return _buildNearbyNotifier(
-      repo,
-      coords,
-      ref.watch(gpsServiceProvider),
-      city: city,
+      NearbyFeedLoader(
+        fetchCandidates: ref.watch(nearbyCandidateFetchProvider),
+        postsByIds: repo.getPostsByIds,
+      ),
+      scope,
       cache: ref.watch(offlineCacheProvider),
       accountId: ref.watch(cacheAccountIdProvider),
     );
@@ -308,63 +337,27 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
 );
 
 TabFeedNotifier _buildNearbyNotifier(
-  PostRepository repo,
-  ({double lat, double lng})? appLocation,
-  GpsService gps, {
-  String? city,
+  NearbyFeedLoader loader,
+  NearbyScope? appScope, {
   OfflineCache? cache,
   String? accountId,
 }) {
   return TabFeedNotifier(
     ({required limit, required offset}) async {
-      // Prefer the app-level location selection (GPS / saved / manual area).
-      double? lat = appLocation?.lat;
-      double? lng = appLocation?.lng;
+      // The selected City is the boundary. With none (no app location, GPS
+      // only, or denied) there is no query: the home header opens the manual
+      // 'Set location' drawer, and the OS permission is never asked here.
+      final scope = appScope ?? const NearbyScope();
 
-      // Only the city is known (a hand-picked City, no Area): no point and no
-      // GPS, the city's posts newest first (KAN-588).
-      if ((lat == null || lng == null) && city != null) {
-        return repo.getNearbyFeed(city: city, limit: limit, offset: offset);
-      }
-
-      // Fallback: raw GPS, read-only (it never raises the OS permission prompt:
-      // only the location intro or an explicit user action asks for it).
-      if (lat == null || lng == null) {
-        try {
-          final result = await gps.getCurrentLocation(
-            requestPermission: false,
-            cap: DabblerMotion.timeoutShort,
-            accuracy: LocationAccuracy.low,
-          );
-          if (result is LocationSuccess) {
-            lat = result.lat;
-            lng = result.lng;
-          }
-        } catch (_) {
-          // Location unavailable — backend will fall back to recency.
-        }
-      }
-
-      return repo.getNearbyFeed(
-        lat: lat,
-        lng: lng,
-        limit: limit,
-        offset: offset,
-      );
+      return loader.loadPage(scope: scope, limit: limit, offset: offset);
       // With app-level coordinates the initial fetch can't trigger a GPS
       // permission prompt, so load eagerly — this also covers notifier
       // recreation after a location change while the Nearby tab is visible.
     },
-    autoLoad: appLocation != null || city != null,
+    autoLoad: appScope != null,
     cache: cache,
     accountId: accountId,
-    // Per city, so a city change never shows the previous city's cached posts;
-    // a city without a point is newest-first, apart from the distance-ranked.
-    cacheKey: city == null
-        ? 'feed.nearby'
-        : appLocation == null
-        ? 'feed.nearby.city.$city'
-        : 'feed.nearby.$city',
+    cacheKey: 'feed.nearby',
   );
 }
 
