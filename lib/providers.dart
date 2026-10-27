@@ -3,6 +3,8 @@ library;
 export 'core/providers/locale_provider.dart';
 export 'core/services/analytics/analytics_service.dart';
 export 'core/services/connectivity_service.dart';
+export 'core/offline/cached_read.dart';
+export 'core/offline/game_codec.dart';
 export 'core/analytics/analytics_helpers.dart';
 export 'features/app_boot/providers.dart';
 export 'features/app_boot/schema_guard.dart';
