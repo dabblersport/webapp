@@ -24,6 +24,8 @@ import '../../utils/constants/route_constants.dart';
 import '../models/google_sign_in_failure.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';
+import '../fp/result.dart';
+import '../../features/auth_onboarding/data/unified_onboarding_client.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -1301,6 +1303,19 @@ class AuthService {
     ).ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
+  }
+
+  /// KAN-650: creates the account's profile through the unified RPC. Returns
+  /// the server's profile id or a typed refusal. It does not set `onboard`,
+  /// call the legacy onboarding RPC or insert extension/tier rows; a retry
+  /// passes the same [input], so the intention key is unchanged.
+  Future<Result<String, UnifiedOnboardingFailure>> onboardUnifiedProfile(
+    UnifiedOnboardingInput input,
+  ) {
+    return UnifiedOnboardingClient(
+      _supabase,
+      resolveCountryCode: _resolveCountryCode,
+    ).onboard(input);
   }
 
   /// Check if username already exists — uses RPC to avoid btrim(uuid) when

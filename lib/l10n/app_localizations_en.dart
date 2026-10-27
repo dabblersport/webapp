@@ -7672,4 +7672,61 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_search_failed => 'Couldn’t load results';
+
+  @override
+  String get onb_intention_title => 'What brings you to Dabbler?';
+
+  @override
+  String get onb_intention_subtitle =>
+      'Choose what brings you here. Your choice helps us understand your goals.';
+
+  @override
+  String get onb_intention_connect_play => 'Connect & play';
+
+  @override
+  String get onb_intention_play_organise => 'Play & organise';
+
+  @override
+  String get onb_intention_organise => 'Organise';
+
+  @override
+  String get onb_intention_host_games => 'Host games';
+
+  @override
+  String get onb_intention_continue => 'Continue';
+
+  @override
+  String get onb_error_legacy_profile_requires_existing_flow =>
+      'This account already has a profile. Please continue with the existing sign-in flow.';
+
+  @override
+  String get onb_error_profile_migration_required =>
+      'Your profile needs an update before you can continue. Please try again later.';
+
+  @override
+  String get onb_error_persona_change_not_supported =>
+      'Changing the account type isn’t supported yet.';
+
+  @override
+  String get onb_error_single_profile_required =>
+      'An account can have only one profile.';
+
+  @override
+  String get onb_error_persona_conversion_blocked =>
+      'This profile can’t be converted right now.';
+
+  @override
+  String get onb_error_persona_write_via_rpc_only =>
+      'We couldn’t save that change. Please try again.';
+
+  @override
+  String get onb_error_onboarding_intention_mismatch =>
+      'Your choice doesn’t match what we saved. Please choose again.';
+
+  @override
+  String get onb_error_contributor_sports_incomplete =>
+      'Choose at least one sport to continue.';
+
+  @override
+  String get onb_error_generic => 'Something went wrong. Please try again.';
 }

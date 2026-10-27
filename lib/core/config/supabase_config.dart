@@ -278,6 +278,9 @@ class SupabaseConfig {
   static const String rpcSportOverviewFn = 'rpc_sport_overview';
   static const String rpcLeaveGameFn = 'rpc_leave_game';
   static const String rpcOnboardProfileFn = 'rpc_onboard_profile';
+  /// KAN-650: the unified onboarding RPC (S2 contract).
+  static const String rpcOnboardUnifiedProfileFn =
+      'rpc_onboard_unified_profile';
   static const String rpcUpdateGameFn = 'rpc_update_game';
   static const String rpcDecideJoinRequestFn = 'rpc_decide_join_request';
   static const String rpcRemovePlayerFn = 'rpc_remove_player';
