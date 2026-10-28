@@ -2498,17 +2498,11 @@ abstract class AppLocalizations {
   /// **'Pick at least one to continue.'**
   String get onb_sports_count_zero;
 
-  /// No description provided for @onb_sports_count_one.
+  /// No description provided for @onb_sports_count.
   ///
   /// In en, this message translates to:
-  /// **'1 sport selected'**
-  String get onb_sports_count_one;
-
-  /// No description provided for @onb_sports_count_many.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} sports selected'**
-  String onb_sports_count_many(int count);
+  /// **'{count, plural, =1{1 sport selected} other{{count} sports selected}}'**
+  String onb_sports_count(int count);
 
   /// No description provided for @onb_primary_more.
   ///

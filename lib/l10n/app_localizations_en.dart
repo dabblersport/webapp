@@ -1350,11 +1350,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_sports_count_zero => 'Pick at least one to continue.';
 
   @override
-  String get onb_sports_count_one => '1 sport selected';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return '$count sports selected';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sports selected',
+      one: '1 sport selected',
+    );
+    return '$_temp0';
   }
 
   @override

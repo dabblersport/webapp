@@ -147,8 +147,7 @@ class _InterestsSelectionScreenState
   String _countLabel(AppLocalizations l10n) {
     final n = _selectedSportIds.length;
     if (n == 0) return l10n.onb_sports_count_zero;
-    if (n == 1) return l10n.onb_sports_count_one;
-    return l10n.onb_sports_count_many(n);
+    return l10n.onb_sports_count(n);
   }
 
   @override

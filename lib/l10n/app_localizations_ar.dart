@@ -1337,11 +1337,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_sports_count_zero => 'اختر رياضة واحدة على الأقل للمتابعة.';
 
   @override
-  String get onb_sports_count_one => 'تم اختيار رياضة واحدة';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return 'الرياضات المختارة: $count';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم اختيار $count رياضة',
+      many: 'تم اختيار $count رياضة',
+      few: 'تم اختيار $count رياضات',
+      two: 'تم اختيار رياضتين',
+      one: 'تم اختيار رياضة واحدة',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -7807,7 +7813,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onb_intention_play_organise_body =>
-      'انضم إلى المباريات، أو اجمع الناس في مباراة تنظّمها بنفسك.';
+      'انضم إلى المباريات واجمع الناس في مباراتك الخاصة.';
 
   @override
   String get onb_intention_organise_body =>

@@ -505,8 +505,12 @@
   "onb_sports_search": "ابحث عن رياضة",
   "onb_sports_none": "لا نتائج مطابقة. جرّب اسمًا آخر.",
   "onb_sports_count_zero": "اختر رياضة واحدة على الأقل للمتابعة.",
-  "onb_sports_count_one": "تم اختيار رياضة واحدة",
-  "onb_sports_count_many": "الرياضات المختارة: {count}",
+  "onb_sports_count": "{count, plural, =1{تم اختيار رياضة واحدة} =2{تم اختيار رياضتين} few{تم اختيار {count} رياضات} many{تم اختيار {count} رياضة} other{تم اختيار {count} رياضة}}",
+  "@onb_sports_count": {
+    "placeholders": {
+      "count": { "type": "int" }
+    }
+  },
   "onb_primary_more": "أضف المزيد من الرياضات",
   "onb_identity_title": "بماذا يناديك الناس؟",
   "onb_identity_subtitle": "اضبط الاسم والمعرّف اللذين سيراهما الناس في دابلر.",
@@ -2695,7 +2699,7 @@
   "onb_intention_organise": "نظّم فعاليات رياضية",
   "onb_intention_host_games": "استضف رياضات وفعاليات",
   "onb_intention_connect_play_body": "تابع الرياضات، وتعرّف على الناس، وشارك في أجواء اللعب.",
-  "onb_intention_play_organise_body": "انضم إلى المباريات، أو اجمع الناس في مباراة تنظّمها بنفسك.",
+  "onb_intention_play_organise_body": "انضم إلى المباريات واجمع الناس في مباراتك الخاصة.",
   "onb_intention_organise_body": "اجمع اللاعبين ونظّم المباريات واللقاءات.",
   "onb_intention_host_games_body": "رحّب باللاعبين في ملعبك وأماكنك.",
   "onb_intention_continue": "المتابعة",
