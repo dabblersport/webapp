@@ -7731,6 +7731,22 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_error_generic => 'Something went wrong. Please try again.';
 
   @override
+  String ratings_summary_from_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ratings',
+      one: '1 rating',
+    );
+    return 'from $_temp0';
+  }
+
+  @override
+  String ratings_summary_semantics(String average) {
+    return 'Rating $average out of 5';
+  }
+
+  @override
   String get map_attribution_osm => '© OpenStreetMap contributors';
 
   @override

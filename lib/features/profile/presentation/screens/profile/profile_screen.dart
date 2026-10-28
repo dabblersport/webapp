@@ -12,6 +12,7 @@ import 'package:dabbler/features/profile/presentation/widgets/profile/own_profil
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
+import 'package:dabbler/features/ratings/presentation/widgets/rating_summary.dart';
 import '../../../../../app/app_router.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
@@ -456,6 +457,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   : null,
             ),
             const DabblerGap.v(DabblerSpacing.space8),
+            RatingSummary(userId: profile?.userId),
             if (personaType == 'socialiser')
               OwnProfileFollowedSports(sports: mySports)
             else

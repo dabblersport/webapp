@@ -14,6 +14,7 @@ import 'package:dabbler/features/profile/presentation/widgets/profile/own_profil
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
+import 'package:dabbler/features/ratings/presentation/widgets/rating_summary.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 import '../../models/sport_profile_route_args.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -233,6 +234,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             const DabblerGap.v(DabblerSpacing.space8),
             if (profile != null) _buildStats(context, profile, sportsState),
             const DabblerGap.v(DabblerSpacing.space8),
+            RatingSummary(userId: profile?.userId),
             if (mySports.isNotEmpty) ...[
               OwnProfileSportPicker(
                 title: l10n.profile_section_their_sports,

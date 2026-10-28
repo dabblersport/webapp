@@ -7789,6 +7789,25 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_error_generic => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
 
   @override
+  String ratings_summary_from_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقييم',
+      many: '$count تقييمًا',
+      few: '$count تقييمات',
+      two: 'تقييمين',
+      one: 'تقييم واحد',
+    );
+    return 'من $_temp0';
+  }
+
+  @override
+  String ratings_summary_semantics(String average) {
+    return 'التقييم $average من 5';
+  }
+
+  @override
   String get map_attribution_osm => '© مساهمو OpenStreetMap';
 
   @override
