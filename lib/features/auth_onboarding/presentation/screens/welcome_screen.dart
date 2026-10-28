@@ -332,9 +332,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
-  /// The intention chosen on step 2, or null when none is held (a returning
-  /// user, or a test without a provider scope).
+  /// The intention chosen on step 2. Onboarding clears its data before it
+  /// navigates here, so the route extra carries it; the held onboarding data
+  /// is the fallback. Null for a returning user.
   OnboardingIntention? _onboardingIntention() {
+    try {
+      final extra = GoRouterState.of(context).extra;
+      final key = extra is Map ? extra['onboardingIntention'] : null;
+      if (key is String) {
+        for (final i in OnboardingIntention.values) {
+          if (i.key == key) return i;
+        }
+      }
+    } catch (_) {}
     try {
       return ProviderScope.containerOf(
         context,
