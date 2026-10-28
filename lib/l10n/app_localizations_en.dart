@@ -3113,6 +3113,17 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settings_not_synced_retry => 'Not synced. Tap to retry.';
 
   @override
+  String get settings_will_sync_online => 'Will sync when online';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'This setting was updated on another device. Showing the newer value.';
+
+  @override
+  String get settings_change_rejected =>
+      'This change could not be saved. Showing the saved value.';
+
+  @override
   String get priv_saved => 'Saved';
 
   @override

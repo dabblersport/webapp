@@ -149,33 +149,21 @@ void main() {
       cache: cache,
     );
 
-    test('an offline change applies at once and is queued', () async {
-      final c = build();
-      addTearDown(c.dispose);
-      await c.loadPrivacySettings('A');
-      expect(c.state.settings!.showEmail, isFalse);
+    test(
+      'an offline change is not queued: privacy is excluded (KAN-657)',
+      () async {
+        final c = build();
+        addTearDown(c.dispose);
+        await c.loadPrivacySettings('A');
 
-      c.updateSetting('showEmail', true);
-      final ok = await c.saveAllChanges('A');
+        c.updateSetting('showEmail', true);
+        await c.saveAllChanges('A');
 
-      expect(ok, isTrue);
-      expect(c.state.settings!.showEmail, isTrue);
-      expect(c.state.errorMessage, isNull);
-      expect(sync.state, {SettingKeys.privacy: SettingSyncState.pending});
-    });
-
-    test('after a restart, offline, the queued change is what shows', () async {
-      final c = build();
-      await c.loadPrivacySettings('A');
-      c.updateSetting('showEmail', true);
-      await c.saveAllChanges('A');
-      c.dispose();
-
-      final reopened = build();
-      addTearDown(reopened.dispose);
-      await reopened.loadPrivacySettings('A');
-      expect(reopened.state.settings!.showEmail, isTrue);
-    });
+        // The existing network error path ran; nothing was queued.
+        expect(sync.state, isEmpty);
+        expect(await const PendingSettingsStore().load('A'), isEmpty);
+      },
+    );
 
     test('another account\'s id does not use this queue', () async {
       final c = build();

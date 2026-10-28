@@ -3108,6 +3108,17 @@ class AppLocalizationsAr extends AppLocalizations {
       'لم تتم المزامنة. اضغط لإعادة المحاولة.';
 
   @override
+  String get settings_will_sync_online => 'ستتم المزامنة عند الاتصال';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'تم تحديث هذا الإعداد على جهاز آخر. يظهر الآن القيمة الأحدث.';
+
+  @override
+  String get settings_change_rejected =>
+      'تعذّر حفظ هذا التغيير. تظهر الآن القيمة المحفوظة.';
+
+  @override
   String get priv_saved => 'تم الحفظ';
 
   @override
