@@ -392,6 +392,32 @@ class AppLocalizationsAr extends AppLocalizations {
   String get persona_player_cta => 'ابحث عن مباراتي الأولى';
 
   @override
+  String get persona_contributor_name => 'المساهم';
+
+  @override
+  String get persona_contributor_headline => 'أنت جاهز. هيّا نلعب.';
+
+  @override
+  String get persona_contributor_principle =>
+      'انضم إلى مباراة هذا الأسبوع، أو ابدأ مباراتك الخاصة.';
+
+  @override
+  String get persona_contributor_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_contributor_item1 => 'أكّد فقط حين تعرف أنك تستطيع اللعب.';
+
+  @override
+  String get persona_contributor_item2 => 'احترم قواعد المنظّم وموعد البداية.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'عندما تنظّم، شارك التفاصيل مبكرًا وبدقة.';
+
+  @override
+  String get persona_contributor_cta => 'ابحث عن مباراتي الأولى';
+
+  @override
   String get persona_organiser_name => 'المنظّم';
 
   @override
@@ -7745,10 +7771,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_intention_play_organise => 'العب ونظّم';
 
   @override
-  String get onb_intention_organise => 'نظّم';
+  String get onb_intention_organise => 'نظّم فعاليات رياضية';
 
   @override
-  String get onb_intention_host_games => 'استضف المباريات';
+  String get onb_intention_host_games => 'استضف رياضات وفعاليات';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'تابع الرياضات وتعرّف على الناس وانضم للمتعة.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'انضم للمباريات واجمع الناس في مباريات تنظّمها بنفسك.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'اجمع اللاعبين ونظّم المباريات واللقاءات.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'رحّب باللاعبين في ملعبك وأماكنك.';
 
   @override
   String get onb_intention_continue => 'المتابعة';

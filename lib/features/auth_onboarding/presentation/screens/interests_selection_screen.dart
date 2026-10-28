@@ -214,15 +214,13 @@ class _InterestsSelectionScreenState
 
   Widget _tile(Sport sport) {
     final selected = _selectedSportIds.contains(sport.id);
-    final tone = onboardingSportTone(sport);
+    final tone = onboardingSportTone(context, sport, selected: selected);
     return DabblerSelectableCard(
       borderOutside: true,
       layout: DabblerSelectableCardLayout.tile,
-      leading: OnboardingSportGlyph(
+      leading: OnboardingSportArtwork(
         sport: sport,
-        selected: selected,
-        size: DabblerSizing.iconLg,
-        color: tone.deep,
+        size: DabblerSpacing.space11,
       ),
       title: sport.localizedName(context),
       selected: selected,

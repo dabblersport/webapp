@@ -93,8 +93,9 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     switch (widget.personaType.trim().toLowerCase()) {
       case 'socialiser':
         return l.persona_socialiser_principle;
+      case 'contributor':
       case 'player':
-        return l.persona_player_principle;
+        return l.persona_contributor_principle;
       case 'organiser':
         return l.persona_organiser_principle;
       case 'host':
@@ -374,20 +375,23 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           ],
           cta: l.persona_socialiser_cta,
         );
+      // KAN-681: the design's Contributor. The first three intentions all
+      // store the existing 'player' value, so it is shown for that value too.
+      case 'contributor':
       case 'player':
       default:
         return _PersonaContent(
-          icon: 'game',
-          name: l.persona_player_name,
-          headline: l.persona_player_headline,
-          principle: l.persona_player_principle,
-          listTitle: l.persona_player_list_title,
+          icon: 'people',
+          name: l.persona_contributor_name,
+          headline: l.persona_contributor_headline,
+          principle: l.persona_contributor_principle,
+          listTitle: l.persona_contributor_list_title,
           items: [
-            l.persona_player_item1,
-            l.persona_player_item2,
-            l.persona_player_item3,
+            l.persona_contributor_item1,
+            l.persona_contributor_item2,
+            l.persona_contributor_item3,
           ],
-          cta: l.persona_player_cta,
+          cta: l.persona_contributor_cta,
         );
     }
   }

@@ -56,6 +56,17 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
         _ => 'player',
       };
 
+  /// KAN-681: the helper line under each card title, from the design's
+  /// `INTENTIONS`.
+  static String _body(OnboardingIntention intention, AppLocalizations l10n) =>
+      switch (intention) {
+        OnboardingIntention.connectPlay => l10n.onb_intention_connect_play_body,
+        OnboardingIntention.playOrganise =>
+          l10n.onb_intention_play_organise_body,
+        OnboardingIntention.organise => l10n.onb_intention_organise_body,
+        OnboardingIntention.hostGames => l10n.onb_intention_host_games_body,
+      };
+
   void _handleSubmit() {
     final chosen = _selected;
     if (chosen == null) {
@@ -93,6 +104,7 @@ class _IntentSelectionScreenState extends ConsumerState<IntentSelectionScreen> {
             borderOutside: true,
             icon: opt.icon,
             title: opt.intention.label(l10n),
+            subtitle: _body(opt.intention, l10n),
             selected: _selected == opt.intention,
             onChanged: (_) => setState(() => _selected = opt.intention),
           ),

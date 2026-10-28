@@ -399,6 +399,34 @@ class AppLocalizationsEn extends AppLocalizations {
   String get persona_player_cta => 'Find my first game';
 
   @override
+  String get persona_contributor_name => 'Contributor';
+
+  @override
+  String get persona_contributor_headline => 'You’re in. Let’s play.';
+
+  @override
+  String get persona_contributor_principle =>
+      'Join a game this week, or start one of your own.';
+
+  @override
+  String get persona_contributor_list_title => 'Don’t forget';
+
+  @override
+  String get persona_contributor_item1 =>
+      'Only confirm when you know you can play.';
+
+  @override
+  String get persona_contributor_item2 =>
+      'Respect the organiser’s rules and kickoff time.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'When you organise, share details early and accurately.';
+
+  @override
+  String get persona_contributor_cta => 'Find my first game';
+
+  @override
   String get persona_organiser_name => 'Organiser';
 
   @override
@@ -7687,10 +7715,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_intention_play_organise => 'Play & organise';
 
   @override
-  String get onb_intention_organise => 'Organise';
+  String get onb_intention_organise => 'Organise sport events';
 
   @override
-  String get onb_intention_host_games => 'Host games';
+  String get onb_intention_host_games => 'Host sports & events';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'Follow sports, meet people and join the fun.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'Join games and bring people together for your own.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'Bring players together and organise games and meetups.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'Welcome players to your venue and spots.';
 
   @override
   String get onb_intention_continue => 'Continue';

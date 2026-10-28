@@ -195,16 +195,11 @@ class _PrimarySportSelectionScreenState
 
   Widget _row(Sport sport) {
     final selected = _selectedSportId == sport.id;
-    final tone = onboardingSportTone(sport);
+    final tone = onboardingSportTone(context, sport, selected: selected);
     return DabblerSelectableCard(
       borderOutside: true,
       layout: DabblerSelectableCardLayout.listRow,
-      leading: OnboardingSportGlyph(
-        sport: sport,
-        selected: selected,
-        size: DabblerSizing.iconMd,
-        color: tone.deep,
-      ),
+      leading: OnboardingSportArtwork(sport: sport, size: DabblerSizing.iconXl),
       title: sport.localizedName(context),
       selected: selected,
       tone: tone,
