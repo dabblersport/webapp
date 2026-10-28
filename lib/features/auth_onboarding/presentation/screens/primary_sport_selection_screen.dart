@@ -96,17 +96,13 @@ class _PrimarySportSelectionScreenState
     if (!_isOnboarding) {
       return (l10n.primary_sport_title, l10n.primary_sport_subtitle);
     }
+    // The design writes one Contributor copy for every intention but Host.
     return switch (ref.read(onboardingDataProvider)?.intention) {
-      'organiser' => (
-        l10n.onb_primary_title_organiser,
-        l10n.onb_primary_subtitle_organiser,
-      ),
       'host' => (l10n.onb_primary_title_host, l10n.onb_primary_subtitle_host),
-      'socialiser' => (
-        l10n.onb_primary_title_socialiser,
-        l10n.onb_primary_subtitle_socialiser,
+      _ => (
+        l10n.onb_primary_title_contributor,
+        l10n.onb_primary_subtitle_contributor,
       ),
-      _ => (l10n.onb_primary_title_player, l10n.onb_primary_subtitle_player),
     };
   }
 

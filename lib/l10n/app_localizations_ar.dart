@@ -1314,6 +1314,20 @@ class AppLocalizationsAr extends AppLocalizations {
       'سنجعلها الرياضة الأساسية في ملف ملعبك.';
 
   @override
+  String get onb_sports_title_contributor => 'ما الرياضات التي تهمّك؟';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'اختر الرياضات التي تتابعها أو تلعبها أو تنظّمها. يمكنك تغييرها في أي وقت.';
+
+  @override
+  String get onb_primary_title_contributor => 'ما رياضتك الأساسية؟';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'سنضعها أولًا في خلاصتك ومبارياتك وملفك الشخصي.';
+
+  @override
   String get onb_sports_search => 'ابحث عن رياضة';
 
   @override
@@ -7769,11 +7783,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_search_failed => 'تعذّر تحميل النتائج';
 
   @override
-  String get onb_intention_title => 'ما الذي أتى بك إلى Dabbler؟';
+  String get onb_intention_title => 'ما الذي أتى بك إلى دابلر؟';
 
   @override
   String get onb_intention_subtitle =>
-      'اختر ما أتى بك إلى هنا. اختيارك يساعدنا على فهم أهدافك.';
+      'اختر ما يناسبك. اختيارك يساعدنا على فهم أهدافك.';
 
   @override
   String get onb_intention_connect_play => 'تواصل والعب';
@@ -7789,11 +7803,11 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get onb_intention_connect_play_body =>
-      'تابع الرياضات وتعرّف على الناس وانضم للمتعة.';
+      'تابع الرياضات، وتعرّف على الناس، وشارك في أجواء اللعب.';
 
   @override
   String get onb_intention_play_organise_body =>
-      'انضم للمباريات واجمع الناس في مباريات تنظّمها بنفسك.';
+      'انضم إلى المباريات، أو اجمع الناس في مباراة تنظّمها بنفسك.';
 
   @override
   String get onb_intention_organise_body =>

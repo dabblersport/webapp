@@ -1327,6 +1327,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'We’ll make it the primary sport on your venue profile.';
 
   @override
+  String get onb_sports_title_contributor => 'What sports are you into?';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'Pick the sports you follow, play or organise. You can change these anytime.';
+
+  @override
+  String get onb_primary_title_contributor => 'What’s your main sport?';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'We’ll put it first across your feed, games and profile.';
+
+  @override
   String get onb_sports_search => 'Search sports';
 
   @override

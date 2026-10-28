@@ -2456,6 +2456,30 @@ abstract class AppLocalizations {
   /// **'We’ll make it the primary sport on your venue profile.'**
   String get onb_primary_subtitle_host;
 
+  /// No description provided for @onb_sports_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What sports are you into?'**
+  String get onb_sports_title_contributor;
+
+  /// No description provided for @onb_sports_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you follow, play or organise. You can change these anytime.'**
+  String get onb_sports_subtitle_contributor;
+
+  /// No description provided for @onb_primary_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your main sport?'**
+  String get onb_primary_title_contributor;
+
+  /// No description provided for @onb_primary_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll put it first across your feed, games and profile.'**
+  String get onb_primary_subtitle_contributor;
+
   /// No description provided for @onb_sports_search.
   ///
   /// In en, this message translates to:
@@ -13703,13 +13727,13 @@ abstract class AppLocalizations {
   /// **'Couldn’t load results'**
   String get location_search_failed;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
   /// **'What brings you to Dabbler?'**
   String get onb_intention_title;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
   /// **'Choose what brings you here. Your choice helps us understand your goals.'**
@@ -13727,13 +13751,13 @@ abstract class AppLocalizations {
   /// **'Play & organise'**
   String get onb_intention_play_organise;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
   /// **'Organise sport events'**
   String get onb_intention_organise;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
   /// **'Host sports & events'**

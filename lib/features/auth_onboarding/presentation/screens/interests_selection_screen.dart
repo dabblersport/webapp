@@ -111,18 +111,31 @@ class _InterestsSelectionScreenState
     };
   }
 
-  (String, String) _copy(AppLocalizations l10n) => switch (_personaKey()) {
-    'organiser' => (
-      l10n.onb_sports_title_organiser,
-      l10n.onb_sports_subtitle_organiser,
-    ),
-    'host' => (l10n.onb_sports_title_host, l10n.onb_sports_subtitle_host),
-    'socialiser' => (
-      l10n.onb_sports_title_socialiser,
-      l10n.onb_sports_subtitle_socialiser,
-    ),
-    _ => (l10n.onb_sports_title_player, l10n.onb_sports_subtitle_player),
-  };
+  (String, String) _copy(AppLocalizations l10n) {
+    // The design writes one Contributor copy for every intention but Host.
+    if (widget.mode == InterestsSelectionMode.onboarding &&
+        _personaKey() != 'host') {
+      return (
+        l10n.onb_sports_title_contributor,
+        l10n.onb_sports_subtitle_contributor,
+      );
+    }
+    return _personaCopy(l10n);
+  }
+
+  (String, String) _personaCopy(AppLocalizations l10n) =>
+      switch (_personaKey()) {
+        'organiser' => (
+          l10n.onb_sports_title_organiser,
+          l10n.onb_sports_subtitle_organiser,
+        ),
+        'host' => (l10n.onb_sports_title_host, l10n.onb_sports_subtitle_host),
+        'socialiser' => (
+          l10n.onb_sports_title_socialiser,
+          l10n.onb_sports_subtitle_socialiser,
+        ),
+        _ => (l10n.onb_sports_title_player, l10n.onb_sports_subtitle_player),
+      };
 
   void _handleBack() {
     if (widget.mode == InterestsSelectionMode.addPersona) {
