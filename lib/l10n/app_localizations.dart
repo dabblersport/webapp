@@ -854,6 +854,90 @@ abstract class AppLocalizations {
   /// **'Find my first game'**
   String get persona_contributor_cta;
 
+  /// KAN-681 design Contributor welcome variant (connect), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sports circle starts here.'**
+  String get persona_contributor_connect_headline;
+
+  /// No description provided for @persona_contributor_connect_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow what you love, meet your people, join when it feels right.'**
+  String get persona_contributor_connect_principle;
+
+  /// No description provided for @persona_contributor_connect_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get persona_contributor_connect_list_title;
+
+  /// No description provided for @persona_contributor_connect_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the sports and people you care about.'**
+  String get persona_contributor_connect_item1;
+
+  /// No description provided for @persona_contributor_connect_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the conversation, then join the game.'**
+  String get persona_contributor_connect_item2;
+
+  /// No description provided for @persona_contributor_connect_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it friendly — everyone here is someone’s teammate.'**
+  String get persona_contributor_connect_item3;
+
+  /// No description provided for @persona_contributor_connect_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get persona_contributor_connect_cta;
+
+  /// KAN-681 design Contributor welcome variant (organise), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to bring the game together.'**
+  String get persona_contributor_organise_headline;
+
+  /// No description provided for @persona_contributor_organise_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good games start with good organisation.'**
+  String get persona_contributor_organise_principle;
+
+  /// No description provided for @persona_contributor_organise_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_contributor_organise_list_title;
+
+  /// No description provided for @persona_contributor_organise_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate details — venue, time, level, price.'**
+  String get persona_contributor_organise_item1;
+
+  /// No description provided for @persona_contributor_organise_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes shared early, not at kickoff.'**
+  String get persona_contributor_organise_item2;
+
+  /// No description provided for @persona_contributor_organise_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance managed fairly, every time.'**
+  String get persona_contributor_organise_item3;
+
+  /// No description provided for @persona_contributor_organise_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my first game'**
+  String get persona_contributor_organise_cta;
+
   /// No description provided for @persona_organiser_name.
   ///
   /// In en, this message translates to:

@@ -1,4 +1,6 @@
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_intention.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart'
     show routerRefreshNotifier;
 import 'package:dabbler/features/auth_onboarding/presentation/welcome_sport_poster.dart';
@@ -330,6 +332,19 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
     );
   }
 
+  /// The intention chosen on step 2, or null when none is held (a returning
+  /// user, or a test without a provider scope).
+  OnboardingIntention? _onboardingIntention() {
+    try {
+      return ProviderScope.containerOf(
+        context,
+        listen: false,
+      ).read(onboardingDataProvider)?.onboardingIntention;
+    } catch (_) {
+      return null;
+    }
+  }
+
   _PersonaContent _personaContent(String persona) {
     final l = AppLocalizations.of(context);
     switch (persona.toLowerCase()) {
@@ -376,23 +391,52 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           cta: l.persona_socialiser_cta,
         );
       // KAN-681: the design's Contributor. The first three intentions all
-      // store the existing 'player' value, so it is shown for that value too.
+      // store the existing 'player' value, so the welcome variant is chosen
+      // from the intention the onboarding already holds (read only).
       case 'contributor':
       case 'player':
       default:
-        return _PersonaContent(
-          icon: 'people',
-          name: l.persona_contributor_name,
-          headline: l.persona_contributor_headline,
-          principle: l.persona_contributor_principle,
-          listTitle: l.persona_contributor_list_title,
-          items: [
-            l.persona_contributor_item1,
-            l.persona_contributor_item2,
-            l.persona_contributor_item3,
-          ],
-          cta: l.persona_contributor_cta,
-        );
+        return switch (_onboardingIntention()) {
+          OnboardingIntention.connectPlay => _PersonaContent(
+            icon: 'people',
+            name: l.persona_contributor_name,
+            headline: l.persona_contributor_connect_headline,
+            principle: l.persona_contributor_connect_principle,
+            listTitle: l.persona_contributor_connect_list_title,
+            items: [
+              l.persona_contributor_connect_item1,
+              l.persona_contributor_connect_item2,
+              l.persona_contributor_connect_item3,
+            ],
+            cta: l.persona_contributor_connect_cta,
+          ),
+          OnboardingIntention.organise => _PersonaContent(
+            icon: 'people',
+            name: l.persona_contributor_name,
+            headline: l.persona_contributor_organise_headline,
+            principle: l.persona_contributor_organise_principle,
+            listTitle: l.persona_contributor_organise_list_title,
+            items: [
+              l.persona_contributor_organise_item1,
+              l.persona_contributor_organise_item2,
+              l.persona_contributor_organise_item3,
+            ],
+            cta: l.persona_contributor_organise_cta,
+          ),
+          _ => _PersonaContent(
+            icon: 'people',
+            name: l.persona_contributor_name,
+            headline: l.persona_contributor_headline,
+            principle: l.persona_contributor_principle,
+            listTitle: l.persona_contributor_list_title,
+            items: [
+              l.persona_contributor_item1,
+              l.persona_contributor_item2,
+              l.persona_contributor_item3,
+            ],
+            cta: l.persona_contributor_cta,
+          ),
+        };
     }
   }
 }

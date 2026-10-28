@@ -427,6 +427,58 @@ class AppLocalizationsEn extends AppLocalizations {
   String get persona_contributor_cta => 'Find my first game';
 
   @override
+  String get persona_contributor_connect_headline =>
+      'Your sports circle starts here.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'Follow what you love, meet your people, join when it feels right.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'How this works';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'Follow the sports and people you care about.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'Join the conversation, then join the game.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'Keep it friendly — everyone here is someone’s teammate.';
+
+  @override
+  String get persona_contributor_connect_cta => 'Start exploring';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'Time to bring the game together.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'Good games start with good organisation.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'What players expect';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'Accurate details — venue, time, level, price.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'Changes shared early, not at kickoff.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'Attendance managed fairly, every time.';
+
+  @override
+  String get persona_contributor_organise_cta => 'Create my first game';
+
+  @override
   String get persona_organiser_name => 'Organiser';
 
   @override

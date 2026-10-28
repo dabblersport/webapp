@@ -418,10 +418,62 @@ class AppLocalizationsAr extends AppLocalizations {
   String get persona_contributor_cta => 'ابحث عن مباراتي الأولى';
 
   @override
+  String get persona_contributor_connect_headline =>
+      'دائرتك الرياضية تبدأ من هنا.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'تابع ما تحب، وتعرّف على ناسك، وانضم حين تشعر أنه الوقت المناسب.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'كيف يعمل هذا';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'تابع الرياضات والأشخاص الذين تهتم بهم.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'شارك في الحديث، ثم انضم إلى المباراة.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'حافظ على الود — فكل من هنا زميل لأحدهم في الفريق.';
+
+  @override
+  String get persona_contributor_connect_cta => 'ابدأ الاستكشاف';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'حان وقت جمع المباراة معًا.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'المباريات الجيدة تبدأ بتنظيم جيد.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'تفاصيل دقيقة — الملعب والوقت والمستوى والسعر.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'التغييرات تُشارك مبكرًا، لا عند البداية.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'الحضور يُدار بعدل، في كل مرة.';
+
+  @override
+  String get persona_contributor_organise_cta => 'أنشئ مباراتي الأولى';
+
+  @override
   String get persona_organiser_name => 'المنظّم';
 
   @override
-  String get persona_organiser_headline => 'حان وقت جمع المباراة.';
+  String get persona_organiser_headline => 'حان وقت تنظيم المباراة.';
 
   @override
   String get persona_organiser_principle => 'تبدأ المباريات الجيدة بتنظيم جيد.';
@@ -1270,7 +1322,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_persona_organiser_name => 'المنظّم';
 
   @override
-  String get onb_persona_organiser_hook => 'اجمع المباراة';
+  String get onb_persona_organiser_hook => 'اجمع اللاعبين';
 
   @override
   String get onb_persona_organiser_body =>
