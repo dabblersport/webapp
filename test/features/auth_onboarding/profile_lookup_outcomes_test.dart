@@ -147,11 +147,7 @@ User _user() => User(
 );
 
 class _Harness {
-  _Harness(
-    this.tester, {
-    this.locale = const Locale('en'),
-    this.dark = false,
-  });
+  _Harness(this.tester, {this.locale = const Locale('en'), this.dark = false});
   final WidgetTester tester;
   final Locale locale;
   final bool dark;

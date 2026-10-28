@@ -49,7 +49,12 @@ void main() {
     final cors = File(
       'supabase/functions/detect-country/cors.ts',
     ).readAsStringSync();
-    for (final h in ['authorization', 'apikey', 'content-type', 'x-client-info']) {
+    for (final h in [
+      'authorization',
+      'apikey',
+      'content-type',
+      'x-client-info',
+    ]) {
       expect(cors, contains(h));
     }
     for (final o in [

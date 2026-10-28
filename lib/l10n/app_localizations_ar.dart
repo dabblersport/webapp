@@ -392,10 +392,88 @@ class AppLocalizationsAr extends AppLocalizations {
   String get persona_player_cta => 'ابحث عن مباراتي الأولى';
 
   @override
+  String get persona_contributor_name => 'المساهم';
+
+  @override
+  String get persona_contributor_headline => 'أنت جاهز. هيّا نلعب.';
+
+  @override
+  String get persona_contributor_principle =>
+      'انضم إلى مباراة هذا الأسبوع، أو ابدأ مباراتك الخاصة.';
+
+  @override
+  String get persona_contributor_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_contributor_item1 => 'أكّد فقط حين تعرف أنك تستطيع اللعب.';
+
+  @override
+  String get persona_contributor_item2 => 'احترم قواعد المنظّم وموعد البداية.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'عندما تنظّم، شارك التفاصيل مبكرًا وبدقة.';
+
+  @override
+  String get persona_contributor_cta => 'ابحث عن مباراتي الأولى';
+
+  @override
+  String get persona_contributor_connect_headline =>
+      'دائرتك الرياضية تبدأ من هنا.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'تابع ما تحب، وتعرّف على ناسك، وانضم حين تشعر أنه الوقت المناسب.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'كيف يعمل هذا';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'تابع الرياضات والأشخاص الذين تهتم بهم.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'شارك في الحديث، ثم انضم إلى المباراة.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'حافظ على الود — فكل من هنا زميل لأحدهم في الفريق.';
+
+  @override
+  String get persona_contributor_connect_cta => 'ابدأ الاستكشاف';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'حان وقت جمع المباراة معًا.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'المباريات الجيدة تبدأ بتنظيم جيد.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'تفاصيل دقيقة — الملعب والوقت والمستوى والسعر.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'التغييرات تُشارك مبكرًا، لا عند البداية.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'الحضور يُدار بعدل، في كل مرة.';
+
+  @override
+  String get persona_contributor_organise_cta => 'أنشئ مباراتي الأولى';
+
+  @override
   String get persona_organiser_name => 'المنظّم';
 
   @override
-  String get persona_organiser_headline => 'حان وقت جمع المباراة.';
+  String get persona_organiser_headline => 'حان وقت تنظيم المباراة.';
 
   @override
   String get persona_organiser_principle => 'تبدأ المباريات الجيدة بتنظيم جيد.';
@@ -1244,7 +1322,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_persona_organiser_name => 'المنظّم';
 
   @override
-  String get onb_persona_organiser_hook => 'اجمع المباراة';
+  String get onb_persona_organiser_hook => 'اجمع اللاعبين';
 
   @override
   String get onb_persona_organiser_body =>
@@ -1288,6 +1366,20 @@ class AppLocalizationsAr extends AppLocalizations {
       'سنجعلها الرياضة الأساسية في ملف ملعبك.';
 
   @override
+  String get onb_sports_title_contributor => 'ما الرياضات التي تهمّك؟';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'اختر الرياضات التي تتابعها أو تلعبها أو تنظّمها. يمكنك تغييرها في أي وقت.';
+
+  @override
+  String get onb_primary_title_contributor => 'ما رياضتك الأساسية؟';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'سنضعها أولًا في خلاصتك ومبارياتك وملفك الشخصي.';
+
+  @override
   String get onb_sports_search => 'ابحث عن رياضة';
 
   @override
@@ -1297,11 +1389,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_sports_count_zero => 'اختر رياضة واحدة على الأقل للمتابعة.';
 
   @override
-  String get onb_sports_count_one => 'تم اختيار رياضة واحدة';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return 'الرياضات المختارة: $count';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم اختيار $count رياضة',
+      many: 'تم اختيار $count رياضة',
+      few: 'تم اختيار $count رياضات',
+      two: 'تم اختيار رياضتين',
+      one: 'تم اختيار رياضة واحدة',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3080,6 +3178,17 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get settings_not_synced_retry =>
       'لم تتم المزامنة. اضغط لإعادة المحاولة.';
+
+  @override
+  String get settings_will_sync_online => 'ستتم المزامنة عند الاتصال';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'تم تحديث هذا الإعداد على جهاز آخر. يظهر الآن القيمة الأحدث.';
+
+  @override
+  String get settings_change_rejected =>
+      'تعذّر حفظ هذا التغيير. تظهر الآن القيمة المحفوظة.';
 
   @override
   String get priv_saved => 'تم الحفظ';
@@ -7732,11 +7841,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get location_search_failed => 'تعذّر تحميل النتائج';
 
   @override
-  String get onb_intention_title => 'ما الذي أتى بك إلى Dabbler؟';
+  String get onb_intention_title => 'ما الذي أتى بك إلى دابلر؟';
 
   @override
   String get onb_intention_subtitle =>
-      'اختر ما أتى بك إلى هنا. اختيارك يساعدنا على فهم أهدافك.';
+      'اختر ما يناسبك. اختيارك يساعدنا على فهم أهدافك.';
 
   @override
   String get onb_intention_connect_play => 'تواصل والعب';
@@ -7745,10 +7854,26 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_intention_play_organise => 'العب ونظّم';
 
   @override
-  String get onb_intention_organise => 'نظّم';
+  String get onb_intention_organise => 'نظّم فعاليات رياضية';
 
   @override
-  String get onb_intention_host_games => 'استضف المباريات';
+  String get onb_intention_host_games => 'استضف رياضات وفعاليات';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'تابع الرياضات، وتعرّف على الناس، وشارك في أجواء اللعب.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'انضم إلى المباريات واجمع الناس في مباراتك الخاصة.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'اجمع اللاعبين ونظّم المباريات واللقاءات.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'رحّب باللاعبين في ملعبك وأماكنك.';
 
   @override
   String get onb_intention_continue => 'المتابعة';

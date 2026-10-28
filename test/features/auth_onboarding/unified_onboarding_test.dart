@@ -400,15 +400,15 @@ void main() {
       expect(OnboardingIntention.values.map((i) => i.label(l10n)).toList(), [
         'Connect & play',
         'Play & organise',
-        'Organise',
-        'Host games',
+        'Organise sport events',
+        'Host sports & events',
       ]);
       expect(l10n.onb_intention_continue, 'Continue');
     });
 
     test('AR reuses approved wording for Organise and Continue', () async {
       final l10n = await AppLocalizations.delegate.load(const Locale('ar'));
-      expect(l10n.onb_intention_organise, 'نظّم');
+      expect(l10n.onb_intention_organise, 'نظّم فعاليات رياضية');
       expect(l10n.onb_intention_continue, 'المتابعة');
     });
   });

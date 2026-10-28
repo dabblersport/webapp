@@ -111,18 +111,31 @@ class _InterestsSelectionScreenState
     };
   }
 
-  (String, String) _copy(AppLocalizations l10n) => switch (_personaKey()) {
-    'organiser' => (
-      l10n.onb_sports_title_organiser,
-      l10n.onb_sports_subtitle_organiser,
-    ),
-    'host' => (l10n.onb_sports_title_host, l10n.onb_sports_subtitle_host),
-    'socialiser' => (
-      l10n.onb_sports_title_socialiser,
-      l10n.onb_sports_subtitle_socialiser,
-    ),
-    _ => (l10n.onb_sports_title_player, l10n.onb_sports_subtitle_player),
-  };
+  (String, String) _copy(AppLocalizations l10n) {
+    // The design writes one Contributor copy for every intention but Host.
+    if (widget.mode == InterestsSelectionMode.onboarding &&
+        _personaKey() != 'host') {
+      return (
+        l10n.onb_sports_title_contributor,
+        l10n.onb_sports_subtitle_contributor,
+      );
+    }
+    return _personaCopy(l10n);
+  }
+
+  (String, String) _personaCopy(AppLocalizations l10n) =>
+      switch (_personaKey()) {
+        'organiser' => (
+          l10n.onb_sports_title_organiser,
+          l10n.onb_sports_subtitle_organiser,
+        ),
+        'host' => (l10n.onb_sports_title_host, l10n.onb_sports_subtitle_host),
+        'socialiser' => (
+          l10n.onb_sports_title_socialiser,
+          l10n.onb_sports_subtitle_socialiser,
+        ),
+        _ => (l10n.onb_sports_title_player, l10n.onb_sports_subtitle_player),
+      };
 
   void _handleBack() {
     if (widget.mode == InterestsSelectionMode.addPersona) {
@@ -134,8 +147,7 @@ class _InterestsSelectionScreenState
   String _countLabel(AppLocalizations l10n) {
     final n = _selectedSportIds.length;
     if (n == 0) return l10n.onb_sports_count_zero;
-    if (n == 1) return l10n.onb_sports_count_one;
-    return l10n.onb_sports_count_many(n);
+    return l10n.onb_sports_count(n);
   }
 
   @override
@@ -214,15 +226,13 @@ class _InterestsSelectionScreenState
 
   Widget _tile(Sport sport) {
     final selected = _selectedSportIds.contains(sport.id);
-    final tone = onboardingSportTone(sport);
+    final tone = onboardingSportTone(context, sport, selected: selected);
     return DabblerSelectableCard(
       borderOutside: true,
       layout: DabblerSelectableCardLayout.tile,
-      leading: OnboardingSportGlyph(
+      leading: OnboardingSportArtwork(
         sport: sport,
-        selected: selected,
-        size: DabblerSizing.iconLg,
-        color: tone.deep,
+        size: DabblerSpacing.space11,
       ),
       title: sport.localizedName(context),
       selected: selected,

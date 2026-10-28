@@ -806,6 +806,138 @@ abstract class AppLocalizations {
   /// **'Find my first game'**
   String get persona_player_cta;
 
+  /// No description provided for @persona_contributor_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Contributor'**
+  String get persona_contributor_name;
+
+  /// No description provided for @persona_contributor_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re in. Let’s play.'**
+  String get persona_contributor_headline;
+
+  /// No description provided for @persona_contributor_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a game this week, or start one of your own.'**
+  String get persona_contributor_principle;
+
+  /// No description provided for @persona_contributor_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get persona_contributor_list_title;
+
+  /// No description provided for @persona_contributor_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirm when you know you can play.'**
+  String get persona_contributor_item1;
+
+  /// No description provided for @persona_contributor_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Respect the organiser’s rules and kickoff time.'**
+  String get persona_contributor_item2;
+
+  /// No description provided for @persona_contributor_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'When you organise, share details early and accurately.'**
+  String get persona_contributor_item3;
+
+  /// No description provided for @persona_contributor_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Find my first game'**
+  String get persona_contributor_cta;
+
+  /// KAN-681 design Contributor welcome variant (connect), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sports circle starts here.'**
+  String get persona_contributor_connect_headline;
+
+  /// No description provided for @persona_contributor_connect_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow what you love, meet your people, join when it feels right.'**
+  String get persona_contributor_connect_principle;
+
+  /// No description provided for @persona_contributor_connect_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get persona_contributor_connect_list_title;
+
+  /// No description provided for @persona_contributor_connect_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the sports and people you care about.'**
+  String get persona_contributor_connect_item1;
+
+  /// No description provided for @persona_contributor_connect_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the conversation, then join the game.'**
+  String get persona_contributor_connect_item2;
+
+  /// No description provided for @persona_contributor_connect_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it friendly — everyone here is someone’s teammate.'**
+  String get persona_contributor_connect_item3;
+
+  /// No description provided for @persona_contributor_connect_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get persona_contributor_connect_cta;
+
+  /// KAN-681 design Contributor welcome variant (organise), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to bring the game together.'**
+  String get persona_contributor_organise_headline;
+
+  /// No description provided for @persona_contributor_organise_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good games start with good organisation.'**
+  String get persona_contributor_organise_principle;
+
+  /// No description provided for @persona_contributor_organise_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_contributor_organise_list_title;
+
+  /// No description provided for @persona_contributor_organise_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate details — venue, time, level, price.'**
+  String get persona_contributor_organise_item1;
+
+  /// No description provided for @persona_contributor_organise_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes shared early, not at kickoff.'**
+  String get persona_contributor_organise_item2;
+
+  /// No description provided for @persona_contributor_organise_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance managed fairly, every time.'**
+  String get persona_contributor_organise_item3;
+
+  /// No description provided for @persona_contributor_organise_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my first game'**
+  String get persona_contributor_organise_cta;
+
   /// No description provided for @persona_organiser_name.
   ///
   /// In en, this message translates to:
@@ -2408,6 +2540,30 @@ abstract class AppLocalizations {
   /// **'We’ll make it the primary sport on your venue profile.'**
   String get onb_primary_subtitle_host;
 
+  /// No description provided for @onb_sports_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What sports are you into?'**
+  String get onb_sports_title_contributor;
+
+  /// No description provided for @onb_sports_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you follow, play or organise. You can change these anytime.'**
+  String get onb_sports_subtitle_contributor;
+
+  /// No description provided for @onb_primary_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your main sport?'**
+  String get onb_primary_title_contributor;
+
+  /// No description provided for @onb_primary_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll put it first across your feed, games and profile.'**
+  String get onb_primary_subtitle_contributor;
+
   /// No description provided for @onb_sports_search.
   ///
   /// In en, this message translates to:
@@ -2426,17 +2582,11 @@ abstract class AppLocalizations {
   /// **'Pick at least one to continue.'**
   String get onb_sports_count_zero;
 
-  /// No description provided for @onb_sports_count_one.
+  /// No description provided for @onb_sports_count.
   ///
   /// In en, this message translates to:
-  /// **'1 sport selected'**
-  String get onb_sports_count_one;
-
-  /// No description provided for @onb_sports_count_many.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} sports selected'**
-  String onb_sports_count_many(int count);
+  /// **'{count, plural, =1{1 sport selected} other{{count} sports selected}}'**
+  String onb_sports_count(int count);
 
   /// No description provided for @onb_primary_more.
   ///
@@ -5548,6 +5698,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not synced. Tap to retry.'**
   String get settings_not_synced_retry;
+
+  /// No description provided for @settings_will_sync_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Will sync when online'**
+  String get settings_will_sync_online;
+
+  /// No description provided for @settings_updated_elsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting was updated on another device. Showing the newer value.'**
+  String get settings_updated_elsewhere;
+
+  /// No description provided for @settings_change_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'This change could not be saved. Showing the saved value.'**
+  String get settings_change_rejected;
 
   /// No description provided for @priv_saved.
   ///
@@ -13637,13 +13805,13 @@ abstract class AppLocalizations {
   /// **'Couldn’t load results'**
   String get location_search_failed;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
   /// **'What brings you to Dabbler?'**
   String get onb_intention_title;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
   /// **'Choose what brings you here. Your choice helps us understand your goals.'**
@@ -13661,17 +13829,41 @@ abstract class AppLocalizations {
   /// **'Play & organise'**
   String get onb_intention_play_organise;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
-  /// **'Organise'**
+  /// **'Organise sport events'**
   String get onb_intention_organise;
 
-  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
   ///
   /// In en, this message translates to:
-  /// **'Host games'**
+  /// **'Host sports & events'**
   String get onb_intention_host_games;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow sports, meet people and join the fun.'**
+  String get onb_intention_connect_play_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Join games and bring people together for your own.'**
+  String get onb_intention_play_organise_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring players together and organise games and meetups.'**
+  String get onb_intention_organise_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome players to your venue and spots.'**
+  String get onb_intention_host_games_body;
 
   /// KAN-650 onboarding intention copy. AR pending content review unless reused.
   ///
