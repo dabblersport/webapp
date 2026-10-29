@@ -1,8 +1,6 @@
-import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -52,96 +50,10 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
           subtitle: l10n.settings_item_edit_profile_subtitle,
           trailing: const DabblerChevron(circled: true),
         ),
-        if (isAtLimit) _buildExistingProfilesList(context),
         for (final availability in others)
           _buildPersonaItem(context, availability),
       ],
     );
-  }
-
-  Widget _buildExistingProfilesList(BuildContext context) {
-    final availableProfilesAsync = ref.watch(availableProfilesProvider);
-    final activeProfileType = ref.watch(activeProfileTypeProvider);
-    final colors = DabblerColors.of(context);
-
-    return availableProfilesAsync.when(
-      data: (profiles) {
-        if (profiles.isEmpty) return const SizedBox.shrink();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final profile in profiles)
-              Builder(
-                builder: (context) {
-                  final effectiveType =
-                      profile.personaType ?? profile.profileType;
-                  final isActive =
-                      effectiveType?.toLowerCase() ==
-                      activeProfileType?.toLowerCase();
-                  final name = profile.getDisplayName().isNotEmpty
-                      ? profile.getDisplayName()
-                      : 'Profile';
-                  return DabblerInputRow(
-                    flat: true,
-                    showDivider: false,
-                    onTap: () => _switchProfile(isActive, effectiveType),
-                    leading: DabblerAvatar(
-                      seed: name,
-                      imageUrl: profile.avatarUrl,
-                      size: DabblerAvatarSize.sm,
-                    ),
-                    title: name,
-                    subtitle: (effectiveType ?? 'player').toUpperCase(),
-                    trailing: isActive
-                        ? DabblerIcon(
-                            'tick-circle',
-                            size: DabblerSizing.iconMd,
-                            color: colors.brandPrimary,
-                          )
-                        : const DabblerChevron(circled: true),
-                  );
-                },
-              ),
-          ],
-        );
-      },
-      loading: () => const Padding(
-        padding: EdgeInsets.all(DabblerSpacing.space5),
-        child: Center(child: DabblerSpinner()),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
-  Future<void> _switchProfile(bool isActive, String? effectiveType) async {
-    if (isActive || effectiveType == null) return;
-    // Switch active profile in the database
-    final switched = await ref
-        .read(personaServiceProvider.notifier)
-        .switchActiveProfile(effectiveType);
-
-    if (!switched) {
-      if (mounted) {
-        final errorMsg =
-            ref.read(personaServiceProvider).errorMessage ??
-            AppLocalizations.of(context).profile_error_switch_profile_failed;
-        toast(errorMsg);
-      }
-      return;
-    }
-
-    // Update local state and persist
-    ref.read(activeProfileTypeProvider.notifier).state = effectiveType;
-    persistActiveProfileType(effectiveType);
-
-    // Clear cached profile so the profile screen loads fresh data
-    final userId = AuthService().getCurrentUser()?.id;
-    if (userId != null) {
-      final localDS = ref.read(profileLocalDataSourceProvider);
-      await localDS.clearUserCache(userId);
-    }
-
-    if (mounted) context.go('/profile');
   }
 
   void toast(

@@ -1,12 +1,9 @@
-import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/widgets/manage_sports_sheet.dart';
-import 'package:dabbler/features/profile/presentation/widgets/profile/manage_profiles_sheet.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_followed_sports.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
@@ -178,64 +175,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
     }
   }
 
-  Future<void> _switchProfileType(String profileType) async {
-    if (_selectedProfileType == profileType) return;
-
-    final previousProfileType = _selectedProfileType;
-
-    setState(() {
-      _selectedProfileType = profileType;
-    });
-
-    // Update is_active in the database: deactivate old, activate new
-    final switched = await ref
-        .read(personaServiceProvider.notifier)
-        .switchActiveProfile(profileType);
-
-    if (!switched) {
-      // Revert optimistic state on failure
-      setState(() {
-        _selectedProfileType = previousProfileType;
-      });
-      if (mounted) {
-        final errorMsg =
-            ref.read(personaServiceProvider).errorMessage ??
-            AppLocalizations.of(context).profile_error_switch_profile_failed;
-        DabblerToastProvider.of(
-          context,
-        ).show(DabblerToastSpec(message: errorMsg));
-      }
-      return;
-    }
-
-    // Clear profile cache to force fresh fetch for the new profile type
-    final user = ref.read(currentUserProvider);
-    if (user != null) {
-      await clearProfileCache(ref, user.id);
-    }
-
-    await _loadProfileData(profileType: profileType);
-
-    // Persist the active profile type for app restarts
-    persistActiveProfileType(profileType);
-  }
-
   Future<void> _loadAverageRating() async {
     // Rating data loading (not displayed in top section)
-  }
-
-  void _showManageProfiles() {
-    showAppSheet<String>(
-      context: context,
-      title: AppLocalizations.of(context).profile_manage_profiles_title,
-      detent: DabblerSheetDetent.content,
-      builder: (context) => const ManageProfilesSheet(),
-    ).then((selectedProfileType) {
-      if (selectedProfileType != null &&
-          selectedProfileType != _selectedProfileType) {
-        _switchProfileType(selectedProfileType);
-      }
-    });
   }
 
   void _openSportProfile(UserProfile? profile, dynamic sport) {
@@ -357,11 +298,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
           heroTint: true,
           onBack: () => context.canPop() ? context.pop() : context.go('/home'),
           actions: [
-            DabblerNavigationAction(
-              icon: 'repeat',
-              label: l10n.profile_btn_manage_profiles_tooltip,
-              onPressed: _showManageProfiles,
-            ),
             DabblerNavigationAction(
               icon: 'setting-2',
               label: l10n.settings_header_title,
