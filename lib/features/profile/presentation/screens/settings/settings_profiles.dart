@@ -3,7 +3,6 @@ import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
-import 'package:dabbler/features/profile/presentation/screens/settings/settings_sheets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -25,27 +24,8 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
     );
   }
 
-  PersonaAvailability? organiserAvailability() {
-    final personaState = ref.read(personaServiceProvider);
-    if (personaState.isLoading || personaState.isAtProfileLimit) return null;
-    for (final a in personaState.availablePersonas) {
-      if (a.targetPersona == PersonaType.organiser &&
-          a.actionType == PersonaActionType.add) {
-        return a;
-      }
-    }
-    return null;
-  }
-
-  /// The organiser row opens the design's info sheet before the setup flow.
-  void openOrganiser(PersonaAvailability availability) =>
-      showSettingsOrganiserSheet(
-        context,
-        () => _startPersonaFlow(availability),
-      );
-
-  /// The Profiles group: the design's single Become-an-organiser row, then any
-  /// other persona the user can still add or convert to.
+  /// The Profiles group: edit profile, then any persona the user can convert
+  /// to. Adding another profile is not offered.
   Widget buildProfileSection(BuildContext context) {
     final personaState = ref.watch(personaServiceProvider);
     if (personaState.isLoading) return const SizedBox.shrink();
@@ -55,12 +35,9 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
     final availablePersonas = isAtLimit
         ? <PersonaAvailability>[]
         : personaState.availablePersonas;
-    final organiser = organiserAvailability();
     final others = [
       for (final a in availablePersonas)
-        if (a.targetPersona != organiser?.targetPersona ||
-            a.actionType != organiser?.actionType)
-          a,
+        if (a.actionType == PersonaActionType.convert) a,
     ];
 
     return DabblerRowGroup(
@@ -76,16 +53,6 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
           trailing: const DabblerChevron(circled: true),
         ),
         if (isAtLimit) _buildExistingProfilesList(context),
-        if (organiser != null)
-          DabblerInputRow(
-            flat: true,
-            showDivider: false,
-            onTap: () => openOrganiser(organiser),
-            leading: leadingIcon('calendar-edit'),
-            title: l10n.settings_organiser_title,
-            subtitle: l10n.settings_organiser_subtitle,
-            trailing: const DabblerChevron(circled: true),
-          ),
         for (final availability in others)
           _buildPersonaItem(context, availability),
       ],
