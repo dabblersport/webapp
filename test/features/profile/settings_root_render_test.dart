@@ -119,7 +119,7 @@ void main() {
       );
     });
 
-    testWidgets('language & region, about and organiser sheets — $dir', (
+    testWidgets('language & region and about sheets — $dir', (
       tester,
     ) async {
       await _pump(tester, const SettingsScreen(), locale);
@@ -133,23 +133,6 @@ void main() {
       await _shoot(tester, _key, 'settings-language-sheet-$dir');
       Navigator.of(
         tester.element(find.text('العربية').first),
-        rootNavigator: true,
-      ).pop();
-      await _settle(tester);
-
-      await tester.scrollUntilVisible(
-        find.text(l10n.settings_organiser_title),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.ensureVisible(find.text(l10n.settings_organiser_title));
-      await _settle(tester);
-      await tester.tap(find.text(l10n.settings_organiser_title));
-      await _settle(tester);
-      expect(find.text(l10n.settings_organiser_start), findsOneWidget);
-      await _shoot(tester, _key, 'settings-organiser-sheet-$dir');
-      Navigator.of(
-        tester.element(find.text(l10n.settings_organiser_start)),
         rootNavigator: true,
       ).pop();
       await _settle(tester);

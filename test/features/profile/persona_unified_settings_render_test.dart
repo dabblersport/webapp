@@ -114,12 +114,12 @@ void main() {
       });
     }
 
-    testWidgets('a legacy player still sees Become an organiser — $dir', (
+    testWidgets('a legacy player no longer sees Become an organiser — $dir', (
       tester,
     ) async {
       await _pump(tester, _state(PersonaType.player), locale);
       expect(tester.takeException(), isNull);
-      expect(find.text(l10n.settings_organiser_title), findsOneWidget);
+      expect(find.text(l10n.settings_organiser_title), findsNothing);
       await _shoot(tester, 'settings-profiles-legacy-player-$dir');
     });
   }

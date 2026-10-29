@@ -385,9 +385,7 @@ void main() {
           .addMediaUrl('https://example.invalid/c.gif');
       await settle(tester);
       expect(tester.takeException(), isNull);
-      final String you = l.composer_you;
       final List<String> labels = <String>[
-        l.composer_posting_as_switch(iso(you)),
         l.composer_tool_vibe_set(iso('Inspired')),
         l.composer_tool_sport_set(iso('Padel')),
         l.composer_tool_location_set(iso('Nad Al Sheba Sports Complex')),
@@ -400,8 +398,7 @@ void main() {
       }
       expect(find.text(l.composer_media_gif), findsOneWidget);
       if (rtl) {
-        expect(labels.first, 'النشر باسم \u2068أنت\u2069. اضغط لتبديل الملف الشخصي.');
-        expect(labels[1], 'الأجواء: \u2068Inspired\u2069. اضغط للتغيير.');
+        expect(labels.first, 'الأجواء: \u2068Inspired\u2069. اضغط للتغيير.');
         expect(l.composer_media_image, 'صورة');
         for (final String s in labels) {
           expect(RegExp('Vibe:|Sport:|Location:|Game:|Posting as|Tap to').hasMatch(s), isFalse);
@@ -409,7 +406,6 @@ void main() {
       } else {
         // English is byte-identical to the pre-KAN-467 hardcoded strings.
         expect(labels, <String>[
-          'Posting as You. Tap to switch profile.',
           'Vibe: Inspired. Tap to change.',
           'Sport: Padel. Tap to change.',
           'Location: Nad Al Sheba Sports Complex. Tap to change.',
