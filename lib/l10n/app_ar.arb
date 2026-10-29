@@ -2741,5 +2741,12 @@
   "games_map_empty_text": "لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة.",
   "challenge_error_sport_required": "اختر رياضة لتحديك ثم حاول مرة أخرى.",
   "challenge_error_invalid_sport": "هذه الرياضة غير متاحة. اختر رياضة من القائمة.",
-  "challenge_error_organiser_required": "إنشاء التحديات متاح لحسابات المنظّمين فقط."
+  "challenge_error_organiser_required": "إنشاء التحديات متاح لحسابات المنظّمين فقط.",
+  "profile_upcoming_empty": "لا توجد ألعاب بعد. انضم إلى لعبة قريبة منك أو أنشئ لعبتك.",
+  "profile_find_a_game": "ابحث عن لعبة",
+  "profile_section_sports_you_play": "الرياضات التي تلعبها",
+  "profile_stat_games_meetups": "الألعاب واللقاءات",
+  "profile_stat_new_hero_sub": "انضم إلى لعبة أو نظّم واحدة لتبدأ قائمتك",
+  "profile_stat_played": "لعبت",
+  "profile_stat_organised": "نظّمت"
 }

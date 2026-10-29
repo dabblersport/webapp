@@ -7965,4 +7965,27 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get challenge_error_organiser_required =>
       'إنشاء التحديات متاح لحسابات المنظّمين فقط.';
+
+  @override
+  String get profile_upcoming_empty =>
+      'لا توجد ألعاب بعد. انضم إلى لعبة قريبة منك أو أنشئ لعبتك.';
+
+  @override
+  String get profile_find_a_game => 'ابحث عن لعبة';
+
+  @override
+  String get profile_section_sports_you_play => 'الرياضات التي تلعبها';
+
+  @override
+  String get profile_stat_games_meetups => 'الألعاب واللقاءات';
+
+  @override
+  String get profile_stat_new_hero_sub =>
+      'انضم إلى لعبة أو نظّم واحدة لتبدأ قائمتك';
+
+  @override
+  String get profile_stat_played => 'لعبت';
+
+  @override
+  String get profile_stat_organised => 'نظّمت';
 }

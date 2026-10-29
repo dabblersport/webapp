@@ -315,6 +315,11 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
           )
         : null;
     final GameCounts? counts = countsAsync?.valueOrNull;
+    final bool newContributor =
+        counts != null &&
+        counts.played == 0 &&
+        counts.organised == 0 &&
+        counts.upcoming == 0;
 
     return DabblerPage(
       topBar: ListenableBuilder(
@@ -408,6 +413,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   ? DabblerStatTileTone.ink
                   : DabblerStatTileTone.card,
               scoped: selected != null,
+              newContributor: newContributor && selected == null,
               heroLabel: selected == null
                   ? null
                   : l10n.profile_stat_sport_matches(selected.nameEn),
@@ -437,31 +443,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             else
               OwnProfileSportPicker(
                 sports: mySports,
+                title: newContributor
+                    ? l10n.profile_section_sports_you_play
+                    : null,
                 selectedId: selected?.id,
                 primaryId: profile?.primarySport,
                 onSelect: (id) => setState(() => _selectedSportId = id),
                 onManage: () => ManageSportsSheet.show(context),
               ),
             const DabblerGap.v(DabblerSpacing.space8),
-            if (counts != null) ...[
-              if (counts.played == 0 &&
-                  counts.organised == 0 &&
-                  counts.upcoming == 0)
-                Padding(
-                  padding: const EdgeInsetsDirectional.only(
-                    start: DabblerSpacing.space6,
-                    end: DabblerSpacing.space6,
-                    bottom: DabblerSpacing.space8,
-                  ),
-                  child: DabblerText(
-                    l10n.listing_games_none_title,
-                    style: DabblerType.footnote,
-                    tone: DabblerTextTone.secondary,
-                  ),
-                )
-              else
-                ContributorGamesSections(counts: counts),
-            ],
+            if (counts != null) ContributorGamesSections(counts: counts),
             if (profileId == null)
               const Padding(
                 padding: EdgeInsets.all(DabblerSpacing.space11),

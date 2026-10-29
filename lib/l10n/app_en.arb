@@ -3023,5 +3023,12 @@
   "challenge_error_invalid_sport": "That sport isn't available. Choose one from the list.",
   "@challenge_error_invalid_sport": {"description": "KAN-680 shown when the chosen sport key is not a known sport."},
   "challenge_error_organiser_required": "Only organiser accounts can create challenges.",
-  "@challenge_error_organiser_required": {"description": "KAN-680 shown when a non-organiser tries to create a challenge."}
+  "@challenge_error_organiser_required": {"description": "KAN-680 shown when a non-organiser tries to create a challenge."},
+  "profile_upcoming_empty": "No games yet. Join one nearby or create your own.",
+  "profile_find_a_game": "Find a game",
+  "profile_section_sports_you_play": "Sports you play",
+  "profile_stat_games_meetups": "Games & meetups",
+  "profile_stat_new_hero_sub": "Join or organise one to start your list",
+  "profile_stat_played": "Played",
+  "profile_stat_organised": "Organised"
 }

@@ -13996,6 +13996,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Only organiser accounts can create challenges.'**
   String get challenge_error_organiser_required;
+
+  /// No description provided for @profile_upcoming_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No games yet. Join one nearby or create your own.'**
+  String get profile_upcoming_empty;
+
+  /// No description provided for @profile_find_a_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a game'**
+  String get profile_find_a_game;
+
+  /// No description provided for @profile_section_sports_you_play.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports you play'**
+  String get profile_section_sports_you_play;
+
+  /// No description provided for @profile_stat_games_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Games & meetups'**
+  String get profile_stat_games_meetups;
+
+  /// No description provided for @profile_stat_new_hero_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Join or organise one to start your list'**
+  String get profile_stat_new_hero_sub;
+
+  /// No description provided for @profile_stat_played.
+  ///
+  /// In en, this message translates to:
+  /// **'Played'**
+  String get profile_stat_played;
+
+  /// No description provided for @profile_stat_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Organised'**
+  String get profile_stat_organised;
 }
 
 class _AppLocalizationsDelegate

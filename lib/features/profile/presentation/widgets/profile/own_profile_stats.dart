@@ -28,6 +28,7 @@ class OwnProfileStats extends StatelessWidget {
     this.sportsLabel,
     this.sportsTone = DabblerStatTileTone.card,
     this.scoped = false,
+    this.newContributor = false,
   });
 
   final int posts;
@@ -82,6 +83,11 @@ class OwnProfileStats extends StatelessWidget {
   /// A sport is chosen: the bento narrows to that sport's own figures.
   final bool scoped;
 
+  /// A Contributor with no games yet: the design's three-tile bento (hero,
+  /// Played, Organised, all zero) with the invitation under the hero
+  /// (`Profiles.dc.html` `contributorNew`, lines 573-579).
+  final bool newContributor;
+
   @override
   Widget build(BuildContext context) {
     final AppLocalizations l10n = AppLocalizations.of(context);
@@ -90,6 +96,36 @@ class OwnProfileStats extends StatelessWidget {
     final int? minutes = minutesPlayed;
     final int? show = reliability;
     final int? primary = primarySports;
+    if (newContributor) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
+        child: DabblerStatGrid(
+          children: <DabblerStatTile>[
+            DabblerStatTile(
+              size: DabblerStatTileSize.hero,
+              tone: heroTone,
+              accent: accent,
+              value: '0',
+              label: l10n.profile_stat_games_meetups,
+              sub: l10n.profile_stat_new_hero_sub,
+              fitValue: true,
+            ),
+            DabblerStatTile(
+              value: '0',
+              label: l10n.profile_stat_played,
+              tone: DabblerStatTileTone.amber,
+              fitValue: true,
+            ),
+            DabblerStatTile(
+              value: '0',
+              label: l10n.profile_stat_organised,
+              tone: DabblerStatTileTone.accent,
+              fitValue: true,
+            ),
+          ],
+        ),
+      );
+    }
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: DabblerSpacing.space6),
       child: DabblerStatGrid(

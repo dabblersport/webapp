@@ -7903,4 +7903,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get challenge_error_organiser_required =>
       'Only organiser accounts can create challenges.';
+
+  @override
+  String get profile_upcoming_empty =>
+      'No games yet. Join one nearby or create your own.';
+
+  @override
+  String get profile_find_a_game => 'Find a game';
+
+  @override
+  String get profile_section_sports_you_play => 'Sports you play';
+
+  @override
+  String get profile_stat_games_meetups => 'Games & meetups';
+
+  @override
+  String get profile_stat_new_hero_sub =>
+      'Join or organise one to start your list';
+
+  @override
+  String get profile_stat_played => 'Played';
+
+  @override
+  String get profile_stat_organised => 'Organised';
 }

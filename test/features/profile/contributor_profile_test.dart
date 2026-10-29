@@ -172,6 +172,88 @@ void main() {
     });
   });
 
+  group('New Contributor (Profiles.dc.html contributorNew)', () {
+    setUpAll(loadProfileFonts);
+    final GameCounts none = computeGameCounts(<GameCountRow>[]);
+    Widget newUser({VoidCallback? onFindGame, bool owner = true}) => _scroll(
+      Column(
+        children: <Widget>[
+          if (owner)
+            const OwnProfileStats(
+              posts: 0,
+              sportsCount: 1,
+              newContributor: true,
+            ),
+          ContributorGamesSections(
+            counts: none,
+            showOrganised: owner,
+            onFindGame: onFindGame,
+          ),
+        ],
+      ),
+    );
+
+    testWidgets('owner sees the calendar empty state and Find a game', (
+      WidgetTester tester,
+    ) async {
+      int found = 0;
+      await pumpProfileScreen(tester, newUser(onFindGame: () => found++), _en);
+      expect(find.text('Upcoming'), findsOneWidget);
+      expect(
+        find.text('No games yet. Join one nearby or create your own.'),
+        findsOneWidget,
+      );
+      expect(find.text('Find a game'), findsOneWidget);
+      await tester.tap(find.text('Find a game'));
+      expect(found, 1);
+    });
+
+    testWidgets('bento is the three-tile zero state', (
+      WidgetTester tester,
+    ) async {
+      await pumpProfileScreen(tester, newUser(), _en);
+      expect(find.text('Games & meetups'), findsOneWidget);
+      expect(find.text('Join or organise one to start your list'), findsOneWidget);
+      expect(find.text('Played'), findsOneWidget);
+      expect(find.text('Organised'), findsOneWidget);
+      expect(find.text('Primary sports'), findsNothing);
+      expect(find.text('Games played'), findsNothing);
+    });
+
+    testWidgets('a visitor sees neither the empty state nor its button', (
+      WidgetTester tester,
+    ) async {
+      await pumpProfileScreen(tester, newUser(owner: false), _en);
+      expect(
+        find.text('No games yet. Join one nearby or create your own.'),
+        findsNothing,
+      );
+      expect(find.text('Find a game'), findsNothing);
+      expect(
+        find.byKey(const ValueKey<String>('contributor-upcoming-empty')),
+        findsNothing,
+      );
+    });
+
+    for (final Locale locale in const <Locale>[Locale('en'), Locale('ar')]) {
+      testWidgets('renders in ${locale.languageCode}', (
+        WidgetTester tester,
+      ) async {
+        await pumpProfileScreen(tester, newUser(), locale, height: 560);
+        expect(
+          find.byKey(const ValueKey<String>('contributor-upcoming-empty')),
+          findsOneWidget,
+        );
+        expect(tester.takeException(), isNull);
+        await shootProfile(
+          tester,
+          kShotKey,
+          'kan682-new-contributor-${locale.languageCode}',
+        );
+      });
+    }
+  });
+
   group('v_game_card rows', () {
     test('own profile reads the viewer flags; others read creator and roster', () {
       final List<Map<String, dynamic>> rows = <Map<String, dynamic>>[
