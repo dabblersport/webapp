@@ -5741,6 +5741,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_stat_minutes_played => 'Minutes played';
 
   @override
+  String get profile_stat_games_organised => 'Games organised';
+
+  @override
+  String get profile_section_games_organised => 'Games I organise';
+
+  @override
   String get meetups_tab_all => 'All';
 
   @override

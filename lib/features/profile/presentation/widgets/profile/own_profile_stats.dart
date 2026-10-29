@@ -13,6 +13,9 @@ class OwnProfileStats extends StatelessWidget {
     required this.posts,
     required this.sportsCount,
     this.gamesPlayed,
+    this.organised,
+    this.upcoming,
+    this.postsFailed = false,
     this.rating,
     this.minutesPlayed,
     this.reliability,
@@ -33,6 +36,15 @@ class OwnProfileStats extends StatelessWidget {
   /// Total games across the shown sport profiles; null when the persona has
   /// no sport profiles (the hero then shows posts).
   final int? gamesPlayed;
+
+  /// Distinct games the user created; null draws no tile.
+  final int? organised;
+
+  /// Distinct upcoming games the user joined or created; null draws no tile.
+  final int? upcoming;
+
+  /// The posts fetch failed: the hero shows a dash, never a zero.
+  final bool postsFailed;
 
   /// The mean player rating over the shown sport profiles; null or zero draws
   /// no tile.
@@ -86,7 +98,7 @@ class OwnProfileStats extends StatelessWidget {
             size: DabblerStatTileSize.hero,
             tone: heroTone,
             accent: accent,
-            value: '${games ?? posts}',
+            value: games == null && postsFailed ? '\u2014' : '${games ?? posts}',
             label: games != null
                 ? (heroLabel ?? l10n.user_profile_stat_games)
                 : l10n.profile_tab_posts,
@@ -96,6 +108,20 @@ class OwnProfileStats extends StatelessWidget {
             onTap: onOpenSport,
             trailing: onOpenSport != null ? const DabblerChevron() : null,
           ),
+          if (!scoped && organised != null)
+            DabblerStatTile(
+              value: '$organised',
+              label: l10n.profile_stat_games_organised,
+              tone: DabblerStatTileTone.card,
+              fitValue: true,
+            ),
+          if (!scoped && upcoming != null)
+            DabblerStatTile(
+              value: '$upcoming',
+              label: l10n.listing_upcoming,
+              tone: DabblerStatTileTone.accent,
+              fitValue: true,
+            ),
           if (stars != null && stars > 0)
             DabblerStatTile(
               value: stars.toStringAsFixed(1),

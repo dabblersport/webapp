@@ -2061,6 +2061,8 @@
   "profile_sports_followed_note": "Sports followed — feeds and results only",
   "profile_stat_sports_followed": "Sports followed",
   "profile_stat_minutes_played": "Minutes played",
+  "profile_stat_games_organised": "Games organised",
+  "profile_section_games_organised": "Games I organise",
   "meetups_tab_all": "All",
   "meetups_none_title": "No meetups available.",
   "meetups_explore_another": "Explore another activity",

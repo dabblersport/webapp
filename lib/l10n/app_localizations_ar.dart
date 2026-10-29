@@ -5771,6 +5771,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_minutes_played => 'دقائق اللعب';
 
   @override
+  String get profile_stat_games_organised => 'ألعاب نظّمتها';
+
+  @override
+  String get profile_section_games_organised => 'الألعاب التي أنظّمها';
+
+  @override
   String get meetups_tab_all => 'الكل';
 
   @override

@@ -10,6 +10,10 @@ import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import '../../../../../utils/constants/route_constants.dart';
+import 'package:dabbler/features/games/presentation/controllers/game_counts.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_game_counts_provider.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_games_sections.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
@@ -178,6 +182,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               .watch(followersCountProvider(profileId))
               .maybeWhen(data: (v) => v, orElse: () => 0);
 
+    final isContributor =
+        personaTypeOrNull(profile?.personaType ?? profile?.profileType) ==
+        PersonaType.contributor;
+    final GameCounts? counts =
+        isContributor && profile?.userId != null && profileId != null
+        ? ref
+              .watch(
+                profileGameCountsProvider((
+                  userId: profile!.userId,
+                  profileId: profileId,
+                )),
+              )
+              .valueOrNull
+        : null;
+
     final allSports = ref.watch(sportsProvider).valueOrNull ?? [];
     final byId = {for (final s in allSports) s.id: s};
     final mySports = [
@@ -216,6 +235,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               sportsCount: mySports.length,
               sportsLabel: l10n.user_profile_stat_sports,
               location: _formatLocation(profile?.city, profile?.country),
+              showPersonaBadge: !isContributor,
               onPosts: _scrollToFeed,
               onFollowing: profileId == null
                   ? null
@@ -232,7 +252,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               actions: _buildActionButtons(context),
             ),
             const DabblerGap.v(DabblerSpacing.space8),
-            if (profile != null) _buildStats(context, profile, sportsState),
+            if (profile != null)
+              _buildStats(context, profile, sportsState, counts),
             const DabblerGap.v(DabblerSpacing.space8),
             RatingSummary(userId: profile?.userId),
             if (mySports.isNotEmpty) ...[
@@ -251,6 +272,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               ),
               const DabblerGap.v(DabblerSpacing.space8),
             ],
+            if (counts != null)
+              ContributorGamesSections(counts: counts, showOrganised: false),
             if (profileId != null)
               KeyedSubtree(
                 key: _activitiesKey,
@@ -279,7 +302,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final personaType = profile?.personaType ?? profile?.profileType ?? '';
     if (profileId == null ||
         userId == null ||
-        (personaType != 'player' && personaType != 'organiser')) {
+        (personaType != 'player' &&
+            personaType != 'organiser' &&
+            personaType != 'contributor')) {
       return;
     }
     final args = SportProfileRouteArgs(
@@ -309,7 +334,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     BuildContext context,
     UserProfile profile,
     SportsProfileState sportsState,
+    GameCounts? counts,
   ) {
+    final bool contributor =
+        personaTypeOrNull(profile.personaType ?? profile.profileType) ==
+        PersonaType.contributor;
     final statistics = profile.statistics;
     final List<SportProfile> sports = sportsState.profiles;
     final List<SportProfile> rated = [
@@ -319,12 +348,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     return OwnProfileStats(
       posts: 0,
       sportsCount: sports.length,
-      gamesPlayed: statistics.totalGamesPlayed,
+      gamesPlayed: contributor ? counts?.played : statistics.totalGamesPlayed,
+      organised: contributor ? counts?.organised : null,
+      upcoming: contributor ? counts?.upcoming : null,
       rating: rated.isEmpty
           ? null
           : rated.fold<double>(0, (a, p) => a + p.averageRating) / rated.length,
-      minutesPlayed: (statistics.totalHoursPlayed * 60).round(),
-      reliability: statistics.getReliabilityScore().round(),
+      minutesPlayed: contributor
+          ? null
+          : (statistics.totalHoursPlayed * 60).round(),
+      reliability: contributor ? null : statistics.getReliabilityScore().round(),
       primarySports: sports.where((p) => p.isPrimarySport).length,
       heroSub: sports.isEmpty
           ? null

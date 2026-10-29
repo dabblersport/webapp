@@ -2109,6 +2109,8 @@
   "game_duration_chip_hours_minutes": "{hours} س {minutes} د",
   "sfx_comments_count": "{count, plural, =0{لا تعليقات} =1{تعليق واحد} =2{تعليقان} few{{count} تعليقات} many{{count} تعليقًا} other{{count} تعليق}}",
   "profile_stat_minutes_played": "دقائق اللعب",
+  "profile_stat_games_organised": "ألعاب نظّمتها",
+  "profile_section_games_organised": "الألعاب التي أنظّمها",
   "meetups_tab_all": "الكل",
   "meetups_join": "انضم للقاء",
   "meetups_going_count": "{count, plural, one{مشارك واحد} two{مشاركان} few{{count} مشاركين} many{{count} مشاركًا} other{{count} مشارك}}",

@@ -10307,6 +10307,18 @@ abstract class AppLocalizations {
   /// **'Minutes played'**
   String get profile_stat_minutes_played;
 
+  /// No description provided for @profile_stat_games_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games organised'**
+  String get profile_stat_games_organised;
+
+  /// No description provided for @profile_section_games_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games I organise'**
+  String get profile_section_games_organised;
+
   /// No description provided for @meetups_tab_all.
   ///
   /// In en, this message translates to:
