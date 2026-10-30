@@ -10,8 +10,13 @@ INSERT INTO _ctx
 SELECT p.user_id, sv.sport_id, sv.id,
        (SELECT id FROM public.geo_locations ORDER BY id LIMIT 1), (SELECT id FROM public.areas ORDER BY id LIMIT 1),
        (SELECT pr.user_id FROM public.profiles pr WHERE pr.user_id IS NOT NULL AND pr.user_id <> p.user_id ORDER BY pr.user_id LIMIT 1)
-  FROM public.profiles p, public.sport_variants sv
- WHERE p.persona_type = 'player' AND p.is_active ORDER BY p.created_at, sv.id LIMIT 1;
+  FROM public.profiles p
+  CROSS JOIN public.sport_variants sv
+  JOIN public.sports s ON s.id = sv.sport_id
+ WHERE p.persona_type = 'player' AND p.is_active AND p.user_id IS NOT NULL
+   AND s.is_active AND s.is_challenge_sport IS TRUE
+   AND sv.is_active AND sv.players_per_side IS NOT NULL
+ ORDER BY p.created_at, sv.id LIMIT 1;
 
 DO $c$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM _ctx WHERE other IS NOT NULL AND other <> uid) THEN
@@ -33,7 +38,7 @@ DO $$
 DECLARE c _ctx; sw uuid; sb uuid; n1 int; n2 int; r1 int; r2 int; s_cap uuid; s_end uuid; msg text;
 BEGIN
   SELECT * INTO c FROM _ctx;
-  IF c.uid IS NULL THEN RAISE EXCEPTION 'kan693_probe_no_fixture: need a player profile and a sport variant'; END IF;
+  IF c.uid IS NULL OR c.sport IS NULL OR c.variant IS NULL THEN RAISE EXCEPTION 'kan693_probe_no_fixture: need a player profile and a sport variant'; END IF;
   PERFORM pg_temp.as_user(c.uid);
 
   -- P1 weekly creates 4 future rows, all linked, 7 days apart
