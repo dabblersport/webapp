@@ -9,9 +9,15 @@ CREATE TEMP TABLE _ctx(uid uuid, sport uuid, variant uuid, geo uuid, area uuid, 
 INSERT INTO _ctx
 SELECT p.user_id, sv.sport_id, sv.id,
        (SELECT id FROM public.geo_locations ORDER BY id LIMIT 1), (SELECT id FROM public.areas ORDER BY id LIMIT 1),
-       (SELECT id FROM auth.users u WHERE u.id <> p.user_id ORDER BY id LIMIT 1)
+       (SELECT pr.user_id FROM public.profiles pr WHERE pr.user_id IS NOT NULL AND pr.user_id <> p.user_id ORDER BY pr.user_id LIMIT 1)
   FROM public.profiles p, public.sport_variants sv
  WHERE p.persona_type = 'player' AND p.is_active ORDER BY p.created_at, sv.id LIMIT 1;
+
+DO $c$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM _ctx WHERE other IS NOT NULL AND other <> uid) THEN
+    RAISE EXCEPTION 'probe fixture: other user missing or equals uid';
+  END IF;
+END $c$;
 
 CREATE FUNCTION pg_temp.as_user(p_user uuid) RETURNS void LANGUAGE sql AS $f$
   SELECT set_config('request.jwt.claims', json_build_object('sub', p_user, 'role','authenticated')::text, true),
