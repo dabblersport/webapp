@@ -14038,6 +14038,456 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Organised'**
   String get profile_stat_organised;
+
+  /// No description provided for @bench_row_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench mode'**
+  String get bench_row_title;
+
+  /// No description provided for @bench_row_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get bench_row_off;
+
+  /// No description provided for @bench_row_until.
+  ///
+  /// In en, this message translates to:
+  /// **'On until {date}'**
+  String bench_row_until(String date);
+
+  /// No description provided for @bench_row_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'On, no end date'**
+  String get bench_row_no_end;
+
+  /// No description provided for @bench_screen_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench mode'**
+  String get bench_screen_title;
+
+  /// No description provided for @bench_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit bench'**
+  String get bench_edit_title;
+
+  /// No description provided for @bench_explain_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a break from the social side'**
+  String get bench_explain_title;
+
+  /// No description provided for @bench_explain_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Sit out for a while. You can still play and show up in game rosters.'**
+  String get bench_explain_body;
+
+  /// No description provided for @bench_paused_head.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused while on bench'**
+  String get bench_paused_head;
+
+  /// No description provided for @bench_paused_1.
+  ///
+  /// In en, this message translates to:
+  /// **'You can’t post, comment or like'**
+  String get bench_paused_1;
+
+  /// No description provided for @bench_paused_2.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re hidden from the feed and search, as you choose'**
+  String get bench_paused_2;
+
+  /// No description provided for @bench_paused_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests are blocked, as you choose'**
+  String get bench_paused_3;
+
+  /// No description provided for @bench_keep_head.
+  ///
+  /// In en, this message translates to:
+  /// **'Still works'**
+  String get bench_keep_head;
+
+  /// No description provided for @bench_keep_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Join and play games'**
+  String get bench_keep_1;
+
+  /// No description provided for @bench_keep_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Show up in game rosters'**
+  String get bench_keep_2;
+
+  /// No description provided for @bench_reason_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get bench_reason_label;
+
+  /// No description provided for @bench_reason_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'A short note for yourself'**
+  String get bench_reason_placeholder;
+
+  /// No description provided for @bench_reason_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it short.'**
+  String get bench_reason_helper;
+
+  /// No description provided for @bench_end_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End date (optional)'**
+  String get bench_end_label;
+
+  /// No description provided for @bench_end_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_end_placeholder;
+
+  /// No description provided for @bench_end_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'You can end bench earlier any time.'**
+  String get bench_end_helper;
+
+  /// No description provided for @bench_toggle_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide me in the feed'**
+  String get bench_toggle_feed;
+
+  /// No description provided for @bench_toggle_feed_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your activity won’t appear in feeds.'**
+  String get bench_toggle_feed_sub;
+
+  /// No description provided for @bench_toggle_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide me in search'**
+  String get bench_toggle_search;
+
+  /// No description provided for @bench_toggle_search_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'People can’t find you by name.'**
+  String get bench_toggle_search_sub;
+
+  /// No description provided for @bench_toggle_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Block friend requests'**
+  String get bench_toggle_friends;
+
+  /// No description provided for @bench_toggle_friends_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'No new requests while on bench.'**
+  String get bench_toggle_friends_sub;
+
+  /// No description provided for @bench_toggle_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute social notifications'**
+  String get bench_toggle_notifs;
+
+  /// No description provided for @bench_toggle_notifs_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes, comments and friend activity stay quiet.'**
+  String get bench_toggle_notifs_sub;
+
+  /// No description provided for @bench_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start bench'**
+  String get bench_start;
+
+  /// No description provided for @bench_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get bench_save;
+
+  /// No description provided for @bench_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Start bench mode?'**
+  String get bench_confirm_title;
+
+  /// No description provided for @bench_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'This applies right away. You can end it any time.'**
+  String get bench_confirm_body;
+
+  /// No description provided for @bench_confirm_sum_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the feed'**
+  String get bench_confirm_sum_feed;
+
+  /// No description provided for @bench_confirm_sum_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in search'**
+  String get bench_confirm_sum_search;
+
+  /// No description provided for @bench_confirm_sum_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests blocked'**
+  String get bench_confirm_sum_friends;
+
+  /// No description provided for @bench_confirm_sum_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications muted'**
+  String get bench_confirm_sum_notifs;
+
+  /// No description provided for @bench_confirm_sum_end.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends on {date}'**
+  String bench_confirm_sum_end(String date);
+
+  /// No description provided for @bench_confirm_sum_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_confirm_sum_no_end;
+
+  /// No description provided for @bench_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get bench_cancel;
+
+  /// No description provided for @bench_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get bench_back;
+
+  /// No description provided for @bench_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get bench_retry;
+
+  /// No description provided for @bench_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get bench_manage;
+
+  /// No description provided for @bench_status_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench'**
+  String get bench_status_badge;
+
+  /// No description provided for @bench_status_head.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re on bench'**
+  String get bench_status_head;
+
+  /// No description provided for @bench_status_since.
+  ///
+  /// In en, this message translates to:
+  /// **'Since'**
+  String get bench_status_since;
+
+  /// No description provided for @bench_status_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get bench_status_until;
+
+  /// No description provided for @bench_status_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get bench_status_reason;
+
+  /// No description provided for @bench_status_hidden_head.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s hidden'**
+  String get bench_status_hidden_head;
+
+  /// No description provided for @bench_status_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get bench_status_feed;
+
+  /// No description provided for @bench_status_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get bench_status_search;
+
+  /// No description provided for @bench_status_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests'**
+  String get bench_status_friends;
+
+  /// No description provided for @bench_status_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications'**
+  String get bench_status_notifs;
+
+  /// No description provided for @bench_status_hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get bench_status_hidden;
+
+  /// No description provided for @bench_status_visible.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible'**
+  String get bench_status_visible;
+
+  /// No description provided for @bench_status_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get bench_status_blocked;
+
+  /// No description provided for @bench_status_allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get bench_status_allowed;
+
+  /// No description provided for @bench_status_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get bench_status_muted;
+
+  /// No description provided for @bench_status_on.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get bench_status_on;
+
+  /// No description provided for @bench_status_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_status_no_end;
+
+  /// No description provided for @bench_end.
+  ///
+  /// In en, this message translates to:
+  /// **'End bench'**
+  String get bench_end;
+
+  /// No description provided for @bench_edit_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get bench_edit_action;
+
+  /// No description provided for @bench_end_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'End bench now?'**
+  String get bench_end_confirm_title;
+
+  /// No description provided for @bench_end_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ll be visible again and can post, comment and like.'**
+  String get bench_end_confirm_body;
+
+  /// No description provided for @bench_end_confirm_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep bench'**
+  String get bench_end_confirm_keep;
+
+  /// No description provided for @bench_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get bench_loading;
+
+  /// No description provided for @bench_error_start_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t start bench'**
+  String get bench_error_start_title;
+
+  /// No description provided for @bench_error_start_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get bench_error_start_body;
+
+  /// No description provided for @bench_error_load_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load bench mode'**
+  String get bench_error_load_title;
+
+  /// No description provided for @bench_error_load_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get bench_error_load_body;
+
+  /// No description provided for @bench_offline_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re offline'**
+  String get bench_offline_title;
+
+  /// No description provided for @bench_offline_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to end or edit bench. Your status shows as last saved.'**
+  String get bench_offline_body;
+
+  /// No description provided for @bench_indicator_home.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench until {date}'**
+  String bench_indicator_home(String date);
+
+  /// No description provided for @bench_indicator_home_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench'**
+  String get bench_indicator_home_no_end;
+
+  /// No description provided for @bench_indicator_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the feed and search until {date}.'**
+  String bench_indicator_profile(String date);
 }
 
 class _AppLocalizationsDelegate
