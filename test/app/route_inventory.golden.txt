@@ -65,6 +65,7 @@
 /edit-game/:gameId	edit-game	GoRoute
 /settings/account	-	GoRoute
 /settings/privacy	-	GoRoute
+/settings/bench	settings-bench	GoRoute
 /settings/notifications	-	GoRoute
 /settings/theme	-	GoRoute
 /settings/location	-	GoRoute

@@ -20,6 +20,10 @@ class FeatureFlags {
   /// heart). Read-only apart from removing a favourite.
   static const bool enableFavourites = true;
 
+  /// Bench mode (KAN-706): the Settings row, the Bench screen route and the
+  /// Home / Profile benched indicators.
+  static const bool benchMode = true;
+
   /// Games & Matches
   static const bool enableGameBrowsing = true;
 
