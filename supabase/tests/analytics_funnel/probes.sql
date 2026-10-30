@@ -4,27 +4,26 @@
 BEGIN;
 
 -- Seed: one real auth user is made admin (rolled back); a random uuid is the non-admin.
-CREATE TEMP TABLE _k700 AS
-  SELECT (SELECT id FROM auth.users ORDER BY created_at LIMIT 1) AS admin_id,
-         gen_random_uuid() AS plain_id;
-GRANT SELECT ON _k700 TO authenticated, anon;
+-- The ids travel as transaction-local settings (readable under every role), so nothing is granted to anyone.
+SELECT set_config('k700.admin_id', (SELECT id FROM auth.users ORDER BY created_at LIMIT 1)::text, true),
+       set_config('k700.plain_id', gen_random_uuid()::text, true);
 
-INSERT INTO public.role_grants (user_id, role) SELECT admin_id, 'admin' FROM _k700
+INSERT INTO public.role_grants (user_id, role) SELECT current_setting('k700.admin_id')::uuid, 'admin'
   ON CONFLICT DO NOTHING;
 
 -- 2099 dates cannot collide with real rows. Day 1: all four launch events + other_event; day 3 empty; day 2 none.
 INSERT INTO public.analytics_events (user_id, event_name, properties, created_at)
-SELECT admin_id, 'signup',       '{"secret":"x"}', '2099-01-01 10:00+00' FROM _k700 UNION ALL
-SELECT admin_id, 'signup',       '{}',             '2099-01-01 23:59:59+00' FROM _k700 UNION ALL
-SELECT plain_id, 'game_created', '{}',             '2099-01-01 11:00+00' FROM _k700 UNION ALL
-SELECT plain_id, 'game_joined',  '{}',             '2099-01-01 12:00+00' FROM _k700 UNION ALL
-SELECT admin_id, 'check_in',     '{}',             '2099-01-03 00:00:00+00' FROM _k700 UNION ALL
-SELECT admin_id, 'other_event',  '{}',             '2099-01-01 13:00+00' FROM _k700;
+SELECT current_setting('k700.admin_id')::uuid, 'signup',       '{"secret":"x"}', '2099-01-01 10:00+00' UNION ALL
+SELECT current_setting('k700.admin_id')::uuid, 'signup',       '{}',             '2099-01-01 23:59:59+00' UNION ALL
+SELECT current_setting('k700.plain_id')::uuid, 'game_created', '{}',             '2099-01-01 11:00+00' UNION ALL
+SELECT current_setting('k700.plain_id')::uuid, 'game_joined',  '{}',             '2099-01-01 12:00+00' UNION ALL
+SELECT current_setting('k700.admin_id')::uuid, 'check_in',     '{}',             '2099-01-03 00:00:00+00' UNION ALL
+SELECT current_setting('k700.admin_id')::uuid, 'other_event',  '{}',             '2099-01-01 13:00+00';
 
 -- P1: admin gets rows, counts right, other_event excluded, empty day has no row.
 SET LOCAL ROLE authenticated;
 SELECT set_config('request.jwt.claims',
-  json_build_object('sub', (SELECT admin_id FROM _k700), 'role', 'authenticated')::text, true);
+  json_build_object('sub', current_setting('k700.admin_id')::uuid, 'role', 'authenticated')::text, true);
 DO $$
 DECLARE n int; s bigint; d2 int; oth int;
 BEGIN
@@ -69,7 +68,7 @@ END $$;
 
 -- P4: authenticated non-admin raises 42501.
 SELECT set_config('request.jwt.claims',
-  json_build_object('sub', (SELECT plain_id FROM _k700), 'role', 'authenticated')::text, true);
+  json_build_object('sub', current_setting('k700.plain_id')::uuid, 'role', 'authenticated')::text, true);
 DO $$
 BEGIN
   BEGIN
