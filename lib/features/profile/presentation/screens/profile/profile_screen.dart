@@ -1,3 +1,4 @@
+import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -377,6 +378,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                       ),
               ),
             ),
+            // KAN-706: On bench badge + line; nothing when not benched.
+            const BenchProfileIndicator(),
             const DabblerGap.v(DabblerSpacing.space8),
             OwnProfileStats(
               posts: posts,

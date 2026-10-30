@@ -7926,4 +7926,243 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_stat_organised => 'Organised';
+
+  @override
+  String get bench_row_title => 'Bench mode';
+
+  @override
+  String get bench_row_off => 'Off';
+
+  @override
+  String bench_row_until(String date) {
+    return 'On until $date';
+  }
+
+  @override
+  String get bench_row_no_end => 'On, no end date';
+
+  @override
+  String get bench_screen_title => 'Bench mode';
+
+  @override
+  String get bench_edit_title => 'Edit bench';
+
+  @override
+  String get bench_explain_title => 'Take a break from the social side';
+
+  @override
+  String get bench_explain_body =>
+      'Sit out for a while. You can still play and show up in game rosters.';
+
+  @override
+  String get bench_paused_head => 'Paused while on bench';
+
+  @override
+  String get bench_paused_1 => 'You can’t post, comment or like';
+
+  @override
+  String get bench_paused_2 =>
+      'You’re hidden from the feed and search, as you choose';
+
+  @override
+  String get bench_paused_3 => 'Friend requests are blocked, as you choose';
+
+  @override
+  String get bench_keep_head => 'Still works';
+
+  @override
+  String get bench_keep_1 => 'Join and play games';
+
+  @override
+  String get bench_keep_2 => 'Show up in game rosters';
+
+  @override
+  String get bench_reason_label => 'Reason (optional)';
+
+  @override
+  String get bench_reason_placeholder => 'A short note for yourself';
+
+  @override
+  String get bench_reason_helper => 'Keep it short.';
+
+  @override
+  String get bench_end_label => 'End date (optional)';
+
+  @override
+  String get bench_end_placeholder => 'No end date';
+
+  @override
+  String get bench_end_helper => 'You can end bench earlier any time.';
+
+  @override
+  String get bench_toggle_feed => 'Hide me in the feed';
+
+  @override
+  String get bench_toggle_feed_sub => 'Your activity won’t appear in feeds.';
+
+  @override
+  String get bench_toggle_search => 'Hide me in search';
+
+  @override
+  String get bench_toggle_search_sub => 'People can’t find you by name.';
+
+  @override
+  String get bench_toggle_friends => 'Block friend requests';
+
+  @override
+  String get bench_toggle_friends_sub => 'No new requests while on bench.';
+
+  @override
+  String get bench_toggle_notifs => 'Mute social notifications';
+
+  @override
+  String get bench_toggle_notifs_sub =>
+      'Likes, comments and friend activity stay quiet.';
+
+  @override
+  String get bench_start => 'Start bench';
+
+  @override
+  String get bench_save => 'Save changes';
+
+  @override
+  String get bench_confirm_title => 'Start bench mode?';
+
+  @override
+  String get bench_confirm_body =>
+      'This applies right away. You can end it any time.';
+
+  @override
+  String get bench_confirm_sum_feed => 'Hidden in the feed';
+
+  @override
+  String get bench_confirm_sum_search => 'Hidden in search';
+
+  @override
+  String get bench_confirm_sum_friends => 'Friend requests blocked';
+
+  @override
+  String get bench_confirm_sum_notifs => 'Social notifications muted';
+
+  @override
+  String bench_confirm_sum_end(String date) {
+    return 'Ends on $date';
+  }
+
+  @override
+  String get bench_confirm_sum_no_end => 'No end date';
+
+  @override
+  String get bench_cancel => 'Cancel';
+
+  @override
+  String get bench_back => 'Back';
+
+  @override
+  String get bench_retry => 'Try again';
+
+  @override
+  String get bench_manage => 'Manage';
+
+  @override
+  String get bench_status_badge => 'On bench';
+
+  @override
+  String get bench_status_head => 'You’re on bench';
+
+  @override
+  String get bench_status_since => 'Since';
+
+  @override
+  String get bench_status_until => 'Until';
+
+  @override
+  String get bench_status_reason => 'Reason';
+
+  @override
+  String get bench_status_hidden_head => 'What’s hidden';
+
+  @override
+  String get bench_status_feed => 'Feed';
+
+  @override
+  String get bench_status_search => 'Search';
+
+  @override
+  String get bench_status_friends => 'Friend requests';
+
+  @override
+  String get bench_status_notifs => 'Social notifications';
+
+  @override
+  String get bench_status_hidden => 'Hidden';
+
+  @override
+  String get bench_status_visible => 'Visible';
+
+  @override
+  String get bench_status_blocked => 'Blocked';
+
+  @override
+  String get bench_status_allowed => 'Allowed';
+
+  @override
+  String get bench_status_muted => 'Muted';
+
+  @override
+  String get bench_status_on => 'On';
+
+  @override
+  String get bench_status_no_end => 'No end date';
+
+  @override
+  String get bench_end => 'End bench';
+
+  @override
+  String get bench_edit_action => 'Edit';
+
+  @override
+  String get bench_end_confirm_title => 'End bench now?';
+
+  @override
+  String get bench_end_confirm_body =>
+      'You’ll be visible again and can post, comment and like.';
+
+  @override
+  String get bench_end_confirm_keep => 'Keep bench';
+
+  @override
+  String get bench_loading => 'Loading';
+
+  @override
+  String get bench_error_start_title => 'Couldn’t start bench';
+
+  @override
+  String get bench_error_start_body => 'Check your connection and try again.';
+
+  @override
+  String get bench_error_load_title => 'Couldn’t load bench mode';
+
+  @override
+  String get bench_error_load_body => 'Check your connection and try again.';
+
+  @override
+  String get bench_offline_title => 'You’re offline';
+
+  @override
+  String get bench_offline_body =>
+      'Connect to end or edit bench. Your status shows as last saved.';
+
+  @override
+  String bench_indicator_home(String date) {
+    return 'On bench until $date';
+  }
+
+  @override
+  String get bench_indicator_home_no_end => 'On bench';
+
+  @override
+  String bench_indicator_profile(String date) {
+    return 'Hidden in the feed and search until $date.';
+  }
 }

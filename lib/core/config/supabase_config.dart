@@ -291,6 +291,15 @@ class SupabaseConfig {
   static const String rpcTrackEventFn = 'rpc_track_event';
   static const String sendBookingRemindersFn = 'send_booking_reminders';
 
+  // ---- Bench mode (KAN-706) ----
+  /// The viewer's own bench row (RLS `user_status_select_self`).
+  static const String userStatusTable = 'user_status';
+  /// Read-only view over `user_status`; not granted SELECT to `authenticated`
+  /// in the baseline, so the client reads [userStatusTable].
+  static const String vBenchStatusView = 'v_bench_status';
+  static const String rpcToggleBenchFn = 'rpc_toggle_bench';
+  static const String rpcEndBenchFn = 'rpc_end_bench';
+
   // ---- Edge Functions (invoked via supabase.functions.invoke) ----
   // KAN-52: Resend-backed export delivery. Requires RESEND_API_KEY set as
   // an Edge Function secret; caller must be authenticated and `to` must

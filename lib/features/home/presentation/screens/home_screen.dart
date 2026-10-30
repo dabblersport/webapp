@@ -1,3 +1,4 @@
+import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
@@ -361,6 +362,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           // KAN-610: sits under the header, above reminders and tabs, in
           // normal flow; collapses to nothing when online.
           const ConnectionBanner(),
+          // KAN-706: on-bench strip with Manage; nothing when not benched.
+          const BenchHomeStrip(),
           const HomeUpcoming(),
           if (forYouState.hasNewPosts && _activeIndex == 0)
             Center(
