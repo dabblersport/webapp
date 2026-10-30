@@ -153,7 +153,7 @@ class GameCreationController extends StateNotifier<GameCreationState> {
             gameId: gameId,
             sportType: s.sportKey,
             playerCount: s.requiredPlayers,
-            price: s.costCover == 'paid' ? 0 : null,
+            price: null,
             venueType: s.venueId != null ? 'venue' : 'unspecified',
             duration: '${durationMinutes}m',
           ),

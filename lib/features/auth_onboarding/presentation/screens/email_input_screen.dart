@@ -1,4 +1,5 @@
 import 'package:dabbler/core/models/google_sign_in_result.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/utils/identifier_detector.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
@@ -249,6 +250,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
       if (!signedIn) return; // User cancelled the Apple sheet.
 
       final result = await authService.handleAppleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'apple');
       if (!mounted) return;
 
       switch (result) {
@@ -313,6 +315,7 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
 
       // Now check the result after OAuth completes
       final result = await authService.handleGoogleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'google');
 
       if (!mounted) return;
 

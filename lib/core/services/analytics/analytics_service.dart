@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/models/google_sign_in_result.dart';
 
 typedef AnalyticsProps = Map<String, Object?>;
 
@@ -12,16 +13,42 @@ class AnalyticsService {
   // Allow instantiation for use in mixins
   const AnalyticsService();
 
-  static String? _userId;
+  /// Test seams: replace the RPC call and the signed-in user lookup.
+  @visibleForTesting
+  static Future<void> Function(String name, AnalyticsProps props)? sinkOverride;
+  @visibleForTesting
+  static String? Function()? userIdOverride;
 
-  static Future<void> trackEvent(String name, [AnalyticsProps? props]) async {
-    final client = Supabase.instance.client;
-    final properties = <String, Object?>{
-      if (_userId != null) 'user_id': _userId,
-      ...?props,
-    };
+  // Accounts whose signup was already sent in this process.
+  static final Set<String> _signupSent = <String>{};
+
+  @visibleForTesting
+  static void resetForTest() {
+    sinkOverride = null;
+    userIdOverride = null;
+    _signupSent.clear();
+  }
+
+  static String? _currentUserId() {
+    final override = userIdOverride;
+    if (override != null) return override();
     try {
-      await client.rpc(
+      return Supabase.instance.client.auth.currentUser?.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  // The RPC stores auth.uid() in the user_id column; it is not repeated here.
+  static Future<void> trackEvent(String name, [AnalyticsProps? props]) async {
+    final properties = <String, Object?>{...?props};
+    try {
+      final sink = sinkOverride;
+      if (sink != null) {
+        await sink(name, properties);
+        return;
+      }
+      await Supabase.instance.client.rpc(
         SupabaseConfig.rpcTrackEventFn,
         params: {'_event_name': name, '_properties': properties},
       );
@@ -40,12 +67,39 @@ class AnalyticsService {
   }
 
   static Future<void> setUser(String userId, [AnalyticsProps? traits]) async {
-    _userId = userId;
-    await trackEvent('identify', {'user_id': userId, ...?traits});
+    await trackEvent('identify', {...?traits});
+  }
+
+  /// Launch event `signup`, once per newly created account. [method] is one
+  /// of `otp`, `google`, `apple`.
+  static Future<void> trackSignup({required String method}) async {
+    final uid = _currentUserId();
+    if (uid != null && !_signupSent.add(uid)) return;
+    await trackEvent('signup', {'method': method});
+  }
+
+  /// Fires `signup` only when an OAuth sign-in resolved to a new account
+  /// (no profile yet); a returning user resolves to another result.
+  static Future<void> trackOAuthSignup(
+    GoogleSignInResult result, {
+    required String provider,
+  }) async {
+    if (result is GoogleSignInResultGoToOnboarding ||
+        result is GoogleSignInResultGoToPhoneOtp) {
+      await trackSignup(method: provider);
+    }
+  }
+
+  /// Launch event `check_in`: the daily check-in, after it succeeded.
+  Future<void> trackCheckIn({int? streakCount, bool? firstToday}) async {
+    await trackEvent('check_in', {
+      if (streakCount != null) 'streak_count': streakCount,
+      if (firstToday != null) 'first_today': firstToday,
+    });
   }
 
   static Future<void> reset() async {
-    _userId = null;
+    _signupSent.clear();
   }
 
   // Game creation tracking
