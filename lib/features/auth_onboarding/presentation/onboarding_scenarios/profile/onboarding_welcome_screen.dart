@@ -155,6 +155,7 @@ class _ProfileOnboardingWelcomeScreenState
     // Navigate
     if (!mounted) return;
     final displayName = data.displayName ?? '';
+    final onboardingIntention = data.onboardingIntention?.key;
     final primarySportKey = await _primarySportKey(data.preferredSport);
     ref.read(onboardingDataProvider.notifier).clear();
     await ref.read(simpleAuthProvider.notifier).refreshAuthState();
@@ -169,6 +170,9 @@ class _ProfileOnboardingWelcomeScreenState
           'personaType': persona,
           'isFirstTime': true,
           'primarySportKey': primarySportKey,
+          // KAN-681: the provider is cleared above, so the welcome variant
+          // travels with the route (read only by the welcome screen).
+          'onboardingIntention': onboardingIntention,
         },
       );
     }

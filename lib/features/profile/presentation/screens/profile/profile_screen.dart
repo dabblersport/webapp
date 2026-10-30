@@ -1,12 +1,13 @@
-import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/widgets/manage_sports_sheet.dart';
-import 'package:dabbler/features/profile/presentation/widgets/profile/manage_profiles_sheet.dart';
+import 'package:dabbler/features/games/presentation/controllers/game_counts.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_game_counts_provider.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_games_sections.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_followed_sports.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
@@ -44,24 +45,21 @@ final profileTakedownProvider = FutureProvider.autoDispose.family<bool, String>(
   },
 );
 
-/// Provider to get current user's posts count
+/// Provider to get current user's posts count. A failed fetch surfaces as an
+/// error (the profile shows a retry); 0 means a successful fetch found none.
 final myPostsCountProvider = FutureProvider.autoDispose<int>((ref) async {
   final supabase = Supabase.instance.client;
   final userId = supabase.auth.currentUser?.id;
   if (userId == null) return 0;
 
-  try {
-    final response = await supabase
-        .from(SupabaseConfig.postsTable)
-        .select('id')
-        .eq('author_user_id', userId)
-        .eq('is_deleted', false)
-        .eq('is_hidden_admin', false);
+  final response = await supabase
+      .from(SupabaseConfig.postsTable)
+      .select('id')
+      .eq('author_user_id', userId)
+      .eq('is_deleted', false)
+      .eq('is_hidden_admin', false);
 
-    return (response as List).length;
-  } catch (e) {
-    return 0;
-  }
+  return (response as List).length;
 });
 
 class ProfileScreen extends ConsumerStatefulWidget {
@@ -166,6 +164,17 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             user.id,
             profileId: profileId,
           );
+        } else if (personaTypeOrNull(effectiveType) ==
+            PersonaType.contributor) {
+          // A Contributor holds both extensions on the one profile.
+          await organiserController.loadOrganiserProfiles(
+            user.id,
+            profileId: profileId,
+          );
+          await sportsController.loadSportsProfiles(
+            user.id,
+            profileId: profileId,
+          );
         } else {
           await sportsController.loadSportsProfiles(
             user.id,
@@ -178,64 +187,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
     }
   }
 
-  Future<void> _switchProfileType(String profileType) async {
-    if (_selectedProfileType == profileType) return;
-
-    final previousProfileType = _selectedProfileType;
-
-    setState(() {
-      _selectedProfileType = profileType;
-    });
-
-    // Update is_active in the database: deactivate old, activate new
-    final switched = await ref
-        .read(personaServiceProvider.notifier)
-        .switchActiveProfile(profileType);
-
-    if (!switched) {
-      // Revert optimistic state on failure
-      setState(() {
-        _selectedProfileType = previousProfileType;
-      });
-      if (mounted) {
-        final errorMsg =
-            ref.read(personaServiceProvider).errorMessage ??
-            AppLocalizations.of(context).profile_error_switch_profile_failed;
-        DabblerToastProvider.of(
-          context,
-        ).show(DabblerToastSpec(message: errorMsg));
-      }
-      return;
-    }
-
-    // Clear profile cache to force fresh fetch for the new profile type
-    final user = ref.read(currentUserProvider);
-    if (user != null) {
-      await clearProfileCache(ref, user.id);
-    }
-
-    await _loadProfileData(profileType: profileType);
-
-    // Persist the active profile type for app restarts
-    persistActiveProfileType(profileType);
-  }
-
   Future<void> _loadAverageRating() async {
     // Rating data loading (not displayed in top section)
-  }
-
-  void _showManageProfiles() {
-    showAppSheet<String>(
-      context: context,
-      title: AppLocalizations.of(context).profile_manage_profiles_title,
-      detent: DabblerSheetDetent.content,
-      builder: (context) => const ManageProfilesSheet(),
-    ).then((selectedProfileType) {
-      if (selectedProfileType != null &&
-          selectedProfileType != _selectedProfileType) {
-        _switchProfileType(selectedProfileType);
-      }
-    });
   }
 
   void _openSportProfile(UserProfile? profile, dynamic sport) {
@@ -245,7 +198,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         profile?.personaType ?? profile?.profileType ?? 'player';
     if (profileId == null ||
         userId == null ||
-        (personaType != 'player' && personaType != 'organiser')) {
+        (personaType != 'player' &&
+            personaType != 'organiser' &&
+            personaType != 'contributor')) {
       return;
     }
     final args = SportProfileRouteArgs(
@@ -300,9 +255,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
       return const DabblerPage(body: Center(child: DabblerSpinner()));
     }
 
-    final posts = ref
-        .watch(myPostsCountProvider)
-        .maybeWhen(data: (v) => v, orElse: () => 0);
+    final postsAsync = ref.watch(myPostsCountProvider);
+    final posts = postsAsync.maybeWhen(data: (v) => v, orElse: () => 0);
+    final postsFailed = postsAsync.hasError && !postsAsync.isLoading;
     final following = profileId == null
         ? 0
         : ref
@@ -341,9 +296,30 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                 : [for (final s in mySports) s.nameEn])
             .take(3)
             .join(' · ');
+    final isContributor =
+        personaTypeOrNull(personaType) == PersonaType.contributor;
     final canOpen =
         profile?.userId != null &&
-        (personaType == 'player' || personaType == 'organiser');
+        (personaType == 'player' ||
+            personaType == 'organiser' ||
+            isContributor);
+    // Contributor figures come from the games the user holds a seat in or
+    // created; until they load (or when the read fails) the tiles are omitted.
+    final AsyncValue<GameCounts>? countsAsync =
+        isContributor && profile?.userId != null && profileId != null
+        ? ref.watch(
+            profileGameCountsProvider((
+              userId: profile!.userId,
+              profileId: profileId,
+            )),
+          )
+        : null;
+    final GameCounts? counts = countsAsync?.valueOrNull;
+    final bool newContributor =
+        counts != null &&
+        counts.played == 0 &&
+        counts.organised == 0 &&
+        counts.upcoming == 0;
 
     return DabblerPage(
       topBar: ListenableBuilder(
@@ -357,11 +333,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
           heroTint: true,
           onBack: () => context.canPop() ? context.pop() : context.go('/home'),
           actions: [
-            DabblerNavigationAction(
-              icon: 'repeat',
-              label: l10n.profile_btn_manage_profiles_tooltip,
-              onPressed: _showManageProfiles,
-            ),
             DabblerNavigationAction(
               icon: 'setting-2',
               label: l10n.settings_header_title,
@@ -389,6 +360,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                 sportsCount: personaType == 'socialiser'
                     ? mySports.length
                     : null,
+                showPersonaBadge: !isContributor,
+                postsFailed: postsFailed,
+                onRetryPosts: () => ref.invalidate(myPostsCountProvider),
                 onFollowing: profileId == null
                     ? null
                     : () => context.pushNamed(
@@ -406,8 +380,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             const DabblerGap.v(DabblerSpacing.space8),
             OwnProfileStats(
               posts: posts,
+              postsFailed: postsFailed,
               sportsCount: mySports.length,
-              gamesPlayed: sportProfiles.isEmpty
+              organised: counts?.organised,
+              upcoming: counts?.upcoming,
+              gamesPlayed: isContributor
+                  ? counts?.played
+                  : sportProfiles.isEmpty
                   ? (personaType == 'socialiser'
                         ? null
                         : profile?.statistics.totalGamesPlayed)
@@ -418,10 +397,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                         : null)
                   : shown.fold<double>(0, (a, p) => a + p.averageRating) /
                         shown.length,
-              minutesPlayed: personaType == 'player'
+              minutesPlayed: personaType == 'player' && !isContributor
                   ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
                   : null,
-              reliability: personaType == 'player'
+              reliability: personaType == 'player' && !isContributor
                   ? profile?.statistics.getReliabilityScore().round()
                   : null,
               primarySports: sportProfiles
@@ -434,6 +413,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   ? DabblerStatTileTone.ink
                   : DabblerStatTileTone.card,
               scoped: selected != null,
+              newContributor: newContributor && selected == null,
               heroLabel: selected == null
                   ? null
                   : l10n.profile_stat_sport_matches(selected.nameEn),
@@ -463,12 +443,16 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             else
               OwnProfileSportPicker(
                 sports: mySports,
+                title: newContributor
+                    ? l10n.profile_section_sports_you_play
+                    : null,
                 selectedId: selected?.id,
                 primaryId: profile?.primarySport,
                 onSelect: (id) => setState(() => _selectedSportId = id),
                 onManage: () => ManageSportsSheet.show(context),
               ),
             const DabblerGap.v(DabblerSpacing.space8),
+            if (counts != null) ContributorGamesSections(counts: counts),
             if (profileId == null)
               const Padding(
                 padding: EdgeInsets.all(DabblerSpacing.space11),

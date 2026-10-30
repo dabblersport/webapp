@@ -271,6 +271,10 @@ void main() {
         final l10n = AppLocalizations.of(
           tester.element(find.byType(IntentSelectionScreen)),
         );
+        // The cards carry a helper line now, so the fourth can sit below the
+        // fold of the test viewport.
+        await tester.ensureVisible(find.text(i.label(l10n)));
+        await tester.pump();
         await tester.tap(find.text(i.label(l10n)));
         await tester.pump();
         await tester.tap(find.text(l10n.onb_continue));

@@ -21,7 +21,6 @@ import 'package:dabbler/features/social/presentation/widgets/composer_vibes_shee
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/sport.dart';
-import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
@@ -355,98 +354,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  Future<void> _showProfileSwitchPicker() async {
-    final profiles = await ref.read(availableProfilesProvider.future);
-
-    if (!mounted || profiles.isEmpty) {
-      return;
-    }
-
-    final activeType = ref.read(activeProfileTypeProvider);
-
-    showComposerSheet<void>(
-      _sheetContext,
-      title: AppLocalizations.of(context).composer_post_as,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final profile in profiles)
-            Builder(
-              builder: (_) {
-                final effectiveType =
-                    (profile.personaType ?? profile.profileType ?? '')
-                        .toLowerCase();
-                final isActive =
-                    effectiveType.isNotEmpty &&
-                    effectiveType == activeType?.toLowerCase();
-                final colors = DabblerColors.of(ctx);
-
-                return DabblerInputRow(
-                  leading: DabblerAvatar(
-                    seed: profile.displayName,
-                    imageUrl: profile.avatarUrl,
-                    size: DabblerAvatarSize.sm,
-                  ),
-                  title: profile.displayName,
-                  subtitle: effectiveType.isNotEmpty
-                      ? _prettifyLabel(effectiveType)
-                      : null,
-                  trailing: isActive
-                      ? DabblerIcon(
-                          'tick-circle',
-                          weight: DabblerIconWeight.bold,
-                          size: DabblerSizing.iconRow,
-                          color: colors.brandPrimary,
-                        )
-                      : null,
-                  onTap: () async {
-                    if (isActive || effectiveType.isEmpty) {
-                      Navigator.pop(ctx);
-                      return;
-                    }
-
-                    final switched = await ref
-                        .read(personaServiceProvider.notifier)
-                        .switchActiveProfile(effectiveType);
-
-                    if (!switched) {
-                      if (mounted) {
-                        _errorToast(
-                          ref.read(personaServiceProvider).errorMessage ??
-                              AppLocalizations.of(
-                                context,
-                              ).composer_switch_failed,
-                        );
-                      }
-                      return;
-                    }
-
-                    ref.read(activeProfileTypeProvider.notifier).state =
-                        effectiveType;
-                    unawaited(persistActiveProfileType(effectiveType));
-                    ref
-                        .read(postComposerProvider.notifier)
-                        .setPersonaTypeSnapshot(effectiveType);
-
-                    final userId = _authService.getCurrentUser()?.id;
-                    if (userId != null) {
-                      await clearProfileCache(ref, userId);
-                    }
-
-                    await _loadUserProfile();
-
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                    }
-                  },
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════════════════════════════════
   // BUILD
   // ═══════════════════════════════════════════════════════════════════════
@@ -536,47 +443,39 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final avatarUrl = _userProfile?['avatar_url'] as String?;
     final composerState = ref.watch(postComposerProvider);
     final activePersona = ref.watch(activeProfileTypeProvider);
-    final canSwitch = activePersona != null && activePersona.isNotEmpty;
+    final showPersona = activePersona != null && activePersona.isNotEmpty;
 
     return Semantics(
-      label: canSwitch
-          ? AppLocalizations.of(
-              context,
-            ).composer_posting_as_switch(_isolate(context, displayName))
-          : AppLocalizations.of(
-              context,
-            ).composer_posting_as(_isolate(context, displayName)),
-      button: canSwitch,
+      label: AppLocalizations.of(
+        context,
+      ).composer_posting_as(_isolate(context, displayName)),
       excludeSemantics: true,
-      child: DabblerFeedTappable(
-        onTap: canSwitch ? _showProfileSwitchPicker : null,
-        child: Row(
-          children: [
-            DabblerAvatar(
-              seed: displayName,
-              imageUrl: avatarUrl,
-              size: DabblerAvatarSize.md,
-            ),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DabblerText(displayName, style: DabblerType.subheadline),
-                  if (canSwitch)
-                    DabblerText(
-                      _prettifyLabel(
-                        composerState.personaTypeSnapshot ?? activePersona,
-                      ),
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
+      child: Row(
+        children: [
+          DabblerAvatar(
+            seed: displayName,
+            imageUrl: avatarUrl,
+            size: DabblerAvatarSize.md,
+          ),
+          const SizedBox(width: DabblerSpacing.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DabblerText(displayName, style: DabblerType.subheadline),
+                if (showPersona)
+                  DabblerText(
+                    _prettifyLabel(
+                      composerState.personaTypeSnapshot ?? activePersona,
                     ),
-                ],
-              ),
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

@@ -220,15 +220,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       terms: terms,
       onTap: () => context.push(to),
     );
-    final organiser = organiserAvailability();
     return [
-      if (organiser != null)
-        SettingsSearchEntry(
-          icon: 'calendar-edit',
-          label: l10n.settings_organiser_title,
-          path: l10n.settings_path_profiles,
-          onTap: () => openOrganiser(organiser),
-        ),
       route(
         'edit',
         l10n.profile_btn_edit,

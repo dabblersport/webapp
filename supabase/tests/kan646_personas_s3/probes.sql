@@ -298,7 +298,7 @@ BEGIN
   PERFORM pg_temp.expect('L4 legacy organiser: choose_actor exact', pg_temp.q_as('SELECT public.choose_actor(''organiser'')'), lO::text);
   PERFORM pg_temp.expect('L5 legacy organiser: game gate passed', pg_temp.q_as('SELECT '||format(game_sig,'organiser',gs,gv)), 'ERR:invalid_time_range');
   PERFORM pg_temp.chk('L6 legacy organiser: actor_is_organiser true (F1 fixed) and not player', public.actor_is_organiser(lO) AND NOT public.actor_is_player(lO));
-  PERFORM pg_temp.expect('L7 legacy organiser creates a challenge with an active sport key (F1 fixed, KAN-678 5-arg) [auth]', pg_temp.q_as(format('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', %L, NULL)', k1)), NULL);
+  PERFORM pg_temp.expect('L7 legacy organiser creates a challenge with an active sport key (F1 fixed, KAN-678 5-arg) [auth]', pg_temp.q_as(format('SELECT id FROM public.rpc_challenge_create(''organiser'', ''Probe challenge'', ''public'', %L, NULL)', k1)), NULL);
   PERFORM pg_temp.expect('L7b legacy organiser: blank sport -> sport_required [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', ''  '', NULL)'), 'ERR:sport_required');
   PERFORM pg_temp.expect('L7c legacy organiser: NULL sport -> sport_required [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', NULL, NULL)'), 'ERR:sport_required');
   PERFORM pg_temp.expect('L7d legacy organiser: unknown sport key -> invalid_sport (existing trigger) [auth]', pg_temp.q_as('SELECT id FROM public.rpc_challenge_create(''organiser'', ''x'', ''public'', ''no_such_sport_kan678'', NULL)'), 'ERR:invalid_sport');

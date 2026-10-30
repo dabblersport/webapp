@@ -6,51 +6,39 @@ import 'package:dabbler/data/models/games/game.dart';
 import '../../domain/usecases/cancel_game_usecase.dart';
 import '../../domain/repositories/games_repository.dart';
 import '../../services/game_completion_rewards_handler.dart';
+import 'game_counts.dart';
 
 enum MyGameType { upcoming, past, organized, joined }
 
 enum QuickAction { share, cancel, checkIn, viewDetails, invite, rate }
 
+/// Counts from the games the user holds a seat in or created. Show-up rate,
+/// minutes played and a favourite sport are not derivable from this data, so
+/// they are not here.
 class GameStatistics {
   final int totalGamesPlayed;
   final int totalGamesOrganized;
+  final int upcomingGames;
   final int gamesThisMonth;
-  final double averageRating;
-  final String favoritesSport;
-  final Duration totalPlayTime;
-  final int cancelledGames;
-  final double attendanceRate;
 
   const GameStatistics({
     required this.totalGamesPlayed,
     required this.totalGamesOrganized,
+    required this.upcomingGames,
     required this.gamesThisMonth,
-    required this.averageRating,
-    required this.favoritesSport,
-    required this.totalPlayTime,
-    required this.cancelledGames,
-    required this.attendanceRate,
   });
 
   GameStatistics copyWith({
     int? totalGamesPlayed,
     int? totalGamesOrganized,
+    int? upcomingGames,
     int? gamesThisMonth,
-    double? averageRating,
-    String? favoritesSport,
-    Duration? totalPlayTime,
-    int? cancelledGames,
-    double? attendanceRate,
   }) {
     return GameStatistics(
       totalGamesPlayed: totalGamesPlayed ?? this.totalGamesPlayed,
       totalGamesOrganized: totalGamesOrganized ?? this.totalGamesOrganized,
+      upcomingGames: upcomingGames ?? this.upcomingGames,
       gamesThisMonth: gamesThisMonth ?? this.gamesThisMonth,
-      averageRating: averageRating ?? this.averageRating,
-      favoritesSport: favoritesSport ?? this.favoritesSport,
-      totalPlayTime: totalPlayTime ?? this.totalPlayTime,
-      cancelledGames: cancelledGames ?? this.cancelledGames,
-      attendanceRate: attendanceRate ?? this.attendanceRate,
     );
   }
 }
@@ -332,28 +320,33 @@ class MyGamesController extends StateNotifier<MyGamesState> {
     state = state.copyWith(isLoadingStatistics: true);
 
     try {
-      // Calculate statistics from actual games data
-      final allGames = [...state.upcomingGames, ...state.pastGames];
+      // Counts follow the shared rule (game_counts.dart): distinct game ids,
+      // cancelled games out, Played only for a joined or confirmed seat.
+      // getMyGames returns the user's created games and active roster seats.
+      final allGames = <Game>[...state.upcomingGames, ...state.pastGames];
       final now = DateTime.now();
+      final counts = computeGameCounts([
+        for (final game in allGames)
+          GameCountRow(
+            id: game.id,
+            startAt: game.getScheduledStartDateTime(),
+            isCancelled: game.status == GameStatus.cancelled,
+            isOrganiser: game.organizerId == userId,
+            participation: game.organizerId == userId
+                ? null
+                : GameParticipation.joined,
+          ),
+      ], now: now);
       final thisMonth = allGames.where((game) {
         return game.scheduledDate.year == now.year &&
             game.scheduledDate.month == now.month;
       }).length;
 
-      final organized = allGames
-          .where((game) => game.organizerId == userId)
-          .length;
-      final played = state.pastGames.length;
-
       final statistics = GameStatistics(
-        totalGamesPlayed: played,
-        totalGamesOrganized: organized,
+        totalGamesPlayed: counts.played,
+        totalGamesOrganized: counts.organised,
+        upcomingGames: counts.upcoming,
         gamesThisMonth: thisMonth,
-        averageRating: 0.0,
-        favoritesSport: 'basketball',
-        totalPlayTime: Duration(hours: played * 2), // Estimate 2 hours per game
-        cancelledGames: 0,
-        attendanceRate: played > 0 ? 1.0 : 0.0,
       );
 
       state = state.copyWith(

@@ -1,9 +1,6 @@
-import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/add_persona_provider.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
-import 'package:dabbler/features/profile/presentation/screens/settings/settings_sheets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -25,27 +22,8 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
     );
   }
 
-  PersonaAvailability? organiserAvailability() {
-    final personaState = ref.read(personaServiceProvider);
-    if (personaState.isLoading || personaState.isAtProfileLimit) return null;
-    for (final a in personaState.availablePersonas) {
-      if (a.targetPersona == PersonaType.organiser &&
-          a.actionType == PersonaActionType.add) {
-        return a;
-      }
-    }
-    return null;
-  }
-
-  /// The organiser row opens the design's info sheet before the setup flow.
-  void openOrganiser(PersonaAvailability availability) =>
-      showSettingsOrganiserSheet(
-        context,
-        () => _startPersonaFlow(availability),
-      );
-
-  /// The Profiles group: the design's single Become-an-organiser row, then any
-  /// other persona the user can still add or convert to.
+  /// The Profiles group: edit profile, then any persona the user can convert
+  /// to. Adding another profile is not offered.
   Widget buildProfileSection(BuildContext context) {
     final personaState = ref.watch(personaServiceProvider);
     if (personaState.isLoading) return const SizedBox.shrink();
@@ -55,12 +33,9 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
     final availablePersonas = isAtLimit
         ? <PersonaAvailability>[]
         : personaState.availablePersonas;
-    final organiser = organiserAvailability();
     final others = [
       for (final a in availablePersonas)
-        if (a.targetPersona != organiser?.targetPersona ||
-            a.actionType != organiser?.actionType)
-          a,
+        if (a.actionType == PersonaActionType.convert) a,
     ];
 
     return DabblerRowGroup(
@@ -75,106 +50,10 @@ mixin SettingsProfilesMixin<T extends ConsumerStatefulWidget>
           subtitle: l10n.settings_item_edit_profile_subtitle,
           trailing: const DabblerChevron(circled: true),
         ),
-        if (isAtLimit) _buildExistingProfilesList(context),
-        if (organiser != null)
-          DabblerInputRow(
-            flat: true,
-            showDivider: false,
-            onTap: () => openOrganiser(organiser),
-            leading: leadingIcon('calendar-edit'),
-            title: l10n.settings_organiser_title,
-            subtitle: l10n.settings_organiser_subtitle,
-            trailing: const DabblerChevron(circled: true),
-          ),
         for (final availability in others)
           _buildPersonaItem(context, availability),
       ],
     );
-  }
-
-  Widget _buildExistingProfilesList(BuildContext context) {
-    final availableProfilesAsync = ref.watch(availableProfilesProvider);
-    final activeProfileType = ref.watch(activeProfileTypeProvider);
-    final colors = DabblerColors.of(context);
-
-    return availableProfilesAsync.when(
-      data: (profiles) {
-        if (profiles.isEmpty) return const SizedBox.shrink();
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            for (final profile in profiles)
-              Builder(
-                builder: (context) {
-                  final effectiveType =
-                      profile.personaType ?? profile.profileType;
-                  final isActive =
-                      effectiveType?.toLowerCase() ==
-                      activeProfileType?.toLowerCase();
-                  final name = profile.getDisplayName().isNotEmpty
-                      ? profile.getDisplayName()
-                      : 'Profile';
-                  return DabblerInputRow(
-                    flat: true,
-                    showDivider: false,
-                    onTap: () => _switchProfile(isActive, effectiveType),
-                    leading: DabblerAvatar(
-                      seed: name,
-                      imageUrl: profile.avatarUrl,
-                      size: DabblerAvatarSize.sm,
-                    ),
-                    title: name,
-                    subtitle: (effectiveType ?? 'player').toUpperCase(),
-                    trailing: isActive
-                        ? DabblerIcon(
-                            'tick-circle',
-                            size: DabblerSizing.iconMd,
-                            color: colors.brandPrimary,
-                          )
-                        : const DabblerChevron(circled: true),
-                  );
-                },
-              ),
-          ],
-        );
-      },
-      loading: () => const Padding(
-        padding: EdgeInsets.all(DabblerSpacing.space5),
-        child: Center(child: DabblerSpinner()),
-      ),
-      error: (_, __) => const SizedBox.shrink(),
-    );
-  }
-
-  Future<void> _switchProfile(bool isActive, String? effectiveType) async {
-    if (isActive || effectiveType == null) return;
-    // Switch active profile in the database
-    final switched = await ref
-        .read(personaServiceProvider.notifier)
-        .switchActiveProfile(effectiveType);
-
-    if (!switched) {
-      if (mounted) {
-        final errorMsg =
-            ref.read(personaServiceProvider).errorMessage ??
-            AppLocalizations.of(context).profile_error_switch_profile_failed;
-        toast(errorMsg);
-      }
-      return;
-    }
-
-    // Update local state and persist
-    ref.read(activeProfileTypeProvider.notifier).state = effectiveType;
-    persistActiveProfileType(effectiveType);
-
-    // Clear cached profile so the profile screen loads fresh data
-    final userId = AuthService().getCurrentUser()?.id;
-    if (userId != null) {
-      final localDS = ref.read(profileLocalDataSourceProvider);
-      await localDS.clearUserCache(userId);
-    }
-
-    if (mounted) context.go('/profile');
   }
 
   void toast(

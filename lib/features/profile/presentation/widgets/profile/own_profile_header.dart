@@ -21,6 +21,9 @@ class OwnProfileHeader extends StatelessWidget {
     this.sportsLabel,
     this.location,
     this.actions,
+    this.showPersonaBadge = true,
+    this.postsFailed = false,
+    this.onRetryPosts,
   });
 
   final UserProfile? profile;
@@ -42,6 +45,14 @@ class OwnProfileHeader extends StatelessWidget {
   /// The action row under the counters (Follow / Message on another user's
   /// profile); null on the own profile, which the design draws without one.
   final Widget? actions;
+
+  /// A Contributor shows no persona badge.
+  final bool showPersonaBadge;
+
+  /// The posts fetch failed: the counter reads as an error with a retry,
+  /// never a zero.
+  final bool postsFailed;
+  final VoidCallback? onRetryPosts;
 
   static String personaIcon(String? persona) =>
       switch (persona?.toLowerCase()) {
@@ -127,7 +138,7 @@ class OwnProfileHeader extends StatelessWidget {
               runSpacing: DabblerSpacing.space2,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
-                if (persona != null && persona.isNotEmpty)
+                if (showPersonaBadge && persona != null && persona.isNotEmpty)
                   DabblerBadge(
                     label: personaLabel(context, persona),
                     comfortable: true,
@@ -178,6 +189,12 @@ class OwnProfileHeader extends StatelessWidget {
                   DabblerCounterLink(
                     value: '$sportsCount',
                     label: sportsLabel ?? l10n.profile_section_sports,
+                  )
+                else if (postsFailed)
+                  DabblerCounterLink(
+                    value: '\u2014',
+                    label: l10n.feed_retry,
+                    onTap: onRetryPosts,
                   )
                 else
                   DabblerCounterLink(

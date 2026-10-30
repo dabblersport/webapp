@@ -399,6 +399,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get persona_player_cta => 'Find my first game';
 
   @override
+  String get persona_contributor_name => 'Contributor';
+
+  @override
+  String get persona_contributor_headline => 'You’re in. Let’s play.';
+
+  @override
+  String get persona_contributor_principle =>
+      'Join a game this week, or start one of your own.';
+
+  @override
+  String get persona_contributor_list_title => 'Don’t forget';
+
+  @override
+  String get persona_contributor_item1 =>
+      'Only confirm when you know you can play.';
+
+  @override
+  String get persona_contributor_item2 =>
+      'Respect the organiser’s rules and kickoff time.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'When you organise, share details early and accurately.';
+
+  @override
+  String get persona_contributor_cta => 'Find my first game';
+
+  @override
+  String get persona_contributor_connect_headline =>
+      'Your sports circle starts here.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'Follow what you love, meet your people, join when it feels right.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'How this works';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'Follow the sports and people you care about.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'Join the conversation, then join the game.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'Keep it friendly — everyone here is someone’s teammate.';
+
+  @override
+  String get persona_contributor_connect_cta => 'Start exploring';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'Time to bring the game together.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'Good games start with good organisation.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'What players expect';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'Accurate details — venue, time, level, price.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'Changes shared early, not at kickoff.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'Attendance managed fairly, every time.';
+
+  @override
+  String get persona_contributor_organise_cta => 'Create my first game';
+
+  @override
   String get persona_organiser_name => 'Organiser';
 
   @override
@@ -1299,6 +1379,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'We’ll make it the primary sport on your venue profile.';
 
   @override
+  String get onb_sports_title_contributor => 'What sports are you into?';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'Pick the sports you follow, play or organise. You can change these anytime.';
+
+  @override
+  String get onb_primary_title_contributor => 'What’s your main sport?';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'We’ll put it first across your feed, games and profile.';
+
+  @override
   String get onb_sports_search => 'Search sports';
 
   @override
@@ -1308,11 +1402,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_sports_count_zero => 'Pick at least one to continue.';
 
   @override
-  String get onb_sports_count_one => '1 sport selected';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return '$count sports selected';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sports selected',
+      one: '1 sport selected',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3083,6 +3180,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_not_synced_retry => 'Not synced. Tap to retry.';
+
+  @override
+  String get settings_will_sync_online => 'Will sync when online';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'This setting was updated on another device. Showing the newer value.';
+
+  @override
+  String get settings_change_rejected =>
+      'This change could not be saved. Showing the saved value.';
 
   @override
   String get priv_saved => 'Saved';
@@ -5633,6 +5741,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_stat_minutes_played => 'Minutes played';
 
   @override
+  String get profile_stat_games_organised => 'Games organised';
+
+  @override
+  String get profile_section_games_organised => 'Games I organise';
+
+  @override
   String get meetups_tab_all => 'All';
 
   @override
@@ -7687,10 +7801,26 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_intention_play_organise => 'Play & organise';
 
   @override
-  String get onb_intention_organise => 'Organise';
+  String get onb_intention_organise => 'Organise sport events';
 
   @override
-  String get onb_intention_host_games => 'Host games';
+  String get onb_intention_host_games => 'Host sports & events';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'Follow sports, meet people and join the fun.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'Join games and bring people together for your own.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'Bring players together and organise games and meetups.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'Welcome players to your venue and spots.';
 
   @override
   String get onb_intention_continue => 'Continue';
@@ -7773,4 +7903,27 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get challenge_error_organiser_required =>
       'Only organiser accounts can create challenges.';
+
+  @override
+  String get profile_upcoming_empty =>
+      'No games yet. Join one nearby or create your own.';
+
+  @override
+  String get profile_find_a_game => 'Find a game';
+
+  @override
+  String get profile_section_sports_you_play => 'Sports you play';
+
+  @override
+  String get profile_stat_games_meetups => 'Games & meetups';
+
+  @override
+  String get profile_stat_new_hero_sub =>
+      'Join or organise one to start your list';
+
+  @override
+  String get profile_stat_played => 'Played';
+
+  @override
+  String get profile_stat_organised => 'Organised';
 }
