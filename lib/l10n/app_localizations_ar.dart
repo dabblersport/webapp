@@ -7988,4 +7988,226 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profile_stat_organised => 'نظّمت';
+
+  @override
+  String get recurring_repeat_label => 'التكرار';
+
+  @override
+  String get recurring_option_none => 'لا تتكرر';
+
+  @override
+  String get recurring_option_weekly => 'أسبوعيًا';
+
+  @override
+  String get recurring_option_biweekly => 'كل أسبوعين';
+
+  @override
+  String recurring_summary_weekly(String weekday) {
+    return 'تتكرر كل أسبوع يوم $weekday';
+  }
+
+  @override
+  String recurring_summary_biweekly(String weekday) {
+    return 'تتكرر كل أسبوعين يوم $weekday';
+  }
+
+  @override
+  String get recurring_end_date_label => 'تاريخ الانتهاء';
+
+  @override
+  String get recurring_end_date_none => 'بدون تاريخ انتهاء';
+
+  @override
+  String get recurring_end_date_hint =>
+      'من دون تاريخ انتهاء، تستمر السلسلة حتى تنهيها.';
+
+  @override
+  String get recurring_end_date_pick => 'اختر تاريخ الانتهاء';
+
+  @override
+  String recurring_end_date_value(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تنتهي في $dateString';
+  }
+
+  @override
+  String get recurring_end_date_clear => 'إزالة تاريخ الانتهاء';
+
+  @override
+  String get recurring_end_date_before_start =>
+      'يجب أن يكون تاريخ الانتهاء بعد موعد أول لعبة.';
+
+  @override
+  String recurring_limit_hint(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max لعبة',
+      many: '$max لعبة',
+      few: '$max ألعاب',
+      two: 'لعبتين',
+      one: 'لعبة واحدة',
+    );
+    return 'يمكن أن تضم السلسلة حتى $_temp0. جدّدها عند انتهائها لتستمر.';
+  }
+
+  @override
+  String recurring_limit_reached(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max لعبة',
+      many: '$max لعبة',
+      few: '$max ألعاب',
+      two: 'لعبتان',
+      one: 'لعبة واحدة',
+    );
+    return 'بلغت هذه السلسلة حدّها الأقصى وهو $_temp0. جدّدها لجدولة المزيد.';
+  }
+
+  @override
+  String recurring_preview_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لعبة',
+      many: '$count لعبة',
+      few: '$count ألعاب',
+      two: 'لعبتين',
+      one: 'لعبة واحدة',
+    );
+    return 'سيؤدي هذا إلى إنشاء $_temp0.';
+  }
+
+  @override
+  String get recurring_renew_action => 'تجديد السلسلة';
+
+  @override
+  String get recurring_paid_disabled => 'لا يمكن تكرار الألعاب المدفوعة حاليًا';
+
+  @override
+  String get recurring_paid_free_hint => 'اجعل اللعبة مجانية لتفعيل التكرار.';
+
+  @override
+  String get recurring_paid_switched_off =>
+      'أُوقف التكرار لأن هذه اللعبة مدفوعة. لا يمكن تكرار الألعاب المدفوعة حاليًا.';
+
+  @override
+  String get recurring_badge_label => 'سلسلة';
+
+  @override
+  String get recurring_badge_weekly => 'سلسلة أسبوعية';
+
+  @override
+  String get recurring_badge_biweekly => 'كل أسبوعين';
+
+  @override
+  String recurring_badge_ends(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تنتهي السلسلة في $dateString';
+  }
+
+  @override
+  String get recurring_badge_open_ended => 'تستمر حتى ينهيها المنظّم';
+
+  @override
+  String get recurring_badge_semantics => 'جزء من سلسلة متكررة';
+
+  @override
+  String get recurring_edit_title => 'تعديل لعبة متكررة';
+
+  @override
+  String get recurring_edit_subtitle =>
+      'هذه اللعبة جزء من سلسلة. على ماذا تريد تطبيق تعديلاتك؟';
+
+  @override
+  String get recurring_edit_this_only => 'هذه اللعبة فقط';
+
+  @override
+  String recurring_edit_this_only_desc(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تتغير لعبة يوم $dateString فقط. تبقى بقية السلسلة كما هي.';
+  }
+
+  @override
+  String get recurring_edit_all_future => 'كل الألعاب القادمة';
+
+  @override
+  String get recurring_edit_all_future_desc =>
+      'تتغير هذه اللعبة وكل لعبة تليها في السلسلة. يحتفظ اللاعبون المنضمون بمكانهم في الألعاب التي لا يُعاد إنشاؤها.';
+
+  @override
+  String get recurring_edit_continue => 'متابعة';
+
+  @override
+  String get recurring_edit_close => 'إغلاق';
+
+  @override
+  String get recurring_cancel_title => 'هل تريد إلغاء هذه السلسلة؟';
+
+  @override
+  String recurring_cancel_future_line(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ستُلغى $count لعبة قادمة.',
+      many: 'ستُلغى $count لعبة قادمة.',
+      few: 'ستُلغى $count ألعاب قادمة.',
+      two: 'ستُلغى لعبتان قادمتان.',
+      one: 'ستُلغى لعبة واحدة قادمة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurring_cancel_players_line(int players) {
+    String _temp0 = intl.Intl.pluralLogic(
+      players,
+      locale: localeName,
+      other: 'انضم $players لاعب وسيتم إشعارهم.',
+      many: 'انضم $players لاعبًا وسيتم إشعارهم.',
+      few: 'انضم $players لاعبين وسيتم إشعارهم.',
+      two: 'انضم لاعبان وسيتم إشعارهما.',
+      one: 'انضم لاعب واحد وسيتم إشعاره.',
+      zero: 'لم ينضم أي لاعب بعد.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_past_line =>
+      'تبقى الألعاب السابقة وسجلها كما هي.';
+
+  @override
+  String get recurring_cancel_no_carry_over =>
+      'لن يُنقل أي لاعب إلى لعبة أخرى تلقائيًا.';
+
+  @override
+  String get recurring_cancel_confirm => 'إلغاء السلسلة';
+
+  @override
+  String get recurring_cancel_keep => 'إبقاء السلسلة';
+
+  @override
+  String get recurring_cancel_done => 'تم إلغاء السلسلة';
+
+  @override
+  String get recurring_cancel_failed => 'تعذّر إلغاء السلسلة. حاول مرة أخرى.';
+
+  @override
+  String get recurring_cancel_notif_title => 'تم إلغاء اللعبة';
+
+  @override
+  String recurring_cancel_notif_body(String game, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تم إلغاء لعبة يوم $dateString. أنهى المنظّم هذه السلسلة. اللعبة: $game';
+  }
 }

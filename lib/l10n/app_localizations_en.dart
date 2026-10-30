@@ -7926,4 +7926,212 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_stat_organised => 'Organised';
+
+  @override
+  String get recurring_repeat_label => 'Repeat';
+
+  @override
+  String get recurring_option_none => 'Does not repeat';
+
+  @override
+  String get recurring_option_weekly => 'Weekly';
+
+  @override
+  String get recurring_option_biweekly => 'Every 2 weeks';
+
+  @override
+  String recurring_summary_weekly(String weekday) {
+    return 'Repeats every week on $weekday';
+  }
+
+  @override
+  String recurring_summary_biweekly(String weekday) {
+    return 'Repeats every 2 weeks on $weekday';
+  }
+
+  @override
+  String get recurring_end_date_label => 'End date';
+
+  @override
+  String get recurring_end_date_none => 'No end date';
+
+  @override
+  String get recurring_end_date_hint =>
+      'Without an end date, the series runs until you end it.';
+
+  @override
+  String get recurring_end_date_pick => 'Choose an end date';
+
+  @override
+  String recurring_end_date_value(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Ends $dateString';
+  }
+
+  @override
+  String get recurring_end_date_clear => 'Remove end date';
+
+  @override
+  String get recurring_end_date_before_start =>
+      'The end date must be after the first game.';
+
+  @override
+  String recurring_limit_hint(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max games',
+      one: '1 game',
+    );
+    return 'Up to $_temp0 per series. Renew it when it ends to keep going.';
+  }
+
+  @override
+  String recurring_limit_reached(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max games',
+      one: '1 game',
+    );
+    return 'This series has reached its limit of $_temp0. Renew it to schedule more.';
+  }
+
+  @override
+  String recurring_preview_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return 'This creates $_temp0.';
+  }
+
+  @override
+  String get recurring_renew_action => 'Renew series';
+
+  @override
+  String get recurring_paid_disabled => 'Paid games can\'t repeat yet';
+
+  @override
+  String get recurring_paid_free_hint =>
+      'Make the game free to turn on Repeat.';
+
+  @override
+  String get recurring_paid_switched_off =>
+      'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.';
+
+  @override
+  String get recurring_badge_label => 'Series';
+
+  @override
+  String get recurring_badge_weekly => 'Weekly series';
+
+  @override
+  String get recurring_badge_biweekly => 'Every 2 weeks';
+
+  @override
+  String recurring_badge_ends(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Series ends $dateString';
+  }
+
+  @override
+  String get recurring_badge_open_ended => 'Runs until the organiser ends it';
+
+  @override
+  String get recurring_badge_semantics => 'Part of a recurring series';
+
+  @override
+  String get recurring_edit_title => 'Edit a recurring game';
+
+  @override
+  String get recurring_edit_subtitle =>
+      'This game is part of a series. What should your changes apply to?';
+
+  @override
+  String get recurring_edit_this_only => 'This game only';
+
+  @override
+  String recurring_edit_this_only_desc(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Only the game on $dateString changes. The rest of the series stays as it is.';
+  }
+
+  @override
+  String get recurring_edit_all_future => 'All future games';
+
+  @override
+  String get recurring_edit_all_future_desc =>
+      'This game and every later game in the series change. Players who joined keep their spot on games that aren\'t rebuilt.';
+
+  @override
+  String get recurring_edit_continue => 'Continue';
+
+  @override
+  String get recurring_edit_close => 'Close';
+
+  @override
+  String get recurring_cancel_title => 'Cancel this series?';
+
+  @override
+  String recurring_cancel_future_line(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count future games will be cancelled.',
+      one: '1 future game will be cancelled.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurring_cancel_players_line(int players) {
+    String _temp0 = intl.Intl.pluralLogic(
+      players,
+      locale: localeName,
+      other: '$players players have joined and will be notified.',
+      one: '1 player has joined and will be notified.',
+      zero: 'No players have joined yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_past_line => 'Past games and their history stay.';
+
+  @override
+  String get recurring_cancel_no_carry_over =>
+      'Nobody is moved to another game automatically.';
+
+  @override
+  String get recurring_cancel_confirm => 'Cancel series';
+
+  @override
+  String get recurring_cancel_keep => 'Keep series';
+
+  @override
+  String get recurring_cancel_done => 'Series cancelled';
+
+  @override
+  String get recurring_cancel_failed =>
+      'Couldn\'t cancel the series. Try again.';
+
+  @override
+  String get recurring_cancel_notif_title => 'Game cancelled';
+
+  @override
+  String recurring_cancel_notif_body(String game, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '$game on $dateString was cancelled. The organiser ended this series.';
+  }
 }

@@ -14038,6 +14038,276 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Organised'**
   String get profile_stat_organised;
+
+  /// No description provided for @recurring_repeat_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get recurring_repeat_label;
+
+  /// No description provided for @recurring_option_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not repeat'**
+  String get recurring_option_none;
+
+  /// No description provided for @recurring_option_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get recurring_option_weekly;
+
+  /// No description provided for @recurring_option_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get recurring_option_biweekly;
+
+  /// No description provided for @recurring_summary_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats every week on {weekday}'**
+  String recurring_summary_weekly(String weekday);
+
+  /// No description provided for @recurring_summary_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats every 2 weeks on {weekday}'**
+  String recurring_summary_biweekly(String weekday);
+
+  /// No description provided for @recurring_end_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get recurring_end_date_label;
+
+  /// No description provided for @recurring_end_date_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get recurring_end_date_none;
+
+  /// No description provided for @recurring_end_date_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Without an end date, the series runs until you end it.'**
+  String get recurring_end_date_hint;
+
+  /// No description provided for @recurring_end_date_pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an end date'**
+  String get recurring_end_date_pick;
+
+  /// No description provided for @recurring_end_date_value.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String recurring_end_date_value(DateTime date);
+
+  /// No description provided for @recurring_end_date_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove end date'**
+  String get recurring_end_date_clear;
+
+  /// No description provided for @recurring_end_date_before_start.
+  ///
+  /// In en, this message translates to:
+  /// **'The end date must be after the first game.'**
+  String get recurring_end_date_before_start;
+
+  /// No description provided for @recurring_limit_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {max, plural, =1{1 game} other{{max} games}} per series. Renew it when it ends to keep going.'**
+  String recurring_limit_hint(int max);
+
+  /// No description provided for @recurring_limit_reached.
+  ///
+  /// In en, this message translates to:
+  /// **'This series has reached its limit of {max, plural, =1{1 game} other{{max} games}}. Renew it to schedule more.'**
+  String recurring_limit_reached(int max);
+
+  /// No description provided for @recurring_preview_count.
+  ///
+  /// In en, this message translates to:
+  /// **'This creates {count, plural, =1{1 game} other{{count} games}}.'**
+  String recurring_preview_count(int count);
+
+  /// No description provided for @recurring_renew_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Renew series'**
+  String get recurring_renew_action;
+
+  /// No description provided for @recurring_paid_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid games can\'t repeat yet'**
+  String get recurring_paid_disabled;
+
+  /// No description provided for @recurring_paid_free_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the game free to turn on Repeat.'**
+  String get recurring_paid_free_hint;
+
+  /// No description provided for @recurring_paid_switched_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.'**
+  String get recurring_paid_switched_off;
+
+  /// No description provided for @recurring_badge_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get recurring_badge_label;
+
+  /// No description provided for @recurring_badge_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly series'**
+  String get recurring_badge_weekly;
+
+  /// No description provided for @recurring_badge_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get recurring_badge_biweekly;
+
+  /// No description provided for @recurring_badge_ends.
+  ///
+  /// In en, this message translates to:
+  /// **'Series ends {date}'**
+  String recurring_badge_ends(DateTime date);
+
+  /// No description provided for @recurring_badge_open_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs until the organiser ends it'**
+  String get recurring_badge_open_ended;
+
+  /// No description provided for @recurring_badge_semantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of a recurring series'**
+  String get recurring_badge_semantics;
+
+  /// No description provided for @recurring_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit a recurring game'**
+  String get recurring_edit_title;
+
+  /// No description provided for @recurring_edit_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This game is part of a series. What should your changes apply to?'**
+  String get recurring_edit_subtitle;
+
+  /// No description provided for @recurring_edit_this_only.
+  ///
+  /// In en, this message translates to:
+  /// **'This game only'**
+  String get recurring_edit_this_only;
+
+  /// No description provided for @recurring_edit_this_only_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the game on {date} changes. The rest of the series stays as it is.'**
+  String recurring_edit_this_only_desc(DateTime date);
+
+  /// No description provided for @recurring_edit_all_future.
+  ///
+  /// In en, this message translates to:
+  /// **'All future games'**
+  String get recurring_edit_all_future;
+
+  /// No description provided for @recurring_edit_all_future_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'This game and every later game in the series change. Players who joined keep their spot on games that aren\'t rebuilt.'**
+  String get recurring_edit_all_future_desc;
+
+  /// No description provided for @recurring_edit_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get recurring_edit_continue;
+
+  /// No description provided for @recurring_edit_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get recurring_edit_close;
+
+  /// No description provided for @recurring_cancel_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this series?'**
+  String get recurring_cancel_title;
+
+  /// No description provided for @recurring_cancel_future_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 future game will be cancelled.} other{{count} future games will be cancelled.}}'**
+  String recurring_cancel_future_line(int count);
+
+  /// No description provided for @recurring_cancel_players_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{players, plural, =0{No players have joined yet.} =1{1 player has joined and will be notified.} other{{players} players have joined and will be notified.}}'**
+  String recurring_cancel_players_line(int players);
+
+  /// No description provided for @recurring_cancel_past_line.
+  ///
+  /// In en, this message translates to:
+  /// **'Past games and their history stay.'**
+  String get recurring_cancel_past_line;
+
+  /// No description provided for @recurring_cancel_no_carry_over.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is moved to another game automatically.'**
+  String get recurring_cancel_no_carry_over;
+
+  /// No description provided for @recurring_cancel_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel series'**
+  String get recurring_cancel_confirm;
+
+  /// No description provided for @recurring_cancel_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep series'**
+  String get recurring_cancel_keep;
+
+  /// No description provided for @recurring_cancel_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Series cancelled'**
+  String get recurring_cancel_done;
+
+  /// No description provided for @recurring_cancel_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t cancel the series. Try again.'**
+  String get recurring_cancel_failed;
+
+  /// No description provided for @recurring_cancel_notif_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game cancelled'**
+  String get recurring_cancel_notif_title;
+
+  /// No description provided for @recurring_cancel_notif_body.
+  ///
+  /// In en, this message translates to:
+  /// **'{game} on {date} was cancelled. The organiser ended this series.'**
+  String recurring_cancel_notif_body(String game, DateTime date);
 }
 
 class _AppLocalizationsDelegate
