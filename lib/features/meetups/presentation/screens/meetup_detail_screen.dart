@@ -97,8 +97,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
         );
         if (picked != null && mounted) await _run(picked);
       case DabblerRsvpCtaState.notAllowed:
-        (widget.onSwitchProfile ??
-            () => context.push(RoutePaths.profileSwitcher))();
+        widget.onSwitchProfile?.call();
       default:
         break;
     }
