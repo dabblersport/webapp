@@ -13,12 +13,12 @@ INSERT INTO public.role_grants (user_id, role) SELECT current_setting('k700.admi
 
 -- 2099 dates cannot collide with real rows. Day 1: all four launch events + other_event; day 3 empty; day 2 none.
 INSERT INTO public.analytics_events (user_id, event_name, properties, created_at)
-SELECT current_setting('k700.admin_id')::uuid, 'signup',       '{"secret":"x"}', '2099-01-01 10:00+00' UNION ALL
-SELECT current_setting('k700.admin_id')::uuid, 'signup',       '{}',             '2099-01-01 23:59:59+00' UNION ALL
-SELECT current_setting('k700.plain_id')::uuid, 'game_created', '{}',             '2099-01-01 11:00+00' UNION ALL
-SELECT current_setting('k700.plain_id')::uuid, 'game_joined',  '{}',             '2099-01-01 12:00+00' UNION ALL
-SELECT current_setting('k700.admin_id')::uuid, 'check_in',     '{}',             '2099-01-03 00:00:00+00' UNION ALL
-SELECT current_setting('k700.admin_id')::uuid, 'other_event',  '{}',             '2099-01-01 13:00+00';
+SELECT current_setting('k700.admin_id')::uuid, 'signup',       '{"secret":"x"}'::jsonb, '2099-01-01 10:00+00'::timestamptz UNION ALL
+SELECT current_setting('k700.admin_id')::uuid, 'signup',       '{}'::jsonb,             '2099-01-01 23:59:59+00'::timestamptz UNION ALL
+SELECT current_setting('k700.plain_id')::uuid, 'game_created', '{}'::jsonb,             '2099-01-01 11:00+00'::timestamptz UNION ALL
+SELECT current_setting('k700.plain_id')::uuid, 'game_joined',  '{}'::jsonb,             '2099-01-01 12:00+00'::timestamptz UNION ALL
+SELECT current_setting('k700.admin_id')::uuid, 'check_in',     '{}'::jsonb,             '2099-01-03 00:00:00+00'::timestamptz UNION ALL
+SELECT current_setting('k700.admin_id')::uuid, 'other_event',  '{}'::jsonb,             '2099-01-01 13:00+00'::timestamptz;
 
 -- P1: admin gets rows, counts right, other_event excluded, empty day has no row.
 SET LOCAL ROLE authenticated;
