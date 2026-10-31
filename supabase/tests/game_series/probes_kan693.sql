@@ -35,7 +35,7 @@ RETURNS uuid LANGUAGE sql AS $f$
          'Asia/Dubai', p_freq, 10, 'KAN693 probe', NULL, p_ends, 'public', 'open', p_ahead, p_price) FROM _ctx c $f$;
 
 DO $$
-DECLARE c _ctx; sw uuid; sb uuid; n1 int; n2 int; r1 int; r2 int; s_cap uuid; s_end uuid; msg text;
+DECLARE c _ctx; sw uuid; sb uuid; n1 int; n2 int; r1 int; r2 int; s_cap uuid; s_end uuid; msg text; gen int; cnt int; mx date; sod date;
 BEGIN
   SELECT * INTO c FROM _ctx;
   IF c.uid IS NULL OR c.sport IS NULL OR c.variant IS NULL THEN RAISE EXCEPTION 'kan693_probe_no_fixture: need a player profile and a sport variant'; END IF;
@@ -68,12 +68,17 @@ BEGIN
   s_end := pg_temp.new_series('weekly', current_date + 1 + 7);
   PERFORM pg_temp.chk('P4 ends_on stops generation', (SELECT count(*) FROM public.games WHERE series_id = s_end) = 2);
 
-  -- P5 the 52 cap: simulate 52 elapsed slots by asking for the maximum window on a long-running series; rows never exceed 52
+  -- P5 the 52 cap actively stops generation: cancel the series' games, move starts_on back 48 weeks so only the last ~3-4 of the
+  -- 52 weekly slots are still in the future, then generate. Window (12) must NOT fill; nothing may exist beyond slot 52.
   s_cap := pg_temp.new_series('weekly', NULL, 0, 12);
-  UPDATE public.game_series SET starts_on = current_date - 7 * 51 + 1 WHERE id = s_cap;
-  PERFORM public.fn_generate_game_series_occurrences(s_cap);
-  PERFORM pg_temp.chk('P5 52 cap holds',
-    (SELECT count(*) FROM public.games WHERE series_id = s_cap) <= 52);
+  UPDATE public.games SET is_cancelled = true WHERE series_id = s_cap;   -- clear the window (rolled back); generator counts non-cancelled only
+  UPDATE public.game_series SET starts_on = current_date - 7 * 48 WHERE id = s_cap;
+  SELECT starts_on INTO sod FROM public.game_series WHERE id = s_cap;
+  gen := public.fn_generate_game_series_occurrences(s_cap);
+  SELECT count(*), max(start_at)::date INTO cnt, mx FROM public.games WHERE series_id = s_cap AND start_at > now() AND NOT COALESCE(is_cancelled, false);
+  PERFORM pg_temp.chk('P5 52 cap stops generation',
+    cnt > 0 AND cnt < 12 AND mx <= sod + 51 * 7,
+    format('generated %s, future count %s (<12), max start date %s (<= %s), starts_on %s', gen, cnt, mx, sod + 51 * 7, sod));
 
   -- P6 paid game rejected
   BEGIN
