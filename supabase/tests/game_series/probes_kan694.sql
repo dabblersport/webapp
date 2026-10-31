@@ -2,7 +2,9 @@
 -- in ONE transaction that ends in ROLLBACK (nothing persists). NOT YET EXECUTED (the authoring seat may not write to the
 -- database); Memphis runs it. One row per probe; the last statement raises if any probe failed.
 -- Fixtures: an existing player profile + sport variant (host) and an existing profile of a different user (joiner).
+-- Fix cycle: also run AFTER 20261030140000_kan694_fix_same_day_topup.sql (probes F8, F9). Every earlier assertion is unchanged.
 BEGIN;
+SET LOCAL statement_timeout = '60s'; SET LOCAL lock_timeout = '10s';
 CREATE TEMP TABLE _r(name text, ok boolean, detail text);
 CREATE TEMP TABLE _ctx(uid uuid, sport uuid, variant uuid, geo uuid, area uuid, other_uid uuid, other_pid uuid);
 
@@ -10,9 +12,14 @@ INSERT INTO _ctx
 SELECT p.user_id, sv.sport_id, sv.id,
        (SELECT id FROM public.geo_locations ORDER BY id LIMIT 1), (SELECT id FROM public.areas ORDER BY id LIMIT 1),
        o.user_id, o.id
-  FROM public.profiles p, public.sport_variants sv,
+  FROM public.profiles p
+  CROSS JOIN public.sport_variants sv
+  JOIN public.sports s ON s.id = sv.sport_id,
        LATERAL (SELECT q.user_id, q.id FROM public.profiles q WHERE q.user_id <> p.user_id ORDER BY q.created_at LIMIT 1) o
- WHERE p.persona_type = 'player' AND p.is_active ORDER BY p.created_at, sv.id LIMIT 1;
+ WHERE p.persona_type = 'player' AND p.is_active
+   AND s.is_active AND s.is_challenge_sport IS TRUE
+   AND sv.is_active AND sv.players_per_side IS NOT NULL
+ ORDER BY p.created_at, sv.id LIMIT 1;
 
 CREATE FUNCTION pg_temp.as_user(p_user uuid) RETURNS void LANGUAGE sql AS $f$
   SELECT set_config('request.jwt.claims', json_build_object('sub', p_user, 'role','authenticated')::text, true),
@@ -86,6 +93,26 @@ BEGIN
   PERFORM pg_temp.chk('F7 shorter end date cancels unjoined rows beyond it',
     (SELECT count(*) FROM public.games WHERE series_id = s2 AND is_cancelled) = 2
     AND (SELECT NOT is_cancelled FROM public.games WHERE id = j) AND (SELECT count(*) FROM public.games WHERE series_id = s2) = 4, res::text);
+
+  -- F8 scheduled generator (all active series) after F6/F7: the joined 18:00 row holds its local date, so no second 19:30
+  -- occurrence appears on it, nothing is created past ends_on, and no local date holds two non-cancelled rows
+  PERFORM public.fn_generate_game_series_occurrences(NULL);
+  PERFORM pg_temp.chk('F8 scheduled generator adds no second occurrence on a held day',
+    (SELECT count(*) FROM public.games WHERE series_id = s2) = 4
+    AND (SELECT count(*) FROM public.games WHERE series_id = s2 AND NOT is_cancelled
+          AND (start_at AT TIME ZONE 'Asia/Dubai')::date = (SELECT (start_at AT TIME ZONE 'Asia/Dubai')::date FROM public.games WHERE id = j)) = 1
+    AND NOT EXISTS (SELECT 1 FROM public.games WHERE series_id = s2 AND NOT is_cancelled AND (start_at AT TIME ZONE 'Asia/Dubai')::date > current_date + 1 + 7)
+    AND NOT EXISTS (SELECT 1 FROM public.games WHERE series_id = s2 AND NOT is_cancelled
+                     GROUP BY (start_at AT TIME ZONE 'Asia/Dubai')::date HAVING count(*) > 1));
+
+  -- F9 open-ended series: the held day counts once toward the window of 4; the scheduled run tops up to exactly 4 distinct days
+  PERFORM public.rpc_edit_game_series_future(s2, NULL, NULL, NULL, NULL, NULL, NULL, true);
+  PERFORM public.fn_generate_game_series_occurrences(NULL);
+  PERFORM pg_temp.chk('F9 window counts a held day once',
+    (SELECT count(*) FROM public.games WHERE series_id = s2 AND start_at > now() AND NOT is_cancelled) = 4
+    AND (SELECT count(DISTINCT (start_at AT TIME ZONE 'Asia/Dubai')::date) FROM public.games WHERE series_id = s2 AND NOT is_cancelled) = 4
+    AND (SELECT NOT is_cancelled FROM public.games WHERE id = j)
+    AND (SELECT (start_at AT TIME ZONE 'Asia/Dubai')::time FROM public.games WHERE id = j) = time '18:00');
 
   -- C1 cancel series: ended, future rows cancelled, joined player notified via the single-game cancel trigger, past kept
   s3 := pg_temp.new_series();
