@@ -10,9 +10,14 @@ INSERT INTO _ctx
 SELECT p.user_id, sv.sport_id, sv.id,
        (SELECT id FROM public.geo_locations ORDER BY id LIMIT 1), (SELECT id FROM public.areas ORDER BY id LIMIT 1),
        o.user_id, o.id
-  FROM public.profiles p, public.sport_variants sv,
+  FROM public.profiles p
+  CROSS JOIN public.sport_variants sv
+  JOIN public.sports s ON s.id = sv.sport_id,
        LATERAL (SELECT q.user_id, q.id FROM public.profiles q WHERE q.user_id <> p.user_id ORDER BY q.created_at LIMIT 1) o
- WHERE p.persona_type = 'player' AND p.is_active ORDER BY p.created_at, sv.id LIMIT 1;
+ WHERE p.persona_type = 'player' AND p.is_active
+   AND s.is_active AND s.is_challenge_sport IS TRUE
+   AND sv.is_active AND sv.players_per_side IS NOT NULL
+ ORDER BY p.created_at, sv.id LIMIT 1;
 
 CREATE FUNCTION pg_temp.as_user(p_user uuid) RETURNS void LANGUAGE sql AS $f$
   SELECT set_config('request.jwt.claims', json_build_object('sub', p_user, 'role','authenticated')::text, true),
