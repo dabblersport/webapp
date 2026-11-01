@@ -6873,9 +6873,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_dm_action_semantic => 'Send a direct message';
 
   @override
-  String get profile_invite_action_semantic => 'Invite';
-
-  @override
   String get messaging_meetup_mark_label => 'Meetup';
 
   @override
@@ -8443,4 +8440,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get profile_tag_organising_playing => 'Organising · Playing';
+
+  @override
+  String get profile_invite_action_semantic => 'Invite';
+
+  @override
+  String get profile_stat_games_played_visitor => 'Games played';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return '$sport matches';
+  }
 }

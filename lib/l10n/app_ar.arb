@@ -2463,7 +2463,6 @@
   "admin_message_reports_status_unknown": "حالة غير معروفة",
   "messaging_dm_action_label": "مراسلة",
   "messaging_dm_action_semantic": "إرسال رسالة مباشرة",
-  "profile_invite_action_semantic": "دعوة",
   "messaging_meetup_mark_label": "لقاء",
   "messaging_meetup_kind_time": "لقاء · {time}",
   "messaging_meetup_chat_open": "محادثة اللقاء",
@@ -2888,5 +2887,8 @@
   "profile_visitor_upcoming_note": "المباريات المفتوحة التي يلعب فيها أو ينظّمها",
   "profile_tag_playing": "يلعب",
   "profile_tag_organising": "ينظّم",
-  "profile_tag_organising_playing": "ينظّم · يلعب"
+  "profile_tag_organising_playing": "ينظّم · يلعب",
+  "profile_invite_action_semantic": "دعوة",
+  "profile_stat_games_played_visitor": "المباريات التي لعبها",
+  "profile_stat_sport_matches_visitor": "مباريات {sport}"
 }

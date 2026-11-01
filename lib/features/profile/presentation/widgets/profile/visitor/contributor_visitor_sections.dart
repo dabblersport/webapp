@@ -32,6 +32,7 @@ class ContributorVisitorSections extends ConsumerStatefulWidget {
     required this.profileId,
     this.primarySportId,
     this.onOpenSport,
+    this.onOpenAllSports,
     this.onOpenEntity,
     this.now,
   });
@@ -47,6 +48,9 @@ class ContributorVisitorSections extends ConsumerStatefulWidget {
 
   /// Opens the chosen sport's profile from the hero; null leaves it inert.
   final ValueChanged<Sport>? onOpenSport;
+
+  /// The All-sports hero link (KAN-688 ruling: opens /activities).
+  final VoidCallback? onOpenAllSports;
 
   /// Opens an Upcoming row; defaults to the game or meetup detail route.
   final ValueChanged<ContributorEntity>? onOpenEntity;
@@ -158,7 +162,9 @@ class _ContributorVisitorSectionsState
           selected: selected,
           sportsCount: practicing?.length,
           onRetry: _retry,
-          onOpenSport: selected != null && openSport != null
+          onOpenSport: selected == null
+              ? widget.onOpenAllSports
+              : openSport != null
               ? () => openSport(selected)
               : null,
         ),

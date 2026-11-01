@@ -2504,8 +2504,6 @@
   "@messaging_dm_action_label": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review."},
   "messaging_dm_action_semantic": "Send a direct message",
   "@messaging_dm_action_semantic": {"description": "KAN-557 Message action on another user's profile. Arabic is PROVISIONAL pending content review. Screen-reader label of the icon button."},
-  "profile_invite_action_semantic": "Invite",
-  "@profile_invite_action_semantic": {"description": "KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review."},
   "messaging_meetup_mark_label": "Meetup",
   "@messaging_meetup_mark_label": {"description": "KAN-559 Messages list: the meetup row's quiet kind label (the meetup mark). Arabic is PROVISIONAL pending content review."},
   "messaging_meetup_kind_time": "Meetup · {time}",
@@ -3188,5 +3186,10 @@
   "profile_visitor_upcoming_note": "Open games they are playing in or organising",
   "profile_tag_playing": "Playing",
   "profile_tag_organising": "Organising",
-  "profile_tag_organising_playing": "Organising · Playing"
+  "profile_tag_organising_playing": "Organising · Playing",
+  "profile_invite_action_semantic": "Invite",
+  "@profile_invite_action_semantic": {"description": "KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review."},
+  "profile_stat_games_played_visitor": "Games played",
+  "profile_stat_sport_matches_visitor": "{sport} matches",
+  "@profile_stat_sport_matches_visitor": {"description": "KAN-688 hero label with a sport selected (Profiles.dc.html line 576).", "placeholders": {"sport": {"type": "String"}}}
 }

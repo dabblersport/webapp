@@ -65,14 +65,14 @@ class _FakeSports extends StateNotifier<SportsProfileState>
 
 final DateTime _now = DateTime(2026, 11, 1, 9);
 
-UserProfile _omar() => UserProfile(
+UserProfile _omar({bool emptyBio = false}) => UserProfile(
   id: 'p-omar',
   userId: 'u-omar',
   username: 'omar_k',
   displayName: 'Omar Khalil',
   createdAt: DateTime(2024),
   updatedAt: DateTime(2024),
-  bio: 'Weekend padel, Tuesday football.',
+  bio: emptyBio ? null : 'Weekend padel, Tuesday football.',
   city: 'Dubai',
   personaType: 'contributor',
   primarySport: 's-padel',
@@ -160,6 +160,7 @@ Future<void> _pump(
   bool messageOn = false,
   bool countsFail = false,
   _Landed? landed,
+  bool emptyBio = false,
 }) async {
   tester.view.physicalSize = const Size(393, 2400);
   tester.view.devicePixelRatio = 1;
@@ -197,7 +198,8 @@ Future<void> _pump(
       overrides: <Override>[
         profileControllerProvider.overrideWith((ref) => _global),
         visitedProfileControllerProvider.overrideWith(
-          (ref, key) => _FakeProfile(ProfileState(profile: _omar())),
+          (ref, key) =>
+              _FakeProfile(ProfileState(profile: _omar(emptyBio: emptyBio))),
         ),
         visitedSportsProfileControllerProvider.overrideWith(
           (ref, key) => _FakeSports(),
@@ -256,6 +258,24 @@ void main() {
     await loadRenderFonts();
   });
 
+  testWidgets('bento: Sport profiles alone in its row spans the full width', (
+    tester,
+  ) async {
+    await _pump(tester);
+    final Rect hero = tester.getRect(
+      find.byKey(ContributorVisitorBento.heroKey),
+    );
+    final Rect played = tester.getRect(
+      find.byKey(ContributorVisitorBento.playedKey),
+    );
+    final Rect sports = tester.getRect(
+      find.byKey(ContributorVisitorBento.sportsKey),
+    );
+    expect(sports.left, hero.left);
+    expect(sports.right, played.right);
+    expect(sports.top, greaterThan(hero.bottom));
+  });
+
   testWidgets('data: Contributor body, bento from the read model', (
     tester,
   ) async {
@@ -285,7 +305,7 @@ void main() {
     final DabblerStatTile hero = tester.widget<DabblerStatTile>(
       find.byKey(ContributorVisitorBento.heroKey),
     );
-    expect(hero.label, 'Football games');
+    expect(hero.label, 'Football matches');
   });
 
   testWidgets('loading is a spinner, never a zero', (tester) async {
@@ -359,11 +379,72 @@ void main() {
     await _pump(tester);
     expect(find.text('Follow'), findsOneWidget);
     expect(find.byType(ProfileMessageAction), findsNothing);
-    expect(find.textContaining('Invite'), findsNothing);
 
     await _pump(tester, messageOn: true);
     expect(find.byType(ProfileMessageAction), findsOneWidget);
-    expect(find.textContaining('Invite'), findsNothing);
+  });
+
+  testWidgets('Invite: icon-only third button, labelled, starts nothing', (
+    tester,
+  ) async {
+    await _pump(tester, messageOn: true);
+    final Finder invite = find.byKey(ProfileInviteAction.buttonKey);
+    expect(invite, findsOneWidget);
+    expect(find.bySemanticsLabel('Invite'), findsWidgets);
+    // Third in the row, after Follow and Message.
+    expect(
+      tester.getTopLeft(invite).dx,
+      greaterThan(tester.getTopLeft(find.byType(ProfileMessageAction)).dx),
+    );
+    expect(tester.widget<DabblerButton>(invite).onPressed, isNull);
+  });
+
+  testWidgets('hero says Games played, All sports links out', (tester) async {
+    await _pump(tester);
+    final DabblerStatTile hero = tester.widget<DabblerStatTile>(
+      find.byKey(ContributorVisitorBento.heroKey),
+    );
+    expect(hero.label, 'Games played');
+    expect(hero.onTap, isNotNull);
+  });
+
+  testWidgets('empty bio: visitor sees no owner prompt', (tester) async {
+    await _pump(tester, emptyBio: true);
+    expect(
+      find.text('Add a short bio so teammates know what to expect.'),
+      findsNothing,
+    );
+  });
+
+  testWidgets('empty bio: the owner view keeps its prompt', (tester) async {
+    tester.view.physicalSize = const Size(393, 1200);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    await tester.pumpWidget(
+      MaterialApp(
+        localizationsDelegates: AppLocalizations.localizationsDelegates,
+        supportedLocales: AppLocalizations.supportedLocales,
+        theme: DabblerDesignSystemTheme.withFonts(
+          DabblerDesignSystemTheme.withTokens(renderThemeBase()),
+          locale: const Locale('en'),
+        ),
+        home: Scaffold(
+          body: SingleChildScrollView(
+            child: OwnProfileHeader(
+              profile: _omar(emptyBio: true),
+              posts: 0,
+              following: 0,
+              followers: 0,
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump(const Duration(milliseconds: 200));
+    expect(
+      find.text('Add a short bio so teammates know what to expect.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('blocked shows Unblock instead of Follow', (tester) async {
@@ -416,14 +497,14 @@ void main() {
     expect(l.uri?.queryParameters['sportId'], 's-football');
   });
 
-  testWidgets('taps: All-sports hero has no destination yet (declared gap)', (
+  testWidgets('taps: All-sports hero opens /activities (KAN-688 ruling)', (
     tester,
   ) async {
     final _Landed l = _Landed();
     await _pump(tester, landed: l);
     await tester.tap(find.byKey(ContributorVisitorBento.heroKey));
     await settle(tester);
-    expect(l.uri, isNull);
+    expect(l.uri?.path, '/activities');
   });
 
   testWidgets('taps: Upcoming row opens the game', (tester) async {

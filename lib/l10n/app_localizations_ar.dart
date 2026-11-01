@@ -6923,9 +6923,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messaging_dm_action_semantic => 'إرسال رسالة مباشرة';
 
   @override
-  String get profile_invite_action_semantic => 'دعوة';
-
-  @override
   String get messaging_meetup_mark_label => 'لقاء';
 
   @override
@@ -8519,4 +8516,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get profile_tag_organising_playing => 'ينظّم · يلعب';
+
+  @override
+  String get profile_invite_action_semantic => 'دعوة';
+
+  @override
+  String get profile_stat_games_played_visitor => 'المباريات التي لعبها';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return 'مباريات $sport';
+  }
 }

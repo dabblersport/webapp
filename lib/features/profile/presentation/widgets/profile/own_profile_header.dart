@@ -228,15 +228,18 @@ class OwnProfileHeader extends StatelessWidget {
               ],
             ),
             const DabblerGap.v(DabblerSpacing.space5),
-            DabblerText(
-              bio != null && bio.isNotEmpty
-                  ? bio
-                  : l10n.profile_bio_placeholder,
-              style: DabblerType.copy,
-              tone: DabblerTextTone.secondary,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+            // The "Add a short bio" prompt is the owner's; a visitor
+            // (the header carries [actions]) sees nothing for an empty bio.
+            if ((bio != null && bio.isNotEmpty) || actions == null)
+              DabblerText(
+                bio != null && bio.isNotEmpty
+                    ? bio
+                    : l10n.profile_bio_placeholder,
+                style: DabblerType.copy,
+                tone: DabblerTextTone.secondary,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             const DabblerGap.v(DabblerSpacing.space1),
             Wrap(
               spacing: DabblerSpacing.space6,

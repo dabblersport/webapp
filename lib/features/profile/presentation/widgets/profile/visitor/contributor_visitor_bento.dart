@@ -74,6 +74,8 @@ class ContributorVisitorBento extends StatelessWidget {
             DabblerStatTile(
               key: heroKey,
               size: DabblerStatTileSize.hero,
+              // No Played/Organised beside a failed hero: span the row.
+              span: DabblerStatGrid.columns,
               tone: DabblerStatTileTone.brand,
               accent: accent,
               value: '—',
@@ -91,8 +93,8 @@ class ContributorVisitorBento extends StatelessWidget {
               accent: accent,
               value: '$gamesTotal',
               label: sport == null
-                  ? l10n.profile_stat_games_visitor
-                  : l10n.profile_stat_sport_games(sport.nameEn),
+                  ? l10n.profile_stat_games_played_visitor
+                  : l10n.profile_stat_sport_matches_visitor(sport.nameEn),
               sub: l10n.profile_stat_as_player_or_organiser,
               fitValue: true,
               link: onOpenSport != null,
@@ -121,6 +123,8 @@ class ContributorVisitorBento extends StatelessWidget {
           if (sport == null && sports != null)
             DabblerStatTile(
               key: sportsKey,
+              // Alone in its row: span the full bento width, no orphan cell.
+              span: DabblerStatGrid.columns,
               value: '$sports',
               label: l10n.profile_stat_sport_profiles,
               tone: DabblerStatTileTone.accent,
