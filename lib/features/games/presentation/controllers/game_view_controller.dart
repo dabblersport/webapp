@@ -143,6 +143,9 @@ class GameView {
     this.venueName,
     this.venueSpaceName,
     this.venueId,
+    this.seriesId,
+    this.seriesFrequency,
+    this.seriesEndsOn,
   });
 
   final String id;
@@ -176,6 +179,16 @@ class GameView {
   final String? venueName;
   final String? venueSpaceName;
   final String? venueId;
+
+  /// KAN-698: set only for a game that belongs to a recurring series. Read from
+  /// `v_game_card`, which any viewer of the card can see.
+  final String? seriesId;
+
+  /// `weekly` or `biweekly`; null for a one-off game.
+  final String? seriesFrequency;
+  final DateTime? seriesEndsOn;
+
+  bool get isSeries => seriesId != null;
 
   int get spotsLeft => (capacity - rosterCount).clamp(0, capacity);
   bool get isFull => spotsLeft == 0;
@@ -223,6 +236,11 @@ class GameView {
       venueName: j['venue_name'] as String?,
       venueSpaceName: j['venue_space_name'] as String?,
       venueId: j['venue_id'] as String?,
+      seriesId: j['series_id'] as String?,
+      seriesFrequency: j['series_frequency'] as String?,
+      seriesEndsOn: j['series_ends_on'] == null
+          ? null
+          : DateTime.parse(j['series_ends_on'] as String),
     );
   }
 }
