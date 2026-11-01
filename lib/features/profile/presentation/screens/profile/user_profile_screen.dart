@@ -269,6 +269,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
                 profileId: profileId,
                 primarySportId: profile?.primarySport,
                 onOpenSport: (sport) => _openSportProfile(profile, sport),
+                onOpenAllSports: () => context.push(RoutePaths.activities),
               )
             else ...[
               if (profile != null) _buildStats(profile, sportsState),
@@ -406,6 +407,8 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       message: messageOn
           ? ProfileMessageAction(targetAuthUserId: targetAuthUserId)
           : null,
+      // KAN-688 (cxo ruling, same as KAN-689): icon-only, starts nothing.
+      invite: const ProfileInviteAction(),
     );
   }
 

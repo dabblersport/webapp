@@ -3176,5 +3176,10 @@
   "profile_visitor_upcoming_note": "Open games they are playing in or organising",
   "profile_tag_playing": "Playing",
   "profile_tag_organising": "Organising",
-  "profile_tag_organising_playing": "Organising · Playing"
+  "profile_tag_organising_playing": "Organising · Playing",
+  "profile_invite_action_semantic": "Invite",
+  "@profile_invite_action_semantic": {"description": "KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review."},
+  "profile_stat_games_played_visitor": "Games played",
+  "profile_stat_sport_matches_visitor": "{sport} matches",
+  "@profile_stat_sport_matches_visitor": {"description": "KAN-688 hero label with a sport selected (Profiles.dc.html line 576).", "placeholders": {"sport": {"type": "String"}}}
 }

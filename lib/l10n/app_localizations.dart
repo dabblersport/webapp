@@ -14812,6 +14812,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Organising · Playing'**
   String get profile_tag_organising_playing;
+
+  /// KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get profile_invite_action_semantic;
+
+  /// No description provided for @profile_stat_games_played_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games played'**
+  String get profile_stat_games_played_visitor;
+
+  /// KAN-688 hero label with a sport selected (Profiles.dc.html line 576).
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} matches'**
+  String profile_stat_sport_matches_visitor(String sport);
 }
 
 class _AppLocalizationsDelegate
