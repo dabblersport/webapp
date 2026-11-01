@@ -315,12 +315,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             )),
           )
         : null;
-    final GameCounts? counts = countsAsync?.valueOrNull;
-    final bool newContributor =
-        counts != null &&
-        counts.played == 0 &&
-        counts.organised == 0 &&
-        counts.upcoming == 0;
+    final GameCounts? counts = ownProfileCountsData(countsAsync);
+    final bool countsFailed = ownProfileCountsFailed(countsAsync);
+    final bool newContributor = ownProfileIsNewContributor(countsAsync);
 
     return DabblerPage(
       topBar: ListenableBuilder(
@@ -387,6 +384,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               sportsCount: mySports.length,
               organised: counts?.organised,
               upcoming: counts?.upcoming,
+              countsFailed: countsFailed,
+              onRetryCounts: () => ref.invalidate(profileGameCountsProvider),
               gamesPlayed: isContributor
                   ? counts?.played
                   : sportProfiles.isEmpty
