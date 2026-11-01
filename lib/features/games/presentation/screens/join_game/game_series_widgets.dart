@@ -47,37 +47,32 @@ Future<SeriesEditScope?> showSeriesEditScopeSheet(
   final l = AppLocalizations.of(context);
   return showAppSheet<SeriesEditScope>(
     context: context,
+    detent: DabblerSheetDetent.content,
     title: l.recurring_edit_title,
     closeLabel: l.recurring_edit_close,
-    builder: (ctx) => Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerText(
-            l.recurring_edit_subtitle,
-            style: DabblerType.subheadline,
-          ),
-          const DabblerGap.v(DabblerSpacing.space3),
-          DabblerListGroup(
-            children: [
-              DabblerListRow(
-                key: const ValueKey<String>('series-scope-this'),
-                title: l.recurring_edit_this_only,
-                subtitle: l.recurring_edit_this_only_desc(gameStart),
-                onTap: () => Navigator.pop(ctx, SeriesEditScope.thisOnly),
-              ),
-              DabblerListRow(
-                key: const ValueKey<String>('series-scope-future'),
-                title: l.recurring_edit_all_future,
-                subtitle: l.recurring_edit_all_future_desc,
-                onTap: () => Navigator.pop(ctx, SeriesEditScope.allFuture),
-              ),
-            ],
-          ),
-        ],
-      ),
+    builder: (ctx) => Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerText(l.recurring_edit_subtitle, style: DabblerType.subheadline),
+        const DabblerGap.v(DabblerSpacing.space3),
+        DabblerListGroup(
+          children: [
+            DabblerListRow(
+              key: const ValueKey<String>('series-scope-this'),
+              title: l.recurring_edit_this_only,
+              subtitle: l.recurring_edit_this_only_desc(gameStart),
+              onTap: () => Navigator.pop(ctx, SeriesEditScope.thisOnly),
+            ),
+            DabblerListRow(
+              key: const ValueKey<String>('series-scope-future'),
+              title: l.recurring_edit_all_future,
+              subtitle: l.recurring_edit_all_future_desc,
+              onTap: () => Navigator.pop(ctx, SeriesEditScope.allFuture),
+            ),
+          ],
+        ),
+      ],
     ),
   );
 }
@@ -91,6 +86,7 @@ Future<bool?> showSeriesFutureEditSheet(
   final l = AppLocalizations.of(context);
   return showAppSheet<bool>(
     context: context,
+    detent: DabblerSheetDetent.content,
     title: l.recurring_edit_all_future,
     closeLabel: l.recurring_edit_close,
     builder: (_) => _FutureEditBody(game: game),
@@ -163,60 +159,57 @@ class _FutureEditBodyState extends ConsumerState<_FutureEditBody> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerText(
+          l.recurring_edit_all_future_desc,
+          style: DabblerType.subheadline,
+        ),
+        const DabblerGap.v(DabblerSpacing.space3),
+        DabblerTextField(
+          key: const ValueKey<String>('series-future-title'),
+          controller: _title,
+          placeholder: l.recurring_future_title_label,
+        ),
+        const DabblerGap.v(DabblerSpacing.space3),
+        DabblerTextField(
+          key: const ValueKey<String>('series-future-capacity'),
+          controller: _capacity,
+          placeholder: l.recurring_future_capacity_label,
+          keyboardType: TextInputType.number,
+        ),
+        if (_error != null) ...[
+          const DabblerGap.v(DabblerSpacing.space3),
+          DabblerText(_error!, style: DabblerType.subheadline),
+        ],
+        if (_kept > 0) ...[
+          const DabblerGap.v(DabblerSpacing.space3),
           DabblerText(
-            l.recurring_edit_all_future_desc,
+            l.recurring_kept_with_players_notice(_kept),
+            key: const ValueKey<String>('series-kept-notice'),
             style: DabblerType.subheadline,
           ),
-          const DabblerGap.v(DabblerSpacing.space3),
-          DabblerTextField(
-            key: const ValueKey<String>('series-future-title'),
-            controller: _title,
-            placeholder: l.recurring_future_title_label,
-          ),
-          const DabblerGap.v(DabblerSpacing.space3),
-          DabblerTextField(
-            key: const ValueKey<String>('series-future-capacity'),
-            controller: _capacity,
-            placeholder: l.recurring_future_capacity_label,
-            keyboardType: TextInputType.number,
-          ),
-          if (_error != null) ...[
-            const DabblerGap.v(DabblerSpacing.space3),
-            DabblerText(_error!, style: DabblerType.subheadline),
-          ],
-          if (_kept > 0) ...[
-            const DabblerGap.v(DabblerSpacing.space3),
-            DabblerText(
-              l.recurring_kept_with_players_notice(_kept),
-              key: const ValueKey<String>('series-kept-notice'),
-              style: DabblerType.subheadline,
-            ),
-          ],
-          const DabblerGap.v(DabblerSpacing.space4),
-          if (_kept > 0)
-            DabblerButton(
-              label: l.recurring_edit_close,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              onPressed: () => Navigator.pop(context, true),
-            )
-          else
-            DabblerButton(
-              key: const ValueKey<String>('series-future-save'),
-              label: l.recurring_future_save,
-              size: DabblerButtonSize.full,
-              fullWidth: true,
-              loading: _saving,
-              onPressed: _saving ? null : _save,
-            ),
         ],
-      ),
+        const DabblerGap.v(DabblerSpacing.space4),
+        if (_kept > 0)
+          DabblerButton(
+            label: l.recurring_edit_close,
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            onPressed: () => Navigator.pop(context, true),
+          )
+        else
+          DabblerButton(
+            key: const ValueKey<String>('series-future-save'),
+            label: l.recurring_future_save,
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            loading: _saving,
+            onPressed: _saving ? null : _save,
+          ),
+      ],
     );
   }
 }
@@ -229,6 +222,7 @@ Future<bool?> showSeriesCancelSheet(
   final l = AppLocalizations.of(context);
   return showAppSheet<bool>(
     context: context,
+    detent: DabblerSheetDetent.content,
     title: l.recurring_cancel_title,
     closeLabel: l.recurring_edit_close,
     builder: (_) => _CancelBody(seriesId: seriesId),
@@ -269,45 +263,42 @@ class _CancelBodyState extends ConsumerState<_CancelBody> {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space4),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          DabblerText(
-            l.recurring_cancel_past_line,
-            style: DabblerType.subheadline,
-          ),
-          const DabblerGap.v(DabblerSpacing.space2),
-          DabblerText(
-            l.recurring_cancel_no_carry_over,
-            style: DabblerType.subheadline,
-          ),
-          if (_error != null) ...[
-            const DabblerGap.v(DabblerSpacing.space3),
-            DabblerText(_error!, style: DabblerType.subheadline),
-          ],
-          const DabblerGap.v(DabblerSpacing.space4),
-          DabblerButton(
-            key: const ValueKey<String>('series-cancel-confirm'),
-            label: l.recurring_cancel_confirm,
-            tone: DabblerButtonTone.destructive,
-            size: DabblerButtonSize.full,
-            fullWidth: true,
-            loading: _busy,
-            onPressed: _busy ? null : _cancel,
-          ),
-          const DabblerGap.v(DabblerSpacing.space2),
-          DabblerButton(
-            label: l.recurring_cancel_keep,
-            tone: DabblerButtonTone.outlined,
-            size: DabblerButtonSize.full,
-            fullWidth: true,
-            onPressed: () => Navigator.pop(context, false),
-          ),
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerText(
+          l.recurring_cancel_past_line,
+          style: DabblerType.subheadline,
+        ),
+        const DabblerGap.v(DabblerSpacing.space2),
+        DabblerText(
+          l.recurring_cancel_no_carry_over,
+          style: DabblerType.subheadline,
+        ),
+        if (_error != null) ...[
+          const DabblerGap.v(DabblerSpacing.space3),
+          DabblerText(_error!, style: DabblerType.subheadline),
         ],
-      ),
+        const DabblerGap.v(DabblerSpacing.space4),
+        DabblerButton(
+          key: const ValueKey<String>('series-cancel-confirm'),
+          label: l.recurring_cancel_confirm,
+          tone: DabblerButtonTone.destructive,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
+          loading: _busy,
+          onPressed: _busy ? null : _cancel,
+        ),
+        const DabblerGap.v(DabblerSpacing.space2),
+        DabblerButton(
+          label: l.recurring_cancel_keep,
+          tone: DabblerButtonTone.outlined,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
+          onPressed: () => Navigator.pop(context, false),
+        ),
+      ],
     );
   }
 }
