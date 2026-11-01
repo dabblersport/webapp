@@ -3137,6 +3137,7 @@
   "recurring_paid_disabled": "Paid games can't repeat yet",
   "recurring_paid_free_hint": "Make the game free to turn on Repeat.",
   "recurring_paid_switched_off": "Repeat was turned off because this game is paid. Paid games can't repeat yet.",
+  "recurring_location_required": "Choose a venue or set your location to repeat this game.",
   "recurring_badge_label": "Series",
   "recurring_badge_weekly": "Weekly series",
   "recurring_badge_biweekly": "Every 2 weeks",

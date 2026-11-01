@@ -399,6 +399,7 @@ void main() {
         'location',
         'calendar',
         'timer',
+        'refresh', // KAN-697: Repeat
         'medal-star',
         'people',
         'people',

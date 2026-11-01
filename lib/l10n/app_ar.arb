@@ -2845,6 +2845,7 @@
   "recurring_paid_disabled": "لا يمكن تكرار الألعاب المدفوعة حاليًا",
   "recurring_paid_free_hint": "اجعل اللعبة مجانية لتفعيل التكرار.",
   "recurring_paid_switched_off": "أُوقف التكرار لأن هذه اللعبة مدفوعة. لا يمكن تكرار الألعاب المدفوعة حاليًا.",
+  "recurring_location_required": "اختر ملعبًا أو حدّد موقعك لتكرار هذه اللعبة.",
   "recurring_badge_label": "سلسلة",
   "recurring_badge_weekly": "سلسلة أسبوعية",
   "recurring_badge_biweekly": "كل أسبوعين",

@@ -272,6 +272,13 @@ class SupabaseConfig {
       'increment_notification_interaction';
   static const String processQueuedEventsFn = 'process_queued_events';
   static const String rpcCreateGameFn = 'rpc_create_game';
+
+  /// KAN-693/KAN-697: creates a recurring series and its first occurrences.
+  static const String rpcCreateGameSeriesFn = 'rpc_create_game_series';
+
+  /// KAN-697 (CTO ruling): `p_timezone` of a series. Series times assume UAE
+  /// local time until a device timezone source exists.
+  static const String defaultSeriesTimezone = 'Asia/Dubai';
   static const String rpcCreateSportProfileFn = 'rpc_create_sport_profile';
   /// KAN-678/KAN-680: the 5-argument overload that carries the sport key.
   static const String rpcChallengeCreateFn = 'rpc_challenge_create';

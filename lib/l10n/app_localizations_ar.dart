@@ -8332,6 +8332,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'أُوقف التكرار لأن هذه اللعبة مدفوعة. لا يمكن تكرار الألعاب المدفوعة حاليًا.';
 
   @override
+  String get recurring_location_required =>
+      'اختر ملعبًا أو حدّد موقعك لتكرار هذه اللعبة.';
+
+  @override
   String get recurring_badge_label => 'سلسلة';
 
   @override

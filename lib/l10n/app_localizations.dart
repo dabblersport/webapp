@@ -14609,6 +14609,12 @@ abstract class AppLocalizations {
   /// **'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.'**
   String get recurring_paid_switched_off;
 
+  /// No description provided for @recurring_location_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a venue or set your location to repeat this game.'**
+  String get recurring_location_required;
+
   /// No description provided for @recurring_badge_label.
   ///
   /// In en, this message translates to:

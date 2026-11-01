@@ -87,6 +87,10 @@ class FeatureFlags {
   // account_management_screen.dart.
   static const bool enableDataExport = false;
 
+  /// KAN-697: the Repeat control in the game composer (recurring series via
+  /// `rpc_create_game_series`, KAN-693).
+  static const bool enableRecurringGames = true;
+
   /// Game Creation Features (Split by profile type)
   static const bool enablePlayerGameCreation =
       true; // Players CANNOT create games in MVP
