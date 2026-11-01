@@ -14764,6 +14764,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{game} on {date} was cancelled. The organiser ended this series.'**
   String recurring_cancel_notif_body(String game, DateTime date);
+
+  /// No description provided for @recurring_future_title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Game title'**
+  String get recurring_future_title_label;
+
+  /// No description provided for @recurring_future_capacity_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get recurring_future_capacity_label;
+
+  /// No description provided for @recurring_future_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save for all future games'**
+  String get recurring_future_save;
+
+  /// No description provided for @recurring_future_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Series updated'**
+  String get recurring_future_done;
+
+  /// No description provided for @recurring_future_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the series. Try again.'**
+  String get recurring_future_failed;
+
+  /// No description provided for @recurring_kept_with_players_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game with joined players keeps its old details.} other{{count} games with joined players keep their old details.}}'**
+  String recurring_kept_with_players_notice(int count);
+
+  /// No description provided for @recurring_cancel_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel series'**
+  String get recurring_cancel_action;
 }
 
 class _AppLocalizationsDelegate

@@ -8451,4 +8451,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
     return 'تم إلغاء لعبة يوم $dateString. أنهى المنظّم هذه السلسلة. اللعبة: $game';
   }
+
+  @override
+  String get recurring_future_title_label => 'عنوان اللعبة';
+
+  @override
+  String get recurring_future_capacity_label => 'عدد اللاعبين';
+
+  @override
+  String get recurring_future_save => 'حفظ لكل الألعاب القادمة';
+
+  @override
+  String get recurring_future_done => 'تم تحديث السلسلة';
+
+  @override
+  String get recurring_future_failed => 'تعذّر تحديث السلسلة. حاول مرة أخرى.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      many: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      few: '$count ألعاب فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      two: 'لعبتان فيهما لاعبون منضمّون تحتفظان بتفاصيلهما السابقة.',
+      one: 'لعبة واحدة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'إلغاء السلسلة';
 }

@@ -3167,5 +3167,13 @@
   "recurring_cancel_failed": "Couldn't cancel the series. Try again.",
   "recurring_cancel_notif_title": "Game cancelled",
   "recurring_cancel_notif_body": "{game} on {date} was cancelled. The organiser ended this series.",
-  "@recurring_cancel_notif_body": {"placeholders": {"game": {"type": "String"}, "date": {"type": "DateTime", "format": "yMMMEd"}}}
+  "@recurring_cancel_notif_body": {"placeholders": {"game": {"type": "String"}, "date": {"type": "DateTime", "format": "yMMMEd"}}},
+  "recurring_future_title_label": "Game title",
+  "recurring_future_capacity_label": "Players",
+  "recurring_future_save": "Save for all future games",
+  "recurring_future_done": "Series updated",
+  "recurring_future_failed": "Couldn't update the series. Try again.",
+  "recurring_kept_with_players_notice": "{count, plural, =1{1 game with joined players keeps its old details.} other{{count} games with joined players keep their old details.}}",
+  "@recurring_kept_with_players_notice": {"placeholders": {"count": {"type": "int"}}},
+  "recurring_cancel_action": "Cancel series"
 }

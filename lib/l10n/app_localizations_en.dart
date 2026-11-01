@@ -8377,4 +8377,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
     return '$game on $dateString was cancelled. The organiser ended this series.';
   }
+
+  @override
+  String get recurring_future_title_label => 'Game title';
+
+  @override
+  String get recurring_future_capacity_label => 'Players';
+
+  @override
+  String get recurring_future_save => 'Save for all future games';
+
+  @override
+  String get recurring_future_done => 'Series updated';
+
+  @override
+  String get recurring_future_failed =>
+      'Couldn\'t update the series. Try again.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games with joined players keep their old details.',
+      one: '1 game with joined players keeps its old details.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'Cancel series';
 }
