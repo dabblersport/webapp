@@ -14039,6 +14039,18 @@ abstract class AppLocalizations {
   /// **'Organised'**
   String get profile_stat_organised;
 
+  /// No description provided for @profile_stat_partners.
+  ///
+  /// In en, this message translates to:
+  /// **'Partners'**
+  String get profile_stat_partners;
+
+  /// No description provided for @profile_stat_not_available_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available yet'**
+  String get profile_stat_not_available_yet;
+
   /// No description provided for @profile_stat_as_player_or_organiser.
   ///
   /// In en, this message translates to:

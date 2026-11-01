@@ -6,10 +6,11 @@ import 'package:intl/intl.dart';
 /// The Contributor's own bento (`Profiles.dc.html` `bento()`, key
 /// `contributor`, lines 584-598): Games & meetups hero (As player or
 /// organiser), Played, Organised, Show-up rate, Minutes played, then Sport
-/// profiles (All). Partners (a chosen sport) has no source in the app and is
-/// left out (named blocker). A tile whose source the app
-/// does not hold is left out, never drawn as zero; the hero value is a dash
-/// until a distinct games-and-meetups total exists.
+/// profiles (All). Partners and the per-sport Organised, Show-up rate and
+/// Minutes have no source in the app: with a sport chosen each renders as a
+/// dash tile, never zero (approved exclusion; follow-up need "Per-sport
+/// contributor metrics source"). The hero value is a dash until a distinct
+/// games-and-meetups total exists (temporary, PO ruling 2026-11-01).
 class ContributorBento extends StatelessWidget {
   const ContributorBento({
     super.key,
@@ -41,6 +42,20 @@ class ContributorBento extends StatelessWidget {
 
   /// Hero tap: the games list (the design's hero is a link).
   final VoidCallback? onOpenGames;
+
+  /// An approved exclusion (KAN-687 PO ruling): the per-sport source does not
+  /// exist yet, so the tile says so instead of showing zero or vanishing.
+  DabblerStatTile _unavailable(
+    AppLocalizations l10n,
+    String label,
+    DabblerStatTileTone tone,
+  ) => DabblerStatTile(
+    value: '—',
+    label: label,
+    sub: l10n.profile_stat_not_available_yet,
+    tone: tone,
+    fitValue: true,
+  );
 
   @override
   Widget build(BuildContext context) {
@@ -80,6 +95,12 @@ class ContributorBento extends StatelessWidget {
               label: l10n.profile_stat_organised,
               tone: DabblerStatTileTone.accent,
               fitValue: true,
+            )
+          else if (!all)
+            _unavailable(
+              l10n,
+              l10n.profile_stat_organised,
+              DabblerStatTileTone.accent,
             ),
           if (showUpPercent != null)
             DabblerStatTile(
@@ -87,6 +108,12 @@ class ContributorBento extends StatelessWidget {
               label: l10n.profile_stat_show_up_rate,
               tone: DabblerStatTileTone.info,
               fitValue: true,
+            )
+          else if (!all)
+            _unavailable(
+              l10n,
+              l10n.profile_stat_show_up_rate,
+              DabblerStatTileTone.info,
             ),
           if (minutes != null && minutes > 0)
             DabblerStatTile(
@@ -94,6 +121,18 @@ class ContributorBento extends StatelessWidget {
               label: l10n.profile_stat_minutes_played,
               tone: DabblerStatTileTone.card,
               fitValue: true,
+            )
+          else if (!all)
+            _unavailable(
+              l10n,
+              l10n.profile_stat_minutes_played,
+              DabblerStatTileTone.card,
+            ),
+          if (!all)
+            _unavailable(
+              l10n,
+              l10n.profile_stat_partners,
+              DabblerStatTileTone.card,
             ),
           if (all && sportProfiles != null)
             DabblerStatTile(

@@ -7990,6 +7990,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_organised => 'نظّمت';
 
   @override
+  String get profile_stat_partners => 'الشركاء';
+
+  @override
+  String get profile_stat_not_available_yet => 'غير متاح بعد';
+
+  @override
   String get profile_stat_as_player_or_organiser => 'كلاعب أو منظّم';
 
   @override

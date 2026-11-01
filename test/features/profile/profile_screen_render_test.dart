@@ -13,6 +13,8 @@ import 'package:dabbler/features/profile/presentation/providers/profile_game_cou
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/profile_screen.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_bento.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_games_sections.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
 import 'package:dabbler/features/ratings/presentation/widgets/rating_summary.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
@@ -307,6 +309,66 @@ void main() {
       await _shoot(tester, 'profile-contributor-bento-$dir');
     });
 
+    testWidgets('contributor sections follow the design order - $dir', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        locale: locale,
+        profileState: ProfileState(profile: _profile('contributor')),
+        counts: () async => GameCounts(
+          played: 12,
+          organised: 3,
+          upcoming: 1,
+          upcomingGames: <GameCountRow>[
+            GameCountRow(
+              id: 'g1',
+              title: 'Padel doubles',
+              startAt: DateTime.now().add(const Duration(days: 2)),
+              isCancelled: false,
+            ),
+          ],
+        ),
+      );
+      expect(tester.takeException(), isNull);
+      double top(Finder f) => tester.getTopLeft(f.first).dy;
+      final double bento = top(find.byType(ContributorBento));
+      final double games = top(find.byType(ContributorGamesSections));
+      expect(bento < games, isTrue, reason: 'bento above Upcoming');
+      expect(games < top(find.byType(DabblerTabs)), isTrue);
+      if (find.byType(OwnProfileSportPicker).evaluate().isNotEmpty) {
+        expect(top(find.byType(OwnProfileSportPicker)) < bento, isTrue);
+      }
+      // The hero total is a dash, never a bare sum or a zero.
+      expect(
+        find.descendant(
+          of: find.byType(ContributorBento),
+          matching: find.text('—'),
+        ),
+        findsOneWidget,
+      );
+      // The only zero a tile may show is a known count (Sport profiles = 0
+      // is a fact); the hero and unknown figures are never drawn as zero.
+      expect(
+        find.descendant(
+          of: find.byType(ContributorBento),
+          matching: find.text('12'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: find.byType(ContributorBento),
+          matching: find.text('3'),
+        ),
+        findsOneWidget,
+      );
+      await _shoot(tester, 'profile-contributor-order-$dir');
+      await tester.drag(find.byType(ListView).first, const Offset(0, -500));
+      await _settle(tester);
+      await _shoot(tester, 'profile-contributor-scrolled-$dir');
+    });
+
     testWidgets('contributor with zero counts keeps new-user variant - $dir', (
       tester,
     ) async {
@@ -320,6 +382,7 @@ void main() {
       expect(tester.takeException(), isNull);
       expect(find.byType(ContributorBento), findsNothing);
       expect(find.byType(OwnProfileStats), findsOneWidget);
+      await _shoot(tester, 'profile-contributor-no-history-$dir');
     });
 
     testWidgets('contributor counts failure keeps retry state - $dir', (

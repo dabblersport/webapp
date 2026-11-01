@@ -46,22 +46,31 @@ void main() {
     expect(find.text('Primary sports'), findsNothing);
   });
 
-  testWidgets('Selected sport: scoped hero label, no unsourced tiles', (
-    tester,
-  ) async {
-    await _pump(
-      tester,
-      const ContributorBento(
-        accent: DabblerSportAccent.all,
-        sportName: 'Padel',
-        played: 41,
-      ),
-    );
-    expect(find.text('Padel games & meetups'), findsOneWidget);
-    expect(find.text('Organised'), findsNothing);
-    expect(find.text('Sport profiles'), findsNothing);
-    expect(find.text('Partners'), findsNothing);
-  });
+  testWidgets(
+    'Selected sport: scoped hero label, unsourced tiles are labelled unavailable',
+    (tester) async {
+      await _pump(
+        tester,
+        const ContributorBento(
+          accent: DabblerSportAccent.all,
+          sportName: 'Padel',
+          played: 41,
+        ),
+      );
+      expect(find.text('Padel games & meetups'), findsOneWidget);
+      for (final String label in <String>[
+        'Organised',
+        'Show-up rate',
+        'Minutes played',
+        'Partners',
+      ]) {
+        expect(find.text(label), findsOneWidget);
+      }
+      expect(find.text('Not available yet'), findsNWidgets(4));
+      expect(find.text('0'), findsNothing);
+      expect(find.text('Sport profiles'), findsNothing);
+    },
+  );
 
   testWidgets('Hero opens games and Arabic renders', (tester) async {
     int taps = 0;

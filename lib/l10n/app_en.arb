@@ -3031,6 +3031,8 @@
   "profile_stat_new_hero_sub": "Join or organise one to start your list",
   "profile_stat_played": "Played",
   "profile_stat_organised": "Organised",
+  "profile_stat_partners": "Partners",
+  "profile_stat_not_available_yet": "Not available yet",
   "profile_stat_as_player_or_organiser": "As player or organiser",
   "profile_stat_sport_games_meetups": "{sport} games & meetups",
   "@profile_stat_sport_games_meetups": {"placeholders": {"sport": {"type": "String"}}},

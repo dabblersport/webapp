@@ -19,6 +19,7 @@ class ContributorGamesSections extends StatelessWidget {
     this.showOrganised = true,
     this.onOpenGame,
     this.onFindGame,
+    this.onCreateGame,
   });
 
   final GameCounts counts;
@@ -29,6 +30,9 @@ class ContributorGamesSections extends StatelessWidget {
 
   /// Replaces the push to the Games tab behind Find a game.
   final VoidCallback? onFindGame;
+
+  /// Replaces the push to game creation behind Create game.
+  final VoidCallback? onCreateGame;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +48,20 @@ class ContributorGamesSections extends StatelessWidget {
         if (upcoming.isNotEmpty)
           _section(context, l10n.listing_upcoming, upcoming),
         if (showOrganised && organised.isNotEmpty)
-          _section(context, l10n.profile_section_games_organised, organised),
+          _section(
+            context,
+            l10n.profile_section_games_organised,
+            organised,
+            action: DabblerTextLink(
+              label: l10n.nav_create_game,
+              underline: false,
+              style: DabblerType.footnote
+                  .resolveForDirection(Directionality.of(context))
+                  .copyWith(fontWeight: DabblerType.semibold),
+              onPressed:
+                  onCreateGame ?? () => context.push(RoutePaths.createGame),
+            ),
+          ),
       ],
     );
   }
@@ -89,7 +106,12 @@ class ContributorGamesSections extends StatelessWidget {
     );
   }
 
-  Widget _section(BuildContext context, String title, List<GameCountRow> rows) {
+  Widget _section(
+    BuildContext context,
+    String title,
+    List<GameCountRow> rows, {
+    Widget? action,
+  }) {
     final String locale = Localizations.localeOf(context).toString();
     final DateFormat when = DateFormat.MMMEd(locale).add_jm();
     return Padding(
@@ -101,9 +123,30 @@ class ContributorGamesSections extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: DabblerSpacing.space6,
             ),
-            child: DabblerSection(
-              title: title,
-              style: DabblerSectionStyle.label,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: <Widget>[
+                if (action == null)
+                  Expanded(
+                    child: DabblerSection(
+                      title: title,
+                      style: DabblerSectionStyle.label,
+                    ),
+                  )
+                else ...<Widget>[
+                  Expanded(
+                    child: DabblerText(
+                      title,
+                      style: DabblerType.subheadline,
+                      weight: DabblerTextWeight.semibold,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  action,
+                ],
+              ],
             ),
           ),
           const DabblerGap.v(DabblerSpacing.space3),

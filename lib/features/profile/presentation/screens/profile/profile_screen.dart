@@ -378,7 +378,22 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             ),
             // KAN-706: On bench badge + line; nothing when not benched.
             const BenchProfileIndicator(),
-            const DabblerGap.v(DabblerSpacing.space8),
+            // Design order (Profiles.dc.html): practicing selector, bento,
+            // followed sports, Upcoming, Needs attention, Games I organise,
+            // feed tabs.
+            if (personaType != 'socialiser') ...[
+              OwnProfileSportPicker(
+                sports: mySports,
+                title: newContributor
+                    ? l10n.profile_section_sports_you_play
+                    : null,
+                selectedId: selected?.id,
+                primaryId: profile?.primarySport,
+                onSelect: (id) => setState(() => _selectedSportId = id),
+                onManage: () => ManageSportsSheet.show(context),
+              ),
+              const DabblerGap.v(DabblerSpacing.space8),
+            ],
             if (isContributor && counts != null && !newContributor)
               ContributorBento(
                 accent: DabblerSportAccent.of(
@@ -466,18 +481,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             const DabblerGap.v(DabblerSpacing.space8),
             if (!isContributor) RatingSummary(userId: profile?.userId),
             if (personaType == 'socialiser')
-              OwnProfileFollowedSports(sports: mySports)
-            else
-              OwnProfileSportPicker(
-                sports: mySports,
-                title: newContributor
-                    ? l10n.profile_section_sports_you_play
-                    : null,
-                selectedId: selected?.id,
-                primaryId: profile?.primarySport,
-                onSelect: (id) => setState(() => _selectedSportId = id),
-                onManage: () => ManageSportsSheet.show(context),
-              ),
+              OwnProfileFollowedSports(sports: mySports),
             const DabblerGap.v(DabblerSpacing.space8),
             if (counts != null) ContributorGamesSections(counts: counts),
             if (profileId == null)
