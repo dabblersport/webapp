@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
@@ -9,6 +11,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
@@ -869,7 +872,23 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         if (requestId != null) 'p_request_id': requestId,
       };
 
-      await _db.rpc(SupabaseConfig.rpcCreateGameFn, params: params);
+      final created = await _db.rpc(
+        SupabaseConfig.rpcCreateGameFn,
+        params: params,
+      );
+      // Launch event: this composer is the app's create path, so the event
+      // is sent here, once, after the create RPC succeeded.
+      unawaited(
+        const AnalyticsService().trackGameCreated(
+          gameId: created?.toString() ?? '',
+          sportType: (state.sportNameEn ?? state.sportId ?? 'unknown')
+              .toLowerCase(),
+          playerCount: state.requiredPlayers ?? 0,
+          price: null,
+          venueType: state.venueSpaceId != null ? 'venue' : 'unspecified',
+          duration: '${state.durationMinutes}m',
+        ),
+      );
       state = state.copyWith(isSubmitting: false);
       return true;
     } on PostgrestException catch (e) {

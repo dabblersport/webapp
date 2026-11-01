@@ -166,7 +166,7 @@ class _OtpVerificationScreenState extends ConsumerState<OtpVerificationScreen> {
       }
 
       if (widget.userExistsBeforeOtp == false) {
-        unawaited(AnalyticsService.trackEvent('signup'));
+        unawaited(AnalyticsService.trackSignup(method: 'otp'));
       }
 
       if (mounted) {
