@@ -292,8 +292,11 @@ void main() {
     await _tap(tester, find.text(l.recurring_repeat_label));
     await _tap(tester, find.text(l.recurring_option_biweekly));
     await _tap(tester, _submit);
-    expect(_rpcs, hasLength(1));
-    final (name, body) = _rpcs.single;
+    final creates = _rpcs
+        .where((r) => r.$1 != SupabaseConfig.rpcTrackEventFn)
+        .toList();
+    expect(creates, hasLength(1));
+    final (name, body) = creates.single;
     expect(name, SupabaseConfig.rpcCreateGameSeriesFn);
     expect(body['p_geo_location_id'], 'geo-1');
     expect(body['p_area_id'], 'area-1');
@@ -317,8 +320,12 @@ void main() {
     await _pump(tester);
     await _fill(tester, l, price: '35');
     await _tap(tester, _submit);
-    expect(_rpcs.single.$1, SupabaseConfig.rpcCreateGameFn);
-    expect(_rpcs.single.$2.containsKey('p_geo_location_id'), isFalse);
+    final creates = _rpcs
+        .where((r) => r.$1 != SupabaseConfig.rpcTrackEventFn)
+        .toList();
+    expect(creates, hasLength(1));
+    expect(creates.single.$1, SupabaseConfig.rpcCreateGameFn);
+    expect(creates.single.$2.containsKey('p_geo_location_id'), isFalse);
   });
 
   testWidgets('C4 layout: row with value and chevron, panel with equal pills', (
