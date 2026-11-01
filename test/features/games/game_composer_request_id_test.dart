@@ -206,14 +206,13 @@ Future<void> _fill(WidgetTester tester, AppLocalizations l) async {
     await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
     await _settle(tester);
   }
-  await tester.tap(
-    find
-        .descendant(
-          of: find.byType(DabblerCalendar),
-          matching: find.text('${day.day}'),
-        )
-        .last,
+  // The grid also shows the adjacent months' days: an early day of this
+  // month is the first match, a late one the last.
+  final Finder dayCells = find.descendant(
+    of: find.byType(DabblerCalendar),
+    matching: find.text('${day.day}'),
   );
+  await tester.tap(day.day <= 15 ? dayCells.first : dayCells.last);
   await _settle(tester);
   await _tap(tester, find.text(l.composer_continue_time));
   await _tap(tester, find.text(l.composer_confirm));
