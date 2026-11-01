@@ -434,9 +434,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               heroTone: personaType == 'host'
                   ? DabblerStatTileTone.amber
                   : DabblerStatTileTone.brand,
-              onOpenSport: selected != null && canOpen
-                  ? () => _openSportProfile(profile, selected)
-                  : null,
+              // Selected sport: its personal Sport Profile. All sports: the
+              // account's own activity list (no per-sport filter exists there).
+              onOpenSport: selected != null
+                  ? (canOpen ? () => _openSportProfile(profile, selected) : null)
+                  : (isContributor && !newContributor && counts != null
+                        ? () => context.push(RoutePaths.activities)
+                        : null),
             ),
             const DabblerGap.v(DabblerSpacing.space8),
             RatingSummary(userId: profile?.userId),
