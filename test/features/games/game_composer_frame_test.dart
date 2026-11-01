@@ -260,14 +260,13 @@ Future<DateTime> _fill(WidgetTester tester, AppLocalizations l) async {
     await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
     await _settle(tester);
   }
-  await tester.tap(
-    find
-        .descendant(
-          of: find.byType(DabblerCalendar),
-          matching: find.text('${day.day}'),
-        )
-        .last,
+  // The grid also shows the adjacent months' days: an early day of this
+  // month is the first match, a late one the last.
+  final Finder dayCells = find.descendant(
+    of: find.byType(DabblerCalendar),
+    matching: find.text('${day.day}'),
   );
+  await tester.tap(day.day <= 15 ? dayCells.first : dayCells.last);
   await _settle(tester);
   await _tap(tester, find.text(l.composer_continue_time));
   await _tap(tester, find.text(l.composer_confirm));
@@ -388,6 +387,12 @@ void main() {
       );
       expect(glyph.name, 'grid-2');
       expect(glyph.size, 20);
+
+      // KAN-697: Repeat is its own sunken row (36 circle), not a composer row.
+      expect(
+        find.byKey(const ValueKey<String>('game-repeat-row')),
+        findsOneWidget,
+      );
 
       // Icons by row, in the design's order.
       final List<String> icons = tester
@@ -527,6 +532,11 @@ void main() {
         ),
         '35',
       );
+      // KAN-697: the Repeat rows made the form taller; lift the pill clear of
+      // the sticky submit bar before tapping it.
+      await tester.ensureVisible(find.text(l.game_join_request));
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -160));
+      await _settle(tester, 2);
       await _tap(tester, find.text(l.game_join_request));
       await _tap(tester, find.byType(DabblerToggle).first);
       await tester.enterText(

@@ -14579,6 +14579,12 @@ abstract class AppLocalizations {
   /// **'This series has reached its limit of {max, plural, =1{1 game} other{{max} games}}. Renew it to schedule more.'**
   String recurring_limit_reached(int max);
 
+  /// No description provided for @recurring_limit_reached_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Series limit reached'**
+  String get recurring_limit_reached_title;
+
   /// No description provided for @recurring_preview_count.
   ///
   /// In en, this message translates to:
@@ -14608,6 +14614,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.'**
   String get recurring_paid_switched_off;
+
+  /// No description provided for @recurring_location_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a venue or set your location to repeat this game.'**
+  String get recurring_location_required;
 
   /// No description provided for @recurring_badge_label.
   ///

@@ -8239,6 +8239,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get recurring_limit_reached_title => 'Series limit reached';
+
+  @override
   String recurring_preview_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -8262,6 +8265,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recurring_paid_switched_off =>
       'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.';
+
+  @override
+  String get recurring_location_required =>
+      'Choose a venue or set your location to repeat this game.';
 
   @override
   String get recurring_badge_label => 'Series';
