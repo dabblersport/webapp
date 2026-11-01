@@ -14579,6 +14579,12 @@ abstract class AppLocalizations {
   /// **'This series has reached its limit of {max, plural, =1{1 game} other{{max} games}}. Renew it to schedule more.'**
   String recurring_limit_reached(int max);
 
+  /// No description provided for @recurring_limit_reached_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Series limit reached'**
+  String get recurring_limit_reached_title;
+
   /// No description provided for @recurring_preview_count.
   ///
   /// In en, this message translates to:

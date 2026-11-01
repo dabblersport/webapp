@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/features/games/domain/models/game_recurrence.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
@@ -242,6 +243,7 @@ void main() {
   ) async {
     await _pump(tester);
     await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
     await _tap(tester, find.text(l.recurring_option_weekly));
     await _tap(tester, _submit);
     expect(_rpcs, isEmpty);
@@ -259,6 +261,7 @@ void main() {
     };
     await _pump(tester);
     await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
     await _tap(tester, find.text(l.recurring_option_biweekly));
     await _tap(tester, _submit);
     expect(_rpcs, hasLength(1));
@@ -288,5 +291,59 @@ void main() {
     await _tap(tester, _submit);
     expect(_rpcs.single.$1, SupabaseConfig.rpcCreateGameFn);
     expect(_rpcs.single.$2.containsKey('p_geo_location_id'), isFalse);
+  });
+
+  testWidgets('C4 layout: row with value and chevron, panel with 44dp pills', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    // D1: collapsed row shows the current value, the panel is closed.
+    expect(find.text(l.recurring_option_none), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('game-repeat-panel')),
+      findsNothing,
+    );
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    expect(
+      find.byKey(const ValueKey<String>('game-repeat-panel')),
+      findsOneWidget,
+    );
+    // D2: three equal pills, 44dp high.
+    final sizes = <Size>[
+      for (final t in <String>[
+        l.recurring_option_none,
+        l.recurring_option_weekly,
+        l.recurring_option_biweekly,
+      ])
+        tester.getSize(
+          find
+              .ancestor(of: find.text(t).last, matching: find.byType(SizedBox))
+              .first,
+        ),
+    ];
+    expect(sizes.map((s) => s.height), everyElement(44));
+    expect(sizes.map((s) => s.width).toSet(), hasLength(1));
+    // D4: the hint sits under the card, whole.
+    expect(
+      find.text(l.recurring_limit_hint(kMaxSeriesOccurrences)),
+      findsOneWidget,
+    );
+    // D3 and D4: once Weekly is on, the Ends card and the limit card show.
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    expect(find.text(l.recurring_end_date_label), findsOneWidget);
+    expect(find.text(l.recurring_end_date_none), findsOneWidget);
+    expect(find.text(l.recurring_limit_reached_title), findsOneWidget);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('C4 layout: paid lock is two lines in the Repeat block', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '35');
+    expect(find.text(l.recurring_paid_disabled), findsOneWidget);
+    expect(find.text(l.recurring_paid_free_hint), findsOneWidget);
+    expect(find.text(l.recurring_option_none), findsOneWidget);
   });
 }
