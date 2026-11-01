@@ -74,6 +74,8 @@ class ContributorVisitorBento extends StatelessWidget {
             DabblerStatTile(
               key: heroKey,
               size: DabblerStatTileSize.hero,
+              // No Played/Organised beside a failed hero: span the row.
+              span: DabblerStatGrid.columns,
               tone: DabblerStatTileTone.brand,
               accent: accent,
               value: '—',
@@ -121,6 +123,8 @@ class ContributorVisitorBento extends StatelessWidget {
           if (sport == null && sports != null)
             DabblerStatTile(
               key: sportsKey,
+              // Alone in its row: span the full bento width, no orphan cell.
+              span: DabblerStatGrid.columns,
               value: '$sports',
               label: l10n.profile_stat_sport_profiles,
               tone: DabblerStatTileTone.accent,

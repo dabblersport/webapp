@@ -219,6 +219,24 @@ void main() {
     await loadRenderFonts();
   });
 
+  testWidgets('bento: Sport profiles alone in its row spans the full width', (
+    tester,
+  ) async {
+    await _pump(tester);
+    final Rect hero = tester.getRect(
+      find.byKey(ContributorVisitorBento.heroKey),
+    );
+    final Rect played = tester.getRect(
+      find.byKey(ContributorVisitorBento.playedKey),
+    );
+    final Rect sports = tester.getRect(
+      find.byKey(ContributorVisitorBento.sportsKey),
+    );
+    expect(sports.left, hero.left);
+    expect(sports.right, played.right);
+    expect(sports.top, greaterThan(hero.bottom));
+  });
+
   testWidgets('data: Contributor body, bento from the read model', (
     tester,
   ) async {

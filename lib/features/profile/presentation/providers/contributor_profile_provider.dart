@@ -13,7 +13,7 @@ const String _gameColumns =
     'creator_profile_id, sport_id';
 
 const String _meetupColumns =
-    'id, title, start_at, is_cancelled, creator_profile_id, creator_user_id, '
+    'id, title, start_at, is_cancelled, creator_profile_id, '
     'sport_id';
 
 const ContributorGap _ownerPrivate = ContributorGap(
