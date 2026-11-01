@@ -1,11 +1,9 @@
 import 'package:dabbler/features/games/presentation/controllers/game_counts.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
-import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-import '../../support/render_mode.dart';
 import 'profile_render_support.dart';
 
 const GameCounts _zeros = GameCounts(played: 0, organised: 0, upcoming: 0);
