@@ -25,10 +25,12 @@ import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart' hide Icons;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 
 import '../home/home_test_harness.dart';
 import '../../support/render_mode.dart';
@@ -141,17 +143,54 @@ ContributorProfileData _data({
 
 late _FakeProfile _global;
 
+/// What the last pushed route carried (KAN-689 tap-through assertions).
+class _Landed {
+  Uri? uri;
+  Map<String, String> params = const {};
+  void reset() {
+    uri = null;
+    params = const {};
+  }
+}
+
 Future<void> _pump(
   WidgetTester tester, {
   Future<ContributorProfileData> Function()? data,
   bool blocked = false,
   bool messageOn = false,
   bool countsFail = false,
+  _Landed? landed,
 }) async {
   tester.view.physicalSize = const Size(393, 2400);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   _global = _FakeProfile(ProfileState(profile: _me()));
+  Widget stop(GoRouterState st) {
+    landed?.uri = st.uri;
+    landed?.params = st.pathParameters;
+    return const Scaffold(body: Text('landed'));
+  }
+
+  final GoRouter router = GoRouter(
+    routes: <RouteBase>[
+      GoRoute(
+        path: '/',
+        builder: (_, __) => const UserProfileScreen(userId: 'u-omar'),
+      ),
+      GoRoute(
+        path: '${RoutePaths.followers}/:profileId',
+        name: RouteNames.followers,
+        builder: (_, st) => stop(st),
+      ),
+      GoRoute(
+        path: '${RoutePaths.following}/:profileId',
+        name: RouteNames.following,
+        builder: (_, st) => stop(st),
+      ),
+      GoRoute(path: '/:rest(.*)', builder: (_, st) => stop(st)),
+    ],
+  );
+  addTearDown(router.dispose);
   const Locale locale = Locale('en');
   await tester.pumpWidget(
     ProviderScope(
@@ -190,7 +229,7 @@ Future<void> _pump(
         userLikedPostsProvider.overrideWith((ref, key) async => []),
         userRepostedPostsProvider.overrideWith((ref, key) async => []),
       ],
-      child: MaterialApp(
+      child: MaterialApp.router(
         locale: locale,
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
@@ -199,7 +238,7 @@ Future<void> _pump(
           locale: locale,
         ),
         builder: (context, child) => DabblerToastProvider(child: child!),
-        home: const UserProfileScreen(userId: 'u-omar'),
+        routerConfig: router,
       ),
     ),
   );
@@ -354,5 +393,62 @@ void main() {
   testWidgets('copy-link pill is on the Contributor header', (tester) async {
     await _pump(tester);
     expect(find.byKey(OwnProfileHeader.copyLinkKey), findsOneWidget);
+  });
+
+  Future<void> settle(WidgetTester tester) async {
+    for (int i = 0; i < 6; i++) {
+      await tester.pump(const Duration(milliseconds: 100));
+    }
+  }
+
+  testWidgets('taps: selected-sport hero opens the visited Sport Profile', (
+    tester,
+  ) async {
+    final _Landed l = _Landed();
+    await _pump(tester, landed: l);
+    await tester.tap(find.text('Football').first);
+    await settle(tester);
+    await tester.tap(find.byKey(ContributorVisitorBento.heroKey));
+    await settle(tester);
+    expect(l.uri?.path, RoutePaths.sportProfile);
+    expect(l.uri?.queryParameters['profileId'], 'p-omar');
+    expect(l.uri?.queryParameters['userId'], 'u-omar');
+    expect(l.uri?.queryParameters['sportId'], 's-football');
+  });
+
+  testWidgets('taps: All-sports hero has no destination yet (declared gap)', (
+    tester,
+  ) async {
+    final _Landed l = _Landed();
+    await _pump(tester, landed: l);
+    await tester.tap(find.byKey(ContributorVisitorBento.heroKey));
+    await settle(tester);
+    expect(l.uri, isNull);
+  });
+
+  testWidgets('taps: Upcoming row opens the game', (tester) async {
+    final _Landed l = _Landed();
+    await _pump(tester, landed: l);
+    await tester.tap(find.text('Padel doubles'));
+    await settle(tester);
+    expect(l.uri?.path, RoutePaths.gameDetail('g-next'));
+  });
+
+  testWidgets('taps: Followers and Following push the visited profile id', (
+    tester,
+  ) async {
+    final _Landed l = _Landed();
+    await _pump(tester, landed: l);
+    await tester.tap(find.text('34'));
+    await settle(tester);
+    expect(l.uri?.path, '${RoutePaths.followers}/p-omar');
+    expect(l.params['profileId'], 'p-omar');
+    GoRouter.of(tester.element(find.text('landed'))).pop();
+    await settle(tester);
+    l.reset();
+    await tester.tap(find.text('12'));
+    await settle(tester);
+    expect(l.uri?.path, '${RoutePaths.following}/p-omar');
+    expect(l.params['profileId'], 'p-omar');
   });
 }

@@ -439,6 +439,10 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               onOpenSport: selected != null
                   ? (canOpen ? () => _openSportProfile(profile, selected) : null)
                   : (isContributor && !newContributor && counts != null
+          // PROPOSAL, not agreed wiring (KAN-689): the design's All hero targets
+          // Listings, which the app lacks; the signed-in user's own feed is a
+          // stand-in pending scope agreement (activities carry no sport/profile
+          // column, so it is not an account-scoped list).
                         ? () => context.push(RoutePaths.activities)
                         : null),
             ),
