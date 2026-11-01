@@ -70,14 +70,21 @@ rollback;
 
 -- B-05 duplicate linkage: two subtype rows cannot share one event_id (UNIQUE, not deferrable)
 begin;
+  insert into public.events (id,event_type,creator_profile_id,creator_user_id,title,start_at,end_at,capacity,sport_id,area_id,geo_location_id)
+  select g.id,'game',g.creator_profile_id,g.creator_user_id,g.title,g.start_at,g.end_at,g.capacity,g.sport_id,g.area_id,g.geo_location_id
+  from public.games g where g.id = :'game_id';
+  update public.games set event_id = id where id = :'game_id';
   select pg_temp.expect_fail('B-05 duplicate link',
     format('update public.games set event_id = %L where id in (select id from public.games where id <> %L limit 1)', :'game_id', :'game_id'));
 rollback;
 
 -- B-06 event_id must equal the row id
 begin;
-  select pg_temp.expect_fail('B-06 event_id <> id',
-    format('update public.games set event_id = gen_random_uuid() where id = %L; set constraints all immediate', :'game_id'));
+  insert into public.events (id,event_type,creator_profile_id,creator_user_id,start_at,end_at,capacity,sport_id,area_id,geo_location_id)
+  select 'cccccccc-0000-0000-0000-000000000001','game',g.creator_profile_id,g.creator_user_id,g.start_at,g.end_at,4,g.sport_id,g.area_id,g.geo_location_id
+  from public.games g where g.id = :'game_id';
+  update public.games set event_id = 'cccccccc-0000-0000-0000-000000000001' where id = :'game_id';
+  select pg_temp.expect_fail('B-06 event_id <> id (parent exists)', 'set constraints all immediate');
 rollback;
 
 -- B-07 cross-type double ownership: a game event cannot also be claimed by a meetups row
