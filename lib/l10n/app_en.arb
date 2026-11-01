@@ -3175,5 +3175,15 @@
   "recurring_future_failed": "Couldn't update the series. Try again.",
   "recurring_kept_with_players_notice": "{count, plural, =1{1 game with joined players keeps its old details.} other{{count} games with joined players keep their old details.}}",
   "@recurring_kept_with_players_notice": {"placeholders": {"count": {"type": "int"}}},
-  "recurring_cancel_action": "Cancel series"
+  "recurring_cancel_action": "Cancel series",
+  "profile_visitor_sports_title": "Sports they play",
+  "profile_stat_games_visitor": "Games",
+  "profile_stat_sport_games": "{sport} games",
+  "@profile_stat_sport_games": {"placeholders": {"sport": {"type": "String"}}},
+  "profile_stat_as_player_or_organiser": "As player or organiser",
+  "profile_stat_sport_profiles": "Sport profiles",
+  "profile_visitor_upcoming_note": "Open games they are playing in or organising",
+  "profile_tag_playing": "Playing",
+  "profile_tag_organising": "Organising",
+  "profile_tag_organising_playing": "Organising · Playing"
 }

@@ -2877,5 +2877,14 @@
   "recurring_future_done": "تم تحديث السلسلة",
   "recurring_future_failed": "تعذّر تحديث السلسلة. حاول مرة أخرى.",
   "recurring_kept_with_players_notice": "{count, plural, =1{لعبة واحدة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.} =2{لعبتان فيهما لاعبون منضمّون تحتفظان بتفاصيلهما السابقة.} few{{count} ألعاب فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.} many{{count} لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.} other{{count} لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.}}",
-  "recurring_cancel_action": "إلغاء السلسلة"
+  "recurring_cancel_action": "إلغاء السلسلة",
+  "profile_visitor_sports_title": "الرياضات التي يمارسها",
+  "profile_stat_games_visitor": "المباريات",
+  "profile_stat_sport_games": "مباريات {sport}",
+  "profile_stat_as_player_or_organiser": "لاعبًا أو منظّمًا",
+  "profile_stat_sport_profiles": "الملفات الرياضية",
+  "profile_visitor_upcoming_note": "المباريات المفتوحة التي يلعب فيها أو ينظّمها",
+  "profile_tag_playing": "يلعب",
+  "profile_tag_organising": "ينظّم",
+  "profile_tag_organising_playing": "ينظّم · يلعب"
 }
