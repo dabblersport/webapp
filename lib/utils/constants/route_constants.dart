@@ -60,7 +60,6 @@ class RoutePaths {
   static const String onboardingInterestsSelection =
       '/onboarding-interests-selection';
   static const String onboardingPrimarySport = '/onboarding-primary-sport';
-  static const String profileSwitcher = '/profile-switcher';
 
   // Add Persona Flow (from Settings)
   static const String addPersonaInterests = '/add-persona/interests';

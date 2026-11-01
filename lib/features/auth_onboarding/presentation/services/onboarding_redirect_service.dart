@@ -37,16 +37,9 @@ class OnboardingRedirectService {
         return false;
 
       case OnboardingStep.completed:
-        // Onboarding complete
-        if (state.existingProfileCount == 2) {
-          // User has 2 profiles - go to profile switcher
-          context.go(RoutePaths.profileSwitcher);
-          return true;
-        } else {
-          // User has 1 complete profile - go to home
-          context.go(RoutePaths.home);
-          return true;
-        }
+        // Onboarding complete - one account, go to home
+        context.go(RoutePaths.home);
+        return true;
 
       case OnboardingStep.collectingBasicInfo:
         // Start onboarding from beginning
