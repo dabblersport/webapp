@@ -64,9 +64,15 @@ void main() {
     });
 
     test('the other profile offers a copy-link built by ShareLinks.profile', () {
-      final src = _read(
-        'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
-      );
+      // KAN-688 moved the visitor's write actions (copy link included) into
+      // the screen's actions mixin; the invariant is unchanged.
+      final src =
+          _read(
+            'lib/features/profile/presentation/screens/profile/user_profile_screen.dart',
+          ) +
+          _read(
+            'lib/features/profile/presentation/screens/profile/user_profile_actions.dart',
+          );
       expect(src, contains('ShareLinks.profile('));
     });
 

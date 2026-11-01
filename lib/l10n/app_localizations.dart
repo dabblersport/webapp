@@ -14770,6 +14770,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{game} on {date} was cancelled. The organiser ended this series.'**
   String recurring_cancel_notif_body(String game, DateTime date);
+
+  /// No description provided for @profile_visitor_sports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports they play'**
+  String get profile_visitor_sports_title;
+
+  /// No description provided for @profile_stat_games_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get profile_stat_games_visitor;
+
+  /// No description provided for @profile_stat_sport_games.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} games'**
+  String profile_stat_sport_games(String sport);
+
+  /// No description provided for @profile_stat_as_player_or_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'As player or organiser'**
+  String get profile_stat_as_player_or_organiser;
+
+  /// No description provided for @profile_stat_sport_profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport profiles'**
+  String get profile_stat_sport_profiles;
+
+  /// No description provided for @profile_visitor_upcoming_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Open games they are playing in or organising'**
+  String get profile_visitor_upcoming_note;
+
+  /// No description provided for @profile_tag_playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get profile_tag_playing;
+
+  /// No description provided for @profile_tag_organising.
+  ///
+  /// In en, this message translates to:
+  /// **'Organising'**
+  String get profile_tag_organising;
+
+  /// No description provided for @profile_tag_organising_playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Organising · Playing'**
+  String get profile_tag_organising_playing;
+
+  /// KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get profile_invite_action_semantic;
+
+  /// No description provided for @profile_stat_games_played_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games played'**
+  String get profile_stat_games_played_visitor;
+
+  /// KAN-688 hero label with a sport selected (Profiles.dc.html line 576).
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} matches'**
+  String profile_stat_sport_matches_visitor(String sport);
 }
 
 class _AppLocalizationsDelegate

@@ -8454,4 +8454,45 @@ class AppLocalizationsAr extends AppLocalizations {
 
     return 'تم إلغاء لعبة يوم $dateString. أنهى المنظّم هذه السلسلة. اللعبة: $game';
   }
+
+  @override
+  String get profile_visitor_sports_title => 'الرياضات التي يمارسها';
+
+  @override
+  String get profile_stat_games_visitor => 'المباريات';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return 'مباريات $sport';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'لاعبًا أو منظّمًا';
+
+  @override
+  String get profile_stat_sport_profiles => 'الملفات الرياضية';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'المباريات المفتوحة التي يلعب فيها أو ينظّمها';
+
+  @override
+  String get profile_tag_playing => 'يلعب';
+
+  @override
+  String get profile_tag_organising => 'ينظّم';
+
+  @override
+  String get profile_tag_organising_playing => 'ينظّم · يلعب';
+
+  @override
+  String get profile_invite_action_semantic => 'دعوة';
+
+  @override
+  String get profile_stat_games_played_visitor => 'المباريات التي لعبها';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return 'مباريات $sport';
+  }
 }

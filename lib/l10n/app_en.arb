@@ -3168,5 +3168,20 @@
   "recurring_cancel_failed": "Couldn't cancel the series. Try again.",
   "recurring_cancel_notif_title": "Game cancelled",
   "recurring_cancel_notif_body": "{game} on {date} was cancelled. The organiser ended this series.",
-  "@recurring_cancel_notif_body": {"placeholders": {"game": {"type": "String"}, "date": {"type": "DateTime", "format": "yMMMEd"}}}
+  "@recurring_cancel_notif_body": {"placeholders": {"game": {"type": "String"}, "date": {"type": "DateTime", "format": "yMMMEd"}}},
+  "profile_visitor_sports_title": "Sports they play",
+  "profile_stat_games_visitor": "Games",
+  "profile_stat_sport_games": "{sport} games",
+  "@profile_stat_sport_games": {"placeholders": {"sport": {"type": "String"}}},
+  "profile_stat_as_player_or_organiser": "As player or organiser",
+  "profile_stat_sport_profiles": "Sport profiles",
+  "profile_visitor_upcoming_note": "Open games they are playing in or organising",
+  "profile_tag_playing": "Playing",
+  "profile_tag_organising": "Organising",
+  "profile_tag_organising_playing": "Organising · Playing",
+  "profile_invite_action_semantic": "Invite",
+  "@profile_invite_action_semantic": {"description": "KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review."},
+  "profile_stat_games_played_visitor": "Games played",
+  "profile_stat_sport_matches_visitor": "{sport} matches",
+  "@profile_stat_sport_matches_visitor": {"description": "KAN-688 hero label with a sport selected (Profiles.dc.html line 576).", "placeholders": {"sport": {"type": "String"}}}
 }

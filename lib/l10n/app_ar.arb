@@ -2871,5 +2871,17 @@
   "recurring_cancel_done": "تم إلغاء السلسلة",
   "recurring_cancel_failed": "تعذّر إلغاء السلسلة. حاول مرة أخرى.",
   "recurring_cancel_notif_title": "تم إلغاء اللعبة",
-  "recurring_cancel_notif_body": "تم إلغاء لعبة يوم {date}. أنهى المنظّم هذه السلسلة. اللعبة: {game}"
+  "recurring_cancel_notif_body": "تم إلغاء لعبة يوم {date}. أنهى المنظّم هذه السلسلة. اللعبة: {game}",
+  "profile_visitor_sports_title": "الرياضات التي يمارسها",
+  "profile_stat_games_visitor": "المباريات",
+  "profile_stat_sport_games": "مباريات {sport}",
+  "profile_stat_as_player_or_organiser": "لاعبًا أو منظّمًا",
+  "profile_stat_sport_profiles": "الملفات الرياضية",
+  "profile_visitor_upcoming_note": "المباريات المفتوحة التي يلعب فيها أو ينظّمها",
+  "profile_tag_playing": "يلعب",
+  "profile_tag_organising": "ينظّم",
+  "profile_tag_organising_playing": "ينظّم · يلعب",
+  "profile_invite_action_semantic": "دعوة",
+  "profile_stat_games_played_visitor": "المباريات التي لعبها",
+  "profile_stat_sport_matches_visitor": "مباريات {sport}"
 }

@@ -1,41 +1,41 @@
-import 'package:dabbler/utils/transitions/app_sheet_route.dart';
-import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../controllers/sports_profile_controller.dart';
 import '../../providers/profile_providers.dart';
+import '../../providers/visited_profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 import '../../../../../utils/constants/route_constants.dart';
-import 'package:dabbler/features/games/presentation/controllers/game_counts.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_game_counts_provider.dart';
-import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_games_sections.dart';
+import 'package:dabbler/features/profile/presentation/screens/profile/user_profile_actions.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_header.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/visitor/contributor_visitor_sections.dart';
 import 'package:dabbler/features/ratings/presentation/widgets/rating_summary.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 import '../../models/sport_profile_route_args.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_message_action.dart';
-import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
-    show userPostsProvider, sportsProvider;
+    show sportsProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/utils/helpers/share_links.dart';
 
 /// Another user's profile (design frames PF04 / PF05, "seen by another
-/// user"): a brand-tinted identity header (avatar, name, handle, persona and
-/// place badges, bio, counters, Follow / Message actions), a bento of stat
-/// tiles, the user's sports, then the tabbed posts. DS-only; the wide-layout
-/// legacy wide-layout wrapper (side rail + right panel) is dropped as in the
-/// earlier waves, the content column is centred instead.
+/// user"): a brand-tinted identity header (avatar, name, handle, place badge,
+/// bio, counters, Follow / Message actions), then the persona's body, then
+/// the tabbed posts. DS-only; the content column is centred.
+///
+/// A Contributor gets the `contributorVisitor` body (KAN-688): the
+/// practicing-sport selector, the bento it scopes and the public Upcoming
+/// list, all from the KAN-686 read model. Other personas keep their existing
+/// layout; converting them is out of scope.
+///
+/// The visited profile lives in [visitedProfileControllerProvider], keyed by
+/// route identity, so opening someone else never replaces the signed-in
+/// user's own `profileControllerProvider`.
 class UserProfileScreen extends ConsumerStatefulWidget {
   final String userId;
 
@@ -50,12 +50,17 @@ class UserProfileScreen extends ConsumerStatefulWidget {
   ConsumerState<UserProfileScreen> createState() => _UserProfileScreenState();
 }
 
-class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
+class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
+    with UserProfileActions {
   final _activitiesKey = GlobalKey();
 
   // Drives the top bar: tinted with no title until the identity block has
   // scrolled away, then the page ground with the handle.
   final ScrollController _scroll = ScrollController();
+
+  @override
+  VisitedProfileKey get visitedKey =>
+      (userId: widget.userId, profileId: widget.profileId);
 
   @override
   void dispose() {
@@ -66,8 +71,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   @override
   void initState() {
     super.initState();
-
-    // Check if viewing own profile and load data
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       await _loadProfileData();
       _checkOwnProfile();
@@ -82,9 +85,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     // (e.g. a game creator card) only have a profile id and pass it in this
     // slot. Never compare it against currentUser.id; determine "own profile"
     // purely from profile ids below, which are always genuine.
-
-    // A specific profileId was requested — if it is not the active profile
-    // the caller explicitly wants to view an inactive persona, so stay here.
     final myProfileId = await ref.read(myProfileIdProvider.future);
     if (!mounted) return;
 
@@ -93,19 +93,20 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       return;
     }
 
-    final loaded = ref.read(profileControllerProvider);
-    final viewedProfileId = loaded.profile?.id;
-
-    // If the loaded profile matches the active profile, redirect to own screen.
+    final viewedProfileId = visitedProfileId();
     if (viewedProfileId != null && viewedProfileId == myProfileId) {
       context.go(RoutePaths.profile);
     }
   }
 
   Future<void> _loadProfileData() async {
-    final profileController = ref.read(profileControllerProvider.notifier);
-    final sportsController = ref.read(sportsProfileControllerProvider.notifier);
-
+    if (!mounted) return;
+    final profileController = ref.read(
+      visitedProfileControllerProvider(visitedKey).notifier,
+    );
+    final sportsController = ref.read(
+      visitedSportsProfileControllerProvider(visitedKey).notifier,
+    );
     await Future.wait<void>([
       profileController.loadProfile(
         widget.userId,
@@ -119,20 +120,32 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     ]);
   }
 
-  void _toast(
-    String message, {
-    DabblerToastTone tone = DabblerToastTone.neutral,
-  }) {
-    if (!mounted) return;
-    DabblerToastProvider.of(
-      context,
-    ).show(DabblerToastSpec(message: message, tone: tone));
+  Future<void> _refresh() async {
+    final String? profileId = visitedProfileId();
+    if (profileId != null) {
+      ref.invalidate(visitedFollowersCountProvider(profileId));
+      ref.invalidate(visitedFollowingCountProvider(profileId));
+      ref.invalidate(visitedPostsCountProvider(profileId));
+    }
+    await _loadProfileData();
+  }
+
+  ProfileCounterState _stateOf(AsyncValue<int>? v) {
+    if (v == null || v.isLoading && !v.hasValue) {
+      return ProfileCounterState.loading;
+    }
+    if (v.hasError && !v.isLoading) return ProfileCounterState.failed;
+    return ProfileCounterState.data;
   }
 
   @override
   Widget build(BuildContext context) {
-    final profileState = ref.watch(profileControllerProvider);
-    final sportsState = ref.watch(sportsProfileControllerProvider);
+    final profileState = ref.watch(
+      visitedProfileControllerProvider(visitedKey),
+    );
+    final sportsState = ref.watch(
+      visitedSportsProfileControllerProvider(visitedKey),
+    );
     final l10n = AppLocalizations.of(context);
 
     if (profileState.isLoading) {
@@ -165,37 +178,21 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     final profile = profileState.profile;
     final username = profile?.username;
     final profileId = profile?.id;
+    final authUserId = profile?.userId;
 
-    final posts = profileId == null
-        ? 0
-        : ref
-              .watch(userPostsProvider((profileId: profileId, page: 0)))
-              .maybeWhen(data: (v) => v.length, orElse: () => 0);
-    final following = profileId == null
-        ? 0
-        : ref
-              .watch(followingCountProvider(profileId))
-              .maybeWhen(data: (v) => v, orElse: () => 0);
-    final followers = profileId == null
-        ? 0
-        : ref
-              .watch(followersCountProvider(profileId))
-              .maybeWhen(data: (v) => v, orElse: () => 0);
+    final postsAsync = profileId == null
+        ? null
+        : ref.watch(visitedPostsCountProvider(profileId));
+    final followingAsync = profileId == null
+        ? null
+        : ref.watch(visitedFollowingCountProvider(profileId));
+    final followersAsync = profileId == null
+        ? null
+        : ref.watch(visitedFollowersCountProvider(profileId));
 
     final isContributor =
         personaTypeOrNull(profile?.personaType ?? profile?.profileType) ==
         PersonaType.contributor;
-    final GameCounts? counts =
-        isContributor && profile?.userId != null && profileId != null
-        ? ref
-              .watch(
-                profileGameCountsProvider((
-                  userId: profile!.userId,
-                  profileId: profileId,
-                )),
-              )
-              .valueOrNull
-        : null;
 
     final allSports = ref.watch(sportsProvider).valueOrNull ?? [];
     final byId = {for (final s in allSports) s.id: s};
@@ -206,9 +203,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: (username != null && username.isNotEmpty)
-            ? '\u200E@$username'
-            : null,
+        title: (username != null && username.isNotEmpty) ? '‎@$username' : null,
         scrollController: _scroll,
         heroTint: true,
         onBack: () => context.canPop() ? context.pop() : context.go('/home'),
@@ -216,12 +211,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           DabblerNavigationAction(
             icon: 'more',
             label: 'More',
-            onPressed: () => _showMoreOptions(context),
+            onPressed: showMoreOptions,
           ),
         ],
       ),
       body: DabblerRefresh(
-        onRefresh: _loadProfileData,
+        onRefresh: _refresh,
         child: ListView(
           controller: _scroll,
           physics: const AlwaysScrollableScrollPhysics(),
@@ -229,13 +224,29 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
           children: [
             OwnProfileHeader(
               profile: profile,
-              posts: posts,
-              following: following,
-              followers: followers,
-              sportsCount: mySports.length,
+              posts: postsAsync?.valueOrNull ?? 0,
+              following: followingAsync?.valueOrNull ?? 0,
+              followers: followersAsync?.valueOrNull ?? 0,
+              postsState: _stateOf(postsAsync),
+              followingState: _stateOf(followingAsync),
+              followersState: _stateOf(followersAsync),
+              onRetryCounts: profileId == null
+                  ? null
+                  : () {
+                      ref.invalidate(visitedPostsCountProvider(profileId));
+                      ref.invalidate(visitedFollowingCountProvider(profileId));
+                      ref.invalidate(visitedFollowersCountProvider(profileId));
+                    },
+              // The Contributor frame's third counter is Posts; the other
+              // personas keep their Sports counter.
+              sportsCount: isContributor ? null : mySports.length,
               sportsLabel: l10n.user_profile_stat_sports,
               location: _formatLocation(profile?.city, profile?.country),
               showPersonaBadge: !isContributor,
+              onCopyLink: isContributor && profileId != null
+                  ? () => copyProfileLink(confirmInPlace: true)
+                  : null,
+              linkCopied: linkCopied,
               onPosts: _scrollToFeed,
               onFollowing: profileId == null
                   ? null
@@ -252,28 +263,35 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
               actions: _buildActionButtons(context),
             ),
             const DabblerGap.v(DabblerSpacing.space8),
-            if (profile != null)
-              _buildStats(context, profile, sportsState, counts),
-            const DabblerGap.v(DabblerSpacing.space8),
-            RatingSummary(userId: profile?.userId),
-            if (mySports.isNotEmpty) ...[
-              OwnProfileSportPicker(
-                title: l10n.profile_section_their_sports,
-                sports: mySports,
-                selectedId: null,
-                primaryId: profile?.primarySport,
-                onSelect: (id) {
-                  if (id == null) return;
-                  _openSportProfile(
-                    profile,
-                    mySports.firstWhere((s) => s.id == id),
-                  );
-                },
-              ),
+            if (isContributor && profileId != null && authUserId != null)
+              ContributorVisitorSections(
+                userId: authUserId,
+                profileId: profileId,
+                primarySportId: profile?.primarySport,
+                onOpenSport: (sport) => _openSportProfile(profile, sport),
+                onOpenAllSports: () => context.push(RoutePaths.activities),
+              )
+            else ...[
+              if (profile != null) _buildStats(profile, sportsState),
               const DabblerGap.v(DabblerSpacing.space8),
+              RatingSummary(userId: profile?.userId),
+              if (mySports.isNotEmpty) ...[
+                OwnProfileSportPicker(
+                  title: l10n.profile_section_their_sports,
+                  sports: mySports,
+                  selectedId: null,
+                  primaryId: profile?.primarySport,
+                  onSelect: (id) {
+                    if (id == null) return;
+                    _openSportProfile(
+                      profile,
+                      mySports.firstWhere((s) => s.id == id),
+                    );
+                  },
+                ),
+                const DabblerGap.v(DabblerSpacing.space8),
+              ],
             ],
-            if (counts != null)
-              ContributorGamesSections(counts: counts, showOrganised: false),
             if (profileId != null)
               KeyedSubtree(
                 key: _activitiesKey,
@@ -296,7 +314,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     }
   }
 
-  void _openSportProfile(UserProfile? profile, dynamic sport) {
+  void _openSportProfile(UserProfile? profile, Sport sport) {
     final profileId = profile?.id;
     final userId = profile?.userId;
     final personaType = profile?.personaType ?? profile?.profileType ?? '';
@@ -313,8 +331,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       displayName: profile?.displayName ?? '',
       personaType: personaType,
       sportId: sport.id,
-      sportKey:
-          sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_'),
+      sportKey: OwnProfileSportPicker.sportKeyOf(sport),
       sportName: sport.nameEn,
       avatarUrl: profile?.avatarUrl,
       sportEmoji: sport.emoji,
@@ -330,15 +347,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     );
   }
 
-  Widget _buildStats(
-    BuildContext context,
-    UserProfile profile,
-    SportsProfileState sportsState,
-    GameCounts? counts,
-  ) {
-    final bool contributor =
-        personaTypeOrNull(profile.personaType ?? profile.profileType) ==
-        PersonaType.contributor;
+  /// The legacy (non-Contributor) bento: Player and Organiser figures from
+  /// the profile's own statistics. Contributors never reach this.
+  Widget _buildStats(UserProfile profile, SportsProfileState sportsState) {
     final statistics = profile.statistics;
     final List<SportProfile> sports = sportsState.profiles;
     final List<SportProfile> rated = [
@@ -348,16 +359,12 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     return OwnProfileStats(
       posts: 0,
       sportsCount: sports.length,
-      gamesPlayed: contributor ? counts?.played : statistics.totalGamesPlayed,
-      organised: contributor ? counts?.organised : null,
-      upcoming: contributor ? counts?.upcoming : null,
+      gamesPlayed: statistics.totalGamesPlayed,
       rating: rated.isEmpty
           ? null
           : rated.fold<double>(0, (a, p) => a + p.averageRating) / rated.length,
-      minutesPlayed: contributor
-          ? null
-          : (statistics.totalHoursPlayed * 60).round(),
-      reliability: contributor ? null : statistics.getReliabilityScore().round(),
+      minutesPlayed: (statistics.totalHoursPlayed * 60).round(),
+      reliability: statistics.getReliabilityScore().round(),
       primarySports: sports.where((p) => p.isPrimarySport).length,
       heroSub: sports.isEmpty
           ? null
@@ -371,19 +378,16 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   // ── Actions ──────────────────────────────────────────────────────────
 
   Widget _buildActionButtons(BuildContext context) {
-    final myProfileIdAsync = ref.watch(myProfileIdProvider);
-
-    final myProfileId = myProfileIdAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => null,
-    );
-    // Use the same profile ID displayed on screen (from profileControllerProvider)
-    // to ensure counters, follow state, and follow actions all reference the same profile.
-    final targetProfileId = ref.watch(profileControllerProvider).profile?.id;
-    final targetAuthUserId = ref
-        .watch(profileControllerProvider)
-        .profile
-        ?.userId;
+    final myProfileId = ref
+        .watch(myProfileIdProvider)
+        .maybeWhen(data: (v) => v, orElse: () => null);
+    // The profile on screen: counters, follow state and follow actions all
+    // reference this one profiles.id.
+    final visited = ref.watch(visitedProfileControllerProvider(visitedKey));
+    final targetProfileId = visited.profile?.id;
+    final targetAuthUserId = visited.profile?.userId;
+    final flags = ref.watch(profileMessageActionFlagsProvider);
+    final bool messageOn = flags.messaging && flags.direct;
 
     return ProfileActionButtons(
       follow: (myProfileId == null || targetProfileId == null)
@@ -400,9 +404,11 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
             ),
       // KAN-557: the Message action draws nothing unless the messaging and
       // direct-message flags are on, so the gap goes with it.
-      message: (FeatureFlags.messaging && FeatureFlags.enableMessagingDirect)
+      message: messageOn
           ? ProfileMessageAction(targetAuthUserId: targetAuthUserId)
           : null,
+      // KAN-688 (cxo ruling, same as KAN-689): icon-only, starts nothing.
+      invite: const ProfileInviteAction(),
     );
   }
 
@@ -412,17 +418,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
     required String targetProfileId,
   }) {
     final l10n = AppLocalizations.of(context);
-
-    final isBlockedAsync = ref.watch(
-      isBlockedProvider((
-        currentProfileId: myProfileId,
-        targetProfileId: targetProfileId,
-      )),
+    final ids = (
+      currentProfileId: myProfileId,
+      targetProfileId: targetProfileId,
     );
-    final isBlocked = isBlockedAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => false,
-    );
+    final isBlocked = ref
+        .watch(isBlockedProvider(ids))
+        .maybeWhen(data: (v) => v, orElse: () => false);
 
     if (isBlocked) {
       return DabblerButton(
@@ -430,20 +432,13 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         icon: 'slash',
         tone: DabblerButtonTone.destructive,
         fullWidth: true,
-        onPressed: () => _unblockUser(context),
+        onPressed: unblockUser,
       );
     }
 
-    final isFollowingAsync = ref.watch(
-      isFollowingProvider((
-        currentProfileId: myProfileId,
-        targetProfileId: targetProfileId,
-      )),
-    );
-    final isFollowing = isFollowingAsync.maybeWhen(
-      data: (v) => v,
-      orElse: () => false,
-    );
+    final isFollowing = ref
+        .watch(isFollowingProvider(ids))
+        .maybeWhen(data: (v) => v, orElse: () => false);
 
     if (isFollowing) {
       return DabblerButton(
@@ -451,8 +446,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
         icon: 'user-tick',
         tone: DabblerButtonTone.outlined,
         fullWidth: true,
-        onPressed: () => _toggleFollow(
-          context,
+        onPressed: () => toggleFollow(
           myProfileId: myProfileId,
           targetProfileId: targetProfileId,
           currentlyFollowing: true,
@@ -469,8 +463,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       ),
       tone: DabblerButtonTone.primary,
       fullWidth: true,
-      onPressed: () => _toggleFollow(
-        context,
+      onPressed: () => toggleFollow(
         myProfileId: myProfileId,
         targetProfileId: targetProfileId,
         currentlyFollowing: false,
@@ -481,7 +474,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
   String _formatLocation(String? city, String? country) {
     final cityStr = city?.trim();
     final countryStr = country?.trim();
-
     if (cityStr != null &&
         cityStr.isNotEmpty &&
         countryStr != null &&
@@ -493,234 +485,5 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       return countryStr;
     }
     return '';
-  }
-
-  /// The genuine `auth.users` id of the profile currently loaded on this
-  /// screen. `widget.userId` is NOT reliably this — some entry points (e.g. a
-  /// game creator card) only know a profile id and pass it in that slot. Any
-  /// action that writes to a user-level (not profile-level) table — block,
-  /// report, message — must resolve the real auth uid from the loaded
-  /// profile instead, and no-op if it isn't loaded yet rather than fall back
-  /// to widget.userId.
-  String? _targetAuthUserId() =>
-      ref.read(profileControllerProvider).profile?.userId;
-
-  Future<void> _toggleFollow(
-    BuildContext context, {
-    required String myProfileId,
-    required String targetProfileId,
-    required bool currentlyFollowing,
-  }) async {
-    try {
-      final supabase = Supabase.instance.client;
-      if (currentlyFollowing) {
-        // User-level unfollow: removes every follow edge between the two
-        // users' persona profiles, not just the active-profile pair —
-        // otherwise followers-only content stays visible after unfollowing.
-        await supabase.rpc(
-          SupabaseConfig.rpcUnfollowUserFn,
-          params: {'p_target_profile_id': targetProfileId},
-        );
-      } else {
-        await supabase.from(SupabaseConfig.profileFollowsTable).insert({
-          'follower_profile_id': myProfileId,
-          'following_profile_id': targetProfileId,
-        });
-      }
-
-      // Invalidate relevant providers
-      ref.invalidate(
-        isFollowingProvider((
-          currentProfileId: myProfileId,
-          targetProfileId: targetProfileId,
-        )),
-      );
-      ref.invalidate(followingListProvider(myProfileId));
-      ref.invalidate(followingCountProvider(myProfileId));
-      ref.invalidate(followersCountProvider(targetProfileId));
-    } catch (_) {
-      // Silently fail — providers will stay stale until next refresh
-    }
-  }
-
-  Future<void> _blockUser(BuildContext context) async {
-    // Confirmation dialog
-    final confirmed = await showDabblerDialog<bool>(
-      context: context,
-      builder: (ctx) => DabblerDialog(
-        title: AppLocalizations.of(ctx).user_profile_block_dialog_title,
-        description: AppLocalizations.of(ctx).user_profile_block_dialog_body,
-        destructive: true,
-        onClose: () => Navigator.pop(ctx, false),
-        secondaryAction: DabblerDialogAction(
-          label: AppLocalizations.of(ctx).profile_btn_cancel,
-          onPressed: () => Navigator.pop(ctx, false),
-        ),
-        primaryAction: DabblerDialogAction(
-          label: AppLocalizations.of(ctx).user_profile_block_btn_block,
-          onPressed: () => Navigator.pop(ctx, true),
-        ),
-      ),
-    );
-
-    if (confirmed != true) return;
-
-    final targetUserId = _targetAuthUserId();
-    if (targetUserId == null) return;
-    final repo = ref.read(blockRepositoryProvider);
-    final result = await repo.blockUser(targetUserId);
-
-    result.fold(
-      (err) {
-        _toast('Error: ${err.message}', tone: DabblerToastTone.error);
-      },
-      (_) {
-        // Invalidate all block-dependent providers
-        ref.invalidate(blockedUserIdsProvider);
-        ref.invalidate(blockedUsersWithProfilesProvider);
-        ref.invalidate(isUserBlockedProvider(targetUserId));
-        final myProfileId = ref
-            .read(myProfileIdProvider)
-            .maybeWhen(data: (v) => v, orElse: () => null);
-        if (myProfileId != null) {
-          ref.invalidate(
-            isBlockedProvider((
-              currentProfileId: myProfileId,
-              targetProfileId:
-                  ref.read(profileControllerProvider).profile?.id ?? '',
-            )),
-          );
-          ref.invalidate(followingListProvider(myProfileId));
-          ref.invalidate(followersListProvider(myProfileId));
-        }
-        if (mounted) {
-          _toast(AppLocalizations.of(context).user_profile_blocked_snack);
-        }
-      },
-    );
-  }
-
-  Future<void> _unblockUser(BuildContext context) async {
-    final targetUserId = _targetAuthUserId();
-    if (targetUserId == null) return;
-    final repo = ref.read(blockRepositoryProvider);
-    final result = await repo.unblockUser(targetUserId);
-
-    result.fold(
-      (err) {
-        _toast('Error: ${err.message}', tone: DabblerToastTone.error);
-      },
-      (_) {
-        ref.invalidate(blockedUserIdsProvider);
-        ref.invalidate(blockedUsersWithProfilesProvider);
-        ref.invalidate(isUserBlockedProvider(targetUserId));
-        final myProfileId = ref
-            .read(myProfileIdProvider)
-            .maybeWhen(data: (v) => v, orElse: () => null);
-        if (myProfileId != null) {
-          ref.invalidate(
-            isBlockedProvider((
-              currentProfileId: myProfileId,
-              targetProfileId:
-                  ref.read(profileControllerProvider).profile?.id ?? '',
-            )),
-          );
-          ref.invalidate(followingListProvider(myProfileId));
-          ref.invalidate(followersListProvider(myProfileId));
-        }
-        if (mounted) {
-          _toast(AppLocalizations.of(context).user_profile_unblocked_snack);
-        }
-      },
-    );
-  }
-
-  void _reportUser(BuildContext context) {
-    final targetUserId = _targetAuthUserId();
-    if (targetUserId == null) return;
-    showReportDialog(
-      context,
-      targetType: ReportTargetType.user,
-      targetId: targetUserId,
-      targetUserId: targetUserId,
-    );
-  }
-
-  Future<void> _copyProfileLink(BuildContext context) async {
-    final profileId = ref.read(profileControllerProvider).profile?.id;
-    if (profileId == null) return;
-    await Clipboard.setData(
-      ClipboardData(
-        text: ShareLinks.profile(
-          profileId,
-          sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
-        ),
-      ),
-    );
-    if (mounted) _toast(AppLocalizations.of(this.context).sfx_link_copied);
-  }
-
-  void _showMoreOptions(BuildContext context) {
-    final targetUserId = _targetAuthUserId();
-    final blocked = targetUserId == null
-        ? false
-        : ref.read(isUserBlockedProvider(targetUserId)).valueOrNull ?? false;
-
-    showAppSheet<void>(
-      context: context,
-      detent: DabblerSheetDetent.content,
-      builder: (sheetContext) {
-        final l10n = AppLocalizations.of(sheetContext);
-        return DabblerSheetBody(
-          spacing: DabblerSpacing.space3,
-          children: [
-            // KAN-597: the full web link to this profile for the running environment.
-            if (ref.read(profileControllerProvider).profile?.id != null)
-              DabblerButton(
-                label: l10n.post_detail_copy_link,
-                icon: 'copy',
-                tone: DabblerButtonTone.neutral,
-                fullWidth: true,
-                onPressed: () {
-                  Navigator.pop(sheetContext);
-                  _copyProfileLink(this.context);
-                },
-              ),
-            if (blocked)
-              DabblerButton(
-                label: l10n.user_profile_menu_unblock_user,
-                icon: 'close-circle',
-                tone: DabblerButtonTone.neutral,
-                fullWidth: true,
-                onPressed: () async {
-                  Navigator.pop(sheetContext);
-                  await _unblockUser(this.context);
-                },
-              )
-            else
-              DabblerButton(
-                label: l10n.user_profile_menu_block_user,
-                icon: 'close-circle',
-                tone: DabblerButtonTone.neutral,
-                fullWidth: true,
-                onPressed: () async {
-                  Navigator.pop(sheetContext);
-                  await _blockUser(this.context);
-                },
-              ),
-            DabblerButton(
-              label: l10n.user_profile_menu_report_user,
-              icon: 'warning-2',
-              tone: DabblerButtonTone.neutral,
-              fullWidth: true,
-              onPressed: () {
-                Navigator.pop(sheetContext);
-                _reportUser(this.context);
-              },
-            ),
-          ],
-        );
-      },
-    );
   }
 }
