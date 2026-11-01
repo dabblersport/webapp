@@ -369,14 +369,14 @@ Future<void> _pickTomorrow(WidgetTester tester) async {
     await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
     await _settle(tester);
   }
-  await tester.tap(
-    find
-        .descendant(
-          of: find.byType(DabblerCalendar),
-          matching: find.text('${day.day}'),
-        )
-        .last,
+  // The grid also shows the neighbouring months' days (22+ before, up to 13
+  // after), so the in-month cell is the first match for days up to 13 and the
+  // last one otherwise.
+  final Finder cells = find.descendant(
+    of: find.byType(DabblerCalendar),
+    matching: find.text('${day.day}'),
   );
+  await tester.tap(day.day <= 13 ? cells.first : cells.last);
   await _settle(tester);
 }
 
