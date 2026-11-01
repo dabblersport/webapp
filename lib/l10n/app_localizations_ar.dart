@@ -7990,6 +7990,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_organised => 'نظّمت';
 
   @override
+  String get profile_stat_as_player_or_organiser => 'كلاعب أو منظّم';
+
+  @override
+  String profile_stat_sport_games_meetups(String sport) {
+    return 'ألعاب ولقاءات $sport';
+  }
+
+  @override
+  String get profile_stat_show_up_rate => 'نسبة الحضور';
+
+  @override
+  String get profile_stat_sport_profiles => 'ملفات الرياضات';
+
+  @override
   String get bench_row_title => 'وضع الاستراحة';
 
   @override

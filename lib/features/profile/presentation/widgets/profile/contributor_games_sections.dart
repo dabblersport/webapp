@@ -89,11 +89,7 @@ class ContributorGamesSections extends StatelessWidget {
     );
   }
 
-  Widget _section(
-    BuildContext context,
-    String title,
-    List<GameCountRow> rows,
-  ) {
+  Widget _section(BuildContext context, String title, List<GameCountRow> rows) {
     final String locale = Localizations.localeOf(context).toString();
     final DateFormat when = DateFormat.MMMEd(locale).add_jm();
     return Padding(

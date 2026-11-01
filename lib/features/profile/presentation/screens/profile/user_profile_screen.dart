@@ -357,7 +357,9 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen> {
       minutesPlayed: contributor
           ? null
           : (statistics.totalHoursPlayed * 60).round(),
-      reliability: contributor ? null : statistics.getReliabilityScore().round(),
+      reliability: contributor
+          ? null
+          : statistics.getReliabilityScore().round(),
       primarySports: sports.where((p) => p.isPrimarySport).length,
       heroSub: sports.isEmpty
           ? null

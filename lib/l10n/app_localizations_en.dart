@@ -7928,6 +7928,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_stat_organised => 'Organised';
 
   @override
+  String get profile_stat_as_player_or_organiser => 'As player or organiser';
+
+  @override
+  String profile_stat_sport_games_meetups(String sport) {
+    return '$sport games & meetups';
+  }
+
+  @override
+  String get profile_stat_show_up_rate => 'Show-up rate';
+
+  @override
+  String get profile_stat_sport_profiles => 'Sport profiles';
+
+  @override
   String get bench_row_title => 'Bench mode';
 
   @override
