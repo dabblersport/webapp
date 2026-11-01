@@ -207,6 +207,34 @@ Future<void> _fill(
   await _settle(tester, 2);
 }
 
+/// Opens the End date sheet and picks the day [offset] days after the first
+/// game (tomorrow, as `_fill` sets it), then taps Done.
+Future<void> _pickEnd(
+  WidgetTester tester,
+  AppLocalizations l,
+  int offset,
+) async {
+  final DateTime now = DateTime.now();
+  final DateTime first = DateTime(now.year, now.month, now.day + 1);
+  final DateTime target = first.add(Duration(days: offset));
+  await _tap(tester, find.byKey(const ValueKey<String>('game-repeat-end')));
+  // The calendar opens on the month of the first offered day.
+  final DateTime shown = first.add(const Duration(days: 1));
+  final int months =
+      (target.year - shown.year) * 12 + target.month - shown.month;
+  for (var i = 0; i < months; i++) {
+    await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
+    await _settle(tester);
+  }
+  final Finder dayCells = find.descendant(
+    of: find.byType(DabblerCalendar),
+    matching: find.text('${target.day}'),
+  );
+  await tester.tap(target.day <= 15 ? dayCells.first : dayCells.last);
+  await _settle(tester);
+  await _tap(tester, find.text(l.composer_done));
+}
+
 final Finder _submit = find.byKey(
   const ValueKey<String>('game-composer-submit'),
 );
@@ -333,8 +361,45 @@ void main() {
     await _tap(tester, find.text(l.recurring_option_weekly));
     expect(find.text(l.recurring_end_date_label), findsOneWidget);
     expect(find.text(l.recurring_end_date_none), findsOneWidget);
-    expect(find.text(l.recurring_limit_reached_title), findsOneWidget);
+    // An open-ended series is capped silently: no limit card.
+    expect(find.text(l.recurring_limit_reached_title), findsNothing);
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('limit card: Weekly with no end date shows none', (tester) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    expect(find.text(l.recurring_end_date_none), findsOneWidget);
+    expect(find.text(l.recurring_limit_reached_title), findsNothing);
+    expect(
+      find.text(l.recurring_limit_hint(kMaxSeriesOccurrences)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('limit card: Weekly with an end date giving 52 games shows it', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    await _pickEnd(tester, l, 7 * (kMaxSeriesOccurrences - 1));
+    expect(find.text(l.recurring_limit_reached_title), findsOneWidget);
+  });
+
+  testWidgets('limit card: Weekly with an end date under 52 games shows none', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    await _pickEnd(tester, l, 21);
+    expect(find.text(l.recurring_limit_reached_title), findsNothing);
+    expect(find.text(l.recurring_end_date_none), findsNothing);
   });
 
   testWidgets('C4 layout: paid lock is two lines in the Repeat block', (

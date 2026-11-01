@@ -1345,8 +1345,11 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       value = l.recurring_option_none;
     }
     final end = state.repeatEnd;
+    // An open-ended series is capped silently; the card is for a chosen end
+    // date that runs into the cap.
     final reached =
         state.isRepeating &&
+        end != null &&
         seriesOccurrenceCount(state.repeat, first ?? DateTime.now(), end) >=
             kMaxSeriesOccurrences;
     return <Widget>[
