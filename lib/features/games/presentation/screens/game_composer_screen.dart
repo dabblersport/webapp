@@ -20,6 +20,7 @@ import 'package:dabbler/features/location/providers/profile_location_providers.d
     show profileLocationRepositoryProvider;
 import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_repeat.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_guard.dart';
@@ -944,6 +945,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
 
+  /// The Repeat panel is open (KAN-697).
+  bool _repeatOpen = false;
+
   /// KAN-618: one request id per create attempt. It is kept across failed
   /// retries and cleared on success, on a form edit and when the drawer
   /// closes. Sent to `rpc_create_game` (KAN-612). Saving an edit of an
@@ -1339,8 +1343,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
 
   // ─── Repeat (KAN-697) ──────────────────────────────────────────────────────
 
-  /// The Repeat row, and the End date row while it is on. A paid game cannot
-  /// repeat: the row is locked and says why.
+  /// The Repeat block: the row with the current value, and the panel it opens
+  /// (options, Ends card, hint). A paid game cannot repeat: the row is locked
+  /// and says why.
   List<Widget> _repeatRows(
     BuildContext context,
     _ComposerState state,
@@ -1349,73 +1354,55 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   ) {
     final locale = Localizations.localeOf(context).toString();
     final first = state.selectedDate;
-    final String subtitle;
-    if (state.isPaid) {
-      subtitle = '${l.recurring_paid_disabled}. ${l.recurring_paid_free_hint}';
-    } else if (state.repeatSwitchedOffForPrice) {
-      subtitle = l.recurring_paid_switched_off;
-    } else if (first != null && state.isRepeating) {
+    final String value;
+    if (first != null && state.isRepeating) {
       final weekday = DateFormat.EEEE(locale).format(first);
-      subtitle = state.repeat == GameRepeat.weekly
+      value = state.repeat == GameRepeat.weekly
           ? l.recurring_summary_weekly(weekday)
           : l.recurring_summary_biweekly(weekday);
     } else {
-      subtitle = l.recurring_limit_hint(kMaxSeriesOccurrences);
+      value = l.recurring_option_none;
     }
     final end = state.repeatEnd;
+    // An open-ended series is capped silently; the card is for a chosen end
+    // date that runs into the cap.
+    final reached =
+        state.isRepeating &&
+        end != null &&
+        seriesOccurrenceCount(state.repeat, first ?? DateTime.now(), end) >=
+            kMaxSeriesOccurrences;
     return <Widget>[
-      DabblerComposerRow(
-        icon: 'refresh',
-        title: l.recurring_repeat_label,
-        subtitle: subtitle,
-        trailing: state.isPaid
-            ? GameSelectPill(
-                label: l.recurring_option_none,
-                state: GamePillState.locked,
-                onTap: () {},
-              )
-            : GameOptionPills<GameRepeat>(
-                options: <(GameRepeat, String)>[
-                  (GameRepeat.none, l.recurring_option_none),
-                  (GameRepeat.weekly, l.recurring_option_weekly),
-                  (GameRepeat.biweekly, l.recurring_option_biweekly),
-                ],
-                selected: state.repeat,
-                onSelect: notifier.setRepeat,
-              ),
+      GameRepeatSection<GameRepeat>(
+        label: l.recurring_repeat_label,
+        valueText: value,
+        open: _repeatOpen,
+        onToggle: () => setState(() => _repeatOpen = !_repeatOpen),
+        options: <(GameRepeat, String)>[
+          (GameRepeat.none, l.recurring_option_none),
+          (GameRepeat.weekly, l.recurring_option_weekly),
+          (GameRepeat.biweekly, l.recurring_option_biweekly),
+        ],
+        selected: state.repeat,
+        onSelect: notifier.setRepeat,
+        endLabel: l.recurring_end_date_label,
+        endValue: end == null
+            ? l.recurring_end_date_none
+            : l.recurring_end_date_value(end),
+        onPickEnd: () => _pickRepeatEnd(context),
+        hint: l.recurring_limit_hint(kMaxSeriesOccurrences),
+        showEnds: state.isRepeating,
+        locked: state.isPaid,
+        lockedTitle: l.recurring_paid_disabled,
+        lockedMessage: l.recurring_paid_free_hint,
+        limitReached: reached,
+        limitTitle: l.recurring_limit_reached_title,
+        limitMessage: l.recurring_limit_reached(kMaxSeriesOccurrences),
+        limitAction: l.recurring_end_date_pick,
       ),
-      if (state.isRepeating)
-        DabblerComposerRow(
-          icon: 'calendar',
-          title: l.recurring_end_date_label,
-          subtitle: end == null
-              ? l.recurring_end_date_hint
-              : l.recurring_preview_count(
-                  seriesOccurrenceCount(
-                    state.repeat,
-                    first ?? DateTime.now(),
-                    end,
-                  ),
-                ),
-          trailing: Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
-            children: <Widget>[
-              GameSelectPill(
-                label: end == null
-                    ? l.recurring_end_date_none
-                    : l.recurring_end_date_value(end),
-                state: end == null ? GamePillState.idle : GamePillState.chosen,
-                onTap: () => _pickRepeatEnd(context),
-              ),
-              if (end != null)
-                GameSelectPill(
-                  label: l.recurring_end_date_clear,
-                  state: GamePillState.idle,
-                  onTap: () => notifier.setRepeatEnd(null),
-                ),
-            ],
-          ),
+      if (state.repeatSwitchedOffForPrice && !state.isPaid)
+        DabblerBanner(
+          tone: DabblerBannerTone.info,
+          message: l.recurring_paid_switched_off,
         ),
     ];
   }
@@ -1437,10 +1424,17 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     pending.addListener(() => canContinue.value = pending.value != null);
     await showGamePickSheet<void>(
       context,
-      title: l.recurring_end_date_pick,
+      title: l.recurring_end_date_label,
       subtitle: l.recurring_limit_hint(kMaxSeriesOccurrences),
+      secondary: ComposerSheetConfirm(
+        label: l.recurring_end_date_none,
+        onTap: () {
+          notifier.setRepeatEnd(null);
+          Navigator.of(context).maybePop();
+        },
+      ),
       confirm: ComposerSheetConfirm(
-        label: l.recurring_edit_continue,
+        label: l.composer_done,
         enabledWhen: canContinue,
         onTap: () {
           final d = pending.value;

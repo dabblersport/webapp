@@ -3133,6 +3133,7 @@
   "@recurring_limit_hint": {"placeholders": {"max": {"type": "int"}}},
   "recurring_limit_reached": "This series has reached its limit of {max, plural, =1{1 game} other{{max} games}}. Renew it to schedule more.",
   "@recurring_limit_reached": {"placeholders": {"max": {"type": "int"}}},
+  "recurring_limit_reached_title": "Series limit reached",
   "recurring_preview_count": "This creates {count, plural, =1{1 game} other{{count} games}}.",
   "@recurring_preview_count": {"placeholders": {"count": {"type": "int"}}},
   "recurring_renew_action": "Renew series",

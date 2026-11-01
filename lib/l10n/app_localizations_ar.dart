@@ -8308,6 +8308,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get recurring_limit_reached_title => 'بلغت السلسلة حدّها الأقصى';
+
+  @override
   String recurring_preview_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

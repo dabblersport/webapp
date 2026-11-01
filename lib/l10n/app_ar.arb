@@ -2841,6 +2841,7 @@
   "recurring_end_date_before_start": "يجب أن يكون تاريخ الانتهاء بعد موعد أول لعبة.",
   "recurring_limit_hint": "يمكن أن تضم السلسلة حتى {max, plural, =1{لعبة واحدة} two{لعبتين} few{{max} ألعاب} many{{max} لعبة} other{{max} لعبة}}. جدّدها عند انتهائها لتستمر.",
   "recurring_limit_reached": "بلغت هذه السلسلة حدّها الأقصى وهو {max, plural, =1{لعبة واحدة} two{لعبتان} few{{max} ألعاب} many{{max} لعبة} other{{max} لعبة}}. جدّدها لجدولة المزيد.",
+  "recurring_limit_reached_title": "بلغت السلسلة حدّها الأقصى",
   "recurring_preview_count": "سيؤدي هذا إلى إنشاء {count, plural, =1{لعبة واحدة} two{لعبتين} few{{count} ألعاب} many{{count} لعبة} other{{count} لعبة}}.",
   "recurring_renew_action": "تجديد السلسلة",
   "recurring_paid_disabled": "لا يمكن تكرار الألعاب المدفوعة حاليًا",

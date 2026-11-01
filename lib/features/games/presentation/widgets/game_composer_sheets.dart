@@ -25,6 +25,7 @@ Future<T?> showGamePickSheet<T>(
   String? subtitle,
   VoidCallback? onClear,
   ComposerSheetConfirm? confirm,
+  ComposerSheetConfirm? secondary,
   double? contentMaxFraction,
   bool headerDivider = true,
 }) => showAppSheet<T>(
@@ -42,26 +43,53 @@ Future<T?> showGamePickSheet<T>(
       composerSheetHeaderActions(opener, ctx, onClear: onClear),
   footerBuilder: confirm == null
       ? null
-      : (_) => GameComposerSheetFoot(confirm: confirm),
+      : (_) => GameComposerSheetFoot(confirm: confirm, secondary: secondary),
   builder: composerFrameBuilder(opener, builder),
 );
 
 /// The 48dp pill foot of a Create game sub-sheet, live-enabled through
 /// [ComposerSheetConfirm.enabledWhen] when set.
 class GameComposerSheetFoot extends StatelessWidget {
-  const GameComposerSheetFoot({super.key, required this.confirm});
+  const GameComposerSheetFoot({
+    super.key,
+    required this.confirm,
+    this.secondary,
+  });
 
   final ComposerSheetConfirm confirm;
+
+  /// A neutral pill before the confirm (the end-date sheet's "Never ends"),
+  /// both flexing to half the foot as the frame draws them.
+  final ComposerSheetConfirm? secondary;
 
   @override
   Widget build(BuildContext context) => ValueListenableBuilder<bool>(
     valueListenable:
         confirm.enabledWhen ?? ValueNotifier<bool>(confirm.enabled),
-    builder: (_, on, __) => DabblerComposerSubmit(
-      label: confirm.label,
-      enabled: on,
-      onPressed: confirm.onTap,
-    ),
+    builder: (_, on, __) {
+      final submit = DabblerComposerSubmit(
+        label: confirm.label,
+        enabled: on,
+        onPressed: confirm.onTap,
+      );
+      final other = secondary;
+      if (other == null) return submit;
+      return Row(
+        spacing: DabblerSpacing.space3,
+        children: <Widget>[
+          Expanded(
+            child: DabblerButton(
+              label: other.label,
+              tone: DabblerButtonTone.neutral,
+              size: DabblerButtonSize.full,
+              fullWidth: true,
+              onPressed: other.onTap,
+            ),
+          ),
+          Expanded(child: submit),
+        ],
+      );
+    },
   );
 }
 

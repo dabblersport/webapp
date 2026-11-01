@@ -3,6 +3,7 @@
 import 'dart:convert';
 
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/features/games/domain/models/game_recurrence.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
@@ -206,6 +207,34 @@ Future<void> _fill(
   await _settle(tester, 2);
 }
 
+/// Opens the End date sheet and picks the day [offset] days after the first
+/// game (tomorrow, as `_fill` sets it), then taps Done.
+Future<void> _pickEnd(
+  WidgetTester tester,
+  AppLocalizations l,
+  int offset,
+) async {
+  final DateTime now = DateTime.now();
+  final DateTime first = DateTime(now.year, now.month, now.day + 1);
+  final DateTime target = first.add(Duration(days: offset));
+  await _tap(tester, find.byKey(const ValueKey<String>('game-repeat-end')));
+  // The calendar opens on the month of the first offered day.
+  final DateTime shown = first.add(const Duration(days: 1));
+  final int months =
+      (target.year - shown.year) * 12 + target.month - shown.month;
+  for (var i = 0; i < months; i++) {
+    await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
+    await _settle(tester);
+  }
+  final Finder dayCells = find.descendant(
+    of: find.byType(DabblerCalendar),
+    matching: find.text('${target.day}'),
+  );
+  await tester.tap(target.day <= 15 ? dayCells.first : dayCells.last);
+  await _settle(tester);
+  await _tap(tester, find.text(l.composer_done));
+}
+
 final Finder _submit = find.byKey(
   const ValueKey<String>('game-composer-submit'),
 );
@@ -242,6 +271,7 @@ void main() {
   ) async {
     await _pump(tester);
     await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
     await _tap(tester, find.text(l.recurring_option_weekly));
     await _tap(tester, _submit);
     expect(_rpcs, isEmpty);
@@ -259,10 +289,14 @@ void main() {
     };
     await _pump(tester);
     await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
     await _tap(tester, find.text(l.recurring_option_biweekly));
     await _tap(tester, _submit);
-    expect(_rpcs, hasLength(1));
-    final (name, body) = _rpcs.single;
+    final creates = _rpcs
+        .where((r) => r.$1 != SupabaseConfig.rpcTrackEventFn)
+        .toList();
+    expect(creates, hasLength(1));
+    final (name, body) = creates.single;
     expect(name, SupabaseConfig.rpcCreateGameSeriesFn);
     expect(body['p_geo_location_id'], 'geo-1');
     expect(body['p_area_id'], 'area-1');
@@ -286,7 +320,99 @@ void main() {
     await _pump(tester);
     await _fill(tester, l, price: '35');
     await _tap(tester, _submit);
-    expect(_rpcs.single.$1, SupabaseConfig.rpcCreateGameFn);
-    expect(_rpcs.single.$2.containsKey('p_geo_location_id'), isFalse);
+    final creates = _rpcs
+        .where((r) => r.$1 != SupabaseConfig.rpcTrackEventFn)
+        .toList();
+    expect(creates, hasLength(1));
+    expect(creates.single.$1, SupabaseConfig.rpcCreateGameFn);
+    expect(creates.single.$2.containsKey('p_geo_location_id'), isFalse);
+  });
+
+  testWidgets('C4 layout: row with value and chevron, panel with equal pills', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    // D1: collapsed row shows the current value, the panel is closed.
+    expect(find.text(l.recurring_option_none), findsOneWidget);
+    expect(
+      find.byKey(const ValueKey<String>('game-repeat-panel')),
+      findsNothing,
+    );
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    expect(
+      find.byKey(const ValueKey<String>('game-repeat-panel')),
+      findsOneWidget,
+    );
+    // D2: three equal pills, the design system's 45 block height.
+    final pills = find.descendant(
+      of: find.byKey(const ValueKey<String>('game-repeat-panel')),
+      matching: find.byType(DabblerButton),
+    );
+    expect(pills, findsNWidgets(3));
+    final sizes = <Size>[for (final e in pills.evaluate()) e.size!];
+    expect(
+      sizes.map((s) => s.height),
+      everyElement(DabblerSizing.touchTargetMin),
+    );
+    expect(sizes.map((s) => s.width).toSet(), hasLength(1));
+    // D4: the hint sits under the card, whole.
+    expect(
+      find.text(l.recurring_limit_hint(kMaxSeriesOccurrences)),
+      findsOneWidget,
+    );
+    // D3 and D4: once Weekly is on, the Ends card and the limit card show.
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    expect(find.text(l.recurring_end_date_label), findsOneWidget);
+    expect(find.text(l.recurring_end_date_none), findsOneWidget);
+    // An open-ended series is capped silently: no limit card.
+    expect(find.text(l.recurring_limit_reached_title), findsNothing);
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('limit card: Weekly with no end date shows none', (tester) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    expect(find.text(l.recurring_end_date_none), findsOneWidget);
+    expect(find.text(l.recurring_limit_reached_title), findsNothing);
+    expect(
+      find.text(l.recurring_limit_hint(kMaxSeriesOccurrences)),
+      findsOneWidget,
+    );
+  });
+
+  testWidgets('limit card: Weekly with an end date giving 52 games shows it', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    await _pickEnd(tester, l, 7 * (kMaxSeriesOccurrences - 1));
+    expect(find.text(l.recurring_limit_reached_title), findsOneWidget);
+  });
+
+  testWidgets('limit card: Weekly with an end date under 52 games shows none', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '0');
+    await _tap(tester, find.text(l.recurring_repeat_label));
+    await _tap(tester, find.text(l.recurring_option_weekly));
+    await _pickEnd(tester, l, 21);
+    expect(find.text(l.recurring_limit_reached_title), findsNothing);
+    expect(find.text(l.recurring_end_date_none), findsNothing);
+  });
+
+  testWidgets('C4 layout: paid lock is two lines in the Repeat block', (
+    tester,
+  ) async {
+    await _pump(tester);
+    await _fill(tester, l, price: '35');
+    expect(find.text(l.recurring_paid_disabled), findsOneWidget);
+    expect(find.text(l.recurring_paid_free_hint), findsOneWidget);
+    expect(find.text(l.recurring_option_none), findsOneWidget);
   });
 }

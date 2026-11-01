@@ -388,6 +388,12 @@ void main() {
       expect(glyph.name, 'grid-2');
       expect(glyph.size, 20);
 
+      // KAN-697: Repeat is its own sunken row (36 circle), not a composer row.
+      expect(
+        find.byKey(const ValueKey<String>('game-repeat-row')),
+        findsOneWidget,
+      );
+
       // Icons by row, in the design's order.
       final List<String> icons = tester
           .widgetList<DabblerComposerRow>(find.byType(DabblerComposerRow))
@@ -398,7 +404,6 @@ void main() {
         'location',
         'calendar',
         'timer',
-        'refresh', // KAN-697: Repeat
         'medal-star',
         'people',
         'people',
