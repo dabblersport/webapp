@@ -13,6 +13,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import '../providers/auth_providers.dart';
 
@@ -277,6 +278,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       if (!launched) return;
 
       final result = await authService.handleGoogleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'google');
       if (!mounted) return;
 
       switch (result) {
@@ -334,6 +336,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       if (!signedIn) return; // User cancelled the Apple sheet.
 
       final result = await authService.handleAppleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'apple');
       if (!mounted) return;
 
       switch (result) {
