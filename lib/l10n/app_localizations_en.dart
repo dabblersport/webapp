@@ -8373,4 +8373,34 @@ class AppLocalizationsEn extends AppLocalizations {
 
     return '$game on $dateString was cancelled. The organiser ended this series.';
   }
+
+  @override
+  String get profile_visitor_sports_title => 'Sports they play';
+
+  @override
+  String get profile_stat_games_visitor => 'Games';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return '$sport games';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'As player or organiser';
+
+  @override
+  String get profile_stat_sport_profiles => 'Sport profiles';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'Open games they are playing in or organising';
+
+  @override
+  String get profile_tag_playing => 'Playing';
+
+  @override
+  String get profile_tag_organising => 'Organising';
+
+  @override
+  String get profile_tag_organising_playing => 'Organising · Playing';
 }

@@ -3166,5 +3166,15 @@
   "recurring_cancel_failed": "Couldn't cancel the series. Try again.",
   "recurring_cancel_notif_title": "Game cancelled",
   "recurring_cancel_notif_body": "{game} on {date} was cancelled. The organiser ended this series.",
-  "@recurring_cancel_notif_body": {"placeholders": {"game": {"type": "String"}, "date": {"type": "DateTime", "format": "yMMMEd"}}}
+  "@recurring_cancel_notif_body": {"placeholders": {"game": {"type": "String"}, "date": {"type": "DateTime", "format": "yMMMEd"}}},
+  "profile_visitor_sports_title": "Sports they play",
+  "profile_stat_games_visitor": "Games",
+  "profile_stat_sport_games": "{sport} games",
+  "@profile_stat_sport_games": {"placeholders": {"sport": {"type": "String"}}},
+  "profile_stat_as_player_or_organiser": "As player or organiser",
+  "profile_stat_sport_profiles": "Sport profiles",
+  "profile_visitor_upcoming_note": "Open games they are playing in or organising",
+  "profile_tag_playing": "Playing",
+  "profile_tag_organising": "Organising",
+  "profile_tag_organising_playing": "Organising · Playing"
 }
