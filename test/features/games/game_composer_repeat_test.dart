@@ -321,7 +321,7 @@ void main() {
     expect(_rpcs.single.$2.containsKey('p_geo_location_id'), isFalse);
   });
 
-  testWidgets('C4 layout: row with value and chevron, panel with 44dp pills', (
+  testWidgets('C4 layout: row with value and chevron, panel with equal pills', (
     tester,
   ) async {
     await _pump(tester);
@@ -337,20 +337,17 @@ void main() {
       find.byKey(const ValueKey<String>('game-repeat-panel')),
       findsOneWidget,
     );
-    // D2: three equal pills, 44dp high.
-    final sizes = <Size>[
-      for (final t in <String>[
-        l.recurring_option_none,
-        l.recurring_option_weekly,
-        l.recurring_option_biweekly,
-      ])
-        tester.getSize(
-          find
-              .ancestor(of: find.text(t).last, matching: find.byType(SizedBox))
-              .first,
-        ),
-    ];
-    expect(sizes.map((s) => s.height), everyElement(44));
+    // D2: three equal pills, the design system's 45 block height.
+    final pills = find.descendant(
+      of: find.byKey(const ValueKey<String>('game-repeat-panel')),
+      matching: find.byType(DabblerButton),
+    );
+    expect(pills, findsNWidgets(3));
+    final sizes = <Size>[for (final e in pills.evaluate()) e.size!];
+    expect(
+      sizes.map((s) => s.height),
+      everyElement(DabblerSizing.touchTargetMin),
+    );
     expect(sizes.map((s) => s.width).toSet(), hasLength(1));
     // D4: the hint sits under the card, whole.
     expect(
