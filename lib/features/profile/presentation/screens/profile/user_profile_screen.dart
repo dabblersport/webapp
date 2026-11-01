@@ -406,6 +406,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
       message: messageOn
           ? ProfileMessageAction(targetAuthUserId: targetAuthUserId)
           : null,
+      invite: const ProfileInviteAction(),
     );
   }
 

@@ -6923,6 +6923,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get messaging_dm_action_semantic => 'إرسال رسالة مباشرة';
 
   @override
+  String get profile_invite_action_semantic => 'دعوة';
+
+  @override
   String get messaging_meetup_mark_label => 'لقاء';
 
   @override

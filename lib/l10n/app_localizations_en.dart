@@ -6873,6 +6873,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_dm_action_semantic => 'Send a direct message';
 
   @override
+  String get profile_invite_action_semantic => 'Invite';
+
+  @override
   String get messaging_meetup_mark_label => 'Meetup';
 
   @override

@@ -12,9 +12,11 @@ const String _gameColumns =
     'id, title, start_at, is_cancelled, is_creator, is_joined, '
     'creator_profile_id, sport_id';
 
-const String _meetupColumns =
-    'id, title, start_at, is_cancelled, creator_profile_id, creator_user_id, '
-    'sport_id';
+/// Columns of `v_meetup_list`; the view has no `creator_user_id`.
+const String meetupColumns =
+    'id, title, start_at, is_cancelled, creator_profile_id, sport_id';
+
+const String _meetupColumns = meetupColumns;
 
 const ContributorGap _ownerPrivate = ContributorGap(
   'owner-private',

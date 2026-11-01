@@ -12347,6 +12347,12 @@ abstract class AppLocalizations {
   /// **'Send a direct message'**
   String get messaging_dm_action_semantic;
 
+  /// KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get profile_invite_action_semantic;
+
   /// KAN-559 Messages list: the meetup row's quiet kind label (the meetup mark). Arabic is PROVISIONAL pending content review.
   ///
   /// In en, this message translates to:
