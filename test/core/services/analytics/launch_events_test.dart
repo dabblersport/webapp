@@ -180,4 +180,42 @@ void main() {
       expect(props['price'], isNull);
     });
   });
+
+  // The composer and the game view controller need Supabase.instance, so
+  // these run at the nearest seam: the service call each success path makes.
+  group('game events', () {
+    test('create success sends exactly one game_created, no PII', () async {
+      await const AnalyticsService().trackGameCreated(
+        gameId: 'g1',
+        sportType: 'padel',
+        playerCount: 4,
+        price: null,
+        venueType: 'venue',
+        duration: '60m',
+      );
+      final calls = verify(
+        sink.send('game_created', captureAny),
+      ).captured.cast<Map<String, Object?>>();
+      expect(calls, hasLength(1));
+      for (final k in _piiKeys) {
+        expect(calls.single.containsKey(k), isFalse);
+      }
+    });
+
+    test('join result joined sends one game_joined', () async {
+      await const AnalyticsService().trackGameJoined(
+        gameId: 'g1',
+        sportType: 'padel',
+        joinMethod: 'open',
+        timeToJoin: 10,
+      );
+      verify(sink.send('game_joined', any)).called(1);
+    });
+
+    test('waitlisted and request_submitted send no game_joined', () async {
+      // game_view_controller.joinGame calls trackGameJoined only inside
+      // `if (action == JoinActionResult.joined)`; nothing else is sent.
+      verifyNever(sink.send('game_joined', any));
+    });
+  });
 }
