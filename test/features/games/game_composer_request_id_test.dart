@@ -88,6 +88,8 @@ http.Client _fakeDb() => MockClient((http.Request req) async {
       },
     ]);
   }
+  // The launch analytics event (rpc_track_event) is not a create.
+  if (path.endsWith('/rpc/rpc_track_event')) return json(<String, Object>{});
   if (path.contains('/rpc/')) {
     _ids.add(_holder?.current);
     final body = jsonDecode(req.body) as Map<String, dynamic>;

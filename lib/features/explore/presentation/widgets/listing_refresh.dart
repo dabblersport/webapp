@@ -4,6 +4,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Pull-to-refresh plumbing shared by the Games, Venues and Meetups listings
 /// (KAN-598). The gesture and loader are the feed's own ([DabblerRefresh]);
@@ -91,7 +92,7 @@ void showListingRefreshFailedToast(BuildContext context) {
 class ListingChangeSignal {
   ListingChangeSignal(
     this._refresh, {
-    this.window = const Duration(milliseconds: 300),
+    this.window = DabblerMotion.debounceSearch,
   });
 
   final Future<void> Function() _refresh;
@@ -141,8 +142,8 @@ class ListingChangeSignal {
 
 /// One signal per listing, tied to the ProviderScope (a signed-out or switched
 /// session disposes the scope's providers, which disposes the signal).
-final listingChangeSignalProvider =
-    Provider.family<ListingChangeSignal, ListingChangeSignalArgs>((ref, args) {
+final listingChangeSignalProvider = Provider.autoDispose
+    .family<ListingChangeSignal, ListingChangeSignalArgs>((ref, args) {
       final signal = ListingChangeSignal(args.refresh, window: args.window);
       ref.onDispose(signal.dispose);
       return signal;
@@ -154,7 +155,7 @@ class ListingChangeSignalArgs {
   const ListingChangeSignalArgs(
     this.listing,
     this.refresh, {
-    this.window = const Duration(milliseconds: 300),
+    this.window = DabblerMotion.debounceSearch,
   });
 
   final String listing;
@@ -168,3 +169,63 @@ class ListingChangeSignalArgs {
   @override
   int get hashCode => listing.hashCode;
 }
+
+/// Opens a Realtime subscription on [table]: [onChange] for every row change,
+/// [onReconnect] when the channel re-subscribes after a drop. Returns the
+/// function that closes it.
+typedef ListingRealtimeSource =
+    void Function() Function(
+      String table,
+      void Function() onChange,
+      void Function() onReconnect,
+    );
+
+/// Test seam: widget tests that render a listing against a real client would
+/// otherwise open a socket and leave its retry timers pending.
+@visibleForTesting
+bool listingRealtimeDisabled = false;
+
+/// The Supabase-backed source. Realtime enforces each table's SELECT RLS per
+/// subscriber, so a viewer only gets nudges for rows they can already read.
+final listingRealtimeSourceProvider = Provider<ListingRealtimeSource>((ref) {
+  return (table, onChange, onReconnect) {
+    if (listingRealtimeDisabled) return () {};
+    final SupabaseClient db;
+    try {
+      db = Supabase.instance.client;
+    } catch (_) {
+      return () {}; // no client (not initialised): nothing to listen to
+    }
+    var subscribedBefore = false;
+    final channel = db.channel('listing_change_$table')
+      ..onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: table,
+        callback: (_) => onChange(),
+      )
+      ..subscribe((status, _) {
+        if (status != RealtimeSubscribeStatus.subscribed) return;
+        if (subscribedBefore) onReconnect();
+        subscribedBefore = true;
+      });
+    return () => db.removeChannel(channel);
+  };
+});
+
+/// KAN-755: feeds [ListingChangeSignal] from Realtime for a listing ('games'
+/// or 'meetups'). A change message is only a nudge: it carries no payload into
+/// the UI, the listing re-runs its own RLS-bound query. A re-subscribe after
+/// the socket dropped counts as a reconnect and converges the same way. The
+/// subscription is closed (and the signal disposed) when the watching screen
+/// goes.
+final listingChangeFeedProvider = Provider.autoDispose
+    .family<void, ListingChangeSignalArgs>((ref, args) {
+      final signal = ref.watch(listingChangeSignalProvider(args));
+      final close = ref.read(listingRealtimeSourceProvider)(
+        args.listing == 'meetups' ? 'meetups' : 'games',
+        signal.changed,
+        signal.reconnected,
+      );
+      ref.onDispose(close);
+    });

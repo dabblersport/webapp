@@ -395,6 +395,14 @@ class GameViewController extends StateNotifier<GameViewState> {
 
     _channel = _db.channel('game_view_$gameId')
       ..onPostgresChanges(
+        // KAN-755: the game's own title, time, place or cancel state.
+        event: PostgresChangeEvent.update,
+        schema: 'public',
+        table: SupabaseConfig.gamesTable,
+        filter: byGame('id'),
+        callback: (_) => _scheduleRealtimeRefresh(),
+      )
+      ..onPostgresChanges(
         event: PostgresChangeEvent.all,
         schema: 'public',
         table: SupabaseConfig.gameRosterTable,
