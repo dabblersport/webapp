@@ -69,6 +69,20 @@
                 <data android:pathPrefix="/u/" />
             </intent-filter>
         </activity>
+        <!-- flutter_web_auth_2 captures the OAuth return (Apple sign-in) on dabbler://app -->
+        <activity
+            android:name="com.linusu.flutter_web_auth_2.CallbackActivity"
+            android:exported="true"
+            android:taskAffinity="">
+            <intent-filter android:label="flutter_web_auth_2">
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data
+                    android:scheme="dabbler"
+                    android:host="app" />
+            </intent-filter>
+        </activity>
         <!-- Route background FCM notifications into the same channel the app
              creates at init (see push_notification_service_mobile.dart).
              NOTE: ic_notification.png is a full-color tile, not a valid
