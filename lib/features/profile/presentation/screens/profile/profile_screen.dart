@@ -378,10 +378,81 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             ),
             // KAN-706: On bench badge + line; nothing when not benched.
             const BenchProfileIndicator(),
-            // Design order (Profiles.dc.html): practicing selector, bento,
-            // followed sports, Upcoming, Needs attention, Games I organise,
-            // feed tabs.
-            if (personaType != 'socialiser') ...[
+            const DabblerGap.v(DabblerSpacing.space8),
+            OwnProfileStats(
+              posts: posts,
+              postsFailed: postsFailed,
+              sportsCount: mySports.length,
+              organised: counts?.organised,
+              upcoming: counts?.upcoming,
+              countsFailed: countsFailed,
+              onRetryCounts: () => ref.invalidate(profileGameCountsProvider),
+              gamesPlayed: isContributor
+                  ? counts?.played
+                  : sportProfiles.isEmpty
+                  ? (personaType == 'socialiser'
+                        ? null
+                        : profile?.statistics.totalGamesPlayed)
+                  : shown.fold<int>(0, (a, p) => a + p.gamesPlayed),
+              rating: shown.isEmpty
+                  ? (sportProfiles.isEmpty && personaType != 'socialiser'
+                        ? profile?.statistics.averageRating
+                        : null)
+                  : shown.fold<double>(0, (a, p) => a + p.averageRating) /
+                        shown.length,
+              minutesPlayed: personaType == 'player' && !isContributor
+                  ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
+                  : null,
+              reliability: personaType == 'player' && !isContributor
+                  ? profile?.statistics.getReliabilityScore().round()
+                  : null,
+              primarySports: sportProfiles
+                  .where((p) => p.isPrimarySport)
+                  .length,
+              sportsLabel: personaType == 'socialiser'
+                  ? l10n.profile_stat_sports_followed
+                  : null,
+              sportsTone: personaType == 'socialiser'
+                  ? DabblerStatTileTone.ink
+                  : DabblerStatTileTone.card,
+              scoped: selected != null,
+              newContributor: newContributor && selected == null,
+              heroLabel: selected == null
+                  ? null
+                  : l10n.profile_stat_sport_matches(selected.nameEn),
+              heroSub: selected == null
+                  ? (allSub.isEmpty ? null : allSub)
+                  : (shown.isEmpty ? null : shown.first.getSkillLevelName()),
+              accent: switch (personaType) {
+                'socialiser' => DabblerSportAccent.socialRamp,
+                'organiser' => DabblerSportAccent.mainRamp,
+                _ => DabblerSportAccent.of(
+                  selected == null
+                      ? null
+                      : OwnProfileSportPicker.sportKeyOf(selected),
+                ),
+              },
+              heroTone: personaType == 'host'
+                  ? DabblerStatTileTone.amber
+                  : DabblerStatTileTone.brand,
+              // Selected sport: its personal Sport Profile. All sports: the
+              // account's own activity list (no per-sport filter exists there).
+              onOpenSport: selected != null
+                  ? (canOpen
+                        ? () => _openSportProfile(profile, selected)
+                        : null)
+                  : (isContributor && !newContributor && counts != null
+                        // KAN-688 ruling: the All-sports hero opens /activities (the app has
+                        // no Listings screen; activities carry no sport/profile column, so it
+                        // is not an account-scoped list).
+                        ? () => context.push(RoutePaths.activities)
+                        : null),
+            ),
+            const DabblerGap.v(DabblerSpacing.space8),
+            RatingSummary(userId: profile?.userId),
+            if (personaType == 'socialiser')
+              OwnProfileFollowedSports(sports: mySports)
+            else
               OwnProfileSportPicker(
                 sports: mySports,
                 title: newContributor

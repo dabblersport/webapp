@@ -10,6 +10,7 @@ export 'features/app_boot/providers.dart';
 export 'features/app_boot/schema_guard.dart';
 export 'features/profile/providers.dart';
 export 'features/profile/presentation/providers/sport_profiles_providers.dart';
+export 'features/profile/presentation/providers/visited_profile_providers.dart';
 export 'features/venues/providers.dart';
 export 'features/venue_submissions/providers.dart';
 export 'core/data/supabase_remote_data_source.dart';
@@ -35,6 +36,7 @@ export 'features/explore/providers/feed_providers.dart';
 
 // Games
 export 'features/games/providers/game_history_providers.dart';
+export 'features/games/data/repositories/game_series_repository.dart';
 
 // News
 export 'features/meetups/presentation/providers/meetup_providers.dart';

@@ -122,6 +122,7 @@ class ProfileActionButtons extends StatelessWidget {
     super.key,
     required this.follow,
     required this.message,
+    this.invite,
   });
 
   final Widget follow;
@@ -129,28 +130,71 @@ class ProfileActionButtons extends StatelessWidget {
   /// Null when the Message action is gated off.
   final Widget? message;
 
+  /// The icon-only Invite button (Profiles.dc.html OTHER_ACTIONS, third
+  /// entry), drawn after Message. Null draws nothing.
+  final Widget? invite;
+
   /// Above this text scale the two buttons stack.
   static const double stackAboveScale = 1.3;
 
   @override
   Widget build(BuildContext context) {
     final message = this.message;
-    if (message == null) return follow;
+    final invite = this.invite;
+    if (message == null && invite == null) return follow;
     final stacked =
         MediaQuery.textScalerOf(context).scale(10) / 10 > stackAboveScale;
     if (stacked) {
       return Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [follow, const DabblerGap.v(DabblerSpacing.space3), message],
+        children: [
+          follow,
+          if (message != null) ...[
+            const DabblerGap.v(DabblerSpacing.space3),
+            message,
+          ],
+          if (invite != null) ...[
+            const DabblerGap.v(DabblerSpacing.space3),
+            invite,
+          ],
+        ],
       );
     }
     return Row(
       children: [
         Expanded(child: follow),
-        const DabblerGap.h(DabblerSpacing.space3),
-        Expanded(child: message),
+        if (message != null) ...[
+          const DabblerGap.h(DabblerSpacing.space3),
+          Expanded(child: message),
+        ],
+        if (invite != null) ...[
+          const DabblerGap.h(DabblerSpacing.space3),
+          invite,
+        ],
       ],
+    );
+  }
+}
+
+/// The icon-only "Invite" button on another user's profile (Profiles.dc.html
+/// OTHER_ACTIONS: `calendar-add`, outlined, no label). The design names no
+/// target flow and the codebase has no invite-a-person-to-a-game screen, so
+/// it draws and announces itself but starts nothing (KAN-689, cxo ruling).
+class ProfileInviteAction extends StatelessWidget {
+  const ProfileInviteAction({super.key});
+
+  static const buttonKey = ValueKey<String>('profile-invite-action');
+
+  @override
+  Widget build(BuildContext context) {
+    return DabblerButton.icon(
+      key: buttonKey,
+      icon: 'calendar-add',
+      semanticLabel: AppLocalizations.of(
+        context,
+      ).profile_invite_action_semantic,
+      tone: DabblerButtonTone.outlined,
     );
   }
 }

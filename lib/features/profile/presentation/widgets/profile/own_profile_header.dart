@@ -4,6 +4,10 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
+/// What a counter knows: a figure, nothing yet, or a failed read. Loading and
+/// failed both draw a dash, never a zero (KAN-688); only failed offers retry.
+enum ProfileCounterState { data, loading, failed }
+
 /// The Profiles design's identity block: the brand-tint band holding the
 /// avatar, display-face name, handle, persona and city badges, bio and the
 /// counters row. It owns no data and no navigation.
@@ -24,6 +28,12 @@ class OwnProfileHeader extends StatelessWidget {
     this.showPersonaBadge = true,
     this.postsFailed = false,
     this.onRetryPosts,
+    this.followersState = ProfileCounterState.data,
+    this.followingState = ProfileCounterState.data,
+    this.postsState = ProfileCounterState.data,
+    this.onRetryCounts,
+    this.onCopyLink,
+    this.linkCopied = false,
   });
 
   final UserProfile? profile;
@@ -53,6 +63,49 @@ class OwnProfileHeader extends StatelessWidget {
   /// never a zero.
   final bool postsFailed;
   final VoidCallback? onRetryPosts;
+
+  /// The visitor's typed counters (KAN-688). The owner leaves them at
+  /// [ProfileCounterState.data] and keeps its own [postsFailed] path.
+  final ProfileCounterState followersState;
+  final ProfileCounterState followingState;
+  final ProfileCounterState postsState;
+
+  /// Re-reads whichever counter failed.
+  final VoidCallback? onRetryCounts;
+
+  /// The copy-link pill beside the handle (`Profiles.dc.html` lines 91-98).
+  /// Null hides it, as on the owner view.
+  final VoidCallback? onCopyLink;
+
+  /// The pill's confirmed state: tick and "Link copied" on the success tint.
+  final bool linkCopied;
+
+  static const ValueKey<String> copyLinkKey = ValueKey<String>(
+    'profile-copy-link',
+  );
+
+  Widget _counter({
+    required ProfileCounterState state,
+    required String value,
+    required String label,
+    required String retryLabel,
+    VoidCallback? onTap,
+  }) => switch (state) {
+    ProfileCounterState.data => DabblerCounterLink(
+      value: value,
+      label: label,
+      onTap: onTap,
+    ),
+    ProfileCounterState.loading => DabblerCounterLink(
+      value: '\u2014',
+      label: label,
+    ),
+    ProfileCounterState.failed => DabblerCounterLink(
+      value: '\u2014',
+      label: retryLabel,
+      onTap: onRetryCounts,
+    ),
+  };
 
   static String personaIcon(String? persona) =>
       switch (persona?.toLowerCase()) {
@@ -120,12 +173,26 @@ class OwnProfileHeader extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       if (username != null && username.isNotEmpty)
-                        DabblerText(
-                          '\u200E@$username',
-                          style: DabblerType.smallTight,
-                          tone: DabblerTextTone.tertiary,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                        Row(
+                          children: <Widget>[
+                            Flexible(
+                              child: DabblerText(
+                                '\u200E@$username',
+                                style: DabblerType.smallTight,
+                                tone: DabblerTextTone.tertiary,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ),
+                            if (onCopyLink != null) ...<Widget>[
+                              const DabblerGap.h(DabblerSpacing.space2),
+                              _CopyLinkPill(
+                                key: copyLinkKey,
+                                copied: linkCopied,
+                                onTap: onCopyLink!,
+                              ),
+                            ],
+                          ],
                         ),
                     ],
                   ),
@@ -161,34 +228,48 @@ class OwnProfileHeader extends StatelessWidget {
               ],
             ),
             const DabblerGap.v(DabblerSpacing.space5),
-            DabblerText(
-              bio != null && bio.isNotEmpty
-                  ? bio
-                  : l10n.profile_bio_placeholder,
-              style: DabblerType.copy,
-              tone: DabblerTextTone.secondary,
-              maxLines: 3,
-              overflow: TextOverflow.ellipsis,
-            ),
+            // The "Add a short bio" prompt is the owner's; a visitor
+            // (the header carries [actions]) sees nothing for an empty bio.
+            if ((bio != null && bio.isNotEmpty) || actions == null)
+              DabblerText(
+                bio != null && bio.isNotEmpty
+                    ? bio
+                    : l10n.profile_bio_placeholder,
+                style: DabblerType.copy,
+                tone: DabblerTextTone.secondary,
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis,
+              ),
             const DabblerGap.v(DabblerSpacing.space1),
             Wrap(
               spacing: DabblerSpacing.space6,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: <Widget>[
-                DabblerCounterLink(
+                _counter(
+                  state: followersState,
                   value: '$followers',
                   label: l10n.profile_follower_count(followers),
+                  retryLabel: l10n.feed_retry,
                   onTap: onFollowers,
                 ),
-                DabblerCounterLink(
+                _counter(
+                  state: followingState,
                   value: '$following',
                   label: l10n.profile_following_label,
+                  retryLabel: l10n.feed_retry,
                   onTap: onFollowing,
                 ),
                 if (sportsCount != null)
                   DabblerCounterLink(
                     value: '$sportsCount',
                     label: sportsLabel ?? l10n.profile_section_sports,
+                  )
+                else if (postsState != ProfileCounterState.data)
+                  _counter(
+                    state: postsState,
+                    value: '$posts',
+                    label: l10n.profile_post_count(posts),
+                    retryLabel: l10n.feed_retry,
                   )
                 else if (postsFailed)
                   DabblerCounterLink(
@@ -209,6 +290,58 @@ class OwnProfileHeader extends StatelessWidget {
               actions!,
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// The 26-tall pill beside the handle: a link glyph on the card surface, and
+/// after a copy a tick with "Link copied" on the success tint.
+class _CopyLinkPill extends StatelessWidget {
+  const _CopyLinkPill({super.key, required this.copied, required this.onTap});
+
+  final bool copied;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final DabblerColors colors = DabblerColors.of(context);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final Color ink = copied ? colors.success.strong : colors.textSecondary;
+    return Semantics(
+      button: true,
+      label: copied ? l10n.sfx_link_copied : l10n.post_detail_copy_link,
+      excludeSemantics: true,
+      child: GestureDetector(
+        onTap: onTap,
+        behavior: HitTestBehavior.opaque,
+        child: DabblerSurface(
+          radius: DabblerRadius.pill,
+          fill: copied ? colors.success.surface : colors.surfaceCard,
+          borderColor: copied ? colors.success.surface : colors.borderDefault,
+          padding: const EdgeInsets.symmetric(
+            horizontal: DabblerSpacing.space3,
+            vertical: DabblerSpacing.space1,
+          ),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              DabblerIcon(
+                copied ? 'tick-circle' : 'link',
+                size: DabblerSizing.iconXs,
+                color: ink,
+              ),
+              if (copied) ...<Widget>[
+                const DabblerGap.h(DabblerSpacing.space1),
+                DabblerText(
+                  l10n.sfx_link_copied,
+                  style: DabblerType.tagTight,
+                  tone: DabblerTextTone.success,
+                ),
+              ],
+            ],
+          ),
         ),
       ),
     );

@@ -369,14 +369,13 @@ Future<void> _pickTomorrow(WidgetTester tester) async {
     await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
     await _settle(tester);
   }
-  // The grid also shows the neighbouring months' days (22+ before, up to 13
-  // after), so the in-month cell is the first match for days up to 13 and the
-  // last one otherwise.
-  final Finder cells = find.descendant(
+  // The grid also shows the adjacent months' days: an early day of this
+  // month is the first match, a late one the last.
+  final Finder dayCells = find.descendant(
     of: find.byType(DabblerCalendar),
     matching: find.text('${day.day}'),
   );
-  await tester.tap(day.day <= 13 ? cells.first : cells.last);
+  await tester.tap(day.day <= 15 ? dayCells.first : dayCells.last);
   await _settle(tester);
 }
 
@@ -784,6 +783,11 @@ void main() {
           ),
           '35',
         );
+        // KAN-697: the Repeat rows made the form taller; lift the pill clear
+        // of the sticky submit bar before tapping it.
+        await tester.ensureVisible(find.text(l.game_join_request));
+        await tester.drag(find.byType(Scrollable).first, const Offset(0, -160));
+        await _settle(tester, 2);
         await _tap(tester, find.text(l.game_join_request));
         await _tap(tester, find.byType(DabblerToggle).first);
         await tester.enterText(

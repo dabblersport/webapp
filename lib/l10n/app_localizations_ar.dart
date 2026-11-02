@@ -8325,6 +8325,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get recurring_limit_reached_title => 'بلغت السلسلة حدّها الأقصى';
+
+  @override
   String recurring_preview_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -8350,6 +8353,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get recurring_paid_switched_off =>
       'أُوقف التكرار لأن هذه اللعبة مدفوعة. لا يمكن تكرار الألعاب المدفوعة حاليًا.';
+
+  @override
+  String get recurring_location_required =>
+      'اختر ملعبًا أو حدّد موقعك لتكرار هذه اللعبة.';
 
   @override
   String get recurring_badge_label => 'سلسلة';
@@ -8466,5 +8473,78 @@ class AppLocalizationsAr extends AppLocalizations {
     final String dateString = dateDateFormat.format(date);
 
     return 'تم إلغاء لعبة يوم $dateString. أنهى المنظّم هذه السلسلة. اللعبة: $game';
+  }
+
+  @override
+  String get recurring_future_title_label => 'عنوان اللعبة';
+
+  @override
+  String get recurring_future_capacity_label => 'عدد اللاعبين';
+
+  @override
+  String get recurring_future_save => 'حفظ لكل الألعاب القادمة';
+
+  @override
+  String get recurring_future_done => 'تم تحديث السلسلة';
+
+  @override
+  String get recurring_future_failed => 'تعذّر تحديث السلسلة. حاول مرة أخرى.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      many: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      few: '$count ألعاب فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      two: 'لعبتان فيهما لاعبون منضمّون تحتفظان بتفاصيلهما السابقة.',
+      one: 'لعبة واحدة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'إلغاء السلسلة';
+
+  @override
+  String get profile_visitor_sports_title => 'الرياضات التي يمارسها';
+
+  @override
+  String get profile_stat_games_visitor => 'المباريات';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return 'مباريات $sport';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'لاعبًا أو منظّمًا';
+
+  @override
+  String get profile_stat_sport_profiles => 'الملفات الرياضية';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'المباريات المفتوحة التي يلعب فيها أو ينظّمها';
+
+  @override
+  String get profile_tag_playing => 'يلعب';
+
+  @override
+  String get profile_tag_organising => 'ينظّم';
+
+  @override
+  String get profile_tag_organising_playing => 'ينظّم · يلعب';
+
+  @override
+  String get profile_invite_action_semantic => 'دعوة';
+
+  @override
+  String get profile_stat_games_played_visitor => 'المباريات التي لعبها';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return 'مباريات $sport';
   }
 }

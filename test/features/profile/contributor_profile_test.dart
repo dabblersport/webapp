@@ -51,32 +51,33 @@ void main() {
   });
 
   group('Contributor stats', () {
-    testWidgets('Played, Organised and Upcoming draw; fabricated tiles do not', (
-      WidgetTester tester,
-    ) async {
-      await pumpProfileScreen(
-        tester,
-        _scroll(
-          const OwnProfileStats(
-            posts: 0,
-            sportsCount: 2,
-            gamesPlayed: 4,
-            organised: 3,
-            upcoming: 1,
-            minutesPlayed: null,
-            reliability: null,
+    testWidgets(
+      'Played, Organised and Upcoming draw; fabricated tiles do not',
+      (WidgetTester tester) async {
+        await pumpProfileScreen(
+          tester,
+          _scroll(
+            const OwnProfileStats(
+              posts: 0,
+              sportsCount: 2,
+              gamesPlayed: 4,
+              organised: 3,
+              upcoming: 1,
+              minutesPlayed: null,
+              reliability: null,
+            ),
           ),
-        ),
-        _en,
-      );
-      expect(find.text('Games played'), findsOneWidget);
-      expect(find.text('Games organised'), findsOneWidget);
-      expect(find.text('Upcoming'), findsOneWidget);
-      expect(find.text('Minutes played'), findsNothing);
-      expect(find.text('Reliability'), findsNothing);
-      expect(find.textContaining('Show-up'), findsNothing);
-      expect(find.textContaining('Partners'), findsNothing);
-    });
+          _en,
+        );
+        expect(find.text('Games played'), findsOneWidget);
+        expect(find.text('Games organised'), findsOneWidget);
+        expect(find.text('Upcoming'), findsOneWidget);
+        expect(find.text('Minutes played'), findsNothing);
+        expect(find.text('Reliability'), findsNothing);
+        expect(find.textContaining('Show-up'), findsNothing);
+        expect(find.textContaining('Partners'), findsNothing);
+      },
+    );
 
     testWidgets('no counts, no Organised or Upcoming tile', (
       WidgetTester tester,
@@ -136,6 +137,7 @@ void main() {
   });
 
   group('Contributor games lists', () {
+    setUpAll(loadProfileFonts);
     final GameCounts counts = computeGameCounts(<GameCountRow>[
       GameCountRow(
         id: 'g1',
@@ -152,13 +154,41 @@ void main() {
       final List<String> opened = <String>[];
       await pumpProfileScreen(
         tester,
-        _scroll(ContributorGamesSections(counts: counts, onOpenGame: opened.add)),
+        _scroll(
+          ContributorGamesSections(counts: counts, onOpenGame: opened.add),
+        ),
         _en,
       );
       expect(find.text('Upcoming'), findsOneWidget);
       expect(find.text('Games I organise'), findsOneWidget);
-      await tester.tap(find.byKey(const ValueKey<String>('contributor-game-g1')).first);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('contributor-game-g1')).first,
+      );
       expect(opened, <String>['g1']);
+    });
+
+    testWidgets('owner Create game opens the composer; visitor has none', (
+      WidgetTester tester,
+    ) async {
+      int created = 0;
+      await pumpProfileScreen(
+        tester,
+        _scroll(
+          ContributorGamesSections(
+            counts: counts,
+            onCreateGame: () => created++,
+          ),
+        ),
+        _en,
+      );
+      await tester.tap(find.text('Create game'));
+      expect(created, 1);
+      await pumpProfileScreen(
+        tester,
+        _scroll(ContributorGamesSections(counts: counts, showOrganised: false)),
+        _en,
+      );
+      expect(find.text('Create game'), findsNothing);
     });
 
     testWidgets('a visitor sees Upcoming only', (WidgetTester tester) async {
@@ -213,7 +243,10 @@ void main() {
     ) async {
       await pumpProfileScreen(tester, newUser(), _en);
       expect(find.text('Games & meetups'), findsOneWidget);
-      expect(find.text('Join or organise one to start your list'), findsOneWidget);
+      expect(
+        find.text('Join or organise one to start your list'),
+        findsOneWidget,
+      );
       expect(find.text('Played'), findsOneWidget);
       expect(find.text('Organised'), findsOneWidget);
       expect(find.text('Primary sports'), findsNothing);
@@ -255,43 +288,46 @@ void main() {
   });
 
   group('v_game_card rows', () {
-    test('own profile reads the viewer flags; others read creator and roster', () {
-      final List<Map<String, dynamic>> rows = <Map<String, dynamic>>[
-        <String, dynamic>{
-          'id': 'a',
-          'start_at': '2020-01-01T10:00:00Z',
-          'is_cancelled': false,
-          'is_creator': true,
-          'is_joined': false,
-          'creator_profile_id': 'other',
-        },
-        <String, dynamic>{
-          'id': 'b',
-          'start_at': '2020-01-02T10:00:00Z',
-          'is_cancelled': false,
-          'is_creator': false,
-          'is_joined': true,
-          'creator_profile_id': 'x',
-        },
-      ];
-      final GameCounts own = computeGameCounts(
-        rowsToGameCountRows(
-          rows,
-          isOwn: true,
-          profileId: 'me',
-          rostered: <String>{},
-        ),
-      );
-      expect((own.played, own.organised), (1, 1));
-      final GameCounts seen = computeGameCounts(
-        rowsToGameCountRows(
-          rows,
-          isOwn: false,
-          profileId: 'x',
-          rostered: <String>{'a'},
-        ),
-      );
-      expect((seen.played, seen.organised), (1, 1));
-    });
+    test(
+      'own profile reads the viewer flags; others read creator and roster',
+      () {
+        final List<Map<String, dynamic>> rows = <Map<String, dynamic>>[
+          <String, dynamic>{
+            'id': 'a',
+            'start_at': '2020-01-01T10:00:00Z',
+            'is_cancelled': false,
+            'is_creator': true,
+            'is_joined': false,
+            'creator_profile_id': 'other',
+          },
+          <String, dynamic>{
+            'id': 'b',
+            'start_at': '2020-01-02T10:00:00Z',
+            'is_cancelled': false,
+            'is_creator': false,
+            'is_joined': true,
+            'creator_profile_id': 'x',
+          },
+        ];
+        final GameCounts own = computeGameCounts(
+          rowsToGameCountRows(
+            rows,
+            isOwn: true,
+            profileId: 'me',
+            rostered: <String>{},
+          ),
+        );
+        expect((own.played, own.organised), (1, 1));
+        final GameCounts seen = computeGameCounts(
+          rowsToGameCountRows(
+            rows,
+            isOwn: false,
+            profileId: 'x',
+            rostered: <String>{'a'},
+          ),
+        );
+        expect((seen.played, seen.organised), (1, 1));
+      },
+    );
   });
 }

@@ -8259,6 +8259,9 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get recurring_limit_reached_title => 'Series limit reached';
+
+  @override
   String recurring_preview_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -8282,6 +8285,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get recurring_paid_switched_off =>
       'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.';
+
+  @override
+  String get recurring_location_required =>
+      'Choose a venue or set your location to repeat this game.';
 
   @override
   String get recurring_badge_label => 'Series';
@@ -8392,5 +8399,76 @@ class AppLocalizationsEn extends AppLocalizations {
     final String dateString = dateDateFormat.format(date);
 
     return '$game on $dateString was cancelled. The organiser ended this series.';
+  }
+
+  @override
+  String get recurring_future_title_label => 'Game title';
+
+  @override
+  String get recurring_future_capacity_label => 'Players';
+
+  @override
+  String get recurring_future_save => 'Save for all future games';
+
+  @override
+  String get recurring_future_done => 'Series updated';
+
+  @override
+  String get recurring_future_failed =>
+      'Couldn\'t update the series. Try again.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games with joined players keep their old details.',
+      one: '1 game with joined players keeps its old details.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'Cancel series';
+
+  @override
+  String get profile_visitor_sports_title => 'Sports they play';
+
+  @override
+  String get profile_stat_games_visitor => 'Games';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return '$sport games';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'As player or organiser';
+
+  @override
+  String get profile_stat_sport_profiles => 'Sport profiles';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'Open games they are playing in or organising';
+
+  @override
+  String get profile_tag_playing => 'Playing';
+
+  @override
+  String get profile_tag_organising => 'Organising';
+
+  @override
+  String get profile_tag_organising_playing => 'Organising · Playing';
+
+  @override
+  String get profile_invite_action_semantic => 'Invite';
+
+  @override
+  String get profile_stat_games_played_visitor => 'Games played';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return '$sport matches';
   }
 }

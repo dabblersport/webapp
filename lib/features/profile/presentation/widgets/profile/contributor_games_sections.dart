@@ -31,7 +31,7 @@ class ContributorGamesSections extends StatelessWidget {
   /// Replaces the push to the Games tab behind Find a game.
   final VoidCallback? onFindGame;
 
-  /// Replaces the push to game creation behind Create game.
+  /// Replaces the push to the game composer behind the Create game action.
   final VoidCallback? onCreateGame;
 
   @override
@@ -53,7 +53,7 @@ class ContributorGamesSections extends StatelessWidget {
             l10n.profile_section_games_organised,
             organised,
             action: DabblerTextLink(
-              label: l10n.nav_create_game,
+              label: l10n.game_create,
               underline: false,
               style: DabblerType.footnote
                   .resolveForDirection(Directionality.of(context))
@@ -123,30 +123,10 @@ class ContributorGamesSections extends StatelessWidget {
             padding: const EdgeInsets.symmetric(
               horizontal: DabblerSpacing.space6,
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: <Widget>[
-                if (action == null)
-                  Expanded(
-                    child: DabblerSection(
-                      title: title,
-                      style: DabblerSectionStyle.label,
-                    ),
-                  )
-                else ...<Widget>[
-                  Expanded(
-                    child: DabblerText(
-                      title,
-                      style: DabblerType.subheadline,
-                      weight: DabblerTextWeight.semibold,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                  ),
-                  action,
-                ],
-              ],
+            child: DabblerSection(
+              title: title,
+              style: DabblerSectionStyle.label,
+              action: action,
             ),
           ),
           const DabblerGap.v(DabblerSpacing.space3),
