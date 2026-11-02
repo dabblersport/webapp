@@ -1,8 +1,37 @@
 -- KAN-724 (KAN-714 B05): probes for 20261104100500_kan714_b05_search_filter_indexes.sql.
 -- LOCAL THROWAWAY DATABASE ONLY. Runs inside BEGIN ... ROLLBACK and leaves nothing behind.
--- Build: events_p1 harness+seed, events_p2 local_harness_kan712, events_p2_kan713 local_harness_kan713,
---        KAN-710, KAN-711 (x2, backfill, validate), KAN-712 (A+B), KAN-713 (x2), KAN-718, then optionally KAN-724.
--- Run:   PGOPTIONS='-c kan724.local=on' psql -X -v ON_ERROR_STOP=1 -d <db> -f this_file.sql
+-- Build (bash, from the repository root; PostgreSQL 16 initdb/pg_ctl/psql on PATH; brand new cluster):
+--   bash supabase/tests/events_p2/build_kan724.sh /tmp/kan724b_pg 54725
+-- That script is the complete ordered chain, every file loaded with psql -v ON_ERROR_STOP=1 into database k724:
+--    1 supabase/tests/events_p1/local_harness_kan711.sql
+--    2 supabase/tests/events_p1/local_seed_kan711.sql
+--    3 supabase/tests/events_p2/local_harness_kan712.sql
+--    4 supabase/tests/events_p2_kan713/local_harness_kan713.sql
+--    5 supabase/migrations/20261101140000_kan710_events_parent_schema.sql
+--    6 supabase/migrations/20261102110000_kan711_events_mirror_triggers.sql
+--    7 supabase/migrations/20261102120000_kan711_events_backfill.sql
+--    8 CALL public.kan711_events_backfill_run();  SELECT public.kan711_events_validate_links();
+--    9 supabase/migrations/20261103100000_kan712_events_write_contract.sql
+--   10 supabase/migrations/20261103110000_kan712_cutover.sql
+--   11 supabase/migrations/20261104100000_kan713_access_helpers.sql
+--   12 supabase/migrations/20261104110000_kan713_location_triggers.sql
+--   13 supabase/migrations/20261104110300_kan718_d07_series_occurrence_unique.sql
+--   14 supabase/tests/events_p2/local_harness_kan724.sql   (PRE-IMAGE rpc_unified_search_sectioned verbatim from
+--      baseline_schema.sql:16246-16337 + grants :36875-36877, md5 pin asserted; empty stand-in tables)
+-- Run (same shell; C="-X -v ON_ERROR_STOP=1 -h /tmp -p 54725 -U postgres -d k724"):
+--   a. pre-image:  PGOPTIONS='-c kan724.local=on' psql $C -f supabase/tests/events_p2/kan714_b05_search_indexes.sql
+--                  -> 'PRE-IMAGE OK: every [=] passes and every [K] fails (7 K checks)'
+--   b. apply:      psql $C -f supabase/migrations/20261104100500_kan714_b05_search_filter_indexes.sql
+--                  -> NOTICE 'KAN-724 applied: Q1-Q3 ok, 35 probe queries identical'
+--   c. applied:    PGOPTIONS='-c kan724.local=on' psql $C -f supabase/tests/events_p2/kan714_b05_search_indexes.sql
+--                  -> 'ALL PASS (60 checks, migration applied)'
+--   d. rollback:   psql $C -f supabase/tests/events_p2/datahash_kan724.sql
+--                  sed -n '/^-- ROLLBACK (run as postgres/,$p' supabase/migrations/20261104100500_kan714_b05_search_filter_indexes.sql \
+--                    | sed -n '/^-- begin;/,/^-- commit;/p' | sed -E 's/^-- ?//' | psql $C
+--                  psql $C -f supabase/tests/events_p2/datahash_kan724.sql
+--                  -> the three table hashes identical; fn md5=fe3382197842fa66564b2f62d9b754f5, index_present=false
+--   e. restored:   repeat (a) -> 'PRE-IMAGE OK ... (7 K checks)'
+--   stop:          pg_ctl -D /tmp/kan724b_pg stop -m fast
 --
 -- Check kinds:
 --   [=] parity: must PASS on the pre-image AND after the migration (shape, counts, no doubles, meetup
