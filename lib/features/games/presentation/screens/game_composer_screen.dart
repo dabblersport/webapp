@@ -884,7 +884,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           sportType: (state.sportNameEn ?? state.sportId ?? 'unknown')
               .toLowerCase(),
           playerCount: state.requiredPlayers ?? 0,
-          price: null,
+          price: state.priceAed,
           venueType: state.venueSpaceId != null ? 'venue' : 'unspecified',
           duration: '${state.durationMinutes}m',
         ),
