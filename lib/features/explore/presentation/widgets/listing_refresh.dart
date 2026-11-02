@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -70,4 +72,99 @@ void showListingRefreshFailedToast(BuildContext context) {
       tone: DabblerToastTone.warning,
     ),
   );
+}
+
+/// KAN-755: converges a listing (and an open detail) after an event's title,
+/// time, location or cancel state changes, from any supported signal (a
+/// Realtime change, a reconnect, a return from the editor).
+///
+///  * the signal carries NO payload: the listing re-runs its own RLS-bound
+///    query, so nothing a subscriber is not allowed to see is ever rendered
+///    from a change message;
+///  * bursts coalesce: any number of signals inside [window] cost one refetch,
+///    and signals arriving while that refetch runs cost exactly one follow-up,
+///    so there are no duplicate requests;
+///  * a reconnect is just another signal, so the listing converges on whatever
+///    changed while the socket was down;
+///  * [dispose] (session end, account switch) cancels the pending timer and
+///    drops late signals, so an old account's listing never refetches or updates.
+class ListingChangeSignal {
+  ListingChangeSignal(
+    this._refresh, {
+    this.window = const Duration(milliseconds: 300),
+  });
+
+  final Future<void> Function() _refresh;
+  final Duration window;
+
+  Timer? _timer;
+  bool _running = false;
+  bool _dirty = false;
+  bool _disposed = false;
+
+  /// An event the listing shows changed (any field, or cancel).
+  void changed() {
+    if (_disposed) return;
+    if (_running) {
+      _dirty = true;
+      return;
+    }
+    _timer ??= Timer(window, _fire);
+  }
+
+  /// The realtime channel came back: refetch once to pick up missed changes.
+  void reconnected() => changed();
+
+  Future<void> _fire() async {
+    _timer = null;
+    if (_disposed) return;
+    _running = true;
+    try {
+      await _refresh();
+    } catch (_) {
+      // The query's own error state is shown by the listing.
+    } finally {
+      _running = false;
+    }
+    if (_dirty && !_disposed) {
+      _dirty = false;
+      _timer ??= Timer(window, _fire);
+    }
+  }
+
+  void dispose() {
+    _disposed = true;
+    _timer?.cancel();
+    _timer = null;
+  }
+}
+
+/// One signal per listing, tied to the ProviderScope (a signed-out or switched
+/// session disposes the scope's providers, which disposes the signal).
+final listingChangeSignalProvider =
+    Provider.family<ListingChangeSignal, ListingChangeSignalArgs>((ref, args) {
+      final signal = ListingChangeSignal(args.refresh, window: args.window);
+      ref.onDispose(signal.dispose);
+      return signal;
+    });
+
+/// Family key: the listing name plus the refetch to run. Equal by [listing]
+/// only, so re-reading the provider never builds a second signal.
+class ListingChangeSignalArgs {
+  const ListingChangeSignalArgs(
+    this.listing,
+    this.refresh, {
+    this.window = const Duration(milliseconds: 300),
+  });
+
+  final String listing;
+  final Future<void> Function() refresh;
+  final Duration window;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ListingChangeSignalArgs && other.listing == listing;
+
+  @override
+  int get hashCode => listing.hashCode;
 }
