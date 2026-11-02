@@ -123,6 +123,10 @@ class SupabaseConfig {
   static const String circleMembersTable = 'circle_members';
   static const String circlesTable = 'circles';
   static const String commentsTable = 'comments';
+
+  /// KAN-710/711: shared parent of games and meetups; a game's event row has
+  /// `id == game.id`.
+  static const String eventsTable = 'events';
   static const String friendEdgesTable = 'friend_edges';
   static const String friendshipsTable = 'friendships';
   static const String gameRatingAggregateTable = 'game_rating_aggregate';

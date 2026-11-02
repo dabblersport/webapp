@@ -204,12 +204,15 @@ class GameView {
   }
 
   factory GameView.fromJson(Map<String, dynamic> j) {
+    final startAt = DateTime.parse(j['start_at'] as String);
+    final endAt = j['end_at'] as String?;
     return GameView(
       id: j['id'] as String,
       title: j['title'] as String? ?? 'Untitled Game',
       gameType: j['game_type'] as String? ?? 'casual',
-      startAt: DateTime.parse(j['start_at'] as String),
-      endAt: DateTime.parse(j['end_at'] as String),
+      startAt: startAt,
+      // KAN-749: an events-backed row may carry no end yet.
+      endAt: endAt == null ? startAt : DateTime.parse(endAt),
       capacity: j['capacity'] as int? ?? 0,
       benchSlots: j['bench_slots'] as int? ?? 0,
       totalSlots: j['total_slots'] as int? ?? 0,
@@ -312,6 +315,59 @@ class GameViewState {
   }
 }
 
+// ─── Realtime seam ────────────────────────────────────────────────────────────
+
+/// One postgres-change listener: every change on [table] whose [column]
+/// equals the game id.
+typedef GameViewListener = ({String table, String column});
+
+/// Opens/closes the game view's realtime channel. Production uses
+/// [SupabaseGameViewRealtime]; tests inject a recorder (KAN-749).
+abstract class GameViewRealtime {
+  Object open(
+    String channelName,
+    List<GameViewListener> listeners,
+    String value,
+    void Function() onChange,
+  );
+
+  Future<void> close(Object channel);
+}
+
+class SupabaseGameViewRealtime implements GameViewRealtime {
+  const SupabaseGameViewRealtime(this._db);
+  final SupabaseClient _db;
+
+  @override
+  Object open(
+    String channelName,
+    List<GameViewListener> listeners,
+    String value,
+    void Function() onChange,
+  ) {
+    final channel = _db.channel(channelName);
+    for (final l in listeners) {
+      channel.onPostgresChanges(
+        event: PostgresChangeEvent.all,
+        schema: 'public',
+        table: l.table,
+        filter: PostgresChangeFilter(
+          type: PostgresChangeFilterType.eq,
+          column: l.column,
+          value: value,
+        ),
+        // The payload is ignored: a change only triggers a reload.
+        callback: (_) => onChange(),
+      );
+    }
+    return channel..subscribe();
+  }
+
+  @override
+  Future<void> close(Object channel) =>
+      _db.removeChannel(channel as RealtimeChannel);
+}
+
 // ─── Controller ───────────────────────────────────────────────────────────────
 
 class GameViewController extends StateNotifier<GameViewState> {
@@ -321,7 +377,10 @@ class GameViewController extends StateNotifier<GameViewState> {
     required this.currentUserId,
     OfflineCache? cache,
     String? accountId,
+    // Test seam only; production passes nothing.
+    GameViewRealtime? realtime,
   }) : _db = supabase,
+       _realtime = realtime ?? SupabaseGameViewRealtime(supabase),
        _cache = cache,
        _accountId = accountId,
        super(const GameViewState()) {
@@ -331,6 +390,7 @@ class GameViewController extends StateNotifier<GameViewState> {
   }
 
   final SupabaseClient _db;
+  final GameViewRealtime _realtime;
   final String gameId;
   final String? currentUserId;
 
@@ -362,7 +422,7 @@ class GameViewController extends StateNotifier<GameViewState> {
     }
   }
 
-  RealtimeChannel? _channel;
+  Object? _channel;
   Timer? _refreshDebounce;
 
   Future<void> refresh() => _load();
@@ -374,53 +434,43 @@ class GameViewController extends StateNotifier<GameViewState> {
     final channel = _channel;
     if (channel != null) {
       _channel = null;
-      await _db.removeChannel(channel);
+      await _realtime.close(channel);
     }
+    if (!mounted) return;
     _subscribeToChanges();
     await _load();
   }
 
-  /// Live-updates the screen when the roster, waitlist, or join requests
-  /// change (someone joins/leaves, the host approves a request, …).
-  /// Realtime enforces each table's SELECT RLS per subscriber, so viewers
-  /// only receive events for rows they can already read. Events just
-  /// trigger a debounced reload — the fetch queries stay the single source
-  /// of truth.
+  /// Live-updates the screen when the game's event/game row, roster,
+  /// waitlist, or join requests change. Realtime enforces each table's
+  /// SELECT RLS per subscriber, so viewers only receive events for rows they
+  /// can already read. Events just trigger a debounced reload — the payload
+  /// is never read, and the fetch queries stay the single source of truth.
+  /// A game's events row has `id == gameId` (KAN-711).
   void _subscribeToChanges() {
-    PostgresChangeFilter byGame(String column) => PostgresChangeFilter(
-      type: PostgresChangeFilterType.eq,
-      column: column,
-      value: gameId,
+    if (!mounted) return;
+    // KAN-749: one channel per controller — never stack a second one.
+    final old = _channel;
+    _channel = null;
+    if (old != null) unawaited(_realtime.close(old));
+    _channel = _realtime.open(
+      'game_view_$gameId',
+      const [
+        (table: SupabaseConfig.gameRosterTable, column: 'game_id'),
+        (table: SupabaseConfig.gameWaitlistTable, column: 'game_id'),
+        (table: SupabaseConfig.gameJoinRequestsTable, column: 'game_id'),
+        (table: SupabaseConfig.eventsTable, column: 'id'),
+        (table: SupabaseConfig.gamesTable, column: 'id'),
+      ],
+      gameId,
+      _scheduleRealtimeRefresh,
     );
-
-    _channel = _db.channel('game_view_$gameId')
-      ..onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: SupabaseConfig.gameRosterTable,
-        filter: byGame('game_id'),
-        callback: (_) => _scheduleRealtimeRefresh(),
-      )
-      ..onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: SupabaseConfig.gameWaitlistTable,
-        filter: byGame('game_id'),
-        callback: (_) => _scheduleRealtimeRefresh(),
-      )
-      ..onPostgresChanges(
-        event: PostgresChangeEvent.all,
-        schema: 'public',
-        table: SupabaseConfig.gameJoinRequestsTable,
-        filter: byGame('game_id'),
-        callback: (_) => _scheduleRealtimeRefresh(),
-      )
-      ..subscribe();
   }
 
   /// Coalesces bursts of change events (approve = request update + roster
-  /// insert) into a single reload.
+  /// insert) into a single reload. A no-op once disposed.
   void _scheduleRealtimeRefresh() {
+    if (!mounted) return;
     _refreshDebounce?.cancel();
     _refreshDebounce = Timer(DabblerMotion.debounceSearch, () {
       if (mounted) _load();
@@ -430,12 +480,15 @@ class GameViewController extends StateNotifier<GameViewState> {
   @override
   void dispose() {
     _refreshDebounce?.cancel();
+    _refreshDebounce = null;
     final channel = _channel;
-    if (channel != null) _db.removeChannel(channel);
+    _channel = null;
+    if (channel != null) unawaited(_realtime.close(channel));
     super.dispose();
   }
 
   Future<void> _load() async {
+    if (!mounted) return;
     state = state.copyWith(isLoading: true, clearError: true);
     try {
       await Future.wait([
@@ -446,7 +499,8 @@ class GameViewController extends StateNotifier<GameViewState> {
       ]);
       await _checkPendingRequest();
     } finally {
-      state = state.copyWith(isLoading: false);
+      // KAN-749: a load that outlives the controller writes nothing.
+      if (mounted) state = state.copyWith(isLoading: false);
     }
   }
 
@@ -487,6 +541,7 @@ class GameViewController extends StateNotifier<GameViewState> {
       if (_cacheOn) {
         _cache!.write(_accountId!, _rosterKey, rows, requestStartedAt: started);
       }
+      if (!mounted) return;
       state = state.copyWith(
         roster: (rows as List)
             .map((r) => GameRosterEntry.fromJson(r as Map<String, dynamic>))
@@ -504,6 +559,7 @@ class GameViewController extends StateNotifier<GameViewState> {
           )
           .eq('game_id', gameId)
           .order('position');
+      if (!mounted) return;
       state = state.copyWith(
         waitlist: (rows as List)
             .map((r) => GameWaitlistEntry.fromJson(r as Map<String, dynamic>))
@@ -522,6 +578,7 @@ class GameViewController extends StateNotifier<GameViewState> {
           .eq('game_id', gameId)
           .eq('status', 'pending')
           .order('created_at', ascending: true);
+      if (!mounted) return;
       state = state.copyWith(
         pendingRequests: (rows as List)
             .map(
@@ -542,6 +599,7 @@ class GameViewController extends StateNotifier<GameViewState> {
           .eq('from_user_id', currentUserId!)
           .eq('status', 'pending')
           .maybeSingle();
+      if (!mounted) return;
       state = state.copyWith(hasPendingRequest: row != null);
     } catch (_) {}
   }
