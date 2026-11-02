@@ -1,4 +1,4 @@
--- local disposable Postgres 16.15, stub baseline, NOT live. Run 2026-11-01T19:26:03Z
+-- local disposable Postgres 16.15, stub baseline, NOT live. Run 2026-11-02T04:24:53Z
 CREATE DATABASE
 === STUB ===
 CREATE EXTENSION
@@ -442,24 +442,47 @@ select case when (select count(*) from public.events) = 0 then 'PASS B-12 rollba
 
 rollback;
 ROLLBACK
-=== ROLLBACK ===
+begin;
 BEGIN
-DO
-DROP TRIGGER
-DROP TRIGGER
-DROP TRIGGER
-ALTER TABLE
-ALTER TABLE
-DROP TABLE
-DROP FUNCTION
-DROP FUNCTION
-DROP FUNCTION
-DROP FUNCTION
-DROP FUNCTION
-COMMIT
-=== SCHEMA BACK AT BASELINE? ===
- events_table | event_id_cols | events_funcs 
---------------+---------------+--------------
-              |             0 |            0
+insert into public.events (id,event_type,creator_profile_id,creator_user_id,title,start_at,end_at,capacity,sport_id,area_id,geo_location_id)
+  select g.id,'game',g.creator_profile_id,g.creator_user_id,g.title,g.start_at,g.end_at,g.capacity,g.sport_id,g.area_id,g.geo_location_id from public.games g where g.id = 'aaaaaaaa-0000-0000-0000-000000000001';
+INSERT 0 1
+update public.games set event_id = id where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+UPDATE 1
+set constraints all immediate;
+SET CONSTRAINTS
+set constraints all deferred;
+SET CONSTRAINTS
+update public.games set id = gen_random_uuid() where id = 'aaaaaaaa-0000-0000-0000-000000000001';
+UPDATE 1
+select pg_temp.expect_fail('B-13a games id mutation', 'set constraints all immediate');
+psql:/Users/moataz/Desktop/Thebes-Canonical/Dabbler/dabbler-code/.claude/worktrees/kan710-events-parent/supabase/tests/events_parent/probes_kan710.sql:151: NOTICE:  PASS B-13a games id mutation (23514: games.event_id must equal the row id (aaaaaaaa-0000-0000-0000-000000000001 vs 66754518-131c-416c-a5b4-157214f71088))
+ expect_fail 
+-------------
+ 
 (1 row)
 
+rollback;
+ROLLBACK
+begin;
+BEGIN
+insert into public.events (id,event_type,creator_profile_id,creator_user_id,title,start_at)
+  select m.id,'meetup',m.creator_profile_id,m.creator_user_id,coalesce(m.title,'xxx'),m.start_at from public.meetups m where m.id = 'bbbbbbbb-0000-0000-0000-000000000001';
+INSERT 0 1
+update public.meetups set event_id = id where id = 'bbbbbbbb-0000-0000-0000-000000000001';
+UPDATE 1
+set constraints all immediate;
+SET CONSTRAINTS
+set constraints all deferred;
+SET CONSTRAINTS
+update public.meetups set id = gen_random_uuid() where id = 'bbbbbbbb-0000-0000-0000-000000000001';
+UPDATE 1
+select pg_temp.expect_fail('B-13b meetups id mutation', 'set constraints all immediate');
+psql:/Users/moataz/Desktop/Thebes-Canonical/Dabbler/dabbler-code/.claude/worktrees/kan710-events-parent/supabase/tests/events_parent/probes_kan710.sql:160: NOTICE:  PASS B-13b meetups id mutation (23514: meetups.event_id must equal the row id (bbbbbbbb-0000-0000-0000-000000000001 vs c126d0cf-165e-48f9-a284-4310f0844a33))
+ expect_fail 
+-------------
+ 
+(1 row)
+
+rollback;
+ROLLBACK

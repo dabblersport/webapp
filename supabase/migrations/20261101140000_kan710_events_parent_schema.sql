@@ -284,10 +284,10 @@ alter table public.games   add constraint games_event_id_fkey   foreign key (eve
 alter table public.meetups add constraint meetups_event_id_fkey foreign key (event_id)
   references public.events (id) on delete cascade deferrable initially deferred;
 
-create constraint trigger trg_games_event_link_check after insert or update of event_id on public.games
+create constraint trigger trg_games_event_link_check after insert or update of id, event_id on public.games
   deferrable initially deferred
   for each row execute function public.events_check_subtype_link();
-create constraint trigger trg_meetups_event_link_check after insert or update of event_id on public.meetups
+create constraint trigger trg_meetups_event_link_check after insert or update of id, event_id on public.meetups
   deferrable initially deferred
   for each row execute function public.events_check_subtype_link();
 create constraint trigger trg_games_series_occurrence_check after insert or update of series_id, event_id on public.games

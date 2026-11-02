@@ -139,3 +139,23 @@ rollback;
 -- Not executed anywhere (would delete real rows): delete cascade vs NO ACTION FKs on posts and
 -- msg_conversations; proven structurally by KAN-709/03 §C. Series occurrence trigger is inert until
 -- games.event_id is populated (KAN-711); exercise it then.
+
+-- B-13 subtype id mutation after a valid link must be rejected (games and meetups)
+begin;
+  insert into public.events (id,event_type,creator_profile_id,creator_user_id,title,start_at,end_at,capacity,sport_id,area_id,geo_location_id)
+  select g.id,'game',g.creator_profile_id,g.creator_user_id,g.title,g.start_at,g.end_at,g.capacity,g.sport_id,g.area_id,g.geo_location_id from public.games g where g.id = :'game_id';
+  update public.games set event_id = id where id = :'game_id';
+  set constraints all immediate;
+  set constraints all deferred;
+  update public.games set id = gen_random_uuid() where id = :'game_id';
+  select pg_temp.expect_fail('B-13a games id mutation', 'set constraints all immediate');
+rollback;
+begin;
+  insert into public.events (id,event_type,creator_profile_id,creator_user_id,title,start_at)
+  select m.id,'meetup',m.creator_profile_id,m.creator_user_id,coalesce(m.title,'xxx'),m.start_at from public.meetups m where m.id = :'meetup_id';
+  update public.meetups set event_id = id where id = :'meetup_id';
+  set constraints all immediate;
+  set constraints all deferred;
+  update public.meetups set id = gen_random_uuid() where id = :'meetup_id';
+  select pg_temp.expect_fail('B-13b meetups id mutation', 'set constraints all immediate');
+rollback;
