@@ -148,7 +148,6 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
     return DabblerPage(
       maxContentWidth: DabblerPage.readableWidth,
@@ -241,20 +240,18 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                     onPressed: _isLoading ? null : _handleGoogle,
                   ),
                 ),
-                if (showApple) ...<Widget>[
-                  const DabblerGap.v(DabblerSpacing.space4),
-                  authIdentify(
-                    'auth-welcome-continue-apple',
-                    DabblerButton(
-                      label: l10n.auth_entry_continue_apple,
-                      tone: DabblerButtonTone.outlined,
-                      size: DabblerButtonSize.full,
-                      fullWidth: true,
-                      disabled: _isLoading,
-                      onPressed: _isLoading ? null : _handleApple,
-                    ),
+                const DabblerGap.v(DabblerSpacing.space4),
+                authIdentify(
+                  'auth-welcome-continue-apple',
+                  DabblerButton(
+                    label: l10n.auth_entry_continue_apple,
+                    tone: DabblerButtonTone.outlined,
+                    size: DabblerButtonSize.full,
+                    fullWidth: true,
+                    disabled: _isLoading,
+                    onPressed: _isLoading ? null : _handleApple,
                   ),
-                ],
+                ),
                 const DabblerGap.v(DabblerSpacing.space5),
                 AuthAccountLine(
                   prefix: l10n.auth_already_have_account,
