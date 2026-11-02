@@ -806,6 +806,138 @@ abstract class AppLocalizations {
   /// **'Find my first game'**
   String get persona_player_cta;
 
+  /// No description provided for @persona_contributor_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Contributor'**
+  String get persona_contributor_name;
+
+  /// No description provided for @persona_contributor_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re in. Let’s play.'**
+  String get persona_contributor_headline;
+
+  /// No description provided for @persona_contributor_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a game this week, or start one of your own.'**
+  String get persona_contributor_principle;
+
+  /// No description provided for @persona_contributor_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get persona_contributor_list_title;
+
+  /// No description provided for @persona_contributor_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirm when you know you can play.'**
+  String get persona_contributor_item1;
+
+  /// No description provided for @persona_contributor_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Respect the organiser’s rules and kickoff time.'**
+  String get persona_contributor_item2;
+
+  /// No description provided for @persona_contributor_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'When you organise, share details early and accurately.'**
+  String get persona_contributor_item3;
+
+  /// No description provided for @persona_contributor_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Find my first game'**
+  String get persona_contributor_cta;
+
+  /// KAN-681 design Contributor welcome variant (connect), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sports circle starts here.'**
+  String get persona_contributor_connect_headline;
+
+  /// No description provided for @persona_contributor_connect_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow what you love, meet your people, join when it feels right.'**
+  String get persona_contributor_connect_principle;
+
+  /// No description provided for @persona_contributor_connect_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get persona_contributor_connect_list_title;
+
+  /// No description provided for @persona_contributor_connect_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the sports and people you care about.'**
+  String get persona_contributor_connect_item1;
+
+  /// No description provided for @persona_contributor_connect_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the conversation, then join the game.'**
+  String get persona_contributor_connect_item2;
+
+  /// No description provided for @persona_contributor_connect_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it friendly — everyone here is someone’s teammate.'**
+  String get persona_contributor_connect_item3;
+
+  /// No description provided for @persona_contributor_connect_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get persona_contributor_connect_cta;
+
+  /// KAN-681 design Contributor welcome variant (organise), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to bring the game together.'**
+  String get persona_contributor_organise_headline;
+
+  /// No description provided for @persona_contributor_organise_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good games start with good organisation.'**
+  String get persona_contributor_organise_principle;
+
+  /// No description provided for @persona_contributor_organise_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_contributor_organise_list_title;
+
+  /// No description provided for @persona_contributor_organise_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate details — venue, time, level, price.'**
+  String get persona_contributor_organise_item1;
+
+  /// No description provided for @persona_contributor_organise_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes shared early, not at kickoff.'**
+  String get persona_contributor_organise_item2;
+
+  /// No description provided for @persona_contributor_organise_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance managed fairly, every time.'**
+  String get persona_contributor_organise_item3;
+
+  /// No description provided for @persona_contributor_organise_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my first game'**
+  String get persona_contributor_organise_cta;
+
   /// No description provided for @persona_organiser_name.
   ///
   /// In en, this message translates to:
@@ -2408,6 +2540,30 @@ abstract class AppLocalizations {
   /// **'We’ll make it the primary sport on your venue profile.'**
   String get onb_primary_subtitle_host;
 
+  /// No description provided for @onb_sports_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What sports are you into?'**
+  String get onb_sports_title_contributor;
+
+  /// No description provided for @onb_sports_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you follow, play or organise. You can change these anytime.'**
+  String get onb_sports_subtitle_contributor;
+
+  /// No description provided for @onb_primary_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your main sport?'**
+  String get onb_primary_title_contributor;
+
+  /// No description provided for @onb_primary_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll put it first across your feed, games and profile.'**
+  String get onb_primary_subtitle_contributor;
+
   /// No description provided for @onb_sports_search.
   ///
   /// In en, this message translates to:
@@ -2426,17 +2582,11 @@ abstract class AppLocalizations {
   /// **'Pick at least one to continue.'**
   String get onb_sports_count_zero;
 
-  /// No description provided for @onb_sports_count_one.
+  /// No description provided for @onb_sports_count.
   ///
   /// In en, this message translates to:
-  /// **'1 sport selected'**
-  String get onb_sports_count_one;
-
-  /// No description provided for @onb_sports_count_many.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} sports selected'**
-  String onb_sports_count_many(int count);
+  /// **'{count, plural, =1{1 sport selected} other{{count} sports selected}}'**
+  String onb_sports_count(int count);
 
   /// No description provided for @onb_primary_more.
   ///
@@ -5548,6 +5698,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Not synced. Tap to retry.'**
   String get settings_not_synced_retry;
+
+  /// No description provided for @settings_will_sync_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Will sync when online'**
+  String get settings_will_sync_online;
+
+  /// No description provided for @settings_updated_elsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting was updated on another device. Showing the newer value.'**
+  String get settings_updated_elsewhere;
+
+  /// No description provided for @settings_change_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'This change could not be saved. Showing the saved value.'**
+  String get settings_change_rejected;
 
   /// No description provided for @priv_saved.
   ///
@@ -10139,6 +10307,18 @@ abstract class AppLocalizations {
   /// **'Minutes played'**
   String get profile_stat_minutes_played;
 
+  /// No description provided for @profile_stat_games_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games organised'**
+  String get profile_stat_games_organised;
+
+  /// No description provided for @profile_section_games_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games I organise'**
+  String get profile_section_games_organised;
+
   /// No description provided for @meetups_tab_all.
   ///
   /// In en, this message translates to:
@@ -13636,6 +13816,1074 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn’t load results'**
   String get location_search_failed;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'What brings you to Dabbler?'**
+  String get onb_intention_title;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what brings you here. Your choice helps us understand your goals.'**
+  String get onb_intention_subtitle;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect & play'**
+  String get onb_intention_connect_play;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Play & organise'**
+  String get onb_intention_play_organise;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'Organise sport events'**
+  String get onb_intention_organise;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'Host sports & events'**
+  String get onb_intention_host_games;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow sports, meet people and join the fun.'**
+  String get onb_intention_connect_play_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Join games and bring people together for your own.'**
+  String get onb_intention_play_organise_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring players together and organise games and meetups.'**
+  String get onb_intention_organise_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome players to your venue and spots.'**
+  String get onb_intention_host_games_body;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onb_intention_continue;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a profile. Please continue with the existing sign-in flow.'**
+  String get onb_error_legacy_profile_requires_existing_flow;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile needs an update before you can continue. Please try again later.'**
+  String get onb_error_profile_migration_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the account type isn’t supported yet.'**
+  String get onb_error_persona_change_not_supported;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'An account can have only one profile.'**
+  String get onb_error_single_profile_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This profile can’t be converted right now.'**
+  String get onb_error_persona_conversion_blocked;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t save that change. Please try again.'**
+  String get onb_error_persona_write_via_rpc_only;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your choice doesn’t match what we saved. Please choose again.'**
+  String get onb_error_onboarding_intention_mismatch;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one sport to continue.'**
+  String get onb_error_contributor_sports_incomplete;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get onb_error_generic;
+
+  /// KAN-666 profile rating summary.
+  ///
+  /// In en, this message translates to:
+  /// **'from {count, plural, =1{1 rating} other{{count} ratings}}'**
+  String ratings_summary_from_count(int count);
+
+  /// KAN-666 profile rating summary, screen reader label.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating {average} out of 5'**
+  String ratings_summary_semantics(String average);
+
+  /// KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get map_attribution_osm;
+
+  /// KAN-669 Games discovery: switch to the map view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show map'**
+  String get games_view_map;
+
+  /// KAN-669 Games discovery: switch back to the list view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show list'**
+  String get games_view_list;
+
+  /// KAN-669 empty state title when no upcoming public game matches the filters.
+  ///
+  /// In en, this message translates to:
+  /// **'No games on the map'**
+  String get games_map_empty_title;
+
+  /// No description provided for @games_map_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming public games match your filters. Change the filters or switch back to the list.'**
+  String get games_map_empty_text;
+
+  /// KAN-680 shown when creating a challenge without a sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a sport for your challenge, then try again.'**
+  String get challenge_error_sport_required;
+
+  /// KAN-680 shown when the chosen sport key is not a known sport.
+  ///
+  /// In en, this message translates to:
+  /// **'That sport isn\'t available. Choose one from the list.'**
+  String get challenge_error_invalid_sport;
+
+  /// KAN-680 shown when a non-organiser tries to create a challenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Only organiser accounts can create challenges.'**
+  String get challenge_error_organiser_required;
+
+  /// No description provided for @profile_upcoming_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No games yet. Join one nearby or create your own.'**
+  String get profile_upcoming_empty;
+
+  /// No description provided for @profile_find_a_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a game'**
+  String get profile_find_a_game;
+
+  /// No description provided for @profile_section_sports_you_play.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports you play'**
+  String get profile_section_sports_you_play;
+
+  /// No description provided for @profile_stat_games_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Games & meetups'**
+  String get profile_stat_games_meetups;
+
+  /// No description provided for @profile_stat_new_hero_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Join or organise one to start your list'**
+  String get profile_stat_new_hero_sub;
+
+  /// No description provided for @profile_stat_played.
+  ///
+  /// In en, this message translates to:
+  /// **'Played'**
+  String get profile_stat_played;
+
+  /// No description provided for @profile_stat_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Organised'**
+  String get profile_stat_organised;
+
+  /// No description provided for @bench_row_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench mode'**
+  String get bench_row_title;
+
+  /// No description provided for @bench_row_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get bench_row_off;
+
+  /// No description provided for @bench_row_until.
+  ///
+  /// In en, this message translates to:
+  /// **'On until {date}'**
+  String bench_row_until(String date);
+
+  /// No description provided for @bench_row_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'On, no end date'**
+  String get bench_row_no_end;
+
+  /// No description provided for @bench_screen_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench mode'**
+  String get bench_screen_title;
+
+  /// No description provided for @bench_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit bench'**
+  String get bench_edit_title;
+
+  /// No description provided for @bench_explain_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a break from the social side'**
+  String get bench_explain_title;
+
+  /// No description provided for @bench_explain_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Sit out for a while. You can still play and show up in game rosters.'**
+  String get bench_explain_body;
+
+  /// No description provided for @bench_paused_head.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused while on bench'**
+  String get bench_paused_head;
+
+  /// No description provided for @bench_paused_1.
+  ///
+  /// In en, this message translates to:
+  /// **'You can’t post, comment or like'**
+  String get bench_paused_1;
+
+  /// No description provided for @bench_paused_2.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re hidden from the feed and search, as you choose'**
+  String get bench_paused_2;
+
+  /// No description provided for @bench_paused_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests are blocked, as you choose'**
+  String get bench_paused_3;
+
+  /// No description provided for @bench_keep_head.
+  ///
+  /// In en, this message translates to:
+  /// **'Still works'**
+  String get bench_keep_head;
+
+  /// No description provided for @bench_keep_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Join and play games'**
+  String get bench_keep_1;
+
+  /// No description provided for @bench_keep_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Show up in game rosters'**
+  String get bench_keep_2;
+
+  /// No description provided for @bench_reason_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get bench_reason_label;
+
+  /// No description provided for @bench_reason_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'A short note for yourself'**
+  String get bench_reason_placeholder;
+
+  /// No description provided for @bench_reason_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it short.'**
+  String get bench_reason_helper;
+
+  /// No description provided for @bench_end_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End date (optional)'**
+  String get bench_end_label;
+
+  /// No description provided for @bench_end_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_end_placeholder;
+
+  /// No description provided for @bench_end_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'You can end bench earlier any time.'**
+  String get bench_end_helper;
+
+  /// No description provided for @bench_toggle_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide me in the feed'**
+  String get bench_toggle_feed;
+
+  /// No description provided for @bench_toggle_feed_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your activity won’t appear in feeds.'**
+  String get bench_toggle_feed_sub;
+
+  /// No description provided for @bench_toggle_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide me in search'**
+  String get bench_toggle_search;
+
+  /// No description provided for @bench_toggle_search_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'People can’t find you by name.'**
+  String get bench_toggle_search_sub;
+
+  /// No description provided for @bench_toggle_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Block friend requests'**
+  String get bench_toggle_friends;
+
+  /// No description provided for @bench_toggle_friends_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'No new requests while on bench.'**
+  String get bench_toggle_friends_sub;
+
+  /// No description provided for @bench_toggle_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute social notifications'**
+  String get bench_toggle_notifs;
+
+  /// No description provided for @bench_toggle_notifs_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes, comments and friend activity stay quiet.'**
+  String get bench_toggle_notifs_sub;
+
+  /// No description provided for @bench_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start bench'**
+  String get bench_start;
+
+  /// No description provided for @bench_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get bench_save;
+
+  /// No description provided for @bench_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Start bench mode?'**
+  String get bench_confirm_title;
+
+  /// No description provided for @bench_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'This applies right away. You can end it any time.'**
+  String get bench_confirm_body;
+
+  /// No description provided for @bench_confirm_sum_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the feed'**
+  String get bench_confirm_sum_feed;
+
+  /// No description provided for @bench_confirm_sum_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in search'**
+  String get bench_confirm_sum_search;
+
+  /// No description provided for @bench_confirm_sum_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests blocked'**
+  String get bench_confirm_sum_friends;
+
+  /// No description provided for @bench_confirm_sum_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications muted'**
+  String get bench_confirm_sum_notifs;
+
+  /// No description provided for @bench_confirm_sum_end.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends on {date}'**
+  String bench_confirm_sum_end(String date);
+
+  /// No description provided for @bench_confirm_sum_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_confirm_sum_no_end;
+
+  /// No description provided for @bench_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get bench_cancel;
+
+  /// No description provided for @bench_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get bench_back;
+
+  /// No description provided for @bench_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get bench_retry;
+
+  /// No description provided for @bench_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get bench_manage;
+
+  /// No description provided for @bench_status_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench'**
+  String get bench_status_badge;
+
+  /// No description provided for @bench_status_head.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re on bench'**
+  String get bench_status_head;
+
+  /// No description provided for @bench_status_since.
+  ///
+  /// In en, this message translates to:
+  /// **'Since'**
+  String get bench_status_since;
+
+  /// No description provided for @bench_status_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get bench_status_until;
+
+  /// No description provided for @bench_status_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get bench_status_reason;
+
+  /// No description provided for @bench_status_hidden_head.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s hidden'**
+  String get bench_status_hidden_head;
+
+  /// No description provided for @bench_status_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get bench_status_feed;
+
+  /// No description provided for @bench_status_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get bench_status_search;
+
+  /// No description provided for @bench_status_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests'**
+  String get bench_status_friends;
+
+  /// No description provided for @bench_status_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications'**
+  String get bench_status_notifs;
+
+  /// No description provided for @bench_status_hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get bench_status_hidden;
+
+  /// No description provided for @bench_status_visible.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible'**
+  String get bench_status_visible;
+
+  /// No description provided for @bench_status_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get bench_status_blocked;
+
+  /// No description provided for @bench_status_allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get bench_status_allowed;
+
+  /// No description provided for @bench_status_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get bench_status_muted;
+
+  /// No description provided for @bench_status_on.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get bench_status_on;
+
+  /// No description provided for @bench_status_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_status_no_end;
+
+  /// No description provided for @bench_end.
+  ///
+  /// In en, this message translates to:
+  /// **'End bench'**
+  String get bench_end;
+
+  /// No description provided for @bench_edit_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get bench_edit_action;
+
+  /// No description provided for @bench_end_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'End bench now?'**
+  String get bench_end_confirm_title;
+
+  /// No description provided for @bench_end_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ll be visible again and can post, comment and like.'**
+  String get bench_end_confirm_body;
+
+  /// No description provided for @bench_end_confirm_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep bench'**
+  String get bench_end_confirm_keep;
+
+  /// No description provided for @bench_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get bench_loading;
+
+  /// No description provided for @bench_error_start_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t start bench'**
+  String get bench_error_start_title;
+
+  /// No description provided for @bench_error_start_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get bench_error_start_body;
+
+  /// No description provided for @bench_error_load_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load bench mode'**
+  String get bench_error_load_title;
+
+  /// No description provided for @bench_error_load_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get bench_error_load_body;
+
+  /// No description provided for @bench_offline_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re offline'**
+  String get bench_offline_title;
+
+  /// No description provided for @bench_offline_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to end or edit bench. Your status shows as last saved.'**
+  String get bench_offline_body;
+
+  /// No description provided for @bench_indicator_home.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench until {date}'**
+  String bench_indicator_home(String date);
+
+  /// No description provided for @bench_indicator_home_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench'**
+  String get bench_indicator_home_no_end;
+
+  /// No description provided for @bench_indicator_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the feed and search until {date}.'**
+  String bench_indicator_profile(String date);
+
+  /// No description provided for @recurring_repeat_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get recurring_repeat_label;
+
+  /// No description provided for @recurring_option_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not repeat'**
+  String get recurring_option_none;
+
+  /// No description provided for @recurring_option_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get recurring_option_weekly;
+
+  /// No description provided for @recurring_option_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get recurring_option_biweekly;
+
+  /// No description provided for @recurring_summary_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats every week on {weekday}'**
+  String recurring_summary_weekly(String weekday);
+
+  /// No description provided for @recurring_summary_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats every 2 weeks on {weekday}'**
+  String recurring_summary_biweekly(String weekday);
+
+  /// No description provided for @recurring_end_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get recurring_end_date_label;
+
+  /// No description provided for @recurring_end_date_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get recurring_end_date_none;
+
+  /// No description provided for @recurring_end_date_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Without an end date, the series runs until you end it.'**
+  String get recurring_end_date_hint;
+
+  /// No description provided for @recurring_end_date_pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an end date'**
+  String get recurring_end_date_pick;
+
+  /// No description provided for @recurring_end_date_value.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String recurring_end_date_value(DateTime date);
+
+  /// No description provided for @recurring_end_date_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove end date'**
+  String get recurring_end_date_clear;
+
+  /// No description provided for @recurring_end_date_before_start.
+  ///
+  /// In en, this message translates to:
+  /// **'The end date must be after the first game.'**
+  String get recurring_end_date_before_start;
+
+  /// No description provided for @recurring_limit_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {max, plural, =1{1 game} other{{max} games}} per series. Renew it when it ends to keep going.'**
+  String recurring_limit_hint(int max);
+
+  /// No description provided for @recurring_limit_reached.
+  ///
+  /// In en, this message translates to:
+  /// **'This series has reached its limit of {max, plural, =1{1 game} other{{max} games}}. Renew it to schedule more.'**
+  String recurring_limit_reached(int max);
+
+  /// No description provided for @recurring_limit_reached_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Series limit reached'**
+  String get recurring_limit_reached_title;
+
+  /// No description provided for @recurring_preview_count.
+  ///
+  /// In en, this message translates to:
+  /// **'This creates {count, plural, =1{1 game} other{{count} games}}.'**
+  String recurring_preview_count(int count);
+
+  /// No description provided for @recurring_renew_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Renew series'**
+  String get recurring_renew_action;
+
+  /// No description provided for @recurring_paid_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid games can\'t repeat yet'**
+  String get recurring_paid_disabled;
+
+  /// No description provided for @recurring_paid_free_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the game free to turn on Repeat.'**
+  String get recurring_paid_free_hint;
+
+  /// No description provided for @recurring_paid_switched_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.'**
+  String get recurring_paid_switched_off;
+
+  /// No description provided for @recurring_location_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a venue or set your location to repeat this game.'**
+  String get recurring_location_required;
+
+  /// No description provided for @recurring_badge_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get recurring_badge_label;
+
+  /// No description provided for @recurring_badge_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly series'**
+  String get recurring_badge_weekly;
+
+  /// No description provided for @recurring_badge_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get recurring_badge_biweekly;
+
+  /// No description provided for @recurring_badge_ends.
+  ///
+  /// In en, this message translates to:
+  /// **'Series ends {date}'**
+  String recurring_badge_ends(DateTime date);
+
+  /// No description provided for @recurring_badge_open_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs until the organiser ends it'**
+  String get recurring_badge_open_ended;
+
+  /// No description provided for @recurring_badge_semantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of a recurring series'**
+  String get recurring_badge_semantics;
+
+  /// No description provided for @recurring_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit a recurring game'**
+  String get recurring_edit_title;
+
+  /// No description provided for @recurring_edit_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This game is part of a series. What should your changes apply to?'**
+  String get recurring_edit_subtitle;
+
+  /// No description provided for @recurring_edit_this_only.
+  ///
+  /// In en, this message translates to:
+  /// **'This game only'**
+  String get recurring_edit_this_only;
+
+  /// No description provided for @recurring_edit_this_only_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the game on {date} changes. The rest of the series stays as it is.'**
+  String recurring_edit_this_only_desc(DateTime date);
+
+  /// No description provided for @recurring_edit_all_future.
+  ///
+  /// In en, this message translates to:
+  /// **'All future games'**
+  String get recurring_edit_all_future;
+
+  /// No description provided for @recurring_edit_all_future_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'This game and every later game in the series change. Players who joined keep their spot on games that aren\'t rebuilt.'**
+  String get recurring_edit_all_future_desc;
+
+  /// No description provided for @recurring_edit_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get recurring_edit_continue;
+
+  /// No description provided for @recurring_edit_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get recurring_edit_close;
+
+  /// No description provided for @recurring_cancel_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this series?'**
+  String get recurring_cancel_title;
+
+  /// No description provided for @recurring_cancel_future_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 future game will be cancelled.} other{{count} future games will be cancelled.}}'**
+  String recurring_cancel_future_line(int count);
+
+  /// No description provided for @recurring_cancel_players_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{players, plural, =0{No players have joined yet.} =1{1 player has joined and will be notified.} other{{players} players have joined and will be notified.}}'**
+  String recurring_cancel_players_line(int players);
+
+  /// No description provided for @recurring_cancel_past_line.
+  ///
+  /// In en, this message translates to:
+  /// **'Past games and their history stay.'**
+  String get recurring_cancel_past_line;
+
+  /// No description provided for @recurring_cancel_no_carry_over.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is moved to another game automatically.'**
+  String get recurring_cancel_no_carry_over;
+
+  /// No description provided for @recurring_cancel_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel series'**
+  String get recurring_cancel_confirm;
+
+  /// No description provided for @recurring_cancel_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep series'**
+  String get recurring_cancel_keep;
+
+  /// No description provided for @recurring_cancel_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Series cancelled'**
+  String get recurring_cancel_done;
+
+  /// No description provided for @recurring_cancel_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t cancel the series. Try again.'**
+  String get recurring_cancel_failed;
+
+  /// No description provided for @recurring_cancel_notif_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game cancelled'**
+  String get recurring_cancel_notif_title;
+
+  /// No description provided for @recurring_cancel_notif_body.
+  ///
+  /// In en, this message translates to:
+  /// **'{game} on {date} was cancelled. The organiser ended this series.'**
+  String recurring_cancel_notif_body(String game, DateTime date);
+
+  /// No description provided for @recurring_future_title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Game title'**
+  String get recurring_future_title_label;
+
+  /// No description provided for @recurring_future_capacity_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get recurring_future_capacity_label;
+
+  /// No description provided for @recurring_future_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save for all future games'**
+  String get recurring_future_save;
+
+  /// No description provided for @recurring_future_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Series updated'**
+  String get recurring_future_done;
+
+  /// No description provided for @recurring_future_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the series. Try again.'**
+  String get recurring_future_failed;
+
+  /// No description provided for @recurring_kept_with_players_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game with joined players keeps its old details.} other{{count} games with joined players keep their old details.}}'**
+  String recurring_kept_with_players_notice(int count);
+
+  /// No description provided for @recurring_cancel_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel series'**
+  String get recurring_cancel_action;
+
+  /// No description provided for @profile_visitor_sports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports they play'**
+  String get profile_visitor_sports_title;
+
+  /// No description provided for @profile_stat_games_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get profile_stat_games_visitor;
+
+  /// No description provided for @profile_stat_sport_games.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} games'**
+  String profile_stat_sport_games(String sport);
+
+  /// No description provided for @profile_stat_as_player_or_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'As player or organiser'**
+  String get profile_stat_as_player_or_organiser;
+
+  /// No description provided for @profile_stat_sport_profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport profiles'**
+  String get profile_stat_sport_profiles;
+
+  /// No description provided for @profile_visitor_upcoming_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Open games they are playing in or organising'**
+  String get profile_visitor_upcoming_note;
+
+  /// No description provided for @profile_tag_playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get profile_tag_playing;
+
+  /// No description provided for @profile_tag_organising.
+  ///
+  /// In en, this message translates to:
+  /// **'Organising'**
+  String get profile_tag_organising;
+
+  /// No description provided for @profile_tag_organising_playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Organising · Playing'**
+  String get profile_tag_organising_playing;
+
+  /// KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get profile_invite_action_semantic;
+
+  /// No description provided for @profile_stat_games_played_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games played'**
+  String get profile_stat_games_played_visitor;
+
+  /// KAN-688 hero label with a sport selected (Profiles.dc.html line 576).
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} matches'**
+  String profile_stat_sport_matches_visitor(String sport);
 }
 
 class _AppLocalizationsDelegate

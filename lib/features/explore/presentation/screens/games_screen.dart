@@ -5,6 +5,7 @@ import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'dart:async';
 
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/explore/presentation/widgets/games_map_view.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
@@ -190,6 +191,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     ];
 
     final denied = activeLocationNeedsManualChange(locState);
+    final mapMode = ref.watch(gamesMapModeProvider);
 
     return SetLocationWhenDenied(
       child: DabblerPage(
@@ -219,6 +221,13 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
                 icon: 'search-normal',
                 semanticLabel: l.listing_search,
                 onPressed: () => context.push(RoutePaths.socialSearch),
+              ),
+              // KAN-669: List (default) / Map toggle.
+              DabblerPageHeaderAction(
+                icon: mapMode ? 'row-vertical' : 'map',
+                semanticLabel: mapMode ? l.games_view_list : l.games_view_map,
+                onPressed: () =>
+                    ref.read(gamesMapModeProvider.notifier).state = !mapMode,
               ),
               DabblerPageHeaderAction(
                 icon: 'filter',
@@ -443,6 +452,12 @@ class _GameTabBody extends ConsumerWidget {
           const ListingSkeletons(kind: DabblerListingSkeletonKind.game),
       error: (e, _) => error,
       data: (games) {
+        if (ref.watch(gamesMapModeProvider)) {
+          final now = DateTime.now();
+          return GamesMapView(
+            games: games.where((g) => _passes(ref, g, now)).toList(),
+          );
+        }
         final pinnedIds = {for (final g in pinned) g.id};
 
         // Pinned "Upcoming" games stay visible — the filters narrow

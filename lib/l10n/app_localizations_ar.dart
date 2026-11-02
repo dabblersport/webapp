@@ -392,10 +392,88 @@ class AppLocalizationsAr extends AppLocalizations {
   String get persona_player_cta => 'ابحث عن مباراتي الأولى';
 
   @override
+  String get persona_contributor_name => 'المساهم';
+
+  @override
+  String get persona_contributor_headline => 'أنت جاهز. هيّا نلعب.';
+
+  @override
+  String get persona_contributor_principle =>
+      'انضم إلى مباراة هذا الأسبوع، أو ابدأ مباراتك الخاصة.';
+
+  @override
+  String get persona_contributor_list_title => 'لا تنسَ';
+
+  @override
+  String get persona_contributor_item1 => 'أكّد فقط حين تعرف أنك تستطيع اللعب.';
+
+  @override
+  String get persona_contributor_item2 => 'احترم قواعد المنظّم وموعد البداية.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'عندما تنظّم، شارك التفاصيل مبكرًا وبدقة.';
+
+  @override
+  String get persona_contributor_cta => 'ابحث عن مباراتي الأولى';
+
+  @override
+  String get persona_contributor_connect_headline =>
+      'دائرتك الرياضية تبدأ من هنا.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'تابع ما تحب، وتعرّف على ناسك، وانضم حين تشعر أنه الوقت المناسب.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'كيف يعمل هذا';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'تابع الرياضات والأشخاص الذين تهتم بهم.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'شارك في الحديث، ثم انضم إلى المباراة.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'حافظ على الود — فكل من هنا زميل لأحدهم في الفريق.';
+
+  @override
+  String get persona_contributor_connect_cta => 'ابدأ الاستكشاف';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'حان وقت جمع المباراة معًا.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'المباريات الجيدة تبدأ بتنظيم جيد.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'ما يتوقعه اللاعبون';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'تفاصيل دقيقة — الملعب والوقت والمستوى والسعر.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'التغييرات تُشارك مبكرًا، لا عند البداية.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'الحضور يُدار بعدل، في كل مرة.';
+
+  @override
+  String get persona_contributor_organise_cta => 'أنشئ مباراتي الأولى';
+
+  @override
   String get persona_organiser_name => 'المنظّم';
 
   @override
-  String get persona_organiser_headline => 'حان وقت جمع المباراة.';
+  String get persona_organiser_headline => 'حان وقت تنظيم المباراة.';
 
   @override
   String get persona_organiser_principle => 'تبدأ المباريات الجيدة بتنظيم جيد.';
@@ -1244,7 +1322,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_persona_organiser_name => 'المنظّم';
 
   @override
-  String get onb_persona_organiser_hook => 'اجمع المباراة';
+  String get onb_persona_organiser_hook => 'اجمع اللاعبين';
 
   @override
   String get onb_persona_organiser_body =>
@@ -1288,6 +1366,20 @@ class AppLocalizationsAr extends AppLocalizations {
       'سنجعلها الرياضة الأساسية في ملف ملعبك.';
 
   @override
+  String get onb_sports_title_contributor => 'ما الرياضات التي تهمّك؟';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'اختر الرياضات التي تتابعها أو تلعبها أو تنظّمها. يمكنك تغييرها في أي وقت.';
+
+  @override
+  String get onb_primary_title_contributor => 'ما رياضتك الأساسية؟';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'سنضعها أولًا في خلاصتك ومبارياتك وملفك الشخصي.';
+
+  @override
   String get onb_sports_search => 'ابحث عن رياضة';
 
   @override
@@ -1297,11 +1389,17 @@ class AppLocalizationsAr extends AppLocalizations {
   String get onb_sports_count_zero => 'اختر رياضة واحدة على الأقل للمتابعة.';
 
   @override
-  String get onb_sports_count_one => 'تم اختيار رياضة واحدة';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return 'الرياضات المختارة: $count';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'تم اختيار $count رياضة',
+      many: 'تم اختيار $count رياضة',
+      few: 'تم اختيار $count رياضات',
+      two: 'تم اختيار رياضتين',
+      one: 'تم اختيار رياضة واحدة',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3080,6 +3178,17 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get settings_not_synced_retry =>
       'لم تتم المزامنة. اضغط لإعادة المحاولة.';
+
+  @override
+  String get settings_will_sync_online => 'ستتم المزامنة عند الاتصال';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'تم تحديث هذا الإعداد على جهاز آخر. يظهر الآن القيمة الأحدث.';
+
+  @override
+  String get settings_change_rejected =>
+      'تعذّر حفظ هذا التغيير. تظهر الآن القيمة المحفوظة.';
 
   @override
   String get priv_saved => 'تم الحفظ';
@@ -5662,6 +5771,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_minutes_played => 'دقائق اللعب';
 
   @override
+  String get profile_stat_games_organised => 'ألعاب نظّمتها';
+
+  @override
+  String get profile_section_games_organised => 'الألعاب التي أنظّمها';
+
+  @override
   String get meetups_tab_all => 'الكل';
 
   @override
@@ -7730,4 +7845,686 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get location_search_failed => 'تعذّر تحميل النتائج';
+
+  @override
+  String get onb_intention_title => 'ما الذي أتى بك إلى دابلر؟';
+
+  @override
+  String get onb_intention_subtitle =>
+      'اختر ما يناسبك. اختيارك يساعدنا على فهم أهدافك.';
+
+  @override
+  String get onb_intention_connect_play => 'تواصل والعب';
+
+  @override
+  String get onb_intention_play_organise => 'العب ونظّم';
+
+  @override
+  String get onb_intention_organise => 'نظّم فعاليات رياضية';
+
+  @override
+  String get onb_intention_host_games => 'استضف رياضات وفعاليات';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'تابع الرياضات، وتعرّف على الناس، وشارك في أجواء اللعب.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'انضم إلى المباريات واجمع الناس في مباراتك الخاصة.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'اجمع اللاعبين ونظّم المباريات واللقاءات.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'رحّب باللاعبين في ملعبك وأماكنك.';
+
+  @override
+  String get onb_intention_continue => 'المتابعة';
+
+  @override
+  String get onb_error_legacy_profile_requires_existing_flow =>
+      'لدى هذا الحساب ملف شخصي بالفعل. يرجى المتابعة عبر مسار تسجيل الدخول الحالي.';
+
+  @override
+  String get onb_error_profile_migration_required =>
+      'يحتاج ملفك الشخصي إلى تحديث قبل أن تتمكن من المتابعة. يرجى المحاولة لاحقًا.';
+
+  @override
+  String get onb_error_persona_change_not_supported =>
+      'تغيير نوع الحساب غير مدعوم حاليًا.';
+
+  @override
+  String get onb_error_single_profile_required =>
+      'يمكن أن يحتوي الحساب على ملف شخصي واحد فقط.';
+
+  @override
+  String get onb_error_persona_conversion_blocked =>
+      'لا يمكن تحويل هذا الملف الشخصي حاليًا.';
+
+  @override
+  String get onb_error_persona_write_via_rpc_only =>
+      'تعذّر حفظ هذا التغيير. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String get onb_error_onboarding_intention_mismatch =>
+      'اختيارك لا يطابق ما تم حفظه. يرجى الاختيار مرة أخرى.';
+
+  @override
+  String get onb_error_contributor_sports_incomplete =>
+      'اختر رياضة واحدة على الأقل للمتابعة.';
+
+  @override
+  String get onb_error_generic => 'حدث خطأ ما. يرجى المحاولة مرة أخرى.';
+
+  @override
+  String ratings_summary_from_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count تقييم',
+      many: '$count تقييمًا',
+      few: '$count تقييمات',
+      two: 'تقييمين',
+      one: 'تقييم واحد',
+    );
+    return 'من $_temp0';
+  }
+
+  @override
+  String ratings_summary_semantics(String average) {
+    return 'التقييم $average من 5';
+  }
+
+  @override
+  String get map_attribution_osm => '© مساهمو OpenStreetMap';
+
+  @override
+  String get games_view_map => 'عرض الخريطة';
+
+  @override
+  String get games_view_list => 'عرض القائمة';
+
+  @override
+  String get games_map_empty_title => 'لا توجد مباريات على الخريطة';
+
+  @override
+  String get games_map_empty_text =>
+      'لا توجد مباريات عامة قادمة تطابق الفلاتر. غيّر الفلاتر أو ارجع إلى القائمة.';
+
+  @override
+  String get challenge_error_sport_required =>
+      'اختر رياضة لتحديك ثم حاول مرة أخرى.';
+
+  @override
+  String get challenge_error_invalid_sport =>
+      'هذه الرياضة غير متاحة. اختر رياضة من القائمة.';
+
+  @override
+  String get challenge_error_organiser_required =>
+      'إنشاء التحديات متاح لحسابات المنظّمين فقط.';
+
+  @override
+  String get profile_upcoming_empty =>
+      'لا توجد ألعاب بعد. انضم إلى لعبة قريبة منك أو أنشئ لعبتك.';
+
+  @override
+  String get profile_find_a_game => 'ابحث عن لعبة';
+
+  @override
+  String get profile_section_sports_you_play => 'الرياضات التي تلعبها';
+
+  @override
+  String get profile_stat_games_meetups => 'الألعاب واللقاءات';
+
+  @override
+  String get profile_stat_new_hero_sub =>
+      'انضم إلى لعبة أو نظّم واحدة لتبدأ قائمتك';
+
+  @override
+  String get profile_stat_played => 'لعبت';
+
+  @override
+  String get profile_stat_organised => 'نظّمت';
+
+  @override
+  String get bench_row_title => 'وضع الاستراحة';
+
+  @override
+  String get bench_row_off => 'متوقف';
+
+  @override
+  String bench_row_until(String date) {
+    return 'مفعّل حتى $date';
+  }
+
+  @override
+  String get bench_row_no_end => 'مفعّل بدون تاريخ انتهاء';
+
+  @override
+  String get bench_screen_title => 'وضع الاستراحة';
+
+  @override
+  String get bench_edit_title => 'تعديل الاستراحة';
+
+  @override
+  String get bench_explain_title => 'خذ استراحة من الجانب الاجتماعي';
+
+  @override
+  String get bench_explain_body =>
+      'ابتعد قليلًا. يمكنك مواصلة اللعب والظهور في قوائم اللاعبين.';
+
+  @override
+  String get bench_paused_head => 'يتوقف أثناء الاستراحة';
+
+  @override
+  String get bench_paused_1 => 'لا يمكنك النشر أو التعليق أو الإعجاب';
+
+  @override
+  String get bench_paused_2 => 'تُخفى من الخلاصة والبحث حسب اختيارك';
+
+  @override
+  String get bench_paused_3 => 'تُحظر طلبات الصداقة حسب اختيارك';
+
+  @override
+  String get bench_keep_head => 'ما يستمر بالعمل';
+
+  @override
+  String get bench_keep_1 => 'الانضمام إلى المباريات واللعب';
+
+  @override
+  String get bench_keep_2 => 'الظهور في قوائم اللاعبين';
+
+  @override
+  String get bench_reason_label => 'السبب (اختياري)';
+
+  @override
+  String get bench_reason_placeholder => 'ملاحظة قصيرة لنفسك';
+
+  @override
+  String get bench_reason_helper => 'اجعلها قصيرة.';
+
+  @override
+  String get bench_end_label => 'تاريخ الانتهاء (اختياري)';
+
+  @override
+  String get bench_end_placeholder => 'بدون تاريخ انتهاء';
+
+  @override
+  String get bench_end_helper => 'يمكنك إنهاء الاستراحة قبل ذلك في أي وقت.';
+
+  @override
+  String get bench_toggle_feed => 'إخفائي من الخلاصة';
+
+  @override
+  String get bench_toggle_feed_sub => 'لن يظهر نشاطك في الخلاصات.';
+
+  @override
+  String get bench_toggle_search => 'إخفائي من البحث';
+
+  @override
+  String get bench_toggle_search_sub => 'لا يمكن للآخرين العثور عليك بالاسم.';
+
+  @override
+  String get bench_toggle_friends => 'حظر طلبات الصداقة';
+
+  @override
+  String get bench_toggle_friends_sub => 'لا طلبات جديدة أثناء الاستراحة.';
+
+  @override
+  String get bench_toggle_notifs => 'كتم الإشعارات الاجتماعية';
+
+  @override
+  String get bench_toggle_notifs_sub =>
+      'الإعجابات والتعليقات ونشاط الأصدقاء تبقى صامتة.';
+
+  @override
+  String get bench_start => 'ابدأ الاستراحة';
+
+  @override
+  String get bench_save => 'احفظ التغييرات';
+
+  @override
+  String get bench_confirm_title => 'بدء وضع الاستراحة؟';
+
+  @override
+  String get bench_confirm_body => 'يسري هذا فورًا. يمكنك إنهاؤه في أي وقت.';
+
+  @override
+  String get bench_confirm_sum_feed => 'مخفي من الخلاصة';
+
+  @override
+  String get bench_confirm_sum_search => 'مخفي من البحث';
+
+  @override
+  String get bench_confirm_sum_friends => 'طلبات الصداقة محظورة';
+
+  @override
+  String get bench_confirm_sum_notifs => 'الإشعارات الاجتماعية مكتومة';
+
+  @override
+  String bench_confirm_sum_end(String date) {
+    return 'ينتهي في $date';
+  }
+
+  @override
+  String get bench_confirm_sum_no_end => 'بدون تاريخ انتهاء';
+
+  @override
+  String get bench_cancel => 'إلغاء';
+
+  @override
+  String get bench_back => 'رجوع';
+
+  @override
+  String get bench_retry => 'حاول مرة أخرى';
+
+  @override
+  String get bench_manage => 'إدارة';
+
+  @override
+  String get bench_status_badge => 'في استراحة';
+
+  @override
+  String get bench_status_head => 'أنت في استراحة';
+
+  @override
+  String get bench_status_since => 'منذ';
+
+  @override
+  String get bench_status_until => 'حتى';
+
+  @override
+  String get bench_status_reason => 'السبب';
+
+  @override
+  String get bench_status_hidden_head => 'ما هو مخفي';
+
+  @override
+  String get bench_status_feed => 'الخلاصة';
+
+  @override
+  String get bench_status_search => 'البحث';
+
+  @override
+  String get bench_status_friends => 'طلبات الصداقة';
+
+  @override
+  String get bench_status_notifs => 'الإشعارات الاجتماعية';
+
+  @override
+  String get bench_status_hidden => 'مخفي';
+
+  @override
+  String get bench_status_visible => 'ظاهر';
+
+  @override
+  String get bench_status_blocked => 'محظورة';
+
+  @override
+  String get bench_status_allowed => 'مسموحة';
+
+  @override
+  String get bench_status_muted => 'مكتومة';
+
+  @override
+  String get bench_status_on => 'مفعّلة';
+
+  @override
+  String get bench_status_no_end => 'بدون تاريخ انتهاء';
+
+  @override
+  String get bench_end => 'أنهِ الاستراحة';
+
+  @override
+  String get bench_edit_action => 'تعديل';
+
+  @override
+  String get bench_end_confirm_title => 'إنهاء الاستراحة الآن؟';
+
+  @override
+  String get bench_end_confirm_body =>
+      'ستظهر للآخرين من جديد ويمكنك النشر والتعليق والإعجاب.';
+
+  @override
+  String get bench_end_confirm_keep => 'ابقَ في الاستراحة';
+
+  @override
+  String get bench_loading => 'جارٍ التحميل';
+
+  @override
+  String get bench_error_start_title => 'تعذّر بدء الاستراحة';
+
+  @override
+  String get bench_error_start_body => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get bench_error_load_title => 'تعذّر تحميل وضع الاستراحة';
+
+  @override
+  String get bench_error_load_body => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get bench_offline_title => 'لا يوجد اتصال';
+
+  @override
+  String get bench_offline_body =>
+      'اتصل بالإنترنت لإنهاء الاستراحة أو تعديلها. تظهر حالتك كما حُفظت آخر مرة.';
+
+  @override
+  String bench_indicator_home(String date) {
+    return 'في استراحة حتى $date';
+  }
+
+  @override
+  String get bench_indicator_home_no_end => 'في استراحة';
+
+  @override
+  String bench_indicator_profile(String date) {
+    return 'مخفي من الخلاصة والبحث حتى $date.';
+  }
+
+  @override
+  String get recurring_repeat_label => 'التكرار';
+
+  @override
+  String get recurring_option_none => 'لا تتكرر';
+
+  @override
+  String get recurring_option_weekly => 'أسبوعيًا';
+
+  @override
+  String get recurring_option_biweekly => 'كل أسبوعين';
+
+  @override
+  String recurring_summary_weekly(String weekday) {
+    return 'تتكرر كل أسبوع يوم $weekday';
+  }
+
+  @override
+  String recurring_summary_biweekly(String weekday) {
+    return 'تتكرر كل أسبوعين يوم $weekday';
+  }
+
+  @override
+  String get recurring_end_date_label => 'تاريخ الانتهاء';
+
+  @override
+  String get recurring_end_date_none => 'بدون تاريخ انتهاء';
+
+  @override
+  String get recurring_end_date_hint =>
+      'من دون تاريخ انتهاء، تستمر السلسلة حتى تنهيها.';
+
+  @override
+  String get recurring_end_date_pick => 'اختر تاريخ الانتهاء';
+
+  @override
+  String recurring_end_date_value(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تنتهي في $dateString';
+  }
+
+  @override
+  String get recurring_end_date_clear => 'إزالة تاريخ الانتهاء';
+
+  @override
+  String get recurring_end_date_before_start =>
+      'يجب أن يكون تاريخ الانتهاء بعد موعد أول لعبة.';
+
+  @override
+  String recurring_limit_hint(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max لعبة',
+      many: '$max لعبة',
+      few: '$max ألعاب',
+      two: 'لعبتين',
+      one: 'لعبة واحدة',
+    );
+    return 'يمكن أن تضم السلسلة حتى $_temp0. جدّدها عند انتهائها لتستمر.';
+  }
+
+  @override
+  String recurring_limit_reached(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max لعبة',
+      many: '$max لعبة',
+      few: '$max ألعاب',
+      two: 'لعبتان',
+      one: 'لعبة واحدة',
+    );
+    return 'بلغت هذه السلسلة حدّها الأقصى وهو $_temp0. جدّدها لجدولة المزيد.';
+  }
+
+  @override
+  String get recurring_limit_reached_title => 'بلغت السلسلة حدّها الأقصى';
+
+  @override
+  String recurring_preview_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لعبة',
+      many: '$count لعبة',
+      few: '$count ألعاب',
+      two: 'لعبتين',
+      one: 'لعبة واحدة',
+    );
+    return 'سيؤدي هذا إلى إنشاء $_temp0.';
+  }
+
+  @override
+  String get recurring_renew_action => 'تجديد السلسلة';
+
+  @override
+  String get recurring_paid_disabled => 'لا يمكن تكرار الألعاب المدفوعة حاليًا';
+
+  @override
+  String get recurring_paid_free_hint => 'اجعل اللعبة مجانية لتفعيل التكرار.';
+
+  @override
+  String get recurring_paid_switched_off =>
+      'أُوقف التكرار لأن هذه اللعبة مدفوعة. لا يمكن تكرار الألعاب المدفوعة حاليًا.';
+
+  @override
+  String get recurring_location_required =>
+      'اختر ملعبًا أو حدّد موقعك لتكرار هذه اللعبة.';
+
+  @override
+  String get recurring_badge_label => 'سلسلة';
+
+  @override
+  String get recurring_badge_weekly => 'سلسلة أسبوعية';
+
+  @override
+  String get recurring_badge_biweekly => 'كل أسبوعين';
+
+  @override
+  String recurring_badge_ends(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تنتهي السلسلة في $dateString';
+  }
+
+  @override
+  String get recurring_badge_open_ended => 'تستمر حتى ينهيها المنظّم';
+
+  @override
+  String get recurring_badge_semantics => 'جزء من سلسلة متكررة';
+
+  @override
+  String get recurring_edit_title => 'تعديل لعبة متكررة';
+
+  @override
+  String get recurring_edit_subtitle =>
+      'هذه اللعبة جزء من سلسلة. على ماذا تريد تطبيق تعديلاتك؟';
+
+  @override
+  String get recurring_edit_this_only => 'هذه اللعبة فقط';
+
+  @override
+  String recurring_edit_this_only_desc(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تتغير لعبة يوم $dateString فقط. تبقى بقية السلسلة كما هي.';
+  }
+
+  @override
+  String get recurring_edit_all_future => 'كل الألعاب القادمة';
+
+  @override
+  String get recurring_edit_all_future_desc =>
+      'تتغير هذه اللعبة وكل لعبة تليها في السلسلة. يحتفظ اللاعبون المنضمون بمكانهم في الألعاب التي لا يُعاد إنشاؤها.';
+
+  @override
+  String get recurring_edit_continue => 'متابعة';
+
+  @override
+  String get recurring_edit_close => 'إغلاق';
+
+  @override
+  String get recurring_cancel_title => 'هل تريد إلغاء هذه السلسلة؟';
+
+  @override
+  String recurring_cancel_future_line(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'ستُلغى $count لعبة قادمة.',
+      many: 'ستُلغى $count لعبة قادمة.',
+      few: 'ستُلغى $count ألعاب قادمة.',
+      two: 'ستُلغى لعبتان قادمتان.',
+      one: 'ستُلغى لعبة واحدة قادمة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurring_cancel_players_line(int players) {
+    String _temp0 = intl.Intl.pluralLogic(
+      players,
+      locale: localeName,
+      other: 'انضم $players لاعب وسيتم إشعارهم.',
+      many: 'انضم $players لاعبًا وسيتم إشعارهم.',
+      few: 'انضم $players لاعبين وسيتم إشعارهم.',
+      two: 'انضم لاعبان وسيتم إشعارهما.',
+      one: 'انضم لاعب واحد وسيتم إشعاره.',
+      zero: 'لم ينضم أي لاعب بعد.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_past_line =>
+      'تبقى الألعاب السابقة وسجلها كما هي.';
+
+  @override
+  String get recurring_cancel_no_carry_over =>
+      'لن يُنقل أي لاعب إلى لعبة أخرى تلقائيًا.';
+
+  @override
+  String get recurring_cancel_confirm => 'إلغاء السلسلة';
+
+  @override
+  String get recurring_cancel_keep => 'إبقاء السلسلة';
+
+  @override
+  String get recurring_cancel_done => 'تم إلغاء السلسلة';
+
+  @override
+  String get recurring_cancel_failed => 'تعذّر إلغاء السلسلة. حاول مرة أخرى.';
+
+  @override
+  String get recurring_cancel_notif_title => 'تم إلغاء اللعبة';
+
+  @override
+  String recurring_cancel_notif_body(String game, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'تم إلغاء لعبة يوم $dateString. أنهى المنظّم هذه السلسلة. اللعبة: $game';
+  }
+
+  @override
+  String get recurring_future_title_label => 'عنوان اللعبة';
+
+  @override
+  String get recurring_future_capacity_label => 'عدد اللاعبين';
+
+  @override
+  String get recurring_future_save => 'حفظ لكل الألعاب القادمة';
+
+  @override
+  String get recurring_future_done => 'تم تحديث السلسلة';
+
+  @override
+  String get recurring_future_failed => 'تعذّر تحديث السلسلة. حاول مرة أخرى.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      many: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      few: '$count ألعاب فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      two: 'لعبتان فيهما لاعبون منضمّون تحتفظان بتفاصيلهما السابقة.',
+      one: 'لعبة واحدة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'إلغاء السلسلة';
+
+  @override
+  String get profile_visitor_sports_title => 'الرياضات التي يمارسها';
+
+  @override
+  String get profile_stat_games_visitor => 'المباريات';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return 'مباريات $sport';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'لاعبًا أو منظّمًا';
+
+  @override
+  String get profile_stat_sport_profiles => 'الملفات الرياضية';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'المباريات المفتوحة التي يلعب فيها أو ينظّمها';
+
+  @override
+  String get profile_tag_playing => 'يلعب';
+
+  @override
+  String get profile_tag_organising => 'ينظّم';
+
+  @override
+  String get profile_tag_organising_playing => 'ينظّم · يلعب';
+
+  @override
+  String get profile_invite_action_semantic => 'دعوة';
+
+  @override
+  String get profile_stat_games_played_visitor => 'المباريات التي لعبها';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return 'مباريات $sport';
+  }
 }

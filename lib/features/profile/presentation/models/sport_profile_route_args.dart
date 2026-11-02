@@ -24,7 +24,9 @@ class SportProfileRouteArgs {
   final String? avatarUrl;
   final String? sportEmoji;
 
-  bool get isOrganiserPersona => personaType == 'organiser';
+  /// A Contributor holds both extensions and opens the organiser view.
+  bool get isOrganiserPersona =>
+      personaType == 'organiser' || personaType == 'contributor';
 
   /// Query representation so the route survives web refresh / direct URL
   /// entry, where GoRouter's `state.extra` is lost.
@@ -56,7 +58,9 @@ class SportProfileRouteArgs {
         sportId.isEmpty ||
         sportKey == null ||
         sportKey.isEmpty ||
-        (persona != 'player' && persona != 'organiser')) {
+        (persona != 'player' &&
+            persona != 'organiser' &&
+            persona != 'contributor')) {
       return null;
     }
     return SportProfileRouteArgs(

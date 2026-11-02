@@ -1,3 +1,4 @@
+import 'package:dabbler/core/offline/sync/queueable_settings.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/cache/offline_cache.dart';
@@ -84,8 +85,12 @@ class PrivacyController extends StateNotifier<PrivacyState> {
   final OfflineCache? _cache;
   static final String _mirrorKey = settingsMirrorKey(SettingKeys.privacy);
 
+  // Privacy is never queued (KAN-657): offline it shows the network error.
   bool _offlineFirst(String userId) =>
-      _sync != null && _accountId != null && _accountId == userId;
+      isQueueableSetting(SettingKeys.privacy) &&
+      _sync != null &&
+      _accountId != null &&
+      _accountId == userId;
 
   OfflineCache get _mirror => _cache ?? OfflineCache.instance;
 
@@ -110,7 +115,8 @@ class PrivacyController extends StateNotifier<PrivacyState> {
         PrivacySettings? settings;
         if (_offlineFirst(userId)) {
           final pending = await _sync!.pendingValue(SettingKeys.privacy);
-          if (pending != null) settings = PrivacySettingsModel.fromJson(pending);
+          if (pending != null)
+            settings = PrivacySettingsModel.fromJson(pending);
         }
         if (settings == null) {
           final result = await _settingsRepository.getPrivacySettings(userId);

@@ -1,3 +1,5 @@
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
 import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
@@ -188,6 +190,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       onLanguageRegion: () =>
                           showSettingsLanguageRegionSheet(context, ref),
                     ),
+                    if (FeatureFlags.benchMode) ...[
+                      const DabblerGap.v(DabblerSpacing.space6),
+                      const BenchSettingsRow(),
+                    ],
                     const DabblerGap.v(DabblerSpacing.space6),
                     buildProfileSection(context),
                     _buildAboutSection(context),
@@ -220,15 +226,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
       terms: terms,
       onTap: () => context.push(to),
     );
-    final organiser = organiserAvailability();
     return [
-      if (organiser != null)
-        SettingsSearchEntry(
-          icon: 'calendar-edit',
-          label: l10n.settings_organiser_title,
-          path: l10n.settings_path_profiles,
-          onTap: () => openOrganiser(organiser),
-        ),
       route(
         'edit',
         l10n.profile_btn_edit,

@@ -69,8 +69,8 @@ void main() {
   });
 
   for (final c in [
-    (const Locale('en'), 'Not synced. Tap to retry.'),
-    (const Locale('ar'), 'لم تتم المزامنة. اضغط لإعادة المحاولة.'),
+    (const Locale('en'), 'Will sync when online'),
+    (const Locale('ar'), 'ستتم المزامنة عند الاتصال'),
   ]) {
     testWidgets('shown while queued (${c.$1.languageCode}), tap retries', (
       tester,

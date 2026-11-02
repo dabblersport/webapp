@@ -2,6 +2,8 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_tone.dart';
+import 'package:dabbler/features/sports/presentation/widgets/sport_artwork.dart';
 
 /// Shared helpers for the onboarding steps. The step page itself is the
 /// design system's [DabblerFlowPage]; this file only holds what is not
@@ -61,8 +63,37 @@ DabblerSport? dsSportFromKeys(String? sportKey, String? nameEn) {
 
 /// The sport's tint family: the design's per-sport hue, or the fallback hue
 /// for a sport the system does not know.
-DabblerHueTone onboardingSportTone(Sport sport) =>
-    DabblerHueTone.forSportKey(onboardingDsSport(sport)?.key);
+///
+/// KAN-681: the paper card of the design — idle is the plain card with the
+/// card hairline, selected takes the tinted surface — and it follows the
+/// brightness, which [DabblerHueTone] alone does not.
+DabblerHueTone onboardingSportTone(
+  BuildContext context,
+  Sport sport, {
+  required bool selected,
+}) => onboardingPaperTone(
+  context,
+  onboardingDsSport(sport)?.key,
+  selected: selected,
+);
+
+/// KAN-681: the sport's artwork from the app's `assets/sport-icon` set, at
+/// [size]. A sport the set does not cover falls back to the design system's
+/// own glyph.
+class OnboardingSportArtwork extends StatelessWidget {
+  const OnboardingSportArtwork({
+    super.key,
+    required this.sport,
+    required this.size,
+  });
+
+  final Sport sport;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) =>
+      SportArtwork(sportKey: sport.sportKey, size: size);
+}
 
 /// The sport glyph: [DabblerSportIcon] for a known sport, otherwise the
 /// neutral `game` [DabblerIcon]. Never an emoji.

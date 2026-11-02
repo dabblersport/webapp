@@ -1,18 +1,26 @@
+import 'dart:async';
+
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
 import 'package:flutter/material.dart' show TimeOfDay;
 import 'package:flutter/widgets.dart';
+import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
+import 'package:dabbler/features/games/domain/models/game_recurrence.dart';
+import 'package:dabbler/features/location/providers/profile_location_providers.dart'
+    show profileLocationRepositoryProvider;
 import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_repeat.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_guard.dart';
@@ -40,6 +48,9 @@ enum GameComposerErrorCode {
   playerRange,
   playerCountMin,
   priceRequired,
+
+  /// Repeat is on but there is neither a venue nor a saved location (KAN-697).
+  seriesLocationRequired,
 
   /// A failure with no code of its own; shows the server's own text.
   unknown,
@@ -105,6 +116,8 @@ class GameComposerError {
     GameComposerErrorCode.playerRange => l.game_error_player_range,
     GameComposerErrorCode.playerCountMin => l.game_error_player_count_min,
     GameComposerErrorCode.priceRequired => l.game_price_required,
+    GameComposerErrorCode.seriesLocationRequired =>
+      l.recurring_location_required,
     GameComposerErrorCode.unknown => raw ?? '',
   };
 }
@@ -182,6 +195,11 @@ class _ComposerState {
     this.venueSpaceName,
     this.venueNameAr,
     this.venueSpaceNameAr,
+    this.venueGeoLocationId,
+    this.venueAreaId,
+    this.repeat = GameRepeat.none,
+    this.repeatEnd,
+    this.repeatSwitchedOffForPrice = false,
     this.joinPolicy = 'open',
     this.listingVisibility = 'public',
     this.allowWaitlist = false,
@@ -228,6 +246,17 @@ class _ComposerState {
   final String? venueSpaceName;
   final String? venueNameAr;
   final String? venueSpaceNameAr;
+
+  /// The chosen venue's own place (KAN-697): where a series is created.
+  final String? venueGeoLocationId;
+  final String? venueAreaId;
+
+  /// KAN-697: how the game repeats, and the optional last date of the series.
+  final GameRepeat repeat;
+  final DateTime? repeatEnd;
+
+  /// Shown once Repeat was turned off because the price became non-zero.
+  final bool repeatSwitchedOffForPrice;
   final String joinPolicy;
   final String listingVisibility;
   final bool allowWaitlist;
@@ -257,6 +286,11 @@ class _ComposerState {
     return v == null || v.isNaN || v.isInfinite || v < 0 ? null : v;
   }
 
+  /// A paid game cannot repeat (epic KAN-692 v1).
+  bool get isPaid => (priceAed ?? 0) > 0;
+
+  bool get isRepeating => repeat != GameRepeat.none;
+
   bool get canSubmit =>
       sportId != null &&
       variantId != null &&
@@ -285,6 +319,11 @@ class _ComposerState {
     String? venueSpaceName,
     String? venueNameAr,
     String? venueSpaceNameAr,
+    String? venueGeoLocationId,
+    String? venueAreaId,
+    GameRepeat? repeat,
+    DateTime? repeatEnd,
+    bool? repeatSwitchedOffForPrice,
     String? joinPolicy,
     String? listingVisibility,
     bool? allowWaitlist,
@@ -302,6 +341,7 @@ class _ComposerState {
     GameComposerError? error,
     bool clearError = false,
     bool clearVenue = false,
+    bool clearRepeatEnd = false,
     bool clearVariant = false,
     bool clearSkill = false,
     bool clearPlayers = false,
@@ -331,6 +371,14 @@ class _ComposerState {
       venueSpaceNameAr: clearVenue
           ? null
           : venueSpaceNameAr ?? this.venueSpaceNameAr,
+      venueGeoLocationId: clearVenue
+          ? null
+          : venueGeoLocationId ?? this.venueGeoLocationId,
+      venueAreaId: clearVenue ? null : venueAreaId ?? this.venueAreaId,
+      repeat: repeat ?? this.repeat,
+      repeatEnd: clearRepeatEnd ? null : repeatEnd ?? this.repeatEnd,
+      repeatSwitchedOffForPrice:
+          repeatSwitchedOffForPrice ?? this.repeatSwitchedOffForPrice,
       joinPolicy: joinPolicy ?? this.joinPolicy,
       listingVisibility: listingVisibility ?? this.listingVisibility,
       allowWaitlist: allowWaitlist ?? this.allowWaitlist,
@@ -515,7 +563,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           .from(SupabaseConfig.venueSpacesTable)
           .select(
             'id, name_en, name_ar, sport_id, sport_variant_keys, '
-            'venue:venues(id, name_en, name_ar, area)',
+            'venue:venues(id, name_en, name_ar, area, geo_location_id, area_id)',
           )
           .eq('sport_id', sportId)
           .eq('is_active', true)
@@ -556,7 +604,13 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     loadVenueSpaces();
   }
 
-  void selectDate(DateTime date) => state = state.copyWith(selectedDate: date);
+  void selectDate(DateTime date) {
+    final end = state.repeatEnd;
+    // An end date that is no longer after the first game is dropped.
+    final dropEnd = end != null && !seriesEndIsValid(date, end);
+    state = state.copyWith(selectedDate: date, clearRepeatEnd: dropEnd);
+  }
+
   void selectTime(TimeOfDay time) => state = state.copyWith(selectedTime: time);
   void setDuration(int minutes) =>
       state = state.copyWith(durationMinutes: minutes);
@@ -569,6 +623,8 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       venueSpaceName: space['name_en'] as String?,
       venueNameAr: venue['name_ar'] as String?,
       venueSpaceNameAr: space['name_ar'] as String?,
+      venueGeoLocationId: venue['geo_location_id'] as String?,
+      venueAreaId: venue['area_id'] as String?,
     );
   }
 
@@ -608,7 +664,14 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
   /// Live check: an emptied or non-numeric price shows its error at once.
   void setPriceText(String v) {
     final next = state.copyWith(priceText: v);
-    state = next.copyWith(priceError: next.priceAed == null);
+    // KAN-697: a paid game cannot repeat, so Repeat turns itself off.
+    final dropRepeat = next.isPaid && next.isRepeating;
+    state = next.copyWith(
+      priceError: next.priceAed == null,
+      repeat: dropRepeat ? GameRepeat.none : null,
+      clearRepeatEnd: dropRepeat,
+      repeatSwitchedOffForPrice: dropRepeat ? true : null,
+    );
   }
 
   /// False (and the field shows its error) while the price is missing.
@@ -618,6 +681,22 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     return false;
   }
 
+  void setRepeat(GameRepeat v) {
+    if (v != GameRepeat.none && state.isPaid) return;
+    state = state.copyWith(
+      repeat: v,
+      clearRepeatEnd: v == GameRepeat.none,
+      repeatSwitchedOffForPrice: false,
+      clearError: true,
+    );
+  }
+
+  /// A null [v] removes the end date. An end date that is not after the first
+  /// game is refused by the picker, so it never reaches the state.
+  void setRepeatEnd(DateTime? v) => state = v == null
+      ? state.copyWith(clearRepeatEnd: true)
+      : state.copyWith(repeatEnd: v);
+
   void setMinPlayers(int v) => state = state.copyWith(minPlayers: v);
   void setMaxPlayers(int v) => state = state.copyWith(maxPlayers: v);
   void clearPlayers() => state = state.copyWith(clearPlayers: true);
@@ -625,11 +704,38 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
   /// [requestId] is the create attempt's client request id (KAN-612); it is
   /// sent to `rpc_create_game` so a retry never makes a second game. Saving
   /// an edit sends none.
-  Future<bool> submit({String? requestId}) async {
+  ///
+  /// [profileLocation] is read only for a repeating game with no usable venue
+  /// place: the signed-in profile's saved location (KAN-697).
+  Future<bool> submit({
+    String? requestId,
+    Future<SeriesLocation?> Function()? profileLocation,
+  }) async {
     if (!state.canSubmit) return false;
     state = state.copyWith(isSubmitting: true, clearError: true);
 
     try {
+      // KAN-697: resolve the series place before anything is spent or sent.
+      // Neither a venue nor a saved location: nothing is invented, the RPC is
+      // not called and the form says what to do.
+      SeriesLocation? seriesPlace;
+      if (!state.isEditing && state.isRepeating) {
+        seriesPlace = resolveSeriesLocation(
+          venueGeoLocationId: state.venueGeoLocationId,
+          venueAreaId: state.venueAreaId,
+        );
+        seriesPlace ??= await profileLocation?.call();
+        if (seriesPlace == null) {
+          state = state.copyWith(
+            isSubmitting: false,
+            error: const GameComposerError(
+              GameComposerErrorCode.seriesLocationRequired,
+            ),
+          );
+          return false;
+        }
+      }
+
       // Creation cooldown only — editing your own game is not rate-limited.
       if (!state.isEditing &&
           !(requestId != null && requestId == _cooldownRequestId)) {
@@ -699,6 +805,48 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         return true;
       }
 
+      if (seriesPlace != null) {
+        final capacity = state.maxPlayers ?? state.requiredPlayers;
+        if (capacity == null) {
+          state = state.copyWith(
+            isSubmitting: false,
+            error: const GameComposerError(
+              GameComposerErrorCode.playerCountMin,
+            ),
+          );
+          return false;
+        }
+        final end = state.repeatEnd;
+        String two(int n) => n.toString().padLeft(2, '0');
+        String ymd(DateTime d) => '${d.year}-${two(d.month)}-${two(d.day)}';
+        await _db.rpc(
+          SupabaseConfig.rpcCreateGameSeriesFn,
+          params: <String, dynamic>{
+            'p_actor_type': 'player',
+            'p_sport_id': state.sportId!,
+            'p_sport_variant_id': state.variantId!,
+            'p_geo_location_id': seriesPlace.geoLocationId,
+            'p_area_id': seriesPlace.areaId,
+            'p_starts_on': ymd(date),
+            'p_start_time_local': '${two(t.hour)}:${two(t.minute)}:00',
+            'p_duration_minutes': state.durationMinutes,
+            'p_timezone': SupabaseConfig.defaultSeriesTimezone,
+            'p_frequency': state.repeat.rpcFrequency!,
+            'p_capacity': capacity,
+            if (state.title != null && state.title!.isNotEmpty)
+              'p_title': state.title,
+            if (state.venueSpaceId != null)
+              'p_venue_space_id': state.venueSpaceId,
+            if (end != null) 'p_ends_on': ymd(end),
+            'p_listing_visibility': state.listingVisibility,
+            'p_join_policy': state.joinPolicy,
+            'p_price_aed': 0,
+          },
+        );
+        state = state.copyWith(isSubmitting: false);
+        return true;
+      }
+
       final params = <String, dynamic>{
         'p_actor_type': 'player',
         'p_sport_id': state.sportId!,
@@ -724,7 +872,23 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         if (requestId != null) 'p_request_id': requestId,
       };
 
-      await _db.rpc(SupabaseConfig.rpcCreateGameFn, params: params);
+      final created = await _db.rpc(
+        SupabaseConfig.rpcCreateGameFn,
+        params: params,
+      );
+      // Launch event: this composer is the app's create path, so the event
+      // is sent here, once, after the create RPC succeeded.
+      unawaited(
+        const AnalyticsService().trackGameCreated(
+          gameId: created?.toString() ?? '',
+          sportType: (state.sportNameEn ?? state.sportId ?? 'unknown')
+              .toLowerCase(),
+          playerCount: state.requiredPlayers ?? 0,
+          price: null,
+          venueType: state.venueSpaceId != null ? 'venue' : 'unspecified',
+          duration: '${state.durationMinutes}m',
+        ),
+      );
       state = state.copyWith(isSubmitting: false);
       return true;
     } on PostgrestException catch (e) {
@@ -780,6 +944,9 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
   final _titleController = TextEditingController();
   final _descController = TextEditingController();
   final _priceController = TextEditingController();
+
+  /// The Repeat panel is open (KAN-697).
+  bool _repeatOpen = false;
 
   /// KAN-618: one request id per create attempt. It is kept across failed
   /// retries and cleared on success, on a form edit and when the drawer
@@ -858,6 +1025,25 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     s.priceText,
   ];
 
+  /// The signed-in profile's saved place for a series (KAN-697): the primary
+  /// one, else the newest, that carries both ids. Read-only.
+  Future<SeriesLocation?> _profileSeriesLocation() async {
+    final result = await ref
+        .read(profileLocationRepositoryProvider)
+        .getLocations();
+    return result.fold((_) => null, (list) {
+      final ordered = [...list.where((e) => e.isPrimary), ...list];
+      for (final loc in ordered) {
+        final place = resolveSeriesLocation(
+          profileGeoLocationId: loc.geoLocationId,
+          profileAreaId: loc.areaId,
+        );
+        if (place != null) return place;
+      }
+      return null;
+    });
+  }
+
   Future<void> _submit() async {
     // KAN-618: a second tap while one is in flight is dropped, so two taps
     // make one submission and one id.
@@ -878,7 +1064,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final requestId = _isEditing ? null : _requestId.begin();
     final ok = await ref
         .read(_gameComposerProvider.notifier)
-        .submit(requestId: requestId);
+        .submit(requestId: requestId, profileLocation: _profileSeriesLocation);
     if (ok && !_isEditing) {
       _requestId.clear();
     }
@@ -1011,6 +1197,8 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
                     onSelect: notifier.setDuration,
                   ),
                 ),
+                if (FeatureFlags.enableRecurringGames && !_isEditing)
+                  ..._repeatRows(context, state, notifier, l),
               ],
             ),
             GameSectionLabel(l.game_join_policy),
@@ -1148,6 +1336,119 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
               onPressed: _submit,
             ),
           ],
+        ),
+      ),
+    );
+  }
+
+  // ─── Repeat (KAN-697) ──────────────────────────────────────────────────────
+
+  /// The Repeat block: the row with the current value, and the panel it opens
+  /// (options, Ends card, hint). A paid game cannot repeat: the row is locked
+  /// and says why.
+  List<Widget> _repeatRows(
+    BuildContext context,
+    _ComposerState state,
+    _ComposerNotifier notifier,
+    AppLocalizations l,
+  ) {
+    final locale = Localizations.localeOf(context).toString();
+    final first = state.selectedDate;
+    final String value;
+    if (first != null && state.isRepeating) {
+      final weekday = DateFormat.EEEE(locale).format(first);
+      value = state.repeat == GameRepeat.weekly
+          ? l.recurring_summary_weekly(weekday)
+          : l.recurring_summary_biweekly(weekday);
+    } else {
+      value = l.recurring_option_none;
+    }
+    final end = state.repeatEnd;
+    // An open-ended series is capped silently; the card is for a chosen end
+    // date that runs into the cap.
+    final reached =
+        state.isRepeating &&
+        end != null &&
+        seriesOccurrenceCount(state.repeat, first ?? DateTime.now(), end) >=
+            kMaxSeriesOccurrences;
+    return <Widget>[
+      GameRepeatSection<GameRepeat>(
+        label: l.recurring_repeat_label,
+        valueText: value,
+        open: _repeatOpen,
+        onToggle: () => setState(() => _repeatOpen = !_repeatOpen),
+        options: <(GameRepeat, String)>[
+          (GameRepeat.none, l.recurring_option_none),
+          (GameRepeat.weekly, l.recurring_option_weekly),
+          (GameRepeat.biweekly, l.recurring_option_biweekly),
+        ],
+        selected: state.repeat,
+        onSelect: notifier.setRepeat,
+        endLabel: l.recurring_end_date_label,
+        endValue: end == null
+            ? l.recurring_end_date_none
+            : l.recurring_end_date_value(end),
+        onPickEnd: () => _pickRepeatEnd(context),
+        hint: l.recurring_limit_hint(kMaxSeriesOccurrences),
+        showEnds: state.isRepeating,
+        locked: state.isPaid,
+        lockedTitle: l.recurring_paid_disabled,
+        lockedMessage: l.recurring_paid_free_hint,
+        limitReached: reached,
+        limitTitle: l.recurring_limit_reached_title,
+        limitMessage: l.recurring_limit_reached(kMaxSeriesOccurrences),
+        limitAction: l.recurring_end_date_pick,
+      ),
+      if (state.repeatSwitchedOffForPrice && !state.isPaid)
+        DabblerBanner(
+          tone: DabblerBannerTone.info,
+          message: l.recurring_paid_switched_off,
+        ),
+    ];
+  }
+
+  Future<void> _pickRepeatEnd(BuildContext context) async {
+    final l = AppLocalizations.of(context);
+    final state = ref.read(_gameComposerProvider);
+    final notifier = ref.read(_gameComposerProvider.notifier);
+    final start = state.selectedDate ?? DateTime.now();
+    final startDay = DateTime(start.year, start.month, start.day);
+    // The calendar only offers dates after the first game and no later than
+    // the 52nd game, so the date-before-start and the cap can't be picked.
+    final firstEnd = startDay.add(const Duration(days: 1));
+    final lastEnd = startDay.add(
+      Duration(days: state.repeat.intervalDays * (kMaxSeriesOccurrences - 1)),
+    );
+    final pending = ValueNotifier<DateTime?>(state.repeatEnd);
+    final canContinue = ValueNotifier<bool>(pending.value != null);
+    pending.addListener(() => canContinue.value = pending.value != null);
+    await showGamePickSheet<void>(
+      context,
+      title: l.recurring_end_date_label,
+      subtitle: l.recurring_limit_hint(kMaxSeriesOccurrences),
+      secondary: ComposerSheetConfirm(
+        label: l.recurring_end_date_none,
+        onTap: () {
+          notifier.setRepeatEnd(null);
+          Navigator.of(context).maybePop();
+        },
+      ),
+      confirm: ComposerSheetConfirm(
+        label: l.composer_done,
+        enabledWhen: canContinue,
+        onTap: () {
+          final d = pending.value;
+          if (d == null) return;
+          notifier.setRepeatEnd(d);
+          Navigator.of(context).maybePop();
+        },
+      ),
+      builder: (_) => Padding(
+        padding: const EdgeInsetsDirectional.only(top: DabblerSpacing.space8),
+        child: ComposerDateSheet(
+          first: firstEnd,
+          last: lastEnd,
+          pending: pending,
         ),
       ),
     );

@@ -1,3 +1,6 @@
+import 'package:dabbler/features/auth_onboarding/data/onboarding_intention_store.dart';
+import 'package:dabbler/features/auth_onboarding/data/unified_onboarding_client.dart';
+import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_intention.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// Holds temporary onboarding data during registration flow
@@ -9,6 +12,9 @@ class RegistrationOnboardingData {
   final int? age;
   final String? gender;
   final String? intention; // persona_type: player, organiser, host, socialiser
+  // KAN-650: what brings the person here. Separate from [intention] above
+  // (the legacy persona) and carried only as the stable enum key.
+  final OnboardingIntention? onboardingIntention;
   final String? preferredSport; // UUID from sports.id (= primary_sport)
   final List<String>? interests; // list of sport UUIDs
   final String? username;
@@ -25,6 +31,7 @@ class RegistrationOnboardingData {
     this.age,
     this.gender,
     this.intention,
+    this.onboardingIntention,
     this.preferredSport,
     this.interests,
     this.username,
@@ -43,6 +50,7 @@ class RegistrationOnboardingData {
     int? age,
     String? gender,
     String? intention,
+    OnboardingIntention? onboardingIntention,
     String? preferredSport,
     List<String>? interests,
     String? username,
@@ -58,6 +66,7 @@ class RegistrationOnboardingData {
       age: age ?? this.age,
       gender: clearGender ? null : (gender ?? this.gender),
       intention: intention ?? this.intention,
+      onboardingIntention: onboardingIntention ?? this.onboardingIntention,
       preferredSport: preferredSport ?? this.preferredSport,
       interests: interests ?? this.interests,
       username: username ?? this.username,
@@ -76,6 +85,7 @@ class RegistrationOnboardingData {
       'age': age,
       'gender': gender,
       'intention': intention,
+      'onboardingIntention': onboardingIntention?.key,
       'preferredSport': preferredSport,
       'interests': interests,
       'username': username,
@@ -94,6 +104,9 @@ class RegistrationOnboardingData {
       age: map['age'] as int?,
       gender: map['gender'] as String?,
       intention: map['intention'] as String?,
+      onboardingIntention: OnboardingIntention.fromKey(
+        map['onboardingIntention'] as String?,
+      ),
       preferredSport: map['preferredSport'] as String?,
       interests: map['interests'] != null
           ? List<String>.from(map['interests'] as List)
@@ -112,6 +125,32 @@ class RegistrationOnboardingData {
   /// Check if intention is selected
   bool get hasIntention => intention != null;
 
+  /// KAN-650: a single required choice; there is no default.
+  bool get hasOnboardingIntention => onboardingIntention != null;
+
+  /// KAN-650: the input for `rpc_onboard_unified_profile`, or null while
+  /// anything it requires is missing. The persona is not an input: the
+  /// server derives it from the intention.
+  UnifiedOnboardingInput? toUnifiedInput() {
+    final name = displayName;
+    final user = username;
+    final years = age;
+    final chosen = onboardingIntention;
+    if (name == null || user == null || years == null || chosen == null) {
+      return null;
+    }
+    return UnifiedOnboardingInput(
+      displayName: name,
+      username: user,
+      age: years,
+      gender: gender,
+      intention: chosen,
+      preferredSport: preferredSport,
+      interests: interests,
+      country: country,
+    );
+  }
+
   /// Check if sports are selected
   bool get hasSports => preferredSport != null;
 
@@ -126,16 +165,54 @@ class RegistrationOnboardingData {
 /// StateNotifier to manage onboarding data
 class OnboardingDataNotifier
     extends StateNotifier<RegistrationOnboardingData?> {
-  OnboardingDataNotifier() : super(null);
+  OnboardingDataNotifier({
+    OnboardingIntentionStore store = const OnboardingIntentionStore(),
+  }) : _store = store,
+       super(null);
+
+  final OnboardingIntentionStore _store;
+
+  // KAN-650: a choice made before sign-in has no state to live in yet. It is
+  // held here and carried into whichever auth continuation starts the state.
+  OnboardingIntention? _pendingIntention;
+
+  /// The chosen intention, whether or not auth has started the state yet.
+  OnboardingIntention? get onboardingIntention =>
+      state?.onboardingIntention ?? _pendingIntention;
 
   /// Initialize with email
   void initWithEmail(String email) {
-    state = RegistrationOnboardingData(email: email);
+    state = RegistrationOnboardingData(
+      email: email,
+      onboardingIntention: onboardingIntention,
+    );
   }
 
   /// Initialize with phone
   void initWithPhone(String phone) {
-    state = RegistrationOnboardingData(phone: phone);
+    state = RegistrationOnboardingData(
+      phone: phone,
+      onboardingIntention: onboardingIntention,
+    );
+  }
+
+  /// KAN-650: records the single required choice and keeps it for an
+  /// interrupted onboarding. Independent of the legacy persona.
+  void setOnboardingIntention(OnboardingIntention value) {
+    _pendingIntention = value;
+    if (state != null) {
+      state = state!.copyWith(onboardingIntention: value);
+    }
+    _store.save(value);
+  }
+
+  /// KAN-650: brings back a stored choice after the app was restarted.
+  Future<void> restoreOnboardingIntention() async {
+    if (onboardingIntention != null) return;
+    final stored = await _store.load();
+    if (stored == null) return;
+    _pendingIntention = stored;
+    if (state != null) state = state!.copyWith(onboardingIntention: stored);
   }
 
   /// Update user info (Screen 1)
@@ -189,6 +266,8 @@ class OnboardingDataNotifier
 
   /// Clear all data (after successful registration or cancellation)
   void clear() {
+    _pendingIntention = null;
+    _store.clear();
     state = null;
   }
 

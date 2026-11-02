@@ -55,9 +55,15 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
           );
         }
 
-        // Get available persona options (only if not at limit)
+        // Conversion options only: adding another profile is not offered.
         final availablePersonas = personaState.canAddNewProfile
-            ? personaState.availablePersonas.where((p) => p.canProceed).toList()
+            ? personaState.availablePersonas
+                  .where(
+                    (p) =>
+                        p.canProceed &&
+                        p.actionType == PersonaActionType.convert,
+                  )
+                  .toList()
             : <PersonaAvailability>[];
 
         // Check if at profile limit
@@ -87,19 +93,15 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
               );
             }),
 
-            // Create another profile (only if not at limit): one outlined
-            // button per persona the user can still add or convert to.
+            // Convert (only if not at limit): one outlined button per
+            // persona the user can convert to.
             if (availablePersonas.isNotEmpty && !isAtLimit) ...[
               const DabblerGap.v(DabblerSpacing.space3),
               for (final availability in availablePersonas)
                 Padding(
                   padding: const EdgeInsets.only(bottom: DabblerSpacing.space2),
                   child: DabblerButton(
-                    label: _createLabel(
-                      l10n,
-                      availability,
-                      single: availablePersonas.length == 1,
-                    ),
+                    label: _convertLabel(availability),
                     icon: 'add-circle',
                     tone: DabblerButtonTone.outlined,
                     fullWidth: true,
@@ -127,21 +129,10 @@ class _ManageProfilesSheetState extends ConsumerState<ManageProfilesSheet> {
     );
   }
 
-  String _createLabel(
-    AppLocalizations l10n,
-    PersonaAvailability availability, {
-    required bool single,
-  }) {
-    final String persona = personaLabel(
-      context,
-      availability.targetPersona.name,
+  String _convertLabel(PersonaAvailability availability) {
+    return AppLocalizations.of(context).profile_convert_to(
+      personaLabel(context, availability.targetPersona.name),
     );
-    if (availability.actionType == PersonaActionType.convert) {
-      return l10n.profile_convert_to(persona);
-    }
-    return single
-        ? l10n.profile_create_another_profile
-        : l10n.profile_create_persona_profile(persona);
   }
 
   void _startPersonaFlow(PersonaAvailability availability) {

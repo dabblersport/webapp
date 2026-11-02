@@ -401,7 +401,8 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
         final profileId = result['id'] as String;
         final personaType = result['persona_type'] as String?;
 
-        if (personaType == 'player') {
+        final persona = personaTypeOrNull(personaType);
+        if (persona?.hasPlayerCapabilities ?? false) {
           final sportProfilesResponse = await client
               .from(SupabaseConfig.sportProfilesTable)
               .select(
@@ -415,7 +416,11 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
           result['sports_profiles'] = sportProfiles
               .map((sp) => sp.toJson())
               .toList();
-        } else if (personaType == 'organiser' || personaType == 'host') {
+        }
+        if (personaType == 'organiser' ||
+            personaType == 'host' ||
+            persona == PersonaType.contributor ||
+            persona == PersonaType.partner) {
           final organiserResponse = await client
               .from(SupabaseConfig.organiserTable)
               .select('*')
@@ -503,6 +508,8 @@ final initializeProfileDataProvider = FutureProvider<bool>((ref) async {
         if (persistedType != null) persistedType,
         'player',
         'organiser',
+        'contributor',
+        'partner',
       ];
 
       // Deduplicate while preserving order
@@ -529,6 +536,11 @@ final initializeProfileDataProvider = FutureProvider<bool>((ref) async {
 
         if (effectiveType == 'organiser') {
           await organiserController.loadOrganiserProfiles(userId);
+        } else if (personaTypeOrNull(effectiveType) ==
+            PersonaType.contributor) {
+          // A Contributor holds both extensions on the one profile.
+          await organiserController.loadOrganiserProfiles(userId);
+          await sportsController.loadSportsProfiles(userId);
         } else {
           await sportsController.loadSportsProfiles(userId);
         }
@@ -780,7 +792,12 @@ final followingListProvider = FutureProvider.autoDispose
         final profile = row['profiles'] as Map<String, dynamic>?;
         if (profile == null) continue;
         if (profile['is_active'] != true) continue;
-        if (profile['persona_type'] == 'host') continue;
+        if (personaTypeOrNull(
+              profile['persona_type'] as String?,
+            )?.hasHostCapabilities ==
+            true) {
+          continue;
+        }
         final userId = profile['user_id'] as String?;
         if (userId != null && blockedUserIds.contains(userId)) continue;
         profiles.add(profile);

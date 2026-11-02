@@ -141,7 +141,7 @@ void main() {
         expect(
           find.descendant(
             of: card,
-            matching: find.text(l.persona_player_principle),
+            matching: find.text(l.persona_contributor_principle),
           ),
           findsOneWidget,
         );
@@ -164,7 +164,7 @@ void main() {
         matching: find.byType(DabblerCard),
       );
       final head = find.ancestor(
-        of: find.text(l.persona_player_headline),
+        of: find.text(l.persona_contributor_headline),
         matching: find.byType(DabblerCard),
       );
       final list = find.ancestor(
@@ -180,7 +180,7 @@ void main() {
         rectOf(tester, list).top,
         greaterThan(rectOf(tester, head).bottom),
       );
-      expect(find.text(l.persona_player_cta), findsOneWidget);
+      expect(find.text(l.persona_contributor_cta), findsOneWidget);
       expect(tester.takeException(), isNull);
       await _shoot(tester, 'w-football-$lang-$mode');
     });
@@ -189,7 +189,7 @@ void main() {
   group('persona quote', () {
     final cases = <String, String Function(AppLocalizations)>{
       'socialiser': (l) => l.persona_socialiser_principle,
-      'player': (l) => l.persona_player_principle,
+      'player': (l) => l.persona_contributor_principle,
       'organiser': (l) => l.persona_organiser_principle,
       'host': (l) => l.persona_host_principle,
     };
@@ -222,7 +222,7 @@ void main() {
         expect(find.text(en.auth_welcome_back_title('Sam')), findsOneWidget);
         for (final q in <String>[
           en.persona_socialiser_principle,
-          en.persona_player_principle,
+          en.persona_contributor_principle,
           en.persona_organiser_principle,
           en.persona_host_principle,
         ]) {

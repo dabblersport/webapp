@@ -3,11 +3,14 @@ library;
 export 'core/providers/locale_provider.dart';
 export 'core/services/analytics/analytics_service.dart';
 export 'core/services/connectivity_service.dart';
+export 'core/offline/cached_read.dart';
+export 'core/offline/game_codec.dart';
 export 'core/analytics/analytics_helpers.dart';
 export 'features/app_boot/providers.dart';
 export 'features/app_boot/schema_guard.dart';
 export 'features/profile/providers.dart';
 export 'features/profile/presentation/providers/sport_profiles_providers.dart';
+export 'features/profile/presentation/providers/visited_profile_providers.dart';
 export 'features/venues/providers.dart';
 export 'features/venue_submissions/providers.dart';
 export 'core/data/supabase_remote_data_source.dart';
@@ -33,6 +36,7 @@ export 'features/explore/providers/feed_providers.dart';
 
 // Games
 export 'features/games/providers/game_history_providers.dart';
+export 'features/games/data/repositories/game_series_repository.dart';
 
 // News
 export 'features/meetups/presentation/providers/meetup_providers.dart';
@@ -49,3 +53,4 @@ export 'core/feedback/feedback_center.dart';
 export 'core/feedback/feedback_intent.dart';
 export 'core/feedback/presentation_context.dart';
 export 'features/sports/presentation/providers/sport_overview_providers.dart';
+export 'features/bench/presentation/providers/bench_providers.dart';

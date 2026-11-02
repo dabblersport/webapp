@@ -29,6 +29,7 @@ class SupabaseConfig {
 
   /// Messaging (KAN-547/KAN-550): the signed-in user's game chats.
   static const String msgMyConversationsRpc = 'msg_my_conversations';
+
   /// KAN-551: admin-only list of message reports (ids, reason, status, time).
   static const String msgListMessageReportsRpc = 'msg_list_message_reports';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';
@@ -122,6 +123,10 @@ class SupabaseConfig {
   static const String circleMembersTable = 'circle_members';
   static const String circlesTable = 'circles';
   static const String commentsTable = 'comments';
+
+  /// KAN-710/711: shared parent of games and meetups; a game's event row has
+  /// `id == game.id`.
+  static const String eventsTable = 'events';
   static const String friendEdgesTable = 'friend_edges';
   static const String friendshipsTable = 'friendships';
   static const String gameRatingAggregateTable = 'game_rating_aggregate';
@@ -272,12 +277,33 @@ class SupabaseConfig {
       'increment_notification_interaction';
   static const String processQueuedEventsFn = 'process_queued_events';
   static const String rpcCreateGameFn = 'rpc_create_game';
+
+  /// KAN-693/KAN-697: creates a recurring series and its first occurrences.
+  static const String rpcCreateGameSeriesFn = 'rpc_create_game_series';
+
+  /// KAN-697 (CTO ruling): `p_timezone` of a series. Series times assume UAE
+  /// local time until a device timezone source exists.
+  static const String defaultSeriesTimezone = 'Asia/Dubai';
+
+  /// KAN-694/KAN-698: edit one game of a series, the future games, or cancel it.
+  static const String rpcEditGameSeriesOccurrenceFn =
+      'rpc_edit_game_series_occurrence';
+  static const String rpcEditGameSeriesFutureFn = 'rpc_edit_game_series_future';
+  static const String rpcCancelGameSeriesFn = 'rpc_cancel_game_series';
   static const String rpcCreateSportProfileFn = 'rpc_create_sport_profile';
+
+  /// KAN-678/KAN-680: the 5-argument overload that carries the sport key.
+  static const String rpcChallengeCreateFn = 'rpc_challenge_create';
   static const String rpcJoinGameFn = 'rpc_join_game';
+
   /// KAN-621/KAN-622: the Sport Overview aggregates (followers, city-scoped counts).
   static const String rpcSportOverviewFn = 'rpc_sport_overview';
   static const String rpcLeaveGameFn = 'rpc_leave_game';
   static const String rpcOnboardProfileFn = 'rpc_onboard_profile';
+
+  /// KAN-650: the unified onboarding RPC (S2 contract).
+  static const String rpcOnboardUnifiedProfileFn =
+      'rpc_onboard_unified_profile';
   static const String rpcUpdateGameFn = 'rpc_update_game';
   static const String rpcDecideJoinRequestFn = 'rpc_decide_join_request';
   static const String rpcRemovePlayerFn = 'rpc_remove_player';
@@ -285,6 +311,16 @@ class SupabaseConfig {
   static const String rpcIsFollowingUserFn = 'rpc_is_following_user';
   static const String rpcTrackEventFn = 'rpc_track_event';
   static const String sendBookingRemindersFn = 'send_booking_reminders';
+
+  // ---- Bench mode (KAN-706) ----
+  /// The viewer's own bench row (RLS `user_status_select_self`).
+  static const String userStatusTable = 'user_status';
+
+  /// Read-only view over `user_status`; not granted SELECT to `authenticated`
+  /// in the baseline, so the client reads [userStatusTable].
+  static const String vBenchStatusView = 'v_bench_status';
+  static const String rpcToggleBenchFn = 'rpc_toggle_bench';
+  static const String rpcEndBenchFn = 'rpc_end_bench';
 
   // ---- Edge Functions (invoked via supabase.functions.invoke) ----
   // KAN-52: Resend-backed export delivery. Requires RESEND_API_KEY set as

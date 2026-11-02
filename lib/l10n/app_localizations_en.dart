@@ -399,6 +399,86 @@ class AppLocalizationsEn extends AppLocalizations {
   String get persona_player_cta => 'Find my first game';
 
   @override
+  String get persona_contributor_name => 'Contributor';
+
+  @override
+  String get persona_contributor_headline => 'You’re in. Let’s play.';
+
+  @override
+  String get persona_contributor_principle =>
+      'Join a game this week, or start one of your own.';
+
+  @override
+  String get persona_contributor_list_title => 'Don’t forget';
+
+  @override
+  String get persona_contributor_item1 =>
+      'Only confirm when you know you can play.';
+
+  @override
+  String get persona_contributor_item2 =>
+      'Respect the organiser’s rules and kickoff time.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'When you organise, share details early and accurately.';
+
+  @override
+  String get persona_contributor_cta => 'Find my first game';
+
+  @override
+  String get persona_contributor_connect_headline =>
+      'Your sports circle starts here.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'Follow what you love, meet your people, join when it feels right.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'How this works';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'Follow the sports and people you care about.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'Join the conversation, then join the game.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'Keep it friendly — everyone here is someone’s teammate.';
+
+  @override
+  String get persona_contributor_connect_cta => 'Start exploring';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'Time to bring the game together.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'Good games start with good organisation.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'What players expect';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'Accurate details — venue, time, level, price.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'Changes shared early, not at kickoff.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'Attendance managed fairly, every time.';
+
+  @override
+  String get persona_contributor_organise_cta => 'Create my first game';
+
+  @override
   String get persona_organiser_name => 'Organiser';
 
   @override
@@ -1299,6 +1379,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'We’ll make it the primary sport on your venue profile.';
 
   @override
+  String get onb_sports_title_contributor => 'What sports are you into?';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'Pick the sports you follow, play or organise. You can change these anytime.';
+
+  @override
+  String get onb_primary_title_contributor => 'What’s your main sport?';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'We’ll put it first across your feed, games and profile.';
+
+  @override
   String get onb_sports_search => 'Search sports';
 
   @override
@@ -1308,11 +1402,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_sports_count_zero => 'Pick at least one to continue.';
 
   @override
-  String get onb_sports_count_one => '1 sport selected';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return '$count sports selected';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sports selected',
+      one: '1 sport selected',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -3083,6 +3180,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_not_synced_retry => 'Not synced. Tap to retry.';
+
+  @override
+  String get settings_will_sync_online => 'Will sync when online';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'This setting was updated on another device. Showing the newer value.';
+
+  @override
+  String get settings_change_rejected =>
+      'This change could not be saved. Showing the saved value.';
 
   @override
   String get priv_saved => 'Saved';
@@ -5633,6 +5741,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_stat_minutes_played => 'Minutes played';
 
   @override
+  String get profile_stat_games_organised => 'Games organised';
+
+  @override
+  String get profile_section_games_organised => 'Games I organise';
+
+  @override
   String get meetups_tab_all => 'All';
 
   @override
@@ -7672,4 +7786,669 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get location_search_failed => 'Couldn’t load results';
+
+  @override
+  String get onb_intention_title => 'What brings you to Dabbler?';
+
+  @override
+  String get onb_intention_subtitle =>
+      'Choose what brings you here. Your choice helps us understand your goals.';
+
+  @override
+  String get onb_intention_connect_play => 'Connect & play';
+
+  @override
+  String get onb_intention_play_organise => 'Play & organise';
+
+  @override
+  String get onb_intention_organise => 'Organise sport events';
+
+  @override
+  String get onb_intention_host_games => 'Host sports & events';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'Follow sports, meet people and join the fun.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'Join games and bring people together for your own.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'Bring players together and organise games and meetups.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'Welcome players to your venue and spots.';
+
+  @override
+  String get onb_intention_continue => 'Continue';
+
+  @override
+  String get onb_error_legacy_profile_requires_existing_flow =>
+      'This account already has a profile. Please continue with the existing sign-in flow.';
+
+  @override
+  String get onb_error_profile_migration_required =>
+      'Your profile needs an update before you can continue. Please try again later.';
+
+  @override
+  String get onb_error_persona_change_not_supported =>
+      'Changing the account type isn’t supported yet.';
+
+  @override
+  String get onb_error_single_profile_required =>
+      'An account can have only one profile.';
+
+  @override
+  String get onb_error_persona_conversion_blocked =>
+      'This profile can’t be converted right now.';
+
+  @override
+  String get onb_error_persona_write_via_rpc_only =>
+      'We couldn’t save that change. Please try again.';
+
+  @override
+  String get onb_error_onboarding_intention_mismatch =>
+      'Your choice doesn’t match what we saved. Please choose again.';
+
+  @override
+  String get onb_error_contributor_sports_incomplete =>
+      'Choose at least one sport to continue.';
+
+  @override
+  String get onb_error_generic => 'Something went wrong. Please try again.';
+
+  @override
+  String ratings_summary_from_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ratings',
+      one: '1 rating',
+    );
+    return 'from $_temp0';
+  }
+
+  @override
+  String ratings_summary_semantics(String average) {
+    return 'Rating $average out of 5';
+  }
+
+  @override
+  String get map_attribution_osm => '© OpenStreetMap contributors';
+
+  @override
+  String get games_view_map => 'Show map';
+
+  @override
+  String get games_view_list => 'Show list';
+
+  @override
+  String get games_map_empty_title => 'No games on the map';
+
+  @override
+  String get games_map_empty_text =>
+      'No upcoming public games match your filters. Change the filters or switch back to the list.';
+
+  @override
+  String get challenge_error_sport_required =>
+      'Pick a sport for your challenge, then try again.';
+
+  @override
+  String get challenge_error_invalid_sport =>
+      'That sport isn\'t available. Choose one from the list.';
+
+  @override
+  String get challenge_error_organiser_required =>
+      'Only organiser accounts can create challenges.';
+
+  @override
+  String get profile_upcoming_empty =>
+      'No games yet. Join one nearby or create your own.';
+
+  @override
+  String get profile_find_a_game => 'Find a game';
+
+  @override
+  String get profile_section_sports_you_play => 'Sports you play';
+
+  @override
+  String get profile_stat_games_meetups => 'Games & meetups';
+
+  @override
+  String get profile_stat_new_hero_sub =>
+      'Join or organise one to start your list';
+
+  @override
+  String get profile_stat_played => 'Played';
+
+  @override
+  String get profile_stat_organised => 'Organised';
+
+  @override
+  String get bench_row_title => 'Bench mode';
+
+  @override
+  String get bench_row_off => 'Off';
+
+  @override
+  String bench_row_until(String date) {
+    return 'On until $date';
+  }
+
+  @override
+  String get bench_row_no_end => 'On, no end date';
+
+  @override
+  String get bench_screen_title => 'Bench mode';
+
+  @override
+  String get bench_edit_title => 'Edit bench';
+
+  @override
+  String get bench_explain_title => 'Take a break from the social side';
+
+  @override
+  String get bench_explain_body =>
+      'Sit out for a while. You can still play and show up in game rosters.';
+
+  @override
+  String get bench_paused_head => 'Paused while on bench';
+
+  @override
+  String get bench_paused_1 => 'You can’t post, comment or like';
+
+  @override
+  String get bench_paused_2 =>
+      'You’re hidden from the feed and search, as you choose';
+
+  @override
+  String get bench_paused_3 => 'Friend requests are blocked, as you choose';
+
+  @override
+  String get bench_keep_head => 'Still works';
+
+  @override
+  String get bench_keep_1 => 'Join and play games';
+
+  @override
+  String get bench_keep_2 => 'Show up in game rosters';
+
+  @override
+  String get bench_reason_label => 'Reason (optional)';
+
+  @override
+  String get bench_reason_placeholder => 'A short note for yourself';
+
+  @override
+  String get bench_reason_helper => 'Keep it short.';
+
+  @override
+  String get bench_end_label => 'End date (optional)';
+
+  @override
+  String get bench_end_placeholder => 'No end date';
+
+  @override
+  String get bench_end_helper => 'You can end bench earlier any time.';
+
+  @override
+  String get bench_toggle_feed => 'Hide me in the feed';
+
+  @override
+  String get bench_toggle_feed_sub => 'Your activity won’t appear in feeds.';
+
+  @override
+  String get bench_toggle_search => 'Hide me in search';
+
+  @override
+  String get bench_toggle_search_sub => 'People can’t find you by name.';
+
+  @override
+  String get bench_toggle_friends => 'Block friend requests';
+
+  @override
+  String get bench_toggle_friends_sub => 'No new requests while on bench.';
+
+  @override
+  String get bench_toggle_notifs => 'Mute social notifications';
+
+  @override
+  String get bench_toggle_notifs_sub =>
+      'Likes, comments and friend activity stay quiet.';
+
+  @override
+  String get bench_start => 'Start bench';
+
+  @override
+  String get bench_save => 'Save changes';
+
+  @override
+  String get bench_confirm_title => 'Start bench mode?';
+
+  @override
+  String get bench_confirm_body =>
+      'This applies right away. You can end it any time.';
+
+  @override
+  String get bench_confirm_sum_feed => 'Hidden in the feed';
+
+  @override
+  String get bench_confirm_sum_search => 'Hidden in search';
+
+  @override
+  String get bench_confirm_sum_friends => 'Friend requests blocked';
+
+  @override
+  String get bench_confirm_sum_notifs => 'Social notifications muted';
+
+  @override
+  String bench_confirm_sum_end(String date) {
+    return 'Ends on $date';
+  }
+
+  @override
+  String get bench_confirm_sum_no_end => 'No end date';
+
+  @override
+  String get bench_cancel => 'Cancel';
+
+  @override
+  String get bench_back => 'Back';
+
+  @override
+  String get bench_retry => 'Try again';
+
+  @override
+  String get bench_manage => 'Manage';
+
+  @override
+  String get bench_status_badge => 'On bench';
+
+  @override
+  String get bench_status_head => 'You’re on bench';
+
+  @override
+  String get bench_status_since => 'Since';
+
+  @override
+  String get bench_status_until => 'Until';
+
+  @override
+  String get bench_status_reason => 'Reason';
+
+  @override
+  String get bench_status_hidden_head => 'What’s hidden';
+
+  @override
+  String get bench_status_feed => 'Feed';
+
+  @override
+  String get bench_status_search => 'Search';
+
+  @override
+  String get bench_status_friends => 'Friend requests';
+
+  @override
+  String get bench_status_notifs => 'Social notifications';
+
+  @override
+  String get bench_status_hidden => 'Hidden';
+
+  @override
+  String get bench_status_visible => 'Visible';
+
+  @override
+  String get bench_status_blocked => 'Blocked';
+
+  @override
+  String get bench_status_allowed => 'Allowed';
+
+  @override
+  String get bench_status_muted => 'Muted';
+
+  @override
+  String get bench_status_on => 'On';
+
+  @override
+  String get bench_status_no_end => 'No end date';
+
+  @override
+  String get bench_end => 'End bench';
+
+  @override
+  String get bench_edit_action => 'Edit';
+
+  @override
+  String get bench_end_confirm_title => 'End bench now?';
+
+  @override
+  String get bench_end_confirm_body =>
+      'You’ll be visible again and can post, comment and like.';
+
+  @override
+  String get bench_end_confirm_keep => 'Keep bench';
+
+  @override
+  String get bench_loading => 'Loading';
+
+  @override
+  String get bench_error_start_title => 'Couldn’t start bench';
+
+  @override
+  String get bench_error_start_body => 'Check your connection and try again.';
+
+  @override
+  String get bench_error_load_title => 'Couldn’t load bench mode';
+
+  @override
+  String get bench_error_load_body => 'Check your connection and try again.';
+
+  @override
+  String get bench_offline_title => 'You’re offline';
+
+  @override
+  String get bench_offline_body =>
+      'Connect to end or edit bench. Your status shows as last saved.';
+
+  @override
+  String bench_indicator_home(String date) {
+    return 'On bench until $date';
+  }
+
+  @override
+  String get bench_indicator_home_no_end => 'On bench';
+
+  @override
+  String bench_indicator_profile(String date) {
+    return 'Hidden in the feed and search until $date.';
+  }
+
+  @override
+  String get recurring_repeat_label => 'Repeat';
+
+  @override
+  String get recurring_option_none => 'Does not repeat';
+
+  @override
+  String get recurring_option_weekly => 'Weekly';
+
+  @override
+  String get recurring_option_biweekly => 'Every 2 weeks';
+
+  @override
+  String recurring_summary_weekly(String weekday) {
+    return 'Repeats every week on $weekday';
+  }
+
+  @override
+  String recurring_summary_biweekly(String weekday) {
+    return 'Repeats every 2 weeks on $weekday';
+  }
+
+  @override
+  String get recurring_end_date_label => 'End date';
+
+  @override
+  String get recurring_end_date_none => 'No end date';
+
+  @override
+  String get recurring_end_date_hint =>
+      'Without an end date, the series runs until you end it.';
+
+  @override
+  String get recurring_end_date_pick => 'Choose an end date';
+
+  @override
+  String recurring_end_date_value(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Ends $dateString';
+  }
+
+  @override
+  String get recurring_end_date_clear => 'Remove end date';
+
+  @override
+  String get recurring_end_date_before_start =>
+      'The end date must be after the first game.';
+
+  @override
+  String recurring_limit_hint(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max games',
+      one: '1 game',
+    );
+    return 'Up to $_temp0 per series. Renew it when it ends to keep going.';
+  }
+
+  @override
+  String recurring_limit_reached(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max games',
+      one: '1 game',
+    );
+    return 'This series has reached its limit of $_temp0. Renew it to schedule more.';
+  }
+
+  @override
+  String get recurring_limit_reached_title => 'Series limit reached';
+
+  @override
+  String recurring_preview_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return 'This creates $_temp0.';
+  }
+
+  @override
+  String get recurring_renew_action => 'Renew series';
+
+  @override
+  String get recurring_paid_disabled => 'Paid games can\'t repeat yet';
+
+  @override
+  String get recurring_paid_free_hint =>
+      'Make the game free to turn on Repeat.';
+
+  @override
+  String get recurring_paid_switched_off =>
+      'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.';
+
+  @override
+  String get recurring_location_required =>
+      'Choose a venue or set your location to repeat this game.';
+
+  @override
+  String get recurring_badge_label => 'Series';
+
+  @override
+  String get recurring_badge_weekly => 'Weekly series';
+
+  @override
+  String get recurring_badge_biweekly => 'Every 2 weeks';
+
+  @override
+  String recurring_badge_ends(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Series ends $dateString';
+  }
+
+  @override
+  String get recurring_badge_open_ended => 'Runs until the organiser ends it';
+
+  @override
+  String get recurring_badge_semantics => 'Part of a recurring series';
+
+  @override
+  String get recurring_edit_title => 'Edit a recurring game';
+
+  @override
+  String get recurring_edit_subtitle =>
+      'This game is part of a series. What should your changes apply to?';
+
+  @override
+  String get recurring_edit_this_only => 'This game only';
+
+  @override
+  String recurring_edit_this_only_desc(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Only the game on $dateString changes. The rest of the series stays as it is.';
+  }
+
+  @override
+  String get recurring_edit_all_future => 'All future games';
+
+  @override
+  String get recurring_edit_all_future_desc =>
+      'This game and every later game in the series change. Players who joined keep their spot on games that aren\'t rebuilt.';
+
+  @override
+  String get recurring_edit_continue => 'Continue';
+
+  @override
+  String get recurring_edit_close => 'Close';
+
+  @override
+  String get recurring_cancel_title => 'Cancel this series?';
+
+  @override
+  String recurring_cancel_future_line(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count future games will be cancelled.',
+      one: '1 future game will be cancelled.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurring_cancel_players_line(int players) {
+    String _temp0 = intl.Intl.pluralLogic(
+      players,
+      locale: localeName,
+      other: '$players players have joined and will be notified.',
+      one: '1 player has joined and will be notified.',
+      zero: 'No players have joined yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_past_line => 'Past games and their history stay.';
+
+  @override
+  String get recurring_cancel_no_carry_over =>
+      'Nobody is moved to another game automatically.';
+
+  @override
+  String get recurring_cancel_confirm => 'Cancel series';
+
+  @override
+  String get recurring_cancel_keep => 'Keep series';
+
+  @override
+  String get recurring_cancel_done => 'Series cancelled';
+
+  @override
+  String get recurring_cancel_failed =>
+      'Couldn\'t cancel the series. Try again.';
+
+  @override
+  String get recurring_cancel_notif_title => 'Game cancelled';
+
+  @override
+  String recurring_cancel_notif_body(String game, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '$game on $dateString was cancelled. The organiser ended this series.';
+  }
+
+  @override
+  String get recurring_future_title_label => 'Game title';
+
+  @override
+  String get recurring_future_capacity_label => 'Players';
+
+  @override
+  String get recurring_future_save => 'Save for all future games';
+
+  @override
+  String get recurring_future_done => 'Series updated';
+
+  @override
+  String get recurring_future_failed =>
+      'Couldn\'t update the series. Try again.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games with joined players keep their old details.',
+      one: '1 game with joined players keeps its old details.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'Cancel series';
+
+  @override
+  String get profile_visitor_sports_title => 'Sports they play';
+
+  @override
+  String get profile_stat_games_visitor => 'Games';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return '$sport games';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'As player or organiser';
+
+  @override
+  String get profile_stat_sport_profiles => 'Sport profiles';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'Open games they are playing in or organising';
+
+  @override
+  String get profile_tag_playing => 'Playing';
+
+  @override
+  String get profile_tag_organising => 'Organising';
+
+  @override
+  String get profile_tag_organising_playing => 'Organising · Playing';
+
+  @override
+  String get profile_invite_action_semantic => 'Invite';
+
+  @override
+  String get profile_stat_games_played_visitor => 'Games played';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return '$sport matches';
+  }
 }

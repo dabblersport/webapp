@@ -1,3 +1,4 @@
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 // Material is imported for one non-visual symbol only: the
@@ -282,8 +283,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   bool _shouldShowJoinButton() {
     final profileState = ref.watch(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
+    final persona = personaTypeOrNull(
+      profileState.profile?.personaType ?? profileType,
+    );
 
-    if (profileType == 'player') {
+    if (profileType == 'player' || persona == PersonaType.contributor) {
       return FeatureFlags.enablePlayerGameJoining;
     } else if (profileType == 'organiser') {
       return FeatureFlags.enableOrganiserGameJoining;
@@ -726,7 +730,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
     final profileState = ref.watch(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
-    final isOrganiser = profileType == 'organiser';
+    final isOrganiser =
+        profileType == 'organiser' ||
+        personaTypeOrNull(
+              profileState.profile?.personaType,
+            )?.hasOrganiserCapabilities ==
+            true;
     final isVenuesTab = _mainTabIndex == 1;
 
     // Prefer GPS-reverse-geocoded area; fall back to the nearest area from the

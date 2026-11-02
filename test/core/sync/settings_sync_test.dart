@@ -51,7 +51,7 @@ void main() {
     sent = [];
     servers = {
       SettingKeys.notifications: _Server(sent),
-      SettingKeys.privacy: _Server(sent),
+      SettingKeys.region: _Server(sent),
       SettingKeys.theme: _Server(sent),
     };
     offline = true;
@@ -103,7 +103,7 @@ void main() {
     final n = build();
     addTearDown(n.dispose);
     await settle();
-    await n.submit(SettingKeys.privacy, {
+    await n.submit(SettingKeys.region, {
       'v': 'p',
     }, editedAt: clock.add(const Duration(milliseconds: 30)));
     await n.submit(SettingKeys.notifications, {
@@ -114,7 +114,7 @@ void main() {
     }, editedAt: clock.add(const Duration(milliseconds: 20)));
     offline = false;
     await n.syncAll(force: true);
-    expect(sent, ['notifications=n@10', 'theme=t@20', 'privacy=p@30']);
+    expect(sent, ['notifications=n@10', 'theme=t@20', 'region=p@30']);
   });
 
   test('last write wins: a newer server value is not overwritten', () async {

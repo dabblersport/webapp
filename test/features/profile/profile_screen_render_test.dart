@@ -23,7 +23,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 
 import '../home/home_test_harness.dart';
 import '../../support/render_mode.dart';
@@ -297,37 +296,6 @@ void main() {
       await _settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.text(l10n.profile_empty_no_activity), findsOneWidget);
-    });
-
-    testWidgets('switch-profile sheet - $dir', (tester) async {
-      final player = _profile('player');
-      await _pump(
-        tester,
-        locale: locale,
-        profileState: ProfileState(profile: player),
-        available: [player],
-        personaState: const PersonaState(
-          activeProfiles: [
-            ActivePersonaProfile(
-              profileId: 'profile-player',
-              personaType: PersonaType.player,
-              displayName: 'Moataz Mustapha',
-            ),
-          ],
-        ),
-      );
-      final l10n = AppLocalizations.of(
-        tester.element(find.byType(ProfileScreen)),
-      );
-      await tester.tap(
-        find.bySemanticsLabel(l10n.profile_btn_manage_profiles_tooltip),
-      );
-      await _settle(tester);
-      expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerSheet), findsOneWidget);
-      expect(find.text(l10n.profile_manage_profiles_title), findsWidgets);
-      expect(find.text(l10n.profile_create_another_profile), findsOneWidget);
-      await _shoot(tester, 'profile-switch-sheet-$dir');
     });
   }
 }

@@ -37,6 +37,21 @@ class ProfileCreationService {
       throw Exception('User not authenticated');
     }
 
+    // One-profile rule (KAN-647): a unified persona is created by onboarding
+    // only, and an account that already has one never gains another profile.
+    if (data.targetPersona.isUnified) throw const SingleProfileException();
+    final existingPersonas = await _client
+        .from(SupabaseConfig.usersTable)
+        .select('persona_type')
+        .eq('user_id', user.id);
+    if (isUnifiedAccount(
+      (existingPersonas as List).map(
+        (r) => personaTypeOrNull((r as Map)['persona_type'] as String?),
+      ),
+    )) {
+      throw const SingleProfileException();
+    }
+
     // Validate required data
     if (data.primarySport == null || data.primarySport!.isEmpty) {
       throw Exception('Primary sport is required');
@@ -60,6 +75,9 @@ class ProfileCreationService {
       case PersonaType.host:
         profileType = 'venue';
         break;
+      case PersonaType.contributor:
+      case PersonaType.partner:
+        throw const SingleProfileException();
       case PersonaType.socialiser:
         profileType = 'personal';
         break;
@@ -129,6 +147,9 @@ class ProfileCreationService {
           case PersonaType.host:
             intention = 'host';
             break;
+          case PersonaType.contributor:
+          case PersonaType.partner:
+            throw const SingleProfileException();
           case PersonaType.socialiser:
             intention = 'socialise';
             break;
@@ -181,6 +202,9 @@ class ProfileCreationService {
         case PersonaType.host:
           intention = 'host';
           break;
+        case PersonaType.contributor:
+        case PersonaType.partner:
+          throw const SingleProfileException();
         case PersonaType.socialiser:
           intention = 'socialise';
           break;
@@ -291,6 +315,9 @@ class ProfileCreationService {
       case PersonaType.host:
         await _createHostProfile(profileId);
         break;
+      case PersonaType.contributor:
+      case PersonaType.partner:
+        throw const SingleProfileException();
       case PersonaType.socialiser:
         // Socialiser has no separate table
         break;
@@ -422,4 +449,13 @@ class ProfileLimitException implements Exception {
 
   @override
   String toString() => message;
+}
+
+/// Thrown when an add / convert / duplicate-profile action is attempted on a
+/// unified (contributor/partner) account. Deterministic code for typed-error UI.
+class SingleProfileException implements Exception {
+  const SingleProfileException();
+  String get code => 'single_profile_required';
+  @override
+  String toString() => code;
 }

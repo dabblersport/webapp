@@ -6,6 +6,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/offline/sync/queueable_settings.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/sync/pending_settings_store.dart';
@@ -31,6 +32,14 @@ enum SubmitOutcome {
 
   /// The server held a newer value, written after this edit: it won.
   serverWon,
+
+  /// Not a queueable setting (KAN-657): nothing stored, the caller shows the
+  /// normal network error.
+  refused,
+
+  /// The server refused the edit for a reason other than the network
+  /// (validation, permission): dropped, the server value restored.
+  dropped,
 }
 
 /// The offline settings queue and its sync (KAN-608).
@@ -57,6 +66,7 @@ class SettingsSyncNotifier extends StateNotifier<Map<String, SettingSyncState>>
     DateTime Function()? now,
     bool observeLifecycle = true,
     this.maxAutoRetries = 5,
+    this.onNotice,
   }) : _store = store,
        _now = now ?? (() => DateTime.now().toUtc()),
        super(const {}) {
@@ -74,6 +84,10 @@ class SettingsSyncNotifier extends StateNotifier<Map<String, SettingSyncState>>
   final Map<String, SettingSyncHandler> handlers;
   final bool Function() isOffline;
   final int maxAutoRetries;
+
+  /// Told when a queued change was overridden or refused (KAN-657), and with
+  /// null when the setting's notice is cleared by a new edit.
+  final void Function(String key, SettingNotice? notice)? onNotice;
   final PendingSettingsStore _store;
   final DateTime Function() _now;
 
@@ -127,8 +141,10 @@ class SettingsSyncNotifier extends StateNotifier<Map<String, SettingSyncState>>
     Map<String, dynamic> value, {
     DateTime? editedAt,
   }) async {
+    if (!isQueueableSetting(key)) return SubmitOutcome.refused;
     final account = accountId;
     if (account == null) return SubmitOutcome.queued;
+    onNotice?.call(key, null);
     final edit = PendingSettingEdit(
       key: key,
       value: value,
@@ -155,13 +171,26 @@ class SettingsSyncNotifier extends StateNotifier<Map<String, SettingSyncState>>
         await _store.remove(account, key, ifEditedAt: edit.editedAt);
         await _settle(account, key);
         if (mounted) _adopted.add(key);
+        onNotice?.call(key, SettingNotice.updatedElsewhere);
         return SubmitOutcome.serverWon;
       }
       await handler.push(account, edit).timeout(kRequestTimeout);
       await _store.remove(account, key, ifEditedAt: edit.editedAt);
       await _settle(account, key);
       return SubmitOutcome.synced;
-    } catch (_) {
+    } catch (e) {
+      if (!isRetryableSettingFailure(e)) {
+        // Validation or permission: it will not pass on a retry. Drop the
+        // edit and show the server's value again.
+        await _store.remove(account, key, ifEditedAt: edit.editedAt);
+        try {
+          await handler.adoptServer(account).timeout(kRequestTimeout);
+        } catch (_) {}
+        await _settle(account, key);
+        if (mounted) _adopted.add(key);
+        onNotice?.call(key, SettingNotice.rejected);
+        return SubmitOutcome.dropped;
+      }
       await _store.markFailed(account, key, edit.editedAt, _now());
       if (mounted) state = {...state, key: SettingSyncState.failed};
       _scheduleRetry(account);
@@ -285,6 +314,16 @@ final settingsSyncProvider =
         handlers: defaultSettingSyncHandlers(),
         isOffline: () =>
             ref.read(connectivityProvider) == ConnectionStatus.offline,
+        onNotice: (key, notice) {
+          final notices = ref.read(settingNoticesProvider.notifier);
+          final next = Map<String, SettingNotice>.of(notices.state);
+          if (notice == null) {
+            next.remove(key);
+          } else {
+            next[key] = notice;
+          }
+          notices.state = next;
+        },
       );
       ref.listen<AsyncValue<void>>(connectivityReconnectProvider, (_, _) {
         unawaited(notifier.syncAll(force: true));

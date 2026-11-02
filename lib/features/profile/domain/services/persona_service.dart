@@ -7,7 +7,9 @@ import '../models/persona_rules.dart';
 /// Data class representing a user's active persona profile
 class ActivePersonaProfile {
   final String profileId;
-  final PersonaType personaType;
+
+  /// `null` = a persona value this client does not know (never guessed).
+  final PersonaType? personaType;
   final String? displayName;
   final String? username;
   final int? age;
@@ -16,7 +18,7 @@ class ActivePersonaProfile {
 
   const ActivePersonaProfile({
     required this.profileId,
-    required this.personaType,
+    this.personaType,
     this.displayName,
     this.username,
     this.age,
@@ -27,9 +29,7 @@ class ActivePersonaProfile {
   factory ActivePersonaProfile.fromJson(Map<String, dynamic> json) {
     return ActivePersonaProfile(
       profileId: json['id'] as String,
-      personaType:
-          PersonaType.fromString(json['persona_type'] as String?) ??
-          PersonaType.player,
+      personaType: PersonaType.fromString(json['persona_type'] as String?),
       displayName: json['display_name'] as String?,
       username: json['username'] as String?,
       age: json['age'] as int?,
@@ -54,7 +54,12 @@ class PersonaState {
   /// Get the set of ALL persona types (active + inactive)
   /// Used to prevent adding duplicate persona types
   Set<PersonaType> get activePersonaTypes =>
-      activeProfiles.map((p) => p.personaType).toSet();
+      activeProfiles.map((p) => p.personaType).whereType<PersonaType>().toSet();
+
+  /// One-profile account (contributor/partner): Add, Convert, duplicate
+  /// profile and persona-switch controls are hidden for it.
+  bool get isUnifiedAccount =>
+      activeProfiles.any((p) => p.personaType?.isUnified ?? false);
 
   /// Get available personas based on current active personas
   List<PersonaAvailability> get availablePersonas =>
@@ -76,11 +81,11 @@ class PersonaState {
 
   /// Check if user is at the maximum profile limit (2 active profiles)
   bool get isAtProfileLimit =>
-      PersonaRules.isAtProfileLimit(activeProfileCount);
+      isUnifiedAccount || PersonaRules.isAtProfileLimit(activeProfileCount);
 
   /// Check if user can add a new profile
   bool get canAddNewProfile =>
-      PersonaRules.canAddNewProfile(activeProfileCount);
+      !isUnifiedAccount && PersonaRules.canAddNewProfile(activeProfileCount);
 
   /// Get primary (first active) profile for shared data reuse
   ActivePersonaProfile? get primaryProfile =>
@@ -173,7 +178,7 @@ class PersonaServiceNotifier extends StateNotifier<PersonaState> {
       final targetProfile = state.activeProfiles
           .where(
             (p) =>
-                p.personaType.name.toLowerCase() ==
+                p.personaType?.name.toLowerCase() ==
                 targetPersonaType.toLowerCase(),
           )
           .firstOrNull;

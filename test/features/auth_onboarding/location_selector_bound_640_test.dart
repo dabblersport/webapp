@@ -110,10 +110,7 @@ void main() {
   testWidgets('no detection: the selector shows Global, never the first '
       'list item', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    await _open(
-      tester,
-      detect: () async => throw Exception('offline'),
-    );
+    await _open(tester, detect: () async => throw Exception('offline'));
     expect(find.text(l.region_country_Global), findsOneWidget);
     expect(find.text(l.region_country_Egypt), findsNothing);
   });

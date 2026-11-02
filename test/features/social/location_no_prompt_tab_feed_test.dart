@@ -55,34 +55,35 @@ class _FakePlatform extends GeolocatorPlatform {
 }
 
 class _Posts implements PostRepository {
-  final List<({double? lat, double? lng})> calls = [];
-
   @override
-  Future<Result<List<Post>, Failure>> getNearbyFeed({
-    double? lat,
-    double? lng,
-    String? city,
-    int limit = 20,
-    int offset = 0,
-  }) async {
-    calls.add((lat: lat, lng: lng));
-    return const Ok(<Post>[]);
-  }
+  Future<Result<List<Post>, Failure>> getPostsByIds(List<String> ids) async =>
+      const Ok(<Post>[]);
 
   @override
   dynamic noSuchMethod(Invocation invocation) => throw UnimplementedError();
 }
 
-/// No app-level location (denied): the fetcher falls back to the raw read.
+/// No app-level location (denied): there is no City, so Nearby does not query.
 class _NoAppLocation extends ActiveLocationNotifier {
   @override
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
 }
 
+/// KAN-594: the candidate fetch; counts how often the City set was read.
+int _candidateCalls = 0;
+
 ProviderContainer _container(_Posts repo) {
+  _candidateCalls = 0;
   final c = ProviderContainer(
     overrides: [
       postRepositoryProvider.overrideWithValue(repo),
+      nearbyCandidateFetchProvider.overrideWithValue(({
+        required city,
+        required asOf,
+      }) async {
+        _candidateCalls++;
+        return const [];
+      }),
       activeLocationProvider.overrideWith(_NoAppLocation.new),
     ],
   );
@@ -98,9 +99,10 @@ void main() {
   for (final p in [
     LocationPermission.denied,
     LocationPermission.deniedForever,
+    LocationPermission.whileInUse,
   ]) {
-    test('permission $p: zero requestPermission calls, the feed loads by '
-        'recency (no coordinates), no error', () async {
+    test('permission $p and no selected City: no OS prompt, no device read, '
+        'no Nearby query (never an all-cities feed), no error', () async {
       final fake = _FakePlatform(p);
       GeolocatorPlatform.instance = fake;
       final repo = _Posts();
@@ -109,20 +111,10 @@ void main() {
       await c.read(nearbyFeedProvider.notifier).load();
       expect(fake.requestCalls, 0);
       expect(fake.positionCalls, 0);
-      expect(repo.calls.single, (lat: null, lng: null));
-      expect(c.read(nearbyFeedProvider), isA<TabFeedData>());
+      expect(_candidateCalls, 0);
+      final state = c.read(nearbyFeedProvider);
+      expect(state, isA<TabFeedData>());
+      expect((state as TabFeedData).posts, isEmpty);
     });
   }
-
-  test('permission already granted: the device position is passed to the '
-      'repository', () async {
-    final fake = _FakePlatform(LocationPermission.whileInUse);
-    GeolocatorPlatform.instance = fake;
-    final repo = _Posts();
-    final c = _container(repo);
-    await c.read(activeLocationProvider.future);
-    await c.read(nearbyFeedProvider.notifier).load();
-    expect(fake.requestCalls, 0);
-    expect(repo.calls.single, (lat: 12.5, lng: 34.5));
-  });
 }
