@@ -1,6 +1,6 @@
 -- KAN-711 probes. BEGIN ... ROLLBACK: nothing persists.
 -- Executed against: local throwaway PostgreSQL 16 built from local_harness_kan711.sql +
--- local_seed_kan711.sql + the three KAN-711 migrations. NOT executed against Supabase (forbidden to
+-- local_seed_kan711.sql + KAN-710 (20261101140000, unmodified) + the two KAN-711 migrations. NOT executed against Supabase (forbidden to
 -- this seat). The ids below are the local seed's; on any other database the probe must be re-seeded.
 --
 --   psql -h /tmp -p 54399 -U postgres -d kan711 -v ON_ERROR_STOP=1 -f probes_kan711.sql
@@ -10,7 +10,7 @@
 -- a probe nobody has seen fail is not evidence.
 --
 -- Deferred checks only fire at COMMIT, and this file never commits. pg_temp.flush() reproduces the
--- commit boundary: it sets the five KAN-711 deferred checks IMMEDIATE (firing everything pending) and
+-- commit boundary: it sets KAN-710's seven deferred checks IMMEDIATE (firing everything pending) and
 -- then DEFERRED again, so statements still run in production mode (deferred) between flushes.
 -- NOTE: do not use SET CONSTRAINTS ALL IMMEDIATE *before* a legacy write: the FK's internal RI trigger
 -- sorts before trg_kan711_*_mirror and would check before the events row exists (see contract, Risks).
@@ -19,8 +19,10 @@
 BEGIN;
 
 CREATE FUNCTION pg_temp.flush() RETURNS void LANGUAGE plpgsql AS $$
-DECLARE l text := 'public.games_event_id_fkey, public.meetups_event_id_fkey, public.trg_kan711_games_integrity, '
-               || 'public.trg_kan711_meetups_integrity, public.trg_kan711_events_integrity';
+-- KAN-710:264-271 (events) and 282-295 (games/meetups). KAN-711 owns no deferred check.
+DECLARE l text := 'public.games_event_id_fkey, public.meetups_event_id_fkey, public.trg_games_event_link_check, '
+               || 'public.trg_meetups_event_link_check, public.trg_games_series_occurrence_check, '
+               || 'public.trg_events_exclusive_check, public.trg_events_series_start_check';
 BEGIN
   EXECUTE 'SET CONSTRAINTS ' || l || ' IMMEDIATE';
   EXECUTE 'SET CONSTRAINTS ' || l || ' DEFERRED';
@@ -114,12 +116,12 @@ SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.games WHERE event_id IS DISTI
                   'P2 every legacy row linked, event_id = id');
 
 -- P3 per-field parity, zero mismatches ------------------------------------------------------------
-SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P3 parity view: 0 rows (27 fields, IS DISTINCT FROM)');
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P3 parity view: 0 rows (22 fields, IS DISTINCT FROM)');
 SAVEPOINT ctrl;
 UPDATE public.events SET title = 'tampered' WHERE id = '10000000-0000-0000-0000-000000000001';
-UPDATE public.events SET end_at = NULL      WHERE id = '10000000-0000-0000-0000-000000000004';
-SELECT pg_temp.ok((SELECT array_agg(mismatched_fields[1] ORDER BY id) FROM public.kan711_events_parity) = ARRAY['title', 'end_at'],
-                  'P3 CTRL parity catches a tampered title and a nulled end_at');
+UPDATE public.events SET capacity = 3        WHERE id = '10000000-0000-0000-0000-000000000004';
+SELECT pg_temp.ok((SELECT array_agg(mismatched_fields[1] ORDER BY id) FROM public.kan711_events_parity) = ARRAY['title', 'capacity'],
+                  'P3 CTRL parity catches a tampered title and a tampered capacity');
 ROLLBACK TO SAVEPOINT ctrl;
 SELECT pg_temp.flush();
 -- mapping spot checks: nulls preserved, nothing inferred, alias applied
@@ -134,8 +136,12 @@ SELECT pg_temp.ok((SELECT listing_visibility = 'hidden' AND join_policy = 'close
                   'P3 meetup-only values kept raw; rsvp_policy -> join_policy');
 SELECT pg_temp.ok((SELECT venue_id IS NULL FROM public.events WHERE id = '30000000-0000-0000-0000-000000000002'),
                   'P3 meta.venue_space_id NOT copied into venue_id');
-SELECT pg_temp.ok((SELECT location_name IS NULL AND is_indoor IS NULL AND description IS NULL FROM public.events WHERE event_type = 'game' LIMIT 1),
-                  'P3 game has no location_name/is_indoor/description invented');
+SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'events'
+                               AND column_name IN ('description', 'location_name', 'is_indoor')),
+                  'P3 description/location_name/is_indoor are not parent columns (KAN-710); nothing copied or invented');
+SELECT pg_temp.ok((SELECT search_tsv = to_tsvector('simple', 'Sunday 5s') FROM public.events WHERE id = '10000000-0000-0000-0000-000000000001')
+              AND (SELECT search_tsv = setweight(to_tsvector('simple', 'Morning run'), 'A') FROM public.events WHERE id = '30000000-0000-0000-0000-000000000001'),
+                  'P3 search_tsv derived by KAN-710 (title only), not copied from legacy');
 
 -- P4 backfill left every legacy column except event_id untouched (timestamps, tsv) ---------------
 SELECT pg_temp.ok(NOT EXISTS (
@@ -194,15 +200,30 @@ SELECT pg_temp.flush();
 INSERT INTO public.meetups (id, creator_profile_id, creator_user_id, title, start_at, host_actor_id)
 VALUES ('30000000-0000-0000-0000-0000000000aa', '00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000a2',
         'New meetup', '2026-02-02 06:00+00', '00000000-0000-0000-0000-0000000000b2');
-UPDATE public.meetups SET description = 'Bring water', rsvp_policy = 'request' WHERE id = '30000000-0000-0000-0000-0000000000aa';
-SELECT pg_temp.ok((SELECT description = 'Bring water' AND join_policy = 'request' AND end_at IS NULL
+UPDATE public.meetups SET title = 'New meetup edited', rsvp_policy = 'request' WHERE id = '30000000-0000-0000-0000-0000000000aa';
+SELECT pg_temp.ok((SELECT title = 'New meetup edited' AND join_policy = 'request' AND end_at IS NULL
                      FROM public.events WHERE id = '30000000-0000-0000-0000-0000000000aa'), 'P7 meetup insert+edit mirrored, rsvp alias');
+SELECT pg_temp.flush();   -- commit boundary between create and delete; see the FINDING probe below
 UPDATE public.meetups SET is_cancelled = true WHERE id = '30000000-0000-0000-0000-0000000000aa';
 SELECT pg_temp.ok((SELECT is_cancelled AND cancelled_at IS NULL FROM public.events WHERE id = '30000000-0000-0000-0000-0000000000aa'), 'P7 meetup cancel mirrored');
 DELETE FROM public.meetups WHERE id = '30000000-0000-0000-0000-0000000000aa';
 SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.events WHERE id = '30000000-0000-0000-0000-0000000000aa'), 'P7 meetup delete mirrored');
 SELECT pg_temp.flush();
-SELECT pg_temp.ok(true, 'P7 deferred FK + integrity checks passed at the simulated commit boundary for create/edit/cancel/delete');
+SELECT pg_temp.ok(true, 'P7 KAN-710 deferred FK + link checks passed at the simulated commit boundary for create/edit/cancel/delete');
+-- FINDING (KAN-710 x KAN-711): a subtype row created AND deleted in one transaction fails at COMMIT.
+-- KAN-711's assign trigger sets event_id on INSERT, queueing KAN-710's deferred link check; the
+-- delete removes the row and (via the mirror) its events row; the queued check then runs against the
+-- stale NEW tuple and raises 'orphan' (KAN-710:172-176 never re-checks that the subtype row exists).
+-- Recorded, not fixed: the fix is in KAN-710's events_check_subtype_link().
+SELECT pg_temp.refused($q$
+  INSERT INTO public.meetups (id, creator_profile_id, creator_user_id, title, start_at, host_actor_id)
+  VALUES ('30000000-0000-0000-0000-0000000000ab', '00000000-0000-0000-0000-0000000000b2', '00000000-0000-0000-0000-0000000000a2',
+          'Short lived', '2026-02-03 06:00+00', '00000000-0000-0000-0000-0000000000b2');
+  DELETE FROM public.meetups WHERE id = '30000000-0000-0000-0000-0000000000ab';
+$q$, '23503', 'P7 FINDING create+delete of one meetup in one transaction is refused at commit (orphan)');
+SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.meetups WHERE id = '30000000-0000-0000-0000-0000000000ab')
+                  AND NOT EXISTS (SELECT 1 FROM public.events WHERE id = '30000000-0000-0000-0000-0000000000ab'),
+                  'P7 FINDING refused transaction left nothing behind');
 
 SAVEPOINT atom;
 UPDATE public.games SET title = 'rolled back' WHERE id = '10000000-0000-0000-0000-000000000001';
@@ -210,12 +231,14 @@ ROLLBACK TO SAVEPOINT atom;
 SELECT pg_temp.ok((SELECT title = 'Sunday 5s' FROM public.events WHERE id = '10000000-0000-0000-0000-000000000001'),
                   'P7 a rolled-back legacy write takes its mirror with it (same transaction)');
 
-SAVEPOINT newer;
-UPDATE public.events SET updated_at = '2099-01-01', title = 'from the future' WHERE id = '10000000-0000-0000-0000-000000000005';
-UPDATE public.games SET title = 'older write' WHERE id = '10000000-0000-0000-0000-000000000005';
-SELECT pg_temp.ok((SELECT title = 'from the future' FROM public.events WHERE id = '10000000-0000-0000-0000-000000000005'),
-                  'P7 mirror never overwrites a newer events row');
-ROLLBACK TO SAVEPOINT newer;
+SAVEPOINT direct;
+UPDATE public.events SET title = 'direct edit' WHERE id = '10000000-0000-0000-0000-000000000005';
+UPDATE public.games SET title = 'legacy wins' WHERE id = '10000000-0000-0000-0000-000000000005';
+SELECT pg_temp.ok((SELECT title = 'legacy wins' AND updated_at = (SELECT updated_at FROM public.games WHERE id = '10000000-0000-0000-0000-000000000005')
+                     FROM public.events WHERE id = '10000000-0000-0000-0000-000000000005'),
+                  'P7 legacy is authoritative: the next legacy write overwrites a direct events edit; both touch triggers agree on updated_at');
+ROLLBACK TO SAVEPOINT direct;
+SELECT pg_temp.flush();
 
 SAVEPOINT api;
 GRANT SELECT ON public.profiles TO authenticated;
@@ -234,37 +257,53 @@ SELECT pg_temp.flush();
 
 -- P8 mismatched event_type refused ----------------------------------------------------------------
 SELECT pg_temp.refused($$UPDATE public.games SET event_id = '30000000-0000-0000-0000-000000000001' WHERE id = '10000000-0000-0000-0000-000000000001'$$,
-                       'kan711_event_id_must_equal_id', 'P8 game pointed at a meetup event refused');
+                       'games.event_id must equal the row id (30000000-0000-0000-0000-000000000001 vs 10000000-0000-0000-0000-000000000001)',
+                       'P8 game pointed at a meetup event refused (KAN-710 link check)');
 SELECT pg_temp.refused($$INSERT INTO public.games (id, creator_profile_id, creator_user_id, start_at, end_at, capacity, sport_id, geo_location_id, area_id)
                          VALUES ('30000000-0000-0000-0000-000000000004', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1',
                                  '2026-02-03 18:00+00', '2026-02-03 19:00+00', 4, '00000000-0000-0000-0000-0000000000e1',
                                  '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000c1')$$,
                        'kan711_event_type_mismatch', 'P8 game reusing a meetup''s id refused by the mirror');
 SELECT pg_temp.refused($$UPDATE public.events SET event_type = 'meetup' WHERE id = '10000000-0000-0000-0000-000000000001'$$,
-                       'kan711_event_identity_immutable', 'P8 retyping an events row refused');
-SELECT pg_temp.refused($$INSERT INTO public.events (id, event_type, creator_profile_id, creator_user_id, start_at, listing_visibility, join_policy,
-                         joining_rule, cost_cover, is_cancelled, created_at, updated_at)
-                         SELECT '10000000-0000-0000-0000-0000000000cc', 'meetup', creator_profile_id, creator_user_id, start_at, 'public', 'open',
-                                'free', 'free', false, now(), now() FROM public.games WHERE id = '10000000-0000-0000-0000-000000000001'$$,
-                       'kan711_orphan_or_mistyped_event', 'P8 events row with no parent of its type refused');
+                       'events.event_type is immutable (game -> meetup)', 'P8 retyping an events row refused (KAN-710 guard)');
+SAVEPOINT bypass;
+ALTER TABLE public.games DISABLE TRIGGER trg_kan711_games_mirror;        -- simulate a path that skips the mirror
+-- Parent first (outside the refused subtransaction) so no outer deferred FK event outlives it.
+INSERT INTO public.events (id, event_type, creator_profile_id, creator_user_id, title, start_at)
+VALUES ('10000000-0000-0000-0000-0000000000cc', 'meetup', '00000000-0000-0000-0000-0000000000b1',
+        '00000000-0000-0000-0000-0000000000a1', 'Mistyped', '2026-02-03 18:00+00');
+SELECT pg_temp.refused($$INSERT INTO public.games (id, creator_profile_id, creator_user_id, start_at, end_at, capacity, sport_id, geo_location_id, area_id)
+                         VALUES ('10000000-0000-0000-0000-0000000000cc', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a1',
+                                 '2026-02-03 18:00+00', '2026-02-03 19:00+00', 4, '00000000-0000-0000-0000-0000000000e1',
+                                 '00000000-0000-0000-0000-0000000000d1', '00000000-0000-0000-0000-0000000000c1')$$,
+                       'wrong subtype: meetup event 10000000-0000-0000-0000-0000000000cc has a games row',
+                       'P8 a game linked to a meetup-typed parent refused at the boundary (KAN-710 parent-children check, 197-208)');
+ROLLBACK TO SAVEPOINT bypass;
+SELECT pg_temp.flush();
 
--- P9 orphan / duplicate event_id refused ----------------------------------------------------------
+-- P9 orphan / duplicate event_id ----------------------------------------------------------------
 SELECT pg_temp.refused($$UPDATE public.games SET event_id = '10000000-0000-0000-0000-000000000002' WHERE id = '10000000-0000-0000-0000-000000000001'$$,
-                       'kan711_event_id_must_equal_id', 'P9 duplicate event_id (pointing at another game) refused');
-SELECT pg_temp.refused($$DELETE FROM public.events WHERE id = '10000000-0000-0000-0000-000000000001'$$,
-                       '23503', 'P9 deleting an events row a game still links to refused (FK)');
+                       '23505', 'P9 duplicate event_id (pointing at another game) refused (games_event_id_key, KAN-710:279)');
+SAVEPOINT cascade;
+DELETE FROM public.events WHERE id = '10000000-0000-0000-0000-000000000001';
+SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.games WHERE id = '10000000-0000-0000-0000-000000000001'),
+                  'P9 FINDING: KAN-710 FK is ON DELETE CASCADE (KAN-710:282-285): deleting a parent DELETES its legacy game');
+ROLLBACK TO SAVEPOINT cascade;
+SELECT pg_temp.flush();
 SAVEPOINT bypass;
 ALTER TABLE public.meetups DISABLE TRIGGER trg_kan711_meetups_mirror;     -- simulate a path that skips the mirror
-SELECT pg_temp.refused($$DELETE FROM public.meetups WHERE id = '30000000-0000-0000-0000-000000000004'$$,
-                       'kan711_orphan_event', 'P9 legacy delete that leaves its event behind refused at the boundary');
+DELETE FROM public.meetups WHERE id = '30000000-0000-0000-0000-000000000004';
+SELECT pg_temp.flush();                                                  -- not refused: KAN-710 phase 1 allows a childless parent
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity WHERE orphan_event) = 1,
+                  'P9 a legacy delete that skips the mirror is NOT refused (KAN-710 handoff limitation 3); parity reports the orphan');
 ROLLBACK TO SAVEPOINT bypass;
 SELECT pg_temp.flush();
 SAVEPOINT ctrl;
-ALTER TABLE public.meetups DISABLE TRIGGER trg_kan711_meetups_mirror;
-ALTER TABLE public.meetups DISABLE TRIGGER trg_kan711_meetups_integrity;
 DELETE FROM public.meetups WHERE id = '30000000-0000-0000-0000-000000000004';
-SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity WHERE orphan_event) = 1,
-                  'P9 CTRL with the boundary check removed the orphan gets through, and parity reports it');
+SELECT pg_temp.flush();
+SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.events WHERE id = '30000000-0000-0000-0000-000000000004')
+              AND (SELECT count(*) FROM public.kan711_events_parity) = 0,
+                  'P9 CTRL with the mirror in place the same delete removes the parent and parity stays 0');
 ROLLBACK TO SAVEPOINT ctrl;
 SELECT pg_temp.flush();
 
@@ -290,7 +329,7 @@ SELECT pg_temp.ok(NOT EXISTS (
     SELECT 1 FROM pg_proc p CROSS JOIN unnest(ARRAY['anon', 'authenticated']) r(role)
      WHERE p.pronamespace = 'public'::regnamespace AND p.proname LIKE 'kan711\_%'
        AND has_function_privilege(r.role, p.oid, 'EXECUTE')),
-                  'P10 no kan711 function (incl. the 5 trigger functions) executable by anon/authenticated (proacl asserted)');
+                  'P10 no kan711 function (incl. the 3 trigger functions) executable by anon/authenticated (proacl asserted)');
 SAVEPOINT ctrl;
 GRANT EXECUTE ON FUNCTION public.kan711_games_mirror() TO anon;
 GRANT SELECT ON public.events TO anon;
@@ -303,12 +342,11 @@ SELECT pg_temp.ok((SELECT count(*) FROM public.events) = 0, 'P10 CTRL even with 
 RESET ROLE;
 ROLLBACK TO SAVEPOINT ctrl;
 
--- P11 exception path: a row the mirror cannot take is reported and links stay NOT VALID ----------
+-- P11 exception path: a row the mirror cannot take is reported and NOT NULL is not added -----------
 SELECT pg_temp.flush();
 SAVEPOINT exc;
 ALTER TABLE public.meetups DISABLE TRIGGER trg_kan711_meetups_assign_event_id;
 ALTER TABLE public.meetups DISABLE TRIGGER trg_kan711_meetups_mirror;
-ALTER TABLE public.meetups DISABLE TRIGGER trg_kan711_meetups_integrity;
 -- legal in legacy (different creator_user_id), illegal in events (same type+profile+request_id as meetup ...02)
 INSERT INTO public.meetups (id, creator_profile_id, creator_user_id, title, start_at, host_actor_id, request_id)
 VALUES ('30000000-0000-0000-0000-0000000000ff', '00000000-0000-0000-0000-0000000000b1', '00000000-0000-0000-0000-0000000000a2',
@@ -316,7 +354,6 @@ VALUES ('30000000-0000-0000-0000-0000000000ff', '00000000-0000-0000-0000-0000000
 SELECT pg_temp.flush();   -- the deferred FK check queued by this INSERT (event_id NULL, passes)
 ALTER TABLE public.meetups ENABLE TRIGGER trg_kan711_meetups_assign_event_id;
 ALTER TABLE public.meetups ENABLE TRIGGER trg_kan711_meetups_mirror;
-ALTER TABLE public.meetups ENABLE TRIGGER trg_kan711_meetups_integrity;
 SELECT public.kan711_events_backfill_reset('meetups');
 SELECT pg_temp.ok(public.kan711_events_backfill_batch('meetups', 500) = 7 AND public.kan711_events_backfill_batch('meetups', 500) = 0,
                   'P11 batch completes despite a bad row');
@@ -327,8 +364,8 @@ SELECT pg_temp.ok((SELECT event_id IS NULL FROM public.meetups WHERE id = '30000
               AND NOT EXISTS (SELECT 1 FROM public.events WHERE id = '30000000-0000-0000-0000-0000000000ff'),
                   'P11 bad row not half-written (no event, no link)');
 SELECT pg_temp.ok((public.kan711_events_validate_links() ->> 'validated')::boolean = false
-              AND (SELECT bool_and(NOT convalidated) FROM pg_constraint WHERE conname IN ('games_event_id_fkey', 'meetups_event_id_fkey')),
-                  'P11 validate_links refuses and leaves the FKs NOT VALID');
+              AND NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname IN ('games_event_id_not_null', 'meetups_event_id_not_null')),
+                  'P11 validate_links refuses and adds no NOT NULL check');
 ROLLBACK TO SAVEPOINT exc;
 SELECT pg_temp.flush();
 
@@ -347,9 +384,15 @@ SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.events WHERE id = '10000000-0000-
 SELECT pg_temp.refused($$UPDATE public.games SET start_at = '2026-01-07 18:00+00' WHERE id = '10000000-0000-0000-0000-000000000005'$$,
                        '23505', 'P13 duplicate (series_id, start_at) still refused by games_series_id_start_at_key');
 
--- P14 events carries no side-effect trigger ------------------------------------------------------
-SELECT pg_temp.ok((SELECT array_agg(tgname::text) FROM pg_trigger WHERE tgrelid = 'public.events'::regclass AND NOT tgisinternal)
-                  = ARRAY['trg_kan711_events_integrity'], 'P14 events has only the integrity constraint trigger');
+-- P14 events carries exactly KAN-710's triggers; KAN-711 adds none, and no side-effect trigger -------
+SELECT pg_temp.ok((SELECT array_agg(tgname::text ORDER BY tgname) FROM pg_trigger WHERE tgrelid = 'public.events'::regclass AND NOT tgisinternal)
+                  = ARRAY['trg_events_exclusive_check', 'trg_events_search_tsv', 'trg_events_series_start_check',
+                          'trg_events_touch', 'trg_events_type_immutable'],
+                  'P14 events triggers are exactly KAN-710''s five (KAN-710:260-271)');
+SELECT pg_temp.ok((SELECT count(*) FROM pg_trigger WHERE tgname LIKE 'trg\_kan711\_%') = 4
+              AND (SELECT count(*) FROM pg_trigger WHERE tgname IN ('trg_games_event_link_check', 'trg_meetups_event_link_check',
+                     'trg_games_series_occurrence_check') AND tgenabled = 'O') = 3,
+                  'P14 4 kan711 triggers; KAN-710''s 3 subtype constraint triggers enabled after every backfill batch');
 
 SELECT 'ALL KAN-711 PROBES PASSED' AS result;
 ROLLBACK;

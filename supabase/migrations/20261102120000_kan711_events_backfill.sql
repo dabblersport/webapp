@@ -11,15 +11,27 @@
 --     SELECT * FROM public.events_backfill_exceptions WHERE resolved_at IS NULL;  -- expect 0 rows
 --     SELECT public.kan711_events_validate_links();         -- validates only if all of the above are 0
 --
+-- Built on KAN-710 (20261101140000): events, the event_id columns, games/meetups_event_id_fkey
+-- (KAN-710:282-285, already VALID) and the deferred link/series/exclusive checks (KAN-710:264-271,
+-- 287-295) are KAN-710's. This stage creates no constraint on them except the two NOT NULL checks
+-- added by kan711_events_validate_links().
+--
 -- Order: games first, then meetups; within a table, ascending id. Each batch:
 --   1. locks the checkpoint row, then the legacy table in SHARE ROW EXCLUSIVE (blocks concurrent legacy
---      writes for the batch only; taken first so no lock upgrade can deadlock against a writer),
+--      writes; taken first so no lock upgrade can deadlock against a writer),
 --   2. selects the next N rows by id FOR UPDATE,
---   3. sets the KAN-711 deferred checks IMMEDIATE so each row fails on its own,
---   4. disables, for this transaction only, every enabled non-internal non-KAN-711 trigger that fires on
---      UPDATE, so writing event_id does not bump updated_at, rebuild search_tsv, or touch
---      public_activities / notifications / outbox / msg lines. The disable is transactional: other
---      sessions are blocked by the lock and never observe the disabled state,
+--   3. sets KAN-710's deferred checks for that table IMMEDIATE so each row fails on its own,
+--   4. disables, for this transaction only, every enabled non-internal, NON-CONSTRAINT, non-KAN-711
+--      trigger that fires on UPDATE, so writing event_id does not bump updated_at, rebuild search_tsv,
+--      or touch public_activities / notifications / outbox / msg lines. KAN-710's constraint triggers
+--      (trg_*_event_link_check, trg_games_series_occurrence_check) stay ENABLED (tgconstraint <> 0).
+--      LOCK: ALTER TABLE ... DISABLE TRIGGER takes SHARE ROW EXCLUSIVE on the legacy table (observed in
+--      pg_locks on PostgreSQL 16.15 during a real batch: strongest mode on games = ShareRowExclusiveLock,
+--      no AccessExclusiveLock on any relation; see KAN711_CONTRACT.md "Locking"). Step 1 already holds
+--      that mode, so the disable adds no stronger lock. It is held until the batch commits: while a batch
+--      runs, every INSERT/UPDATE/DELETE of that table (app writes included) waits; plain SELECTs do not.
+--      Run small batches (200-500) at a quiet time.
+--      The disable is transactional: other sessions never observe the disabled state,
 --   5. per row in a subtransaction: upsert events, set event_id = id where NULL; failures go to
 --      events_backfill_exceptions and the row is skipped (never half-written),
 --   6. restores every trigger to its exact previous mode (O/A/R), restores DEFERRED, advances the
@@ -31,6 +43,10 @@ DO $$
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = current_user AND (rolsuper OR rolbypassrls)) THEN
     RAISE EXCEPTION 'KAN-711: applying role % must be superuser or BYPASSRLS (meetups is FORCE RLS)', current_user;
+  END IF;
+  IF to_regclass('public.events') IS NULL
+     OR NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'games_event_id_fkey' AND conrelid = 'public.games'::regclass) THEN
+    RAISE EXCEPTION 'KAN-711: KAN-710 (20261101140000) not applied';
   END IF;
   IF to_regprocedure('public.kan711_events_upsert(public.events)') IS NULL THEN
     RAISE EXCEPTION 'KAN-711: stage 2 (20261102110000) not applied; capture must exist before the backfill';
@@ -70,6 +86,9 @@ REVOKE ALL ON TABLE public.events_backfill_checkpoint, public.events_backfill_ex
 
 -- 2. Parity: one row per legacy/events id that is missing, orphaned, unlinked or differs in any field.
 -- Comparison is IS DISTINCT FROM per field (NULL = NULL is parity). Zero rows means full parity.
+-- 22 fields: every mapped column except search_tsv (derived by KAN-710:128-137, not copied) and
+-- updated_at (owned by KAN-710's trg_events_touch, KAN-710:260: any UPDATE of an events row sets it to
+-- now(), so it equals the legacy value only for rows that were inserted and never repaired).
 CREATE VIEW public.kan711_events_parity WITH (security_invoker = true) AS
 WITH src AS (
   SELECT 'games'::text AS kind, g.id, g.event_id, public.kan711_events_map_game(g) AS m FROM public.games g
@@ -84,7 +103,6 @@ WITH src AS (
          CASE WHEN s.id IS NULL OR e.id IS NULL THEN '{}'::text[] ELSE array_remove(ARRAY[
            CASE WHEN (s.m).event_type         IS DISTINCT FROM e.event_type         THEN 'event_type' END,
            CASE WHEN (s.m).title              IS DISTINCT FROM e.title              THEN 'title' END,
-           CASE WHEN (s.m).description        IS DISTINCT FROM e.description        THEN 'description' END,
            CASE WHEN (s.m).creator_profile_id IS DISTINCT FROM e.creator_profile_id THEN 'creator_profile_id' END,
            CASE WHEN (s.m).creator_user_id    IS DISTINCT FROM e.creator_user_id    THEN 'creator_user_id' END,
            CASE WHEN (s.m).sport_id           IS DISTINCT FROM e.sport_id           THEN 'sport_id' END,
@@ -94,8 +112,6 @@ WITH src AS (
            CASE WHEN (s.m).venue_id           IS DISTINCT FROM e.venue_id           THEN 'venue_id' END,
            CASE WHEN (s.m).geo_location_id    IS DISTINCT FROM e.geo_location_id    THEN 'geo_location_id' END,
            CASE WHEN (s.m).area_id            IS DISTINCT FROM e.area_id            THEN 'area_id' END,
-           CASE WHEN (s.m).location_name      IS DISTINCT FROM e.location_name      THEN 'location_name' END,
-           CASE WHEN (s.m).is_indoor          IS DISTINCT FROM e.is_indoor          THEN 'is_indoor' END,
            CASE WHEN (s.m).listing_visibility IS DISTINCT FROM e.listing_visibility THEN 'listing_visibility' END,
            CASE WHEN (s.m).join_policy        IS DISTINCT FROM e.join_policy        THEN 'join_policy' END,
            CASE WHEN (s.m).min_skill          IS DISTINCT FROM e.min_skill          THEN 'min_skill' END,
@@ -106,9 +122,7 @@ WITH src AS (
            CASE WHEN (s.m).cancelled_at       IS DISTINCT FROM e.cancelled_at       THEN 'cancelled_at' END,
            CASE WHEN (s.m).cancelled_reason   IS DISTINCT FROM e.cancelled_reason   THEN 'cancelled_reason' END,
            CASE WHEN (s.m).request_id         IS DISTINCT FROM e.request_id         THEN 'request_id' END,
-           CASE WHEN (s.m).created_at         IS DISTINCT FROM e.created_at         THEN 'created_at' END,
-           CASE WHEN (s.m).updated_at         IS DISTINCT FROM e.updated_at         THEN 'updated_at' END,
-           CASE WHEN (s.m).search_tsv         IS DISTINCT FROM e.search_tsv         THEN 'search_tsv' END
+           CASE WHEN (s.m).created_at         IS DISTINCT FROM e.created_at         THEN 'created_at' END
          ], NULL) END AS mismatched_fields
   FROM src s
   FULL JOIN public.events e ON e.id = s.id
@@ -150,7 +164,14 @@ BEGIN
   END IF;
 
   v_tbl  := pg_catalog.to_regclass('public.' || p_kind);
-  v_cons := format('public.%1$s_event_id_fkey, public.trg_kan711_%1$s_integrity, public.trg_kan711_events_integrity', p_kind);
+  -- KAN-710's deferred checks that a batch on this table can queue (KAN-710:264-271, 282-295).
+  v_cons := CASE p_kind
+    WHEN 'games'   THEN 'public.games_event_id_fkey, public.trg_games_event_link_check, '
+                     || 'public.trg_games_series_occurrence_check, public.trg_events_exclusive_check, '
+                     || 'public.trg_events_series_start_check'
+    ELSE                'public.meetups_event_id_fkey, public.trg_meetups_event_link_check, '
+                     || 'public.trg_events_exclusive_check, public.trg_events_series_start_check'
+  END;
 
   -- Fire anything already pending on our checks now (ALTER TABLE refuses while events are pending).
   EXECUTE format('SET CONSTRAINTS %s IMMEDIATE', v_cons);
@@ -170,6 +191,7 @@ BEGIN
     SELECT t.tgname, t.tgenabled::text AS mode
       FROM pg_catalog.pg_trigger t
      WHERE t.tgrelid = v_tbl AND NOT t.tgisinternal AND t.tgenabled <> 'D'
+       AND t.tgconstraint = 0                            -- KAN-710's constraint triggers stay enabled
        AND t.tgname NOT LIKE 'trg\_kan711\_%'
        AND (t.tgtype::integer & 16) <> 0                 -- TRIGGER_TYPE_UPDATE
      ORDER BY t.tgname
@@ -255,26 +277,30 @@ BEGIN
   IF NOT FOUND THEN RAISE EXCEPTION 'kan711_backfill_reset: unknown kind %', p_kind; END IF;
 END $$;
 
--- 6. Validate links ONLY on verified parity with no exceptions; otherwise leave NOT VALID and report.
+-- 6. Add and validate the NOT NULL checks ONLY on verified parity with no exceptions; otherwise leave
+-- them absent and report. KAN-710's FKs are created VALID (KAN-710:282-285); this function does not
+-- touch them, it only reports their convalidated state.
 CREATE FUNCTION public.kan711_events_validate_links()
 RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = '' AS $$
 DECLARE
   v_parity     bigint;
   v_exceptions bigint;
   v_unfinished bigint;
+  v_fk         jsonb;
 BEGIN
+  SELECT jsonb_object_agg(conname, convalidated) INTO v_fk FROM pg_catalog.pg_constraint
+   WHERE conname IN ('games_event_id_fkey', 'meetups_event_id_fkey')
+     AND conrelid IN ('public.games'::regclass, 'public.meetups'::regclass);
   SELECT count(*) INTO v_parity     FROM public.kan711_events_parity;
   SELECT count(*) INTO v_exceptions FROM public.events_backfill_exceptions WHERE resolved_at IS NULL;
   SELECT count(*) INTO v_unfinished FROM public.events_backfill_checkpoint WHERE finished_at IS NULL;
 
   IF v_parity > 0 OR v_exceptions > 0 OR v_unfinished > 0 THEN
     RETURN jsonb_build_object('validated', false, 'parity_rows', v_parity,
-      'unresolved_exceptions', v_exceptions, 'unfinished_kinds', v_unfinished,
-      'note', 'links and NOT NULL left NOT VALID; resolve the report and re-run');
+      'unresolved_exceptions', v_exceptions, 'unfinished_kinds', v_unfinished, 'fk_valid', v_fk,
+      'note', 'NOT NULL checks not added; resolve the report and re-run');
   END IF;
 
-  ALTER TABLE public.games   VALIDATE CONSTRAINT games_event_id_fkey;
-  ALTER TABLE public.meetups VALIDATE CONSTRAINT meetups_event_id_fkey;
   IF NOT EXISTS (SELECT 1 FROM pg_catalog.pg_constraint WHERE conname = 'games_event_id_not_null'
                   AND conrelid = 'public.games'::regclass) THEN
     ALTER TABLE public.games ADD CONSTRAINT games_event_id_not_null CHECK (event_id IS NOT NULL) NOT VALID;
@@ -287,7 +313,9 @@ BEGIN
   ALTER TABLE public.meetups VALIDATE CONSTRAINT meetups_event_id_not_null;
 
   RETURN jsonb_build_object('validated', true, 'parity_rows', 0, 'unresolved_exceptions', 0,
-    'unfinished_kinds', 0);
+    'unfinished_kinds', 0, 'fk_valid', v_fk,
+    'not_null_valid', (SELECT jsonb_object_agg(conname, convalidated) FROM pg_catalog.pg_constraint
+                        WHERE conname IN ('games_event_id_not_null', 'meetups_event_id_not_null')));
 END $$;
 
 REVOKE ALL ON FUNCTION public.kan711_events_backfill_batch(text, integer)        FROM PUBLIC, anon, authenticated, service_role;

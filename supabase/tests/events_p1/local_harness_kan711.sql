@@ -12,9 +12,13 @@
 --     and records the finding in KAN711_CONTRACT.md; the live body is unknown to this seat.
 --   * PostGIS, unaccent, sports/venues validation triggers, persona guards, frozen guard and
 --     notification fan-out are stubbed. Anything not listed here is absent.
--- Usage (throwaway cluster, superuser postgres):
+-- Usage (throwaway cluster, superuser postgres), in this order:
 --   createdb -h /tmp -p 54399 -U postgres kan711
---   psql -h /tmp -p 54399 -U postgres -d kan711 -v ON_ERROR_STOP=1 -f local_harness_kan711.sql
+--   psql ... -f local_harness_kan711.sql            (this file; replaces KAN-710's local_stub_kan710.sql)
+--   psql ... -f local_seed_kan711.sql
+--   psql ... -f ../../migrations/20261101140000_kan710_events_parent_schema.sql   (KAN-710, unmodified)
+--   psql ... -f ../../migrations/20261102110000_kan711_events_mirror_triggers.sql
+--   psql ... -f ../../migrations/20261102120000_kan711_events_backfill.sql
 
 -- Roles as on Supabase.
 DO $$ BEGIN
@@ -63,6 +67,8 @@ RETURNS void LANGUAGE sql AS $$ INSERT INTO public.notifications(user_id, kind, 
 CREATE OR REPLACE FUNCTION public.emit_event(event_key text, entity_type text, entity_id uuid, actor_user_id uuid, payload jsonb)
 RETURNS void LANGUAGE sql AS $$ INSERT INTO public.event_outbox(event_key, entity_id) VALUES (event_key, entity_id) $$;
 CREATE OR REPLACE FUNCTION public.unaccent(text) RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT $1 $$;
+-- KAN-710 (20261101140000) indexes and derives search_tsv through unaccent_immutable; stubbed the same way.
+CREATE OR REPLACE FUNCTION public.unaccent_immutable(text) RETURNS text LANGUAGE sql IMMUTABLE AS $$ SELECT $1 $$;
 CREATE OR REPLACE FUNCTION public.can_view_owner(owner_user_id uuid, scope text) RETURNS boolean LANGUAGE sql STABLE AS $$ SELECT scope = 'public' $$;
 
 -- games (baseline 22863-22908 + later columns) ---------------------------------------------------

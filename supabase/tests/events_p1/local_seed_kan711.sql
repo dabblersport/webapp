@@ -1,5 +1,5 @@
--- KAN-711 LOCAL SEED. LOCAL THROWAWAY POSTGRES ONLY. Run after local_harness_kan711.sql and BEFORE
--- the three KAN-711 migrations, so these rows are "pre-existing legacy rows" the backfill must cover.
+-- KAN-711 LOCAL SEED. LOCAL THROWAWAY POSTGRES ONLY. Run after local_harness_kan711.sql and BEFORE KAN-710 and
+-- the two KAN-711 migrations, so these rows are "pre-existing legacy rows" the backfill must cover.
 -- Edge cases are deliberate: null game title, null meetup end_at/capacity, meetup meta.venue_space_id,
 -- every meetup-only visibility/rsvp value, a cancelled game with cancelled_at/reason, a cancelled
 -- meetup (no cancelled_at column exists), request_ids, a series game, old timestamps to prove they
