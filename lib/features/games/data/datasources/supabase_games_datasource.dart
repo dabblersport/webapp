@@ -683,16 +683,16 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }
 
   // Simplified implementations for remaining methods
+  /// Authorised cancel path (KAN-712 inventory S8); not yet in SupabaseConfig.
+  static const String _rpcCancelGameFn = 'rpc_cancel_game';
+
   @override
   Future<bool> cancelGame(String gameId) async {
     try {
-      await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
-          .update({
-            'status': 'cancelled',
-            'cancelled_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', gameId);
+      await _supabaseClient.rpc(
+        _rpcCancelGameFn,
+        params: {'p_game_id': gameId},
+      );
       return true;
     } catch (e) {
       throw GameServerException('Failed to cancel game: ${e.toString()}');
@@ -775,9 +775,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   // Implement remaining abstract methods with basic functionality
   @override
   Future<bool> updateGameStatus(String gameId, String status) async {
+    // The only authorised status change is cancel (rpc_cancel_game). No RPC
+    // sets any other status, and a direct write is refused, so write nothing.
+    if (status != 'cancelled') return false;
     try {
-      await updateGame(gameId, {'status': status});
-      return true;
+      return await cancelGame(gameId);
     } catch (e) {
       return false;
     }
