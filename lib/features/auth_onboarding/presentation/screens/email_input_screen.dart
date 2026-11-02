@@ -132,7 +132,6 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
     final List<Widget> body = <Widget>[
       DabblerTextField(
@@ -215,17 +214,15 @@ class _EmailInputScreenState extends ConsumerState<EmailInputScreen> {
                   disabled: _isLoading,
                   onPressed: _isLoading ? null : _handleGoogleSignIn,
                 ),
-                if (showApple) ...<Widget>[
-                  const DabblerGap.v(DabblerSpacing.space4),
-                  DabblerButton(
-                    label: l10n.auth_entry_continue_apple,
-                    tone: DabblerButtonTone.outlined,
-                    size: DabblerButtonSize.full,
-                    fullWidth: true,
-                    disabled: _isLoading,
-                    onPressed: _isLoading ? null : _handleAppleSignIn,
-                  ),
-                ],
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerButton(
+                  label: l10n.auth_entry_continue_apple,
+                  tone: DabblerButtonTone.outlined,
+                  size: DabblerButtonSize.full,
+                  fullWidth: true,
+                  disabled: _isLoading,
+                  onPressed: _isLoading ? null : _handleAppleSignIn,
+                ),
                 const DabblerGap.v(DabblerSpacing.space4),
                 AuthAccountLine(
                   prefix: l10n.auth_already_have_account,
