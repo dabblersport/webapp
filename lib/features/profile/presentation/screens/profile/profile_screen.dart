@@ -8,7 +8,6 @@ import 'package:dabbler/features/profile/presentation/widgets/manage_sports_shee
 import 'package:dabbler/features/games/presentation/controllers/game_counts.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_game_counts_provider.dart';
-import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_bento.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/contributor_games_sections.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_followed_sports.dart';
@@ -463,96 +462,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                 onSelect: (id) => setState(() => _selectedSportId = id),
                 onManage: () => ManageSportsSheet.show(context),
               ),
-              const DabblerGap.v(DabblerSpacing.space8),
-            ],
-            if (isContributor && counts != null && !newContributor)
-              ContributorBento(
-                accent: DabblerSportAccent.of(
-                  selected == null
-                      ? null
-                      : OwnProfileSportPicker.sportKeyOf(selected),
-                ),
-                sportName: selected?.nameEn,
-                played: selected == null
-                    ? counts.played
-                    : shown.fold<int>(0, (a, p) => a + p.gamesPlayed),
-                organised: selected == null ? counts.organised : null,
-                showUpPercent:
-                    selected == null &&
-                        (profile?.statistics.totalGamesPlayed ?? 0) > 0
-                    ? profile?.statistics.getReliabilityScore().round()
-                    : null,
-                minutesPlayed: selected == null
-                    ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
-                    : null,
-                sportProfiles: sportProfiles.length,
-                onOpenGames: () => context.go(RoutePaths.gamesTab),
-              )
-            else
-              OwnProfileStats(
-                posts: posts,
-                postsFailed: postsFailed,
-                sportsCount: mySports.length,
-                organised: counts?.organised,
-                upcoming: counts?.upcoming,
-                countsFailed: countsFailed,
-                onRetryCounts: () => ref.invalidate(profileGameCountsProvider),
-                gamesPlayed: isContributor
-                    ? counts?.played
-                    : sportProfiles.isEmpty
-                    ? (personaType == 'socialiser'
-                          ? null
-                          : profile?.statistics.totalGamesPlayed)
-                    : shown.fold<int>(0, (a, p) => a + p.gamesPlayed),
-                rating: shown.isEmpty
-                    ? (sportProfiles.isEmpty && personaType != 'socialiser'
-                          ? profile?.statistics.averageRating
-                          : null)
-                    : shown.fold<double>(0, (a, p) => a + p.averageRating) /
-                          shown.length,
-                minutesPlayed: personaType == 'player' && !isContributor
-                    ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
-                    : null,
-                reliability: personaType == 'player' && !isContributor
-                    ? profile?.statistics.getReliabilityScore().round()
-                    : null,
-                primarySports: sportProfiles
-                    .where((p) => p.isPrimarySport)
-                    .length,
-                sportsLabel: personaType == 'socialiser'
-                    ? l10n.profile_stat_sports_followed
-                    : null,
-                sportsTone: personaType == 'socialiser'
-                    ? DabblerStatTileTone.ink
-                    : DabblerStatTileTone.card,
-                scoped: selected != null,
-                newContributor: newContributor && selected == null,
-                heroLabel: selected == null
-                    ? null
-                    : l10n.profile_stat_sport_matches(selected.nameEn),
-                heroSub: selected == null
-                    ? (allSub.isEmpty ? null : allSub)
-                    : (shown.isEmpty ? null : shown.first.getSkillLevelName()),
-                accent: switch (personaType) {
-                  'socialiser' => DabblerSportAccent.socialRamp,
-                  'organiser' => DabblerSportAccent.mainRamp,
-                  _ => DabblerSportAccent.of(
-                    selected == null
-                        ? null
-                        : OwnProfileSportPicker.sportKeyOf(selected),
-                  ),
-                },
-                heroTone: personaType == 'host'
-                    ? DabblerStatTileTone.amber
-                    : DabblerStatTileTone.brand,
-                onOpenSport: selected != null && canOpen
-                    ? () => _openSportProfile(profile, selected)
-                    : null,
-              ),
-            const DabblerGap.v(DabblerSpacing.space8),
-            if (!isContributor) RatingSummary(userId: profile?.userId),
-            if (personaType == 'socialiser')
-              OwnProfileFollowedSports(sports: mySports),
             const DabblerGap.v(DabblerSpacing.space8),
             if (counts != null) ContributorGamesSections(counts: counts),
             if (profileId == null)

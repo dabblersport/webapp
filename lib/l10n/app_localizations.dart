@@ -14039,42 +14039,6 @@ abstract class AppLocalizations {
   /// **'Organised'**
   String get profile_stat_organised;
 
-  /// No description provided for @profile_stat_partners.
-  ///
-  /// In en, this message translates to:
-  /// **'Partners'**
-  String get profile_stat_partners;
-
-  /// No description provided for @profile_stat_not_available_yet.
-  ///
-  /// In en, this message translates to:
-  /// **'Not available yet'**
-  String get profile_stat_not_available_yet;
-
-  /// No description provided for @profile_stat_as_player_or_organiser.
-  ///
-  /// In en, this message translates to:
-  /// **'As player or organiser'**
-  String get profile_stat_as_player_or_organiser;
-
-  /// No description provided for @profile_stat_sport_games_meetups.
-  ///
-  /// In en, this message translates to:
-  /// **'{sport} games & meetups'**
-  String profile_stat_sport_games_meetups(String sport);
-
-  /// No description provided for @profile_stat_show_up_rate.
-  ///
-  /// In en, this message translates to:
-  /// **'Show-up rate'**
-  String get profile_stat_show_up_rate;
-
-  /// No description provided for @profile_stat_sport_profiles.
-  ///
-  /// In en, this message translates to:
-  /// **'Sport profiles'**
-  String get profile_stat_sport_profiles;
-
   /// No description provided for @bench_row_title.
   ///
   /// In en, this message translates to:
