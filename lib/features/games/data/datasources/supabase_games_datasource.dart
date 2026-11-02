@@ -62,7 +62,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
               _gameUpdatesController.add(gameModel);
             } catch (e) {}
           }
-        });
+        }, onError: (Object _) {});
   }
 
   /// Helper method to get profile_id from user_id
@@ -195,29 +195,26 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     }
   }
 
+  /// Only the keys the authorised RPC understands (`p_*`) are forwarded.
+  /// Legacy column keys (host_*, status, ...) are dropped: the RPC derives the
+  /// host, roster row and mirrored columns itself.
+  Map<String, dynamic> _rpcParams(Map<String, dynamic> data) => {
+    for (final e in data.entries)
+      if (e.key.startsWith('p_')) e.key: e.value,
+  };
+
   @override
   Future<GameModel> createGame(Map<String, dynamic> gameData) async {
     try {
-      // Insert game
-      final gameResponse = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
-          .insert(gameData)
-          .select()
-          .single();
-
-      // Add organizer as first player
-      await _supabaseClient.from(SupabaseConfig.gameRosterTable).insert({
-        'game_id': gameResponse['id'],
-        'profile_id': gameData['host_profile_id'],
-        'user_id': gameData['host_user_id'],
-        'role': 'host',
-        'status': 'active', // Database uses 'active' not 'confirmed'
-        'joined_at': DateTime.now().toIso8601String(),
-      });
-
-      return GameModel.fromJson(gameResponse);
+      final id = await _supabaseClient.rpc(
+        SupabaseConfig.rpcCreateGameFn,
+        params: _rpcParams(gameData),
+      );
+      return await getGame(id.toString());
     } on PostgrestException catch (e) {
       throw GameServerException('Database error: ${e.message}');
+    } on GameServerException {
+      rethrow;
     } catch (e) {
       throw GameServerException('Failed to create game: ${e.toString()}');
     }
@@ -432,12 +429,18 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     Map<String, dynamic> updates,
   ) async {
     try {
+      await _supabaseClient.rpc(
+        SupabaseConfig.rpcUpdateGameFn,
+        params: {..._rpcParams(updates), 'p_game_id': gameId},
+      );
       final response = await _supabaseClient
           .from(SupabaseConfig.gamesTable)
-          .update(updates)
+          .select('*')
           .eq('id', gameId)
-          .select()
-          .single();
+          .maybeSingle();
+      if (response == null) {
+        throw GameNotFoundException('Game not found');
+      }
 
       final updatedGame = GameModel.fromJson(response);
       _gameUpdatesController.add(updatedGame);
