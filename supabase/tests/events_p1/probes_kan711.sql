@@ -116,7 +116,7 @@ SELECT pg_temp.ok(NOT EXISTS (SELECT 1 FROM public.games WHERE event_id IS DISTI
                   'P2 every legacy row linked, event_id = id');
 
 -- P3 per-field parity, zero mismatches ------------------------------------------------------------
-SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P3 parity view: 0 rows (22 fields, IS DISTINCT FROM)');
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P3 parity view: 0 rows (23 fields incl. updated_at, IS DISTINCT FROM)');
 SAVEPOINT ctrl;
 UPDATE public.events SET title = 'tampered' WHERE id = '10000000-0000-0000-0000-000000000001';
 UPDATE public.events SET capacity = 3        WHERE id = '10000000-0000-0000-0000-000000000004';
@@ -384,15 +384,108 @@ SELECT pg_temp.ok(EXISTS (SELECT 1 FROM public.events WHERE id = '10000000-0000-
 SELECT pg_temp.refused($$UPDATE public.games SET start_at = '2026-01-07 18:00+00' WHERE id = '10000000-0000-0000-0000-000000000005'$$,
                        '23505', 'P13 duplicate (series_id, start_at) still refused by games_series_id_start_at_key');
 
--- P14 events carries exactly KAN-710's triggers; KAN-711 adds none, and no side-effect trigger -------
+-- P14 events carries KAN-710's five triggers plus KAN-711's one updated_at keeper, sorted after touch --
 SELECT pg_temp.ok((SELECT array_agg(tgname::text ORDER BY tgname) FROM pg_trigger WHERE tgrelid = 'public.events'::regclass AND NOT tgisinternal)
                   = ARRAY['trg_events_exclusive_check', 'trg_events_search_tsv', 'trg_events_series_start_check',
-                          'trg_events_touch', 'trg_events_type_immutable'],
-                  'P14 events triggers are exactly KAN-710''s five (KAN-710:260-271)');
-SELECT pg_temp.ok((SELECT count(*) FROM pg_trigger WHERE tgname LIKE 'trg\_kan711\_%') = 4
+                          'trg_events_touch', 'trg_events_type_immutable', 'trg_kan711_events_keep_updated_at'],
+                  'P14 events triggers are KAN-710''s five (KAN-710:260-271) + trg_kan711_events_keep_updated_at, keeper last');
+SELECT pg_temp.ok((SELECT count(*) FROM pg_trigger WHERE tgname LIKE 'trg\_kan711\_%') = 5
               AND (SELECT count(*) FROM pg_trigger WHERE tgname IN ('trg_games_event_link_check', 'trg_meetups_event_link_check',
                      'trg_games_series_occurrence_check') AND tgenabled = 'O') = 3,
-                  'P14 4 kan711 triggers; KAN-710''s 3 subtype constraint triggers enabled after every backfill batch');
+                  'P14 5 kan711 triggers; KAN-710''s 3 subtype constraint triggers enabled after every backfill batch');
+
+-- P15 updated_at is the exact legacy value on every mirror/backfill write (KAN-709/02 row 54) ------
+-- Inside one transaction now() is constant, so a legacy UPDATE through trg_games_touch and an events
+-- UPDATE through trg_events_touch both yield the same now(): a probe that compares them proves
+-- nothing about copying. P15a/b therefore pin the legacy updated_at to a distinctive past value
+-- (legacy touch disabled inside a savepoint) so only an exact copy can match it.
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P15 precondition: parity 0 before the updated_at probes');
+
+-- P15a reviewer counterexample 1, verbatim: a subtype-only edit (games.rules) after a full backfill.
+-- Pre-fix result (reviewer, SHA b2903455): parent kept 2025-12-03 14:00+04, legacy advanced, parity 0.
+SAVEPOINT p15a;
+UPDATE public.games SET rules = jsonb_build_object('qa', 'changed retained subtype field') WHERE id = '10000000-0000-0000-0000-000000000002';
+SELECT pg_temp.ok((SELECT g.updated_at = e.updated_at AND g.updated_at <> '2025-12-03 10:00+00'
+                     FROM public.games g JOIN public.events e ON e.id = g.event_id WHERE g.id = '10000000-0000-0000-0000-000000000002'),
+                  'P15a reviewer repro 1: rules-only edit advances legacy updated_at and the parent carries the same value');
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P15a parity 0 after the rules-only edit');
+SELECT pg_temp.ok(coalesce(current_setting('kan711.src_updated_at', true), '') = '', 'P15a hand-off setting is cleared after the mirror write');
+ROLLBACK TO SAVEPOINT p15a;
+SELECT pg_temp.flush();
+
+-- P15b exact copy: legacy updated_at pinned to a value no clock can produce in this transaction.
+SAVEPOINT p15b;
+ALTER TABLE public.games DISABLE TRIGGER trg_games_touch;
+UPDATE public.games SET rules = jsonb_build_object('qa', 'p15b'), updated_at = '2024-01-02 03:04:05.678901+00'
+ WHERE id = '10000000-0000-0000-0000-000000000002';
+SELECT pg_temp.ok((SELECT e.updated_at = '2024-01-02 03:04:05.678901+00' FROM public.events e WHERE e.id = '10000000-0000-0000-0000-000000000002'),
+                  'P15b parent.updated_at = exact legacy value to the microsecond (not now(), not touched)');
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P15b parity 0 when the timestamps match');
+-- P15b CTRL: the same edit with the keeper disabled -> KAN-710 touch wins -> parity and validate_links must see it.
+SAVEPOINT p15b_ctrl;
+SELECT pg_temp.flush();                                    -- no pending trigger events before ALTER
+ALTER TABLE public.events DISABLE TRIGGER trg_kan711_events_keep_updated_at;
+UPDATE public.games SET rules = jsonb_build_object('qa', 'p15b ctrl'), updated_at = '2023-05-06 07:08:09.101112+00'
+ WHERE id = '10000000-0000-0000-0000-000000000002';
+SELECT pg_temp.ok((SELECT e.updated_at = now() FROM public.events e WHERE e.id = '10000000-0000-0000-0000-000000000002'),
+                  'P15b CTRL without the keeper the parent gets touch''s now()');
+SELECT pg_temp.ok((SELECT array_agg(id::text || ':' || array_to_string(mismatched_fields, ',')) FROM public.kan711_events_parity)
+                  = ARRAY['10000000-0000-0000-0000-000000000002:updated_at'],
+                  'P15b CTRL parity > 0: exactly one row, mismatched_fields = {updated_at}');
+SELECT pg_temp.ok((public.kan711_events_validate_links() ->> 'validated')::boolean = false
+              AND (public.kan711_events_validate_links() ->> 'parity_rows')::int = 1,
+                  'P15b CTRL validate_links refuses on the updated_at drift (validated:false, parity_rows:1)');
+ROLLBACK TO SAVEPOINT p15b_ctrl;
+ROLLBACK TO SAVEPOINT p15b;
+SELECT pg_temp.flush();
+
+-- P15c forced drift: an events row edited outside the mirror is reported, and validate_links refuses.
+SAVEPOINT p15c;
+UPDATE public.events SET updated_at = '2020-01-01 00:00+00' WHERE id = '30000000-0000-0000-0000-000000000001';
+SELECT pg_temp.ok((SELECT e.updated_at = now() FROM public.events e WHERE e.id = '30000000-0000-0000-0000-000000000001'),
+                  'P15c a direct events UPDATE (no KAN-711 hand-off) still gets KAN-710 touch now(): the keeper is inert');
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity WHERE 'updated_at' = ANY (mismatched_fields)) = 1,
+                  'P15c parity > 0 on a forced updated_at drift');
+SELECT pg_temp.ok((public.kan711_events_validate_links() ->> 'validated')::boolean = false, 'P15c validate_links false on the forced drift');
+ROLLBACK TO SAVEPOINT p15c;
+
+-- P15d reviewer counterexample 2 (repair): a stale parent whose updated_at has been touched to now()
+-- is repaired by a re-backfill and gets the SOURCE updated_at back, not now().
+-- (The reviewer's verbatim sequence starts before any backfill and CALLs the COMMIT-ing procedure;
+-- it is run as-is by reviewer_repro_kan711.sql on a fresh database. This is the in-transaction form.)
+SAVEPOINT p15d;
+UPDATE public.events SET title = 'stale parent title' WHERE id = '10000000-0000-0000-0000-000000000001';
+SELECT pg_temp.ok((SELECT updated_at = now() FROM public.events WHERE id = '10000000-0000-0000-0000-000000000001')
+              AND (SELECT array_agg(f ORDER BY f) FROM public.kan711_events_parity, unnest(mismatched_fields) f
+                    WHERE id = '10000000-0000-0000-0000-000000000001') = ARRAY['title', 'updated_at'],
+                  'P15d stale parent: parity reports title AND updated_at');
+SELECT public.kan711_events_backfill_reset('games');
+SELECT count(*) AS p15d_games FROM public.games \gset
+-- (the count is taken first: referencing games in the same statement blocks the batch's ALTER TABLE)
+SELECT pg_temp.ok(public.kan711_events_backfill_batch('games', 500) = :p15d_games, 'P15d re-backfill of games processes every row');
+SELECT pg_temp.ok((SELECT e.title = 'Sunday 5s' AND e.updated_at = '2025-12-02 10:00+00' AND e.updated_at = g.updated_at
+                     FROM public.events e JOIN public.games g ON g.id = e.id WHERE e.id = '10000000-0000-0000-0000-000000000001'),
+                  'P15d repair restores the title and copies the source updated_at (2025-12-02 10:00+00), not now()');
+SELECT pg_temp.ok((SELECT count(*) FROM public.kan711_events_parity) = 0, 'P15d parity 0 after the repair');
+ROLLBACK TO SAVEPOINT p15d;
+SELECT pg_temp.flush();
+
+-- P15e the hand-off cannot leak: a refused upsert (type mismatch) leaves no setting behind.
+DO $p15e$
+DECLARE r public.events;
+BEGIN
+  SELECT (public.kan711_events_map_meetup(m)).* INTO r FROM public.meetups m WHERE m.id = '30000000-0000-0000-0000-000000000001';
+  r.id := '10000000-0000-0000-0000-000000000001';          -- a game's id: must be refused
+  BEGIN
+    PERFORM public.kan711_events_upsert(r);
+    RAISE EXCEPTION 'FAIL: P15e mismatched upsert was not refused';
+  EXCEPTION WHEN check_violation THEN NULL;
+  END;
+  IF coalesce(current_setting('kan711.src_updated_at', true), '') <> '' THEN
+    RAISE EXCEPTION 'FAIL: P15e kan711.src_updated_at leaked past a refused upsert';
+  END IF;
+  RAISE NOTICE 'PASS: P15e refused upsert leaves kan711.src_updated_at empty';
+END $p15e$;
 
 SELECT 'ALL KAN-711 PROBES PASSED' AS result;
 ROLLBACK;

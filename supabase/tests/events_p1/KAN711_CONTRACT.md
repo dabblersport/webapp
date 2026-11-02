@@ -10,6 +10,9 @@ KAN-711 creates no table column, constraint or integrity trigger on `events`, `g
 `meetups.event_id`. It adds only:
 
 - the one-way transactional mirror (games/meetups → events);
+- one non-integrity BEFORE UPDATE trigger on `events`, `trg_kan711_events_keep_updated_at`, which
+  keeps the parent's `updated_at` equal to the exact legacy value on mirror and backfill writes
+  (see "updated_at" below);
 - the resumable backfill tooling, the parity view and the exception/checkpoint tables;
 - two `CHECK (event_id IS NOT NULL)` constraints, added only by `kan711_events_validate_links()`
   once parity is 0.
@@ -32,11 +35,12 @@ migrations 2 and 3 does **not** run it.
 | File | Kind | Purpose |
 |---|---|---|
 | ~~`supabase/migrations/20261102100000_kan711_events_parent_schema.sql`~~ | **deleted** | replaced by KAN-710 (`20261101140000`) |
-| `supabase/migrations/20261102110000_kan711_events_mirror_triggers.sql` | migration 2 | mapping functions, upsert, event_id assignment, one-way mirror. No integrity triggers (KAN-710 owns them) |
+| `supabase/migrations/20261102110000_kan711_events_mirror_triggers.sql` | migration 2 | mapping functions, upsert, event_id assignment, one-way mirror, `updated_at` keeper on `events`. No integrity triggers (KAN-710 owns them) |
 | `supabase/migrations/20261102120000_kan711_events_backfill.sql` | migration 3 | checkpoint and exception tables, parity view, batch/run/reset/validate routines. **Does not run the backfill** |
 | `supabase/tests/events_p1/parity_kan711.sql` | read-only report | KAN-710 pre-check (0b), populations, parity by issue and field, checkpoint, exceptions, series and request cross-checks, link constraints, verdict |
 | `supabase/tests/events_p1/rollback_kan711.sql` | runbook | removes only KAN-711's objects; KAN-710 stays |
-| `supabase/tests/events_p1/probes_kan711.sql` | probes | 84 assertions, BEGIN…ROLLBACK, negative controls and FINDING probes |
+| `supabase/tests/events_p1/probes_kan711.sql` | probes | 101 assertions, BEGIN…ROLLBACK, negative controls and FINDING probes (P15 = updated_at) |
+| `supabase/tests/events_p1/reviewer_repro_kan711.sql` | LOCAL ONLY, COMMITS | the Codex reviewer's two counterexamples (b2903455) verbatim, plus a forced-drift check. Fresh throwaway database only |
 | `supabase/tests/events_p1/local_harness_kan711.sql`, `local_seed_kan711.sql` | LOCAL ONLY | stand-in legacy schema and seed rows. **Never run against Supabase** |
 
 ## Order of application
@@ -101,7 +105,7 @@ Classes:
 | `request_id` | nullable; unique (creator_user_id, request_id) | same | unique (event_type, creator_profile_id, request_id) (118-119) | conflict (C9) | See R2 |
 | `search_tsv` | trigger-maintained | trigger-maintained | derived by `trg_events_search_tsv` (124-137, 262), title only | **derived** | Passed as NULL; KAN-710 computes it. Not compared by parity |
 | `created_at` | NN | NN | NN | copied | Copied, never `now()` |
-| `updated_at` | NN | NN | NN; **touched by `trg_events_touch` (260)** | copied on INSERT only | KAN-710 sets `now()` on every events UPDATE, so the upsert neither sets nor compares it, and parity excludes it. The backfill does not bump legacy `updated_at` |
+| `updated_at` | NN | NN | NN; **touched by `trg_events_touch` (260)** | **copied exactly, on INSERT and on every UPDATE** (KAN-709/02 row 54) | The upsert sets and compares it. KAN-710's touch overwrites it with `now()`; `trg_kan711_events_keep_updated_at` restores the exact legacy value (see "updated_at"). Parity compares it. The backfill does not bump legacy `updated_at` |
 
 **Not on the parent, by KAN-710's design** (KAN-710:124-126, handoff limitation 1):
 `meetups.description`, `meetups.location_name` and `meetups.is_indoor` stay on the meetups subtype.
@@ -116,14 +120,55 @@ missing from KAN-710.**
 - **meetups:** `vibe_key`, `meta` (including `venue_space_id`), `host_actor_id`, `members_only`,
   `description`, `location_name`, `is_indoor`.
 
-**Parity compares 22 fields:** event_type, title, creator_profile_id, creator_user_id, sport_id,
+**Parity compares 23 fields:** event_type, title, creator_profile_id, creator_user_id, sport_id,
 start_at, end_at, capacity, venue_id, geo_location_id, area_id, listing_visibility, join_policy,
 min_skill, max_skill, joining_rule, cost_cover, is_cancelled, cancelled_at, cancelled_reason,
-request_id and created_at. `updated_at` and `search_tsv` are KAN-710-owned and excluded.
+request_id, created_at and **updated_at**. Only `search_tsv` (derived by KAN-710) is excluded.
 
 **Legacy is authoritative.** The earlier "never overwrite a newer events row" guard is removed.
-`kan711_events_upsert` overwrites a same-type events row whenever any of the 21 mirrored non-key
-columns differs. A direct edit of `events` is therefore reverted by the next legacy write (probe P7).
+`kan711_events_upsert` overwrites a same-type events row whenever any of the 22 mirrored non-key
+columns (now including `updated_at`) differs. A direct edit of `events` is therefore reverted by the
+next legacy write (probe P7).
+
+## updated_at (rework after Codex review of b2903455)
+
+**Defect found by the reviewer.** After a full backfill, `UPDATE games SET rules = …` advanced
+`games.updated_at`, but `events.updated_at` kept its old value. The upsert neither set nor compared
+`updated_at`, and `rules` is not a parent column, so the mirror wrote nothing. Parity excluded
+`updated_at`, so it reported 0 and `validate_links()` returned `validated: true` over a real drift.
+A repaired parent got `now()`, not the source value.
+
+**Why the upsert cannot just write it.** KAN-710's `trg_events_touch` (KAN-710:260-261) is
+`BEFORE UPDATE ON public.events FOR EACH ROW EXECUTE FUNCTION public.touch_updated_at()`. The body
+(baseline `20260829080500_baseline_schema.sql:17390-17394`) is `new.updated_at = now()`, and it is
+unconditional. Any UPDATE of `events`, whatever its SET list says, stores `now()`. An AFTER trigger
+or a second UPDATE would fire touch again.
+
+**The KAN-711-only fix** (migration 2, sections 2 and 2a):
+1. `kan711_events_upsert` publishes the source value for its one statement:
+   `set_config('kan711.src_updated_at', r.updated_at::text, true)`. It is transaction-local, and
+   it is cleared to `''` straight after the INSERT … ON CONFLICT.
+2. It sets `updated_at = EXCLUDED.updated_at` and includes `updated_at` in the IS DISTINCT FROM
+   comparison, so a subtype-only edit, which changes only `updated_at`, still rewrites the parent.
+3. `trg_kan711_events_keep_updated_at` is a BEFORE UPDATE row trigger on `events`. Same-timing
+   triggers fire in name order, and `trg_kan711_…` sorts after every `trg_events_…` (P14 asserts
+   the order). So it runs after touch and sets `NEW.updated_at := <published text>::timestamptz`.
+   - That is a copy, never a clock read. The text round-trip of `timestamptz` is exact to the
+     microsecond (P15b pins `2024-01-02 03:04:05.678901+00`).
+   - With the setting unset or `''` it returns NEW unchanged, so every non-KAN-711 events UPDATE
+     keeps KAN-710's `now()` (P15c).
+4. Leak safety:
+   - `set_config(…, true)` is undone with the (sub)transaction on any error. P15e shows a refused
+     upsert leaves the setting empty.
+   - `FOUND` is captured before the clearing `PERFORM`; without that, the type-mismatch guard was
+     skipped, and P8 caught it during development.
+5. The function is SECURITY DEFINER with `search_path = ''`, revoked from PUBLIC, anon,
+   authenticated and service_role. No GRANT, no DROP, no CASCADE.
+
+**Residual risk.** A role that can already UPDATE `events` directly could set
+`kan711.src_updated_at` itself and choose the stored `updated_at`. No API role can write `events`
+(KAN-710:98-102: forced RLS and revokes), so in practice only owner or superuser sessions can, and
+they could write any value anyway.
 
 ## Conflicts
 
@@ -280,6 +325,12 @@ What the lock does in practice:
     not modify KAN-710.
   - Production impact depends on whether any RPC creates and deletes in one transaction. This seat
     does not know.
+- **R14 — the parent's `updated_at` depends on trigger name order.**
+  - `trg_kan711_events_keep_updated_at` must keep sorting after `trg_events_touch`.
+  - A future events BEFORE UPDATE trigger whose name sorts after `trg_kan711_…`, and which writes
+    `updated_at`, would win.
+  - The migration 2 post-condition and P14 assert the exact trigger set and order.
+  - Parity (23 fields) catches any resulting drift, and `validate_links()` refuses on it.
 
 ## Rollback
 
@@ -287,9 +338,10 @@ Run `rollback_kan711.sql`. It is a single transaction with `lock_timeout 5s` and
 
 **It drops only KAN-711's objects:**
 1. the two `*_event_id_not_null` checks;
-2. the 4 `trg_kan711_*` triggers;
+2. the 5 `trg_kan711_*` triggers (4 on games/meetups, plus `trg_kan711_events_keep_updated_at` on
+   `events`);
 3. the stage 3 procedure, functions, view and both bookkeeping tables;
-4. the 6 stage 2 functions.
+4. the 7 stage 2 functions (including `kan711_events_keep_updated_at`).
 
 **It does not drop** `events`, the `event_id` columns, `games/meetups_event_id_key`,
 `games/meetups_event_id_fkey`, or any KAN-710 trigger or function. Its post-conditions assert both:
@@ -312,7 +364,9 @@ superuser `postgres`. The order:
 
 1. harness → seed (6 games, 6 meetups) → KAN-710 `20261101140000` → migration 2 → migration 3: all
    exit 0, and every post-condition assert passed.
-2. `probes_kan711.sql`: **84/84 PASS**, `ALL KAN-711 PROBES PASSED`, rolled back.
+2. `probes_kan711.sql`: **101/101 PASS**, `ALL KAN-711 PROBES PASSED`, rolled back. The 17 new P15
+   probes cover the `updated_at` rework. They include negative controls: with the keeper disabled,
+   parity reports `{updated_at}` and `validate_links()` refuses.
 3. Parity section 0b before the backfill: 0 rows on the seed.
    - Control: with a meetup set to `end_at = start_at` in a rolled-back transaction, the predicate
      counted 1.
@@ -339,9 +393,22 @@ superuser `postgres`. The order:
    - The probes **cannot** run on this database: they assume the pre-backfill state (P0 failed with
      "events empty before backfill", as expected).
 10. Full rebuild on a fresh database (harness → seed → KAN-710 → 2 → 3), then the probes:
-    **84/84 PASS**.
+    **84/84 PASS** (before the updated_at rework; see 13).
 11. Lock observation: see "Locking".
 12. The cluster was stopped.
+13. **updated_at rework (2026-11-02), on fresh databases:**
+    - The probes: **101/101 PASS**.
+    - `reviewer_repro_kan711.sql`:
+      - **with b2903455's migrations: FAIL** at the first assertion (parity did not report
+        `updated_at` on the stale parent);
+      - **with the reworked migrations: all PASS.** The repaired parent carries
+        `2025-12-02 10:00+00`; after the rules edit parent = legacy (`timestamp_mismatch f`) and
+        parity is 0; a forced drift gives parity 1 `{updated_at}` and `validated: false`.
+    - Backfill 4/2/0 + 4/2/0, parity 0, `parity_ok = t`, `validate_links()` `validated: true`.
+    - 12/12 parents carry the exact legacy `updated_at`.
+    - Rollback: legacy hashes unchanged before and after (`c5b7688d0ed36c39316519077fde58a1` /
+      `08118d2421f1a0e6ffea0c5a8dc439da`). 0 kan711 routines and 0 kan711 triggers remain, and
+      `events` is back to KAN-710's five triggers.
 
 **Limitations.**
 - The harness is not the live schema. PostGIS, unaccent, sports and venues validation, persona and

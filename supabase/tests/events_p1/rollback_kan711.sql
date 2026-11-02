@@ -32,6 +32,7 @@ DROP TRIGGER IF EXISTS trg_kan711_games_mirror            ON public.games;
 DROP TRIGGER IF EXISTS trg_kan711_meetups_mirror          ON public.meetups;
 DROP TRIGGER IF EXISTS trg_kan711_games_assign_event_id   ON public.games;
 DROP TRIGGER IF EXISTS trg_kan711_meetups_assign_event_id ON public.meetups;
+DROP TRIGGER IF EXISTS trg_kan711_events_keep_updated_at  ON public.events;
 
 -- A. 3. Stage 3 routines, view and bookkeeping.
 DROP PROCEDURE IF EXISTS public.kan711_events_backfill_run(integer, integer);
@@ -46,6 +47,7 @@ DROP TABLE     IF EXISTS public.events_backfill_checkpoint;
 DROP FUNCTION IF EXISTS public.kan711_games_mirror();
 DROP FUNCTION IF EXISTS public.kan711_meetups_mirror();
 DROP FUNCTION IF EXISTS public.kan711_assign_event_id();
+DROP FUNCTION IF EXISTS public.kan711_events_keep_updated_at();
 DROP FUNCTION IF EXISTS public.kan711_events_upsert(public.events);
 DROP FUNCTION IF EXISTS public.kan711_events_map_game(public.games);
 DROP FUNCTION IF EXISTS public.kan711_events_map_meetup(public.meetups);

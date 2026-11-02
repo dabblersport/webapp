@@ -86,9 +86,11 @@ REVOKE ALL ON TABLE public.events_backfill_checkpoint, public.events_backfill_ex
 
 -- 2. Parity: one row per legacy/events id that is missing, orphaned, unlinked or differs in any field.
 -- Comparison is IS DISTINCT FROM per field (NULL = NULL is parity). Zero rows means full parity.
--- 22 fields: every mapped column except search_tsv (derived by KAN-710:128-137, not copied) and
--- updated_at (owned by KAN-710's trg_events_touch, KAN-710:260: any UPDATE of an events row sets it to
--- now(), so it equals the legacy value only for rows that were inserted and never repaired).
+-- 23 fields: every mapped column except search_tsv (derived by KAN-710:128-137, not copied).
+-- updated_at IS compared (KAN-709/02 row 54: the parent carries the exact legacy value). The mirror
+-- and the backfill keep it exact through kan711_events_upsert + trg_kan711_events_keep_updated_at
+-- (20261102110000 section 2a), so any difference here is a real drift: an events row edited outside
+-- the mirror, or a mirror that failed to propagate a subtype-only legacy edit.
 CREATE VIEW public.kan711_events_parity WITH (security_invoker = true) AS
 WITH src AS (
   SELECT 'games'::text AS kind, g.id, g.event_id, public.kan711_events_map_game(g) AS m FROM public.games g
@@ -122,7 +124,8 @@ WITH src AS (
            CASE WHEN (s.m).cancelled_at       IS DISTINCT FROM e.cancelled_at       THEN 'cancelled_at' END,
            CASE WHEN (s.m).cancelled_reason   IS DISTINCT FROM e.cancelled_reason   THEN 'cancelled_reason' END,
            CASE WHEN (s.m).request_id         IS DISTINCT FROM e.request_id         THEN 'request_id' END,
-           CASE WHEN (s.m).created_at         IS DISTINCT FROM e.created_at         THEN 'created_at' END
+           CASE WHEN (s.m).created_at         IS DISTINCT FROM e.created_at         THEN 'created_at' END,
+           CASE WHEN (s.m).updated_at         IS DISTINCT FROM e.updated_at         THEN 'updated_at' END
          ], NULL) END AS mismatched_fields
   FROM src s
   FULL JOIN public.events e ON e.id = s.id
