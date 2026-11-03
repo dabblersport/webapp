@@ -65,6 +65,12 @@ class MutualFollower {
 
 /// The row `rpc_sport_overview` returns (KAN-621). `followers` is global; the
 /// other counts follow the city asked for. `posts` is not city-scoped.
+///
+/// KAN-745: since KAN-726 (B07, 20261104100700_kan714_b07_sport_overview_counts
+/// .sql:189-191) `games_next7` / `meetups_next7` count games / meetups whose
+/// `public.events` parent matches; the columns, types and order are unchanged.
+/// Every count is a `count(DISTINCT ...)` and so never null; the `?? 0` below
+/// only guards a malformed row. Counts are read as returned, never recounted.
 class SportOverviewCounts {
   const SportOverviewCounts({
     required this.followers,
