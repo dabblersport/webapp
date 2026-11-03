@@ -1,9 +1,11 @@
 -- KAN-733 (KAN-714 piece B14) — ROLLBACK of 20261104101400_kan714_b14_series_rpc_reads.sql.
 -- LOCAL THROWAWAY POSTGRES ONLY. One transaction. No DROP, no CASCADE, no data mutation, no grant change.
 -- Restores the pre-images of the three KAN-712 inner bodies verbatim (pg_get_functiondef of the KAN-713 stage
--- catalogue) with CREATE OR REPLACE, which keeps the oid, owner and ACL. The public wrappers and kan712_wrapped_rpcs
--- were never changed and are asserted unchanged. Must run BEFORE any KAN-712 rollback (which renames the inners back);
--- if the inners no longer exist it refuses.
+-- catalogue) through the same KAN712_CONTRACT.md path the migration uses: kan712_unwrap_rpc -> CREATE OR REPLACE of
+-- the unwrapped public name -> kan712_wrap_rpc with the recorded lock_spec. The KAN-712 wrapper is regenerated and
+-- asserted identical to its pre-image (md5, ACL, kan712.contract=on); inner oids, owners and ACLs are unchanged;
+-- kan712_wrapped_rpcs is identical except wrapped_at of the three rows; every other wrapped RPC is byte-identical.
+-- Must run BEFORE any KAN-712 rollback (which renames the inners back); if the inners no longer exist it refuses.
 -- Refuses unless ALL THREE live inner definitions are exactly the migration's post-images, so a second run, a partial
 -- state, or a run against a DB that never had the migration raises instead of rewriting anything.
 -- Verify afterwards with: psql -v expect=pre -f supabase/tests/events_p2/kan714_b14_series_reads.sql
@@ -29,15 +31,36 @@ BEGIN
 END $guard$;
 
 CREATE TEMP TABLE kan733_rb_attr ON COMMIT DROP AS
-  SELECT p.oid, p.proowner, p.proacl::text AS acl, p.prosecdef, p.provolatile, p.proconfig, pg_get_function_result(p.oid) AS res
+  SELECT p.oid::regprocedure::text AS sig, p.oid, p.proowner, p.proacl::text AS acl, p.prosecdef, p.provolatile, p.proconfig, pg_get_function_result(p.oid) AS res
     FROM pg_proc p
    WHERE p.pronamespace = 'public'::regnamespace
      AND p.proname IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series',
                        'rpc_edit_game_series_occurrence_kan712_inner', 'rpc_edit_game_series_future_kan712_inner',
                        'rpc_cancel_game_series_kan712_inner');
-CREATE TEMP TABLE kan733_rb_wrapped ON COMMIT DROP AS SELECT w::text AS row_text FROM public.kan712_wrapped_rpcs w;
+CREATE TEMP TABLE kan733_rb_wrapped ON COMMIT DROP AS
+  SELECT CASE WHEN w.name IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series')
+              THEN (to_jsonb(w) - 'wrapped_at')::text ELSE to_jsonb(w)::text END AS row_text
+    FROM public.kan712_wrapped_rpcs w;
+CREATE TEMP TABLE kan733_rb_others ON COMMIT DROP AS
+  SELECT p.oid::regprocedure::text AS sig, md5(pg_get_functiondef(p.oid)) AS md, p.proacl::text AS acl
+    FROM public.kan712_wrapped_rpcs w
+    JOIN pg_proc p ON p.pronamespace = 'public'::regnamespace AND p.proname IN (w.name, w.inner_name)
+                  AND pg_get_function_identity_arguments(p.oid) = w.identity_args
+   WHERE w.name NOT IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series');
+CREATE TEMP TABLE kan733_rb_wrap ON COMMIT DROP AS
+  SELECT w.name, w.identity_args, w.lock_spec FROM public.kan712_wrapped_rpcs w
+   WHERE w.name IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series');
 
-CREATE OR REPLACE FUNCTION public.rpc_edit_game_series_occurrence_kan712_inner(p_game_id uuid, p_title text DEFAULT NULL::text, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_capacity integer DEFAULT NULL::integer, p_venue_space_id uuid DEFAULT NULL::uuid)
+DO $unwrap$
+DECLARE r record;
+BEGIN
+  IF (SELECT count(*) FROM kan733_rb_wrap) <> 3 THEN RAISE EXCEPTION 'KAN-733 rollback: expected 3 recorded rows'; END IF;
+  FOR r IN SELECT * FROM kan733_rb_wrap ORDER BY name LOOP
+    PERFORM public.kan712_unwrap_rpc(r.name, r.identity_args);
+  END LOOP;
+END $unwrap$;
+
+CREATE OR REPLACE FUNCTION public.rpc_edit_game_series_occurrence(p_game_id uuid, p_title text DEFAULT NULL::text, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_capacity integer DEFAULT NULL::integer, p_venue_space_id uuid DEFAULT NULL::uuid)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -82,7 +105,7 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.rpc_edit_game_series_future_kan712_inner(p_series_id uuid, p_title text DEFAULT NULL::text, p_capacity integer DEFAULT NULL::integer, p_start_time_local time without time zone DEFAULT NULL::time without time zone, p_duration_minutes integer DEFAULT NULL::integer, p_venue_space_id uuid DEFAULT NULL::uuid, p_ends_on date DEFAULT NULL::date, p_clear_ends_on boolean DEFAULT false)
+CREATE OR REPLACE FUNCTION public.rpc_edit_game_series_future(p_series_id uuid, p_title text DEFAULT NULL::text, p_capacity integer DEFAULT NULL::integer, p_start_time_local time without time zone DEFAULT NULL::time without time zone, p_duration_minutes integer DEFAULT NULL::integer, p_venue_space_id uuid DEFAULT NULL::uuid, p_ends_on date DEFAULT NULL::date, p_clear_ends_on boolean DEFAULT false)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -157,7 +180,7 @@ BEGIN
 END;
 $function$;
 
-CREATE OR REPLACE FUNCTION public.rpc_cancel_game_series_kan712_inner(p_series_id uuid, p_reason text DEFAULT NULL::text)
+CREATE OR REPLACE FUNCTION public.rpc_cancel_game_series(p_series_id uuid, p_reason text DEFAULT NULL::text)
  RETURNS jsonb
  LANGUAGE plpgsql
  SECURITY DEFINER
@@ -194,6 +217,16 @@ BEGIN
 END;
 $function$;
 
+DO $wrap$
+DECLARE r record;
+BEGIN
+  FOR r IN SELECT * FROM kan733_rb_wrap ORDER BY name LOOP
+    PERFORM public.kan712_wrap_rpc(
+      (SELECT p.oid FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname = r.name
+          AND pg_get_function_identity_arguments(p.oid) = r.identity_args)::regprocedure, r.lock_spec);
+  END LOOP;
+END $wrap$;
+
 DO $post$
 DECLARE r record; v text; n int;
 BEGIN
@@ -210,8 +243,9 @@ BEGIN
       RAISE EXCEPTION 'KAN-733 rollback post: % md5 % is not the pre-image %', r.fn, v, r.md;
     END IF;
   END LOOP;
-  SELECT count(*) INTO n FROM pg_proc p JOIN kan733_rb_attr a USING (oid)
-   WHERE p.proowner = a.proowner AND p.proacl::text IS NOT DISTINCT FROM a.acl AND p.prosecdef = a.prosecdef
+  -- inners keep their oid; wrappers are regenerated, so they are matched by signature.
+  SELECT count(*) INTO n FROM kan733_rb_attr a JOIN pg_proc p ON p.oid = to_regprocedure(a.sig)
+   WHERE (a.sig NOT LIKE '%\_kan712\_inner(%' OR p.oid = a.oid) AND p.proowner = a.proowner AND p.proacl::text IS NOT DISTINCT FROM a.acl AND p.prosecdef = a.prosecdef
      AND p.provolatile = a.provolatile AND p.proconfig IS NOT DISTINCT FROM a.proconfig AND pg_get_function_result(p.oid) = a.res;
   IF n <> 6 THEN RAISE EXCEPTION 'KAN-733 rollback post: oid/owner/ACL/SECURITY DEFINER/volatility/search_path/result changed'; END IF;
   SELECT count(*) INTO n FROM pg_proc WHERE pronamespace = 'public'::regnamespace
@@ -219,9 +253,28 @@ BEGIN
                      'rpc_edit_game_series_occurrence_kan712_inner', 'rpc_edit_game_series_future_kan712_inner',
                      'rpc_cancel_game_series_kan712_inner');
   IF n <> 6 THEN RAISE EXCEPTION 'KAN-733 rollback post: % functions (overload appeared or one is missing)', n; END IF;
-  IF EXISTS (SELECT row_text FROM kan733_rb_wrapped EXCEPT SELECT w::text FROM public.kan712_wrapped_rpcs w)
-     OR EXISTS (SELECT w::text FROM public.kan712_wrapped_rpcs w EXCEPT SELECT row_text FROM kan733_rb_wrapped) THEN
+  CREATE TEMP TABLE kan733_rb_now ON COMMIT DROP AS
+    SELECT CASE WHEN w.name IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series')
+                THEN (to_jsonb(w) - 'wrapped_at')::text ELSE to_jsonb(w)::text END AS row_text
+      FROM public.kan712_wrapped_rpcs w;
+  IF EXISTS (SELECT row_text FROM kan733_rb_wrapped EXCEPT SELECT row_text FROM kan733_rb_now)
+     OR EXISTS (SELECT row_text FROM kan733_rb_now EXCEPT SELECT row_text FROM kan733_rb_wrapped) THEN
     RAISE EXCEPTION 'KAN-733 rollback post: kan712_wrapped_rpcs changed';
+  END IF;
+  -- The wrapper is back: kan712.contract=on, calls its inner, ACL = recorded original ACL.
+  IF (SELECT count(*) FROM public.kan712_wrapped_rpcs w JOIN pg_proc p
+         ON p.pronamespace = 'public'::regnamespace AND p.proname = w.name
+        AND pg_get_function_identity_arguments(p.oid) = w.identity_args
+       WHERE w.name IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series')
+         AND 'kan712.contract=on' = ANY (p.proconfig) AND p.prosrc LIKE '%public.' || w.inner_name || '(%'
+         AND p.proacl::text IS NOT DISTINCT FROM w.original_acl::text) <> 3 THEN
+    RAISE EXCEPTION 'KAN-733 rollback post: a series RPC is not wrapped again as KAN-712 recorded it';
+  END IF;
+  IF EXISTS (SELECT 1 FROM kan733_rb_others o
+              WHERE to_regprocedure(o.sig) IS NULL
+                 OR md5(pg_get_functiondef(to_regprocedure(o.sig))) IS DISTINCT FROM o.md
+                 OR (SELECT proacl::text FROM pg_proc WHERE oid = to_regprocedure(o.sig)) IS DISTINCT FROM o.acl) THEN
+    RAISE EXCEPTION 'KAN-733 rollback post: another KAN-712-wrapped RPC changed';
   END IF;
 END $post$;
 
