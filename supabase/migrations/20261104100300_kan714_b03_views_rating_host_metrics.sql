@@ -1,4 +1,4 @@
--- KAN-722 (KAN-714 piece B03, Epic KAN-708) — rating / host-metrics views read their SHARED facts from public.events.
+-- KAN-722 (KAN-714 piece B03, Epic KAN-708) — rating views read their SHARED facts from public.events.
 --
 -- AUTHORED, NOT APPLIED. Local proof only: supabase/tests/events_p2/kan714_b03_rating_views.sql.
 -- Rollback: supabase/tests/events_p2/rollback_kan714_b03.sql (restores the pre-image below, verbatim).
@@ -11,8 +11,11 @@
 --                          so nothing about eligibility changes and no filter is invented. games.end_at and
 --                          events.end_at are both NOT NULL for games (events_game_end_required), so there is no
 --                          NULL end case to preserve; types are identical (uuid, timestamptz) — no casts needed.
---   v_host_weekly_metrics  REPOINTED. Shared columns read: creator_user_id, start_at, capacity, is_cancelled
---                          -> events.*. Types identical (uuid, timestamptz, integer, boolean).
+--   v_host_weekly_metrics  NOT TOUCHED HERE. 20261104100700_kan714_b07_sport_overview_counts.sql (KAN-726, B07) owns
+--                          its repoint (creator_user_id, start_at, capacity, is_cancelled -> events.*, joined
+--                          ON e.id = g.event_id AND e.event_type = 'game'), with its own pre-image capture and
+--                          owner/ACL pre-checks. This file sorts before B07, so rewriting it here would hand B07 a
+--                          changed pre-image; B03's test asserts the B03+B07 chain result instead.
 --   v_game_rating          UNCHANGED, by design. Its only games column is games.id — the subtype id, not a shared
 --                          fact (definition: SELECT g.id AS game_id, gra.* FROM games g LEFT JOIN
 --                          game_rating_aggregate gra ON gra.game_id = g.id). Joining events would add a scan and
@@ -31,15 +34,8 @@
 -- never touch it directly. v_rateable_after_game keeps anon/authenticated SELECT and its auth.uid() gate;
 -- v_host_weekly_metrics / v_game_rating keep NO API SELECT. CREATE OR REPLACE VIEW preserves owner, ACL and
 -- reloptions; all three are captured before and asserted equal after. No grant on events is added or changed.
--- KAN-712: none of these views is a wrapped RPC, and no wrapped RPC (kan712_wrapped_rpcs) reads them;
--- the only readers are award_top_host_weekly(text,jsonb) and v_top_hosts_week (both read v_host_weekly_metrics,
--- whose output shape is unchanged). The KAN-712 unwrap/wrap path therefore does not apply.
---
--- ORDERING NOTE: this file sorts BEFORE 20261105100000_kan714_events_parent_reads.sql, whose drift pins
--- (:160-166) hash the games/meetups/events column dependencies of v_host_weekly_metrics and
--- v_rateable_after_game as they are BEFORE this file. After this file those pins no longer match and that
--- migration aborts by design (it would otherwise re-apply an identical rewrite). Reconciling it is that file's
--- owner's change, not this one's.
+-- KAN-712: views only; no function is created or replaced, so no wrapped RPC (kan712_wrapped_rpcs) is touched and
+-- the KAN-712 unwrap/wrap path (supabase/tests/events_p2/KAN712_CONTRACT.md) does not apply. Asserted below.
 --
 -- No DROP, no CASCADE, no data mutation, no grant change. Single transaction.
 
@@ -110,7 +106,7 @@ BEGIN
 
   -- The view owners must read events past FORCE RLS; the views must stay owner views.
   FOR r IN SELECT c.oid::regclass::text AS obj, c.relowner AS own, c.reloptions FROM pg_class c
-            WHERE c.oid IN ('public.v_rateable_after_game'::regclass, 'public.v_host_weekly_metrics'::regclass) LOOP
+            WHERE c.oid = 'public.v_rateable_after_game'::regclass LOOP
     IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE oid = r.own AND (rolsuper OR rolbypassrls)) THEN
       RAISE EXCEPTION 'KAN-722: owner of % cannot bypass RLS on public.events', r.obj;
     END IF;
@@ -132,8 +128,6 @@ BEGIN
   FOR r IN SELECT * FROM (VALUES
       ('v_rateable_after_game', '1e6a11420e215a3f621928c055996116',
        'game_roster.game_id,game_roster.status,game_roster.user_id,games.creator_user_id,games.end_at,games.id'),
-      ('v_host_weekly_metrics', '1d76ace9f1cfce7fda0d9ec3ad7c065f',
-       'game_roster.game_id,game_roster.status,games.capacity,games.creator_user_id,games.id,games.is_cancelled,games.start_at'),
       ('v_game_rating',         '98e6f13a1a9a3f74467e722395688334',
        'game_rating_aggregate.composite_score,game_rating_aggregate.dim_counts,game_rating_aggregate.dim_sums,'
        || 'game_rating_aggregate.event_count,game_rating_aggregate.game_id,game_rating_aggregate.last_event_at,games.id'))
@@ -165,8 +159,13 @@ $pins$;
 CREATE TEMP TABLE kan722_pre ON COMMIT DROP AS
   SELECT c.oid, c.relname, c.relowner, c.relacl::text AS acl, c.reloptions, md5(pg_get_viewdef(c.oid, false)) AS def
     FROM pg_class c
-   WHERE c.oid IN ('public.v_rateable_after_game'::regclass, 'public.v_host_weekly_metrics'::regclass,
-                   'public.v_game_rating'::regclass, 'public.events'::regclass);
+   WHERE c.oid IN ('public.v_rateable_after_game'::regclass, 'public.v_game_rating'::regclass, 'public.events'::regclass);
+
+-- KAN-712 wrapped RPCs: definitions captured so the post-condition can prove none was touched.
+CREATE TEMP TABLE kan722_wrapped_pre ON COMMIT DROP AS
+  SELECT p.oid, md5(pg_get_functiondef(p.oid)) AS def, p.proacl::text AS acl
+    FROM pg_proc p JOIN public.kan712_wrapped_rpcs w
+      ON p.pronamespace = 'public'::regnamespace AND p.proname IN (w.name, w.inner_name);
 
 -- ---------------------------------------------------------------------------------------------------------
 -- 2. Views
@@ -197,39 +196,7 @@ CREATE OR REPLACE VIEW public.v_rateable_after_game AS
            FROM ctx
           WHERE ctx.game_id = c.game_id)) <> auth.uid();
 
-CREATE OR REPLACE VIEW public.v_host_weekly_metrics AS
- WITH g AS (
-         SELECT g_1.id,
-            e.creator_user_id AS host_user_id,
-            date_trunc('week'::text, e.start_at)::date AS week_start,
-            date_part('isoyear'::text, e.start_at)::integer AS isoy,
-            date_part('week'::text, e.start_at)::integer AS isow,
-            e.capacity,
-            e.is_cancelled
-           FROM public.games g_1
-             JOIN public.events e ON e.id = g_1.event_id AND e.event_type = 'game'::text
-        ), r AS (
-         SELECT game_roster.game_id,
-            count(*) FILTER (WHERE game_roster.status = 'active'::text) AS active_cnt
-           FROM public.game_roster
-          GROUP BY game_roster.game_id
-        ), m AS (
-         SELECT g.host_user_id AS user_id,
-            g.isoy,
-            g.isow,
-            count(*) FILTER (WHERE NOT g.is_cancelled) AS games_hosted,
-            round(avg(GREATEST(0.0, LEAST(1.0, COALESCE(r.active_cnt::numeric, 0::numeric) / NULLIF(g.capacity, 0)::numeric))), 3) AS fill_rate
-           FROM g
-             LEFT JOIN r ON r.game_id = g.id
-          GROUP BY g.host_user_id, g.isoy, g.isow
-        )
- SELECT user_id,
-    isoy,
-    isow,
-    games_hosted,
-    fill_rate
-   FROM m;
-
+-- v_host_weekly_metrics: intentionally not touched (B07 owns it; see header).
 -- v_game_rating: intentionally not touched (see header).
 
 -- ---------------------------------------------------------------------------------------------------------
@@ -243,9 +210,6 @@ BEGIN
       ('v_rateable_after_game', '1e6a11420e215a3f621928c055996116',
        'events.creator_user_id,events.end_at,events.event_type,events.id,game_roster.game_id,game_roster.status,'
        || 'game_roster.user_id,games.event_id,games.id'),
-      ('v_host_weekly_metrics', '1d76ace9f1cfce7fda0d9ec3ad7c065f',
-       'events.capacity,events.creator_user_id,events.event_type,events.id,events.is_cancelled,events.start_at,'
-       || 'game_roster.game_id,game_roster.status,games.event_id,games.id'),
       ('v_game_rating',         '98e6f13a1a9a3f74467e722395688334',
        'game_rating_aggregate.composite_score,game_rating_aggregate.dim_counts,game_rating_aggregate.dim_sums,'
        || 'game_rating_aggregate.event_count,game_rating_aggregate.game_id,game_rating_aggregate.last_event_at,games.id'))
@@ -267,7 +231,7 @@ BEGIN
     END IF;
   END LOOP;
 
-  -- Owner, ACL, reloptions byte-identical for all three views and for events; v_game_rating definition identical.
+  -- Owner, ACL, reloptions byte-identical for both views and for events; v_game_rating definition identical.
   IF EXISTS (SELECT 1 FROM pg_temp.kan722_pre p JOIN pg_class c ON c.oid = p.oid
               WHERE c.relowner <> p.relowner OR c.relacl::text IS DISTINCT FROM p.acl
                  OR c.reloptions IS DISTINCT FROM p.reloptions) THEN
@@ -276,6 +240,12 @@ BEGIN
   IF (SELECT md5(pg_get_viewdef('public.v_game_rating'::regclass, false)))
      IS DISTINCT FROM (SELECT def FROM pg_temp.kan722_pre WHERE relname = 'v_game_rating') THEN
     RAISE EXCEPTION 'KAN-722 post: v_game_rating changed';
+  END IF;
+
+  -- No KAN-712 wrapped RPC (wrapper or inner) changed.
+  IF EXISTS (SELECT 1 FROM pg_temp.kan722_wrapped_pre w LEFT JOIN pg_proc p ON p.oid = w.oid
+              WHERE p.oid IS NULL OR md5(pg_get_functiondef(p.oid)) <> w.def OR p.proacl::text IS DISTINCT FROM w.acl) THEN
+    RAISE EXCEPTION 'KAN-722 post: a KAN-712 wrapped RPC changed';
   END IF;
 
   -- events still closed to the API.
@@ -287,8 +257,6 @@ BEGIN
   -- Access parity on the views themselves.
   IF NOT has_table_privilege('authenticated', 'public.v_rateable_after_game', 'SELECT')
      OR NOT has_table_privilege('anon', 'public.v_rateable_after_game', 'SELECT')
-     OR has_table_privilege('anon', 'public.v_host_weekly_metrics', 'SELECT')
-     OR has_table_privilege('authenticated', 'public.v_host_weekly_metrics', 'SELECT')
      OR has_table_privilege('anon', 'public.v_game_rating', 'SELECT')
      OR has_table_privilege('authenticated', 'public.v_game_rating', 'SELECT') THEN
     RAISE EXCEPTION 'KAN-722 post: view SELECT grants differ from the pre-image';

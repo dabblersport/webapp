@@ -3,13 +3,16 @@
 --
 -- Output: PASS|id|detail or FAIL|id|detail, then #SUMMARY|pass=|fail=, plus #PLAN| and #FINGERPRINT| lines.
 --
--- Variable :expect selects which image is asserted:
+-- Precondition: 20261104100700_kan714_b07_sport_overview_counts.sql (KAN-726, B07) is applied. B07 owns the
+-- v_host_weekly_metrics repoint; B03 does not touch that view. Every v_host_weekly_metrics check below therefore
+-- asserts the B03+B07 CHAIN result (reads events, shape unchanged) regardless of :expect.
+-- Variable :expect selects which image of v_rateable_after_game is asserted:
 --   post (default) — 20261104100300_kan714_b03_views_rating_host_metrics.sql applied.
---   pre            — legacy pre-image (no migration, or after rollback_kan714_b03.sql).
+--   pre            — legacy pre-image (B03 not applied, or after rollback_kan714_b03.sql).
 -- RED/GREEN protocol (commands in the KAN-722 report):
---   chain without migration,  expect=post  -> FAIL lines (D1, D2, P1..P4)          RED
---   chain with migration,     expect=post  -> 0 FAIL                               GREEN
---   migration + rollback,     expect=pre   -> 0 FAIL, and #FINGERPRINT| equal to the pre-migration DB
+--   chain + B07, no B03,      expect=post  -> FAIL lines (D1, X1, P1)               RED
+--   chain + B03 + B07,        expect=post  -> 0 FAIL                               GREEN
+--   chain + B03 + B07 + rollback, expect=pre -> 0 FAIL, #FINGERPRINT| equal to the pre-migration DB
 --
 -- Groups: S shape/attributes, D column dependencies (provenance in the catalogue), L legacy parity,
 --         E seeded semantics (ended / not ended / cancelled / meetup with NULL end), A access,
@@ -154,12 +157,14 @@ SELECT pg_temp.chk('D1 v_rateable_after_game column dependencies', pg_temp.deps(
   CASE WHEN pg_temp.post()
        THEN 'events.creator_user_id,events.end_at,events.event_type,events.id,game_roster.game_id,game_roster.status,game_roster.user_id,games.event_id,games.id'
        ELSE 'game_roster.game_id,game_roster.status,game_roster.user_id,games.creator_user_id,games.end_at,games.id' END);
-SELECT pg_temp.chk('D2 v_host_weekly_metrics column dependencies', pg_temp.deps('v_host_weekly_metrics'),
-  CASE WHEN pg_temp.post()
-       THEN 'events.capacity,events.creator_user_id,events.event_type,events.id,events.is_cancelled,events.start_at,game_roster.game_id,game_roster.status,games.event_id,games.id'
-       ELSE 'game_roster.game_id,game_roster.status,games.capacity,games.creator_user_id,games.id,games.is_cancelled,games.start_at' END);
+SELECT pg_temp.chk('D2 v_host_weekly_metrics column dependencies after B03+B07 (B07 owns the repoint)', pg_temp.deps('v_host_weekly_metrics'),
+  'events.capacity,events.creator_user_id,events.event_type,events.id,events.is_cancelled,events.start_at,game_roster.game_id,game_roster.status,games.event_id,games.id');
 SELECT pg_temp.chk('D3 v_game_rating reads only games.id + aggregate (UNCHANGED by design)', pg_temp.deps('v_game_rating'),
   'game_rating_aggregate.composite_score,game_rating_aggregate.dim_counts,game_rating_aggregate.dim_sums,game_rating_aggregate.event_count,game_rating_aggregate.game_id,game_rating_aggregate.last_event_at,games.id');
+
+SELECT pg_temp.chk('D4 v_game_rating has no shared-fact column to move (no start/end/cancel/creator output)',
+  (SELECT count(*)::text FROM pg_attribute a WHERE a.attrelid = 'public.v_game_rating'::regclass AND a.attnum > 0
+      AND NOT a.attisdropped AND a.attname ~ '(start|end|cancel|creator)'), '0');
 
 -- ---------------------------------------------------------------- L: legacy parity (whole population, as the owner, per rater)
 -- Raters: every user on any active roster + an outsider + NULL (anon). Diff must be empty both ways, counts equal.
@@ -251,12 +256,22 @@ SELECT '#PLAN|v_rateable_after_game|' || replace(pg_temp.plan('SELECT * FROM pub
 SELECT '#PLAN|v_host_weekly_metrics|' || replace(pg_temp.plan('SELECT * FROM public.v_host_weekly_metrics'), E'\n', E'\n#PLAN|  ');
 SELECT pg_temp.chk('X1 rateable plan: events scans, SubPlans, CTE scans of ctx',
   (WITH p AS (SELECT pg_temp.plan('SELECT * FROM public.v_rateable_after_game') t)
-   SELECT pg_temp.cnt(t, ' on events') || ':' || pg_temp.cnt(t, '\n\s*SubPlan \d') || ':' || pg_temp.cnt(t, 'CTE Scan on ctx') FROM p),
+   SELECT pg_temp.cnt(t, ' on events\s') || ':' || pg_temp.cnt(t, '\n\s*SubPlan \d') || ':' || pg_temp.cnt(t, 'CTE Scan on ctx') FROM p),
   CASE WHEN pg_temp.post() THEN '1:2:3' ELSE '0:2:3' END);
+-- X3: the single events scan sits inside the CTE ctx node (evaluated once), and no SubPlan NODE header (a line that
+-- starts with "SubPlan n"; references like "(SubPlan 3)" inside a filter are not nodes) lies between them.
+SELECT pg_temp.chk('X3 rateable: the events scan is in CTE ctx, not under a SubPlan',
+  (WITH p AS (SELECT pg_temp.plan('SELECT * FROM public.v_rateable_after_game') t),
+        q AS (SELECT t, position(E'CTE ctx\n' IN t) AS c, position(' on events ' IN t) AS e FROM p)
+   SELECT CASE WHEN e = 0 THEN 'no-events-scan'
+               WHEN c = 0 OR c > e THEN 'not-in-cte'
+               WHEN substr(t, c, e - c) ~ '\n\s*SubPlan \d' THEN 'under-subplan'
+               ELSE 'ok' END FROM q),
+  CASE WHEN pg_temp.post() THEN 'ok' ELSE 'no-events-scan' END);
 SELECT pg_temp.chk('X2 host plan: events scans, SubPlans',
   (WITH p AS (SELECT pg_temp.plan('SELECT * FROM public.v_host_weekly_metrics') t)
-   SELECT pg_temp.cnt(t, ' on events') || ':' || pg_temp.cnt(t, '\n\s*SubPlan \d') FROM p),
-  CASE WHEN pg_temp.post() THEN '1:0' ELSE '0:0' END);
+   SELECT pg_temp.cnt(t, ' on events\s') || ':' || pg_temp.cnt(t, '\n\s*SubPlan \d') FROM p),
+  '1:0');
 SELECT set_config('request.jwt.claim.sub', '', true);
 
 -- ---------------------------------------------------------------- M: compat-mirror path (normal write through events)
@@ -291,11 +306,11 @@ SELECT pg_temp.chk('P1 rateable host role follows events.creator_user_id',
 SELECT pg_temp.chk('P2 host week follows events.start_at (2032-W20 row exists, 2031-W10 gone)',
   (SELECT count(*) FROM public.v_host_weekly_metrics WHERE user_id = '00000000-0000-0000-0000-0000000000a1' AND isoy = 2032 AND isow = 20)::text
   || ':' || (SELECT count(*) FROM public.v_host_weekly_metrics WHERE user_id = '00000000-0000-0000-0000-0000000000a1' AND isoy = 2031 AND isow = 10)::text,
-  CASE WHEN pg_temp.post() THEN '1:0' ELSE '0:1' END);
+  '1:0');
 SELECT pg_temp.chk('P3/P4 2033-W02 row follows events.is_cancelled (0 hosted) and events.capacity (fill 2/2)',
   (SELECT games_hosted || ':' || fill_rate FROM public.v_host_weekly_metrics
     WHERE user_id = '00000000-0000-0000-0000-0000000000a1' AND isoy = 2033 AND isow = 2),
-  CASE WHEN pg_temp.post() THEN '0:1.000' ELSE NULL END);
+  '0:1.000');
 
 SELECT CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END || '|' || id || '|' || detail FROM res ORDER BY n;
 SELECT '#SUMMARY|expect=' || current_setting('kan722.expect') || '|pass=' || count(*) FILTER (WHERE ok) || '|fail=' || count(*) FILTER (WHERE NOT ok) FROM res;
