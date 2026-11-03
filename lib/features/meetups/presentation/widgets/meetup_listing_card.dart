@@ -131,7 +131,7 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
         ref.watch(meetupFavouritesProvider).valueOrNull?[m.id] ??
         (count: 0, mine: false);
     return DabblerCardGame(
-      title: m.title,
+      title: m.title ?? '',
       // `Listings.dc.html:526`: activity in info, then the skill in its tone
       // (the meetup has no setting or requirement fields to tag).
       tags: <Widget>[

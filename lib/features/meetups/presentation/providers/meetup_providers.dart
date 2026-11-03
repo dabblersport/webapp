@@ -1,7 +1,13 @@
+import 'dart:async';
+
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/data/supabase_client.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 
@@ -29,11 +35,100 @@ Future<T> _unwrap<T>(Future<Result<T, Failure>> f) async {
   return r.fold((e) => throw e, (v) => v);
 }
 
+// refresh on resume / reconnect (KAN-753) ---------------------------------------
+
+/// How long a burst of resume and reconnect signals is collapsed into one
+/// refresh: the design system's debounce before a fetch.
+const Duration kMeetupRefreshDebounce = DabblerMotion.debounceSuggestion;
+
+final meetupRefreshDebounceProvider = Provider<Duration>(
+  (ref) => kMeetupRefreshDebounce,
+);
+
+/// Fires each time the app returns to the foreground. Empty when no binding
+/// exists (a unit test); tests override it.
+final meetupResumeSignalProvider = Provider<Stream<void>>((ref) {
+  final resumed = StreamController<void>.broadcast();
+  try {
+    final listener = AppLifecycleListener(onResume: () => resumed.add(null));
+    ref.onDispose(listener.dispose);
+  } catch (_) {
+    // No WidgetsBinding: nothing ever resumes.
+  }
+  ref.onDispose(resumed.close);
+  return resumed.stream;
+});
+
+/// Refetches the meetup reads that are on screen (lists, nearby, details) when
+/// the app resumes or the connection returns. Signals inside the debounce
+/// window become one refresh, and a refresh is skipped while offline (the
+/// reconnect covers it). It belongs to one account: an account switch disposes
+/// it, so a refresh scheduled for the old account never runs. Reads only: it
+/// never writes.
+class MeetupRefresher {
+  MeetupRefresher(this._ref, this.accountId, {required Duration debounce})
+    : _debounce = debounce;
+
+  final Ref _ref;
+  final Duration _debounce;
+
+  /// The account this refresher was built for.
+  final String? accountId;
+
+  Timer? _timer;
+  bool _disposed = false;
+
+  void schedule() {
+    if (_disposed) return;
+    if (_ref.read(connectivityProvider) == ConnectionStatus.offline) return;
+    _timer?.cancel();
+    _timer = Timer(_debounce, _refresh);
+  }
+
+  void _refresh() {
+    if (_disposed || _ref.read(cacheAccountIdProvider) != accountId) return;
+    // invalidate() only refetches the instances someone is watching, once each.
+    _ref.invalidate(meetupListProvider);
+    _ref.invalidate(nearbyMeetupsProvider);
+    _ref.invalidate(meetupCardProvider);
+  }
+
+  void dispose() {
+    _disposed = true;
+    _timer?.cancel();
+  }
+}
+
+/// Alive while any meetup read is on screen (they watch it). Rebuilt on an
+/// account switch, which also rebuilds those reads for the new account and
+/// discards whatever the old account still had in flight.
+final meetupRefreshProvider = Provider.autoDispose<MeetupRefresher>((ref) {
+  final refresher = MeetupRefresher(
+    ref,
+    ref.watch(cacheAccountIdProvider),
+    debounce: ref.watch(meetupRefreshDebounceProvider),
+  );
+  final resumed = ref
+      .watch(meetupResumeSignalProvider)
+      .listen((_) => refresher.schedule());
+  final reconnected = ref
+      .watch(connectivityProvider.notifier)
+      .reconnects
+      .listen((_) => refresher.schedule());
+  ref.onDispose(() {
+    resumed.cancel();
+    reconnected.cancel();
+    refresher.dispose();
+  });
+  return refresher;
+});
+
 // reads ------------------------------------------------------------------------
 
 /// Upcoming public meetups from v_meetup_list, optionally per sport id.
 final meetupListProvider = FutureProvider.autoDispose
     .family<List<MeetupListItem>, String?>((ref, sportId) {
+      ref.watch(meetupRefreshProvider);
       final repo = ref.watch(meetupRepositoryProvider);
       // KAN-605: stale-while-revalidate, kept on the device per account.
       return swrFetch<List<MeetupListItem>>(
@@ -67,6 +162,7 @@ class NearbyMeetupsQuery {
 
 final nearbyMeetupsProvider = FutureProvider.autoDispose
     .family<List<NearbyMeetup>, NearbyMeetupsQuery>((ref, q) {
+      ref.watch(meetupRefreshProvider);
       final repo = ref.watch(meetupRepositoryProvider);
       return swrFetch<List<NearbyMeetup>>(
         ref,
@@ -90,6 +186,7 @@ final nearbyMeetupsProvider = FutureProvider.autoDispose
 
 final meetupCardProvider = FutureProvider.autoDispose
     .family<MeetupCard, String>((ref, id) {
+      ref.watch(meetupRefreshProvider);
       final repo = ref.watch(meetupRepositoryProvider);
       // KAN-605: a meetup the viewer opened is kept for offline reading.
       return swrFetch<MeetupCard>(
