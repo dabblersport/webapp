@@ -1,7 +1,13 @@
 import 'package:dabbler/data/models/games/game.dart';
 
+/// Version of the cached game record (KAN-747). Version 1 was the unversioned
+/// KAN-655 shape. A record with a missing or different version is discarded,
+/// never decoded, so an old copy cannot stand in for current event data.
+const int kGameCodecVersion = 2;
+
 /// JSON-safe encoding of a [Game] for the on-device cache (KAN-655).
 Map<String, Object?> encodeGame(Game g) => {
+  'v': kGameCodecVersion,
   'id': g.id,
   'title': g.title,
   'description': g.description,
@@ -27,7 +33,19 @@ Map<String, Object?> encodeGame(Game g) => {
   'updatedAt': g.updatedAt.toIso8601String(),
 };
 
-Game decodeGame(Map<String, dynamic> m) => Game(
+/// The cached [Game], or null when the record is from another codec version or
+/// is missing a required field. Nothing is filled in: nulls stay null and the
+/// id and timestamps are the stored ones.
+Game? decodeGame(Map<String, dynamic> m) {
+  if (m['v'] != kGameCodecVersion) return null;
+  try {
+    return _decode(m);
+  } catch (_) {
+    return null;
+  }
+}
+
+Game _decode(Map<String, dynamic> m) => Game(
   id: m['id'] as String,
   title: m['title'] as String,
   description: m['description'] as String,
@@ -58,6 +76,8 @@ Game decodeGame(Map<String, dynamic> m) => Game(
 List<Map<String, Object?>> encodeGames(List<Game> games) =>
     games.map(encodeGame).toList();
 
-List<Game> decodeGames(Object? json) => (json as List)
-    .map((e) => decodeGame(Map<String, dynamic>.from(e as Map)))
-    .toList();
+/// Decodes a cached list; a rejected record is skipped, never merged.
+List<Game> decodeGames(Object? json) => [
+  for (final e in json as List)
+    if (decodeGame(Map<String, dynamic>.from(e as Map)) case final g?) g,
+];
