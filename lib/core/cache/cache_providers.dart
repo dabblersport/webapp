@@ -120,9 +120,22 @@ Future<T> swrFetch<T>(
     }),
   );
 
+  // A result that lands after the provider was disposed or the account
+  // changed is written nowhere: not to the old account, not to the new one
+  // (KAN-748).
+  bool stillCurrent() {
+    if (disposed) return false;
+    try {
+      return ref.read(cacheAccountIdProvider) == account;
+    } catch (_) {
+      return false; // the container went away
+    }
+  }
+
   Future<T> network() async {
     final started = DateTime.now();
     final value = await fetch().timeout(kRequestTimeout);
+    if (!stillCurrent()) return value;
     try {
       await cache.write(account, key, encode(value), requestStartedAt: started);
     } catch (_) {
@@ -170,3 +183,68 @@ Future<T> swrFetch<T>(
   }
   return cached;
 }
+
+/// Applies the event invalidation contract (KAN-748, see `isInvalidatedBy` in
+/// cache_policy.dart) to the on-device cache and to what is on screen.
+///
+/// For the signed-in account: matching entries not on screen are removed;
+/// matching entries on screen are refreshed once each through
+/// [ShownCacheEntries] (the provider re-runs, `swrFetch` goes network-first).
+/// A cancelled event's entries are removed even when shown. An account change
+/// wipes every account but the current one and refreshes the old account's
+/// shown copies. Local only: it calls no server and writes no shared column.
+class EventCacheInvalidator {
+  EventCacheInvalidator({
+    required OfflineCache cache,
+    required String? Function() currentAccountId,
+    ShownCacheEntries? shown,
+  }) : _cache = cache,
+       _currentAccountId = currentAccountId,
+       _shown = shown ?? ShownCacheEntries.instance;
+
+  final OfflineCache _cache;
+  final String? Function() _currentAccountId;
+  final ShownCacheEntries _shown;
+
+  /// Invalidates what [change] makes stale; returns the keys it acted on.
+  Future<Set<String>> invalidate(EventCacheChange change) async {
+    final current = _currentAccountId();
+
+    if (change.type == EventChangeType.accountChanged) {
+      final previous = change.previousAccountId;
+      if (previous == null || previous == current) return const {};
+      // Null current (signed out) wipes everything.
+      await _cache.wipe(keepAccountId: current);
+      final shownKeys = _shown.keysOf(previous);
+      for (final key in shownKeys) {
+        _shown.refresh(previous, key);
+      }
+      return shownKeys;
+    }
+
+    if (current == null) return const {};
+    bool matches(String key) => isInvalidatedBy(change, key);
+    final shownKeys = _shown.keysOf(current).where(matches).toSet();
+    final storedKeys = (await _cache.keysOf(current)).where(matches).toSet();
+    final removeShown = change.type == EventChangeType.cancelled;
+    for (final key in storedKeys) {
+      if (removeShown || !shownKeys.contains(key)) {
+        await _cache.remove(current, key);
+      }
+    }
+    for (final key in shownKeys) {
+      _shown.refresh(current, key);
+    }
+    return {...storedKeys, ...shownKeys};
+  }
+}
+
+/// The event cache invalidator for the signed-in account (KAN-748). Feature
+/// code calls `invalidate(...)` after an event create / edit / cancel or a
+/// city / sport change.
+final eventCacheInvalidatorProvider = Provider<EventCacheInvalidator>(
+  (ref) => EventCacheInvalidator(
+    cache: ref.watch(offlineCacheProvider),
+    currentAccountId: () => ref.read(cacheAccountIdProvider),
+  ),
+);

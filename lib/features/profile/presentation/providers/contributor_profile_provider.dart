@@ -160,6 +160,10 @@ Future<List<ContributorSport>> _readSports(
 
 /// Maps `v_game_card` rows to entities. The owner reads the viewer-relative
 /// flags; another profile matches the creator and the target's active roster.
+///
+/// `v_game_card` reads its shared columns (title, start_at, is_cancelled,
+/// creator_profile_id) from `public.events` since KAN-720; `id` stays the
+/// games id. Title may be null; a row without a start is skipped.
 List<ContributorEntity> gameRowsToEntities(
   List<Map<String, dynamic>> rows, {
   required bool isOwn,

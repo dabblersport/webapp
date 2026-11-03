@@ -7,6 +7,8 @@
 -- Variable :expect selects which image is asserted:
 --   post (default) — 20261104100600_kan714_b06_rpc_meetup_reads.sql applied.
 --   pre            — legacy pre-image (no migration, or after rollback_kan714_b06.sql).
+-- Build the chain from tracked files only: bash supabase/tests/events_p2/build_kan725.sh <new-datadir> <port>
+--   (database k725; it ends with local_harness_kan725.sql: the three pre-image RPCs, citext, stand-in columns).
 -- RED/GREEN protocol:
 --   chain without migration,  expect=post  -> FAIL lines (D1, D2, D3, P1..P4, X1)   RED
 --   chain without migration,  expect=pre   -> 0 FAIL
