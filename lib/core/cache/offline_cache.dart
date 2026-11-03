@@ -265,6 +265,11 @@ class OfflineCache {
     }),
   );
 
+  /// The keys cached for [accountId], from its index, after any queued write
+  /// (KAN-748: the event invalidator removes the stale ones).
+  Future<Set<String>> keysOf(String accountId) =>
+      _queue.then((_) async => _readIndex(await _p(), accountId).keys.toSet());
+
   /// Total encoded size cached for [accountId], from its index.
   Future<int> sizeOf(String accountId) async => _readIndex(
     await _p(),

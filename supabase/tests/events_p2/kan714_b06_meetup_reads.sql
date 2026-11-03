@@ -1,5 +1,5 @@
 -- KAN-725 (KAN-714 piece B06) — rpc_meetup_card / rpc_meetup_attendees read shared facts from public.events;
--- rpc_meetup_my is pinned UNCHANGED (it cannot execute in the pre-image — see R1).
+-- rpc_meetup_my: retired by KAN-785 (migration 20261104110400); no longer pinned.
 -- LOCAL THROWAWAY POSTGRES ONLY. One transaction, ROLLBACK at the end: no data survives.
 --
 -- Output: PASS|id|detail or FAIL|id|detail, then #SUMMARY|expect=|pass=|fail=, plus #PLAN| and #FINGERPRINT| lines.
@@ -17,7 +17,7 @@
 --
 -- Groups: S shape/attributes, D definition provenance, L legacy parity over the whole dataset,
 --         V visibility literals (owner / circle member / blocked / admin / outsider / anon), G games do not leak,
---         A access, C consumer (wrapped rpc_meetup_update returns the card), R rpc_meetup_my,
+--         A access, C consumer (wrapped rpc_meetup_update returns the card),
 --         X EXPLAIN shape, P provenance (events made to disagree with meetups).
 \set ON_ERROR_STOP 1
 \set card_post_md5 11a9f38356fc23e4430c9353b246eb8f
@@ -299,20 +299,18 @@ SELECT ('72500000-0000-0000-0001-00000000000' || n)::uuid, ('00000000-0000-0000-
 SELECT pg_temp.chk('S1 signatures and result types',
   (SELECT string_agg(p.proname || '(' || pg_get_function_identity_arguments(p.oid) || ')->' || pg_get_function_result(p.oid), ' ; '
                      ORDER BY p.proname)
-     FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname IN ('rpc_meetup_card', 'rpc_meetup_my', 'rpc_meetup_attendees')),
+     FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname IN ('rpc_meetup_card', 'rpc_meetup_attendees')),
   'rpc_meetup_attendees(p_meetup_id uuid, p_status text, p_limit integer, p_offset integer)->TABLE(actor_profile_id uuid, display_name text, username citext, status text) ; '
-  || 'rpc_meetup_card(p_meetup_id uuid, p_profile_type text)->jsonb ; '
-  || 'rpc_meetup_my()->TABLE(id uuid, title text, starts_at timestamp with time zone, visibility text, host_actor_id uuid, updated_at timestamp with time zone)');
+  || 'rpc_meetup_card(p_meetup_id uuid, p_profile_type text)->jsonb');
 SELECT pg_temp.chk('S2 owner / secdef / volatility / config / ACL unchanged',
   (SELECT string_agg(p.proname || ':' || pg_get_userbyid(p.proowner) || ':' || p.prosecdef || ':' || p.provolatile::text || ':'
                      || coalesce(array_to_string(p.proconfig, ';'), '-') || ':' || coalesce(p.proacl::text, '-'), ' ' ORDER BY p.proname)
-     FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname IN ('rpc_meetup_card', 'rpc_meetup_my', 'rpc_meetup_attendees')),
+     FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace AND p.proname IN ('rpc_meetup_card', 'rpc_meetup_attendees')),
   'rpc_meetup_attendees:postgres:true:v:search_path=public:{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres} '
-  || 'rpc_meetup_card:postgres:true:v:search_path=public:{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres} '
-  || 'rpc_meetup_my:postgres:false:s:search_path=public, pg_temp:{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}');
-SELECT pg_temp.chk('S3 none of the three is KAN-712-wrapped (no registry row, no _kan712_inner)',
-  (SELECT count(*) FROM public.kan712_wrapped_rpcs w WHERE w.name IN ('rpc_meetup_card', 'rpc_meetup_my', 'rpc_meetup_attendees'))::text
-  || ':' || (SELECT count(*) FROM pg_proc WHERE proname IN ('rpc_meetup_card_kan712_inner', 'rpc_meetup_my_kan712_inner',
+  || 'rpc_meetup_card:postgres:true:v:search_path=public:{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}');
+SELECT pg_temp.chk('S3 neither of the two is KAN-712-wrapped (no registry row, no _kan712_inner)',
+  (SELECT count(*) FROM public.kan712_wrapped_rpcs w WHERE w.name IN ('rpc_meetup_card', 'rpc_meetup_attendees'))::text
+  || ':' || (SELECT count(*) FROM pg_proc WHERE proname IN ('rpc_meetup_card_kan712_inner',
                                                            'rpc_meetup_attendees_kan712_inner'))::text, '0:0');
 
 -- ---------------------------------------------------------------- D: definition provenance (md5 of pg_get_functiondef)
@@ -329,8 +327,6 @@ SELECT pg_temp.chk('D3 card + attendees read events by id + type; legacy meetups
                                     'public.rpc_meetup_attendees(uuid,text,integer,integer)'::regprocedure)),
   CASE WHEN pg_temp.post() THEN 'rpc_meetup_attendees:true:false rpc_meetup_card:true:false'
        ELSE 'rpc_meetup_attendees:false:true rpc_meetup_card:false:true' END);
-SELECT pg_temp.chk('D4 rpc_meetup_my definition UNCHANGED (both images)',
-  md5(pg_get_functiondef('public.rpc_meetup_my()'::regprocedure)), '9459dd31f4dfc534d26b3e37e49326b9');
 
 -- ---------------------------------------------------------------- L: legacy parity over the whole dataset
 -- Every meetup x every user (a1..a7) + anon: card outcome text identical (jsonb or error), counts equal, non-vacuous.
@@ -453,10 +449,6 @@ SELECT pg_temp.chk('A3 events posture unchanged (ACL, RLS, FORCE RLS, zero polic
   (SELECT coalesce(relacl::text, '-') || ':' || relrowsecurity || ':' || relforcerowsecurity FROM pg_class WHERE oid = 'public.events'::regclass)
   || ':' || (SELECT count(*) FROM pg_policy WHERE polrelid = 'public.events'::regclass),
   '{postgres=arwdDxt/postgres,service_role=arwdDxt/postgres}:true:true:0');
-
--- ---------------------------------------------------------------- R: rpc_meetup_my (pre-image cannot execute; pinned unchanged)
-SELECT pg_temp.chk('R1 rpc_meetup_my raises 42703 (undefined column) in both images',
-  pg_temp.as_('authenticated', '00000000-0000-0000-0000-0000000000a1', 'SELECT count(*)::text FROM public.rpc_meetup_my()'), 'ERR 42703');
 
 -- ---------------------------------------------------------------- X: EXPLAIN shape of the function's lookup statement
 -- The statement text explained is asserted to be the one inside the function body (not a paraphrase).

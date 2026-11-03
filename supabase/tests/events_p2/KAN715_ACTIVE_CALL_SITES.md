@@ -24,9 +24,6 @@ Guard: `test/features/games/active_write_paths_test.dart` (run: `flutter test te
 | L1 | `lib/data/repositories/games_repository_impl.dart:91` | insert | dead file | unreachable |
 | L2 | same `:194` | update | dead file | unreachable |
 | L3 | same `:223` | update | dead file | unreachable |
-| D1 | `lib/features/games/data/datasources/supabase_games_datasource.dart:204` (`createGame`) | insert | reachable via the active repository | games has RLS and no write policy; payload has non-existent columns (KAN-712 inventory D1) |
-| D2 | same `:437` (`updateGame`) | update | reachable | same RLS denial (D2) |
-| D3 | same `:688` (`cancelGame`) | update status/cancelled_at | reachable | same RLS denial; correct path is `rpc_cancel_game` (D3) |
 | D4 | `lib/features/profile/services/data_retention_service.dart:317` | delete | reachable | RLS denial; filters on `creator_id`, not a games column (D4) |
 
 Meetups: zero direct table writes in `lib/` (reads via `v_meetup_list`, writes via RPC only; KAN-712 D5).
@@ -37,7 +34,7 @@ The live write surface is RPC only (KAN-712 inventory section 4 D6): `rpc_create
 ## 3. The guard
 
 The test scans every `lib/**/*.dart` (comments stripped) for `.from(<games|meetups table>).insert|update|upsert|delete(` and requires the
-result to equal the table above exactly (3 / 3 / 1 sites). A new direct write fails the test; removing a known one also fails it, so this
+result to equal the table above exactly (3 / 1 sites). A new direct write fails the test; removing a known one also fails it, so this
 manifest and the test map are updated together. It also asserts: meetups have no direct writes, the legacy file has no importers, and a game
 record with null title/end/sport parses with `id` (games.id) and `organizerId` (creator_profile_id) intact.
 

@@ -36,6 +36,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
 import '../meetups/meetup_screens_harness.dart';
+import '../../support/connectivity_overrides.dart';
 import '../../support/render_mode.dart';
 
 /// Favourites on the venue and meetup cards (CTO ruling v2): the heart is a
@@ -141,6 +142,8 @@ Future<void> _pumpVenues(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         activeLocationProvider.overrideWith(_Location.new),
         activeSportsByProfileCountryProvider.overrideWith(
           (ref) async => _sports,
@@ -210,6 +213,8 @@ Future<void> _pumpMeetups(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         meetupRepositoryProvider.overrideWithValue(
           FakeMeetupRepository()
             ..list = <MeetupListItem>[

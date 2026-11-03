@@ -2,6 +2,8 @@
 -- rpc_meetup_attendees(uuid,text,integer,integer) after 20261104100600_kan714_b06_rpc_meetup_reads.sql.
 -- Bodies below are pg_get_functiondef of the KAN-713 stage catalogue, verbatim (T-058).
 -- rpc_meetup_my() was never changed and is not touched.
+-- KAN-789 note: rpc_meetup_my() was since RETIRED by KAN-785 (20261104110400). The post-check below still pins its
+-- pre-image md5 (historical B06 state), so on a post-KAN-785 catalogue run KAN-785's rollback (its migration header) first.
 -- Single transaction; no DROP, no CASCADE, no data mutation, no grant change.
 -- CREATE OR REPLACE FUNCTION keeps owner and ACL; asserted below.
 

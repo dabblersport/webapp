@@ -88,7 +88,9 @@ List<MeetupListItem> applyMeetupFilters(
   out.sort((a, b) {
     // Only a city is known and no sort was chosen: A to Z (KAN-588).
     if (alphabetical) {
-      final byTitle = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+      final byTitle = (a.title ?? '').toLowerCase().compareTo(
+        (b.title ?? '').toLowerCase(),
+      );
       return byTitle != 0 ? byTitle : a.startAt.compareTo(b.startAt);
     }
     if (sort == MeetupSort.popular && a.goingCount != b.goingCount) {

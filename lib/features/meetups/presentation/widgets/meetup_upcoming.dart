@@ -41,7 +41,7 @@ class MeetupUpcoming extends StatelessWidget {
             fraction: c.fraction,
             countdownValue: c.value,
             countdownUnit: c.unit,
-            title: m.title,
+            title: m.title ?? '',
             when:
                 '${DateFormat.MMMd(locale).format(m.startAt)} · ${DateFormat.jm(locale).format(m.startAt)}'
                 '${end == null ? '' : ' · ${end.difference(m.startAt).inMinutes} ${l.listing_unit_min}'}',
@@ -55,7 +55,7 @@ class MeetupUpcoming extends StatelessWidget {
             tone: tone,
             month: DateFormat.MMM(locale).format(m.startAt).toUpperCase(),
             day: '${m.startAt.day}',
-            title: m.title,
+            title: m.title ?? '',
             time: DateFormat.jm(locale).format(m.startAt),
             place: place,
             fraction: c.fraction,

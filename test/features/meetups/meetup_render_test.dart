@@ -22,6 +22,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/connectivity_overrides.dart';
 import '../../support/geometry_dump.dart';
 import '../../support/render_mode.dart';
 import 'meetup_screens_harness.dart';
@@ -67,6 +68,8 @@ Future<void> _shoot(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         activeLocationProvider.overrideWith(_Ready.new),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         listingCityAreaIdsProvider.overrideWith(

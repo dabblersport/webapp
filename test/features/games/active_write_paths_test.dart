@@ -15,9 +15,6 @@ import 'package:flutter_test/flutter_test.dart';
 const Map<String, int> _knownDirectWrites = {
   // Legacy repository: no importers anywhere in lib/ or test/ (dead code).
   'data/repositories/games_repository_impl.dart': 3,
-  // Active datasource: createGame, updateGame, cancelGame. games has RLS on and
-  // no write policy, so these are denied for authenticated (KAN-712 inventory D1-D3).
-  'features/games/data/datasources/supabase_games_datasource.dart': 3,
   // Retention purge filters on a column games does not have (inventory D4).
   'features/profile/services/data_retention_service.dart': 1,
 };
