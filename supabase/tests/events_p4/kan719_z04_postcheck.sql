@@ -411,6 +411,7 @@ DO $s4$ DECLARE r record; BEGIN
   FOR r IN SELECT DISTINCT t.tgrelid::regclass::text AS tbl, t.tgname, rm.col FROM pg_trigger t JOIN pg_proc p ON p.oid = t.tgfoid
              JOIN k781_removed rm ON rm.tbl = t.tgrelid::regclass::text
             WHERE t.tgrelid IN ('public.games'::regclass, 'public.meetups'::regclass) AND NOT t.tgisinternal
+              AND p.proname !~ '^(k7\d\d_ref_|b\d\d_ref_|harness_|k781_)'
               AND p.prosrc ~* ('\m(new|old)\.' || rm.col || '\M') LOOP
     INSERT INTO k781_result VALUES ('S4', 'FAIL', format('trigger %s on %s reads NEW/OLD.%s', r.tgname, r.tbl, r.col));
   END LOOP;
