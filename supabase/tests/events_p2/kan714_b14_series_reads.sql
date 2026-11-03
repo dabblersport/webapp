@@ -1,6 +1,7 @@
 -- KAN-733 (KAN-714 piece B14) — the series RPCs (rpc_edit_game_series_occurrence, rpc_edit_game_series_future,
 -- rpc_cancel_game_series) read host, start, end and cancel state from public.events. All three are KAN-712-wrapped;
--- only their *_kan712_inner bodies change. LOCAL THROWAWAY POSTGRES ONLY. One transaction, ROLLBACK at the end.
+-- the migration changes their bodies via kan712_unwrap_rpc -> replace -> kan712_wrap_rpc, so the wrappers (D-*-wrapper,
+-- S-*) must come back byte-identical and only the *_kan712_inner bodies differ. LOCAL THROWAWAY POSTGRES ONLY. One transaction, ROLLBACK at the end.
 --
 -- Output: PASS|id|detail or FAIL|id|detail, then #SUMMARY|expect=|pass=|fail=, plus #PLAN| / #FINGERPRINT| lines.
 -- Variable :expect selects which image is asserted:
@@ -501,8 +502,8 @@ SELECT pg_temp.chk('A-authenticated-inner-' || n, left(pg_temp.run('authenticate
 SELECT pg_temp.chk('A-authenticated-events', left(pg_temp.run('authenticated', :'a1'::uuid, NULL, 'SELECT count(*)::text FROM public.events', NULL), 9), 'ERR 42501');
 
 -- ---------------------------------------------------------------- K: KAN-712 unwrap -> wrap round trip (rolled back)
--- The contract's own path regenerates a wrapper identical to the installed one (byte for byte, same ACL) and leaves
--- the inner body as it is: replacing the inner in place reaches the same end state without the DROP.
+-- The contract's own path (the one the migration and the rollback use) regenerates a wrapper identical to the
+-- installed one (byte for byte, same ACL) and leaves the inner body as it is.
 CREATE TEMP TABLE k_before AS
   SELECT p.proname::text AS fn, md5(pg_get_functiondef(p.oid)) AS md, p.proacl::text AS acl, p.proconfig::text AS cfg
     FROM pg_proc p WHERE p.pronamespace = 'public'::regnamespace
