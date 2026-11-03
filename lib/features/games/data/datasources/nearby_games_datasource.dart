@@ -28,6 +28,9 @@ abstract class NearbyGamesDatasource {
   });
 }
 
+/// Reads only. KAN-743: `rpc_get_nearby_games` (KAN-723, B04) and
+/// `v_game_card` (KAN-720, B01) are event-backed under the same names and
+/// columns; every row's `id` is the game id.
 class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   const SupabaseNearbyGamesDatasource(this._svc);
 

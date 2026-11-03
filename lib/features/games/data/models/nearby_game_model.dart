@@ -2,6 +2,11 @@
 ///
 /// Plain Dart class (no Freezed) matching the pattern in [NearbyVenueModel].
 /// Distance is always present because the RPC computes it.
+///
+/// KAN-743: since KAN-723 (B04) the RPC and `v_game_card` (KAN-720, B01) read
+/// the shared facts (title, times, sport, capacity, cancelled) from
+/// `public.events`; names and columns are unchanged and no `event_id` is
+/// returned. [id] is `games.id` — the route, deep-link and favourite identity.
 class NearbyGameModel {
   const NearbyGameModel({
     required this.id,
@@ -30,12 +35,16 @@ class NearbyGameModel {
     this.followingJoined = 0,
   });
 
+  /// `games.id`, never the parent `events.id`.
   final String id;
+
+  /// A null title becomes 'Untitled Game', the same label the RPC's own
+  /// `coalesce(e.title, 'Untitled Game')` returns.
   final String title;
   final String? sportName;
   final DateTime? scheduledAt;
 
-  /// One of: 'upcoming', 'live', 'ended'  (computed by the RPC).
+  /// One of: 'upcoming', 'live', 'ended', 'cancelled' (computed by the RPC).
   final String? status;
   final String? venueName;
   final double? latitude;
@@ -57,7 +66,8 @@ class NearbyGameModel {
   final int? minSkill;
   final int? maxSkill;
 
-  /// When the game ends; with [scheduledAt] gives its length.
+  /// When the game ends; with [scheduledAt] gives its length. Null parses
+  /// and means "unknown" — never filled in.
   final DateTime? endAt;
 
   /// The format (`sport_variants.name_en/ar`) — `Futsal 5s`, `Doubles`.
@@ -74,6 +84,7 @@ class NearbyGameModel {
   /// The price per player in AED (`games.price_aed`): above 0 it is the price,
   /// 0 is "Free", null (a game made before the price became required) is "Ask".
   final double? priceAed;
+
   /// How many people the viewer follows are in this game; 0 when none or
   /// unknown. Not part of the listing rows: merged in after they load.
   final int followingJoined;

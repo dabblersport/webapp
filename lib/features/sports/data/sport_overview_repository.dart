@@ -30,7 +30,9 @@ abstract class SportOverviewRepository {
   /// that is not a sport.
   Future<Result<SportInfo, Failure>> sport(String sportId);
 
-  /// `rpc_sport_overview` for [cityCode] (null: every city).
+  /// `rpc_sport_overview` for [cityCode] (null: every city). A read only:
+  /// [sportId] is the sport's own id, and the event-backed game / meetup
+  /// counts (KAN-726) come back in the same shape as before.
   Future<Result<SportOverviewCounts, Failure>> overview(
     String sportId,
     String? cityCode,
