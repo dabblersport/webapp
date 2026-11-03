@@ -1,3 +1,4 @@
+import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -314,12 +315,9 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
             )),
           )
         : null;
-    final GameCounts? counts = countsAsync?.valueOrNull;
-    final bool newContributor =
-        counts != null &&
-        counts.played == 0 &&
-        counts.organised == 0 &&
-        counts.upcoming == 0;
+    final GameCounts? counts = ownProfileCountsData(countsAsync);
+    final bool countsFailed = ownProfileCountsFailed(countsAsync);
+    final bool newContributor = ownProfileIsNewContributor(countsAsync);
 
     return DabblerPage(
       topBar: ListenableBuilder(
@@ -377,6 +375,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                       ),
               ),
             ),
+            // KAN-706: On bench badge + line; nothing when not benched.
+            const BenchProfileIndicator(),
             const DabblerGap.v(DabblerSpacing.space8),
             OwnProfileStats(
               posts: posts,
@@ -384,6 +384,8 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               sportsCount: mySports.length,
               organised: counts?.organised,
               upcoming: counts?.upcoming,
+              countsFailed: countsFailed,
+              onRetryCounts: () => ref.invalidate(profileGameCountsProvider),
               gamesPlayed: isContributor
                   ? counts?.played
                   : sportProfiles.isEmpty
@@ -432,9 +434,18 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               heroTone: personaType == 'host'
                   ? DabblerStatTileTone.amber
                   : DabblerStatTileTone.brand,
-              onOpenSport: selected != null && canOpen
-                  ? () => _openSportProfile(profile, selected)
-                  : null,
+              // Selected sport: its personal Sport Profile. All sports: the
+              // account's own activity list (no per-sport filter exists there).
+              onOpenSport: selected != null
+                  ? (canOpen
+                        ? () => _openSportProfile(profile, selected)
+                        : null)
+                  : (isContributor && !newContributor && counts != null
+                        // KAN-688 ruling: the All-sports hero opens /activities (the app has
+                        // no Listings screen; activities carry no sport/profile column, so it
+                        // is not an account-scoped list).
+                        ? () => context.push(RoutePaths.activities)
+                        : null),
             ),
             const DabblerGap.v(DabblerSpacing.space8),
             RatingSummary(userId: profile?.userId),

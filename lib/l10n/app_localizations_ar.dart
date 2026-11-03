@@ -7990,6 +7990,243 @@ class AppLocalizationsAr extends AppLocalizations {
   String get profile_stat_organised => 'نظّمت';
 
   @override
+  String get bench_row_title => 'وضع الاستراحة';
+
+  @override
+  String get bench_row_off => 'متوقف';
+
+  @override
+  String bench_row_until(String date) {
+    return 'مفعّل حتى $date';
+  }
+
+  @override
+  String get bench_row_no_end => 'مفعّل بدون تاريخ انتهاء';
+
+  @override
+  String get bench_screen_title => 'وضع الاستراحة';
+
+  @override
+  String get bench_edit_title => 'تعديل الاستراحة';
+
+  @override
+  String get bench_explain_title => 'خذ استراحة من الجانب الاجتماعي';
+
+  @override
+  String get bench_explain_body =>
+      'ابتعد قليلًا. يمكنك مواصلة اللعب والظهور في قوائم اللاعبين.';
+
+  @override
+  String get bench_paused_head => 'يتوقف أثناء الاستراحة';
+
+  @override
+  String get bench_paused_1 => 'لا يمكنك النشر أو التعليق أو الإعجاب';
+
+  @override
+  String get bench_paused_2 => 'تُخفى من الخلاصة والبحث حسب اختيارك';
+
+  @override
+  String get bench_paused_3 => 'تُحظر طلبات الصداقة حسب اختيارك';
+
+  @override
+  String get bench_keep_head => 'ما يستمر بالعمل';
+
+  @override
+  String get bench_keep_1 => 'الانضمام إلى المباريات واللعب';
+
+  @override
+  String get bench_keep_2 => 'الظهور في قوائم اللاعبين';
+
+  @override
+  String get bench_reason_label => 'السبب (اختياري)';
+
+  @override
+  String get bench_reason_placeholder => 'ملاحظة قصيرة لنفسك';
+
+  @override
+  String get bench_reason_helper => 'اجعلها قصيرة.';
+
+  @override
+  String get bench_end_label => 'تاريخ الانتهاء (اختياري)';
+
+  @override
+  String get bench_end_placeholder => 'بدون تاريخ انتهاء';
+
+  @override
+  String get bench_end_helper => 'يمكنك إنهاء الاستراحة قبل ذلك في أي وقت.';
+
+  @override
+  String get bench_toggle_feed => 'إخفائي من الخلاصة';
+
+  @override
+  String get bench_toggle_feed_sub => 'لن يظهر نشاطك في الخلاصات.';
+
+  @override
+  String get bench_toggle_search => 'إخفائي من البحث';
+
+  @override
+  String get bench_toggle_search_sub => 'لا يمكن للآخرين العثور عليك بالاسم.';
+
+  @override
+  String get bench_toggle_friends => 'حظر طلبات الصداقة';
+
+  @override
+  String get bench_toggle_friends_sub => 'لا طلبات جديدة أثناء الاستراحة.';
+
+  @override
+  String get bench_toggle_notifs => 'كتم الإشعارات الاجتماعية';
+
+  @override
+  String get bench_toggle_notifs_sub =>
+      'الإعجابات والتعليقات ونشاط الأصدقاء تبقى صامتة.';
+
+  @override
+  String get bench_start => 'ابدأ الاستراحة';
+
+  @override
+  String get bench_save => 'احفظ التغييرات';
+
+  @override
+  String get bench_confirm_title => 'بدء وضع الاستراحة؟';
+
+  @override
+  String get bench_confirm_body => 'يسري هذا فورًا. يمكنك إنهاؤه في أي وقت.';
+
+  @override
+  String get bench_confirm_sum_feed => 'مخفي من الخلاصة';
+
+  @override
+  String get bench_confirm_sum_search => 'مخفي من البحث';
+
+  @override
+  String get bench_confirm_sum_friends => 'طلبات الصداقة محظورة';
+
+  @override
+  String get bench_confirm_sum_notifs => 'الإشعارات الاجتماعية مكتومة';
+
+  @override
+  String bench_confirm_sum_end(String date) {
+    return 'ينتهي في $date';
+  }
+
+  @override
+  String get bench_confirm_sum_no_end => 'بدون تاريخ انتهاء';
+
+  @override
+  String get bench_cancel => 'إلغاء';
+
+  @override
+  String get bench_back => 'رجوع';
+
+  @override
+  String get bench_retry => 'حاول مرة أخرى';
+
+  @override
+  String get bench_manage => 'إدارة';
+
+  @override
+  String get bench_status_badge => 'في استراحة';
+
+  @override
+  String get bench_status_head => 'أنت في استراحة';
+
+  @override
+  String get bench_status_since => 'منذ';
+
+  @override
+  String get bench_status_until => 'حتى';
+
+  @override
+  String get bench_status_reason => 'السبب';
+
+  @override
+  String get bench_status_hidden_head => 'ما هو مخفي';
+
+  @override
+  String get bench_status_feed => 'الخلاصة';
+
+  @override
+  String get bench_status_search => 'البحث';
+
+  @override
+  String get bench_status_friends => 'طلبات الصداقة';
+
+  @override
+  String get bench_status_notifs => 'الإشعارات الاجتماعية';
+
+  @override
+  String get bench_status_hidden => 'مخفي';
+
+  @override
+  String get bench_status_visible => 'ظاهر';
+
+  @override
+  String get bench_status_blocked => 'محظورة';
+
+  @override
+  String get bench_status_allowed => 'مسموحة';
+
+  @override
+  String get bench_status_muted => 'مكتومة';
+
+  @override
+  String get bench_status_on => 'مفعّلة';
+
+  @override
+  String get bench_status_no_end => 'بدون تاريخ انتهاء';
+
+  @override
+  String get bench_end => 'أنهِ الاستراحة';
+
+  @override
+  String get bench_edit_action => 'تعديل';
+
+  @override
+  String get bench_end_confirm_title => 'إنهاء الاستراحة الآن؟';
+
+  @override
+  String get bench_end_confirm_body =>
+      'ستظهر للآخرين من جديد ويمكنك النشر والتعليق والإعجاب.';
+
+  @override
+  String get bench_end_confirm_keep => 'ابقَ في الاستراحة';
+
+  @override
+  String get bench_loading => 'جارٍ التحميل';
+
+  @override
+  String get bench_error_start_title => 'تعذّر بدء الاستراحة';
+
+  @override
+  String get bench_error_start_body => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get bench_error_load_title => 'تعذّر تحميل وضع الاستراحة';
+
+  @override
+  String get bench_error_load_body => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get bench_offline_title => 'لا يوجد اتصال';
+
+  @override
+  String get bench_offline_body =>
+      'اتصل بالإنترنت لإنهاء الاستراحة أو تعديلها. تظهر حالتك كما حُفظت آخر مرة.';
+
+  @override
+  String bench_indicator_home(String date) {
+    return 'في استراحة حتى $date';
+  }
+
+  @override
+  String get bench_indicator_home_no_end => 'في استراحة';
+
+  @override
+  String bench_indicator_profile(String date) {
+    return 'مخفي من الخلاصة والبحث حتى $date.';
+  }
+
+  @override
   String get recurring_repeat_label => 'التكرار';
 
   @override
@@ -8068,6 +8305,9 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get recurring_limit_reached_title => 'بلغت السلسلة حدّها الأقصى';
+
+  @override
   String recurring_preview_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
@@ -8093,6 +8333,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get recurring_paid_switched_off =>
       'أُوقف التكرار لأن هذه اللعبة مدفوعة. لا يمكن تكرار الألعاب المدفوعة حاليًا.';
+
+  @override
+  String get recurring_location_required =>
+      'اختر ملعبًا أو حدّد موقعك لتكرار هذه اللعبة.';
 
   @override
   String get recurring_badge_label => 'سلسلة';
@@ -8209,5 +8453,78 @@ class AppLocalizationsAr extends AppLocalizations {
     final String dateString = dateDateFormat.format(date);
 
     return 'تم إلغاء لعبة يوم $dateString. أنهى المنظّم هذه السلسلة. اللعبة: $game';
+  }
+
+  @override
+  String get recurring_future_title_label => 'عنوان اللعبة';
+
+  @override
+  String get recurring_future_capacity_label => 'عدد اللاعبين';
+
+  @override
+  String get recurring_future_save => 'حفظ لكل الألعاب القادمة';
+
+  @override
+  String get recurring_future_done => 'تم تحديث السلسلة';
+
+  @override
+  String get recurring_future_failed => 'تعذّر تحديث السلسلة. حاول مرة أخرى.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      many: '$count لعبة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      few: '$count ألعاب فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+      two: 'لعبتان فيهما لاعبون منضمّون تحتفظان بتفاصيلهما السابقة.',
+      one: 'لعبة واحدة فيها لاعبون منضمّون تحتفظ بتفاصيلها السابقة.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'إلغاء السلسلة';
+
+  @override
+  String get profile_visitor_sports_title => 'الرياضات التي يمارسها';
+
+  @override
+  String get profile_stat_games_visitor => 'المباريات';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return 'مباريات $sport';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'لاعبًا أو منظّمًا';
+
+  @override
+  String get profile_stat_sport_profiles => 'الملفات الرياضية';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'المباريات المفتوحة التي يلعب فيها أو ينظّمها';
+
+  @override
+  String get profile_tag_playing => 'يلعب';
+
+  @override
+  String get profile_tag_organising => 'ينظّم';
+
+  @override
+  String get profile_tag_organising_playing => 'ينظّم · يلعب';
+
+  @override
+  String get profile_invite_action_semantic => 'دعوة';
+
+  @override
+  String get profile_stat_games_played_visitor => 'المباريات التي لعبها';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return 'مباريات $sport';
   }
 }

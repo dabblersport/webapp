@@ -6,13 +6,13 @@ import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart'
     show TextInputAction, TextInputType, AutofillHints;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import '../providers/auth_providers.dart';
 
@@ -277,6 +277,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       if (!launched) return;
 
       final result = await authService.handleGoogleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'google');
       if (!mounted) return;
 
       switch (result) {
@@ -334,6 +335,7 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
       if (!signedIn) return; // User cancelled the Apple sheet.
 
       final result = await authService.handleAppleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'apple');
       if (!mounted) return;
 
       switch (result) {
@@ -382,7 +384,6 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
     final List<Widget> body = <Widget>[
       DabblerTextField(
@@ -477,17 +478,15 @@ class _EnterPasswordScreenState extends ConsumerState<EnterPasswordScreen> {
                   disabled: _isLoading,
                   onPressed: _isLoading ? null : _handleGoogleSignIn,
                 ),
-                if (showApple) ...<Widget>[
-                  const DabblerGap.v(DabblerSpacing.space4),
-                  DabblerButton(
-                    label: l10n.auth_entry_continue_apple,
-                    tone: DabblerButtonTone.outlined,
-                    size: DabblerButtonSize.full,
-                    fullWidth: true,
-                    disabled: _isLoading,
-                    onPressed: _isLoading ? null : _handleAppleSignIn,
-                  ),
-                ],
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerButton(
+                  label: l10n.auth_entry_continue_apple,
+                  tone: DabblerButtonTone.outlined,
+                  size: DabblerButtonSize.full,
+                  fullWidth: true,
+                  disabled: _isLoading,
+                  onPressed: _isLoading ? null : _handleAppleSignIn,
+                ),
                 const DabblerGap.v(DabblerSpacing.space4),
                 AuthAccountLine(
                   prefix: l10n.auth_new_here,

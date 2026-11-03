@@ -60,7 +60,6 @@ class RoutePaths {
   static const String onboardingInterestsSelection =
       '/onboarding-interests-selection';
   static const String onboardingPrimarySport = '/onboarding-primary-sport';
-  static const String profileSwitcher = '/profile-switcher';
 
   // Add Persona Flow (from Settings)
   static const String addPersonaInterests = '/add-persona/interests';
@@ -126,6 +125,9 @@ class RoutePaths {
 
   /// The Favourites screen; `?tab=venue|game|meetup` picks the tab.
   static const String favourites = '/favourites';
+
+  /// Bench mode (KAN-706), reached from the Settings row.
+  static const String settingsBench = '/settings/bench';
   static const String hashtagFeed = '/hashtag';
   static const String socialCreatePost = '/social-create-post';
   static const String socialEditPost = '/social-edit-post';
@@ -211,6 +213,7 @@ class RouteNames {
   static const String socialNotifications = 'social-notifications';
   static const String socialSearch = 'social-search';
   static const String favourites = 'favourites';
+  static const String settingsBench = 'settings-bench';
   static const String hashtagFeed = 'hashtag-feed';
   static const String socialCreatePost = 'social-create-post';
   static const String socialEditPost = 'social-edit-post';

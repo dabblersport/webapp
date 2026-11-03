@@ -20,6 +20,7 @@ import 'package:dabbler/features/profile/presentation/screens/settings/settings_
 import 'package:dabbler/features/profile/presentation/screens/settings/profile_sports_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart';
+import 'package:dabbler/features/bench/presentation/screens/bench_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/preferences/game_preferences_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
@@ -168,6 +169,21 @@ RouteBase get settingsPrivacyRoute =>
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
         child: const PrivacySettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+// /settings/bench — Bench mode (KAN-706), gated by FeatureFlags.benchMode.
+RouteBase get settingsBenchRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.settingsBench,
+      name: RouteNames.settingsBench,
+      redirect: (context, state) =>
+          FeatureFlags.benchMode ? null : RoutePaths.home,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const BenchScreen(),
         type: SharedAxisType.horizontal,
       ),
     );

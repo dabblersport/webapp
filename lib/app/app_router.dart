@@ -479,6 +479,7 @@ class AppRouter {
     editGameRoute,
     settingsAccountRoute,
     settingsPrivacyRoute,
+    if (FeatureFlags.benchMode) settingsBenchRoute,
     settingsNotificationsRoute,
     settingsThemeRoute,
     settingsLocationRoute,

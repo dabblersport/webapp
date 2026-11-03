@@ -20,6 +20,10 @@ class FeatureFlags {
   /// heart). Read-only apart from removing a favourite.
   static const bool enableFavourites = true;
 
+  /// Bench mode (KAN-706): the Settings row, the Bench screen route and the
+  /// Home / Profile benched indicators.
+  static const bool benchMode = true;
+
   /// Games & Matches
   static const bool enableGameBrowsing = true;
 
@@ -82,6 +86,10 @@ class FeatureFlags {
   // export is actually complete. Gates the Settings export entry point in
   // account_management_screen.dart.
   static const bool enableDataExport = false;
+
+  /// KAN-697: the Repeat control in the game composer (recurring series via
+  /// `rpc_create_game_series`, KAN-693).
+  static const bool enableRecurringGames = true;
 
   /// Game Creation Features (Split by profile type)
   static const bool enablePlayerGameCreation =

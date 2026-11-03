@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/data/models/check_in/check_in_status.dart';
 import 'package:dabbler/features/rewards/providers/check_in_providers.dart';
 import 'package:flutter/foundation.dart';
@@ -54,6 +57,14 @@ class CheckInController
 
         // Invalidate the status provider to refresh
         ref.invalidate(checkInStatusDetailProvider);
+
+        // Launch event: only after the check-in succeeded.
+        unawaited(
+          const AnalyticsService().trackCheckIn(
+            streakCount: response.streakCount,
+            firstToday: response.isFirstCheckInToday,
+          ),
+        );
 
         // Return whether this was the first check-in today (to show modal)
         return response.isFirstCheckInToday;

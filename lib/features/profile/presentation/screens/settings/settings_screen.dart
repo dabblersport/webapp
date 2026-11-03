@@ -1,3 +1,5 @@
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
 import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
@@ -188,6 +190,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                       onLanguageRegion: () =>
                           showSettingsLanguageRegionSheet(context, ref),
                     ),
+                    if (FeatureFlags.benchMode) ...[
+                      const DabblerGap.v(DabblerSpacing.space6),
+                      const BenchSettingsRow(),
+                    ],
                     const DabblerGap.v(DabblerSpacing.space6),
                     buildProfileSection(context),
                     _buildAboutSection(context),
