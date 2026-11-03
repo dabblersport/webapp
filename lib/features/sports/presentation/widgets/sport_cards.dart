@@ -746,7 +746,7 @@ class _SportMeetupRowState extends ConsumerState<SportMeetupRow> {
     return SportRow(
       leadTop: parts.dow,
       lead: parts.day,
-      title: m.title,
+      title: m.title ?? '',
       sub: sub,
       note: note,
       // The CTA is always as wide as it is given; a row hands it a width.

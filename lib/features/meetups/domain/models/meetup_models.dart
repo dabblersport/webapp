@@ -13,7 +13,11 @@ abstract class MeetupListItem with _$MeetupListItem {
 
   const factory MeetupListItem({
     required String id,
-    required String title,
+
+    /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+    /// route key); null when the payload carries no `event_id`.
+    @JsonKey(name: 'event_id') String? eventId,
+    String? title,
     String? description,
     @JsonKey(name: 'start_at') required DateTime startAt,
     @JsonKey(name: 'end_at') DateTime? endAt,
@@ -77,6 +81,10 @@ abstract class MeetupListItem with _$MeetupListItem {
 abstract class NearbyMeetup with _$NearbyMeetup {
   const factory NearbyMeetup({
     required String id,
+
+    /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+    /// route key); null when the payload carries no `event_id`.
+    @JsonKey(name: 'event_id') String? eventId,
     required String title,
     @JsonKey(name: 'starts_at') DateTime? startsAt,
     double? lat,
@@ -135,6 +143,10 @@ abstract class MeetupCounts with _$MeetupCounts {
 abstract class MeetupCard with _$MeetupCard {
   const factory MeetupCard({
     required String id,
+
+    /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+    /// route key); null when the payload carries no `event_id`.
+    @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
     @JsonKey(name: 'start_at') DateTime? startAt,

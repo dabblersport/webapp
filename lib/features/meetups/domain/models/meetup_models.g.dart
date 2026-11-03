@@ -9,7 +9,8 @@ part of 'meetup_models.dart';
 _$MeetupListItemImpl _$$MeetupListItemImplFromJson(Map<String, dynamic> json) =>
     _$MeetupListItemImpl(
       id: json['id'] as String,
-      title: json['title'] as String,
+      eventId: json['event_id'] as String?,
+      title: json['title'] as String?,
       description: json['description'] as String?,
       startAt: DateTime.parse(json['start_at'] as String),
       endAt: json['end_at'] == null
@@ -67,6 +68,7 @@ Map<String, dynamic> _$$MeetupListItemImplToJson(
   _$MeetupListItemImpl instance,
 ) => <String, dynamic>{
   'id': instance.id,
+  'event_id': instance.eventId,
   'title': instance.title,
   'description': instance.description,
   'start_at': instance.startAt.toIso8601String(),
@@ -114,6 +116,7 @@ const _$RsvpPolicyEnumMap = {
 _$NearbyMeetupImpl _$$NearbyMeetupImplFromJson(Map<String, dynamic> json) =>
     _$NearbyMeetupImpl(
       id: json['id'] as String,
+      eventId: json['event_id'] as String?,
       title: json['title'] as String,
       startsAt: json['starts_at'] == null
           ? null
@@ -127,6 +130,7 @@ _$NearbyMeetupImpl _$$NearbyMeetupImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$NearbyMeetupImplToJson(_$NearbyMeetupImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'event_id': instance.eventId,
       'title': instance.title,
       'starts_at': instance.startsAt?.toIso8601String(),
       'lat': instance.lat,
@@ -182,6 +186,7 @@ Map<String, dynamic> _$$MeetupCountsImplToJson(_$MeetupCountsImpl instance) =>
 _$MeetupCardImpl _$$MeetupCardImplFromJson(Map<String, dynamic> json) =>
     _$MeetupCardImpl(
       id: json['id'] as String,
+      eventId: json['event_id'] as String?,
       title: json['title'] as String?,
       description: json['description'] as String?,
       startAt: json['start_at'] == null
@@ -220,6 +225,7 @@ _$MeetupCardImpl _$$MeetupCardImplFromJson(Map<String, dynamic> json) =>
 Map<String, dynamic> _$$MeetupCardImplToJson(_$MeetupCardImpl instance) =>
     <String, dynamic>{
       'id': instance.id,
+      'event_id': instance.eventId,
       'title': instance.title,
       'description': instance.description,
       'start_at': instance.startAt?.toIso8601String(),
