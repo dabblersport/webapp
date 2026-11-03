@@ -1,19 +1,20 @@
--- KAN-801 (KAN-718 D04 blockers #23 rpc_meetup_rsvp, #24 rpc_meetup_set_attendee): both read their shared meetup
--- fields from public.events, so they keep working after KAN-719 Z01 removes the legacy meetups columns.
+-- KAN-801 (KAN-718 D04 blockers #23 rpc_meetup_rsvp, #24 rpc_meetup_set_attendee, and their eligibility helper
+-- can_current_user_rsvp_meetup): all three read their shared meetup fields from public.events, so they keep working
+-- after KAN-719 Z01 removes the legacy meetups columns.
 -- LOCAL THROWAWAY POSTGRES ONLY (database name k801*). NEVER RUN AGAINST SUPABASE.
 --
 -- Seams under test, called as `authenticated` with a JWT subject (auth.uid()), exactly as PostgREST calls them:
 --   public.rpc_meetup_rsvp(p_meetup_id, p_action, p_profile_id => NULL, p_link_token)
 --   public.rpc_meetup_set_attendee(p_meetup_id, p_target_actor, p_status)
+--   public.can_current_user_rsvp_meetup(p_meetup_id, p_link_token)   (the app calls it directly; anon may EXECUTE)
 -- Fixture (local chain): meetup M 71300000-..-0101 (open, public, future, creator a1), seeded meetup F 78100000-..-f001
 -- (copy of M), users a1 (owner), a4 (not owner, not admin), a7 (no RSVP on M). Requires the k801 build
 -- (clean801.sh: events chain + D04 + D05 + seed781 + harness801.sh pre-images).
 --
 -- Expected:
---   without 20261104110600_kan801 (pre-image), before or after Z01: A* FAIL with 42703 (m.owner_user_id does not
---     exist); after Z01 R* FAIL with 42703 as well.
---   with KAN-801, before Z01: every probe PASSes.
---   with KAN-801, after Z01: S*, A* PASS. R* are recorded honestly; see the KAN-801 report for their state.
+--   without 20261104110600_kan801 (pre-image), before or after Z01: S*, A* FAIL with 42703 (m.owner_user_id does not
+--     exist); after Z01 H*, R* FAIL with 42703 as well (record "m" has no field "creator_user_id").
+--   with KAN-801, before or after Z01: every probe PASSes.
 -- One transaction, ROLLBACK at the end: nothing persists.
 \set ON_ERROR_STOP 1
 \pset format unaligned
@@ -76,21 +77,41 @@ BEGIN
     RETURN SQLSTATE || ':' || SQLERRM;
   END;
 END $f$;
+-- Helper call as a client role: returns cta, or cta/reason when there is a reason, or '<SQLSTATE>:<message>'.
+CREATE FUNCTION pg_temp.can(p_uid uuid, p_meetup uuid, p_token uuid, p_role text) RETURNS text
+LANGUAGE plpgsql AS $f$
+DECLARE d jsonb;
+BEGIN
+  BEGIN
+    PERFORM set_config('request.jwt.claim.sub', coalesce(p_uid::text, ''), true);
+    EXECUTE format('SET LOCAL ROLE %I', p_role);
+    d := public.can_current_user_rsvp_meetup(p_meetup, p_token);
+    RESET ROLE;
+    PERFORM set_config('request.jwt.claim.sub', '', true);
+    RETURN (d->>'cta') || coalesce('/' || (d->>'reason'), '');
+  EXCEPTION WHEN OTHERS THEN
+    RETURN SQLSTATE || ':' || SQLERRM;
+  END;
+END $f$;
 CREATE FUNCTION pg_temp.att(p_meetup uuid, p_actor uuid) RETURNS text LANGUAGE sql AS $f$
   SELECT coalesce((SELECT status || '|' || user_id FROM public.meetup_attendees
                     WHERE meetup_id = p_meetup AND actor_profile_id = p_actor), '<none>') $f$;
 
 -- S: the bodies read no legacy meetups column; every meetups read joins its events parent.
-SELECT pg_temp.chk('S1', 'neither body names meetups.rsvp_policy or the non-existent owner_user_id', 'false|false',
-  (SELECT string_agg((prosrc ~ 'rsvp_policy|owner_user_id')::text, '|' ORDER BY proname) FROM pg_proc
+SELECT pg_temp.chk('S1', 'no body reads rsvp_policy, owner_user_id or m.<removed shared field>', 'false|false|false',
+  (SELECT string_agg((prosrc ~ 'rsvp_policy|owner_user_id|m\.(creator_user_id|listing_visibility|is_cancelled|start_at)')::text, '|' ORDER BY proname) FROM pg_proc
     WHERE oid IN ('public.rpc_meetup_rsvp(uuid,text,uuid,uuid)'::regprocedure,
-                  'public.rpc_meetup_set_attendee(uuid,uuid,text)'::regprocedure)));
+                  'public.rpc_meetup_set_attendee(uuid,uuid,text)'::regprocedure,
+                  'public.can_current_user_rsvp_meetup(uuid,uuid)'::regprocedure)));
 SELECT pg_temp.chk('S2', 'each body: every "from public.meetups m" is joined to public.events on event_id + type', '1/1|1/1',
   (SELECT string_agg(
      (SELECT count(*) FROM regexp_matches(prosrc, 'from public\.meetups m join public\.events e on e\.id = m\.event_id and e\.event_type = ''meetup''', 'g'))::text
      || '/' || (SELECT count(*) FROM regexp_matches(prosrc, 'from public\.meetups', 'g'))::text, '|' ORDER BY proname)
      FROM pg_proc WHERE oid IN ('public.rpc_meetup_rsvp(uuid,text,uuid,uuid)'::regprocedure,
                                 'public.rpc_meetup_set_attendee(uuid,uuid,text)'::regprocedure)));
+SELECT pg_temp.chk('S3h', 'helper grants unchanged: anon and authenticated may EXECUTE it (by design)', 'true|true',
+  has_function_privilege('anon', 'public.can_current_user_rsvp_meetup(uuid,uuid)', 'EXECUTE')::text || '|'
+  || has_function_privilege('authenticated', 'public.can_current_user_rsvp_meetup(uuid,uuid)', 'EXECUTE')::text);
 SELECT pg_temp.chk('S3', 'grants: authenticated may EXECUTE both, anon neither', 'true|true|false|false',
   has_function_privilege('authenticated', 'public.rpc_meetup_rsvp(uuid,text,uuid,uuid)', 'EXECUTE')::text || '|'
   || has_function_privilege('authenticated', 'public.rpc_meetup_set_attendee(uuid,uuid,text)', 'EXECUTE')::text || '|'
@@ -113,6 +134,18 @@ SELECT pg_temp.chk('A7', 'invalid status -> P0001 rsvp_status_invalid', 'P0001:r
   pg_temp.setatt(:a1, :M, :b7, 'maybe'));
 SELECT pg_temp.chk('A8', 'no JWT subject -> P0001 not_authenticated', 'P0001:not_authenticated',
   pg_temp.setatt(NULL, :M, :b7, 'going'));
+
+-- H: can_current_user_rsvp_meetup, called directly as the app does (authenticated / anon, JWT sub), reads events.
+SELECT pg_temp.chk('H1', 'a7 on open M -> cta rsvp_going', 'rsvp_going', pg_temp.can(:a7, :M, NULL, 'authenticated'));
+SELECT pg_temp.chk('H2', 'anon on M -> reason anon (unchanged)', 'not_allowed/anon', pg_temp.can(NULL, :M, NULL, 'anon'));
+SELECT pg_temp.chk('H3', 'unknown meetup -> not_found (unchanged)', 'not_allowed/not_found',
+  pg_temp.can(:a7, '80100000-0000-0000-0000-0000000009ff', NULL, 'authenticated'));
+UPDATE public.events SET is_cancelled = true WHERE id = (SELECT event_id FROM public.meetups WHERE id = :M);
+SELECT pg_temp.chk('H4', 'events.is_cancelled = true decides -> cancelled', 'cancelled/cancelled', pg_temp.can(:a7, :M, NULL, 'authenticated'));
+UPDATE public.events SET is_cancelled = false WHERE id = (SELECT event_id FROM public.meetups WHERE id = :M);
+UPDATE public.events SET join_policy = 'closed' WHERE id = (SELECT event_id FROM public.meetups WHERE id = :M);
+SELECT pg_temp.chk('H5', 'events.join_policy = closed decides -> closed', 'closed/closed', pg_temp.can(:a7, :M, NULL, 'authenticated'));
+UPDATE public.events SET join_policy = 'open' WHERE id = (SELECT event_id FROM public.meetups WHERE id = :M);
 
 -- R: rpc_meetup_rsvp -- the link gate reads events.join_policy; KAN-786 leave behaviour unchanged.
 SELECT pg_temp.chk('R1', 'a7 joins open M (gate sees join_policy open, no link consumption)', 'ret:going', pg_temp.rsvp(:a7, :M, 'going'));
