@@ -32,6 +32,11 @@ class OfflineCache {
 
   static const int maxBytesPerAccount = 2 * 1024 * 1024;
   static const String _root = 'offline_cache.v1.';
+
+  /// Entry format version (KAN-747). Version 1 entries (`{t, p}`, no version)
+  /// read as no cache. Each entry also records its account, so an entry is
+  /// only ever returned to the account that wrote it.
+  static const int formatVersion = 2;
   static const String _indexName = '__index';
 
   SharedPreferences? _prefs;
@@ -58,6 +63,7 @@ class OfflineCache {
       final raw = (await _p()).getString(_entryKey(accountId, key));
       if (raw == null) return null;
       final map = jsonDecode(raw) as Map<String, dynamic>;
+      if (map['v'] != formatVersion || map['a'] != accountId) return null;
       return CacheEntry(
         payload: map['p'],
         fetchedAt: DateTime.fromMillisecondsSinceEpoch(map['t'] as int),
@@ -198,7 +204,12 @@ class OfflineCache {
   ) async {
     final prefs = await _p();
     final at = (fetchedAt ?? DateTime.now()).millisecondsSinceEpoch;
-    final encoded = jsonEncode({'t': at, 'p': payload});
+    final encoded = jsonEncode({
+      'v': formatVersion,
+      'a': accountId,
+      't': at,
+      'p': payload,
+    });
     final size = utf8.encode(encoded).length; // bytes, not UTF-16 units
     final index = _readIndex(prefs, accountId);
     if (size > maxBytesPerAccount) {
