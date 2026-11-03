@@ -530,14 +530,24 @@ class AuthService {
     }
   }
 
-  /// Sign in with Apple (iOS).
+  /// Sign in with Apple.
   ///
-  /// Generates a raw nonce client-side, hashes it with SHA-256, asks Apple for
-  /// an identity token bound to the hashed nonce, then exchanges the token with
-  /// Supabase using `signInWithIdToken`. Supabase verifies the nonce against
-  /// the hashed value Apple signed.
+  /// iOS: generates a raw nonce client-side, hashes it with SHA-256, asks Apple
+  /// for an identity token bound to the hashed nonce, then exchanges the token
+  /// with Supabase using `signInWithIdToken`. Supabase verifies the nonce
+  /// against the hashed value Apple signed.
+  /// Web and Android: Supabase's hosted Apple OAuth (see [signInWithAppleOAuth]).
   /// Returns false if the user cancelled the Apple sign-in sheet.
   Future<bool> signInWithApple() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+      return signInWithAppleOAuth(
+        isWeb: kIsWeb,
+        auth: _supabase.auth,
+        authenticate: (url, scheme) =>
+            FlutterWebAuth2.authenticate(url: url, callbackUrlScheme: scheme),
+      );
+    }
+
     final rawNonce = _generateRawNonce();
     final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
 
@@ -565,6 +575,63 @@ class AuthService {
       idToken: idToken,
       nonce: rawNonce,
     );
+    return true;
+  }
+
+  /// Apple sign-in through Supabase's hosted OAuth, for web and Android.
+  ///
+  /// Web redirects the page and the auth state listener picks the session up on
+  /// return. Android runs the flow in an in-app sheet and exchanges the PKCE
+  /// code. [isWeb], [auth] and [authenticate] are injected so a test can drive
+  /// either platform.
+  @visibleForTesting
+  static Future<bool> signInWithAppleOAuth({
+    required bool isWeb,
+    required GoTrueClient auth,
+    required Future<String> Function(String url, String callbackUrlScheme)
+    authenticate,
+    String? webOrigin,
+    Future<void> Function(
+      OAuthProvider provider, {
+      String? redirectTo,
+      String? scopes,
+    })?
+    webSignIn,
+  }) async {
+    if (isWeb) {
+      // signInWithOAuth is an extension method, so a test injects it here.
+      await (webSignIn ?? auth.signInWithOAuth)(
+        OAuthProvider.apple,
+        redirectTo: webOrigin ?? Uri.base.origin,
+        scopes: 'name email',
+      );
+      return true;
+    }
+
+    final oauth = await auth.getOAuthSignInUrl(
+      provider: OAuthProvider.apple,
+      redirectTo: '${RoutePaths.deepLinkPrefix}/',
+      scopes: 'name email',
+    );
+
+    final String resultUrl;
+    try {
+      resultUrl = await authenticate(
+        oauth.url,
+        Uri.parse(RoutePaths.deepLinkPrefix).scheme,
+      );
+    } on PlatformException catch (e) {
+      // User dismissed the in-app auth sheet: a no-op, not an error.
+      if (e.code == 'CANCELED') return false;
+      rethrow;
+    }
+
+    final code = Uri.parse(resultUrl).queryParameters['code'];
+    if (code == null || code.isEmpty) {
+      throw Exception('Apple sign-in did not return an authorization code.');
+    }
+
+    await auth.exchangeCodeForSession(code);
     return true;
   }
 
