@@ -219,7 +219,8 @@ DECLARE
     'active_stream(text[],text,integer,timestamp with time zone,text,uuid)', 'can_current_user_join_game(uuid,text,uuid)',
     'can_current_user_rsvp_meetup(uuid,uuid)', 'fn_generate_game_series_occurrences(uuid)', 'game_slots_left(uuid)',
     'kan712_events_compat_mirror()', 'meetup_counts(uuid)', 'rpc_get_activity_feed(text,integer,timestamp with time zone)',
-    'rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)', 'rpc_meetup_cancel(uuid)', 'rpc_meetup_my()',
+    'rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)', 'rpc_meetup_cancel(uuid)',
+    -- rpc_meetup_my(): RETIRED by KAN-785 (migration 20261104110400); removed from B15 C6, so no longer an anchor (30 -> 29).
     'rpc_rate_game(uuid,uuid,jsonb,text)', 'rpc_rate_user(uuid,uuid,uuid,jsonb,text)', 'rpc_rate_venue(uuid,uuid,uuid,jsonb,text)',
     'rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)',
     'rpc_edit_game_series_future(uuid,text,integer,time without time zone,integer,uuid,date,boolean)',

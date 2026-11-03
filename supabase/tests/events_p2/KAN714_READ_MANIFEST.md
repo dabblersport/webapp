@@ -5,12 +5,16 @@
 catalogue and fails if the catalogue and this file disagree. It must be run on local databases only.
 **Tree audited:** the tracked `supabase/migrations/*.sql` in this commit. The untracked
 `20261105100000_*` and `20261105110000_*` files are excluded (see §6).
+**Refreshed by KAN-789 (after KAN-785).** KAN-785 (`20261104110400_kan785_retire_rpc_meetup_my.sql`) dropped
+`public.rpc_meetup_my()`. It is no longer a candidate, so every total below is recomputed without it (161 → 160
+candidates, 95 → 94 unchanged, 7 → 6 pinned, 100 → 99 present locally, 26 → 25 residual). Its matrix row (Unchanged
+#73) is kept, marked RETIRED and not counted, so the history is not silently lost.
 
 ## 1. Totals
 
 | Category | Total | Converted | Unchanged (with reason) | Open |
 |---|---|---|---|---|
-| Candidate functions (identity = name + argument types) | **161** | **32** (27 by a B migration, 5 by KAN-713) | **95** | **34** |
+| Candidate functions (identity = name + argument types) | **160** | **32** (27 by a B migration, 5 by KAN-713) | **94** | **34** |
 | Views reading `games`/`meetups` | **8** | **6** | **2** | **0** |
 | Inbound FKs to `games`/`meetups` | **21** | 0 | **21** | **0** |
 
@@ -19,14 +23,14 @@ catalogue and fails if the catalogue and this file disagree. It must be run on l
 converted readers keep the legacy visibility predicate alongside the `events` check. §4 lists every one of these
 residual references.
 
-### Unchanged, by sub-reason (95)
+### Unchanged, by sub-reason (94)
 
 | Code | n | Meaning |
 |---|---|---|
 | `name-only` | 40 | The name matches game/meetup, but the body and signature never reference `public.games`/`public.meetups`. For a trigger function, the only column use is NEW/OLD on the table it is attached to. |
 | `infra` | 25 | Events-programme infrastructure from KAN-710/711/712/713/718: mirror, backfill, write contract, guards, and the new KAN-713 helpers. Where it reads legacy, it does so by design. |
 | `trigger` | 9 | A trigger on a legacy row that reads no other games/meetups row by alias. It is write side. |
-| `pinned` | 7 | Pinned unchanged, with a reason, by the named B header (B06, B09, B11, B14). |
+| `pinned` | 6 | Pinned unchanged, with a reason, by the named B header (B09, B11, B14). B06's pin, `rpc_meetup_my`, was RETIRED by KAN-785 and is no longer counted. |
 | `legacy` | 6 | A renamed superseded overload (`*_legacy_vN`, `*_v1`). |
 | `write` | 5 | A KAN-712-wrapped write RPC. Shared-field writes are routed through `events` by the KAN-712 guard, so this is not a read conversion. |
 | `noshared` | 2 | References `games`/`meetups` only for id/subtype; no shared-column token appears in the body. |
@@ -48,13 +52,13 @@ reconciliation compares repository text against a number, not against the audit'
 
 | | Audit | Repo at audit cut (`< 20261101140000`, before KAN-710) | Repo now (tracked) | Explanation |
 |---|---|---|---|---|
-| Functions, by name OR body | 141 | **136** (134 names) | **161** (159 names) | **Now:** 136 plus the 25 identities the events programme added after the audit (KAN-710..718 infra, the KAN-712 `_kan712_inner` bodies folded onto their wrappers, and `kan711_events_backfill_run`, a procedure). **The gap of 5 at the cut (136 vs 141) is not documented.** Likely causes: functions present in production with no migration (drift), objects outside `public`, or a different identity rule. None of these was verified. |
-| Functions, by body only | — | 95 (93 names) | 109 (107 names) | `body` means the comment-stripped body names `games`/`meetups` (excluding `games(`), or the signature/header does, or a B migration is the latest definition. |
-| Functions, by name only | — | 107 (105) | 120 (118) | The name contains `game` or `meetup`. |
+| Functions, by name OR body | 141 | **136** (134 names) | **160** (158 names) | **Now:** 136 plus the 25 identities the events programme added after the audit (KAN-710..718 infra, the KAN-712 `_kan712_inner` bodies folded onto their wrappers, and `kan711_events_backfill_run`, a procedure), minus `rpc_meetup_my()`, dropped by KAN-785 (161 before KAN-785). **The gap of 5 at the cut (136 vs 141) is not documented.** Likely causes: functions present in production with no migration (drift), objects outside `public`, or a different identity rule. None of these was verified. |
+| Functions, by body only | — | 95 (93 names) | 108 (106 names) | `body` means the comment-stripped body names `games`/`meetups` (excluding `games(`), or the signature/header does, or a B migration is the latest definition. |
+| Functions, by name only | — | 107 (105) | 119 (117) | The name contains `game` or `meetup`. |
 | Views | 7 | **7** | 8 | Exact match at the cut. The 8th is `kan711_events_parity` (KAN-711 infra, added after the audit). |
 | Inbound FKs | 20 | **21** | 21 | **The +1 is not documented.** All 21 come from tracked migrations. The 4 added after the baseline: `favorites_game_id_fkey`, `favorites_meetup_id_fkey` (20261008120000), `msg_conversations_game_id_fkey` (20261013150000), `msg_conversations_meetup_id_fkey` (20261017130000). Any one of them may be missing from production or may not have been counted. |
 
-**How the 161 is derived.** It is a text scan of every tracked migration in filename order, with the latest definition
+**How the 160 is derived.** It is a text scan of every tracked migration in filename order, with the latest definition
 winning. The scan applies `CREATE [OR REPLACE] FUNCTION|PROCEDURE`, `DROP FUNCTION|PROCEDURE` (one overload, or every
 overload when no argument list is given) and `ALTER FUNCTION … RENAME TO`. Argument lists are normalised to catalogue
 spelling: names, `DEFAULT` and `OUT` arguments are dropped, and `int`→`integer`, `timestamptz`→`timestamp with time
@@ -88,9 +92,10 @@ These were measured on the local post-B14 catalogue (probe checks C7 and C8) and
     `m public.meetups%rowtype`. Both are open.
   - `SELECT * INTO g FROM public.games` with a record variable: `rpc_join_game` (open). It has the same exposure.
 - **RETURNS TABLE functions** that read games/meetups: `admin_cleanup_user_data`, `admin_overview_row`,
-  `meetup_counts`, `rpc_games_following_joined`, `rpc_meetup_attendees`, `rpc_meetup_my`, `rpc_sport_overview`,
+  `meetup_counts`, `rpc_games_following_joined`, `rpc_meetup_attendees`, `rpc_sport_overview`,
   `rpc_get_nearby_games(6)`, `rpc_join_game`, `msg_evaluate`, `msg_authorize`, `msg_my_conversations`,
-  `msg_game_conversation`, `rpc_get_activity_feed`, `active_stream`. Their declared column lists are explicit, so a
+  `msg_game_conversation`, `rpc_get_activity_feed`, `active_stream`. (`rpc_meetup_my` was on this list until KAN-785
+  retired it.) Their declared column lists are explicit, so a
   DROP COLUMN does not change their result type, only bodies that read a dropped column. **C13 asserts the result
   type, security, volatility and `proconfig` of all 40 converted objects present locally, plus the column list of the
   6 converted views, are unchanged from their pre-B image.**
@@ -105,7 +110,8 @@ These were measured on the local post-B14 catalogue (probe checks C7 and C8) and
   `rpc_edit_game_series_future` inner → `fn_generate_game_series_occurrences` (pinned); KAN-712 wrappers → inners.
 - **Pre-image defect seen in passing (not fixed; out of scope):** `rpc_meetup_invite_user`, `rpc_meetup_mint_link`
   and `rpc_meetup_set_attendee` read `m.owner_user_id`, and `public.meetups` has `creator_user_id`. This is the same
-  defect class B06 recorded for `rpc_meetup_my`. **Whether these raise 42703 in production is not documented.** They
+  defect class B06 recorded for `rpc_meetup_my` (since RETIRED by KAN-785, migration 20261104110400). **Whether these
+  raise 42703 in production is not documented.** They
   are absent from the local harness.
 
 ## 4. Residual legacy shared-column references in converted code (phase-4 DROP COLUMN blockers)
@@ -158,7 +164,7 @@ the alias binds games/meetups.
 | 31 | `trg_meetup_rsvps_notify` | `` | 20261104101200 | KAN-731 B12 | B | yes | latest definition is B migration 20261104101200 (reads events) |
 | 32 | `trg_meetups_cancel_notify` | `` | 20261104101200 | KAN-731 B12 | B | yes | latest definition is B migration 20261104101200 (reads events) |
 
-### Unchanged functions (95)
+### Unchanged functions (94, plus row 73 kept as a RETIRED record and not counted)
 
 | # | Object | Args | Latest def | Ticket / migration | Code | Local | Reason |
 |---|---|---|---|---|---|---|---|
@@ -234,7 +240,7 @@ the alias binds games/meetups.
 | 70 | `rpc_get_nearby_games_legacy_v1` | `double precision,double precision,integer,uuid,text` | 20260829080500 | - | legacy | no | renamed superseded overload (legacy); no current definition replaces it in place |
 | 71 | `rpc_leave_game` | `text,uuid` | 20260829080500 | - | name-only | no | name-only candidate: name matches game/meetup but body/signature never references public.games or public.meetups |
 | 72 | `rpc_meetup_cancel` | `uuid` | 20260915120000 | KAN-712 write | write | yes | KAN-712 wrapped write RPC (write path; shared-field writes routed through events by the KAN-712 guard); not a read conversion |
-| 73 | `rpc_meetup_my` | `` | 20260829080500 | KAN-725 B06 (pinned) | pinned | yes | pre-image raises 42703 on every call (columns owner_user_id/starts_at/visibility do not exist); no app call site; B06 header |
+| 73 | `rpc_meetup_my` | `` | 20261104110400 (DROP) | KAN-785 (retired) | retired | no | **RETIRED by KAN-785** (migration 20261104110400, `DROP FUNCTION`). It does not read `events`, it is no longer pinned, it is not in the catalogue, and it is not counted in any total. History: KAN-725 B06 pinned it unchanged because the pre-image raised 42703 on every call (columns owner_user_id/starts_at/visibility do not exist) and had no app call site. |
 | 74 | `rpc_meetup_update` | `uuid,text,text,timestamp with time zone,timestamp with time zone,text,integer` | 20260915120000 | KAN-712 write | write | yes | KAN-712 wrapped write RPC (write path; shared-field writes routed through events by the KAN-712 guard); not a read conversion [rowtype] |
 | 75 | `rpc_reschedule_game` | `uuid,timestamp with time zone,timestamp with time zone` | 20260829080500 | KAN-712 write | write | yes | KAN-712 wrapped write RPC (write path; shared-field writes routed through events by the KAN-712 guard); not a read conversion |
 | 76 | `rpc_update_game` | `uuid,timestamp with time zone,timestamp with time zone,text,uuid,boolean,text,text,boolean,boolean,integer,integer,boolean,jsonb,integer,integer,numeric` | 20261008140000 | KAN-712 write | write | yes | KAN-712 wrapped write RPC (write path; shared-field writes routed through events by the KAN-712 guard); not a read conversion |
@@ -332,7 +338,6 @@ the alias binds games/meetups.
 | `rpc_get_activity_feed(text,integer,timestamp with time zone)` | g.is_cancelled |
 | `rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)` | g.creator_user_id, g.listing_visibility |
 | `rpc_meetup_cancel(uuid)` | m.creator_user_id |
-| `rpc_meetup_my()` | m.title |
 | `rpc_meetup_update(uuid,text,text,timestamp with time zone,timestamp with time zone,text,integer)` | m.creator_user_id, m.end_at, m.is_cancelled, m.start_at |
 | `rpc_rate_game(uuid,uuid,jsonb,text)` | g0.is_cancelled |
 | `rpc_rate_user(uuid,uuid,uuid,jsonb,text)` | g0.creator_user_id, g0.is_cancelled, g0.start_at |
@@ -340,6 +345,8 @@ the alias binds games/meetups.
 | `rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)` | g.is_cancelled, g.listing_visibility, m.is_cancelled, m.listing_visibility, m.search_tsv |
 | `rpc_update_game(uuid,timestamp with time zone,timestamp with time zone,text,uuid,boolean,text,text,boolean,boolean,integer,integer,boolean,jsonb,integer,integer,numeric)` | g.capacity, g.creator_user_id, g.end_at, g.is_cancelled, g.join_policy, g.listing_visibility, g.max_skill, g.min_skill, g.title |
 | `rpc_update_game_legacy_v1(uuid,timestamp with time zone,timestamp with time zone,text,uuid,boolean,text,text,boolean,boolean,integer,integer,boolean,jsonb,integer,integer)` | g.capacity, g.creator_user_id, g.join_policy, g.listing_visibility, g.title |
+
+`rpc_meetup_my()` (`m.title`) was in this table until KAN-785 retired the function; C6 now expects 25 rows.
 
 ### Inbound foreign keys (21)
 
@@ -478,7 +485,7 @@ rpc_mint_join_link, rpc_recreate_from_game, rpc_remove_player, rpc_search_entiti
     Classification therefore treats any shared-column token as possibly legacy, which is conservative.
   - Dynamic SQL cannot be resolved.
   - plpgsql has no `pg_depend` for function bodies, so every function-level dependency is textual.
-- **Local catalogue is a harness subset.** 100 of the 161 manifest function identities exist locally. 6 of the 34
+- **Local catalogue is a harness subset.** 99 of the 160 manifest function identities exist locally (100 of 161 before KAN-785). 6 of the 34
   open functions exist locally (`_user_hosted_game`, `meetup_counts`, `rpc_challenge_spawn_game`, `rpc_create_game`,
   `rpc_create_meetup`, `rpc_join_game`). The other 61 are covered by the repo scan only. Only 1 of the 21 FKs exists
   locally; C12 checks that one and the rule.
