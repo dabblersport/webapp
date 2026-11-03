@@ -95,7 +95,7 @@ column also has the `kan711_events_map_*` composite signature consumer and the `
 | meetups.search_tsv | pending | d=7 (view 1, trig 0, pol 0, fn 5, loose 0, other 1); transitive 6; e.g. can_current_user_rsvp_meetup, kan711_events_backfill_batch, meetups_search_tsv_trigger, rpc_meetup_update_kan712_inner | KAN-711 map/backfill, KAN-712 compat mirror (KAN-713 intersection rule: kept mirror); B15 open rows: no ticket |
 | meetups.sport_id | pending | d=12 (view 1, trig 1, pol 0, fn 7, loose 0, other 3); transitive 10; e.g. can_current_user_rsvp_meetup, fn_meetups_activity_sync, fn_meetups_enforce_solo_sport, kan711_events_backfill_batch; trigger: trigger trg_meetups_enforce_solo_sport | KAN-711 map/backfill, KAN-712 compat mirror (KAN-713 intersection rule: kept mirror); KAN-716 realtime column list (pg_depend n, blocks DROP COLUMN); B15 open rows: no ticket |
 | meetups.start_at | pending | d=11 (view 1, trig 0, pol 0, fn 6, loose 2, other 2); transitive 9; e.g. can_current_user_rsvp_meetup, kan711_events_backfill_batch, kan712_events_compat_mirror, kan712_legacy_guard | KAN-711 map/backfill, KAN-712 compat mirror (KAN-713 intersection rule: kept mirror); KAN-716 realtime column list (pg_depend n, blocks DROP COLUMN); B15 open rows: no ticket |
-| meetups.title | pending | d=15 (view 1, trig 0, pol 0, fn 7, loose 3, other 4); transitive 9; e.g. can_current_user_rsvp_meetup, kan711_events_backfill_batch, kan712_events_compat_mirror, kan712_legacy_guard | KAN-711 map/backfill, KAN-712 compat mirror (KAN-713 intersection rule: kept mirror); KAN-716 realtime column list (pg_depend n, blocks DROP COLUMN); B15 open rows: no ticket |
+| meetups.title | pending | d=14 (view 1, trig 0, pol 0, fn 6, loose 3, other 4); transitive 9 (KAN-789: was d=15 / fn 7 before KAN-785 retired `rpc_meetup_my`, which read m.title); e.g. can_current_user_rsvp_meetup, kan711_events_backfill_batch, kan712_events_compat_mirror, kan712_legacy_guard | KAN-711 map/backfill, KAN-712 compat mirror (KAN-713 intersection rule: kept mirror); KAN-716 realtime column list (pg_depend n, blocks DROP COLUMN); B15 open rows: no ticket |
 | meetups.venue_id | pending | d=17 (view 1, trig 4, pol 0, fn 9, loose 0, other 3); transitive 12; e.g. can_current_user_rsvp_meetup, fn_meetups_inherit_geo, fn_meetups_sync_joining_rule, kan711_events_backfill_batch; trigger: trigger trg_kan713_meetups_a_location; trigger: trigger trg_kan713_meetups_b_joining; trigger: trigger trg_meetups_inherit_geo | KAN-711 map/backfill, KAN-712 compat mirror (KAN-713 intersection rule: kept mirror); KAN-716 realtime column list (pg_depend n, blocks DROP COLUMN); B15 open rows: no ticket |
 
 **What every row has in common:**
@@ -125,10 +125,11 @@ column also has the `kan711_events_map_*` composite signature consumer and the `
 
 ## 4. What changed against B15
 
-Diff output from the clean run:
+Diff output from the clean run, refreshed by KAN-789 after KAN-785 retired `rpc_meetup_my()` (before KAN-785 the
+first line read catalogue=57 repo=63 both=29):
 
 ```
-DIFF: function consumers catalogue=57 repo=63 both=29 catalogue-only=28 repo-only=34
+DIFF: function consumers catalogue=56 repo=62 both=28 catalogue-only=28 repo-only=34
 DIFF: consumers absent from the B15 matrix: 3: harness_host_actor_stub(); k727_ref_meetup_slots_left(uuid); kan611_stamp_request_id()
 DIFF: catalogue non-function consumer rows: composite=40, constraint=31, index=5, policy=7, publication=20, trigger=12, view=40
 ```
@@ -152,7 +153,7 @@ DIFF: catalogue non-function consumer rows: composite=40, constraint=31, index=5
    chain, mostly B15 open-read functions from the older baseline. Those that still exist in production
    remain consumers until they are dropped or converted. **Whether each one exists in production is not
    documented here.** The production scan answers that.
-5. **All 30 B15 anchors still hold.** These are C6 residual, C7 rowtype, C8 composite and C10 dynamic
+5. **All 29 B15 anchors still hold** (30 before KAN-785 retired `rpc_meetup_my()`, which was a C6 anchor). These are C6 residual, C7 rowtype, C8 composite and C10 dynamic
    (probe check V2), so nothing B15 found has since stopped consuming a slated column.
 
 ## 5. Old store and web builds
@@ -176,7 +177,7 @@ database, applies the migration chain (with harnesses, B01-B14 and KAN-716), and
   (cost_cover), a transitive caller and a dynamic reader. Each one must be flagged. It also plants a reader
   that only touches events, which must not be flagged.
 - **N0:** the planted objects are gone after ROLLBACK.
-- **V1-V4** check that there are 40 pairs, that the 30 B15 anchors are present, that the parity view,
+- **V1-V4** check that there are 40 pairs, that the 29 B15 anchors are present (30 before KAN-785), that the parity view,
   mirror and publication are detected, and that all 40 pairs are pending with at least 7 non-heuristic
   consumers each.
 - **S1-S5** cover:
