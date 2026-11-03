@@ -67,6 +67,13 @@ INSERT INTO k770_b15 VALUES
  ('function','settle_game'),('function','trg_meetup_rsvps_notify'),('function','trg_meetups_cancel_notify'),
  ('view','v_game_card'),('view','v_host_weekly_metrics'),('view','v_meetup_counts'),('view','v_meetup_list'),('view','v_my_games'),
  ('view','v_rateable_after_game');
+-- KAN-772 (KAN-718 D04 return-for-fix 1): the D01 "B15 open" functions converted by
+-- 20261104110100_kan718_d04_last_shared_field_reads.sql. Same rule as B15: 'converted' only when the body reads events,
+-- else 'converted-without-events' (blocking). Disposition of all 34: KAN718_D04_DISPOSITION.md.
+INSERT INTO k770_b15 VALUES
+ ('function','_recent_activity_score'),('function','_user_hosted_game'),('function','game_is_joinable'),
+ ('function','get_games_needing_players'),('function','get_open_games_for_seeding'),('function','meetup_counts'),
+ ('function','rpc_create_game'),('function','rpc_create_meetup');
 
 -- Function bodies, comments stripped, extension members and test-harness reference functions excluded.
 CREATE TEMP TABLE k770_fn AS
