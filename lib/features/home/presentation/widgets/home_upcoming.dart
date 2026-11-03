@@ -1,5 +1,6 @@
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
+import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -28,7 +29,7 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
 
   DabblerUpcomingItem _item(Game game, String locale, AppLocalizations l) {
     final DateTime start = game.getScheduledStartDateTime();
-    final Duration left = start.difference(DateTime.now());
+    final Duration left = start.difference(ref.watch(homeNowProvider)());
     final Duration safe = left.isNegative ? Duration.zero : left;
     final int days = safe.inDays;
     final int hours = safe.inHours % 24;
