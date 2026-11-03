@@ -1,5 +1,6 @@
 -- KAN-728 (KAN-714 piece B09) — booking reads. rpc_booking_hold_for_meetup: owner_user_id blocker fixed, creator read
--- from public.events. Every other booking reader is pinned UNCHANGED (see the migration header for why).
+-- from public.events. _slot_conflicts_game: start/end/cancelled from public.events where the caller may read events
+-- (has_table_privilege branch, plpgsql), the games mirror otherwise. Every other booking reader is pinned UNCHANGED.
 -- LOCAL THROWAWAY POSTGRES ONLY. One transaction, ROLLBACK at the end: no data survives.
 --
 -- Output: PASS|id|detail or FAIL|id|detail, then #SUMMARY|expect=|pass=|fail=, plus #PLAN| / #FINGERPRINT| / #COUNT| lines.
@@ -8,18 +9,26 @@
 --   post (default) — 20261104100900_kan714_b09_booking_conflicts_hold.sql applied.
 --   pre            — legacy pre-image (no migration, or after rollback_kan714_b09.sql).
 -- RED/GREEN protocol:
---   chain without migration,  expect=post  -> FAIL lines (D1, H1, H2, H3, H7, L1, P1, P2, X1)   RED
+--   chain without migration,  expect=post  -> FAIL lines (S3, D1, D4, D5, H1, H2, H3, H6, H7, L1, L2, P1, P2, C4, C5,
+--                                              C6, C9, X1)                                       RED
 --   chain without migration,  expect=pre   -> 0 FAIL
 --   chain with migration,     expect=post  -> 0 FAIL                                           GREEN
 --   migration + rollback,     expect=pre   -> 0 FAIL, and #FINGERPRINT| equal to the pre-migration DB
 --
--- Groups: S shape/attributes, D definitions (changed one + untouched readers), H hold RPC literals (creator / outsider /
+-- Groups: S shape/attributes, D definitions (changed ones + untouched readers), H hold RPC literals (creator / outsider /
 --         admin / anon / not-found), L legacy parity over the whole meetups dataset x 5 callers, P provenance (events
---         made to disagree with meetups), C conflict reader _slot_conflicts_game (unchanged, games + its E4 blocker),
---         G game hold (wrapped, unchanged, still works), A access, X EXPLAIN shape.
+--         made to disagree with meetups), C conflict reader _slot_conflicts_game (both branches: privileged callers
+--         follow events, unprivileged follow the games mirror; games and events made to disagree), G game hold
+--         (wrapped, accepted exception, unchanged, still works), A access, X EXPLAIN shape of both branches.
+-- Harness fact: public.games has RLS enabled and ZERO policies here, so `authenticated` sees no games rows and the
+-- mirror branch answers false for it everywhere, in both images. To exercise the mirror branch over real rows, group C
+-- creates a NOLOGIN BYPASSRLS role kan728_mirror_probe with SELECT on games only (no events SELECT -> mirror branch).
+-- Role and grant are inside this transaction and vanish at the ROLLBACK; no real-schema grant survives.
 \set ON_ERROR_STOP 1
 \set hold_post_md5 9d113b77a82df489569a765ad30445f7
 \set hold_pre_md5 446285fd3e9d6b814fbed14af8121c27
+\set slot_post_md5 6b55caf2dd120676bef075536014370b
+\set slot_pre_md5 42729f5c67c2b2fa453addf51fec26c6
 \if :{?expect}
 \else
   \set expect post
@@ -171,18 +180,43 @@ SELECT pg_temp.chk('S2 one overload, no _kan712_inner, not in kan712_wrapped_rpc
   || ':' || (SELECT count(*) FROM public.kan712_wrapped_rpcs WHERE name = 'rpc_booking_hold_for_meetup')::text,
   '1:true:0');
 
+SELECT pg_temp.chk('S3 _slot_conflicts_game signature : result : owner : ACL : SECURITY DEFINER : volatility : search_path : language',
+  (SELECT pg_get_function_identity_arguments(p.oid) || ' : ' || pg_get_function_result(p.oid) || ' : ' || p.proowner::regrole
+          || ' : ' || p.proacl::text || ' : ' || p.prosecdef || ' : ' || p.provolatile::text || ' : ' || array_to_string(p.proconfig, ',')
+          || ' : ' || l.lanname
+     FROM pg_proc p JOIN pg_language l ON l.oid = p.prolang
+    WHERE p.oid = 'public._slot_conflicts_game(uuid,timestamptz,timestamptz)'::regprocedure),
+  'p_space uuid, p_start timestamp with time zone, p_end timestamp with time zone : boolean : postgres : '
+  || '{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres} : false : s : '
+  || 'search_path=public, pg_temp : ' || CASE WHEN pg_temp.post() THEN 'plpgsql' ELSE 'sql' END);
+SELECT pg_temp.chk('S4 _slot_conflicts_game: one overload; no public function body calls it',
+  (SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND proname = '_slot_conflicts_game')::text || ':'
+  || (SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace AND prosrc ~ '_slot_conflicts_game'
+         AND proname <> '_slot_conflicts_game')::text,
+  '1:0');
+
 -- ---------------------------------------------------------------- D: definitions
 SELECT pg_temp.chk('D1 rpc_booking_hold_for_meetup definition md5 is the expected image',
   md5(pg_get_functiondef('public.rpc_booking_hold_for_meetup(uuid,uuid,timestamptz,timestamptz)'::regprocedure)),
   CASE WHEN pg_temp.post() THEN :'hold_post_md5' ELSE :'hold_pre_md5' END);
-SELECT pg_temp.chk('D2 untouched booking readers byte-identical (slot_conflicts_game, hold_for_game + inner, booking_cancel, game_belongs_to_venue)',
+SELECT pg_temp.chk('D2 untouched booking readers byte-identical (hold_for_game + inner [accepted KAN-712 exception], booking_cancel, game_belongs_to_venue)',
   (SELECT string_agg(md5(pg_get_functiondef(f::regprocedure)), ',' ORDER BY o) FROM (VALUES
-     (1, 'public._slot_conflicts_game(uuid,timestamptz,timestamptz)'),
      (2, 'public.rpc_booking_hold_for_game(uuid,uuid,timestamptz,timestamptz)'),
      (3, 'public.rpc_booking_hold_for_game_kan712_inner(uuid,uuid,timestamptz,timestamptz)'),
      (4, 'public.rpc_booking_cancel(uuid)'),
      (5, 'public._game_belongs_to_venue(uuid,uuid)')) t(o, f)),
-  '42729f5c67c2b2fa453addf51fec26c6,5857515b031fcb57926549d754af89a5,ddb9fe12e37d1a651c0ee3104988ec6b,97e9c289b9d768ff7212529876ecff08,6e5901ff6904c44012897b99d5b0c830');
+  '5857515b031fcb57926549d754af89a5,ddb9fe12e37d1a651c0ee3104988ec6b,97e9c289b9d768ff7212529876ecff08,6e5901ff6904c44012897b99d5b0c830');
+SELECT pg_temp.chk('D4 _slot_conflicts_game definition md5 is the expected image',
+  md5(pg_get_functiondef('public._slot_conflicts_game(uuid,timestamptz,timestamptz)'::regprocedure)),
+  CASE WHEN pg_temp.post() THEN :'slot_post_md5' ELSE :'slot_pre_md5' END);
+SELECT pg_temp.chk('D5 _slot_conflicts_game body: has_table_privilege branch : events join : mirror predicate verbatim',
+  (SELECT (prosrc LIKE '%if has_table_privilege(''public.events'', ''SELECT'') then%')::text || ':'
+          || (prosrc LIKE '%join public.events e on e.id = g.event_id and e.event_type = ''game''%')::text || ':'
+          || (prosrc LIKE '%where g.venue_space_id = p_space
+      and g.is_cancelled = false
+      and tstzrange(g.start_at, g.end_at, ''[)'') && tstzrange(p_start, p_end, ''[)'')%')::text
+     FROM pg_proc WHERE oid = 'public._slot_conflicts_game(uuid,timestamptz,timestamptz)'::regprocedure),
+  CASE WHEN pg_temp.post() THEN 'true:true:true' ELSE 'false:false:true' END);
 SELECT pg_temp.chk('D3 rpc_booking_hold_for_game still wrapped by KAN-712 (wrapper calls the inner, kan712.contract=on)',
   (SELECT (prosrc LIKE '%rpc_booking_hold_for_game_kan712_inner%')::text || ':' || array_to_string(proconfig, ',')
      FROM pg_proc WHERE oid = 'public.rpc_booking_hold_for_game(uuid,uuid,timestamptz,timestamptz)'::regprocedure),
@@ -294,23 +328,142 @@ SELECT pg_temp.chk('C2 conflict literals: active G1 own window on its space true
                           WHERE tstzrange(g2.start_at, g2.end_at, '[)') && tstzrange(g.start_at, g.end_at, '[)'))
      UNION ALL SELECT 4, public._slot_conflicts_game('00000000-0000-0000-0000-00000000ee21', g.start_at, g.end_at)::text FROM public.games g JOIN c_games c ON c.id = g.id AND c.k = 1) z),
   'true,false,false,false');
-SELECT pg_temp.chk('C3 E4 blocker: an INVOKER read of events under authenticated raises 42501; _slot_conflicts_game under authenticated runs',
+-- C3: the E4 blocker is resolved by the branch, not by opening events. A direct INVOKER read of events under
+-- authenticated still raises 42501; _slot_conflicts_game under authenticated runs (no 42501) in both images.
+SELECT pg_temp.chk('C3 authenticated: direct events read 42501; _slot_conflicts_game runs, no 42501 (G1 own window)',
   pg_temp.as_('authenticated', '00000000-0000-0000-0000-0000000000a1',
     $q$SELECT exists(SELECT 1 FROM public.games g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game')::text$q$) || ' | '
-  || pg_temp.as_('authenticated', '00000000-0000-0000-0000-0000000000a1',
-    $q$SELECT public._slot_conflicts_game('00000000-0000-0000-0000-00000000ee11', now(), now() + interval '1 hour')::text$q$),
+  || (SELECT pg_temp.as_('authenticated', '00000000-0000-0000-0000-0000000000a1', format(
+        $q$SELECT public._slot_conflicts_game('00000000-0000-0000-0000-00000000ee11', %L, %L)::text$q$, g.start_at, g.end_at))
+        FROM public.games g JOIN c_games c ON c.id = g.id AND c.k = 1),
   'ERR 42501 permission denied for table events | false');
--- Provenance, stated honestly: an events-only move of G1 does NOT move the conflict answer, in either image, because
--- _slot_conflicts_game is blocked (E4) and still reads games. This is the reported limitation, asserted as fact.
+-- C3b: why the language had to change. A LANGUAGE sql copy whose single statement only MENTIONS events behind the same
+-- has_table_privilege test raises 42501 for authenticated: the range-table permission check runs at executor start,
+-- before the CASE is evaluated. (Temp function; identical in both images.)
+CREATE FUNCTION pg_temp.sql_branch_slot(p_space uuid, p_start timestamp with time zone, p_end timestamp with time zone)
+ RETURNS boolean LANGUAGE sql STABLE SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select case when has_table_privilege('public.events', 'SELECT')
+    then exists(select 1 from public.games g join public.events e on e.id = g.event_id and e.event_type = 'game'
+                 where g.venue_space_id = p_space and e.is_cancelled = false
+                   and tstzrange(e.start_at, e.end_at, '[)') && tstzrange(p_start, p_end, '[)'))
+    else exists(select 1 from public.games g where g.venue_space_id = p_space and g.is_cancelled = false
+                   and tstzrange(g.start_at, g.end_at, '[)') && tstzrange(p_start, p_end, '[)'))
+  end
+$function$;
+SELECT pg_temp.chk('C3b a LANGUAGE sql single-statement branch raises 42501 under authenticated (so plpgsql is required)',
+  pg_temp.as_('authenticated', '00000000-0000-0000-0000-0000000000a1',
+    $q$SELECT pg_temp.sql_branch_slot('00000000-0000-0000-0000-00000000ee11', now(), now() + interval '1 hour')::text$q$),
+  'ERR 42501 permission denied for table events');
+
+-- Make games and events DISAGREE (triggers off for this transaction only, so the compat mirror cannot reconcile):
+--   G1 (ee11, active): events window moved +10 days; games window unchanged.
+--   G2 (ee12, active): events says cancelled; games says active.
+--   G3 (ee11, cancelled in games): events says active.
 SET LOCAL session_replication_role = replica;
 UPDATE public.events e SET start_at = e.start_at + interval '10 days', end_at = e.end_at + interval '10 days'
   FROM c_games c WHERE c.k = 1 AND e.id = c.event_id;
+UPDATE public.events e SET is_cancelled = true  FROM c_games c WHERE c.k = 2 AND e.id = c.event_id;
+UPDATE public.events e SET is_cancelled = false FROM c_games c WHERE c.k = 3 AND e.id = c.event_id;
 SET LOCAL session_replication_role = origin;
-SELECT pg_temp.chk('C4 events-only move of G1: conflict at the games window stays true, at the events window stays false (reader not repointed)',
-  (SELECT public._slot_conflicts_game('00000000-0000-0000-0000-00000000ee11', g.start_at, g.end_at)::text || ','
-          || public._slot_conflicts_game('00000000-0000-0000-0000-00000000ee11', e.start_at, e.end_at)::text
-     FROM public.games g JOIN c_games c ON c.id = g.id AND c.k = 1 JOIN public.events e ON e.id = g.event_id),
-  'true,false');
+SELECT '#COUNT|C disagreements games vs events (start/end/cancelled)=' || count(*)
+  FROM public.games g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game'
+ WHERE e.start_at IS DISTINCT FROM g.start_at OR e.end_at IS DISTINCT FROM g.end_at OR e.is_cancelled IS DISTINCT FROM g.is_cancelled;
+
+-- Callers. privileged: postgres (superuser), service_role (SELECT + BYPASSRLS), and a SECURITY DEFINER wrapper owned by
+-- postgres called under authenticated (the game hold does not call _slot_conflicts_game — S4 — so a definer caller is
+-- modelled by this wrapper). mirror: kan728_mirror_probe (rolled back; SELECT on games only, BYPASSRLS) and
+-- authenticated (blind: games RLS has no policies on this harness).
+CREATE FUNCTION pg_temp.definer_slot(p_space uuid, p_start timestamp with time zone, p_end timestamp with time zone)
+ RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public', 'pg_temp'
+AS $function$ select public._slot_conflicts_game(p_space, p_start, p_end) $function$;
+CREATE ROLE kan728_mirror_probe NOLOGIN BYPASSRLS;
+GRANT SELECT ON public.games TO kan728_mirror_probe;
+-- Reference answers computed as postgres: from events (what the privileged branch must equal) and from the mirror.
+CREATE FUNCTION pg_temp.ref_events_slot(p_space uuid, p_start timestamp with time zone, p_end timestamp with time zone)
+ RETURNS boolean LANGUAGE sql STABLE SET search_path TO 'public', 'pg_temp'
+AS $function$
+  select exists(select 1 from public.games g join public.events e on e.id = g.event_id and e.event_type = 'game'
+                 where g.venue_space_id = p_space and e.is_cancelled = false
+                   and tstzrange(e.start_at, e.end_at, '[)') && tstzrange(p_start, p_end, '[)'))
+$function$;
+-- G1's two windows (games, events) on ee11 and G2's window on ee12, as text, under a role.
+CREATE FUNCTION pg_temp.lit(p_role text, p_uid uuid, p_fn text) RETURNS text LANGUAGE plpgsql AS $$
+DECLARE r record; o text;
+BEGIN
+  SELECT g1.start_at AS gs, g1.end_at AS ge, e1.start_at AS es, e1.end_at AS ee, g2.start_at AS g2s, g2.end_at AS g2e INTO r
+    FROM c_games c1 JOIN public.games g1 ON g1.id = c1.id JOIN public.events e1 ON e1.id = g1.event_id,
+         c_games c2 JOIN public.games g2 ON g2.id = c2.id
+   WHERE c1.k = 1 AND c2.k = 2;
+  o := pg_temp.as_(p_role, p_uid, format($q$SELECT %s('00000000-0000-0000-0000-00000000ee11', %L, %L)::text$q$, p_fn, r.gs, r.ge)) || ','
+    || pg_temp.as_(p_role, p_uid, format($q$SELECT %s('00000000-0000-0000-0000-00000000ee11', %L, %L)::text$q$, p_fn, r.es, r.ee)) || ','
+    || pg_temp.as_(p_role, p_uid, format($q$SELECT %s('00000000-0000-0000-0000-00000000ee12', %L, %L)::text$q$, p_fn, r.g2s, r.g2e));
+  RETURN o;
+END $$;
+-- Literal answers: [G1 games window, G1 events window, G2 window]. events branch: false,true,false. mirror: true,false,true.
+SELECT pg_temp.chk('C4 postgres (privileged) follows events: G1 games/events windows, G2 cancelled in events (pre: mirror)',
+  pg_temp.lit(NULL, NULL, 'public._slot_conflicts_game'),
+  CASE WHEN pg_temp.post() THEN 'false,true,false' ELSE 'true,false,true' END);
+SELECT pg_temp.chk('C5 service_role (SELECT + BYPASSRLS) follows events (pre: mirror)',
+  pg_temp.lit('service_role', NULL, 'public._slot_conflicts_game'),
+  CASE WHEN pg_temp.post() THEN 'false,true,false' ELSE 'true,false,true' END);
+SELECT pg_temp.chk('C6 SECURITY DEFINER caller (owner postgres) invoked by authenticated follows events (pre: mirror)',
+  pg_temp.lit('authenticated', '00000000-0000-0000-0000-0000000000a1', 'pg_temp.definer_slot'),
+  CASE WHEN pg_temp.post() THEN 'false,true,false' ELSE 'true,false,true' END);
+SELECT pg_temp.chk('C7 mirror probe (no events SELECT, sees all games) follows the games mirror (both images)',
+  pg_temp.lit('kan728_mirror_probe', NULL, 'public._slot_conflicts_game'), 'true,false,true');
+SELECT pg_temp.chk('C8 authenticated: no 42501, same answer as the mirror copy under authenticated (blind: all false, both images)',
+  pg_temp.lit('authenticated', '00000000-0000-0000-0000-0000000000a1', 'public._slot_conflicts_game') || ' | '
+  || pg_temp.lit('authenticated', '00000000-0000-0000-0000-0000000000a1', 'pg_temp.legacy_slot_conflicts_game'),
+  'false,false,false | false,false,false');
+
+-- Whole-dataset parity per branch, with games and events disagreeing. Probes: every game's games-own and games-touch
+-- window, plus every seeded game's events window, x every space. Each caller's answer vector is md5-compared.
+CREATE TEMP TABLE c_probe AS
+  SELECT row_number() OVER (ORDER BY s.id, w.ws, w.we) AS n, s.id AS sp, w.ws, w.we
+    FROM (SELECT g.start_at AS ws, g.end_at AS we FROM public.games g WHERE g.end_at IS NOT NULL
+          UNION SELECT g.end_at, g.end_at + interval '1 hour' FROM public.games g WHERE g.end_at IS NOT NULL
+          UNION SELECT e.start_at, e.end_at FROM c_games c JOIN public.events e ON e.id = c.event_id) w
+   CROSS JOIN public.venue_spaces s;
+DO $$ BEGIN
+  PERFORM set_config('kan728.probes', (SELECT jsonb_agg(jsonb_build_object('n', n, 'sp', sp, 'ws', ws, 'we', we))::text FROM c_probe), true);
+END $$;
+CREATE FUNCTION pg_temp.vec(p_role text, p_uid uuid, p_fn text) RETURNS text LANGUAGE plpgsql AS $$
+BEGIN
+  RETURN pg_temp.as_(p_role, p_uid, format(
+    $q$SELECT md5(string_agg(%s(p.sp, p.ws, p.we)::text, ',' ORDER BY p.n)) || '/' || count(*) FILTER (WHERE %s(p.sp, p.ws, p.we))
+         FROM jsonb_to_recordset(%L::jsonb) AS p(n int, sp uuid, ws timestamptz, we timestamptz)$q$,
+    p_fn, p_fn, current_setting('kan728.probes')));
+END $$;
+SELECT '#COUNT|C9 probes=' || (SELECT count(*) FROM c_probe)
+       || '|events_ref_true=' || (SELECT count(*) FILTER (WHERE pg_temp.ref_events_slot(sp, ws, we)) FROM c_probe)
+       || '|mirror_ref_true=' || (SELECT count(*) FILTER (WHERE pg_temp.legacy_slot_conflicts_game(sp, ws, we)) FROM c_probe)
+       || '|events_vs_mirror_differ=' || (SELECT count(*) FILTER (WHERE pg_temp.ref_events_slot(sp, ws, we)
+                                                IS DISTINCT FROM pg_temp.legacy_slot_conflicts_game(sp, ws, we)) FROM c_probe);
+SELECT pg_temp.chk('C9 parity per branch over every probe: postgres, service_role, definer-under-authenticated = events ref (pre: mirror ref); mirror probe = mirror ref; authenticated = mirror copy under authenticated',
+  (SELECT string_agg(x, ' ' ORDER BY o) FROM (
+     SELECT 1 o, (pg_temp.vec(NULL, NULL, 'public._slot_conflicts_game') = pg_temp.vec(NULL, NULL,
+                    CASE WHEN pg_temp.post() THEN 'pg_temp.ref_events_slot' ELSE 'pg_temp.legacy_slot_conflicts_game' END))::text x
+     UNION ALL SELECT 2, (pg_temp.vec('service_role', NULL, 'public._slot_conflicts_game') = pg_temp.vec(NULL, NULL,
+                    CASE WHEN pg_temp.post() THEN 'pg_temp.ref_events_slot' ELSE 'pg_temp.legacy_slot_conflicts_game' END))::text
+     UNION ALL SELECT 3, (pg_temp.vec('authenticated', '00000000-0000-0000-0000-0000000000a1', 'pg_temp.definer_slot') = pg_temp.vec(NULL, NULL,
+                    CASE WHEN pg_temp.post() THEN 'pg_temp.ref_events_slot' ELSE 'pg_temp.legacy_slot_conflicts_game' END))::text
+     UNION ALL SELECT 4, (pg_temp.vec('kan728_mirror_probe', NULL, 'public._slot_conflicts_game')
+                          = pg_temp.vec(NULL, NULL, 'pg_temp.legacy_slot_conflicts_game'))::text
+     UNION ALL SELECT 5, (pg_temp.vec('authenticated', '00000000-0000-0000-0000-0000000000a1', 'public._slot_conflicts_game')
+                          = pg_temp.vec('authenticated', '00000000-0000-0000-0000-0000000000a1', 'pg_temp.legacy_slot_conflicts_game')
+                          AND pg_temp.vec('authenticated', '00000000-0000-0000-0000-0000000000a1', 'public._slot_conflicts_game') !~ '^ERR')::text
+     UNION ALL SELECT 6, (pg_temp.vec(NULL, NULL, 'pg_temp.ref_events_slot')
+                          <> pg_temp.vec(NULL, NULL, 'pg_temp.legacy_slot_conflicts_game'))::text) z),
+  'true true true true true true');
+SELECT '#VEC|' || x || '|' || v FROM (VALUES
+  ('postgres', pg_temp.vec(NULL, NULL, 'public._slot_conflicts_game')),
+  ('service_role', pg_temp.vec('service_role', NULL, 'public._slot_conflicts_game')),
+  ('definer_under_authenticated', pg_temp.vec('authenticated', '00000000-0000-0000-0000-0000000000a1', 'pg_temp.definer_slot')),
+  ('mirror_probe', pg_temp.vec('kan728_mirror_probe', NULL, 'public._slot_conflicts_game')),
+  ('authenticated', pg_temp.vec('authenticated', '00000000-0000-0000-0000-0000000000a1', 'public._slot_conflicts_game')),
+  ('ref_events', pg_temp.vec(NULL, NULL, 'pg_temp.ref_events_slot')),
+  ('ref_mirror', pg_temp.vec(NULL, NULL, 'pg_temp.legacy_slot_conflicts_game'))) t(x, v);
 
 -- ---------------------------------------------------------------- G: game hold (wrapped, untouched) still works
 SELECT pg_temp.chk('G1 rpc_booking_hold_for_game via its wrapper: creator ok, outsider not_authorized (both images)',
@@ -341,7 +494,7 @@ SELECT '#PLAN|hold lookup|' || replace(pg_temp.plan(
   CASE WHEN pg_temp.post()
        THEN $s$select mt.id, e.creator_user_id from public.meetups mt join public.events e on e.id = mt.event_id and e.event_type = 'meetup' where mt.id = '30000000-0000-0000-0000-000000000001'$s$
        ELSE $s$select * from public.meetups where id = '30000000-0000-0000-0000-000000000001'$s$ END), E'\n', E'\n#PLAN|  ');
-SELECT '#PLAN|slot_conflicts_game|' || replace(pg_temp.plan(
+SELECT '#PLAN|slot_conflicts_game mirror branch|' || replace(pg_temp.plan(
   $s$select exists(select 1 from public.games g where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and g.is_cancelled = false and tstzrange(g.start_at, g.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$),
   E'\n', E'\n#PLAN|  ');
 SELECT pg_temp.chk('X1 hold lookup: events scans : SubPlans : statement is in the body',
@@ -352,9 +505,15 @@ SELECT pg_temp.chk('X1 hold lookup: events scans : SubPlans : statement is in th
   (SELECT position(CASE WHEN pg_temp.post() THEN 'from public.meetups mt join public.events e on e.id = mt.event_id and e.event_type = ''meetup''' ELSE 'select * into m from public.meetups where id = p_meetup_id' END
                    IN prosrc) > 0 FROM pg_proc WHERE oid = 'public.rpc_booking_hold_for_meetup(uuid,uuid,timestamptz,timestamptz)'::regprocedure)::text,
   CASE WHEN pg_temp.post() THEN '1:0:true' ELSE '0:0:true' END);
-SELECT pg_temp.chk('X2 slot_conflicts_game: SubPlans (unchanged)',
-  pg_temp.cnt(pg_temp.plan($s$select exists(select 1 from public.games g where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and g.is_cancelled = false and tstzrange(g.start_at, g.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$), 'SubPlan')::text,
-  '0');
+SELECT '#PLAN|slot_conflicts_game events branch|' || replace(pg_temp.plan(
+  $s$select exists(select 1 from public.games g join public.events e on e.id = g.event_id and e.event_type = 'game' where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and e.is_cancelled = false and tstzrange(e.start_at, e.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$),
+  E'\n', E'\n#PLAN|  ');
+SELECT pg_temp.chk('X2 slot_conflicts_game: mirror branch events scans:SubPlans ; events branch events scans:SubPlans',
+  pg_temp.cnt(pg_temp.plan($s$select exists(select 1 from public.games g where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and g.is_cancelled = false and tstzrange(g.start_at, g.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$), ' on events\M')::text
+  || ':' || pg_temp.cnt(pg_temp.plan($s$select exists(select 1 from public.games g where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and g.is_cancelled = false and tstzrange(g.start_at, g.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$), 'SubPlan')::text
+  || ' ; ' || pg_temp.cnt(pg_temp.plan($s$select exists(select 1 from public.games g join public.events e on e.id = g.event_id and e.event_type = 'game' where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and e.is_cancelled = false and tstzrange(e.start_at, e.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$), ' on events\M')::text
+  || ':' || pg_temp.cnt(pg_temp.plan($s$select exists(select 1 from public.games g join public.events e on e.id = g.event_id and e.event_type = 'game' where g.venue_space_id = '00000000-0000-0000-0000-00000000ee11' and e.is_cancelled = false and tstzrange(e.start_at, e.end_at, '[)') && tstzrange(now(), now() + interval '1 hour', '[)'))$s$), 'SubPlan')::text,
+  '0:0 ; 1:0');
 
 SELECT CASE WHEN ok THEN 'PASS' ELSE 'FAIL' END || '|' || id || '|' || detail FROM res ORDER BY n;
 SELECT '#SUMMARY|expect=' || current_setting('kan728.expect') || '|pass=' || count(*) FILTER (WHERE ok) || '|fail=' || count(*) FILTER (WHERE NOT ok) FROM res;
