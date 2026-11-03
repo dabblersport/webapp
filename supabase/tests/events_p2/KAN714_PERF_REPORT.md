@@ -53,8 +53,10 @@ is `KAN714_CONTRACT.md` exception E1 (`rpc_meetup_my`), which is unrelated. So t
 
 ## Results per surface
 
-Timings are medians from the clean run. A second run on the same build moved individual medians by up to about ±25%,
-which is the noise floor here.
+Timings are medians from one representative run of the same test on the same build. Across three runs, including the
+clean run from the commit, individual medians moved by up to about ±30%, which is the noise floor here. For example, the
+nearby body after/before ratio was 1.34×, 1.57× and 1.60×, and unified search ratios were 1.25×–2.3×. Every run reported the
+same plan shapes and SubPlan counts.
 
 | Query | Before (ms) | After (ms) | SubPlans before→after | How events is read after | Verdict |
 |---|---|---|---|---|---|
@@ -118,7 +120,7 @@ ordered by id, and the limit-3 and limit-10 results are prefixes of the full res
 
 ### Notes
 
-1. **Nearby body is 1.3–1.6× slower after B04** (about +15 to +35 ms locally). After B04 it hash-joins a full Seq Scan of
+1. **Nearby body is 1.3–1.6× slower after B04** (about +15 to +35 ms locally, across three runs; the real call ranged 0.77×–1.30×). After B04 it hash-joins a full Seq Scan of
    `events` (5k rows). The plan is still set-based, with one loop and no SubPlan on events, and the SubPlan count is
    unchanged (4: favourites and verification). This is not an N+1. At production scale it would be worth checking that the
    planner uses an events index rather than a seq scan. That could not be measured here, because the dataset is tiny and
@@ -147,7 +149,7 @@ No defect was found in B01, B02, B04 or B05.
 ## Limitations
 
 - **Data:** local synthetic data of about 5k events, all in warm cache. Production was not queried, and no `pg_stat_statements`
-  or production plans were used. The milliseconds are indicative and the ratios are noisy (about ±25%). The timing guard is
+  or production plans were used. The milliseconds are indicative and the ratios are noisy (about ±30% between runs). The timing guard is
   deliberately loose (after ≤ 3× before + 25 ms), so it catches only a gross regression.
 - **Privileges:** timings run as superuser `postgres`, the owner and definer, so RLS on the base tables is bypassed, as it is
   for the owner-run views and the `SECURITY DEFINER` RPCs in production. The row-set checks (B, D) run as `anon` or
