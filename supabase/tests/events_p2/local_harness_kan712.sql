@@ -20,7 +20,19 @@
 --     rpc_meetup_card.
 --   trg_meetups_aaa_host_actor_stub: the repo rpc_create_meetup body does not set meetups.host_actor_id (NOT NULL,
 --     no default in the repo). Live must fill it some other way that this seat cannot see; the stub fills it from
---     creator_profile_id so local creates run. Recorded in KAN712_CONTRACT.md.
+--     the creator of the meetup's public.events parent so local creates run. Recorded in KAN712_CONTRACT.md.
+--     KAN-818 (KAN-805 follow-up): the stub no longer reads any meetups column KAN-719 Z01 removes. An explicit
+--     host_actor_id still wins. When the parent is written relative to the BEFORE INSERT:
+--       * events row written FIRST (event-first create, the post-Z01 shape): trg_meetups_aaa_host_actor_stub reads
+--         events.creator_profile_id by NEW.event_id.
+--       * KAN-712 stage B: the parent is written by trg_zz_kan712_meetups_guard, which sorts AFTER "aaa". The same
+--         function is attached a second time as trg_zzz_harness_host_actor_stub_late (sorts after the guard: '_' <
+--         'z'), which reads the parent the guard has just inserted.
+--       * KAN-711 phase 1 (no guard): the parent is written by the AFTER mirror, so no events row exists during any
+--         BEFORE trigger. The late trigger then takes the creator of the parent row the mirror is about to write,
+--         public.kan711_events_map_meetup(NEW), only when that function exists and no parent row exists yet.
+--       * before KAN-710 (no public.events): nothing is filled; every harness insert there passes host_actor_id.
+--     SECURITY DEFINER (owner postgres) so the read is not filtered by events' FORCE RLS for an API-role insert.
 
 -- Reference rows used by the KAN-712 scenarios. ---------------------------------------------------------------
 ALTER TABLE public.profiles ADD COLUMN persona_type text NOT NULL DEFAULT 'player',
@@ -77,9 +89,21 @@ CREATE FUNCTION public.is_venue_admin(p_uid uuid, p_venue uuid) RETURNS boolean 
 CREATE FUNCTION public.rpc_meetup_card(p_meetup_id uuid) RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS
 $$ SELECT jsonb_build_object('id', m.id, 'title', m.title, 'start_at', m.start_at, 'capacity', m.capacity) FROM public.meetups m WHERE m.id = p_meetup_id $$;
 
-CREATE FUNCTION public.harness_host_actor_stub() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN NEW.host_actor_id := coalesce(NEW.host_actor_id, NEW.creator_profile_id); RETURN NEW; END $$;
+CREATE FUNCTION public.harness_host_actor_stub() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
+DECLARE v_creator uuid; v_parent boolean;
+BEGIN
+  IF NEW.host_actor_id IS NOT NULL OR to_regclass('public.events') IS NULL THEN RETURN NEW; END IF;  -- explicit wins
+  SELECT e.creator_profile_id, true INTO v_creator, v_parent
+    FROM public.events e WHERE e.id = NEW.event_id AND e.event_type = 'meetup';
+  IF v_parent IS NULL AND TG_NAME = 'trg_zzz_harness_host_actor_stub_late'
+     AND to_regprocedure('public.kan711_events_map_meetup(public.meetups)') IS NOT NULL THEN
+    v_creator := (public.kan711_events_map_meetup(NEW)).creator_profile_id;  -- KAN-711 phase 1: parent written AFTER
+  END IF;
+  NEW.host_actor_id := v_creator;
+  RETURN NEW;
+END $$;
 CREATE TRIGGER trg_meetups_aaa_host_actor_stub BEFORE INSERT ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.harness_host_actor_stub();
+CREATE TRIGGER trg_zzz_harness_host_actor_stub_late BEFORE INSERT ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.harness_host_actor_stub();
 
 -- Create paths (stay UNWRAPPED; the guard routes their INSERT) --------------------------------------------------
 CREATE FUNCTION public.rpc_create_game_legacy_v2(p_actor_type text, p_sport_id uuid, p_sport_variant_id uuid, p_title text DEFAULT NULL::text, p_venue_space_id uuid DEFAULT NULL::uuid, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_bench_slots integer DEFAULT 0, p_listing_visibility text DEFAULT 'public'::text, p_join_policy text DEFAULT 'open'::text, p_min_skill integer DEFAULT NULL::integer, p_max_skill integer DEFAULT NULL::integer, p_rules jsonb DEFAULT NULL::jsonb, p_squad_id uuid DEFAULT NULL::uuid, p_allow_spectators boolean DEFAULT false, p_allows_waitlist boolean DEFAULT false, p_sport_specific_data jsonb DEFAULT NULL::jsonb, p_cost_cover text DEFAULT NULL::text, p_geo_location_id uuid DEFAULT NULL::uuid, p_area_id uuid DEFAULT NULL::uuid, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_min_players integer DEFAULT NULL::integer, p_max_players integer DEFAULT NULL::integer, p_price_aed numeric DEFAULT NULL::numeric)
