@@ -3,6 +3,16 @@ import 'package:dabbler/data/models/games/game.dart';
 class GameModel extends Game {
   final String joinPolicy;
 
+  /// The `public.events` parent id (`games.event_id`). [id] keeps meaning
+  /// `games.id`; null when the source row does not carry `event_id`.
+  final String? eventId;
+
+  /// The stored title, end and sport, null when the row has none. The
+  /// inherited [title], [endTime] and [sport] keep their display fallbacks.
+  final String? storedTitle;
+  final DateTime? storedEndAt;
+  final String? storedSport;
+
   const GameModel({
     required super.id,
     required super.title,
@@ -28,6 +38,10 @@ class GameModel extends Game {
     required super.createdAt,
     required super.updatedAt,
     this.joinPolicy = 'open',
+    this.eventId,
+    this.storedTitle,
+    this.storedEndAt,
+    this.storedSport,
   });
 
   factory GameModel.fromJson(Map<String, dynamic> json) {
@@ -98,6 +112,12 @@ class GameModel extends Game {
           json['updated_at'] ?? DateTime.now().toIso8601String(),
         ),
         joinPolicy: json['join_policy'] as String? ?? 'open',
+        eventId: json['event_id'] as String?,
+        storedTitle: json['title'] as String?,
+        storedEndAt: json['end_at'] != null
+            ? DateTime.parse(json['end_at'] as String)
+            : null,
+        storedSport: json['sport'] as String?,
       );
     } catch (e) {
       rethrow; // Re-throw after logging for debugging
@@ -199,6 +219,7 @@ class GameModel extends Game {
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      'event_id': eventId,
       'title': title,
       'description': description,
       'sport': sport,
@@ -333,6 +354,7 @@ class GameModel extends Game {
     DateTime? cancellationDeadline,
     DateTime? createdAt,
     DateTime? updatedAt,
+    String? eventId,
   }) {
     return GameModel(
       id: id ?? this.id,
@@ -358,6 +380,11 @@ class GameModel extends Game {
       cancellationDeadline: cancellationDeadline ?? this.cancellationDeadline,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
+      joinPolicy: joinPolicy,
+      eventId: eventId ?? this.eventId,
+      storedTitle: storedTitle,
+      storedEndAt: storedEndAt,
+      storedSport: storedSport,
     );
   }
 }
