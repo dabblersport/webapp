@@ -8,6 +8,8 @@
 -- Variable :expect selects which image is asserted:
 --   post (default) — 20261104100900_kan714_b09_booking_conflicts_hold.sql applied.
 --   pre            — legacy pre-image (no migration, or after rollback_kan714_b09.sql).
+-- Build (tracked files only): bash supabase/tests/events_p2/build_kan728.sh <new-datadir> <port> creates database k728
+--   with the events chain plus supabase/tests/events_p2/local_harness_kan728.sql (the three baseline functions B09 reads).
 -- RED/GREEN protocol:
 --   chain without migration,  expect=post  -> FAIL lines (S3, D1, D4, D5, H1, H2, H3, H6, H7, L1, L2, P1, P2, C4, C5,
 --                                              C6, C9, X1)                                       RED
