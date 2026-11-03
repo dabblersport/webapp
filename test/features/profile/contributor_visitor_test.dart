@@ -63,7 +63,9 @@ class _FakeSports extends StateNotifier<SportsProfileState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-final DateTime _now = DateTime(2026, 11, 1, 9);
+// Anchored to the real clock: the screen filters Upcoming against
+// DateTime.now() (buildContributorScope), so fixed fixture dates go stale.
+final DateTime _now = DateTime.now();
 
 UserProfile _omar({bool emptyBio = false}) => UserProfile(
   id: 'p-omar',
