@@ -27,6 +27,10 @@ const String kOfflineCacheMiss = 'offline_cache_miss';
 ///   copy is returned with `isStale: true` and its `cachedAt`; with no usable
 ///   copy the result is `Err` with code [kOfflineCacheMiss].
 /// - Any other failure passes through unchanged.
+/// - [currentAccountId], when given, is asked again once the fetch returns: if
+///   the account is no longer [accountId] the value is returned but written
+///   nowhere, so a late result never lands in the old or the new account
+///   (KAN-748).
 Future<Result<CachedRead<T>, Failure>> readThrough<T>({
   required OfflineCache cache,
   required String? accountId,
@@ -36,6 +40,7 @@ Future<Result<CachedRead<T>, Failure>> readThrough<T>({
   required Object? Function(T value) encode,
   required T Function(Object? json) decode,
   T Function(T value)? cap,
+  String? Function()? currentAccountId,
 }) async {
   final account = accountId;
   if (account == null) {
@@ -84,6 +89,9 @@ Future<Result<CachedRead<T>, Failure>> readThrough<T>({
   }
   if (result is Ok<T, Failure>) {
     final value = result.value;
+    if (currentAccountId != null && currentAccountId() != account) {
+      return Ok(CachedRead<T>(value: value));
+    }
     try {
       await cache.write(
         account,
