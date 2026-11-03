@@ -100,11 +100,11 @@ $$;
 
 -- Data fingerprint of every table the series RPCs read or write, BEFORE this script seeds anything.
 SELECT '#FINGERPRINT|' || md5(
-         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x.id), '') FROM public.games x) ||
-         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x.id), '') FROM public.events x) ||
-         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x.id), '') FROM public.game_series x) ||
-         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x.id), '') FROM public.game_roster x) ||
-         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x.id), '') FROM public.meetups x)) AS fingerprint;
+         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.games x) ||
+         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.events x) ||
+         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.game_series x) ||
+         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.game_roster x) ||
+         (SELECT coalesce(string_agg(x::text, '|' ORDER BY x::text), '') FROM public.meetups x)) AS fingerprint;
 
 -- ---------------------------------------------------------------- S: shape and attributes (identical pre and post)
 CREATE TEMP TABLE fns (k text, fn text, args text, inner_fn boolean);
