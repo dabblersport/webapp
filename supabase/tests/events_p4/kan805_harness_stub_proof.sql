@@ -11,14 +11,16 @@
 --   bash supabase/tests/events_p2/build_kan728.sh /tmp/k818_pg 55818
 --   psql -X -h /tmp -p 55818 -U postgres -d k728 -v ON_ERROR_STOP=1 -f supabase/tests/events_p4/kan805_harness_stub_proof.sql
 -- Exit 0 and every line PASS = GREEN. Any FAIL raises at the end (exit 3) = RED. On the pre-KAN-818 harness
--- (stub = coalesce(NEW.host_actor_id, NEW.creator_profile_id)) H1, H2, H5, H6 and H7 FAIL; H3, H4 PASS on both.
+-- (stub = coalesce(NEW.host_actor_id, NEW.creator_profile_id)) H1, H2, H5 and H7 FAIL; H3, H4, H6 PASS on both
+-- (on the guard path the old stub's legacy creator equals the parent's creator, so H3 does not discriminate).
 --
 -- Probes:
 --   H1 [b] the body of harness_host_actor_stub reads no NEW./OLD.<column KAN-719 Z01 removes from meetups>
 --          (same pattern as kan719_z04_postcheck.sql S4), names no owner_user_id, and names creator_profile_id
 --          only as a column of the events parent (e.creator_profile_id / the KAN-711 map result).
---   H2 [b] it reads public.events, and is attached BEFORE INSERT twice: trg_meetups_aaa_host_actor_stub and
---          trg_zzz_harness_host_actor_stub_late, the latter sorting after trg_zz_kan712_meetups_guard.
+--   H2 [b] it reads public.events, is attached exactly once (BEFORE INSERT ROW, trg_meetups_aaa_host_actor_stub),
+--          and trg_zz_kan712_meetups_guard is still the LAST BEFORE ROW trigger on meetups (the KAN-712 cutover
+--          asserts that; a late stub trigger after the guard fails the cutover build).
 --   H3 [a] guard path: a meetup inserted with NULL host_actor_id gets host = the creator of its events parent.
 --   H4 [a] guard path: an explicit host_actor_id is kept.
 --   H5 [a] event-first (the post-Z01 create shape; the guard disabled in a savepoint): the events row is written
@@ -26,7 +28,7 @@
 --          host must be b3 (events), not b4 (meetups.creator_profile_id). This is the discriminating probe.
 --   H6 [a] event-first with an explicit host: kept.
 --   H7 [a] Z01 columns absent (simulated in a savepoint: the 24 Z01 meetups columns are RENAMED, because a real
---          DROP needs the Z01 dependants dropped first; every user trigger on meetups except the two stub triggers
+--          DROP needs the Z01 dependants dropped first; every user trigger on meetups except the stub trigger
 --          is disabled, as Z01 drops them): event-first insert, NULL host -> events creator; no 42703.
 \set ON_ERROR_STOP 1
 \pset format unaligned
@@ -73,11 +75,16 @@ BEGIN
     AND (SELECT count(*) FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass AND NOT t.tgisinternal
            AND t.tgfoid = 'public.harness_host_actor_stub()'::regprocedure AND t.tgenabled = 'O'
            AND t.tgtype::int & 2 = 2 AND t.tgtype::int & 4 = 4 AND t.tgtype::int & 1 = 1
-           AND t.tgname IN ('trg_meetups_aaa_host_actor_stub', 'trg_zzz_harness_host_actor_stub_late')) = 2
-    AND 'trg_zzz_harness_host_actor_stub_late' COLLATE "C" > 'trg_zz_kan712_meetups_guard' COLLATE "C",
-    format('reads public.events=%s; BEFORE INSERT ROW triggers on meetups using it: %s', src ~* '\mpublic\.events\M',
+           AND t.tgname = 'trg_meetups_aaa_host_actor_stub') = 1
+    AND (SELECT count(*) FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass
+           AND t.tgfoid = 'public.harness_host_actor_stub()'::regprocedure) = 1
+    AND (SELECT max(t.tgname::text COLLATE "C") FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass
+           AND NOT t.tgisinternal AND t.tgtype::int & 3 = 3) = 'trg_zz_kan712_meetups_guard',
+    format('reads public.events=%s; triggers on meetups using it: %s; last BEFORE ROW trigger: %s', src ~* '\mpublic\.events\M',
       (SELECT string_agg(tgname, ',' ORDER BY tgname COLLATE "C") FROM pg_trigger
-        WHERE tgrelid = 'public.meetups'::regclass AND tgfoid = 'public.harness_host_actor_stub()'::regprocedure)));
+        WHERE tgrelid = 'public.meetups'::regclass AND tgfoid = 'public.harness_host_actor_stub()'::regprocedure),
+      (SELECT max(t.tgname::text COLLATE "C") FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass
+           AND NOT t.tgisinternal AND t.tgtype::int & 3 = 3)));
 END $h1$;
 
 -- behavioural probes: each in its own subtransaction, the error (if any) is the observed value ------------------
@@ -91,10 +98,13 @@ END $$;
 -- H3 guard path, NULL host
 SAVEPOINT h3;
 SELECT pg_temp.run($q$
-    WITH m AS (INSERT INTO public.meetups (id, creator_profile_id, creator_user_id, title, start_at)
+    INSERT INTO public.meetups (id, creator_profile_id, creator_user_id, title, start_at)
                VALUES ('81800000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-0000000000b4',
-                       '00000000-0000-0000-0000-0000000000a4', 'k818 h3', '2030-06-01 10:00+00') RETURNING id, host_actor_id)
-    SELECT m.host_actor_id || '|' || (SELECT e.creator_profile_id FROM public.events e WHERE e.id = m.id) FROM m $q$) AS r \gset h3_
+                       '00000000-0000-0000-0000-0000000000a4', 'k818 h3', '2030-06-01 10:00+00')
+    RETURNING host_actor_id::text $q$) AS h \gset h3_
+SELECT coalesce((SELECT e.creator_profile_id::text FROM public.events e
+       WHERE e.id = '81800000-0000-0000-0000-000000000003'), '<no parent>') AS c \gset h3_
+\set h3_r :h3_h '|' :h3_c
 ROLLBACK TO SAVEPOINT h3;
 SELECT pg_temp.chk('H3', :'h3_r' = '00000000-0000-0000-0000-0000000000b4|00000000-0000-0000-0000-0000000000b4', 'host|events.creator = ' || :'h3_r');
 
@@ -136,9 +146,9 @@ DO $z$ DECLARE c text; BEGIN
   END LOOP;
 END $z$;
 ALTER TABLE public.meetups DISABLE TRIGGER USER;
-DO $e$ DECLARE r record; BEGIN   -- re-enable only the stub triggers that exist (the old harness has only "aaa")
+DO $e$ DECLARE r record; BEGIN   -- re-enable only the stub trigger
   FOR r IN SELECT tgname FROM pg_trigger WHERE tgrelid = 'public.meetups'::regclass
-            AND tgname IN ('trg_meetups_aaa_host_actor_stub', 'trg_zzz_harness_host_actor_stub_late') LOOP
+            AND tgname = 'trg_meetups_aaa_host_actor_stub' LOOP
     EXECUTE format('ALTER TABLE public.meetups ENABLE TRIGGER %I', r.tgname);
   END LOOP;
 END $e$;

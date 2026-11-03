@@ -25,12 +25,11 @@
 --     host_actor_id still wins. When the parent is written relative to the BEFORE INSERT:
 --       * events row written FIRST (event-first create, the post-Z01 shape): trg_meetups_aaa_host_actor_stub reads
 --         events.creator_profile_id by NEW.event_id.
---       * KAN-712 stage B: the parent is written by trg_zz_kan712_meetups_guard, which sorts AFTER "aaa". The same
---         function is attached a second time as trg_zzz_harness_host_actor_stub_late (sorts after the guard: '_' <
---         'z'), which reads the parent the guard has just inserted.
---       * KAN-711 phase 1 (no guard): the parent is written by the AFTER mirror, so no events row exists during any
---         BEFORE trigger. The late trigger then takes the creator of the parent row the mirror is about to write,
---         public.kan711_events_map_meetup(NEW), only when that function exists and no parent row exists yet.
+--       * no parent row yet (KAN-712 stage B: trg_zz_kan712_meetups_guard inserts it and must stay the LAST BEFORE
+--         ROW trigger, which the cutover asserts; KAN-711 phase 1: the AFTER mirror writes it): the stub takes the
+--         creator of the parent row about to be written, (public.kan711_events_map_meetup(NEW)).creator_profile_id,
+--         when that function exists. The guard and the mirror both copy the creator from the same NEW row
+--         (write contract 2b / KAN-711 map), and no BEFORE trigger between "aaa" and the guard changes it.
 --       * before KAN-710 (no public.events): nothing is filled; every harness insert there passes host_actor_id.
 --     SECURITY DEFINER (owner postgres) so the read is not filtered by events' FORCE RLS for an API-role insert.
 
@@ -94,16 +93,14 @@ DECLARE v_creator uuid; v_parent boolean;
 BEGIN
   IF NEW.host_actor_id IS NOT NULL OR to_regclass('public.events') IS NULL THEN RETURN NEW; END IF;  -- explicit wins
   SELECT e.creator_profile_id, true INTO v_creator, v_parent
-    FROM public.events e WHERE e.id = NEW.event_id AND e.event_type = 'meetup';
-  IF v_parent IS NULL AND TG_NAME = 'trg_zzz_harness_host_actor_stub_late'
-     AND to_regprocedure('public.kan711_events_map_meetup(public.meetups)') IS NOT NULL THEN
-    v_creator := (public.kan711_events_map_meetup(NEW)).creator_profile_id;  -- KAN-711 phase 1: parent written AFTER
+    FROM public.events e WHERE e.id = coalesce(NEW.event_id, NEW.id) AND e.event_type = 'meetup';
+  IF v_parent IS NULL AND to_regprocedure('public.kan711_events_map_meetup(public.meetups)') IS NOT NULL THEN
+    v_creator := (public.kan711_events_map_meetup(NEW)).creator_profile_id;  -- parent not written yet
   END IF;
   NEW.host_actor_id := v_creator;
   RETURN NEW;
 END $$;
 CREATE TRIGGER trg_meetups_aaa_host_actor_stub BEFORE INSERT ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.harness_host_actor_stub();
-CREATE TRIGGER trg_zzz_harness_host_actor_stub_late BEFORE INSERT ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.harness_host_actor_stub();
 
 -- Create paths (stay UNWRAPPED; the guard routes their INSERT) --------------------------------------------------
 CREATE FUNCTION public.rpc_create_game_legacy_v2(p_actor_type text, p_sport_id uuid, p_sport_variant_id uuid, p_title text DEFAULT NULL::text, p_venue_space_id uuid DEFAULT NULL::uuid, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_bench_slots integer DEFAULT 0, p_listing_visibility text DEFAULT 'public'::text, p_join_policy text DEFAULT 'open'::text, p_min_skill integer DEFAULT NULL::integer, p_max_skill integer DEFAULT NULL::integer, p_rules jsonb DEFAULT NULL::jsonb, p_squad_id uuid DEFAULT NULL::uuid, p_allow_spectators boolean DEFAULT false, p_allows_waitlist boolean DEFAULT false, p_sport_specific_data jsonb DEFAULT NULL::jsonb, p_cost_cover text DEFAULT NULL::text, p_geo_location_id uuid DEFAULT NULL::uuid, p_area_id uuid DEFAULT NULL::uuid, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_min_players integer DEFAULT NULL::integer, p_max_players integer DEFAULT NULL::integer, p_price_aed numeric DEFAULT NULL::numeric)
