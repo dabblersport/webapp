@@ -68,6 +68,15 @@ class _MeetupsTabs extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // KAN-755: a title, time, place or cancel change refetches this listing.
+    ref.watch(
+      listingChangeFeedProvider(
+        ListingChangeSignalArgs(
+          'meetups',
+          () async => ref.invalidate(meetupListProvider),
+        ),
+      ),
+    );
     final l = AppLocalizations.of(context);
     final loc = ref.watch(activeLocationProvider).valueOrNull;
     final radius = ref.watch(meetupRadiusProvider);

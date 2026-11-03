@@ -153,6 +153,15 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
   Widget build(BuildContext context) {
     // The header's count and the applied-filters rail both follow every filter
     // that narrows the list.
+    // KAN-755: a title, time, place or cancel change refetches this listing.
+    ref.watch(
+      listingChangeFeedProvider(
+        ListingChangeSignalArgs(
+          'games',
+          () async => ref.invalidate(nearbyGamesProvider),
+        ),
+      ),
+    );
     final l = AppLocalizations.of(context);
     final nearby = ref.watch(nearbyGamesFilterEnabledProvider);
     final radius = ref.watch(gamesRadiusProvider);
