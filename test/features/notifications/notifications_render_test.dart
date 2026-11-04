@@ -3,12 +3,15 @@ import 'dart:io';
 import 'dart:ui' as ui;
 
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
-import 'package:dabbler/features/activities/presentation/controllers/activity_feed_controller.dart';
+import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/notifications/data/models/notification_model.dart';
 import 'package:dabbler/features/notifications/presentation/controllers/notifications_controller.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:dabbler/features/notifications/presentation/screens/notifications_screen_v2.dart';
+import 'package:dabbler/features/notifications/presentation/widgets/activity_empty_state.dart';
+import 'package:dabbler/features/notifications/presentation/widgets/activity_log_slivers.dart';
+import 'package:dabbler/features/notifications/presentation/widgets/notif_chips.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -33,9 +36,8 @@ const String _userId = 'u-me';
 String _fakeSession(String userId) {
   String b64(Map<String, dynamic> m) =>
       base64Url.encode(utf8.encode(jsonEncode(m))).replaceAll('=', '');
-  final int exp = DateTime.now()
-          .add(const Duration(days: 30))
-          .millisecondsSinceEpoch ~/
+  final int exp =
+      DateTime.now().add(const Duration(days: 30)).millisecondsSinceEpoch ~/
       1000;
   final String jwt =
       '${b64({'alg': 'HS256', 'typ': 'JWT'})}.${b64({'sub': userId, 'exp': exp, 'aud': 'authenticated', 'role': 'authenticated'})}.sig';
@@ -73,15 +75,20 @@ class _FakeNotifs extends StateNotifier<NotificationsState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _FakeActivity extends StateNotifier<ActivityFeedState>
-    implements ActivityFeedController {
+class _FakeActivity extends StateNotifier<ActivityLogState>
+    implements ActivityLogController {
   _FakeActivity(super.state);
+  int refreshCalls = 0;
+  int loadMoreCalls = 0;
   @override
-  Future<void> loadActivities(String period) async {}
+  Future<void> load() async {}
   @override
-  void changeCategory(String? category) {}
+  void changeCategory(String? category) =>
+      state = state.copyWith(category: category ?? 'all');
   @override
-  Future<void> refresh() async {}
+  Future<void> refresh() async => refreshCalls++;
+  @override
+  Future<void> loadMore() async => loadMoreCalls++;
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -94,58 +101,110 @@ AppNotification _n(
   Duration ago = const Duration(minutes: 5),
   String? body,
   Map<String, dynamic>? payload,
-}) =>
-    AppNotification(
-      id: id,
-      toUserId: _userId,
-      kindKey: kind,
-      title: title,
-      body: body,
-      isRead: read,
-      payload: payload,
-      createdAt: DateTime.now().subtract(ago),
-    );
+}) => AppNotification(
+  id: id,
+  toUserId: _userId,
+  kindKey: kind,
+  title: title,
+  body: body,
+  isRead: read,
+  payload: payload,
+  createdAt: DateTime.now().subtract(ago),
+);
 
 List<AppNotification> _sample() => [
-      _n('1', 'game.invited', 'Game invite',
-          payload: {'actor_name': 'Omar Haddad'},
-          body: 'Friday 7pm at Al Wasl Courts'),
-      _n('2', 'friend.requested', 'Friend request',
-          payload: {'actor_name': 'Layla Nasser'}, ago: const Duration(hours: 2)),
-      _n('3', 'social.post_liked', 'Liked',
-          payload: {'actor_name': 'Sara Khalid'},
-          read: true,
-          ago: const Duration(hours: 5)),
-      _n('4', 'arena.payment_required', 'Payment', body: 'Complete payment to confirm your booking',
-          ago: const Duration(days: 1, hours: 2)),
-      _n('5', 'reward.badge_awarded', 'Badge', read: true, ago: const Duration(days: 1, hours: 6)),
-      _n('6', 'game.reminder', 'Reminder', read: true, ago: const Duration(days: 3)),
-      _n('7', 'system.notice', 'Notice', read: true, ago: const Duration(days: 9)),
-    ];
+  _n(
+    '1',
+    'game.invited',
+    'Game invite',
+    payload: {'actor_name': 'Omar Haddad'},
+    body: 'Friday 7pm at Al Wasl Courts',
+  ),
+  _n(
+    '2',
+    'friend.requested',
+    'Friend request',
+    payload: {'actor_name': 'Layla Nasser'},
+    ago: const Duration(hours: 2),
+  ),
+  _n(
+    '3',
+    'social.post_liked',
+    'Liked',
+    payload: {'actor_name': 'Sara Khalid'},
+    read: true,
+    ago: const Duration(hours: 5),
+  ),
+  _n(
+    '4',
+    'arena.payment_required',
+    'Payment',
+    body: 'Complete payment to confirm your booking',
+    ago: const Duration(days: 1, hours: 2),
+  ),
+  _n(
+    '5',
+    'reward.badge_awarded',
+    'Badge',
+    read: true,
+    ago: const Duration(days: 1, hours: 6),
+  ),
+  _n(
+    '6',
+    'game.reminder',
+    'Reminder',
+    read: true,
+    ago: const Duration(days: 3),
+  ),
+  _n('7', 'system.notice', 'Notice', read: true, ago: const Duration(days: 9)),
+];
 
 List<ActivityFeedEvent> _activities() {
   final now = DateTime.now();
   return [
     ActivityFeedEvent(
-      id: 'a1', subjectType: 'game', subjectId: 'g1', verb: 'joined',
-      timeBucket: 'present', happenedAt: now.subtract(const Duration(minutes: 20)),
+      id: 'a1',
+      subjectType: 'game',
+      subjectId: 'g1',
+      verb: 'joined',
+      timeBucket: 'present',
+      happenedAt: now.subtract(const Duration(minutes: 20)),
       priority: 1,
-      payload: {'title': 'You joined Friday Football', 'venue_name': 'Al Wasl Courts', 'participants_count': 8},
+      payload: {
+        'title': 'You joined Friday Football',
+        'venue_name': 'Al Wasl Courts',
+        'participants_count': 8,
+      },
     ),
     ActivityFeedEvent(
-      id: 'a2', subjectType: 'reward', subjectId: 'r1', verb: 'earned',
-      timeBucket: 'past', happenedAt: now.subtract(const Duration(hours: 3)),
-      priority: 1, payload: {'title': 'Earned 50 points', 'description': 'Match completed'},
+      id: 'a2',
+      subjectType: 'reward',
+      subjectId: 'r1',
+      verb: 'earned',
+      timeBucket: 'past',
+      happenedAt: now.subtract(const Duration(hours: 3)),
+      priority: 1,
+      payload: {'title': 'Earned 50 points', 'description': 'Match completed'},
     ),
     ActivityFeedEvent(
-      id: 'a3', subjectType: 'game', subjectId: 'g2', verb: 'created',
-      timeBucket: 'upcoming', happenedAt: now.subtract(const Duration(days: 1)),
-      priority: 1, payload: {'title': 'Created Sunday Padel', 'location': 'Dubai Marina'},
+      id: 'a3',
+      subjectType: 'game',
+      subjectId: 'g2',
+      verb: 'created',
+      timeBucket: 'upcoming',
+      happenedAt: now.subtract(const Duration(days: 1)),
+      priority: 1,
+      payload: {'title': 'Created Sunday Padel', 'location': 'Dubai Marina'},
     ),
     ActivityFeedEvent(
-      id: 'a4', subjectType: 'security', subjectId: 's1', verb: 'signed_in',
-      timeBucket: 'past', happenedAt: now.subtract(const Duration(days: 1, hours: 4)),
-      priority: 1, payload: {'title': 'New sign-in', 'description': 'iPhone, Dubai'},
+      id: 'a4',
+      subjectType: 'security',
+      subjectId: 's1',
+      verb: 'signed_in',
+      timeBucket: 'past',
+      happenedAt: now.subtract(const Duration(days: 1, hours: 4)),
+      priority: 1,
+      payload: {'title': 'New sign-in', 'description': 'iPhone, Dubai'},
     ),
   ];
 }
@@ -155,7 +214,8 @@ Future<void> _pump(
   Locale locale,
   Key key, {
   required NotificationsState notifs,
-  ActivityFeedState? activity,
+  ActivityLogState? activity,
+  _FakeActivity? activityFake,
   Size size = const Size(393, 852),
   _FakeNotifs? fake,
 }) async {
@@ -165,17 +225,23 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
-        notificationsControllerProvider(_userId)
-            .overrideWith((ref) => fake ?? _FakeNotifs(notifs)),
-        activityFeedControllerProvider
-            .overrideWith((ref) => _FakeActivity(activity ?? ActivityFeedState())),
+        notificationsControllerProvider(
+          _userId,
+        ).overrideWith((ref) => fake ?? _FakeNotifs(notifs)),
+        activityLogControllerProvider.overrideWith(
+          (ref) =>
+              activityFake ??
+              _FakeActivity(activity ?? const ActivityLogState(loaded: true)),
+        ),
         myProfileIdProvider.overrideWith((ref) async => null),
         notificationSettingsControllerProvider.overrideWith(
-          (ref) => FakeNotificationSettings(const NotificationSettings(
-            userId: _userId,
-            quietStartMin: 23 * 60,
-            quietEndMin: 7 * 60,
-          )),
+          (ref) => FakeNotificationSettings(
+            const NotificationSettings(
+              userId: _userId,
+              quietStartMin: 23 * 60,
+              quietEndMin: 7 * 60,
+            ),
+          ),
         ),
       ],
       child: MaterialApp(
@@ -204,7 +270,9 @@ Future<void> _shoot(WidgetTester tester, Key key, String name) async {
     final RenderRepaintBoundary boundary =
         tester.renderObject(find.byKey(key)) as RenderRepaintBoundary;
     final ui.Image image = await boundary.toImage(pixelRatio: 2);
-    final ByteData? png = await image.toByteData(format: ui.ImageByteFormat.png);
+    final ByteData? png = await image.toByteData(
+      format: ui.ImageByteFormat.png,
+    );
     Directory(_shotsDir).createSync(recursive: true);
     File('$_shotsDir/$name.png').writeAsBytesSync(png!.buffer.asUint8List());
   });
@@ -223,9 +291,16 @@ void main() {
     final l10n = lookupAppLocalizations(locale);
 
     testWidgets('notifications all — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(
-              notifications: _sample(), unreadCount: 3, hasMore: true));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(
+          notifications: _sample(),
+          unreadCount: 3,
+          hasMore: true,
+        ),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerNotificationRow), findsWidgets);
       expect(find.byType(DabblerChip), findsWidgets);
@@ -234,9 +309,16 @@ void main() {
     });
 
     testWidgets('what reaches you sheet — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(
-              notifications: _sample(), unreadCount: 3, hasMore: true));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(
+          notifications: _sample(),
+          unreadCount: 3,
+          hasMore: true,
+        ),
+      );
       await tester.tap(find.bySemanticsLabel(l10n.settings_header_title));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -248,9 +330,16 @@ void main() {
     });
 
     testWidgets('notifications filtered — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(
-              notifications: _sample(), unreadCount: 3, hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(
+          notifications: _sample(),
+          unreadCount: 3,
+          hasMore: false,
+        ),
+      );
       await tester.tap(find.byType(DabblerChip).at(1));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -262,8 +351,13 @@ void main() {
 
     testWidgets('notifications unread — $dir', (tester) async {
       final unread = _sample().map((n) => n.copyWith(isRead: false)).toList();
-      final fake = _FakeNotifs(NotificationsState(
-          notifications: unread, unreadCount: unread.length, hasMore: false));
+      final fake = _FakeNotifs(
+        NotificationsState(
+          notifications: unread,
+          unreadCount: unread.length,
+          hasMore: false,
+        ),
+      );
       await _pump(tester, locale, key, notifs: fake.state, fake: fake);
       expect(find.byType(DabblerBadge), findsWidgets);
       await tester.tap(find.bySemanticsLabel(l10n.notif_mark_all_read));
@@ -274,33 +368,54 @@ void main() {
     });
 
     testWidgets('notifications empty — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: const NotificationsState(hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: const NotificationsState(hasMore: false),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerEmptyState), findsOneWidget);
       await _shoot(tester, key, 'notifications-empty-$dir');
     });
 
     testWidgets('notifications loading — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: const NotificationsState(isLoading: true, hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: const NotificationsState(isLoading: true, hasMore: false),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerSkeleton), findsWidgets);
       await _shoot(tester, key, 'notifications-loading-$dir');
     });
 
     testWidgets('notifications error — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: const NotificationsState(error: 'Network unreachable'));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: const NotificationsState(error: 'Network unreachable'),
+      );
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerEmptyState), findsOneWidget);
       await _shoot(tester, key, 'notifications-error-$dir');
     });
 
     testWidgets('activity log — $dir', (tester) async {
-      await _pump(tester, locale, key,
-          notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
-          activity: ActivityFeedState(activities: _activities(), hasMore: false));
+      await _pump(
+        tester,
+        locale,
+        key,
+        notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
+        activity: ActivityLogState(
+          activities: _activities(),
+          loaded: true,
+          feedHasMore: false,
+          socialHasMore: false,
+        ),
+      );
       await tester.tap(find.text(l10n.notif_title_activity_log));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
@@ -315,11 +430,141 @@ void main() {
     });
   }
 
-  testWidgets('wide layout shows both panes', (tester) async {
-    await _pump(tester, const Locale('en'), const Key('shot'),
+  group('KAN-852 activity log states', () {
+    const Key key = Key('shot');
+    final l10n = lookupAppLocalizations(const Locale('en'));
+
+    Future<_FakeActivity> openLog(
+      WidgetTester tester,
+      ActivityLogState state,
+    ) async {
+      final _FakeActivity fake = _FakeActivity(state);
+      await _pump(
+        tester,
+        const Locale('en'),
+        key,
         notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
-        activity: ActivityFeedState(activities: _activities(), hasMore: false),
-        size: const Size(1100, 800));
+        activityFake: fake,
+      );
+      await tester.tap(find.text(l10n.notif_title_activity_log));
+      for (var i = 0; i < 5; i++) {
+        await tester.pump(const Duration(milliseconds: 100));
+      }
+      return fake;
+    }
+
+    testWidgets('fetch error shows Retry, not the empty log', (tester) async {
+      final fake = await openLog(
+        tester,
+        const ActivityLogState(
+          loaded: true,
+          feedError: 'offline',
+          socialError: 'offline',
+        ),
+      );
+      expect(find.byType(ActivityEmptyState), findsNothing);
+      expect(find.text(l10n.notif_btn_retry), findsOneWidget);
+      await tester.tap(find.text(l10n.notif_btn_retry));
+      await tester.pump();
+      expect(fake.refreshCalls, 1);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('successful empty fetch shows the empty log', (tester) async {
+      await openLog(
+        tester,
+        const ActivityLogState(
+          loaded: true,
+          feedHasMore: false,
+          socialHasMore: false,
+        ),
+      );
+      expect(find.byType(ActivityEmptyState), findsOneWidget);
+      expect(find.text(l10n.notif_btn_retry), findsNothing);
+    });
+
+    testWidgets('one source failed: rows stay and the error shows', (
+      tester,
+    ) async {
+      await openLog(
+        tester,
+        ActivityLogState(
+          activities: _activities(),
+          loaded: true,
+          socialError: 'timeout',
+          feedHasMore: false,
+        ),
+      );
+      expect(find.byType(ActivityLogPartialError), findsOneWidget);
+      expect(find.byType(DabblerActivityRow), findsWidgets);
+      expect(find.byType(ActivityEmptyState), findsNothing);
+    });
+
+    testWidgets('a chip filters and All restores the full list', (
+      tester,
+    ) async {
+      final fake = await openLog(
+        tester,
+        ActivityLogState(
+          activities: _activities(),
+          loaded: true,
+          feedHasMore: false,
+          socialHasMore: false,
+        ),
+      );
+      final int all = find.byType(DabblerActivityRow).evaluate().length;
+      final Finder rewards = find.text(l10n.notif_chip_rewards);
+      await tester.ensureVisible(rewards);
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(rewards);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(fake.state.category, 'reward');
+      expect(find.byType(DabblerActivityRow), findsOneWidget);
+      final Finder allChip = find.text(l10n.notif_chip_all);
+      // The chip row builds lazily: scroll back to the start for "All".
+      await tester.dragUntilVisible(
+        allChip,
+        find.byType(ChipsRow),
+        const Offset(300, 0),
+      );
+      await tester.pump(const Duration(milliseconds: 100));
+      await tester.tap(allChip);
+      await tester.pump(const Duration(milliseconds: 100));
+      expect(fake.state.category, 'all');
+      expect(find.byType(DabblerActivityRow).evaluate().length, all);
+    });
+
+    testWidgets('older history loads on Load more', (tester) async {
+      final fake = await openLog(
+        tester,
+        ActivityLogState(activities: _activities(), loaded: true),
+      );
+      final Finder more = find.text(l10n.notif_load_older);
+      await tester.scrollUntilVisible(
+        more,
+        300,
+        scrollable: find.byType(Scrollable).first,
+      );
+      await tester.tap(more);
+      await tester.pump();
+      expect(fake.loadMoreCalls, 1);
+    });
+  });
+
+  testWidgets('wide layout shows both panes', (tester) async {
+    await _pump(
+      tester,
+      const Locale('en'),
+      const Key('shot'),
+      notifs: NotificationsState(notifications: _sample(), unreadCount: 3),
+      activity: ActivityLogState(
+        activities: _activities(),
+        loaded: true,
+        feedHasMore: false,
+        socialHasMore: false,
+      ),
+      size: const Size(1100, 800),
+    );
     expect(tester.takeException(), isNull);
     expect(find.text('Notifications'), findsWidgets);
     expect(find.text('Activity log'), findsOneWidget);

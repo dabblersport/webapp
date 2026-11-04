@@ -50,13 +50,16 @@ class ActivityFeedState {
         .toList();
   }
 
+  static const Object _keep = Object();
+
   ActivityFeedState copyWith({
     List<ActivityFeedEvent>? activities,
     bool? isLoading,
     bool? isLoadingMore,
     String? error,
     String? currentPeriod,
-    String? currentCategory,
+    // KAN-852: a sentinel, so `changeCategory(null)` ("All") really clears it.
+    Object? currentCategory = _keep,
     DateTime? lastCursor,
     bool? hasMore,
   }) {
@@ -66,7 +69,9 @@ class ActivityFeedState {
       isLoadingMore: isLoadingMore ?? this.isLoadingMore,
       error: error,
       currentPeriod: currentPeriod ?? this.currentPeriod,
-      currentCategory: currentCategory ?? this.currentCategory,
+      currentCategory: identical(currentCategory, _keep)
+          ? this.currentCategory
+          : currentCategory as String?,
       lastCursor: lastCursor ?? this.lastCursor,
       hasMore: hasMore ?? this.hasMore,
     );

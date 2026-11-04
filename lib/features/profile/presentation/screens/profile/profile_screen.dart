@@ -434,18 +434,12 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               heroTone: personaType == 'host'
                   ? DabblerStatTileTone.amber
                   : DabblerStatTileTone.brand,
-              // Selected sport: its personal Sport Profile. All sports: the
-              // account's own activity list (no per-sport filter exists there).
-              onOpenSport: selected != null
-                  ? (canOpen
-                        ? () => _openSportProfile(profile, selected)
-                        : null)
-                  : (isContributor && !newContributor && counts != null
-                        // KAN-688 ruling: the All-sports hero opens /activities (the app has
-                        // no Listings screen; activities carry no sport/profile column, so it
-                        // is not an account-scoped list).
-                        ? () => context.push(RoutePaths.activities)
-                        : null),
+              // Selected sport: its personal Sport Profile. All sports: no
+              // entry — KAN-852 moved the owner's All Activities (KAN-688) into
+              // Home bell → Activity log.
+              onOpenSport: selected != null && canOpen
+                  ? () => _openSportProfile(profile, selected)
+                  : null,
             ),
             const DabblerGap.v(DabblerSpacing.space8),
             RatingSummary(userId: profile?.userId),
@@ -470,7 +464,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                 child: Center(child: DabblerSpinner()),
               )
             else
-              OwnProfileFeed(profileId: profileId),
+              OwnProfileFeed(profileId: profileId, showActivity: false),
           ],
         ),
       ),
