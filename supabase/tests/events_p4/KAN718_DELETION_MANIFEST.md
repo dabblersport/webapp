@@ -7,6 +7,8 @@ two cannot drift.
 
 ## 1. Verdict
 
+> 2026-11-04: exact only on a chain without D05; see `KAN718_HANDOFF.md` (d).
+
 **Deletion stays BLOCKED.** Every one of the 130 entries is blocked today:
 
 - **D01** (`KAN718_D01_SQL_CONSUMERS.md`): all 40 column pairs still have SQL consumers.

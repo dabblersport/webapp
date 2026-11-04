@@ -44,7 +44,7 @@ void main() {
         seen.add(r);
         final path = r.url.path;
         if (path.startsWith('/rest/v1/rpc/')) return _json(r, gameId);
-        if (path == '/rest/v1/games') return _json(r, [_row(gameId)]);
+        if (path == '/rest/v1/kan718_games_compat') return _json(r, [_row(gameId)]);
         return _json(r, <dynamic>[]);
       }),
     );
