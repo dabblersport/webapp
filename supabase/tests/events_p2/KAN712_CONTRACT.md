@@ -84,6 +84,7 @@ the events lock. A direct legacy write that finds the events row held fails at o
 | 17 | `rpc_create_meetup_legacy_v2` | `20261021120300:29` | insert meetups | **ALLOWLIST: guard INSERT path** |
 | 18 | `rpc_challenge_spawn_game` | baseline `:11599` | insert games | **ALLOWLIST: guard INSERT path.** Pre-existing defect: fails in both phases (L-1) |
 | 19 | `admin_cleanup_user_data` | baseline `:2223-2300` | delete games | **ALLOWLIST: after-delete trigger** (L-2, L-7) |
+| 19a | `run_seed_meetup_template` | `20261103104000_kan851_capture_run_seed_meetup_template.sql` (production-only until KAN-851 captured it, prosrc md5 `74e763538070a1460fa4e1dc62f7cdf6`) | insert meetups, meetup_rsvps | **ALLOWLIST: seed/ops writer, service_role only** (SECURITY INVOKER, EXECUTE postgres + service_role; body refuses any other current_user). INSERT/DELETE only, never UPDATE: a meetups INSERT is routed by `kan712_legacy_guard` (BEFORE INSERT, events parent first) and removal by `kan712_legacy_after_delete` (AFTER DELETE). CTO ruling 2026-11-04 option c; same writer kind as #19 |
 | 20 | `kan711_events_backfill_batch` | `20261102120000_*.sql:140-245` | update games, meetups | **KAN-711 MACHINERY.** Excluded from 4d by prefix. **Must never be CALLed after the cutover** (L-6) |
 | 21 | `kan712_events_compat_mirror` | `20261103100000:230-285` | update games, meetups | **INTERNAL** (the phase-2 mirror) |
 | 22 | `rpc_meetup_create` (2 overloads) | baseline `:13672`, `:13765` | — | **DROPPED** at `20260915120000:95-96`. Not live, not wrapped |

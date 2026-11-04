@@ -231,7 +231,7 @@ BEGIN
        OR (p.prosrc ~* '\m(insert\s+into|delete\s+from)\s+(only\s+)?("?public"?\s*\.\s*)?"?(games|meetups)\M'
            AND p.proname NOT IN ('rpc_create_game', 'rpc_create_game_legacy_v1', 'rpc_create_game_legacy_v2',
                                  'rpc_create_meetup', 'rpc_create_meetup_legacy_v1', 'rpc_create_meetup_legacy_v2',
-                                 'rpc_challenge_spawn_game', 'admin_cleanup_user_data'))
+                                 'rpc_challenge_spawn_game', 'admin_cleanup_user_data', 'run_seed_meetup_template'))
      );
   IF v_bad IS NOT NULL THEN
     RAISE EXCEPTION 'KAN-712 post: unclassified writers of games/meetups: %', v_bad;
