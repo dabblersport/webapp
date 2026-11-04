@@ -139,11 +139,13 @@ $guard$;
 DO $pins$
 DECLARE r record; v text;
 BEGIN
+  -- KAN-881 (dreq-d0827949): card re-pinned to prod; rpc_meetup_my may be absent (retired by KAN-785).
   FOR r IN SELECT * FROM (VALUES
-      ('public.rpc_meetup_card(uuid,text)',                       'ba562664e6a99fee30a75de6fe5cbbeb'),
+      ('public.rpc_meetup_card(uuid,text)',                       'cb4265a22477f9ed8e04aecd22b7449b'),
       ('public.rpc_meetup_attendees(uuid,text,integer,integer)',  '9c82e357c7b0fe58afc645f37d889523'),
       ('public.rpc_meetup_my()',                                  '9459dd31f4dfc534d26b3e37e49326b9')) AS t(fn, md)
   LOOP
+    IF to_regprocedure(r.fn) IS NULL AND r.fn = 'public.rpc_meetup_my()' THEN CONTINUE; END IF;
     IF to_regprocedure(r.fn) IS NULL THEN
       RAISE EXCEPTION 'KAN-725 pin: % missing', r.fn;
     END IF;
@@ -171,7 +173,7 @@ CREATE TEMP TABLE kan725_pre ON COMMIT DROP AS
     FROM pg_proc p
    WHERE p.oid IN ('public.rpc_meetup_card(uuid,text)'::regprocedure,
                    'public.rpc_meetup_attendees(uuid,text,integer,integer)'::regprocedure,
-                   'public.rpc_meetup_my()'::regprocedure);
+                   to_regprocedure('public.rpc_meetup_my()'));
 CREATE TEMP TABLE kan725_pre_events ON COMMIT DROP AS
   SELECT relacl::text AS acl, relrowsecurity, relforcerowsecurity FROM pg_class WHERE oid = 'public.events'::regclass;
 
@@ -346,7 +348,7 @@ BEGIN
       ('public.rpc_meetup_my()',                                  '9459dd31f4dfc534d26b3e37e49326b9')) AS t(fn, md)
   LOOP
     v := md5(pg_get_functiondef(to_regprocedure(r.fn)));
-    IF v IS DISTINCT FROM r.md THEN
+    IF v IS DISTINCT FROM r.md AND NOT (r.fn = 'public.rpc_meetup_my()' AND to_regprocedure(r.fn) IS NULL) THEN
       RAISE EXCEPTION 'KAN-725 post: % definition md5 % (expected %)', r.fn, v, r.md;
     END IF;
   END LOOP;
@@ -358,12 +360,13 @@ BEGIN
                  OR c.proconfig IS DISTINCT FROM p.proconfig
                  OR pg_get_function_identity_arguments(c.oid) <> p.args
                  OR pg_get_function_result(c.oid) <> p.res)
-     OR (SELECT count(*) FROM pg_temp.kan725_pre) <> 3 THEN
+     OR (SELECT count(*) FROM pg_temp.kan725_pre) <> 2 + (to_regprocedure('public.rpc_meetup_my()') IS NOT NULL)::int THEN
     RAISE EXCEPTION 'KAN-725 post: signature / owner / ACL / SECURITY DEFINER / search_path changed';
   END IF;
   -- No overload appeared.
   IF (SELECT count(*) FROM pg_proc WHERE pronamespace = 'public'::regnamespace
-        AND proname IN ('rpc_meetup_card', 'rpc_meetup_attendees', 'rpc_meetup_my')) <> 3 THEN
+        AND proname IN ('rpc_meetup_card', 'rpc_meetup_attendees', 'rpc_meetup_my'))
+        <> 2 + (to_regprocedure('public.rpc_meetup_my()') IS NOT NULL)::int THEN
     RAISE EXCEPTION 'KAN-725 post: overload count changed';
   END IF;
 
