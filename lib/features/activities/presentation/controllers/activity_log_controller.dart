@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
@@ -18,10 +20,12 @@ class ActivityLogState {
     this.activities = const <ActivityFeedEvent>[],
     this.isLoading = false,
     this.isLoadingMore = false,
+    this.isSearchingOlder = false,
     this.loaded = false,
     this.feedError,
     this.socialError,
     this.category = 'all',
+    this.query = '',
     this.feedCursor,
     this.feedHasMore = true,
     this.socialOffset = 0,
@@ -32,11 +36,18 @@ class ActivityLogState {
   final bool isLoading;
   final bool isLoadingMore;
 
+  /// KAN-875: true only while the search loop is loading older pages for a
+  /// query with no match. Separate from [isLoadingMore].
+  final bool isSearchingOlder;
+
   /// True once a first load has finished (whatever its outcome).
   final bool loaded;
   final String? feedError;
   final String? socialError;
   final String category;
+
+  /// KAN-874: the search text, applied after [category]. Blank = no search.
+  final String query;
   final DateTime? feedCursor;
   final bool feedHasMore;
   final int socialOffset;
@@ -44,8 +55,11 @@ class ActivityLogState {
 
   String? get error => feedError ?? socialError;
   bool get hasMore => feedHasMore || socialHasMore;
+
+  /// Category first, then search. [activities] stays the full list, so the
+  /// Last 7 days statistics (read from it) never see the query.
   List<ActivityFeedEvent> get filteredActivities =>
-      filterActivityLog(activities, category);
+      searchActivityLog(filterActivityLog(activities, category), query);
 
   /// A genuinely empty log: every source answered, and answered nothing.
   bool get isEmpty => loaded && error == null && activities.isEmpty;
@@ -56,10 +70,12 @@ class ActivityLogState {
     List<ActivityFeedEvent>? activities,
     bool? isLoading,
     bool? isLoadingMore,
+    bool? isSearchingOlder,
     bool? loaded,
     Object? feedError = _keep,
     Object? socialError = _keep,
     String? category,
+    String? query,
     Object? feedCursor = _keep,
     bool? feedHasMore,
     int? socialOffset,
@@ -68,6 +84,7 @@ class ActivityLogState {
     activities: activities ?? this.activities,
     isLoading: isLoading ?? this.isLoading,
     isLoadingMore: isLoadingMore ?? this.isLoadingMore,
+    isSearchingOlder: isSearchingOlder ?? this.isSearchingOlder,
     loaded: loaded ?? this.loaded,
     feedError: identical(feedError, _keep)
         ? this.feedError
@@ -76,6 +93,7 @@ class ActivityLogState {
         ? this.socialError
         : socialError as String?,
     category: category ?? this.category,
+    query: query ?? this.query,
     feedCursor: identical(feedCursor, _keep)
         ? this.feedCursor
         : feedCursor as DateTime?,
@@ -102,9 +120,25 @@ class ActivityLogController extends StateNotifier<ActivityLogState> {
   static const int feedPageSize = 50;
   static const int socialPageSize = 20;
 
+  /// KAN-875: most loadMore() pages one search loop run may request.
+  static const int searchOlderPageCap = 20;
+
+  /// Bumped to cancel a running search loop; a loop whose token no longer
+  /// matches never writes state again.
+  int _searchGen = 0;
+
+  /// The loadMore() the search loop is awaiting, so a fresh loop can wait for
+  /// it instead of seeing isLoadingMore and stopping.
+  Future<void>? _searchPage;
+
   /// First page of both sources. Also the Retry and pull-to-refresh action.
   Future<void> load() async {
-    state = ActivityLogState(isLoading: true, category: state.category);
+    _searchGen++;
+    state = ActivityLogState(
+      isLoading: true,
+      category: state.category,
+      query: state.query,
+    );
     final results = await Future.wait(<Future<_Page>>[
       _fetchFeed(null),
       _fetchSocial(0),
@@ -112,6 +146,7 @@ class ActivityLogController extends StateNotifier<ActivityLogState> {
     if (!mounted) return;
     _apply(results[0], results[1], const <ActivityFeedEvent>[]);
     state = state.copyWith(isLoading: false, loaded: true);
+    if (_queryHasNoMatch) unawaited(_searchOlder());
   }
 
   Future<void> refresh() => load();
@@ -136,6 +171,56 @@ class ActivityLogController extends StateNotifier<ActivityLogState> {
   /// Selects a chip. `all` restores the full list.
   void changeCategory(String? category) {
     state = state.copyWith(category: category ?? 'all');
+    if (!state.isSearchingOlder && _queryHasNoMatch) {
+      unawaited(_searchOlder());
+    }
+  }
+
+  /// KAN-874: sets the search text. The category is kept.
+  void changeQuery(String query) {
+    _searchGen++;
+    state = state.copyWith(query: query, isSearchingOlder: false);
+    if (_queryHasNoMatch) unawaited(_searchOlder());
+  }
+
+  @override
+  void dispose() {
+    _searchGen++;
+    super.dispose();
+  }
+
+  /// KAN-875: an active (non-blank) query whose category + search result is
+  /// empty on a log that has finished its first load.
+  bool get _queryHasNoMatch =>
+      state.loaded &&
+      state.query.trim().isNotEmpty &&
+      state.filteredActivities.isEmpty;
+
+  /// KAN-875: loads older pages through [loadMore] while the active query has
+  /// no match, at most [searchOlderPageCap] pages per run. Ends on a match,
+  /// on `!hasMore`, on an error (which [loadMore] has already surfaced), or on
+  /// cancellation (a new [_searchGen]); a cancelled run never writes state.
+  Future<void> _searchOlder() async {
+    final int gen = ++_searchGen;
+    bool live() => mounted && gen == _searchGen;
+    state = state.copyWith(isSearchingOlder: true);
+    int pages = 0;
+    while (pages < searchOlderPageCap) {
+      final Future<void>? inFlight = _searchPage;
+      if (inFlight != null) await inFlight;
+      if (!live()) return;
+      if (!_queryHasNoMatch || !state.hasMore || state.error != null) break;
+      // A load or an outside loadMore is running: loadMore() would no-op.
+      if (state.isLoading || state.isLoadingMore) break;
+      final Future<void> page = loadMore();
+      _searchPage = page;
+      pages++;
+      await page;
+      if (identical(_searchPage, page)) _searchPage = null;
+      if (!live()) return;
+      if (state.error != null) break;
+    }
+    state = state.copyWith(isSearchingOlder: false);
   }
 
   void _apply(_Page feed, _Page social, List<ActivityFeedEvent> existing) {

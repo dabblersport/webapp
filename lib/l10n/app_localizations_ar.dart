@@ -2518,6 +2518,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get activity_search_hint => 'ابحث في النشاط…';
 
   @override
+  String get activity_search_no_match_title => 'لا توجد نتائج';
+
+  @override
+  String activity_search_no_match_body(String query, String category) {
+    return 'لم نعثر على «$query» في $category.';
+  }
+
+  @override
+  String get activity_search_loading_older => 'جارٍ البحث في النشاط الأقدم…';
+
+  @override
+  String get activity_search_clear => 'مسح البحث';
+
+  @override
   String get activity_pill_upcoming => 'القادمة';
 
   @override

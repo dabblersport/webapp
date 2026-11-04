@@ -2527,6 +2527,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activity_search_hint => 'Search activity…';
 
   @override
+  String get activity_search_no_match_title => 'No matches';
+
+  @override
+  String activity_search_no_match_body(String query, String category) {
+    return 'We couldn\'t find “$query” in $category.';
+  }
+
+  @override
+  String get activity_search_loading_older => 'Searching older activity…';
+
+  @override
+  String get activity_search_clear => 'Clear search';
+
+  @override
   String get activity_pill_upcoming => 'Upcoming';
 
   @override

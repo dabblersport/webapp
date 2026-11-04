@@ -119,3 +119,52 @@ List<ActivityFeedEvent> filterActivityLog(
   if (category == null || category == 'all') return events;
   return events.where((e) => activityLogCategoryOf(e) == category).toList();
 }
+
+/// KAN-874: the text an Activity log row shows, as searchable strings.
+///
+/// Mirrors `ActivityRow` (`notifications/presentation/widgets/activity_row.dart`):
+/// the title is `payload.title`, else "<Verb> <subject>"; the detail is the
+/// first non-blank of description / game_name / venue_name / user_name, plus
+/// `location`. The localized participant count is not searchable text.
+List<String> _activityLogSearchText(ActivityFeedEvent e) {
+  final Map<String, dynamic> p = e.payload ?? const <String, dynamic>{};
+  final Object? title = p['title'];
+  final String verb = e.verb.replaceAll('_', ' ');
+  final List<String> out = <String>[
+    if (title is String)
+      title
+    else if (verb.isNotEmpty)
+      '${verb[0].toUpperCase()}${verb.substring(1)} ${e.subjectType}',
+  ];
+  for (final String key in const <String>[
+    'description',
+    'game_name',
+    'venue_name',
+    'user_name',
+  ]) {
+    final Object? v = p[key];
+    if (v is String && v.trim().isNotEmpty) {
+      out.add(v.trim());
+      break;
+    }
+  }
+  final Object? location = p['location'];
+  if (location is String) out.add(location);
+  return out;
+}
+
+/// Events whose visible title or detail contains [query], case-insensitively.
+/// A blank query returns [events] itself; order is always preserved.
+List<ActivityFeedEvent> searchActivityLog(
+  List<ActivityFeedEvent> events,
+  String query,
+) {
+  final String q = query.trim().toLowerCase();
+  if (q.isEmpty) return events;
+  return events
+      .where(
+        (e) =>
+            _activityLogSearchText(e).any((s) => s.toLowerCase().contains(q)),
+      )
+      .toList();
+}
