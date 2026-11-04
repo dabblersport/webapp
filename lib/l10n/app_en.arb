@@ -955,6 +955,11 @@
 
   "activity_last_7_days": "LAST 7 DAYS",
   "activity_search_hint": "Search activity…",
+  "activity_search_no_match_title": "No matches",
+  "activity_search_no_match_body": "We couldn't find “{query}” in {category}.",
+  "@activity_search_no_match_body": { "placeholders": { "query": { "type": "String" }, "category": { "type": "String" } } },
+  "activity_search_loading_older": "Searching older activity…",
+  "activity_search_clear": "Clear search",
   "activity_pill_upcoming": "Upcoming",
   "activity_pill_live": "Live",
   "activity_subject_reward": "Reward",
