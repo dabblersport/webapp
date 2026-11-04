@@ -178,8 +178,10 @@ SELECT pg_temp.chk('D3 [K]', 'spoofed SET kan712.compat does not open the refusa
      u AS (UPDATE public.games SET title = 'spoof compat' WHERE id = %L AND EXISTS (SELECT 1 FROM s) RETURNING 1) SELECT count(*)::text FROM u$s$, :G06, :G06)));
 SELECT pg_temp.keep('D4', pg_temp.as_('service_role', NULL, format($s$WITH s AS (SELECT set_config('kan712.contract', 'on', true)),
      u AS (UPDATE public.games SET title = 'spoof contract' WHERE id = %L AND EXISTS (SELECT 1 FROM s) RETURNING 1) SELECT count(*)::text FROM u$s$, :G06)));
-SELECT pg_temp.chk('D4 [=]', 'spoofed SET kan712.contract by service_role: not refused, but still ROUTED (events = games)', '1|spoof contract|spoof contract',
-  pg_temp.a('D4') || '|' || (SELECT title FROM public.games WHERE id = :G06) || '|' || (SELECT title FROM public.events WHERE id = :G06));
+-- KAN-850 (step 6c): the guard honours kan712.contract only for current_user postgres / supabase_admin, so a flag
+-- forged by an API role is inert and the direct shared-field write is refused like any other (was: not refused).
+SELECT pg_temp.chk('D4 [K]', 'spoofed SET kan712.contract by service_role: inert, direct shared write refused (KAN-850)', 'ERR 42501',
+  pg_temp.a('D4'));
 SELECT pg_temp.chk('D5 [=]', 'spoofed SET kan712.contract by authenticated: RLS still filters (0 rows)', '0',
   pg_temp.as_('authenticated', :A1, format($s$WITH s AS (SELECT set_config('kan712.contract', 'on', true)),
      u AS (UPDATE public.games SET title = 'x' WHERE id = %L AND EXISTS (SELECT 1 FROM s) RETURNING 1) SELECT count(*)::text FROM u$s$, :G06)));
@@ -290,10 +292,11 @@ SELECT pg_temp.chk('H7 [K]', 'service_role cannot call kan712_wrap_rpc / kan712_
   pg_temp.as_('service_role', NULL, $s$SELECT public.kan712_wrap_rpc('public.rpc_cancel_game(uuid,text)'::regprocedure, 'game:p_game_id')::text$s$) || '|' ||
   pg_temp.as_('service_role', NULL, $s$SELECT public.kan712_unwrap_rpc('rpc_cancel_game', 'p_game_id uuid, p_reason text')::text$s$) || '|' ||
   pg_temp.as_('service_role', NULL, $s$SELECT count(*)::text FROM public.kan712_wrapped_rpcs$s$));
-SELECT pg_temp.chk('H8 [K]', 'every wrapper: SECURITY DEFINER, search_path pinned, kan712.contract=on', '11',
+SELECT pg_temp.chk('H8 [K]', 'every wrapper: SECURITY DEFINER, proconfig exactly search_path pinned, body set_config kan712.contract (KAN-850)', '11',
   pg_temp.q($s$SELECT count(*)::text FROM public.kan712_wrapped_rpcs w JOIN pg_proc p ON p.pronamespace = 'public'::regnamespace
      AND p.proname = w.name AND pg_get_function_identity_arguments(p.oid) = w.identity_args
-    WHERE p.prosecdef AND 'search_path=""' = ANY (p.proconfig) AND 'kan712.contract=on' = ANY (p.proconfig)$s$));
+    WHERE p.prosecdef AND p.proconfig = ARRAY['search_path=""']
+      AND position('set_config(''kan712.contract'', ''on'', true)' IN p.prosrc) > 0$s$));
 
 -- I. The fail-closed writer scan (cutover 4d), seen failing on a planted writer ------------------------------
 CREATE FUNCTION pg_temp.scan() RETURNS text LANGUAGE sql AS $s$

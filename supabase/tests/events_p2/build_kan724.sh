@@ -51,6 +51,7 @@ echo "== KAN-711 backfill + validate"
 psql -X -q -v ON_ERROR_STOP=1 -h /tmp -p "$PORT" -U postgres -d k724 \
   -c 'CALL public.kan711_events_backfill_run();' -c 'SELECT public.kan711_events_validate_links();'
 run supabase/migrations/20261103100000_kan712_events_write_contract.sql
+run supabase/migrations/20261103105000_kan844_kan712_contract_flag_set_config.sql
 run supabase/migrations/20261103110000_kan712_cutover.sql
 run supabase/migrations/20261104100000_kan713_access_helpers.sql
 run supabase/migrations/20261104110000_kan713_location_triggers.sql

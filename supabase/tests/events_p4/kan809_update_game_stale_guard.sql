@@ -73,10 +73,11 @@ begin
   select * into o from pg_proc where oid = pg_temp.k809_old();
   perform pg_temp.k809_report('C1', n.oid is not null, 'expected-version overload exists', 'present',
     case when n.oid is null then 'absent' else pg_get_function_identity_arguments(n.oid) end);
-  perform pg_temp.k809_report('C2', n.prosecdef and n.proconfig = array['search_path=""', 'kan712.contract=on']
+  perform pg_temp.k809_report('C2', n.prosecdef and n.proconfig = array['search_path=""']
+      and position('set_config(''kan712.contract'', ''on'', true)' in n.prosrc) > 0
       and n.proconfig = o.proconfig and n.proowner = 'postgres'::regrole and pg_get_function_result(n.oid) = 'text',
-    'SECURITY DEFINER, search_path='''', kan712.contract=on, owner postgres, returns text',
-    'secdef|{search_path="",kan712.contract=on}|postgres|text',
+    'SECURITY DEFINER, proconfig {search_path=""}, body set_config kan712.contract (KAN-850), owner postgres, returns text',
+    'secdef|{"search_path=\"\""}|postgres|text',
     n.prosecdef::text || '|' || n.proconfig::text || '|' || n.proowner::regrole::text || '|' || pg_get_function_result(n.oid));
   perform pg_temp.k809_report('C3', n.proacl = o.proacl and n.proacl = '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}'::aclitem[],
     'proacl equals the existing rpc_update_game', o.proacl::text, n.proacl::text);
@@ -84,10 +85,10 @@ begin
       and not has_function_privilege('public', n.oid, 'EXECUTE'), 'anon and PUBLIC cannot execute', 'false|false',
     case when n.oid is null then 'absent' else has_function_privilege('anon', n.oid, 'EXECUTE')::text || '|'
       || has_function_privilege('public', n.oid, 'EXECUTE')::text end);
-  perform pg_temp.k809_report('C5', o.oid is not null and md5(o.prosrc) = '742f0a18ddeaae48904263fbf86aa578'
+  perform pg_temp.k809_report('C5', o.oid is not null and md5(o.prosrc) = 'cf869fd1507bf17c273a57af599840cb'
       and o.proacl = '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}'::aclitem[]
-      and o.proconfig = array['search_path=""', 'kan712.contract=on'],
-    'existing 17-arg wrapper unchanged (md5 prosrc, ACL, proconfig)', '742f0a18ddeaae48904263fbf86aa578',
+      and o.proconfig = array['search_path=""'],
+    'existing 17-arg wrapper unchanged (md5 prosrc, ACL, proconfig)', 'cf869fd1507bf17c273a57af599840cb',
     md5(o.prosrc) || ' ' || o.proacl::text);
   select count(*) into v_cnt from public.kan712_wrapped_rpcs;
   perform pg_temp.k809_report('C6', v_cnt = 11 and (select count(*) from public.kan712_wrapped_rpcs where name = 'rpc_update_game') = 1,
@@ -95,10 +96,10 @@ begin
     v_cnt || '|' || (select count(*) from public.kan712_wrapped_rpcs where name = 'rpc_update_game'));
   perform pg_temp.k809_report('C7', n.oid is not null and position('FOR UPDATE' in n.prosrc) > 0
       and position('FOR UPDATE' in n.prosrc) < position('stale_update' in n.prosrc)
-      and position('stale_update' in n.prosrc) < position('RETURN public.rpc_update_game($1, $2, $3, $5' in n.prosrc),
+      and position('stale_update' in n.prosrc) < position('v_result := public.rpc_update_game($1, $2, $3, $5' in n.prosrc),
     'body order: lock events FOR UPDATE, then compare, then delegate to the 17-arg public function', 'lock<compare<delegate',
     case when n.oid is null then 'absent' else 'positions ' || position('FOR UPDATE' in n.prosrc) || '<'
-      || position('stale_update' in n.prosrc) || '<' || position('RETURN public.rpc_update_game($1, $2, $3, $5' in n.prosrc) end);
+      || position('stale_update' in n.prosrc) || '<' || position('v_result := public.rpc_update_game($1, $2, $3, $5' in n.prosrc) end);
 end $c$;
 
 -- ---------------------------------------------------------------------------------------------------------
