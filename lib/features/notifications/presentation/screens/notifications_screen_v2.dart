@@ -5,26 +5,25 @@ import 'package:go_router/go_router.dart';
 import '../../data/models/notification_model.dart';
 import '../providers/notifications_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/notifications/meetup_notification_routes.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:intl/intl.dart';
 import '../providers/notification_center_badge_providers.dart';
 import '../widgets/notif_chips.dart';
 import '../widgets/notif_list_states.dart';
 import '../widgets/notif_section_header.dart';
+import '../widgets/activity_log_slivers.dart';
 import '../widgets/notif_prefs_sheet.dart';
 import '../widgets/notif_top_bar.dart';
 import '../widgets/notif_empty_state.dart';
 import '../widgets/notif_row.dart';
 import '../widgets/activity_summary_card.dart';
 import '../widgets/activity_search_row.dart';
-import '../widgets/activity_row.dart';
 import '../widgets/activity_security_footer.dart';
-import '../widgets/activity_empty_state.dart';
 
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
   const NotificationsScreenV2({super.key});
@@ -43,7 +42,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(activityFeedControllerProvider.notifier).loadActivities('all');
+      ref.read(activityLogControllerProvider.notifier).load();
     });
   }
 
@@ -52,6 +51,8 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       _mode = mode;
       _selectedFilter = 'all';
     });
+    // The chip row shows All again, so the list must be the full list too.
+    ref.read(activityLogControllerProvider.notifier).changeCategory('all');
     if (mode == ViewMode.activity) {
       ref.read(lastSeenActivityAtProvider.notifier).markNow();
     }
@@ -75,7 +76,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     final notificationState = ref.watch(
       notificationsControllerProvider(userId),
     );
-    final activityState = ref.watch(activityFeedControllerProvider);
+    final activityState = ref.watch(activityLogControllerProvider);
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
     if (isWide) {
@@ -98,7 +99,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     BuildContext context,
     String userId,
     dynamic notificationState,
-    dynamic activityState,
+    ActivityLogState activityState,
   ) {
     // KAN-420: the adaptive scaffold (side rail + header) is gone with the
     // design-system migration; the two lists keep their side-by-side panes.
@@ -133,7 +134,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     BuildContext context,
     String userId,
     dynamic notificationState,
-    dynamic activityState,
+    ActivityLogState activityState,
   ) {
     return DabblerPage(
       body: _buildScrollBody(userId, notificationState, activityState),
@@ -143,7 +144,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   Widget _buildScrollBody(
     String userId,
     dynamic notificationState,
-    dynamic activityState, {
+    ActivityLogState activityState, {
     bool hideToggle = false,
     ViewMode? forceMode,
   }) {
@@ -184,7 +185,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                 if (!isNotif) {
                   final cat = key == 'all' ? null : key;
                   ref
-                      .read(activityFeedControllerProvider.notifier)
+                      .read(activityLogControllerProvider.notifier)
                       .changeCategory(cat);
                 }
               },
@@ -372,60 +373,15 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     return 'earlier';
   }
 
-  List<Widget> _buildActivitySlivers(dynamic state) {
-    if (state.isLoading && state.activities.isEmpty) {
-      return const [SliverToBoxAdapter(child: NotifLoadingView())];
-    }
-    final activities = state.filteredActivities as List<ActivityFeedEvent>;
-    if (activities.isEmpty) {
-      return const [SliverToBoxAdapter(child: ActivityEmptyState())];
-    }
-
-    final grouped = <String, List<ActivityFeedEvent>>{};
-    for (final a in activities) {
-      final label = _activityDayLabel(a.happenedAt);
-      grouped.putIfAbsent(label, () => []).add(a);
-    }
-
-    final widgets = <Widget>[];
-    grouped.forEach((day, items) {
-      widgets.add(
-        SliverToBoxAdapter(
-          child: NotifSectionHeader(
-            title: day,
-            count: items.length,
-            suffix: 'events',
-          ),
-        ),
-      );
-      widgets.add(
-        SliverList.builder(
-          itemCount: items.length,
-          itemBuilder: (context, i) => ActivityRow(
-            event: items[i],
-            isLast: i == items.length - 1,
-            onTap: () => _handleActivityTap(items[i]),
-          ),
-        ),
-      );
-    });
-    return widgets;
-  }
-
-  String _activityDayLabel(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final d = DateTime(dt.year, dt.month, dt.day);
-    final diff = today.difference(d).inDays;
-    final l10n = AppLocalizations.of(context);
-    final localeCode = Localizations.localeOf(context).languageCode;
-    final weekday = DateFormat.E(localeCode).format(dt);
-    final month = DateFormat.MMM(localeCode).format(dt);
-    if (diff == 0)
-      return '${l10n.notif_section_today} · $weekday ${dt.day} $month';
-    if (diff == 1)
-      return '${l10n.notif_section_yesterday} · $weekday ${dt.day} $month';
-    return '$weekday ${dt.day} $month';
+  List<Widget> _buildActivitySlivers(ActivityLogState state) {
+    final controller = ref.read(activityLogControllerProvider.notifier);
+    return buildActivityLogSlivers(
+      context,
+      state,
+      onTap: _handleActivityTap,
+      onRetry: controller.refresh,
+      onLoadMore: controller.loadMore,
+    );
   }
 
   Future<void> _handleNotificationTap(
@@ -561,5 +517,5 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       ref.read(notificationsControllerProvider(userId).notifier).refresh();
 
   Future<void> _refreshActivity() =>
-      ref.read(activityFeedControllerProvider.notifier).refresh();
+      ref.read(activityLogControllerProvider.notifier).refresh();
 }

@@ -40,9 +40,17 @@ class PublicActivity {
     this.targetCoverImageUrl,
     this.targetNewsId,
     required this.createdAt,
-  });
+    String? rawType,
+  }) : _rawType = rawType;
 
   final String id;
+
+  final String? _rawType;
+
+  /// The `activity_type` column exactly as stored. [activityType] folds
+  /// types it does not model (e.g. `game_join`) into [PublicActivityType.unknown];
+  /// the personal Activity log needs the stored value for its identity (KAN-852).
+  String get rawType => _rawType ?? activityType.wireValue;
 
   /// The activity kind, parsed from the `activity_type` column.
   final PublicActivityType activityType;
@@ -110,6 +118,7 @@ class PublicActivity {
         targetCoverImageUrl: targetCoverImageUrl ?? this.targetCoverImageUrl,
         targetNewsId: targetNewsId ?? this.targetNewsId,
         createdAt: createdAt,
+        rawType: _rawType,
       );
 
   factory PublicActivity.fromRow(
@@ -127,5 +136,6 @@ class PublicActivity {
         actorAvatarUrl: actorAvatarUrl,
         parentActivityId: row['parent_activity_id'] as String?,
         createdAt: DateTime.parse(row['created_at'] as String),
+        rawType: row['activity_type'] as String?,
       );
 }
