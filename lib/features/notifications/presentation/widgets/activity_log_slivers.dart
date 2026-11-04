@@ -10,6 +10,7 @@ import 'package:dabbler/features/activities/data/models/activity_feed_event.dart
 import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'activity_empty_state.dart';
+import 'activity_no_match_state.dart';
 import 'activity_row.dart';
 import 'notif_list_states.dart';
 import 'notif_section_header.dart';
@@ -42,8 +43,33 @@ List<Widget> buildActivityLogSlivers(
         child: ActivityLogPartialError(message: error, onRetry: onRetry),
       ),
   ];
+  final bool searching = state.query.trim().isNotEmpty;
+  // KAN-878: an active search with no match yet is still searching while
+  // older pages remain; "no match" only once the whole history is in.
+  final bool searchingOlder =
+      searching &&
+      activities.isEmpty &&
+      (state.isSearchingOlder || state.hasMore);
+  if (searchingOlder) {
+    widgets.add(
+      const SliverToBoxAdapter(child: ActivitySearchingOlderIndicator()),
+    );
+    return widgets;
+  }
   if (activities.isEmpty) {
-    widgets.add(const SliverToBoxAdapter(child: ActivityEmptyState()));
+    widgets.add(
+      SliverToBoxAdapter(
+        child: searching
+            ? ActivityNoMatchState(
+                query: state.query,
+                categoryLabel: activityLogCategoryLabel(
+                  AppLocalizations.of(context),
+                  state.category,
+                ),
+              )
+            : const ActivityEmptyState(),
+      ),
+    );
   }
 
   final Map<String, List<ActivityFeedEvent>> grouped =
