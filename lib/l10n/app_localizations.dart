@@ -4571,6 +4571,30 @@ abstract class AppLocalizations {
   /// **'Search activity…'**
   String get activity_search_hint;
 
+  /// No description provided for @activity_search_no_match_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get activity_search_no_match_title;
+
+  /// No description provided for @activity_search_no_match_body.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find “{query}” in {category}.'**
+  String activity_search_no_match_body(String query, String category);
+
+  /// No description provided for @activity_search_loading_older.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching older activity…'**
+  String get activity_search_loading_older;
+
+  /// No description provided for @activity_search_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get activity_search_clear;
+
   /// No description provided for @activity_pill_upcoming.
   ///
   /// In en, this message translates to:
