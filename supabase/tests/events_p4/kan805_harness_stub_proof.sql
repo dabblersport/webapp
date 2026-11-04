@@ -11,14 +11,16 @@
 --   bash supabase/tests/events_p2/build_kan728.sh /tmp/k818_pg 55818
 --   psql -X -h /tmp -p 55818 -U postgres -d k728 -v ON_ERROR_STOP=1 -f supabase/tests/events_p4/kan805_harness_stub_proof.sql
 -- Exit 0 and every line PASS = GREEN. Any FAIL raises at the end (exit 3) = RED. On the pre-KAN-818 harness
--- (stub = coalesce(NEW.host_actor_id, NEW.creator_profile_id)) H1, H2, H5 and H7 FAIL; H3, H4, H6 PASS on both
+-- (stub = coalesce(NEW.host_actor_id, NEW.creator_profile_id)) H1, H2, H5 and H7 FAIL; on 2d1468ff (creator read
+-- inline in the stub as e.creator_profile_id) H1 FAILs; H3, H4, H6 PASS on both
 -- (on the guard path the old stub's legacy creator equals the parent's creator, so H3 does not discriminate).
 --
 -- Probes:
---   H1 [b] the body of harness_host_actor_stub reads no NEW./OLD.<column KAN-719 Z01 removes from meetups>
---          (same pattern as kan719_z04_postcheck.sql S4), names no owner_user_id, and names creator_profile_id
---          only as a column of the events parent (e.creator_profile_id / the KAN-711 map result).
---   H2 [b] it reads public.events, is attached exactly once (BEFORE INSERT ROW, trg_meetups_aaa_host_actor_stub),
+--   H1 [b] the body (pg_proc.prosrc) of harness_host_actor_stub contains neither the token creator_profile_id nor
+--          owner_user_id anywhere (code, comments, literals; case-insensitive), and reads no NEW./OLD.<column
+--          KAN-719 Z01 removes from meetups> (same pattern as kan719_z04_postcheck.sql S4).
+--   H2 [b] it reads the creator from public.events -- in its own body or in a public function it calls as
+--          public.<name>( (KAN-818 fix 1: harness_meetup_creator(public.meetups)), is attached exactly once (BEFORE INSERT ROW, trg_meetups_aaa_host_actor_stub),
 --          and trg_zz_kan712_meetups_guard is still the LAST BEFORE ROW trigger on meetups (the KAN-712 cutover
 --          asserts that; a late stub trigger after the guard fails the cutover build).
 --   H3 [a] guard path: a meetup inserted with NULL host_actor_id gets host = the creator of its events parent.
@@ -63,15 +65,28 @@ $$ INSERT INTO k818_res(id, ok, detail) VALUES (p_id, coalesce(p_ok, false), p_d
 -- H1 / H2: the body --------------------------------------------------------------------------------------------
 DO $h1$
 DECLARE src text := (SELECT prosrc FROM pg_proc WHERE oid = 'public.harness_host_actor_stub()'::regprocedure);
-        hits text; rest text;
+        hits text; called text; ev_readers text;
 BEGIN
   SELECT string_agg(col, ',' ORDER BY col) INTO hits FROM k818_z01 WHERE src ~* ('\m(new|old)\.' || col || '\M');
-  rest := regexp_replace(regexp_replace(src, '\me\.creator_profile_id\M', '', 'gi'), '\)\.creator_profile_id\M', '', 'gi');
-  PERFORM pg_temp.chk('H1', hits IS NULL AND src !~* '\mowner_user_id\M' AND rest !~* '\mcreator_profile_id\M',
-    format('NEW/OLD.<Z01 col> hits=%s owner_user_id=%s creator_profile_id outside events=%s',
-           coalesce(hits, 'none'), src ~* '\mowner_user_id\M', rest ~* '\mcreator_profile_id\M'));
+  -- literal: the tokens may not appear anywhere in the stub body (code, comments, string literals), in any case
+  PERFORM pg_temp.chk('H1', hits IS NULL
+      AND position('creator_profile_id' IN lower(src)) = 0 AND position('owner_user_id' IN lower(src)) = 0,
+    format('stub body names none of creator_profile_id, owner_user_id (creator_profile_id=%s owner_user_id=%s); NEW/OLD.<Z01 col> hits=%s',
+           position('creator_profile_id' IN lower(src)) > 0, position('owner_user_id' IN lower(src)) > 0, coalesce(hits, 'none')));
+  -- stub -> helper: every public function the stub body calls as public.<name>( ; the read of public.events is
+  -- accepted in the stub itself or in one of those callees (plpgsql records no pg_depend for a call). A read is
+  -- FROM/JOIN public.events: a to_regclass('public.events') existence test is not a read.
+  SELECT string_agg(DISTINCT p.oid::regprocedure::text, ',') INTO called
+    FROM regexp_matches(src, '\mpublic\.([a-z_][a-z0-9_]*)\s*\(', 'gi') AS m(g)
+    JOIN pg_proc p ON p.pronamespace = 'public'::regnamespace AND p.proname = lower(m.g[1]);
+  SELECT string_agg(DISTINCT x.who, ',') INTO ev_readers FROM (
+    SELECT 'harness_host_actor_stub()' AS who WHERE src ~* '\m(from|join)\s+public\.events\M'
+    UNION ALL
+    SELECT p.oid::regprocedure::text FROM regexp_matches(src, '\mpublic\.([a-z_][a-z0-9_]*)\s*\(', 'gi') AS m(g)
+      JOIN pg_proc p ON p.pronamespace = 'public'::regnamespace AND p.proname = lower(m.g[1])
+     WHERE p.prosrc ~* '\m(from|join)\s+public\.events\M') x;
   PERFORM pg_temp.chk('H2',
-    src ~* '\mpublic\.events\M'
+    ev_readers IS NOT NULL
     AND (SELECT count(*) FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass AND NOT t.tgisinternal
            AND t.tgfoid = 'public.harness_host_actor_stub()'::regprocedure AND t.tgenabled = 'O'
            AND t.tgtype::int & 2 = 2 AND t.tgtype::int & 4 = 4 AND t.tgtype::int & 1 = 1
@@ -80,7 +95,8 @@ BEGIN
            AND t.tgfoid = 'public.harness_host_actor_stub()'::regprocedure) = 1
     AND (SELECT max(t.tgname::text COLLATE "C") FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass
            AND NOT t.tgisinternal AND t.tgtype::int & 3 = 3) = 'trg_zz_kan712_meetups_guard',
-    format('reads public.events=%s; triggers on meetups using it: %s; last BEFORE ROW trigger: %s', src ~* '\mpublic\.events\M',
+    format('stub reads creator from events: FROM public.events in %s (stub calls %s); triggers on meetups using it: %s; last BEFORE ROW trigger: %s',
+      coalesce(ev_readers, 'NOWHERE'), coalesce(called, 'nothing'),
       (SELECT string_agg(tgname, ',' ORDER BY tgname COLLATE "C") FROM pg_trigger
         WHERE tgrelid = 'public.meetups'::regclass AND tgfoid = 'public.harness_host_actor_stub()'::regprocedure),
       (SELECT max(t.tgname::text COLLATE "C") FROM pg_trigger t WHERE t.tgrelid = 'public.meetups'::regclass

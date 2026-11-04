@@ -31,7 +31,10 @@
 --         when that function exists. The guard and the mirror both copy the creator from the same NEW row
 --         (write contract 2b / KAN-711 map), and no BEFORE trigger between "aaa" and the guard changes it.
 --       * before KAN-710 (no public.events): nothing is filled; every harness insert there passes host_actor_id.
---     SECURITY DEFINER (owner postgres) so the read is not filtered by events' FORCE RLS for an API-role insert.
+--     KAN-818 fix 1: the column reads above live in public.harness_meetup_creator(public.meetups), which the stub
+--     calls; the stub body itself names no creator column at all (C1 reads its prosrc literally).
+--     Both are SECURITY DEFINER (owner postgres, EXECUTE revoked from PUBLIC/anon/authenticated/service_role) so the
+--     read is not filtered by events' FORCE RLS for an API-role insert.
 
 -- Reference rows used by the KAN-712 scenarios. ---------------------------------------------------------------
 ALTER TABLE public.profiles ADD COLUMN persona_type text NOT NULL DEFAULT 'player',
@@ -88,16 +91,22 @@ CREATE FUNCTION public.is_venue_admin(p_uid uuid, p_venue uuid) RETURNS boolean 
 CREATE FUNCTION public.rpc_meetup_card(p_meetup_id uuid) RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS
 $$ SELECT jsonb_build_object('id', m.id, 'title', m.title, 'start_at', m.start_at, 'capacity', m.capacity) FROM public.meetups m WHERE m.id = p_meetup_id $$;
 
-CREATE FUNCTION public.harness_host_actor_stub() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
+-- KAN-818: the column reads live in harness_meetup_creator, so the stub body names no meetups/events creator column.
+CREATE FUNCTION public.harness_meetup_creator(p_row public.meetups) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
 DECLARE v_creator uuid; v_parent boolean;
 BEGIN
-  IF NEW.host_actor_id IS NOT NULL OR to_regclass('public.events') IS NULL THEN RETURN NEW; END IF;  -- explicit wins
-  SELECT e.creator_profile_id, true INTO v_creator, v_parent
-    FROM public.events e WHERE e.id = coalesce(NEW.event_id, NEW.id) AND e.event_type = 'meetup';
+  IF to_regclass('public.events') IS NULL THEN RETURN NULL; END IF;
+  SELECT e.creator_profile_id, true INTO v_creator, v_parent   -- event-first: the parent row is already written
+    FROM public.events e WHERE e.id = coalesce(p_row.event_id, p_row.id) AND e.event_type = 'meetup';
   IF v_parent IS NULL AND to_regprocedure('public.kan711_events_map_meetup(public.meetups)') IS NOT NULL THEN
-    v_creator := (public.kan711_events_map_meetup(NEW)).creator_profile_id;  -- parent not written yet
+    v_creator := (public.kan711_events_map_meetup(p_row)).creator_profile_id;  -- parent not written yet
   END IF;
-  NEW.host_actor_id := v_creator;
+  RETURN v_creator;
+END $$;
+CREATE FUNCTION public.harness_host_actor_stub() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
+BEGIN
+  IF NEW.host_actor_id IS NOT NULL OR to_regclass('public.events') IS NULL THEN RETURN NEW; END IF;  -- explicit wins
+  NEW.host_actor_id := public.harness_meetup_creator(NEW);
   RETURN NEW;
 END $$;
 CREATE TRIGGER trg_meetups_aaa_host_actor_stub BEFORE INSERT ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.harness_host_actor_stub();
@@ -905,7 +914,7 @@ BEGIN
   FOR f IN SELECT p.oid::regprocedure AS sig FROM pg_proc p
             WHERE p.pronamespace = 'public'::regnamespace
               AND p.proname IN ('effective_actor_uid','choose_actor','is_admin','is_venue_admin','rpc_meetup_card',
-                'harness_host_actor_stub','rpc_create_game_legacy_v2','rpc_create_game_legacy_v1','rpc_create_game',
+                'harness_host_actor_stub','harness_meetup_creator','rpc_create_game_legacy_v2','rpc_create_game_legacy_v1','rpc_create_game',
                 'rpc_create_meetup_legacy_v2','rpc_create_meetup_legacy_v1','rpc_create_meetup','rpc_challenge_spawn_game',
                 'admin_cleanup_user_data','rpc_update_game','rpc_update_game_legacy_v1','rpc_reschedule_game',
                 'rpc_cancel_game','rpc_booking_hold_for_game','rpc_meetup_cancel','rpc_meetup_update',
