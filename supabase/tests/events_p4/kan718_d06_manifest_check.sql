@@ -5,12 +5,15 @@
 -- manifest; the .md mirrors it with the evidence for every entry. Nothing here is a migration and nothing is
 -- applied: every statement is AUTHORED for phase 4 and runs here only inside a transaction that rolls back.
 --
---   M1  slated columns = games/meetups columns minus the KAN-718 retained-subtype list; the manifest has exactly
---       one DROP COLUMN per slated column, and every retained column exists
+--   M1  slated columns = games/meetups columns minus the retained list (KAN-718 retained-subtype data, plus the
+--       KAN-861 F8 re-scope under CTO ruling dreq-0f6e9434: every games column D03 lists as client-read, and
+--       ruling 2's meetups description/location_name/is_indoor); the manifest has exactly one DROP COLUMN per
+--       slated column, and every retained column exists. Measured on the local chain: 22 slated (games 1,
+--       meetups 21), 44 retained (games 35, meetups 9)
 --   M2  every object with a column-level pg_depend on a slated column (constraint, index, trigger, policy, view,
 --       publication) has its own manifest entry: no object is left for CASCADE
---   M3  every non-internal trigger on games/meetups whose function reads a slated NEW./OLD. column, or the
---       whole row, has a manifest entry
+--   M3  every non-internal trigger on games/meetups whose function reads a slated NEW./OLD. column, or maps the
+--       whole row through a kan711_events_map_* function that reads a slated column, has a manifest entry
 --   M4  no statement contains CASCADE or a wildcard; every manifest object present locally exists; every named
 --       replacement object exists in the catalogue
 --   M5  every entry is BLOCKED or has a cited replacement, and every BLOCKED entry names its D01/D02/D03 evidence
@@ -40,16 +43,24 @@ DO $g$ BEGIN
 END $g$;
 
 -- ---------------------------------------------------------------------------------------------
--- The retained-subtype list, verbatim from KAN-718 PRODUCT CONTRACT "Retained subtype data".
+-- The retained list. why = kan718: verbatim from KAN-718 PRODUCT CONTRACT "Retained subtype data".
+-- why = d03: KAN-861 F8, CTO ruling dreq-0f6e9434 rule 1: every games column D03 lists as client-read
+--       (KAN718_D03_OLD_CLIENT_MATRIX.md, the 22 KAN-711 mapping columns) stays; only games.search_tsv goes.
+-- why = ruling2: CTO ruling 2 keeps meetups.description, location_name and is_indoor (no events column).
 -- ---------------------------------------------------------------------------------------------
-CREATE TEMP TABLE k774_retained(tbl text, col text);
+CREATE TEMP TABLE k774_retained(tbl text, col text, why text);
 INSERT INTO k774_retained
-SELECT 'games', unnest('{id,event_id,game_type,venue_space_id,sport_variant_id,allow_spectators,rules,squad_id,sport_specific_data,allows_waitlist,bench_slots,price_aed,series_id}'::text[])
+SELECT 'games', unnest('{id,event_id,game_type,venue_space_id,sport_variant_id,allow_spectators,rules,squad_id,sport_specific_data,allows_waitlist,bench_slots,price_aed,series_id}'::text[]), 'kan718'
 UNION ALL
-SELECT 'meetups', unnest('{id,event_id,vibe_key,meta,host_actor_id,members_only}'::text[]);
+SELECT 'games', unnest('{creator_profile_id,creator_user_id,title,start_at,end_at,capacity,listing_visibility,join_policy,is_cancelled,cancelled_at,cancelled_reason,sport_id,area_id,geo_location_id,venue_id,min_skill,max_skill,joining_rule,cost_cover,request_id,created_at,updated_at}'::text[]), 'd03'
+UNION ALL
+SELECT 'meetups', unnest('{id,event_id,vibe_key,meta,host_actor_id,members_only}'::text[]), 'kan718'
+UNION ALL
+SELECT 'meetups', unnest('{description,location_name,is_indoor}'::text[]), 'ruling2';
 
 -- ---------------------------------------------------------------------------------------------
--- THE MANIFEST. seq = phase-4 order. kind: policy | publication | trigger | index | constraint | column.
+-- THE MANIFEST. seq = phase-4 order. kind: policy | publication | trigger | index | constraint | column | function.
+-- seq numbers are stable across the KAN-861 F8 re-scope: entries for kept games objects were removed, never renumbered.
 -- status: blocked = a D01/D02/D03 consumer remains (evidence column); every entry is blocked today.
 -- hard: the dry run must REFUSE this statement (a dependency only a not-yet-authored replacement removes).
 -- local: false = defined in the repo baseline but absent from the local harness catalogue (verify in prod).
@@ -73,76 +84,48 @@ INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence) V
  $s$ALTER POLICY meetup_attendees_write ON public.meetup_attendees USING (EXISTS (SELECT 1 FROM public.meetups m WHERE m.id = meetup_attendees.meetup_id AND (public.kan713_meetup_can_write_row(m.event_id) OR auth.uid() = meetup_attendees.user_id))) WITH CHECK (EXISTS (SELECT 1 FROM public.meetups m WHERE m.id = meetup_attendees.meetup_id AND (public.kan713_meetup_can_write_row(m.event_id) OR auth.uid() = meetup_attendees.user_id)))$s$,
  'events half kept: kan713_meetup_can_write_row(m.event_id)','function:kan713_meetup_can_write_row','D01 s3 RLS; D02 A1/A5');
 
--- 200: KAN-716 realtime column lists. The subtype tables keep only retained columns. NO events-side
--- replacement exists: after the mirror retires a games/meetups row no longer changes when its event does.
+-- 200: KAN-716 realtime column lists. meetups keeps only retained columns. NO events-side replacement exists:
+-- after the mirror retires a meetups row no longer changes when its event does. 201 (games) is gone in the F8
+-- re-scope: the games publication list holds no slated column (search_tsv is not published), and the games
+-- branch of the compat mirror stays, so games realtime is unchanged.
 INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence) VALUES
-(201,'publication','games','supabase_realtime',
- $s$ALTER PUBLICATION supabase_realtime SET TABLE ONLY public.games (id)$s$,
- 'NOT AUTHORED: change signal for games listeners (D03 2d) needs a decision','-','D01 s3 KAN-716; D03 2d'),
 (202,'publication','meetups','supabase_realtime',
  $s$ALTER PUBLICATION supabase_realtime SET TABLE ONLY public.meetups (id, vibe_key)$s$,
  'NOT AUTHORED: change signal for meetups listeners (D03 2d) needs a decision','-','D01 s3 KAN-716; D03 2d');
 
--- 300: triggers on games/meetups that read slated NEW./OLD. columns or the whole row.
+-- 300: triggers on games/meetups that read slated NEW./OLD. columns or the whole row. F8 re-scope: games triggers
+-- on kept columns stay (CTO rule 3); only trg_games_search_tsv (311) reads the one slated games column.
 INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence) VALUES
-(301,'trigger','games','trg_kan711_games_mirror',$s$DROP TRIGGER trg_kan711_games_mirror ON public.games$s$,'infra: retired with the columns, same migration','-','D01 s3 KAN-711; D02 s5.4'),
 (302,'trigger','meetups','trg_kan711_meetups_mirror',$s$DROP TRIGGER trg_kan711_meetups_mirror ON public.meetups$s$,'infra: retired with the columns, same migration','-','D01 s3 KAN-711; D02 s5.4'),
-(303,'trigger','games','trg_zz_kan712_games_guard',$s$DROP TRIGGER trg_zz_kan712_games_guard ON public.games$s$,'infra: retired with the columns, same migration','-','D01 s3 KAN-712; D02 s5.4'),
 (304,'trigger','meetups','trg_zz_kan712_meetups_guard',$s$DROP TRIGGER trg_zz_kan712_meetups_guard ON public.meetups$s$,'infra: retired with the columns, same migration','-','D01 s3 KAN-712; D02 s5.4'),
-(305,'trigger','games','trg_kan713_games_a_location',$s$DROP TRIGGER trg_kan713_games_a_location ON public.games$s$,'infra; events side kept: trg_kan713_events_location','trigger:events.trg_kan713_events_location','D01 s3 KAN-713; D02 s5.4'),
-(306,'trigger','games','trg_kan713_games_b_joining',$s$DROP TRIGGER trg_kan713_games_b_joining ON public.games$s$,'infra: retired with the columns, same migration','-','D01 s3 KAN-713; D02 s5.4'),
-(307,'trigger','games','trg_kan713_games_c_venue_geo',$s$DROP TRIGGER trg_kan713_games_c_venue_geo ON public.games$s$,'infra; events side kept: trg_kan713_events_location','trigger:events.trg_kan713_events_location','D01 s3 KAN-713; D02 s5.4'),
 (308,'trigger','meetups','trg_kan713_meetups_a_location',$s$DROP TRIGGER trg_kan713_meetups_a_location ON public.meetups$s$,'infra; events side kept: trg_kan713_events_location','trigger:events.trg_kan713_events_location','D01 s3 KAN-713; D02 s5.4'),
 (309,'trigger','meetups','trg_kan713_meetups_b_joining',$s$DROP TRIGGER trg_kan713_meetups_b_joining ON public.meetups$s$,'infra: retired with the columns, same migration','-','D01 s3 KAN-713; D02 s5.4'),
-(310,'trigger','games','trg_kan718_games_series_occurrence',$s$DROP TRIGGER trg_kan718_games_series_occurrence ON public.games$s$,'events side kept: trg_kan718_events_series_occurrence (D07)','trigger:events.trg_kan718_events_series_occurrence','D07 kan718_d07_series_unique.sql; D02 s5.4'),
 (311,'trigger','games','trg_games_search_tsv',$s$DROP TRIGGER trg_games_search_tsv ON public.games$s$,'trg_events_search_tsv','trigger:events.trg_events_search_tsv','D01 games.search_tsv; D02 A4'),
 (312,'trigger','meetups','trg_meetups_search_tsv',$s$DROP TRIGGER trg_meetups_search_tsv ON public.meetups$s$,'trg_events_search_tsv','trigger:events.trg_events_search_tsv','D01 meetups.search_tsv; D02 A4'),
-(313,'trigger','games','trg_games_touch',$s$DROP TRIGGER trg_games_touch ON public.games$s$,'trg_events_touch','trigger:events.trg_events_touch','D02 A4'),
 (314,'trigger','meetups','trg_meetups_touch',$s$DROP TRIGGER trg_meetups_touch ON public.meetups$s$,'trg_events_touch','trigger:events.trg_events_touch','D02 A4'),
 (315,'trigger','meetups','trg_meetups_updated',$s$DROP TRIGGER trg_meetups_updated ON public.meetups$s$,'trg_events_touch','trigger:events.trg_events_touch','D02 A4'),
-(316,'trigger','games','trg_games_inherit_geo',$s$DROP TRIGGER trg_games_inherit_geo ON public.games$s$,'trg_kan713_events_location (equivalence not proven here)','trigger:events.trg_kan713_events_location','D01 games.venue_id; D02 A4'),
-(317,'trigger','games','trg_games_inherit_venue_geo',$s$DROP TRIGGER trg_games_inherit_venue_geo ON public.games$s$,'trg_kan713_events_location (equivalence not proven here)','trigger:events.trg_kan713_events_location','D02 A4'),
 (318,'trigger','meetups','trg_meetups_inherit_geo',$s$DROP TRIGGER trg_meetups_inherit_geo ON public.meetups$s$,'trg_kan713_events_location (equivalence not proven here)','trigger:events.trg_kan713_events_location','D01 meetups.venue_id; D02 A4'),
-(319,'trigger','games','tr_games_activity_sync',$s$DROP TRIGGER tr_games_activity_sync ON public.games$s$,'NOT AUTHORED: no events-side activity sync','-','D01 games.area_id; D02 A2 trigger fn_games_activity_sync'),
 (320,'trigger','meetups','tr_meetups_activity_sync',$s$DROP TRIGGER tr_meetups_activity_sync ON public.meetups$s$,'NOT AUTHORED: no events-side activity sync','-','D02 A2 trigger fn_meetups_activity_sync'),
-(321,'trigger','games','trg_game_created',$s$DROP TRIGGER trg_game_created ON public.games$s$,'NOT AUTHORED: handle_game_created reads creator_profile_id/start_at','-','D01 games.creator_profile_id; D02 A4'),
-(322,'trigger','games','trg_game_updated_notify',$s$DROP TRIGGER trg_game_updated_notify ON public.games$s$,'NOT AUTHORED: cancel notification on events.is_cancelled','-','D01 games.is_cancelled; D02 A4'),
-(323,'trigger','games','msg_system_game_cancelled',$s$DROP TRIGGER msg_system_game_cancelled ON public.games$s$,'NOT AUTHORED: messaging system event on events.is_cancelled','-','D01 games.is_cancelled; D02 A4'),
 (324,'trigger','meetups','trg_meetups_cancel_notify',$s$DROP TRIGGER trg_meetups_cancel_notify ON public.meetups$s$,'NOT AUTHORED: cancel notification on events.is_cancelled','-','D01 meetups.is_cancelled; D02 A4'),
 (325,'trigger','meetups','trg_meetups_outbox',$s$DROP TRIGGER trg_meetups_outbox ON public.meetups$s$,'NOT AUTHORED: outbox reads creator_user_id/is_cancelled/start_at','-','D02 A4'),
-(326,'trigger','games','trg_games_set_host',$s$DROP TRIGGER trg_games_set_host ON public.games$s$,'NOT AUTHORED: host stamp reads creator_profile_id','-','D01 games.creator_profile_id; D02 A4'),
-(327,'trigger','games','trg_games_stamp_request_id',$s$DROP TRIGGER trg_games_stamp_request_id ON public.games$s$,'NOT AUTHORED: kan611_stamp_request_id has no events trigger','-','D01 s4 kan611_stamp_request_id'),
 (328,'trigger','meetups','trg_meetups_stamp_request_id',$s$DROP TRIGGER trg_meetups_stamp_request_id ON public.meetups$s$,'NOT AUTHORED: kan611_stamp_request_id has no events trigger','-','D01 s4 kan611_stamp_request_id'),
-(329,'trigger','games','trg_games_require_challenge_sport',$s$DROP TRIGGER trg_games_require_challenge_sport ON public.games$s$,'NOT AUTHORED: challenge sport rule on events.sport_id','-','D01 games.sport_id; D02 A4'),
-(330,'trigger','games','trg_games_inherit_sport_from_space',$s$DROP TRIGGER trg_games_inherit_sport_from_space ON public.games$s$,'NOT AUTHORED: space sport/capacity inheritance on events','-','D02 A4'),
 (331,'trigger','meetups','trg_meetups_enforce_solo_sport',$s$DROP TRIGGER trg_meetups_enforce_solo_sport ON public.meetups$s$,'NOT AUTHORED: solo sport rule on events.sport_id','-','D01 meetups.sport_id; D02 A2 trigger'),
-(332,'trigger','games','trg_games_sync_joining_rule',$s$DROP TRIGGER trg_games_sync_joining_rule ON public.games$s$,'NOT AUTHORED: joining-rule sync on events','-','D01 games.joining_rule; D02 A4'),
 (333,'trigger','meetups','trg_meetups_sync_joining_rule',$s$DROP TRIGGER trg_meetups_sync_joining_rule ON public.meetups$s$,'NOT AUTHORED: joining-rule sync on events (known conflict: Venue vs Space ids)','-','D01 meetups.venue_id; D02 A4');
 
--- 400: indexes (not constraint-backed). Replacements are the KAN-710 / B05 indexes on events.
+-- 400: indexes (not constraint-backed). Replacements are the KAN-710 / B05 indexes on events. F8 re-scope: only
+-- the games index on search_tsv (409) goes; the other games indexes cover kept columns.
 INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence, local) VALUES
-(401,'index','games','games_series_id_start_at_key',$s$DROP INDEX public.games_series_id_start_at_key$s$,'D07 guard + games_series_id_idx + KAN-710 backstop','index:games_series_id_idx','D07 kan718_d07_series_unique.sql; D01 s3 D07',true),
-(402,'index','games','games_creator_user_request_id_key',$s$DROP INDEX public.games_creator_user_request_id_key$s$,'events_type_creator_request_id_key (contract scope: event_type + creator_profile_id)','index:events_type_creator_request_id_key','D01 games.request_id',true),
 (403,'index','meetups','meetups_creator_user_request_id_key',$s$DROP INDEX public.meetups_creator_user_request_id_key$s$,'events_type_creator_request_id_key (contract scope: event_type + creator_profile_id)','index:events_type_creator_request_id_key','D01 meetups.request_id',true),
-(404,'index','games','idx_games_area',$s$DROP INDEX public.idx_games_area$s$,'events_area_idx','index:events_area_idx','B05 header I3; baseline',false),
-(405,'index','games','idx_games_cancelled',$s$DROP INDEX public.idx_games_cancelled$s$,'events_upcoming_idx','index:events_upcoming_idx','B05 header I3; baseline',false),
-(406,'index','games','idx_games_is_cancelled',$s$DROP INDEX public.idx_games_is_cancelled$s$,'events_upcoming_idx','index:events_upcoming_idx','B05 header I3; baseline',false),
-(407,'index','games','idx_games_geo',$s$DROP INDEX public.idx_games_geo$s$,'events_geo_location_idx','index:events_geo_location_idx','B05 header I3; baseline',false),
-(408,'index','games','idx_games_host',$s$DROP INDEX public.idx_games_host$s$,'events_creator_user_start_idx, events_creator_profile_idx','index:events_creator_profile_idx','KAN-170 note; baseline',false),
 (409,'index','games','idx_games_search_tsv',$s$DROP INDEX public.idx_games_search_tsv$s$,'events_search_tsv_idx, events_game_public_search_tsv_idx','index:events_game_public_search_tsv_idx','B05 header I1; baseline',false),
-(410,'index','games','idx_games_start_at',$s$DROP INDEX public.idx_games_start_at$s$,'events_start_at_idx','index:events_start_at_idx','B05 header I3; baseline',false),
-(411,'index','games','idx_games_time',$s$DROP INDEX public.idx_games_time$s$,'events_type_start_at_idx','index:events_type_start_at_idx','B05 header I3; baseline',false),
-(412,'index','games','idx_games_title_prefix',$s$DROP INDEX public.idx_games_title_prefix$s$,'events_title_lower_idx','index:events_title_lower_idx','B05 header I2; baseline',false),
-(413,'index','games','idx_games_visibility',$s$DROP INDEX public.idx_games_visibility$s$,'events_type_vis_join_idx','index:events_type_vis_join_idx','B05 header I3; baseline',false),
 (414,'index','meetups','idx_meetups_owner',$s$DROP INDEX public.idx_meetups_owner$s$,'events_creator_user_start_idx','index:events_creator_user_start_idx','B05 header I5; baseline',false),
 (415,'index','meetups','idx_meetups_owner_time',$s$DROP INDEX public.idx_meetups_owner_time$s$,'events_creator_user_start_idx','index:events_creator_user_start_idx','B05 header I5; baseline',false),
 (416,'index','meetups','idx_meetups_search_tsv',$s$DROP INDEX public.idx_meetups_search_tsv$s$,'events_search_tsv_idx','index:events_search_tsv_idx','B05 header I4; baseline',false);
 
 -- 500: constraints. Replacements are the per-type KAN-710 checks and FKs on events (no union widening).
 INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence)
-SELECT 500 + row_number() OVER (ORDER BY t, c), 'constraint', t, c,
+SELECT seq, 'constraint', t, c,
        format('ALTER TABLE public.%I DROP CONSTRAINT %I', t, c), r, 'constraint:' || split_part(r, ' ', 1), 'D01 s3 constraints'
-FROM (VALUES
+FROM (SELECT 500 + row_number() OVER (ORDER BY t, c) AS seq, * FROM (VALUES
  ('games','games_area_id_fkey','events_area_id_fkey'),
  ('games','games_capacity_check','events_game_capacity_check'),
  ('games','games_cost_cover_check','events_cost_cover_check'),
@@ -170,34 +153,47 @@ FROM (VALUES
  ('meetups','meetups_rsvp_policy_check','events_meetup_join_policy_check (known conflict: rsvp_policy vs join_policy)'),
  ('meetups','meetups_sport_id_fkey','events_sport_id_fkey'),
  ('meetups','meetups_title_check','events_meetup_title_check'),
- ('meetups','meetups_venue_id_fkey','events_venue_id_fkey')) v(t, c, r);
+ ('meetups','meetups_venue_id_fkey','events_venue_id_fkey')) v(t, c, r)) n
+-- F8 re-scope: the games constraints (501-515) are on kept columns and stay (CTO rule 3); numbering unchanged.
+WHERE n.t = 'meetups';
 
 -- 600/700: one DROP COLUMN per slated column; replacement = the same events column through event_id.
--- Evidence: D01 per-column row (40 pairs), D02 A2/A4, D03 G1-G17 (games only). Columns outside the D01-D03
--- slated sets are named as an evidence gap. meetups.description/location_name/is_indoor are hard-blocked by
--- v_meetup_list (column-level view dependency) AND have no events column to move to (contract gap: decision).
--- meetups.rsvp_policy lands on events.join_policy. KAN-716-listed columns are no longer blocked after 201/202.
-INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence, hard)
-SELECT CASE t WHEN 'games' THEN 600 ELSE 700 END + row_number() OVER (PARTITION BY t ORDER BY a.attnum), 'column', t, a.attname,
-       format('ALTER TABLE public.%I DROP COLUMN %I', t, a.attname),
-       CASE WHEN a.attname IN ('description','location_name','is_indoor')
-              THEN 'NO HOME: events has no ' || a.attname || ' column and KAN-718 does not retain it; dropping loses data'
-            WHEN a.attname = 'rsvp_policy' THEN 'events.join_policy via event_id (renamed; known value conflict)'
-            ELSE 'events.' || a.attname || ' via event_id' END,
-       CASE WHEN a.attname IN ('description','location_name','is_indoor') THEN '-'
-            WHEN a.attname = 'rsvp_policy' THEN 'column:events.join_policy'
-            ELSE 'column:events.' || a.attname END,
+-- Evidence: D01 per-column row (40 pairs), D02 A2/A4, D03 G1-G17 (games only). seq = 600/700 + the column's rank
+-- among the columns outside the KAN-718 list (attnum order), so the numbers are the ones the pre-F8 manifest used.
+-- F8 re-scope (CTO ruling dreq-0f6e9434): the D03 client-read games columns and ruling 2's three meetups columns
+-- are retained, so the slated set is games.search_tsv (616) plus the 21 meetups columns. Nothing is hard-blocked.
+-- meetups.rsvp_policy lands on events.join_policy. KAN-716-listed columns are no longer blocked after 202.
+INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence)
+SELECT n.seq, 'column', n.t, n.attname,
+       format('ALTER TABLE public.%I DROP COLUMN %I', n.t, n.attname),
+       CASE WHEN n.attname = 'rsvp_policy' THEN 'events.join_policy via event_id (renamed; known value conflict)'
+            ELSE 'events.' || n.attname || ' via event_id' END,
+       CASE WHEN n.attname = 'rsvp_policy' THEN 'column:events.join_policy' ELSE 'column:events.' || n.attname END,
        CASE
-         WHEN a.attname IN ('description','location_name','is_indoor') THEN 'EVIDENCE GAP: not in the D01/D02/D03 slated sets; v_meetup_list reads it; no events column holds it'
-         WHEN a.attname = 'search_tsv' THEN 'D01 ' || t || '.search_tsv; not in the D02/D03 slated sets'
-         WHEN a.attname IN ('created_at','updated_at') THEN 'D02 s0 / D03 s1 (not in D01''s 40 pairs)'
-         WHEN t = 'games' THEN 'D01 games.' || a.attname || '; D02 A2/A4; D03 2a (old store/web builds read games directly)'
-         ELSE 'D01 meetups.' || a.attname || '; D02 A2/A4; D03 2c (no direct client read)'
-       END,
-       a.attname IN ('description','location_name','is_indoor')
-FROM (VALUES ('games'), ('meetups')) v(t)
-JOIN pg_attribute a ON a.attrelid = ('public.' || v.t)::regclass AND a.attnum > 0 AND NOT a.attisdropped
-WHERE NOT EXISTS (SELECT 1 FROM k774_retained r WHERE r.tbl = v.t AND r.col = a.attname);
+         WHEN n.attname = 'search_tsv' THEN 'D01 ' || n.t || '.search_tsv; not in the D02/D03 slated sets'
+         WHEN n.attname IN ('created_at','updated_at') THEN 'D02 s0 / D03 s1 (not in D01''s 40 pairs)'
+         ELSE 'D01 meetups.' || n.attname || '; D02 A2/A4; D03 2c (no direct client read)'
+       END
+FROM (SELECT v.t, a.attname, CASE v.t WHEN 'games' THEN 600 ELSE 700 END + row_number() OVER (PARTITION BY v.t ORDER BY a.attnum) AS seq
+        FROM (VALUES ('games'), ('meetups')) v(t)
+        JOIN pg_attribute a ON a.attrelid = ('public.' || v.t)::regclass AND a.attnum > 0 AND NOT a.attisdropped
+       WHERE NOT EXISTS (SELECT 1 FROM k774_retained r WHERE r.tbl = v.t AND r.col = a.attname AND r.why = 'kan718')) n
+WHERE NOT EXISTS (SELECT 1 FROM k774_retained r WHERE r.tbl = n.t AND r.col = n.attname);
+
+-- 800: retired RPCs (CTO ruling dreq-0f6e9434 rule 4). F1/F2 (KAN-718) retired them from the client; getnearbymeetups
+-- was converted (F3) and stays. Baseline-only: the repo baseline defines them, the local harness does not, so the
+-- Z01 test loads the baseline pre-images before it runs them. No CASCADE: the pg_depend and pg_proc body scans
+-- (KAN-861 step c) show no dependants.
+INSERT INTO k774_manifest(seq, kind, tbl, obj, stmt, repl, repl_obj, evidence, local) VALUES
+(801,'function','games','get_nearby_games(double precision,double precision,double precision)',
+ $s$DROP FUNCTION public.get_nearby_games(double precision, double precision, double precision)$s$,
+ 'retired by F1 (KAN-718): no client caller','-','F1 20261104112500_kan718_f1_get_nearby_games.sql; baseline',false),
+(802,'function','games','get_nearby_games(double precision,double precision,integer)',
+ $s$DROP FUNCTION public.get_nearby_games(double precision, double precision, integer)$s$,
+ 'retired by F1 (KAN-718): no client caller','-','F1 20261104112500_kan718_f1_get_nearby_games.sql; baseline',false),
+(803,'function','games','getnearbygames(double precision,double precision,double precision)',
+ $s$DROP FUNCTION public.getnearbygames(double precision, double precision, double precision)$s$,
+ 'retired by F2 (KAN-718): no client caller','-','F2 20261104112300_kan718_f2_getnearbygames.sql; baseline',false);
 
 -- ---------------------------------------------------------------------------------------------
 -- M1-M5: the manifest against the catalogue.
@@ -211,9 +207,20 @@ BEGIN
    WHERE NOT EXISTS (SELECT 1 FROM pg_attribute a WHERE a.attrelid = ('public.' || r.tbl)::regclass AND a.attname = r.col AND NOT a.attisdropped);
   IF x IS NOT NULL THEN RAISE EXCEPTION 'KAN-774 M1 FAIL: retained column(s) missing: %', x; END IF;
   SELECT count(*) INTO n FROM k774_manifest WHERE kind = 'column';
-  RAISE NOTICE 'KAN-774 M1 PASS: % DROP COLUMN entries (games %, meetups %); all % retained columns present',
+  -- F8 measured counts (KAN-861, CTO ruling dreq-0f6e9434): 22 slated (games 1, meetups 21), 44 retained (games 35, meetups 9)
+  IF n <> 22 OR (SELECT count(*) FROM k774_manifest WHERE kind = 'column' AND tbl = 'games') <> 1
+     OR (SELECT count(*) FROM k774_retained) <> 44 OR (SELECT count(*) FROM k774_retained WHERE tbl = 'games') <> 35
+     OR EXISTS (SELECT 1 FROM k774_manifest WHERE kind = 'column' AND tbl = 'games' AND obj <> 'search_tsv') THEN
+    RAISE EXCEPTION 'KAN-774 M1 FAIL: expected 22 slated (games: search_tsv only) / 44 retained (games 35, meetups 9), got % slated / % retained', n, (SELECT count(*) FROM k774_retained);
+  END IF;
+  IF (SELECT count(*) FROM k774_retained r JOIN pg_attribute a ON a.attrelid = ('public.' || r.tbl)::regclass AND a.attname = r.col AND NOT a.attisdropped)
+     + n <> (SELECT count(*) FROM pg_attribute WHERE attrelid IN ('public.games'::regclass, 'public.meetups'::regclass) AND attnum > 0 AND NOT attisdropped) THEN
+    RAISE EXCEPTION 'KAN-774 M1 FAIL: retained + slated does not partition the games/meetups columns';
+  END IF;
+  RAISE NOTICE 'KAN-774 M1 PASS: % DROP COLUMN entries (games %, meetups %); all % retained columns present (games %, meetups %)',
     n, (SELECT count(*) FROM k774_manifest WHERE kind = 'column' AND tbl = 'games'),
-    (SELECT count(*) FROM k774_manifest WHERE kind = 'column' AND tbl = 'meetups'), (SELECT count(*) FROM k774_retained);
+    (SELECT count(*) FROM k774_manifest WHERE kind = 'column' AND tbl = 'meetups'), (SELECT count(*) FROM k774_retained),
+    (SELECT count(*) FROM k774_retained WHERE tbl = 'games'), (SELECT count(*) FROM k774_retained WHERE tbl = 'meetups');
 
   -- M2: every column-level dependent of a slated column has its own entry
   WITH sl AS (SELECT ('public.' || tbl)::regclass relid, tbl, obj col FROM k774_manifest WHERE kind = 'column'),
@@ -232,18 +239,19 @@ BEGIN
      WHERE NOT (d.classid = 'pg_class'::regclass AND EXISTS (SELECT 1 FROM pg_constraint k WHERE k.conindid = d.objid)))
   SELECT string_agg(o, ', ' ORDER BY o) INTO x FROM dep
    WHERE o <> 'default'                                        -- column defaults go with their column
-     AND o <> 'view:v_meetup_list'                             -- hard-blocked on purpose: see the 7xx column entries
      AND NOT EXISTS (SELECT 1 FROM k774_manifest m
                       WHERE m.kind || ':' || CASE WHEN m.kind = 'publication' THEN m.tbl ELSE split_part(m.obj, ' ', 1) END = dep.o);
   IF x IS NOT NULL THEN RAISE EXCEPTION 'KAN-774 M2 FAIL: column-level dependent(s) with no manifest entry: %', x; END IF;
-  RAISE NOTICE 'KAN-774 M2 PASS: every column-level dependent (constraint, index, trigger, policy, publication) has an entry; v_meetup_list is the named hard block';
+  RAISE NOTICE 'KAN-774 M2 PASS: every column-level dependent (constraint, index, trigger, policy, view, publication) has an entry; no exclusions';
 
   -- M3: every trigger reading slated NEW./OLD. columns or the whole row (the KAN-711 mirrors) has an entry
   SELECT string_agg(c.relname || '.' || t.tgname, ', ' ORDER BY 1) INTO x
     FROM pg_trigger t JOIN pg_class c ON c.oid = t.tgrelid JOIN pg_proc p ON p.oid = t.tgfoid
    WHERE c.oid IN ('public.games'::regclass, 'public.meetups'::regclass) AND NOT t.tgisinternal
      AND p.proname <> 'harness_host_actor_stub'                -- local harness object, absent in production
-     AND (p.prosrc ~* 'kan711_events_map_'
+     AND (EXISTS (SELECT 1 FROM pg_proc mp JOIN k774_manifest m ON m.kind = 'column' AND m.tbl = c.relname
+                   WHERE mp.pronamespace = 'public'::regnamespace AND mp.proname ~ '^kan711_events_map_'
+                     AND p.prosrc ~* ('\m' || mp.proname || '\M') AND mp.prosrc ~* ('\m' || m.obj || '\M'))
           OR EXISTS (SELECT 1 FROM k774_manifest m WHERE m.kind = 'column' AND m.tbl = c.relname
                       AND p.prosrc ~* ('\m(new|old)\.' || m.obj || '\M')))
      AND NOT EXISTS (SELECT 1 FROM k774_manifest m WHERE m.kind = 'trigger' AND m.obj = t.tgname);
@@ -260,6 +268,7 @@ BEGIN
       WHEN 'constraint' THEN EXISTS (SELECT 1 FROM pg_constraint WHERE conrelid = ('public.' || m.tbl)::regclass AND conname = m.obj)
       WHEN 'policy' THEN EXISTS (SELECT 1 FROM pg_policy WHERE polname = split_part(m.obj, ' ', 1))
       WHEN 'publication' THEN EXISTS (SELECT 1 FROM pg_publication_tables WHERE pubname = m.obj AND tablename = m.tbl)
+      WHEN 'function' THEN to_regprocedure('public.' || m.obj) IS NOT NULL
       ELSE true END;
   IF x IS NOT NULL THEN RAISE EXCEPTION 'KAN-774 M4 FAIL: manifest object(s) absent locally: %', x; END IF;
   SELECT string_agg(seq || ' ' || repl_obj, ', ') INTO x FROM k774_manifest m WHERE repl_obj <> '-' AND NOT CASE split_part(repl_obj, ':', 1)

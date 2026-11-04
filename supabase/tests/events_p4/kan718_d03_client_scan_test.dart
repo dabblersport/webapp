@@ -21,24 +21,33 @@ const String _matrix =
 const Map<String, List<String>> _knownGamesReads = {
   // KAN-715 converted G1 (stream removed), G3, G7, G8 (getGames/getMyGames),
   // G14 (sport profile) and G17 (composer search) to v_game_card/v_my_games.
-  // What remains is UNREACHABLE (G2, G4-G6, G9-G13, G16), the named GDPR
+  // The games datasource's remaining reads now go through the D05 compat view
+  // (pinned in _knownCompatReads below). What remains direct is the named GDPR
   // exception (G15) and the RLS-denied delete (G18).
-  'features/games/data/datasources/supabase_games_datasource.dart': [
-    'select(capacity)',
-    'select(*)',
-    'select(*)',
-    'select(*)',
-    'select(*)',
-    'select(*)',
-    'select(*, game_favorites!inner(user_id))',
-    'select(*, game_roster!inner(user_id))',
-    'select(capacity)',
-  ],
   'features/profile/services/data_export_service.dart': [
     'select(*, game_roster!inner(user_id, joined_at, status, role))',
     'select()',
   ],
   'features/profile/services/data_retention_service.dart': ['delete()'],
+};
+
+/// file -> the games datasource reads that no longer hit `games` directly, as
+/// `view:op(projection)` in source order: 9 through the D05 compat view
+/// (`_gamesReadView` = kan718_games_compat) and KAN-715's 2 v_game_card reads.
+const Map<String, List<String>> _knownCompatReads = {
+  'features/games/data/datasources/supabase_games_datasource.dart': [
+    '_gamesReadView:select(capacity)',
+    'SupabaseConfig.vGameCardTable:select(*)',
+    '_gamesReadView:select(*)',
+    '_gamesReadView:select(*)',
+    '_gamesReadView:select(*)',
+    'SupabaseConfig.vGameCardTable:select(*)',
+    '_gamesReadView:select(*)',
+    '_gamesReadView:select(*)',
+    '_gamesReadView:select(*, game_favorites!inner(user_id))',
+    '_gamesReadView:select(*, game_roster!inner(user_id))',
+    '_gamesReadView:select(capacity)',
+  ],
 };
 
 /// file -> number of PostgREST embeds of games (`game:games(...)`) that read
@@ -53,7 +62,7 @@ const Map<String, int> _knownGamesEmbeds = {
 const Set<String> _knownLegacyRealtime = {
   'data/repositories/games_repository_impl.dart', // dead file (KAN-740)
   'features/explore/presentation/widgets/listing_refresh.dart',
-  'features/games/presentation/controllers/game_view_controller.dart',
+  // game_view_controller no longer subscribes (KAN-864, 701f338d).
 };
 
 String _strip(String s) => s
@@ -105,6 +114,26 @@ String _op(String after) {
   if (m == null) return 'unknown';
   final proj = (m.group(2) ?? m.group(3) ?? '').replaceAll(RegExp(r'\s+'), ' ');
   return '${m.group(1)}(${proj.trim()})';
+}
+
+final RegExp _compatFrom = RegExp(
+  r"\.from\(\s*(_gamesReadView|SupabaseConfig\.vGameCardTable)\s*\)",
+);
+
+/// Scoped to the games datasource: v_game_card is read elsewhere too, but only
+/// this file held the direct games reads that moved to these two sources.
+Map<String, List<String>> _scanCompatReads() {
+  final found = <String, List<String>>{};
+  for (final (rel, src) in _libFiles().where(
+    (f) => _knownCompatReads.containsKey(f.$1),
+  )) {
+    final ops = [
+      for (final m in _compatFrom.allMatches(src))
+        '${m.group(1)}:${_op(src.substring(m.end))}',
+    ];
+    if (ops.isNotEmpty) found[rel] = ops;
+  }
+  return found;
 }
 
 Map<String, List<String>> _scanGamesReads() {
@@ -171,6 +200,23 @@ void main() {
     );
   });
 
+  test('games datasource reads via the compat view and v_game_card match', () {
+    expect(
+      _scanCompatReads(),
+      _knownCompatReads,
+      reason:
+          'A compat-view or v_game_card read appeared or vanished. Record it '
+          'in KAN718_D03_OLD_CLIENT_MATRIX.md and in this map together.',
+    );
+    final ds = File(
+      'lib/features/games/data/datasources/supabase_games_datasource.dart',
+    ).readAsStringSync();
+    expect(
+      ds,
+      contains("static const _gamesReadView = 'kan718_games_compat';"),
+    );
+  });
+
   test('every pinned read touches a slated column', () {
     final selects = {
       for (final ops in _knownGamesReads.values) ...ops,
@@ -203,24 +249,29 @@ void main() {
     expect(hits, isEmpty);
   });
 
-  test('Realtime subscriptions on games/meetups are pinned and column-free', () {
-    final found = <String>{};
-    for (final (rel, src) in _libFiles()) {
-      if (!src.contains('onPostgresChanges(')) continue;
-      final legacy = RegExp(
-        r"SupabaseConfig\.(games|meetups)Table|'(games|meetups)'",
-      ).hasMatch(src);
-      if (legacy) found.add(rel);
-    }
-    expect(found, _knownLegacyRealtime);
-    // The only filter on a legacy table is on `id`, which is retained.
-    final gv = _strip(
-      File(
-        'lib/features/games/presentation/controllers/game_view_controller.dart',
-      ).readAsStringSync(),
-    );
-    expect(gv, contains("(table: SupabaseConfig.gamesTable, column: 'id')"));
-  });
+  test(
+    'Realtime subscriptions on games/meetups are pinned and column-free',
+    () {
+      final found = <String>{};
+      for (final (rel, src) in _libFiles()) {
+        if (!src.contains('onPostgresChanges(')) continue;
+        final legacy = RegExp(
+          r"SupabaseConfig\.(games|meetups)Table|'(games|meetups)'",
+        ).hasMatch(src);
+        if (legacy) found.add(rel);
+      }
+      expect(found, _knownLegacyRealtime);
+      // The only filter on a legacy table is on `id`, which is retained.
+      for (final rel in _knownLegacyRealtime) {
+        final src = _strip(File('lib/$rel').readAsStringSync());
+        for (final f in RegExp(
+          r'PostgresChangeFilter\(([^)]*)\)',
+        ).allMatches(src)) {
+          expect(f.group(1), contains("column: 'id'"), reason: rel);
+        }
+      }
+    },
+  );
 
   test('while any client read remains, the matrix blocks deletion', () {
     final doc = File(_matrix).readAsStringSync();

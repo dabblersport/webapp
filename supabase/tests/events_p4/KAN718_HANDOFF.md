@@ -49,21 +49,22 @@ migration and passes.
 
 ## (b) Coverage: slated column × consumer class
 
-Slated set: **44 columns (games 23, meetups 21). 22 retained**, per CTO ruling 2 in dreq-8ae9bcfa (was 47 slated,
-19 retained). Moved from slated to retained: `meetups.description`, `meetups.location_name`, `meetups.is_indoor`.
-D06 M1 in `kan718_d06_manifest_check.sql` still asserts the old 47 until F8 re-scopes it. Ruling 1 also retains
-every `games` column D03 lists as client-read; that set is not yet subtracted from the games 23 here (F8).
+Slated set: **22 columns (games 1, meetups 21). 44 retained (games 35, meetups 9)**, measured on the local chain
+after F8 (KAN-861, CTO ruling dreq-0f6e9434 option (A)). Was 47 slated / 19 retained, then 44 / 22 after ruling 2
+in dreq-8ae9bcfa. Ruling 2 moved `meetups.description`, `location_name`, `is_indoor` to retained; ruling 1 (C)
+now subtracts the 22 `games` columns D03 lists as client-read, so the only `games` column slated is `search_tsv`
+(seq 616, with `trg_games_search_tsv` 311 and `idx_games_search_tsv` 409). D06 M1 asserts these numbers.
 
 | Consumer class | State | Pending consumers (owner) |
 |---|---|---|
-| SQL functions, direct | mostly **converted** by D04, 798–810, 834 and 794 (authored) | #5/#6 `get_nearby_games`, #8 `getnearbygames`, #9 `getnearbymeetups` (no ticket; named only as B05 exceptions X1–X4). #25 `rpc_meetup_visible` (**no ticket**). #11 `nearby_games`, #12 `rpc_autocomplete_entities`, #29 `rpc_search_entities` (rewritten in KAN-714 part 2 `20261105110000`, but its required part 1 `20261105100000_kan714_events_parent_reads.sql` is **absent on this branch**. That slot holds Z01) |
-| Transitive helpers / %ROWTYPE / composite | pending **by design** | `kan711_events_map_game(games)` and the KAN-711/712 mirror and guard read the `games` row type. Z01 removes them in the same transaction (seq 334 drops `trg_zz_kan712_events_compat_mirror`) |
+| SQL functions, direct | mostly **converted** by D04, 798–810, 834 and 794 (authored) | #5/#6 `get_nearby_games`, #8 `getnearbygames`: **dropped by Z01 801–803** (F8, no dependants). #9 `getnearbymeetups` converted (F3), kept. #25 `rpc_meetup_visible` (**no ticket**). #11 `nearby_games`, #12 `rpc_autocomplete_entities`, #29 `rpc_search_entities` (rewritten in KAN-714 part 2 `20261105110000`, but its required part 1 `20261105100000_kan714_events_parent_reads.sql` is **absent on this branch**. That slot holds Z01) |
+| Transitive helpers / %ROWTYPE / composite | pending **by design** | `kan711_events_map_game(games)` and the KAN-711/712 mirror and guard read the `games` row type. After F8 Z01 **keeps** `trg_zz_kan712_events_compat_mirror` and replaces its function (seq 690/691) with the games branch only; the meetups branch is removed before the meetups drops |
 | Dynamic SQL | D02: 1 function. Still BLOCKED | per D02 |
-| Views | **resolved by ruling 2, not yet in the manifest** | `v_meetup_list` and `kan718_meetups_compat` read `meetups.description`, `location_name` and `is_indoor`. These are now **retained subtype columns** (dreq-8ae9bcfa ruling 2); both views are unchanged. Clears D06 M2 and Z01 G6 for this cause once F8 re-scopes the manifest (704/722/723) and G6 |
+| Views | **resolved** (F8) | `v_meetup_list` and `kan718_meetups_compat` read `meetups.description`, `location_name` and `is_indoor`, now **retained** (ruling 2). 704/722/723 are out of the manifest; D06 M2 passes with no exclusion and Z01 G6 holds | none |
 | Compat projection | `kan718_games_compat` reads only retained `games` columns plus `event_id` | none |
 | Policies | `games` has RLS on and no policy (KAN-671) | per D02 (4 policies) |
 | Triggers | 803/804 converted the frozen guards and posts geo. The KAN-711/712/713 infra is removed with Z01 | none outside Z01 |
-| Indexes | 13 baseline-only indexes are absent locally (Z01 G3 cannot be proven locally) | not documented locally |
+| Indexes | 4 baseline-only indexes (409, 414–416) are absent locally; Z01 G3 proven only with them recreated from the baseline | not documented locally |
 | RETIRE | #20 `rpc_meetup_invite_user`, #21 `rpc_meetup_mint_link` (KAN-802/812) | **no DROP authored** |
 | Edge Functions | `supabase/functions/*` contains no reference to `games`, `meetups` or slated column names (`git grep`) | none |
 | Scripts | no tracked `scripts/` reference | none |
@@ -86,16 +87,17 @@ further points:
 
 ## (d) Manifest
 
-- **On the documented D06 chain** (k788 + KAN-716 + D07 + KAN-785), the manifest is **exact**. Counts are
-  unchanged from 2026-11-03: 130 statements (117 local, 13 baseline-only), 33 triggers, and 20 entries with
-  no replacement.
-- **Delta found today:** on a chain that also has **D05** (`20261104110200`), `kan718_d06_manifest_check.sql`
-  fails with `M2 FAIL: column-level dependent(s) with no manifest entry: view:kan718_meetups_compat`. Chain:
-  `k788full` = build_kan810 + 806/808/809/807b/810/834.
-  - The manifest has no statement for the compat view that reads the three homeless columns.
-  - Z01 G6 already refuses on it.
-  - It is part of the same homeless-column gap, not a new consumer class. Ruling 2 retains those columns; the
-    manifest is **not yet re-scoped** (F8).
+- **Re-scoped by F8** (KAN-861, CTO ruling dreq-0f6e9434): **63 statements (56 local, 7 baseline-only), 15
+  triggers**, md5 `ed136455ca8dfda23a8c83342a4a5110` (was 130 / 117 / 13, 33 triggers, `614c1f8d…`).
+  - Kept, out of the manifest: every `games` trigger, index and constraint on a kept column (only 311 and 409 go
+    with `search_tsv`); the games realtime entry 201 (the published list has no slated column).
+  - Z01 corrects 202 only (DROP/ADD pair), adds 690/691 (replace `kan712_events_compat_mirror()` with its games
+    branch only, re-assert the revoke) and **no longer drops** `trg_zz_kan712_events_compat_mirror` (pre-F8 334).
+  - 801–803 `DROP FUNCTION get_nearby_games` ×2 and `getnearbygames`, no CASCADE; pg_depend and pg_proc body
+    scans show no dependants. Baseline-only locally (4 indexes + 3 RPCs).
+- On k772_base781 (chain + D04) the D06 check passes M1–M5, D1 and S1–S5. Z01 test passes Z1–Z4, smokes (a)/(b)/(c)
+  and R1. With the 7 baseline-only objects recreated from the baseline, the whole Z01 file applies (gate G1–G6 and
+  post-condition pass) and rolls back.
 - D07 series uniqueness: PASS 35/0, so the manifest's series index assumptions hold.
 
 ## (e) Runbook (D08)
@@ -188,7 +190,9 @@ Ruled by cto (Khnum) on decision `dreq-8ae9bcfa-e8bd-46d4-903a-c3b840ab79ec`.
 3. **KAN-718 disposition:** blocked tracking parent. Blocked reason: "deletion gated on §4 follow-ups and the
    ruling (C) in dreq-8ae9bcfa". `f2485ae5` is kept.
 
-**Not yet done:** the D06 manifest, Z01 and G6 have **NOT** been re-scoped to rulings 1 and 2. That is F8.
+**F8 done** (KAN-861, CTO ruling dreq-0f6e9434 option (A), 2026-11-04): the D06 manifest, Z01 and G6 are
+re-scoped to rulings 1 and 2 (22 slated / 44 retained; 63 statements; mirror replaced, not dropped). Authored and
+proven locally only; nothing applied.
 
 Follow-ups for the PM (the CTO creates none; these are not tickets yet):
 
@@ -201,7 +205,7 @@ Follow-ups for the PM (the CTO creates none; these are not tickets yet):
 | F5 | Re-author KAN-714 part 1 in a non-colliding version slot | backend | none |
 | F6 | DROP `rpc_meetup_invite_user` / `rpc_meetup_mint_link` | backend | none |
 | F7 | Track the kan801/kan807 chain builders | backend | none |
-| F8 | Re-scope Z01 + D06 manifest + G6 to rulings 1 and 2 | backend | F1–F6 |
+| F8 | Re-scope Z01 + D06 manifest + G6 to rulings 1 and 2 (**done**, KAN-861) | backend | F1–F6 |
 | F9 | Ops-apply under G-002 (PEER) | backend | F5–F8 |
 | F10 | Convert the 19 `lib/` `games` reads | frontend | none |
 | F11 | KAN-719b: drop the client-read `games` columns | backend | F10 shipped + install-share check |
