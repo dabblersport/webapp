@@ -138,7 +138,22 @@ Limitations:
   and 807a refuse because the harness bodies differ from the production pre-images. Each migration is proven on
   its own chain only. A full pre-Z01 catalogue (and therefore a whole-chain D01/D06/Z01 dry run) is **not
   demonstrated**.
-- 801 and 807 could not be re-run (the chains are lost).
+- ~~801 and 807 could not be re-run (the chains are lost).~~ **Resolved by KAN-860 (F7), 2026-11-04**: both
+  chains are now tracked and both tests were re-run green, each on a brand new throwaway PG16 cluster (ports
+  54861/54862, socket /tmp), clusters deleted afterwards:
+  - `base781_with_d04.sh`: the KAN-781 judge chain + D04, ported from the judge's untracked copy (Thebes review
+    evidence `KAN-781/judge-04740e4f/base781_with_d04.sh`, = `KAN-807/judge-97e5e6df/base.sh`). Same steps and
+    order; adds 851 capture + 6c before the cutover, and a marked stand-in giving the harness
+    `game_rating_aggregate.composite_score` its baseline type `numeric(3,2)` so B03's KAN-853 pin (92d98259) holds.
+  - `build_kan807.sh` → `kan807_d04_residual_test.sql` on `k807t`: `T2 PASS (RED shown)`, `T4/T5 PASS (GREEN): all
+    32 cases ... identical ... before and after Z01`, `T6 PASS: 16 functions ... unchanged`, `KAN-807: ALL PASS`
+    (the same verdict lines as the judged run).
+  - `build_kan801.sh` → base781+D04, D05, a seed replacing the lost seed781.sql, and the lost harness801 pre-images
+    cut verbatim from the baseline (`rpc_meetup_set_attendee` md5 `118f1db9`, matching the judged log;
+    `meetup_attendees_pkey`; `_meetup_link_consume`). RED on the pre-image: `TOTAL pass=17 fail=8`
+    (S1,S2,A1–A6; A1 `42703 column m.owner_user_id does not exist`), identical to the judged log. GREEN after
+    `110600_kan801`: `KAN-801 TOTAL pass=25 fail=0`. The judged post-Z01 variant (`Z01-local`, lost
+    `z01_local.sql`) is **not** reproduced.
 - The 13 baseline-only indexes (Z01 G3) cannot be checked locally.
 
 Prerequisites (each now maps to a follow-up in (h); none is a ticket yet):
@@ -156,7 +171,7 @@ Prerequisites (each now maps to a follow-up in (h); none is a ticket yet):
 7. Apply the authored KAN-718 migrations to production under G-002, then re-run D06/D09/Z01 G1–G6 against that
    catalogue and clear the Z04 FAILs: **F9** (PEER, blocked by F5–F8).
 8. Re-establish the 801 and 807 chains, or re-prove both on a new tracked builder, before they count as green:
-   **F7**.
+   **F7**. **Done (KAN-860)** pre-Z01 for 801 and in full for 807, see the limitation above.
 
 ## (h) CTO ruling dreq-8ae9bcfa (2026-11-04)
 
