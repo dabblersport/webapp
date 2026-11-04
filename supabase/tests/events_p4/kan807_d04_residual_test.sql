@@ -16,7 +16,8 @@
 -- post (new body) / post_z01 (new body after Z01: must equal pre). Z01 dry run = every `...;  -- <seq>` statement of
 -- 20261105100000_kan719_z01_remove_replaced_columns.sql, each in its own savepoint, in file order (as kan799/kan803).
 --
--- Run (worktree root) on a database cloned from the KAN-781 judge chain + D04 (base781_with_d04.sh):
+-- Run (worktree root) on a database cloned from the KAN-781 judge chain + D04
+-- (supabase/tests/events_p4/base781_with_d04.sh; supabase/tests/events_p4/build_kan807.sh builds it and runs this):
 --   psql -X -h /tmp -p <port> -U postgres -d k807<x> -v ON_ERROR_STOP=1 -P pager=off -f supabase/tests/events_p4/kan807_d04_residual_test.sql
 \set ON_ERROR_STOP 1
 SET client_min_messages = notice;

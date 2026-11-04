@@ -9,7 +9,7 @@
 --   public.can_current_user_rsvp_meetup(p_meetup_id, p_link_token)   (the app calls it directly; anon may EXECUTE)
 -- Fixture (local chain): meetup M 71300000-..-0101 (open, public, future, creator a1), seeded meetup F 78100000-..-f001
 -- (copy of M), users a1 (owner), a4 (not owner, not admin), a7 (no RSVP on M). Requires the k801 build
--- (clean801.sh: events chain + D04 + D05 + seed781 + harness801.sh pre-images).
+-- (supabase/tests/events_p4/build_kan801.sh: events chain + D04 + D05 + seed781 + harness801 pre-images).
 --
 -- Expected:
 --   without 20261104110600_kan801 (pre-image), before or after Z01: S*, A* FAIL with 42703 (m.owner_user_id does not
