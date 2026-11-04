@@ -207,7 +207,7 @@ SELECT pg_temp.chk('D2 untouched booking readers byte-identical (hold_for_game +
      (3, 'public.rpc_booking_hold_for_game_kan712_inner(uuid,uuid,timestamptz,timestamptz)'),
      (4, 'public.rpc_booking_cancel(uuid)'),
      (5, 'public._game_belongs_to_venue(uuid,uuid)')) t(o, f)),
-  '5857515b031fcb57926549d754af89a5,ddb9fe12e37d1a651c0ee3104988ec6b,97e9c289b9d768ff7212529876ecff08,6e5901ff6904c44012897b99d5b0c830');
+  '14d9fc1630e8ba77d736d0851f3e3eaf,ddb9fe12e37d1a651c0ee3104988ec6b,97e9c289b9d768ff7212529876ecff08,6e5901ff6904c44012897b99d5b0c830');
 SELECT pg_temp.chk('D4 _slot_conflicts_game definition md5 is the expected image',
   md5(pg_get_functiondef('public._slot_conflicts_game(uuid,timestamptz,timestamptz)'::regprocedure)),
   CASE WHEN pg_temp.post() THEN :'slot_post_md5' ELSE :'slot_pre_md5' END);
@@ -219,10 +219,11 @@ SELECT pg_temp.chk('D5 _slot_conflicts_game body: has_table_privilege branch : e
       and tstzrange(g.start_at, g.end_at, ''[)'') && tstzrange(p_start, p_end, ''[)'')%')::text
      FROM pg_proc WHERE oid = 'public._slot_conflicts_game(uuid,timestamptz,timestamptz)'::regprocedure),
   CASE WHEN pg_temp.post() THEN 'true:true:true' ELSE 'false:false:true' END);
-SELECT pg_temp.chk('D3 rpc_booking_hold_for_game still wrapped by KAN-712 (wrapper calls the inner, kan712.contract=on)',
-  (SELECT (prosrc LIKE '%rpc_booking_hold_for_game_kan712_inner%')::text || ':' || array_to_string(proconfig, ',')
+SELECT pg_temp.chk('D3 rpc_booking_hold_for_game still wrapped by KAN-712 (wrapper calls the inner, body set_config kan712.contract, KAN-850)',
+  (SELECT (prosrc LIKE '%rpc_booking_hold_for_game_kan712_inner%')::text || ':' || array_to_string(proconfig, ',') || ':'
+          || (position('set_config(''kan712.contract'', ''on'', true)' IN prosrc) > 0)::text
      FROM pg_proc WHERE oid = 'public.rpc_booking_hold_for_game(uuid,uuid,timestamptz,timestamptz)'::regprocedure),
-  'true:search_path="",kan712.contract=on');
+  'true:search_path="":true');
 
 -- ---------------------------------------------------------------- H: hold RPC literals (authenticated role, real ACL)
 SELECT pg_temp.chk('H1 creator a1 holds M1 (pre: owner_user_id 42703)',

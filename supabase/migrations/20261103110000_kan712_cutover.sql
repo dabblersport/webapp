@@ -162,10 +162,11 @@ BEGIN
     IF (SELECT proowner FROM pg_proc WHERE oid = r.wf) <> r.original_owner THEN
       RAISE EXCEPTION 'KAN-712 post: owner of wrapper %(%) changed', r.name, r.identity_args;
     END IF;
+    -- KAN-850 (step 6c): the flag is set in the body with set_config, never by a SET clause.
     IF NOT EXISTS (SELECT 1 FROM pg_proc p WHERE p.oid = r.wf AND p.prosecdef
-                      AND 'search_path=""' = ANY (coalesce(p.proconfig, '{}'))
-                      AND 'kan712.contract=on' = ANY (coalesce(p.proconfig, '{}'))) THEN
-      RAISE EXCEPTION 'KAN-712 post: wrapper %(%) lacks SECURITY DEFINER / search_path / kan712.contract', r.name, r.identity_args;
+                      AND p.proconfig = ARRAY['search_path=""']
+                      AND position('set_config(''kan712.contract'', ''on'', true)' IN p.prosrc) > 0) THEN
+      RAISE EXCEPTION 'KAN-712 post: wrapper %(%) lacks SECURITY DEFINER / proconfig {search_path=""} / body set_config kan712.contract', r.name, r.identity_args;
     END IF;
     IF has_function_privilege('anon', r.inf, 'EXECUTE') OR has_function_privilege('authenticated', r.inf, 'EXECUTE')
        OR has_function_privilege('service_role', r.inf, 'EXECUTE')
@@ -230,7 +231,7 @@ BEGIN
        OR (p.prosrc ~* '\m(insert\s+into|delete\s+from)\s+(only\s+)?("?public"?\s*\.\s*)?"?(games|meetups)\M'
            AND p.proname NOT IN ('rpc_create_game', 'rpc_create_game_legacy_v1', 'rpc_create_game_legacy_v2',
                                  'rpc_create_meetup', 'rpc_create_meetup_legacy_v1', 'rpc_create_meetup_legacy_v2',
-                                 'rpc_challenge_spawn_game', 'admin_cleanup_user_data'))
+                                 'rpc_challenge_spawn_game', 'admin_cleanup_user_data', 'run_seed_meetup_template'))
      );
   IF v_bad IS NOT NULL THEN
     RAISE EXCEPTION 'KAN-712 post: unclassified writers of games/meetups: %', v_bad;

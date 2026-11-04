@@ -5,7 +5,8 @@
 -- Rollback: supabase/tests/events_p2/rollback_kan714_b14.sql (restores the pre-images below, verbatim).
 --
 -- KAN-712: ALL THREE RPCs ARE WRAPPED (kan712_wrapped_rpcs rows; KAN712_CONTRACT.md manifest rows 6-8). The public
--- name is the generated wrapper (SECURITY DEFINER, search_path '', kan712.contract=on) that takes the events row
+-- name is the generated wrapper (SECURITY DEFINER, search_path ''; since KAN-850 step 6c it sets
+-- kan712.contract=on in its body with set_config, not by a SET clause) that takes the events row
 -- locks first and then calls <name>_kan712_inner, which IS the original body renamed (kan712_wrap_rpc, T-058).
 -- This migration never CREATE OR REPLACEs a wrapper. It changes the three bodies through the contract's own path
 -- (KAN712_CONTRACT.md: kan712_unwrap_rpc -> replace -> kan712_wrap_rpc; the convention every KAN-714 piece's
@@ -17,7 +18,7 @@
 --      pg_proc entry (T-058; generated from signature and attributes, never from the body), re-inserts the control
 --      row, renames the body to <name>_kan712_inner and strips every API grant from it.
 -- Post-conditions prove the wrapper survived: wrapper text md5 identical to the pre-image (lock statement and
--- kan712.contract=on included), wrapper ACL = the recorded original ACL, inner ACL owner-only, inner oid unchanged,
+-- the body set_config of kan712.contract included), wrapper ACL = the recorded original ACL, inner ACL owner-only, inner oid unchanged,
 -- control rows identical except wrapped_at, every OTHER wrapped RPC byte-identical (definition, ACL, control row).
 -- The only DROP is the one kan712_unwrap_rpc issues on a generated wrapper that 2c re-creates in the same
 -- transaction; no table, row of product data, or grant is dropped or changed. (KAN-733 rescue, Nekhbet: Karnak's
@@ -175,12 +176,12 @@ BEGIN
       ('public.rpc_edit_game_series_occurrence_kan712_inner(uuid,text,timestamptz,timestamptz,integer,uuid)', '76a813d1110538c2f3be870b65ead001'),
       ('public.rpc_edit_game_series_future_kan712_inner(uuid,text,integer,time,integer,uuid,date,boolean)',   'f10269f818183d9a3eb7289cbcff03a2'),
       ('public.rpc_cancel_game_series_kan712_inner(uuid,text)',                                               'ec5ee9a4f81371da8f49d57f0147eea4'),
-      ('public.rpc_edit_game_series_occurrence(uuid,text,timestamptz,timestamptz,integer,uuid)',              'ff5fc97a110d512d95e68702c4875377'),
-      ('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)',                'ae0eb67d40f150276cca5e8d9483d812'),
-      ('public.rpc_cancel_game_series(uuid,text)',                                                            '5dfc8373693466514bcfca3e169aa932'),
-      ('public.fn_generate_game_series_occurrences(uuid)',                                                    '9502f276a2158bf9f57b6130a796ae29'),
+      ('public.rpc_edit_game_series_occurrence(uuid,text,timestamptz,timestamptz,integer,uuid)',              'be3938f0b159dc143078453459882869'),
+      ('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)',                '0e3c35846ebd4a3fe1ca84beca17b31e'),
+      ('public.rpc_cancel_game_series(uuid,text)',                                                            '8493f1848f68cba137c86d5a05af3bab'),
+      ('public.fn_generate_game_series_occurrences(uuid)',                                                    '89f358af2af7d98468c59055d8639190'),
       ('public.fn_generate_game_series_occurrences_kan712_inner(uuid)',                                       '382e19ce66e66b1b0660f50163de36e3'),
-      ('public.rpc_cancel_game(uuid,text)',                                                                   'bf9763ac173e917cab60949d801e86f2')) AS t(fn, md)
+      ('public.rpc_cancel_game(uuid,text)',                                                                   '8d12b2b734153a7b45759f027f012927')) AS t(fn, md)
   LOOP
     IF to_regprocedure(r.fn) IS NULL THEN
       RAISE EXCEPTION 'KAN-733 pin: % missing', r.fn;
@@ -455,12 +456,12 @@ BEGIN
       ('public.rpc_edit_game_series_occurrence_kan712_inner(uuid,text,timestamptz,timestamptz,integer,uuid)', '5adf6e028e5a3407a145e014620f7757'),
       ('public.rpc_edit_game_series_future_kan712_inner(uuid,text,integer,time,integer,uuid,date,boolean)',   '58f7c53c076699063f4868ec6a461928'),
       ('public.rpc_cancel_game_series_kan712_inner(uuid,text)',                                               '3efd11063a2140fadb93bfa50ea493c6'),
-      ('public.rpc_edit_game_series_occurrence(uuid,text,timestamptz,timestamptz,integer,uuid)',              'ff5fc97a110d512d95e68702c4875377'),
-      ('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)',                'ae0eb67d40f150276cca5e8d9483d812'),
-      ('public.rpc_cancel_game_series(uuid,text)',                                                            '5dfc8373693466514bcfca3e169aa932'),
-      ('public.fn_generate_game_series_occurrences(uuid)',                                                    '9502f276a2158bf9f57b6130a796ae29'),
+      ('public.rpc_edit_game_series_occurrence(uuid,text,timestamptz,timestamptz,integer,uuid)',              'be3938f0b159dc143078453459882869'),
+      ('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)',                '0e3c35846ebd4a3fe1ca84beca17b31e'),
+      ('public.rpc_cancel_game_series(uuid,text)',                                                            '8493f1848f68cba137c86d5a05af3bab'),
+      ('public.fn_generate_game_series_occurrences(uuid)',                                                    '89f358af2af7d98468c59055d8639190'),
       ('public.fn_generate_game_series_occurrences_kan712_inner(uuid)',                                       '382e19ce66e66b1b0660f50163de36e3'),
-      ('public.rpc_cancel_game(uuid,text)',                                                                   'bf9763ac173e917cab60949d801e86f2')) AS t(fn, md)
+      ('public.rpc_cancel_game(uuid,text)',                                                                   '8d12b2b734153a7b45759f027f012927')) AS t(fn, md)
   LOOP
     v := md5(pg_get_functiondef(to_regprocedure(r.fn)));
     IF v IS DISTINCT FROM r.md THEN
@@ -480,13 +481,14 @@ BEGIN
      OR (SELECT count(*) FROM pg_temp.kan733_pre) <> 6 THEN
     RAISE EXCEPTION 'KAN-733 post: signature / owner / ACL / SECURITY DEFINER / volatility / search_path / inner oid changed';
   END IF;
-  -- The wrapper survived: each public name is the generated wrapper again (kan712.contract=on, calls its inner,
+  -- The wrapper survived: each public name is the generated wrapper again (body set_config kan712.contract, calls its inner,
   -- takes the recorded lock first) and its ACL equals the original ACL recorded by KAN-712.
   IF (SELECT count(*) FROM public.kan712_wrapped_rpcs w JOIN pg_proc p
          ON p.pronamespace = 'public'::regnamespace AND p.proname = w.name
         AND pg_get_function_identity_arguments(p.oid) = w.identity_args
        WHERE w.name IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series')
-         AND 'kan712.contract=on' = ANY (p.proconfig)
+         AND p.proconfig = ARRAY['search_path=""']  -- KAN-850 step 6c: flag set in the body, no SET clause
+         AND position('set_config(''kan712.contract'', ''on'', true)' IN p.prosrc) > 0
          AND p.prosrc LIKE '%public.' || w.inner_name || '(%'
          AND p.prosrc LIKE '%FOR UPDATE%'
          AND p.proacl::text IS NOT DISTINCT FROM w.original_acl::text) <> 3 THEN
