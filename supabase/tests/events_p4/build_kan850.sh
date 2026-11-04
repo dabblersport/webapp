@@ -41,6 +41,7 @@ ORDER=(
   20261102110000_kan711_events_mirror_triggers.sql
   20261102120000_kan711_events_backfill.sql
   20261103100000_kan712_events_write_contract.sql
+  20261103104000_kan851_capture_run_seed_meetup_template.sql
   20261103105000_kan844_kan712_contract_flag_set_config.sql
   20261103110000_kan712_cutover.sql
   20261104100000_kan713_access_helpers.sql
@@ -148,6 +149,7 @@ mig 20261102120000_kan711_events_backfill.sql
 echo "== [$DB] KAN-711 backfill + validate"
 psql_db -c 'CALL public.kan711_events_backfill_run();' -c 'SELECT public.kan711_events_validate_links();' >/dev/null
 mig 20261103100000_kan712_events_write_contract.sql
+mig_nonsuper 20261103104000_kan851_capture_run_seed_meetup_template.sql
 
 echo "== [$DB] C2 RED: step-7 probe with the 20261103100000 generator, applying role demoted (must fail 42501)"
 demote

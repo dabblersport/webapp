@@ -48,6 +48,7 @@ order. For the events P2 range:
 20261102110000_kan711_events_mirror_triggers.sql
 20261102120000_kan711_events_backfill.sql
 20261103100000_kan712_events_write_contract.sql
+20261103104000_kan851_capture_run_seed_meetup_template.sql
 20261103105000_kan844_kan712_contract_flag_set_config.sql
 20261103110000_kan712_cutover.sql
 20261104100000_kan713_access_helpers.sql
