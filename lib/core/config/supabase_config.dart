@@ -32,6 +32,15 @@ class SupabaseConfig {
 
   /// KAN-551: admin-only list of message reports (ids, reason, status, time).
   static const String msgListMessageReportsRpc = 'msg_list_message_reports';
+
+  /// KAN-872: deletes the caller's own events older than the cutoff
+  /// (clamped to at least 2 years); returns the number deleted.
+  static const String retentionCleanupOwnEventsRpc =
+      'retention_cleanup_own_events';
+
+  /// KAN-872: exports the caller's own events with description,
+  /// cancellation fields, request_id and roster.
+  static const String exportOwnEventsRpc = 'export_own_events';
   static const String getNearbyVenuesFunction = 'get_nearby_venues';
   static const String amenitiesCatalogTable = 'amenities_catalog';
 
