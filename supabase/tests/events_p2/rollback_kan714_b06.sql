@@ -1,9 +1,10 @@
 -- KAN-725 rollback: restores the pre-image of rpc_meetup_card(uuid,text) and
 -- rpc_meetup_attendees(uuid,text,integer,integer) after 20261104100600_kan714_b06_rpc_meetup_reads.sql.
 -- Bodies below are pg_get_functiondef of the KAN-713 stage catalogue, verbatim (T-058).
+-- KAN-881: the rpc_meetup_card body restored is the comment-bearing (prod) body, md5 cb4265a22477f9ed8e04aecd22b7449b.
 -- rpc_meetup_my() was never changed and is not touched.
--- KAN-789 note: rpc_meetup_my() was since RETIRED by KAN-785 (20261104110400). The post-check below still pins its
--- pre-image md5 (historical B06 state), so on a post-KAN-785 catalogue run KAN-785's rollback (its migration header) first.
+-- KAN-789 note: rpc_meetup_my() was since RETIRED by KAN-785 (20261104110400). The post-check below accepts it absent
+-- or at its pre-image md5, so no prior KAN-785 rollback is needed.
 -- Single transaction; no DROP, no CASCADE, no data mutation, no grant change.
 -- CREATE OR REPLACE FUNCTION keeps owner and ACL; asserted below.
 
@@ -183,12 +184,12 @@ DO $post$
 DECLARE r record; v text;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
-      ('public.rpc_meetup_card(uuid,text)',                       'ba562664e6a99fee30a75de6fe5cbbeb'),
+      ('public.rpc_meetup_card(uuid,text)',                       'cb4265a22477f9ed8e04aecd22b7449b'),
       ('public.rpc_meetup_attendees(uuid,text,integer,integer)',  '9c82e357c7b0fe58afc645f37d889523'),
       ('public.rpc_meetup_my()',                                  '9459dd31f4dfc534d26b3e37e49326b9')) AS t(fn, md)
   LOOP
     v := md5(pg_get_functiondef(to_regprocedure(r.fn)));
-    IF v IS DISTINCT FROM r.md THEN
+    IF v IS DISTINCT FROM r.md AND NOT (r.fn = 'public.rpc_meetup_my()' AND to_regprocedure(r.fn) IS NULL) THEN
       RAISE EXCEPTION 'KAN-725 rollback post: % md5 % (expected pre-image %)', r.fn, v, r.md;
     END IF;
   END LOOP;
