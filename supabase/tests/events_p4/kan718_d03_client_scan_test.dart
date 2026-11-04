@@ -19,26 +19,20 @@ const String _matrix =
 /// file (relative to lib/) -> the direct `games` table reads in it, as
 /// `op(projection)` in source order. `*` reads every slated column.
 const Map<String, List<String>> _knownGamesReads = {
-  'data/repositories/post_repository_impl.dart': [
-    'select(id, title, sport, game_type, start_at, end_at)',
-  ],
+  // KAN-715 converted G1 (stream removed), G3, G7, G8 (getGames/getMyGames),
+  // G14 (sport profile) and G17 (composer search) to v_game_card/v_my_games.
+  // What remains is UNREACHABLE (G2, G4-G6, G9-G13, G16), the named GDPR
+  // exception (G15) and the RLS-denied delete (G18).
   'features/games/data/datasources/supabase_games_datasource.dart': [
-    'stream(id)',
     'select(capacity)',
     'select(*)',
     'select(*)',
-    'select(*)',
-    'select(*)',
-    'select(id)',
     'select(*)',
     'select(*)',
     'select(*)',
     'select(*, game_favorites!inner(user_id))',
     'select(*, game_roster!inner(user_id))',
     'select(capacity)',
-  ],
-  'features/profile/presentation/providers/sport_profile_view_provider.dart': [
-    'select(id, is_cancelled, start_at)',
   ],
   'features/profile/services/data_export_service.dart': [
     'select(*, game_roster!inner(user_id, joined_at, status, role))',

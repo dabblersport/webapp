@@ -39,27 +39,28 @@ actually dropped belongs to the deletion manifest (another D ticket). They are c
 
 | # | File:line | Read | Slated columns read | State today |
 |---|---|---|---|---|
-| G1 | `features/games/data/datasources/supabase_games_datasource.dart:56` | `.stream(primaryKey:['id'])` → `GameModel.fromJson` | all (row payload) | live |
-| G2 | same `:154` | `select('capacity')` by id | `capacity` | live |
-| G3 | same `:234` | `select('*')`, getGames with filters | all | live |
-| G4 | same `:299` | `select('*')`, joinGame | all | live |
-| G5 | same `:437` | `select('*')`, updateGame | all | live |
-| G6 | same `:461` | `select('*')`, getGame | all | live |
-| G7 | same `:508` | `select('id')`, filter `.eq('creator_user_id')` | `creator_user_id` (filter) | live |
-| G8 | same `:538` | `select('*')`, getMyGames | all | live |
-| G9 | same `:601` | `select('*')`, `.textSearch('title')` | all, `title` | live |
-| G10 | same `:711` | `select('*')`, `.eq('sport')`, `.eq('is_cancelled')`, `.order('start_at')` | all | **fails today**: `games.sport` does not exist |
-| G11 | same `:888` | `select('*, game_favorites!inner(user_id)')`, `.order('start_at')` | all | live |
-| G12 | same `:925` | `select('*, game_roster!inner(user_id)')`, `.eq('is_cancelled')`, `.order('start_at')` | all | live |
-| G13 | same `:975` | `select('capacity')` by id | `capacity` | live |
-| G14 | `features/profile/presentation/providers/sport_profile_view_provider.dart:255` | `select('id, is_cancelled, start_at')`, filters `creator_user_id`, `sport_id` | `is_cancelled`, `start_at`, `creator_user_id`, `sport_id` | live |
-| G15 | `features/profile/services/data_export_service.dart:647` | `select('*, game_roster!inner(...)')`, `.order('created_at')` | all | live |
-| G16 | same `:1782` | `select()`, `.or('creator_id…,participants…')` | all | **fails today**: `creator_id` and `participants` do not exist |
-| G17 | `data/repositories/post_repository_impl.dart:1429` | `select('id, title, sport, game_type, start_at, end_at')`, `.ilike('title')`, `.eq('is_cancelled')`, `.order('start_at')` | `title`, `start_at`, `end_at`, `is_cancelled` | **fails today**: `sport` does not exist |
-| G18 | `features/profile/services/data_retention_service.dart:317` | `.delete()` filtered on `creator_id` | none read, but it filters on a column that does not exist | already RLS-denied (KAN-740 D4) |
+| G1 | `features/games/data/datasources/supabase_games_datasource.dart:56` | `.stream(primaryKey:['id'])` → `GameModel.fromJson` | all (row payload) | **converted (KAN-715)**: subscription removed; it had zero listeners in lib/ |
+| G2 | same `:154` | `select('capacity')` by id | `capacity` | UNREACHABLE (only via unused providers); unchanged |
+| G3 | same `:234` | `select('*')`, getGames with filters | all | **converted (KAN-715)**: `v_game_card`, same filters server-side, `sport` filter on `sport_key` |
+| G4 | same `:299` | `select('*')`, joinGame | all | UNREACHABLE; unchanged |
+| G5 | same `:437` | `select('*')`, updateGame | all | UNREACHABLE (also the write re-read); unchanged |
+| G6 | same `:461` | `select('*')`, getGame | all | UNREACHABLE; unchanged |
+| G7 | same `:508` | `select('id')`, filter `.eq('creator_user_id')` | `creator_user_id` (filter) | **converted (KAN-715)**: `v_my_games` `select(id)` `.eq(creator_user_id)` |
+| G8 | same `:538` | `select('*')`, getMyGames | all | **converted (KAN-715)**: `v_game_card` `.inFilter(id)`, same filters, order and page |
+| G9 | same `:601` | `select('*')`, `.textSearch('title')` | all, `title` | UNREACHABLE; unchanged |
+| G10 | same `:711` | `select('*')`, `.eq('sport')`, `.eq('is_cancelled')`, `.order('start_at')` | all | UNREACHABLE and **fails today**: `games.sport` does not exist; unchanged |
+| G11 | same `:888` | `select('*, game_favorites!inner(user_id)')`, `.order('start_at')` | all | UNREACHABLE; unchanged |
+| G12 | same `:925` | `select('*, game_roster!inner(user_id)')`, `.eq('is_cancelled')`, `.order('start_at')` | all | UNREACHABLE; unchanged |
+| G13 | same `:975` | `select('capacity')` by id | `capacity` | UNREACHABLE; unchanged |
+| G14 | `features/profile/presentation/providers/sport_profile_view_provider.dart:255` | `select('id, is_cancelled, start_at')`, filters `creator_user_id`, `sport_id` | `is_cancelled`, `start_at`, `creator_user_id`, `sport_id` | **converted (KAN-715)**: `v_game_card` scoped by `creator_profile_id` (card has no `creator_user_id`) and `sport_id`; visibility-gated |
+| G15 | `features/profile/services/data_export_service.dart:647` | `select('*, game_roster!inner(...)')`, `.order('created_at')` | all | ACTIVE, **named exception (KAN-715)**: GDPR export needs `description`, `cancelled_at`, `cancelled_reason`, `request_id`, `event_id` and the `game_roster!inner` embed; no projection carries them |
+| G16 | same `:1782` | `select()`, `.or('creator_id…,participants…')` | all | UNREACHABLE (no caller) and **fails today**: `creator_id` and `participants` do not exist; unchanged |
+| G17 | `data/repositories/post_repository_impl.dart:1429` | `select('id, title, sport, game_type, start_at, end_at')`, `.ilike('title')`, `.eq('is_cancelled')`, `.order('start_at')` | `title`, `start_at`, `end_at`, `is_cancelled` | **converted (KAN-715)**: `v_game_card` `sport:sport_key`; was failing on `sport` |
+| G18 | `features/profile/services/data_retention_service.dart:317` | `.delete()` filtered on `creator_id` | none read, but it filters on a column that does not exist | already RLS-denied (KAN-740 D4); not a read; unchanged |
 
-"live" means a reachable file with a valid query. Per-method reachability from a screen was not traced: every site in a live
-file is counted as a consumer.
+State as of KAN-715. ACTIVE/UNREACHABLE is per method, traced from a screen through providers: a site is UNREACHABLE
+when every path to it goes through a provider no widget or route consumes. After KAN-715, 12 direct `.from(games)` sites
+remain in lib/: 9 UNREACHABLE in `supabase_games_datasource.dart`, G15 (named exception), G16 (UNREACHABLE), G18 (delete).
 
 ### 2b. `games` embedded through another table: 7 sites
 

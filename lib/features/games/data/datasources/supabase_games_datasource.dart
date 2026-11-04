@@ -8,7 +8,6 @@ import 'package:dabbler/data/models/games/player_model.dart';
 
 class SupabaseGamesDataSource implements GamesRemoteDataSource {
   final SupabaseClient _supabaseClient;
-  StreamSubscription? _gamesSubscription;
 
   // Real-time controllers
   final StreamController<GameModel> _gameUpdatesController =
@@ -18,9 +17,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   final StreamController<Map<String, dynamic>> _gameStatusController =
       StreamController.broadcast();
 
-  SupabaseGamesDataSource(this._supabaseClient) {
-    _initializeRealTimeSubscriptions();
-  }
+  SupabaseGamesDataSource(this._supabaseClient);
 
   bool _isJwtExpired(PostgrestException e) {
     final msg = e.message.toLowerCase();
@@ -50,20 +47,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Stream<Map<String, dynamic>> get gameStatusChanges =>
       _gameStatusController.stream;
 
-  void _initializeRealTimeSubscriptions() {
-    // Subscribe to games table changes
-    _gamesSubscription = _supabaseClient
-        .from(SupabaseConfig.gamesTable)
-        .stream(primaryKey: ['id'])
-        .listen((data) {
-          for (final record in data) {
-            try {
-              final gameModel = GameModel.fromJson(record);
-              _gameUpdatesController.add(gameModel);
-            } catch (e) {}
-          }
-        }, onError: (Object _) {});
-  }
+  // KAN-715: no Realtime read of public.games is opened here. The former
+  // `.from(games).stream()` read the table directly (RLS on, no policy, so it
+  // delivered no rows) and nothing in lib/ listens to [gameUpdates]; it only
+  // carries the re-read row after [updateGame]. Change signals for listings and
+  // the game view are the payload-free KAN-755 channels.
 
   /// Helper method to get profile_id from user_id
   /// Returns the first active profile's id for the user
@@ -231,7 +219,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Query without venue join to avoid foreign key issues
       // Venue data can be fetched separately if needed
-      var query = _supabaseClient.from(SupabaseConfig.gamesTable).select('*');
+      // KAN-715: the event-backed, visibility-filtered projection (games.id
+      // stays the row id); public.games is not readable by the client.
+      var query = _supabaseClient
+          .from(SupabaseConfig.vGameCardTable)
+          .select('*');
 
       // Apply basic filters
       if (filters != null) {
@@ -242,7 +234,8 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
           query = query.lte('start_at', filters['end_date']);
         }
         if (filters['sport'] != null) {
-          query = query.eq('sport', filters['sport']);
+          // games has no `sport` column; the card carries the sport key.
+          query = query.eq('sport_key', filters['sport']);
         }
         // MVP Fix: Database uses 'is_cancelled' not 'status'
         if (filters['status'] != null) {
@@ -504,8 +497,9 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Get game IDs where user is either host OR joined as player
       // First, get games where user is host
+      // KAN-715: v_my_games is event-backed and exposes creator_user_id.
       final hostedGamesQuery = _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(SupabaseConfig.vMyGamesTable)
           .select('id')
           .eq('creator_user_id', userId);
 
@@ -533,9 +527,9 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
         return [];
       }
 
-      // Query games by IDs
+      // Query the event-backed card projection by games.id
       var query = _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(SupabaseConfig.vGameCardTable)
           .select('*')
           .inFilter('id', allGameIds.toList());
 
@@ -1234,7 +1228,6 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }
 
   void dispose() {
-    _gamesSubscription?.cancel();
     _gameUpdatesController.close();
     _playerEventsController.close();
     _gameStatusController.close();

@@ -259,6 +259,7 @@ class SupabaseConfig {
   static const String favoritesTable = 'favorites';
   static const String vGameCardTable = 'v_game_card';
   static const String vModQueueOpenTable = 'v_mod_queue_open';
+  static const String vMyGamesTable = 'v_my_games';
   static const String vSafetyOverviewTable = 'v_safety_overview';
   static const String vVenuesWithSportsTable = 'v_venues_with_sports';
   static const String venuePhotosTable = 'venue_photos';

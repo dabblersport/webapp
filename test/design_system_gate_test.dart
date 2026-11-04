@@ -225,9 +225,6 @@ const List<GateAllow> allowList = [
   GateAllow('lib/data/models/games/booking.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
-  GateAllow('lib/data/models/games/game_model.dart', [
-    'Domain duration literal',
-  ], _domainDurationReason),
   GateAllow('lib/data/models/games/game_session.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
