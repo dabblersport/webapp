@@ -58,6 +58,99 @@ Map<String, dynamic> _row(String id) => {
   'event_id': id,
 };
 
+// KAN-715 fix 1: a v_game_card row, column names and order exactly as the
+// view exposes them after 20261105140000_kan715_v_game_card_my_games_event_id
+// (b01 projection + event_id appended last). id is games.id; event_id is the
+// parent public.events.id and is deliberately a DIFFERENT value, so a model
+// that confused the two identities cannot pass.
+const _gameId = 'game-1';
+const _eventId = 'event-1';
+
+Map<String, dynamic> _cardRow(String id) => {
+  'id': id,
+  'title': 'Friday Five-a-side',
+  'game_type': 'pickup',
+  'start_at': '2099-11-05T18:00:00.000Z',
+  'end_at': '2099-11-05T19:30:00.000Z',
+  'capacity': 10,
+  'bench_slots': 0,
+  'total_slots': 10,
+  'min_skill': 1,
+  'max_skill': 3,
+  'listing_visibility': 'public',
+  'join_policy': 'open',
+  'allow_spectators': true,
+  'allows_waitlist': true,
+  'is_cancelled': false,
+  'rules': null,
+  'created_at': '2026-11-01T10:00:00.000Z',
+  'updated_at': '2026-11-01T10:00:00.000Z',
+  'sport_id': 'sport-1',
+  'sport_key': 'football',
+  'sport_name_en': 'Football',
+  'sport_name_ar': null,
+  'sport_variant_id': null,
+  'variant_key': null,
+  'variant_name_en': null,
+  'variant_name_ar': null,
+  'required_players': null,
+  'players_per_side': null,
+  'creator_profile_id': 'prof-1',
+  'creator_username': 'host',
+  'creator_display_name': 'Host',
+  'creator_avatar_url': null,
+  'geo_location_id': null,
+  'area_id': null,
+  'area_name': null,
+  'venue_space_id': 'space-1',
+  'venue_id': 'venue-1',
+  'venue_space_name': null,
+  'venue_name': null,
+  'joining_rule': null,
+  'cost_cover': null,
+  'roster_count': 0,
+  'is_creator': true,
+  'is_joined': false,
+  'host_verified': false,
+  'liked_by_me': false,
+  'latitude': null,
+  'longitude': null,
+  'favorite_count': 0,
+  'favourited_by_me': false,
+  'price_aed': null,
+  'series_id': null,
+  'series_frequency': null,
+  'series_ends_on': null,
+  'event_id': _eventId,
+};
+
+// A v_my_games row, column names and order exactly as the view exposes them
+// after the same migration (event_id appended last).
+Map<String, dynamic> _myGamesRow(String id) => {
+  'id': id,
+  'title': 'Friday Five-a-side',
+  'game_type': 'pickup',
+  'start_at': '2099-11-05T18:00:00.000Z',
+  'end_at': '2099-11-05T19:30:00.000Z',
+  'capacity': 10,
+  'is_cancelled': false,
+  'listing_visibility': 'public',
+  'join_policy': 'open',
+  'created_at': '2026-11-01T10:00:00.000Z',
+  'sport_id': 'sport-1',
+  'sport_key': 'football',
+  'sport_name_en': 'Football',
+  'sport_name_ar': null,
+  'creator_profile_id': 'prof-1',
+  'creator_user_id': 'user-1',
+  'area_id': null,
+  'area_name': null,
+  'venue_id': 'venue-1',
+  'venue_name': null,
+  'my_roster_status': null,
+  'event_id': _eventId,
+};
+
 bool _wantsObject(http.Request r) =>
     (r.headers['Accept'] ?? r.headers['accept'] ?? '').contains(
       'vnd.pgrst.object',
@@ -83,8 +176,24 @@ void main() {
         seen.add(r);
         final path = r.url.path;
         if (path.startsWith('/rest/v1/rpc/')) return _json(r, 'game-1');
-        if (path == _view || path == _card || path == _myGames) {
+        if (path == _view) {
           final rows = [_row('game-1')];
+          return _json(r, _wantsObject(r) ? rows.first : rows);
+        }
+        if (path == _card) {
+          final rows = [_cardRow(_gameId)];
+          return _json(r, _wantsObject(r) ? rows.first : rows);
+        }
+        if (path == _myGames) {
+          final select = r.url.queryParameters['select'];
+          final row = _myGamesRow(_gameId);
+          // PostgREST returns only the selected columns.
+          final rows = [
+            if (select == null || select == '*')
+              row
+            else
+              {for (final c in select.split(',')) c: row[c]},
+          ];
           return _json(r, _wantsObject(r) ? rows.first : rows);
         }
         if (path == '/rest/v1/game_roster') {
@@ -116,6 +225,13 @@ void main() {
     expect(g.scheduledDate, DateTime.utc(2099, 11, 5, 18));
   }
 
+  void expectBothIds(dynamic g) {
+    expect(g.id, _gameId, reason: 'id must stay games.id');
+    expect(g.eventId, isNotNull, reason: 'parent event_id must survive');
+    expect(g.eventId, _eventId);
+    expect(g.eventId, isNot(g.id));
+  }
+
   test('getGames reads v_game_card with filters, model unchanged', () async {
     ds = build();
     final games = await ds.getGames(
@@ -128,6 +244,13 @@ void main() {
     expect(q['order'], startsWith('start_at'));
     expect(touchedLegacy(), isFalse);
     expectModel(games.single);
+  });
+
+  test('getGames carries games.id as id and the parent event_id', () async {
+    ds = build();
+    final games = await ds.getGames();
+    expect(readsOf(_card), hasLength(1));
+    expectBothIds(games.single);
   });
 
   test('getGame reads the projection by id and adds current_players', () async {
@@ -167,6 +290,14 @@ void main() {
       expectModel(games.single);
     },
   );
+
+  test('getMyGames carries games.id as id and the parent event_id', () async {
+    ds = build();
+    final games = await ds.getMyGames('user-1');
+    expect(readsOf(_myGames), hasLength(1));
+    expect(readsOf(_card), hasLength(1));
+    expectBothIds(games.single);
+  });
 
   test('searchGames, getGamesBySport read the projection', () async {
     ds = build();
