@@ -1,30 +1,39 @@
 -- KAN-714 (part 2) — Events P2: move the remaining consumers to parent (public.events) reads.
+-- Re-authored under KAN-858 (KAN-839 ruling, Jira comment 15440: X1 option c, X2 part 2 only).
 --
--- AUTHORED, NOT APPLIED. Local proof only (supabase/tests/events_p2_kan714/, KAN714_CONTRACT.md sections 9-12).
--- Requires 20261105100000_kan714_events_parent_reads.sql (part 1) applied first.
+-- AUTHORED, NOT APPLIED. Local proof: supabase/tests/events_p4/kan858_part2_guard_test.sh.
+-- Stands alone: it does not depend on, read, or roll back any other KAN-714 file.
+-- Release order (KAN-811, Jira comment 15381): after B01-B07 and D04; BEFORE the D04 blocker files
+-- (KAN-798/799/800/801/803/804/806/807/808), which own the 16 functions this file no longer touches.
 --
 -- What this does, in ONE transaction:
---   0. Stage guard: part 1 applied (public.kan714_preimage has its 11 rows), part 2 not applied, events still
---      closed to the API, every games/meetups row has its parent; the applying role bypasses RLS.
---   1. Drift pins: md5(prosrc) of the 39 repointed functions and of the three helpers the owner-only twins
---      copy (game_slots_left, meetup_slots_left, _user_hosted_game). Any drift from the authored pre-image aborts.
---   2. Pre-image capture into public.kan714_preimage_2 (RLS on, no API grants) — rollback_kan714.sql restores
---      it first (pg_get_functiondef + ACL + owner + attributes), then part 1.
+--   0. Stage guard: the applying role bypasses RLS; B01-B07 and D04 are applied (post-image pins below:
+--      md5(prosrc) for functions, md5 of the sorted column-dependency list for views); this file is not
+--      already applied; events still closed to the API; every games/meetups row has its parent.
+--   1. Drift pins: md5(prosrc) of the 22 repointed functions and of the three helpers the owner-only twins
+--      copy (game_slots_left, meetup_slots_left, _user_hosted_game), pinned to the step-30 bodies recorded in
+--      supabase/tests/events_p4/KAN792_PIN_AUDIT.md. Any drift aborts.
+--   2. Pre-image capture into public.kan714_preimage_2 (RLS on, no API grants). ROLLBACK restores from that
+--      table only, in one transaction: EXECUTE each kind='function' row's definition (pg_get_functiondef
+--      output), re-assert its owner/ACL from the row, then remove the five created objects it lists.
 --   3. Two OWNER-ONLY overlay views, public.kan714_games_read and public.kan714_meetups_read: exactly the
 --      legacy table's columns, order and types, every SHARED column (the columns public.events owns) read from
---      public.events (meetups.rsvp_policy <- events.join_policy; smallint skills cast back to integer), every
---      subtype-only column from the subtype, ids stay subtype ids. No grant to PUBLIC/anon/authenticated/
---      service_role: only SECURITY DEFINER functions owned by an RLS-bypassing owner can use them. Built from
---      pg_attribute so the shape is the live table's, and asserted equal to it in post-conditions.
---      Three owner-only SECURITY INVOKER twins of the INVOKER helpers (kan714_game_slots_left,
---      kan714_meetup_slots_left, kan714_user_hosted_game), search_path '', no API EXECUTE; substituted only
---      inside DEFINER callers. The originals stay on the compat mirror (EXCEPTION-E4, KAN714_CONTRACT.md 11).
---   4. CREATE OR REPLACE of 39 SECURITY DEFINER functions from pg_get_functiondef(): only their READS of
---      public.games / public.meetups move to the overlays. Not moved (named per object in the contract):
---      `... FOR UPDATE` row locks (KAN-712 lock order: the wrapper's advisory lock, then the subtype row lock,
---      then the events row through the guard trigger), DELETE targets, INSERT/UPDATE targets. Where a locked
---      row's shared fields are used after the lock, they are re-read from the overlay after the lock.
---      Owner, ACL, SECURITY DEFINER, search_path, volatility, arguments and return types are unchanged.
+--      public.events (meetups.rsvp_policy <- events.join_policy), every subtype-only column from the subtype,
+--      ids stay subtype ids. No grant to PUBLIC/anon/authenticated/service_role: only SECURITY DEFINER
+--      functions owned by an RLS-bypassing owner can use them. Built from pg_attribute so the shape is the
+--      live table's, and asserted equal to it in post-conditions.
+--      Three owner-only SECURITY INVOKER twins of the helpers (kan714_game_slots_left,
+--      kan714_meetup_slots_left, kan714_user_hosted_game), search_path '', no API EXECUTE. The originals
+--      stay as they are.
+--   4. CREATE OR REPLACE of 22 SECURITY DEFINER functions from pg_get_functiondef(): only their READS of
+--      public.games / public.meetups move to the overlays. Not moved: `... FOR UPDATE` row locks, DELETE
+--      targets, INSERT/UPDATE targets. Owner, ACL, SECURITY DEFINER, search_path, volatility, arguments and
+--      return types are unchanged.
+--      Not in this file (KAN-858 X2): rpc_decide_join_request, rpc_invite_user, rpc_mint_join_link,
+--      rpc_recreate_from_game, rpc_remove_player, rpc_meetup_decide_request, rpc_meetup_remove_attendee,
+--      rpc_meetup_rsvp, rpc_join_game, active_stream, rpc_get_activity_feed, rpc_get_nearby_games (both),
+--      rpc_rate_game, rpc_rate_user, rpc_rate_venue — blocker-owned. admin_cleanup_user_data is also out: its
+--      step-30 body touches public.games only as a DELETE target, so it has no read to move.
 --   5. Post-conditions.
 -- No DROP TABLE, no DROP COLUMN, no CASCADE, no data mutation, no legacy column removal, no events grant.
 
@@ -34,23 +43,54 @@ BEGIN;
 -- 0. Stage guard
 -- ---------------------------------------------------------------------------------------------------------
 DO $guard$
-DECLARE v boolean := false; n int;
+DECLARE v boolean := false; r record; h text; bad text := '';
 BEGIN
   IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = current_user AND (rolsuper OR rolbypassrls)) THEN
     RAISE EXCEPTION 'KAN-714/2: applying role % must be superuser or BYPASSRLS', current_user;
-  END IF;
-  IF to_regclass('public.kan714_preimage') IS NULL THEN
-    RAISE EXCEPTION 'KAN-714/2: part 1 (20261105100000) not applied';
-  END IF;
-  EXECUTE 'SELECT count(*) FROM public.kan714_preimage' INTO n;
-  IF n <> 11 THEN
-    RAISE EXCEPTION 'KAN-714/2: part 1 pre-image has % rows, expected 11 (part 1 not applied or rolled back)', n;
   END IF;
   IF to_regclass('public.kan714_preimage_2') IS NOT NULL THEN
     EXECUTE 'SELECT EXISTS (SELECT 1 FROM public.kan714_preimage_2)' INTO v;
   END IF;
   IF v OR to_regclass('public.kan714_games_read') IS NOT NULL OR to_regclass('public.kan714_meetups_read') IS NOT NULL THEN
-    RAISE EXCEPTION 'KAN-714/2: already applied; run rollback_kan714.sql first';
+    RAISE EXCEPTION 'KAN-714/2: already applied; roll back from public.kan714_preimage_2 first';
+  END IF;
+  -- B01-B07 / D04 post-images. Functions: md5(prosrc). Views: md5 of the sorted, schema-qualified
+  -- schema.relation.column list the view's rewrite rule depends on (server-version independent, unlike
+  -- pg_get_viewdef text). D04 is also held by the $pins$ rows get_games_needing_players,
+  -- get_open_games_for_seeding, rpc_create_game, rpc_create_meetup and _user_hosted_game.
+  FOR r IN SELECT * FROM (VALUES
+      ('B01', 'v', 'public.v_game_card',                 'd7c7c59344e52fff6ace74bec48b048f'),
+      ('B01', 'v', 'public.v_my_games',                  '3b765364c7aed6faaee98043190936db'),
+      ('B02', 'v', 'public.v_meetup_list',               '8724655e4127d9a4c460daff4acb3517'),
+      ('B02', 'v', 'public.v_meetup_counts',             '372835d5a4ea428c6d69e1ba5eef8e20'),
+      ('B03', 'v', 'public.v_rateable_after_game',       '1eeadf5e589c8273f0d7b7f5c105862f'),
+      ('B04', 'f', 'public.rpc_games_following_joined(uuid[])', '2ca02c52556f14c2872211cdf988ee34'),
+      ('B05', 'f', 'public.rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)', '399680ac808bddb5a34ef081410dfbd4'),
+      ('B06', 'f', 'public.rpc_meetup_card(uuid,text)',  'c63da3eae7caced992bca253b712067d'),
+      ('B06', 'f', 'public.rpc_meetup_attendees(uuid,text,integer,integer)', '59bdc97a9667bdc60198eb506c4f8083'),
+      ('B07', 'f', 'public.rpc_sport_overview(uuid,text)', 'e7eb361a30f342e9e98df7b944638787'),
+      ('B07', 'v', 'public.v_host_weekly_metrics',       '6ad1f78dced6598211ae74e45d8ff83e'),
+      ('D04', 'f', 'public.meetup_counts(uuid)',         'e5982fbdee8d94c8de2c827a370038c5')) AS t(src, k, o, want)
+  LOOP
+    h := NULL;
+    IF r.k = 'f' THEN
+      SELECT md5(p.prosrc) INTO h FROM pg_proc p WHERE p.oid = to_regprocedure(r.o);
+    ELSIF EXISTS (SELECT 1 FROM pg_class c WHERE c.oid = to_regclass(r.o) AND c.relkind = 'v') THEN
+      SELECT md5(coalesce(string_agg(x, ',' ORDER BY x), '')) INTO h FROM (
+        SELECT DISTINCT format('%I.%I.%I', rn.nspname, rc.relname, a.attname) AS x
+          FROM pg_rewrite rw
+          JOIN pg_depend d ON d.classid = 'pg_rewrite'::regclass AND d.objid = rw.oid AND d.refobjsubid > 0
+          JOIN pg_class rc ON rc.oid = d.refobjid
+          JOIN pg_namespace rn ON rn.oid = rc.relnamespace
+          JOIN pg_attribute a ON a.attrelid = d.refobjid AND a.attnum = d.refobjsubid
+         WHERE rw.ev_class = to_regclass(r.o) AND d.refobjid <> to_regclass(r.o)) s;
+    END IF;
+    IF h IS DISTINCT FROM r.want THEN
+      bad := bad || format(' %s %s (md5 %s expected %s);', r.src, r.o, coalesce(h, '<absent>'), r.want);
+    END IF;
+  END LOOP;
+  IF bad <> '' THEN
+    RAISE EXCEPTION 'KAN-714/2 prereq: B01-B07/D04 post-image not in place:%', bad;
   END IF;
   IF EXISTS (SELECT 1 FROM pg_policy WHERE polrelid = 'public.events'::regclass)
      OR NOT (SELECT relforcerowsecurity AND relrowsecurity FROM pg_class WHERE oid = 'public.events'::regclass)
@@ -67,6 +107,7 @@ BEGIN
 END
 $guard$;
 
+
 CREATE TEMP TABLE kan714_2_events_acl ON COMMIT DROP AS
   SELECT relacl::text AS acl FROM pg_class WHERE oid = 'public.events'::regclass;
 
@@ -75,8 +116,6 @@ DO $owners$
 DECLARE r record;
 BEGIN
   FOR r IN SELECT p.oid::regprocedure::text AS f, p.prosecdef, p.proowner FROM pg_proc p WHERE p.oid IN (
-    'public.active_stream(text[],text,integer,timestamp with time zone,text,uuid)'::regprocedure,
-    'public.admin_cleanup_user_data(uuid,boolean)'::regprocedure,
     'public.admin_overview_row()'::regprocedure,
     'public.fn_game_roster_activity_sync()'::regprocedure,
     'public.fn_generate_game_series_occurrences_kan712_inner(uuid)'::regprocedure,
@@ -93,21 +132,6 @@ BEGIN
     'public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)'::regprocedure,
     'public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)'::regprocedure,
     'public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)'::regprocedure,
-    'public.rpc_decide_join_request(uuid,boolean)'::regprocedure,
-    'public.rpc_get_activity_feed(text,integer,timestamp with time zone)'::regprocedure,
-    'public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text)'::regprocedure,
-    'public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)'::regprocedure,
-    'public.rpc_invite_user(uuid,uuid)'::regprocedure,
-    'public.rpc_join_game(text,uuid,uuid)'::regprocedure,
-    'public.rpc_meetup_decide_request(uuid,uuid,text)'::regprocedure,
-    'public.rpc_meetup_remove_attendee(uuid,uuid)'::regprocedure,
-    'public.rpc_meetup_rsvp(uuid,text,uuid,uuid)'::regprocedure,
-    'public.rpc_mint_join_link(uuid,timestamp with time zone,integer)'::regprocedure,
-    'public.rpc_rate_game(uuid,uuid,jsonb,text)'::regprocedure,
-    'public.rpc_rate_user(uuid,uuid,uuid,jsonb,text)'::regprocedure,
-    'public.rpc_rate_venue(uuid,uuid,uuid,jsonb,text)'::regprocedure,
-    'public.rpc_recreate_from_game(uuid,boolean)'::regprocedure,
-    'public.rpc_remove_player(uuid,uuid)'::regprocedure,
     'public.rpc_search_entities(text,text[],text,integer)'::regprocedure,
     'public.rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)'::regprocedure,
     'public.settle_game(uuid,boolean)'::regprocedure,
@@ -133,48 +157,31 @@ DO $pins$
 DECLARE r record; v text; n int := 0;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
-      ('public.active_stream(text[],text,integer,timestamp with time zone,text,uuid)', '0e7b7eddfce6dee2746734fb47fbf332'),
-      ('public.admin_cleanup_user_data(uuid,boolean)', '978ae882109662a5e229bb87aebad01b'),
-      ('public.admin_overview_row()', 'f5a9160e240140ed7c5a373a3d494e79'),
+      ('public.admin_overview_row()', '42573e04bc2aae0af755ded1f8eceb5a'),
       ('public.fn_game_roster_activity_sync()', '3274cca43042f67a81c9853dd82b4415'),
       ('public.fn_generate_game_series_occurrences_kan712_inner(uuid)', '2c36c743e9b82699fea440e2c93aa976'),
       ('public.fn_meetup_rsvps_activity_sync()', 'ea879f6ac22b0e2a7e154201a7184a49'),
-      ('public.get_games_needing_players()', '2938404e665ffa0ce504826bfd55b146'),
-      ('public.get_open_games_for_seeding()', '261911f5b095b992ce3b463818ecf99f'),
-      ('public.msg_authorize(uuid,text)', '6a3939c6c75a310d7c2769db059021f9'),
-      ('public.msg_evaluate(uuid,uuid,text)', '240ca1a775de5a611aee06c60e92148d'),
-      ('public.msg_my_conversations(integer)', 'e06086af6b1f7c076e7ee6498ae7c3e4'),
+      ('public.get_games_needing_players()', 'c818c2082bf1a29e40202776869ad42b'),
+      ('public.get_open_games_for_seeding()', '30333cbe1d77a6a5ca5b1e757e3e945f'),
+      ('public.msg_authorize(uuid,text)', 'b55e059bcf494df887e48ebdf8139949'),
+      ('public.msg_evaluate(uuid,uuid,text)', '3276466a3d192afd4ee4675135637859'),
+      ('public.msg_my_conversations(integer)', '1297831ca8202108ba9001a750c8935d'),
       ('public.nearby_games(double precision,double precision,integer,text,integer,integer)', '19b0a6c0ce028c4273f46ece71713d9a'),
       ('public.rpc_autocomplete_entities(text,text[],text,integer)', '10369e0dba10ae05a27221a448eb5caf'),
       ('public.rpc_booking_cancel(uuid)', '574e008d904dbb4e40db298559a9192d'),
       ('public.rpc_booking_hold_for_game_kan712_inner(uuid,uuid,timestamp with time zone,timestamp with time zone)', 'df2359a7c9fb031cb350836139a13ab9'),
-      ('public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)', 'ff1ee16988a8c15d1065795cf940c435'),
-      ('public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)', 'aa4876c674fafe5d0f6984b29b4f1938'),
-      ('public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)', 'ef0d41b5e1717e966e5dad1ae3445903'),
-      ('public.rpc_decide_join_request(uuid,boolean)', '7c03f9298eb4754f9a281e3620af7f93'),
-      ('public.rpc_get_activity_feed(text,integer,timestamp with time zone)', '73036a69dbec39c5bd44209b80147f1e'),
-      ('public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text)', '11c52abd9873a93cf71db5ca6b29c480'),
-      ('public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)', 'e14430bad3dedb8540287f70ccfaa208'),
-      ('public.rpc_invite_user(uuid,uuid)', 'f090ca17e10a837091f19c1e0597f164'),
-      ('public.rpc_join_game(text,uuid,uuid)', '9d1ca06d255364137a456b31980a5c60'),
-      ('public.rpc_meetup_decide_request(uuid,uuid,text)', 'd8c60f06cbc35e6b1e579a266863ba14'),
-      ('public.rpc_meetup_remove_attendee(uuid,uuid)', '7fec2761af25e3e0fd414922b7d07e6d'),
-      ('public.rpc_meetup_rsvp(uuid,text,uuid,uuid)', 'acc145f2fa5cf81db600beef47fc6a6d'),
-      ('public.rpc_mint_join_link(uuid,timestamp with time zone,integer)', '6ffbb7cdf8421eef95f4060659084bbe'),
-      ('public.rpc_rate_game(uuid,uuid,jsonb,text)', '195bf3e5b9bc14165fe0feba89635b3b'),
-      ('public.rpc_rate_user(uuid,uuid,uuid,jsonb,text)', '12cb3bf4c0fa33a6a8f11aec94da1e96'),
-      ('public.rpc_rate_venue(uuid,uuid,uuid,jsonb,text)', '2bce0cd675ee5865731d05adb90883e9'),
-      ('public.rpc_recreate_from_game(uuid,boolean)', '6e410ca16771fbdf20a6f37553131e6c'),
-      ('public.rpc_remove_player(uuid,uuid)', 'ab3b5239eb5bb283622679c842ba9cd7'),
+      ('public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)', '0b7e53391b2a44007316d42036d95134'),
+      ('public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)', 'e565a2ba82469724f878435a2f8aaeae'),
+      ('public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)', '77a14a223d4ad16d2f62db46a8ddbcb9'),
       ('public.rpc_search_entities(text,text[],text,integer)', '802a43a24f290110b614aa1ff9c04570'),
-      ('public.rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)', 'fe3382197842fa66564b2f62d9b754f5'),
-      ('public.settle_game(uuid,boolean)', '9357b0e9dc93ba715811aa0ae101cd76'),
+      ('public.rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)', '399680ac808bddb5a34ef081410dfbd4'),
+      ('public.settle_game(uuid,boolean)', 'ee62121d87bee5c6dd1109e6ad11d8b4'),
       ('public.trg_game_join_request_notify()', '65f55b54654b9fe12ef5e6afef4ebe6f'),
       ('public.trg_game_waitlist_promoted_notify()', '263d03c2b3ac0a1ca281e40a1ae71c46'),
-      ('public.trg_meetup_rsvps_notify()', '55efefd5cf5b5556d11f6ac093fd64b8'),
-      ('public.game_slots_left(uuid)', '1f6418851fd9c18d36165f111a4b1f5f'),
-      ('public.meetup_slots_left(uuid)', 'e80d0677a9a6fee5fb507efe93c2d158'),
-      ('public._user_hosted_game(uuid,uuid)', 'dc84da3e337f875afecad11c80bf6e2e')) AS t(f, h)
+      ('public.trg_meetup_rsvps_notify()', 'a22ed63dec19a237b005e30e9c038dc1'),
+      ('public.game_slots_left(uuid)', 'bd773c6f559b9692753fdfccd1eee959'),
+      ('public.meetup_slots_left(uuid)', '17e5926db75031e80ffdf8aedbb803a5'),
+      ('public._user_hosted_game(uuid,uuid)', '41a0f3b192055a68f7dbaea2807c9933')) AS t(f, h)
   LOOP
     IF to_regprocedure(r.f) IS NULL THEN
       RAISE EXCEPTION 'KAN-714/2 pin: % missing', r.f;
@@ -185,8 +192,8 @@ BEGIN
     END IF;
     n := n + 1;
   END LOOP;
-  IF n <> 39 + 3 THEN
-    RAISE EXCEPTION 'KAN-714/2 pin: expected % pins, checked %', 39 + 3, n;
+  IF n <> 22 + 3 THEN
+    RAISE EXCEPTION 'KAN-714/2 pin: expected % pins, checked %', 22 + 3, n;
   END IF;
 END
 $pins$;
@@ -214,8 +221,6 @@ SELECT p.oid::regprocedure::text, 'function', pg_get_functiondef(p.oid), p.proac
        p.prosecdef, p.proconfig, p.provolatile
   FROM pg_proc p
  WHERE p.oid IN (
-    'public.active_stream(text[],text,integer,timestamp with time zone,text,uuid)'::regprocedure,
-    'public.admin_cleanup_user_data(uuid,boolean)'::regprocedure,
     'public.admin_overview_row()'::regprocedure,
     'public.fn_game_roster_activity_sync()'::regprocedure,
     'public.fn_generate_game_series_occurrences_kan712_inner(uuid)'::regprocedure,
@@ -232,21 +237,6 @@ SELECT p.oid::regprocedure::text, 'function', pg_get_functiondef(p.oid), p.proac
     'public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)'::regprocedure,
     'public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)'::regprocedure,
     'public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)'::regprocedure,
-    'public.rpc_decide_join_request(uuid,boolean)'::regprocedure,
-    'public.rpc_get_activity_feed(text,integer,timestamp with time zone)'::regprocedure,
-    'public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text)'::regprocedure,
-    'public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)'::regprocedure,
-    'public.rpc_invite_user(uuid,uuid)'::regprocedure,
-    'public.rpc_join_game(text,uuid,uuid)'::regprocedure,
-    'public.rpc_meetup_decide_request(uuid,uuid,text)'::regprocedure,
-    'public.rpc_meetup_remove_attendee(uuid,uuid)'::regprocedure,
-    'public.rpc_meetup_rsvp(uuid,text,uuid,uuid)'::regprocedure,
-    'public.rpc_mint_join_link(uuid,timestamp with time zone,integer)'::regprocedure,
-    'public.rpc_rate_game(uuid,uuid,jsonb,text)'::regprocedure,
-    'public.rpc_rate_user(uuid,uuid,uuid,jsonb,text)'::regprocedure,
-    'public.rpc_rate_venue(uuid,uuid,uuid,jsonb,text)'::regprocedure,
-    'public.rpc_recreate_from_game(uuid,boolean)'::regprocedure,
-    'public.rpc_remove_player(uuid,uuid)'::regprocedure,
     'public.rpc_search_entities(text,text[],text,integer)'::regprocedure,
     'public.rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)'::regprocedure,
     'public.settle_game(uuid,boolean)'::regprocedure,
@@ -262,8 +252,8 @@ INSERT INTO public.kan714_preimage_2 (object, kind, owner) VALUES
   ('public.kan714_user_hosted_game(uuid,uuid)', 'created_function', current_user);
 
 DO $cnt$ BEGIN
-  IF (SELECT count(*) FROM public.kan714_preimage_2 WHERE kind = 'function') <> 39 THEN
-    RAISE EXCEPTION 'KAN-714/2: pre-image capture expected 39 functions, got %',
+  IF (SELECT count(*) FROM public.kan714_preimage_2 WHERE kind = 'function') <> 22 THEN
+    RAISE EXCEPTION 'KAN-714/2: pre-image capture expected 22 functions, got %',
       (SELECT count(*) FROM public.kan714_preimage_2 WHERE kind = 'function');
   END IF;
 END $cnt$;
@@ -296,7 +286,7 @@ BEGIN
     EXECUTE format('REVOKE ALL ON public.%I FROM PUBLIC, anon, authenticated, service_role', r.vw);
     EXECUTE format('COMMENT ON VIEW public.%I IS %L', r.vw,
                    'KAN-714 owner-only overlay: ' || r.tbl || ' with shared columns from public.events. '
-                   || 'No API grant by design; read only inside SECURITY DEFINER functions. Rollback: rollback_kan714.sql.');
+                   || 'No API grant by design; read only inside SECURITY DEFINER functions. Rollback: restore from public.kan714_preimage_2.');
   END LOOP;
 END
 $overlay$;
@@ -306,19 +296,36 @@ $overlay$;
 -- ---------------------------------------------------------------------------------------------------------
 CREATE FUNCTION public.kan714_game_slots_left(p_game uuid)
  RETURNS integer
- LANGUAGE sql
+ LANGUAGE plpgsql
  STABLE
  SET search_path TO ''
 AS $function$
-  WITH g AS (SELECT capacity, game_type FROM public.kan714_games_read WHERE id = p_game),
-  active AS (
-    SELECT count(*)::int AS c
+-- KAN-727: capacity from events (authoritative) for callers that may read events; pre-image read otherwise
+-- (INVOKER, granted to clients; events has no client grant -- KAN-713's v_events pattern).
+DECLARE
+  v_capacity  integer;
+  v_game_type text;
+  v_active    integer;
+BEGIN
+  IF has_table_privilege('public.events', 'SELECT') THEN
+    SELECT e.capacity, g.game_type INTO v_capacity, v_game_type
+      FROM public.kan714_games_read g
+      JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game'
+     WHERE g.id = p_game;
+  ELSE
+    SELECT g.capacity, g.game_type INTO v_capacity, v_game_type
+      FROM public.kan714_games_read g
+     WHERE g.id = p_game;
+  END IF;
+  IF NOT FOUND THEN
+    RETURN 0;                                   -- pre-image: GREATEST(NULL - 0, 0) = 0 for an unknown game
+  END IF;
+  SELECT count(*)::int INTO v_active
     FROM public.game_roster r
-    JOIN g ON true
-    WHERE r.game_id = p_game AND r.status = 'active'
-      AND (r.role = 'player' OR (r.role = 'host' AND g.game_type = 'hosted'))
-  )
-  SELECT GREATEST((SELECT capacity FROM g) - (SELECT c FROM active), 0)
+   WHERE r.game_id = p_game AND r.status = 'active'
+     AND (r.role = 'player' OR (r.role = 'host' AND v_game_type = 'hosted'));
+  RETURN GREATEST(v_capacity - v_active, 0);
+END
 $function$;
 
 CREATE FUNCTION public.kan714_meetup_slots_left(p_meetup uuid)
@@ -327,24 +334,37 @@ CREATE FUNCTION public.kan714_meetup_slots_left(p_meetup uuid)
  STABLE
  SET search_path TO ''
 AS $function$
+  -- KAN-727: capacity from events e (authoritative); NULL = unlimited (999999) kept; unknown meetup -> NULL kept.
   select
-    case when m.capacity is null then 999999
-         else greatest(m.capacity - coalesce((select count(*) from public.meetup_rsvps r where r.meetup_id=m.id and r.status='going'),0), 0)
+    case when e.capacity is null then 999999
+         else greatest(e.capacity - coalesce((select count(*) from public.meetup_rsvps r where r.meetup_id=m.id and r.status='going'),0), 0)
     end as slots_left
-  from public.kan714_meetups_read m where m.id = p_meetup
+  from public.kan714_meetups_read m
+  join public.events e on e.id = m.event_id and e.event_type = 'meetup'
+  where m.id = p_meetup
 $function$;
 
 CREATE FUNCTION public.kan714_user_hosted_game(p_user_id uuid, p_game_id uuid)
  RETURNS boolean
- LANGUAGE sql
+ LANGUAGE plpgsql
  STABLE
  SET search_path TO ''
 AS $function$
-  SELECT EXISTS(
+-- KAN-772: creator from events for callers that may read events (rpc_rate_venue, SECURITY DEFINER);
+-- pre-image read otherwise (INVOKER, granted to clients; events has no client grant -- KAN-727 pattern).
+BEGIN
+  IF has_table_privilege('public.events', 'SELECT') THEN
+    RETURN EXISTS (
+      SELECT 1 FROM public.kan714_games_read g
+        JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game'
+       WHERE g.id = p_game_id
+         AND e.creator_user_id = p_user_id);
+  END IF;
+  RETURN EXISTS (
     SELECT 1 FROM public.kan714_games_read g
-    WHERE g.id = p_game_id
-      AND g.creator_user_id = p_user_id
-  )
+     WHERE g.id = p_game_id
+       AND g.creator_user_id = p_user_id);
+END
 $function$;
 
 -- A DROP+CREATE / CREATE in public is granted to anon by name through pg_default_acl, so revoke by name.
@@ -354,202 +374,10 @@ REVOKE ALL ON FUNCTION public.kan714_user_hosted_game(uuid,uuid) FROM PUBLIC, an
 
 
 -- ---------------------------------------------------------------------------------------------------------
--- 4. Repointed function bodies (39). Each is pg_get_functiondef() of the pinned pre-image with only:
+-- 4. Repointed function bodies (22). Each is pg_get_functiondef() of the step-30 body (KAN792_PIN_AUDIT.md) with only:
 --    FROM/JOIN public.games|meetups (reads, not FOR UPDATE, not DELETE targets) -> the owner-only overlay;
 --    the named extra edits listed per object in KAN714_CONTRACT.md section 9.
 -- ---------------------------------------------------------------------------------------------------------
-
--- [manifest 8] public.active_stream(text[],text,integer,timestamp with time zone,text,uuid)
-CREATE OR REPLACE FUNCTION public.active_stream(p_event_types text[] DEFAULT NULL::text[], p_city text DEFAULT NULL::text, p_limit integer DEFAULT 30, p_before timestamp with time zone DEFAULT NULL::timestamp with time zone, p_before_type text DEFAULT NULL::text, p_before_entity uuid DEFAULT NULL::uuid)
- RETURNS TABLE(event_type text, event_at timestamp with time zone, entity_kind text, entity_id uuid, actor_profile_id uuid, city text, title text)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-  WITH prm AS (
-    SELECT auth.uid() AS viewer,
-           LEAST(GREATEST(COALESCE(p_limit, 30), 1), 50) AS lim,
-           NULLIF(btrim(p_city), '') AS city
-  ),
-  ev AS (
-    -- player_joined
-    SELECT 'player_joined'::text AS event_type, p.created_at AS event_at, 'profile'::text AS entity_kind,
-           p.id AS entity_id, p.id AS actor_profile_id, p.city AS city, p.display_name AS title
-      FROM public.profiles p, prm
-     WHERE prm.viewer IS NOT NULL
-       AND p.profile_type = 'personal'
-       AND p.created_at IS NOT NULL
-       AND public.is_profile_publicly_visible(p.id)
-       AND NOT public.is_blocked(prm.viewer, p.user_id)
-    UNION ALL
-    -- venue_added
-    SELECT 'venue_added'::text, v.created_at, 'venue'::text, v.id, NULL::uuid, a.city, v.name_en
-      FROM public.venues v
-      JOIN public.areas a ON a.id = v.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND v.is_active = true
-       AND (v.owner_user_id IS NULL OR NOT public.is_blocked(prm.viewer, v.owner_user_id))
-    UNION ALL
-    -- game_created
-    SELECT 'game_created'::text, g.created_at, 'game'::text, g.id, g.creator_profile_id, a.city, g.title
-      FROM public.kan714_games_read g
-      JOIN public.areas a ON a.id = g.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND g.is_cancelled = false
-       AND public._can_view_game(g.id)
-       AND NOT public.is_blocked(prm.viewer, g.creator_user_id)
-    UNION ALL
-    -- game_started
-    SELECT 'game_started'::text, g.start_at, 'game'::text, g.id, g.creator_profile_id, a.city, g.title
-      FROM public.kan714_games_read g
-      JOIN public.areas a ON a.id = g.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND g.is_cancelled = false
-       AND g.start_at <= now()
-       AND public._can_view_game(g.id)
-       AND NOT public.is_blocked(prm.viewer, g.creator_user_id)
-    UNION ALL
-    -- game_ended
-    SELECT 'game_ended'::text, g.end_at, 'game'::text, g.id, g.creator_profile_id, a.city, g.title
-      FROM public.kan714_games_read g
-      JOIN public.areas a ON a.id = g.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND g.is_cancelled = false
-       AND g.end_at <= now()
-       AND public._can_view_game(g.id)
-       AND NOT public.is_blocked(prm.viewer, g.creator_user_id)
-    UNION ALL
-    -- meetup_created
-    SELECT 'meetup_created'::text, m.created_at, 'meetup'::text, m.id, m.creator_profile_id, a.city, m.title
-      FROM public.kan714_meetups_read m
-      LEFT JOIN public.areas a ON a.id = m.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND m.is_cancelled = false
-       AND public.can_view_owner(m.creator_user_id, m.listing_visibility)
-       AND NOT public.is_blocked(prm.viewer, m.creator_user_id)
-    UNION ALL
-    -- meetup_started
-    SELECT 'meetup_started'::text, m.start_at, 'meetup'::text, m.id, m.creator_profile_id, a.city, m.title
-      FROM public.kan714_meetups_read m
-      LEFT JOIN public.areas a ON a.id = m.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND m.is_cancelled = false
-       AND m.start_at <= now()
-       AND public.can_view_owner(m.creator_user_id, m.listing_visibility)
-       AND NOT public.is_blocked(prm.viewer, m.creator_user_id)
-    UNION ALL
-    -- meetup_completed
-    SELECT 'meetup_completed'::text, COALESCE(m.end_at, m.start_at), 'meetup'::text, m.id, m.creator_profile_id,
-           a.city, m.title
-      FROM public.kan714_meetups_read m
-      LEFT JOIN public.areas a ON a.id = m.area_id, prm
-     WHERE prm.viewer IS NOT NULL
-       AND m.is_cancelled = false
-       AND COALESCE(m.end_at, m.start_at) <= now()
-       AND public.can_view_owner(m.creator_user_id, m.listing_visibility)
-       AND NOT public.is_blocked(prm.viewer, m.creator_user_id)
-  ),
-  filtered AS (
-    SELECT DISTINCT ON (ev.event_type, ev.entity_id) ev.*
-      FROM ev, prm
-     WHERE (p_event_types IS NULL OR ev.event_type = ANY (p_event_types))
-       AND (prm.city IS NULL OR lower(ev.city) = lower(prm.city))
-       AND (
-         p_before IS NULL
-         OR ev.event_at < p_before
-         OR (p_before_type IS NOT NULL AND p_before_entity IS NOT NULL
-             AND ev.event_at = p_before
-             AND (ev.event_type, ev.entity_id) < (p_before_type, p_before_entity))
-       )
-     ORDER BY ev.event_type, ev.entity_id, ev.event_at DESC
-  )
-  SELECT f.event_type, f.event_at, f.entity_kind, f.entity_id, f.actor_profile_id, f.city, f.title
-    FROM filtered f
-   ORDER BY f.event_at DESC, f.event_type DESC, f.entity_id DESC
-   LIMIT (SELECT lim FROM prm);
-$function$;
-
--- [manifest 9] public.admin_cleanup_user_data(uuid,boolean)
-CREATE OR REPLACE FUNCTION public.admin_cleanup_user_data(p_user_id uuid, p_dry_run boolean DEFAULT true)
- RETURNS TABLE(affected_table text, affected_column text, rows_affected bigint)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-DECLARE
-  r           record;
-  v_profile_id uuid;
-  v_sql       text;
-  v_count     bigint;
-BEGIN
-  IF NOT public.is_admin() THEN
-    RAISE EXCEPTION 'Access denied: admin privileges required';
-  END IF;
-
-  PERFORM set_config('app.admin_cleanup', 'on', true);
-
-  SELECT id INTO v_profile_id FROM public.profiles WHERE user_id = p_user_id;
-
-  IF v_profile_id IS NULL THEN
-    affected_table := 'profiles'; affected_column := 'user_id'; rows_affected := 0;
-    RETURN NEXT; RETURN;
-  END IF;
-
-  -- Games
-  IF NOT p_dry_run THEN
-    DELETE FROM public.games WHERE id IN (SELECT k714g.id FROM public.kan714_games_read k714g WHERE k714g.creator_profile_id = v_profile_id);
-  END IF;
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  IF v_count > 0 THEN
-    affected_table := 'games'; affected_column := 'creator_profile_id'; rows_affected := v_count;
-    RETURN NEXT;
-  END IF;
-
-  -- Posts
-  IF NOT p_dry_run THEN
-    DELETE FROM public.posts WHERE author_profile_id = v_profile_id;
-  END IF;
-  GET DIAGNOSTICS v_count = ROW_COUNT;
-  IF v_count > 0 THEN
-    affected_table := 'posts'; affected_column := 'author_profile_id'; rows_affected := v_count;
-    RETURN NEXT;
-  END IF;
-
-  FOR r IN
-    SELECT c.table_schema, c.table_name, c.column_name
-    FROM information_schema.columns c
-    JOIN information_schema.tables t
-      ON t.table_schema = c.table_schema AND t.table_name = c.table_name
-    WHERE c.table_schema = 'public'
-      AND c.column_name IN ('user_id', 'profile_id')
-      AND t.table_type = 'BASE TABLE'
-      AND c.table_name NOT IN ('profiles', 'games', 'posts')
-  LOOP
-    v_sql := format('SELECT count(*) FROM %I.%I WHERE %I = $1',
-      r.table_schema, r.table_name, r.column_name);
-
-    EXECUTE v_sql INTO v_count
-      USING CASE WHEN r.column_name = 'user_id' THEN p_user_id ELSE v_profile_id END;
-
-    IF v_count > 0 THEN
-      IF NOT p_dry_run THEN
-        v_sql := format('DELETE FROM %I.%I WHERE %I = $1',
-          r.table_schema, r.table_name, r.column_name);
-        EXECUTE v_sql
-          USING CASE WHEN r.column_name = 'user_id' THEN p_user_id ELSE v_profile_id END;
-      END IF;
-      affected_table := r.table_name; affected_column := r.column_name; rows_affected := v_count;
-      RETURN NEXT;
-    END IF;
-  END LOOP;
-
-  IF NOT p_dry_run THEN
-    DELETE FROM public.profiles WHERE id = v_profile_id;
-  END IF;
-  affected_table := 'profiles'; affected_column := 'id'; rows_affected := 1;
-  RETURN NEXT;
-END;
-$function$;
 
 -- [manifest 10] public.admin_overview_row()
 CREATE OR REPLACE FUNCTION public.admin_overview_row()
@@ -586,11 +414,13 @@ begin
       and (f.until is null or now() < f.until)
       and f.lifted_at is null
   ),
+  -- KAN-732 (KAN-714 B13): created_at is a SHARED fact, read from the game's events parent.
   games_week as (
     select count(*)::bigint as c
     from public.kan714_games_read g
-    where g.created_at >= wk_start
-      and g.created_at <  wk_end
+    join public.events e on e.id = g.event_id and e.event_type = 'game'
+    where e.created_at >= wk_start
+      and e.created_at <  wk_end
   ),
   reports as (
     select
@@ -772,6 +602,7 @@ CREATE OR REPLACE FUNCTION public.get_games_needing_players()
  SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
 AS $function$
+-- KAN-772: shared fields from events (same JSON keys, same filters and order).
 DECLARE
   result jsonb;
 BEGIN
@@ -779,24 +610,25 @@ BEGIN
   FROM (
     SELECT
       g.id                                      AS game_id,
-      g.sport_id,
-      g.area_id,
-      g.capacity,
+      e.sport_id,
+      e.area_id,
+      e.capacity,
       s.sport_key,
       a.city,
       COUNT(gr.profile_id)                      AS current_players,
-      g.capacity - COUNT(gr.profile_id)         AS spots_remaining,
+      e.capacity - COUNT(gr.profile_id)         AS spots_remaining,
       -- get all profile_ids already in this game as array
       ARRAY_AGG(gr.profile_id) FILTER (WHERE gr.profile_id IS NOT NULL) AS existing_profiles
     FROM public.kan714_games_read g
-    JOIN public.sports s       ON s.id = g.sport_id
-    JOIN public.areas a        ON a.id = g.area_id
+    JOIN public.events e       ON e.id = g.event_id AND e.event_type = 'game'
+    JOIN public.sports s       ON s.id = e.sport_id
+    JOIN public.areas a        ON a.id = e.area_id
     LEFT JOIN public.game_roster gr
                                ON gr.game_id = g.id AND gr.status = 'active'
-    WHERE g.is_cancelled = false
-      AND g.start_at > now()
-    GROUP BY g.id, g.sport_id, g.area_id, g.capacity, s.sport_key, a.city
-    HAVING g.capacity - COUNT(gr.profile_id) > 0
+    WHERE e.is_cancelled = false
+      AND e.start_at > now()
+    GROUP BY g.id, e.sport_id, e.area_id, e.capacity, s.sport_key, a.city
+    HAVING e.capacity - COUNT(gr.profile_id) > 0
     ORDER BY spots_remaining DESC
   ) t;
 
@@ -811,6 +643,7 @@ CREATE OR REPLACE FUNCTION public.get_open_games_for_seeding()
  SECURITY DEFINER
  SET search_path TO 'public', 'pg_temp'
 AS $function$
+-- KAN-772: shared fields from events (same JSON keys, same filters, order and limit).
 DECLARE
   result jsonb;
 BEGIN
@@ -818,31 +651,32 @@ BEGIN
   FROM (
     SELECT DISTINCT ON (g.id)
       g.id                    AS game_id,
-      g.sport_id,
-      g.area_id,
-      g.capacity,
-      g.start_at,
+      e.sport_id,
+      e.area_id,
+      e.capacity,
+      e.start_at,
       s.sport_key,
       a.city,
       p.id                    AS profile_id,
       p.user_id,
       p.display_name
     FROM public.kan714_games_read g
-    JOIN public.sports s       ON s.id = g.sport_id
-    JOIN public.areas a        ON a.id = g.area_id
+    JOIN public.events e       ON e.id = g.event_id AND e.event_type = 'game'
+    JOIN public.sports s       ON s.id = e.sport_id
+    JOIN public.areas a        ON a.id = e.area_id
     JOIN public.profiles p     ON p.city = a.city
-                               AND p.primary_sport = g.sport_id
+                               AND p.primary_sport = e.sport_id
                                AND p.is_original = false
     LEFT JOIN public.game_roster gr
                                ON gr.game_id = g.id
                                AND gr.profile_id = p.id
-    WHERE g.is_cancelled = false
-      AND g.start_at > now()
+    WHERE e.is_cancelled = false
+      AND e.start_at > now()
       AND gr.profile_id IS NULL
       AND (
         SELECT COUNT(*) FROM public.game_roster
         WHERE game_id = g.id AND status = 'active'
-      ) < g.capacity
+      ) < e.capacity
     ORDER BY g.id, random()
     LIMIT 10
   ) t;
@@ -886,9 +720,10 @@ BEGIN
                             WHERE mc.id = p_conversation_id AND mc.kind = 'meetup') THEN
            -- KAN-558: a meetup's members are its organiser and its 'going' RSVPs.
            COALESCE((SELECT array_agg(DISTINCT x.uid ORDER BY x.uid)
-                       FROM (SELECT mt.creator_user_id AS uid
+                       FROM (SELECT e.creator_user_id AS uid  -- KAN-730: organiser from the events parent
                                FROM public.msg_conversations mc
                                JOIN public.kan714_meetups_read mt ON mt.id = mc.meetup_id
+                               JOIN public.events e ON e.id = mt.event_id AND e.event_type = 'meetup'
                               WHERE mc.id = p_conversation_id
                              UNION
                              SELECT r.user_id
@@ -988,10 +823,12 @@ BEGIN
   -- the game rule with the game's reason strings: cancelled wins (game_cancelled), then ended (game_ended). A meetup
   -- with no end_at ends at its start_at (fails closed). game_id is returned NULL: a meetup is not a game.
   IF v_kind = 'meetup' THEN
-    SELECT c.meetup_id, mt.is_cancelled, COALESCE(mt.end_at, mt.start_at), mt.creator_user_id
+    -- KAN-730: the shared facts (cancelled, start/end, organiser) come from the events parent.
+    SELECT c.meetup_id, e.is_cancelled, COALESCE(e.end_at, e.start_at), e.creator_user_id
       INTO v_meetup_id, v_m_cancel, v_m_end_at, v_m_owner
       FROM public.msg_conversations c
       JOIN public.kan714_meetups_read mt ON mt.id = c.meetup_id
+      JOIN public.events e ON e.id = mt.event_id AND e.event_type = 'meetup'
      WHERE c.id = p_conversation_id;
     IF v_meetup_id IS NULL THEN
       RETURN QUERY SELECT NULL::text, 'not_member'::text, NULL::bigint, NULL::uuid;
@@ -1027,10 +864,12 @@ BEGIN
     RETURN;
   END IF;
 
-  SELECT c.game_id, g.is_cancelled, g.end_at
+  -- KAN-730: the shared facts (cancelled, end) come from the events parent.
+  SELECT c.game_id, e.is_cancelled, e.end_at
     INTO v_game_id, v_cancelled, v_end_at
     FROM public.msg_conversations c
     JOIN public.kan714_games_read g ON g.id = c.game_id
+    JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game'
    WHERE c.id = p_conversation_id;
 
   IF v_game_id IS NULL THEN
@@ -1093,13 +932,13 @@ AS $function$
       -- Game chats: the KAN-547 query, unchanged, plus the new columns.
       SELECT c.id AS conversation_id,
              g.id AS game_id,
-             g.title AS game_title,
+             e.title AS game_title,
              s.name_en AS sport,
-             g.start_at AS start_at,
-             g.end_at AS end_at,
+             e.start_at AS start_at,
+             e.end_at AS end_at,
              CASE
                WHEN m.status = 'left' THEN 'left'
-               WHEN g.is_cancelled OR g.end_at < now() THEN 'read_only'
+               WHEN e.is_cancelled OR e.end_at < now() THEN 'read_only'
                ELSE 'send'
              END AS state,
              c.last_activity_at AS last_activity_at,
@@ -1111,7 +950,9 @@ AS $function$
                       WHERE mm.conversation_id = c.id AND mm.user_id = auth.uid() AND mm.muted_at IS NOT NULL) AS muted
         FROM public.msg_conversations c
         JOIN public.kan714_games_read g ON g.id = c.game_id
-        LEFT JOIN public.sports s ON s.id = g.sport_id
+        -- KAN-730: title, sport, start, end, cancelled come from the events parent.
+        JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game'
+        LEFT JOIN public.sports s ON s.id = e.sport_id
         CROSS JOIN LATERAL (
           -- msg_evaluate's rule: one roster row per user and game, an active row wins, then a left row.
           SELECT r.status
@@ -1172,13 +1013,13 @@ AS $function$
       -- start and end fill the same columns a game row uses; game_id and the counterpart columns are NULL.
       SELECT c.id,
              mt.id,
-             mt.title,
+             e.title,
              ms.name_en,
-             mt.start_at,
-             mt.end_at,
+             e.start_at,
+             e.end_at,
              CASE
-               WHEN mt.creator_user_id <> auth.uid() AND mr.status = 'cancelled' THEN 'left'
-               WHEN mt.is_cancelled OR COALESCE(mt.end_at, mt.start_at) < now() THEN 'read_only'
+               WHEN e.creator_user_id <> auth.uid() AND mr.status = 'cancelled' THEN 'left'
+               WHEN e.is_cancelled OR COALESCE(e.end_at, e.start_at) < now() THEN 'read_only'
                ELSE 'send'
              END,
              c.last_activity_at,
@@ -1190,11 +1031,13 @@ AS $function$
                       WHERE mm.conversation_id = c.id AND mm.user_id = auth.uid() AND mm.muted_at IS NOT NULL)
         FROM public.msg_conversations c
         JOIN public.kan714_meetups_read mt ON mt.id = c.meetup_id
-        LEFT JOIN public.sports ms ON ms.id = mt.sport_id
+        -- KAN-730: title, sport, start, end, cancelled, organiser come from the events parent.
+        JOIN public.events e ON e.id = mt.event_id AND e.event_type = 'meetup'
+        LEFT JOIN public.sports ms ON ms.id = e.sport_id
         LEFT JOIN public.meetup_rsvps mr ON mr.meetup_id = mt.id AND mr.user_id = auth.uid()
        WHERE c.kind = 'meetup'
          AND auth.uid() IS NOT NULL
-         AND (mt.creator_user_id = auth.uid() OR mr.status IN ('going', 'cancelled'))
+         AND (e.creator_user_id = auth.uid() OR mr.status IN ('going', 'cancelled'))
     ) t
    ORDER BY t.last_activity_at DESC, t.start_at DESC NULLS LAST
    LIMIT least(greatest(coalesce(p_limit, 50), 1), 100);
@@ -1419,13 +1262,16 @@ declare
   vid uuid;
   bid uuid;
 begin
-  select * into m from public.kan714_meetups_read where id = p_meetup_id;
+  -- KAN-728: the creator comes from the events parent (pre-image read meetups.owner_user_id, which does not exist).
+  select mt.id, e.creator_user_id into m
+    from public.kan714_meetups_read mt join public.events e on e.id = mt.event_id and e.event_type = 'meetup'
+   where mt.id = p_meetup_id;
   if not found then raise exception using errcode='P0001', message='meetup_not_found'; end if;
 
   select s.venue_id into vid from public.venue_spaces s where s.id = p_space_id;
   if vid is null then raise exception using errcode='P0001', message='space_not_found'; end if;
 
-  if not (m.owner_user_id = auth.uid() or public.is_venue_admin(auth.uid(), vid) or public.is_admin(auth.uid())) then
+  if not (m.creator_user_id = auth.uid() or public.is_venue_admin(auth.uid(), vid) or public.is_admin(auth.uid())) then
     raise exception using errcode='P0001', message='not_authorized';
   end if;
 
@@ -1454,7 +1300,7 @@ BEGIN
   -- Request-id lookup FIRST, before every guard and limit. Only the creator is ever served the row.
   v_uid := public.effective_actor_uid();
   IF v_uid IS NOT NULL THEN
-    SELECT g.id INTO gid FROM public.kan714_games_read g WHERE g.creator_user_id = v_uid AND g.request_id = p_request_id;
+    SELECT g.id INTO gid FROM public.kan714_games_read g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
     IF gid IS NOT NULL THEN RETURN gid; END IF;
   END IF;
   PERFORM set_config('thebes.create_request_id', p_request_id::text, true);
@@ -1464,7 +1310,7 @@ BEGIN
     GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
     PERFORM set_config('thebes.create_request_id', '', true);
     IF v_constraint IS DISTINCT FROM 'games_creator_user_request_id_key' THEN RAISE; END IF;
-    SELECT g.id INTO gid FROM public.kan714_games_read g WHERE g.creator_user_id = v_uid AND g.request_id = p_request_id;
+    SELECT g.id INTO gid FROM public.kan714_games_read g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
     IF gid IS NULL THEN RAISE; END IF;
     RETURN gid;
   END;
@@ -1489,7 +1335,7 @@ BEGIN
   -- Request-id lookup FIRST, before every guard and limit. Only the creator is ever served the row.
   v_uid := public.effective_actor_uid();
   IF v_uid IS NOT NULL THEN
-    SELECT m.id INTO mid FROM public.kan714_meetups_read m WHERE m.creator_user_id = v_uid AND m.request_id = p_request_id;
+    SELECT m.id INTO mid FROM public.kan714_meetups_read m JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
     IF mid IS NOT NULL THEN RETURN mid; END IF;
   END IF;
   PERFORM set_config('thebes.create_request_id', p_request_id::text, true);
@@ -1499,7 +1345,7 @@ BEGIN
     GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
     PERFORM set_config('thebes.create_request_id', '', true);
     IF v_constraint IS DISTINCT FROM 'meetups_creator_user_request_id_key' THEN RAISE; END IF;
-    SELECT m.id INTO mid FROM public.kan714_meetups_read m WHERE m.creator_user_id = v_uid AND m.request_id = p_request_id;
+    SELECT m.id INTO mid FROM public.kan714_meetups_read m JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
     IF mid IS NULL THEN RAISE; END IF;
     RETURN mid;
   END;
@@ -1507,970 +1353,6 @@ BEGIN
   RETURN mid;
 END;
 $function$;
-
--- [manifest 53] public.rpc_decide_join_request(uuid,boolean)
-CREATE OR REPLACE FUNCTION public.rpc_decide_join_request(p_request_id uuid, p_approve boolean)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  req   record;
-  slots int;
-BEGIN
-  SELECT jr.*, g.creator_user_id
-  INTO req
-  FROM public.game_join_requests jr
-  JOIN public.games g ON g.id = jr.game_id
-  WHERE jr.id = p_request_id
-  FOR UPDATE;
-
-  IF NOT FOUND THEN
-    RAISE EXCEPTION USING errcode='P0001', message='request_not_found';
-  END IF;
-  -- KAN-714: the FOR UPDATE above stays on public.games (KAN-712 lock order); the host is re-read from
-  -- events through the owner-only overlay.
-  SELECT k714g.creator_user_id INTO req.creator_user_id FROM public.kan714_games_read k714g WHERE k714g.id = req.game_id;
-
-  IF req.creator_user_id <> auth.uid() AND NOT public.is_admin(auth.uid()) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='not_host';
-  END IF;
-
-  IF req.status <> 'pending' THEN RETURN 'already_decided'; END IF;
-
-  IF p_approve THEN
-    slots := public.kan714_game_slots_left(req.game_id);
-
-    UPDATE public.game_join_requests
-       SET status = 'approved', decided_at = now()
-     WHERE id = p_request_id;
-
-    IF slots > 0 THEN
-      INSERT INTO public.game_roster(game_id, profile_id, role, status)
-      VALUES (req.game_id, req.from_profile_id, 'player', 'active')
-      ON CONFLICT (game_id, profile_id) DO UPDATE
-        SET status = 'active', left_at = null;
-
-      -- Notify the requester (entity_type 'game' also yields the
-      -- /sports/games/<id> deep link). Never let notification failure
-      -- roll back the approval itself.
-      BEGIN
-        PERFORM public.process_notification_event(
-          req.from_user_id,
-          'game.join_accepted',
-          'game',
-          req.game_id,
-          auth.uid(),
-          'You''re in! Your request to join was accepted'
-        );
-      EXCEPTION WHEN OTHERS THEN
-        RAISE WARNING 'join_accepted notification failed: %', SQLERRM;
-      END;
-
-      RETURN 'approved_joined';
-    ELSE
-      INSERT INTO public.game_waitlist(game_id, profile_id, user_id, position)
-      SELECT req.game_id, req.from_profile_id, req.from_user_id,
-             COALESCE((SELECT MAX(position)+1 FROM public.game_waitlist WHERE game_id = req.game_id), 1)
-      ON CONFLICT DO NOTHING;
-
-      BEGIN
-        PERFORM public.process_notification_event(
-          req.from_user_id,
-          'game.join_accepted',
-          'game',
-          req.game_id,
-          auth.uid(),
-          'Request approved — the game is full, you''re on the waitlist'
-        );
-      EXCEPTION WHEN OTHERS THEN
-        RAISE WARNING 'join_accepted (waitlist) notification failed: %', SQLERRM;
-      END;
-
-      RETURN 'approved_waitlisted';
-    END IF;
-  ELSE
-    UPDATE public.game_join_requests
-       SET status = 'denied', decided_at = now()
-     WHERE id = p_request_id;
-    RETURN 'denied';
-  END IF;
-END;
-$function$;
-
--- [manifest 57] public.rpc_get_activity_feed(text,integer,timestamp with time zone)
-CREATE OR REPLACE FUNCTION public.rpc_get_activity_feed(_period text DEFAULT 'all'::text, _limit integer DEFAULT 50, _cursor timestamp with time zone DEFAULT NULL::timestamp with time zone)
- RETURNS TABLE(id uuid, subject_type text, subject_id uuid, verb text, status text, time_bucket text, happened_at timestamp with time zone, scheduled_for timestamp with time zone, priority integer, payload jsonb)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-BEGIN
-  RETURN QUERY
-  WITH me AS (
-    SELECT auth.uid() AS user_id
-  ),
-  game_created AS (
-    SELECT
-      g.id                                                          AS id,
-      'game'::text                                                  AS subject_type,
-      g.id                                                          AS subject_id,
-      'created'::text                                               AS verb,
-      NULL::text                                                    AS status,
-      CASE
-        WHEN g.end_at < NOW()                              THEN 'past'
-        WHEN g.start_at <= NOW() AND g.end_at >= NOW()    THEN 'present'
-        WHEN g.start_at > NOW()                           THEN 'upcoming'
-        ELSE 'past'
-      END                                                           AS time_bucket,
-      g.created_at                                                  AS happened_at,
-      g.start_at                                                    AS scheduled_for,
-      90                                                            AS priority,
-      jsonb_build_object('role', 'host')                            AS payload
-    FROM public.kan714_games_read g
-    JOIN me ON g.creator_user_id = me.user_id
-    WHERE g.is_cancelled = false
-  ),
-  game_joined AS (
-    SELECT
-      g.id                                                          AS id,
-      'game'::text                                                  AS subject_type,
-      g.id                                                          AS subject_id,
-      'joined'::text                                                AS verb,
-      NULL::text                                                    AS status,
-      CASE
-        WHEN g.end_at < NOW()                              THEN 'past'
-        WHEN g.start_at <= NOW() AND g.end_at >= NOW()    THEN 'present'
-        WHEN g.start_at > NOW()                           THEN 'upcoming'
-        ELSE 'past'
-      END                                                           AS time_bucket,
-      gr.joined_at                                                  AS happened_at,
-      g.start_at                                                    AS scheduled_for,
-      80                                                            AS priority,
-      jsonb_build_object('role', 'player')                          AS payload
-    FROM public.game_roster gr
-    JOIN public.kan714_games_read g ON g.id = gr.game_id
-    JOIN me ON gr.user_id = me.user_id
-    WHERE gr.status = 'active'
-      AND g.is_cancelled = false
-      AND g.creator_user_id <> me.user_id
-  ),
-  game_events AS (
-    SELECT * FROM game_created
-    UNION ALL
-    SELECT * FROM game_joined
-  ),
-  filtered AS (
-    SELECT * FROM game_events e
-    WHERE (_period = 'all' OR e.time_bucket = _period)
-      AND (_cursor IS NULL OR e.happened_at < _cursor)
-  )
-  SELECT f.* FROM filtered f
-  ORDER BY
-    CASE f.time_bucket WHEN 'upcoming' THEN 1 WHEN 'present' THEN 2 WHEN 'past' THEN 3 END,
-    f.scheduled_for ASC,
-    f.happened_at DESC,
-    f.priority DESC
-  LIMIT _limit;
-END;
-$function$;
-
--- [manifest 58] public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text)
-CREATE OR REPLACE FUNCTION public.rpc_get_nearby_games(p_lat double precision, p_lng double precision, p_radius_meters integer DEFAULT 10000, p_sport_id uuid DEFAULT NULL::uuid, p_sort text DEFAULT 'distance'::text)
- RETURNS TABLE(id uuid, title text, sport_name text, scheduled_at timestamp with time zone, status text, venue_name text, latitude double precision, longitude double precision, distance_meters double precision, player_count integer, spots_remaining integer, is_public boolean, min_skill integer, max_skill integer, end_at timestamp with time zone, variant_name_en text, variant_name_ar text, cost_cover text, joining_rule text, host_verified boolean, favorite_count integer, favourited_by_me boolean)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-  select
-    g.id,
-    coalesce(g.title, 'Untitled Game')    as title,
-    s.name_en                              as sport_name,
-    g.start_at                             as scheduled_at,
-    case
-      when g.is_cancelled         then 'cancelled'
-      when now() >= g.end_at      then 'ended'
-      when now() >= g.start_at    then 'live'
-      else                             'upcoming'
-    end                                    as status,
-    ven.name_en                            as venue_name,
-    st_y(gl.location::geometry)            as latitude,
-    st_x(gl.location::geometry)            as longitude,
-    st_distance(
-      gl.location,
-      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-    )                                      as distance_meters,
-    coalesce(roster.cnt, 0)::int           as player_count,
-    greatest(g.capacity - coalesce(roster.cnt, 0), 0)::int as spots_remaining,
-    (g.listing_visibility = 'public')      as is_public,
-    g.min_skill,
-    g.max_skill,
-    g.end_at,
-    sv.name_en                             as variant_name_en,
-    sv.name_ar                             as variant_name_ar,
-    g.cost_cover,
-    g.joining_rule,
-    (coalesce((select pv.verified from profile_verifications pv
-                where pv.profile_id = g.creator_profile_id), false)
-     or exists (select 1 from organiser o
-                where o.profile_id = g.creator_profile_id and o.sport = s.sport_key
-                  and o.is_verified and o.is_active)) as host_verified,
-    (select count(*) from public.favorites f where f.game_id = g.id)::int as favorite_count,
-    exists (select 1 from public.favorites f
-            where f.game_id = g.id and f.user_id = auth.uid()) as favourited_by_me
-  from   public.kan714_games_read g
-  join   geo_locations gl on g.geo_location_id = gl.id
-  join   sports s         on s.id = g.sport_id
-  left   join sport_variants sv on sv.id = g.sport_variant_id
-  left   join venue_spaces vs on vs.id = g.venue_space_id
-  left   join venues ven      on ven.id = coalesce(vs.venue_id, g.venue_id)
-  left   join lateral (
-    select count(*) as cnt
-    from   game_roster gr
-    where  gr.game_id = g.id
-      and  gr.status  = 'active'
-      and  (gr.role = 'player' or (gr.role = 'host' and g.game_type = 'hosted'))
-  ) roster on true
-  where  g.is_cancelled = false
-    and  g.start_at > now()
-    and  st_dwithin(
-           gl.location,
-           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-           p_radius_meters
-         )
-    and  (p_sport_id is null or g.sport_id = p_sport_id)
-    and  (
-           (g.listing_visibility = 'public' and not public.is_blocked(auth.uid(), g.creator_user_id))
-           or g.creator_user_id = auth.uid()
-           or public.can_view_with_scope(
-                auth.uid(), g.creator_user_id, g.listing_visibility, g.squad_id
-              )
-         )
-  order  by
-    case when p_sort = 'distance'
-         then st_distance(
-                gl.location,
-                st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-              )
-    end asc nulls last,
-    g.start_at asc
-  limit 50;
-$function$;
-
--- [manifest 59] public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)
-CREATE OR REPLACE FUNCTION public.rpc_get_nearby_games(p_lat double precision, p_lng double precision, p_radius_meters integer DEFAULT 10000, p_sport_id uuid DEFAULT NULL::uuid, p_sort text DEFAULT 'distance'::text, p_max_price numeric DEFAULT NULL::numeric)
- RETURNS TABLE(id uuid, title text, sport_name text, scheduled_at timestamp with time zone, status text, venue_name text, latitude double precision, longitude double precision, distance_meters double precision, player_count integer, spots_remaining integer, is_public boolean, min_skill integer, max_skill integer, end_at timestamp with time zone, variant_name_en text, variant_name_ar text, cost_cover text, joining_rule text, host_verified boolean, favorite_count integer, favourited_by_me boolean, price_aed numeric)
- LANGUAGE sql
- STABLE SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-  select
-    g.id,
-    coalesce(g.title, 'Untitled Game')    as title,
-    s.name_en                              as sport_name,
-    g.start_at                             as scheduled_at,
-    case
-      when g.is_cancelled         then 'cancelled'
-      when now() >= g.end_at      then 'ended'
-      when now() >= g.start_at    then 'live'
-      else                             'upcoming'
-    end                                    as status,
-    ven.name_en                            as venue_name,
-    st_y(gl.location::geometry)            as latitude,
-    st_x(gl.location::geometry)            as longitude,
-    st_distance(
-      gl.location,
-      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-    )                                      as distance_meters,
-    coalesce(roster.cnt, 0)::int           as player_count,
-    greatest(g.capacity - coalesce(roster.cnt, 0), 0)::int as spots_remaining,
-    (g.listing_visibility = 'public')      as is_public,
-    g.min_skill,
-    g.max_skill,
-    g.end_at,
-    sv.name_en                             as variant_name_en,
-    sv.name_ar                             as variant_name_ar,
-    g.cost_cover,
-    g.joining_rule,
-    (coalesce((select pv.verified from profile_verifications pv
-                where pv.profile_id = g.creator_profile_id), false)
-     or exists (select 1 from organiser o
-                where o.profile_id = g.creator_profile_id and o.sport = s.sport_key
-                  and o.is_verified and o.is_active)) as host_verified,
-    (select count(*) from public.favorites f where f.game_id = g.id)::int as favorite_count,
-    exists (select 1 from public.favorites f
-            where f.game_id = g.id and f.user_id = auth.uid()) as favourited_by_me,
-    g.price_aed
-  from   public.kan714_games_read g
-  join   geo_locations gl on g.geo_location_id = gl.id
-  join   sports s         on s.id = g.sport_id
-  left   join sport_variants sv on sv.id = g.sport_variant_id
-  left   join venue_spaces vs on vs.id = g.venue_space_id
-  left   join venues ven      on ven.id = coalesce(vs.venue_id, g.venue_id)
-  left   join lateral (
-    select count(*) as cnt
-    from   game_roster gr
-    where  gr.game_id = g.id
-      and  gr.status  = 'active'
-      and  (gr.role = 'player' or (gr.role = 'host' and g.game_type = 'hosted'))
-  ) roster on true
-  where  g.is_cancelled = false
-    and  g.start_at > now()
-    and  st_dwithin(
-           gl.location,
-           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
-           p_radius_meters
-         )
-    and  (p_sport_id is null or g.sport_id = p_sport_id)
-    and  (p_max_price is null or g.price_aed <= p_max_price)
-    and  (
-           (g.listing_visibility = 'public' and not public.is_blocked(auth.uid(), g.creator_user_id))
-           or g.creator_user_id = auth.uid()
-           or public.can_view_with_scope(
-                auth.uid(), g.creator_user_id, g.listing_visibility, g.squad_id
-              )
-         )
-  order  by
-    case when p_sort = 'distance'
-         then st_distance(
-                gl.location,
-                st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
-              )
-    end asc nulls last,
-    case when p_sort = 'price' then g.price_aed end asc nulls last,
-    g.start_at asc
-  limit 50;
-$function$;
-
--- [manifest 60] public.rpc_invite_user(uuid,uuid)
-CREATE OR REPLACE FUNCTION public.rpc_invite_user(p_game_id uuid, p_to_user_id uuid)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE gid uuid;
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM public.kan714_games_read g
-    WHERE g.id = p_game_id
-      AND (g.creator_user_id = auth.uid() OR public.is_admin(auth.uid()))
-  ) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='not_host';
-  END IF;
-
-  INSERT INTO public.game_invites(game_id, to_user_id, invited_by_profile_id, status)
-  VALUES (
-    p_game_id,
-    p_to_user_id,
-    (SELECT id FROM public.profiles WHERE user_id = auth.uid() AND profile_type = 'organiser' LIMIT 1),
-    'pending'
-  )
-  RETURNING id INTO gid;
-
-  RETURN gid;
-END$function$;
-
--- [manifest 61] public.rpc_join_game(text,uuid,uuid)
-CREATE OR REPLACE FUNCTION public.rpc_join_game(p_actor_type text, p_game_id uuid, p_link_token uuid DEFAULT NULL::uuid)
- RETURNS TABLE(result text, roster_status text, waitlist_position integer)
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  decision jsonb;
-  pid uuid;
-  uid uuid := auth.uid();
-  g record;
-  slots int;
-BEGIN
-  decision := public.can_current_user_join_game(p_game_id, p_actor_type, p_link_token);
-
-  IF COALESCE((decision->>'allowed')::boolean, false) = false THEN
-    RAISE EXCEPTION USING
-      errcode = 'P0001',
-      message = COALESCE(decision->>'cta', 'not_allowed'),
-      detail  = COALESCE(decision->>'reason', '');
-  END IF;
-
-  pid := public.choose_actor(p_actor_type);
-
-  IF (decision->>'cta') = 'join_with_link' THEN
-    PERFORM public._consume_link_token(p_game_id, p_link_token);
-  END IF;
-
-  IF (decision->>'cta') = 'request' THEN
-    INSERT INTO public.game_join_requests(game_id, from_profile_id, status)
-    VALUES (p_game_id, pid, 'pending')
-    ON CONFLICT DO NOTHING;
-    result := 'request_submitted'; roster_status := NULL; waitlist_position := NULL; RETURN NEXT; RETURN;
-  END IF;
-
-  SELECT * INTO g FROM public.games WHERE id = p_game_id FOR UPDATE;
-  slots := public.kan714_game_slots_left(p_game_id);
-
-  IF slots > 0 THEN
-    INSERT INTO public.game_roster(game_id, profile_id, role, status)
-    VALUES (p_game_id, pid, 'player', 'active')
-    ON CONFLICT (game_id, profile_id) DO UPDATE SET status='active', left_at=NULL;
-    result := 'joined'; roster_status := 'active'; waitlist_position := NULL; RETURN NEXT; RETURN;
-  ELSE
-    INSERT INTO public.game_waitlist(game_id, profile_id, user_id, position)
-    SELECT p_game_id, pid, uid,
-           COALESCE((SELECT max(position)+1 FROM public.game_waitlist WHERE game_id = p_game_id), 1)
-    ON CONFLICT DO NOTHING;
-    waitlist_position := (SELECT position FROM public.game_waitlist WHERE game_id=p_game_id AND profile_id=pid);
-    result := 'waitlisted'; roster_status := NULL; RETURN NEXT; RETURN;
-  END IF;
-END;
-$function$;
-
--- [manifest 65] public.rpc_meetup_decide_request(uuid,uuid,text)
-CREATE OR REPLACE FUNCTION public.rpc_meetup_decide_request(p_meetup_id uuid, p_user_id uuid, p_decision text)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-declare
-  me      uuid := auth.uid();
-  m       public.meetups%rowtype;
-  v_cur   text;
-  v_new   text;
-begin
-  if me is null then
-    raise exception using errcode='P0001', message='auth_required';
-  end if;
-
-  if p_decision is null or p_decision not in ('approve','decline') then
-    raise exception using errcode='P0001', message='invalid_decision';
-  end if;
-
-  select * into m from public.meetups where id = p_meetup_id for update;
-  if not found then
-    raise exception using errcode='P0001', message='meetup_not_found';
-  end if;
-  -- KAN-714: the FOR UPDATE above stays on public.meetups (KAN-712 lock order); shared fields re-read from
-  -- events through the owner-only overlay.
-  select * into m from public.kan714_meetups_read where id = p_meetup_id;
-
-  if not (m.creator_user_id = me or public.is_admin(me)) then
-    raise exception using errcode='P0001', message='not_host';
-  end if;
-
-  if m.is_cancelled then
-    raise exception using errcode='P0001', message='meetup_cancelled';
-  end if;
-
-  select r.status into v_cur
-    from public.meetup_rsvps r
-   where r.meetup_id = p_meetup_id and r.user_id = p_user_id
-   for update;
-  if not found or v_cur <> 'pending' then
-    raise exception using errcode='P0001', message='no_pending_request';
-  end if;
-
-  if p_decision = 'approve' then
-    if public.kan714_meetup_slots_left(p_meetup_id) <= 0 then
-      v_new := 'interested';
-    else
-      v_new := 'going';
-    end if;
-    update public.meetup_rsvps
-       set status = v_new, updated_at = now()
-     where meetup_id = p_meetup_id and user_id = p_user_id;
-    perform public.emit_event('meetup.request_approved','meetup', p_meetup_id, me,
-              jsonb_build_object('user_id', p_user_id, 'status', v_new));
-  else
-    v_new := 'cancelled';
-    update public.meetup_rsvps
-       set status = v_new, updated_at = now()
-     where meetup_id = p_meetup_id and user_id = p_user_id;
-    perform public.emit_event('meetup.request_declined','meetup', p_meetup_id, me,
-              jsonb_build_object('user_id', p_user_id));
-  end if;
-
-  return v_new;
-end;
-$function$;
-
--- [manifest 69] public.rpc_meetup_remove_attendee(uuid,uuid)
-CREATE OR REPLACE FUNCTION public.rpc_meetup_remove_attendee(p_meetup_id uuid, p_user_id uuid)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public', 'pg_temp'
-AS $function$
-declare
-  me  uuid := auth.uid();
-  m   public.meetups%rowtype;
-begin
-  if me is null then
-    raise exception using errcode='P0001', message='auth_required';
-  end if;
-
-  select * into m from public.meetups where id = p_meetup_id for update;
-  if not found then
-    raise exception using errcode='P0001', message='meetup_not_found';
-  end if;
-  -- KAN-714: the FOR UPDATE above stays on public.meetups (KAN-712 lock order); shared fields re-read from
-  -- events through the owner-only overlay.
-  select * into m from public.kan714_meetups_read where id = p_meetup_id;
-
-  if not (m.creator_user_id = me or public.is_admin(me)) then
-    raise exception using errcode='P0001', message='not_host';
-  end if;
-
-  if p_user_id = m.creator_user_id then
-    raise exception using errcode='P0001', message='cannot_remove_host';
-  end if;
-
-  update public.meetup_rsvps
-     set status = 'cancelled', updated_at = now()
-   where meetup_id = p_meetup_id and user_id = p_user_id
-     and status in ('going','interested','pending');
-  if not found then
-    raise exception using errcode='P0001', message='attendee_not_found';
-  end if;
-
-  perform public.emit_event('meetup.attendee_removed','meetup', p_meetup_id, me,
-            jsonb_build_object('user_id', p_user_id));
-  return 'cancelled';
-end;
-$function$;
-
--- [manifest 70] public.rpc_meetup_rsvp(uuid,text,uuid,uuid)
-CREATE OR REPLACE FUNCTION public.rpc_meetup_rsvp(p_meetup_id uuid, p_action text, p_profile_id uuid DEFAULT NULL::uuid, p_link_token uuid DEFAULT NULL::uuid)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-declare
-  d jsonb;
-  u uuid := auth.uid();
-  slots int;
-  v_profile_id uuid;
-begin
-  if u is null then raise exception using errcode='P0001', message='auth_required'; end if;
-
-  -- p_profile_id is accepted for signature compatibility and deliberately ignored.
-  select p.id into v_profile_id
-  from public.profiles p
-  where p.user_id = u and p.is_active = true
-  order by p.created_at asc
-  limit 1;
-
-  -- 'cancel' stores no attribution, so it is not gated on having a profile.
-  if p_action <> 'cancel' and v_profile_id is null then
-    raise exception using errcode='P0001', message='no_active_profile';
-  end if;
-
-  d := public.can_current_user_rsvp_meetup(p_meetup_id, p_link_token);
-
-  -- KAN-786: leaving. The eligibility helper answers "may this caller JOIN?", and for a current member it
-  -- answers allowed=false/cta='already' -- which used to block the member's own leave. For 'cancel' that one
-  -- denial is the expected state; every other denial (anon/frozen/not_found/not_visible/cancelled/started/
-  -- policy_mismatch) still refuses exactly as before. A caller with no active RSVP gets 'not_attending'.
-  if p_action = 'cancel' then
-    if coalesce((d->>'allowed')::boolean, false) = false
-       and coalesce(d->>'cta','not_allowed') <> 'already' then
-      raise exception using errcode='P0001', message=coalesce(d->>'cta','not_allowed');
-    end if;
-    update public.meetup_rsvps set status='cancelled', updated_at=now()
-    where meetup_id = p_meetup_id and user_id = u and status in ('going','interested','pending');
-    if not found then
-      raise exception using errcode='P0001', message='not_attending';
-    end if;
-    perform public.emit_event('meetup.rsvp_cancelled','meetup', p_meetup_id, u, jsonb_build_object('profile_id', v_profile_id));
-    return 'cancelled';
-  end if;
-
-  if coalesce((d->>'allowed')::boolean, false) = false then
-    raise exception using errcode='P0001', message=coalesce(d->>'cta','not_allowed');
-  end if;
-
-  -- Accept invite path
-  if p_action = 'accept_invite' then
-    update public.meetup_invites
-       set status='accepted'
-     where meetup_id = p_meetup_id and to_user_id = u and status='pending';
-  end if;
-
-  -- Link consumption if needed
-  if (d->>'cta') = 'rsvp_going' and (select rsvp_policy from public.kan714_meetups_read where id=p_meetup_id) = 'link' then
-    perform public._meetup_link_consume(p_meetup_id, p_link_token);
-  end if;
-
-  -- Capacity check for 'going' (interested doesn't consume)
-  if p_action in ('going','accept_invite') then
-    select public.kan714_meetup_slots_left(p_meetup_id) into slots;
-    if slots = 0 then
-      -- mark as interested instead of failing hard
-      insert into public.meetup_rsvps(meetup_id, user_id, profile_id, status)
-      values (p_meetup_id, u, v_profile_id, 'interested')
-      on conflict (meetup_id, user_id) do update set status='interested', profile_id=excluded.profile_id, updated_at=now();
-      perform public.emit_event('meetup.waitlisted','meetup', p_meetup_id, u, jsonb_build_object('reason','full'));
-      return 'interested';
-    end if;
-  end if;
-
-  -- Apply action
-  if p_action = 'going' or p_action = 'accept_invite' then
-    insert into public.meetup_rsvps(meetup_id, user_id, profile_id, status)
-    values (p_meetup_id, u, v_profile_id, 'going')
-    on conflict (meetup_id, user_id) do update set status='going', profile_id=excluded.profile_id, updated_at=now();
-    perform public.emit_event('meetup.rsvp_going','meetup', p_meetup_id, u, jsonb_build_object('profile_id', v_profile_id));
-    return 'going';
-
-  elsif p_action = 'interested' then
-    insert into public.meetup_rsvps(meetup_id, user_id, profile_id, status)
-    values (p_meetup_id, u, v_profile_id, 'interested')
-    on conflict (meetup_id, user_id) do update set status='interested', profile_id=excluded.profile_id, updated_at=now();
-    perform public.emit_event('meetup.rsvp_interested','meetup', p_meetup_id, u, jsonb_build_object('profile_id', v_profile_id));
-    return 'interested';
-
-  elsif p_action = 'request' then
-    -- translate to pending; owner may approve later (future)
-    insert into public.meetup_rsvps(meetup_id, user_id, profile_id, status)
-    values (p_meetup_id, u, v_profile_id, 'pending')
-    on conflict (meetup_id, user_id) do update set status='pending', profile_id=excluded.profile_id, updated_at=now();
-    perform public.emit_event('meetup.rsvp_requested','meetup', p_meetup_id, u, jsonb_build_object('profile_id', v_profile_id));
-    return 'pending';
-
-  else
-    raise exception using errcode='P0001', message='invalid_action';
-  end if;
-end;
-$function$;
-
--- [manifest 74] public.rpc_mint_join_link(uuid,timestamp with time zone,integer)
-CREATE OR REPLACE FUNCTION public.rpc_mint_join_link(p_game_id uuid, p_expires_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_max_uses integer DEFAULT NULL::integer)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE t uuid;
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1 FROM public.kan714_games_read g
-    WHERE g.id = p_game_id
-      AND (g.creator_user_id = auth.uid() OR public.is_admin(auth.uid()))
-  ) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='not_host';
-  END IF;
-
-  t := gen_random_uuid();
-
-  INSERT INTO public.game_link_tokens(game_id, token, created_by, expires_at, max_uses)
-  VALUES (p_game_id, t, auth.uid(), p_expires_at, p_max_uses);
-
-  RETURN t;
-END;
-$function$;
-
--- [manifest 75] public.rpc_rate_game(uuid,uuid,jsonb,text)
-CREATE OR REPLACE FUNCTION public.rpc_rate_game(p_game_id uuid, p_rater_profile_id uuid, p_scores jsonb, p_comment text DEFAULT NULL::text)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-declare
-  g record;
-  prof record;
-  r_user uuid;
-  d record; v numeric;
-begin
-  if auth.uid() is null then raise exception using errcode='P0001', message='auth_required'; end if;
-
-  select id, end_at, is_cancelled into g from public.kan714_games_read where id=p_game_id;
-  if not found or g.is_cancelled then raise exception using errcode='P0001', message='game_not_ratable'; end if;
-  if now() > g.end_at + interval '7 days' then raise exception using errcode='P0001', message='rating_window_closed'; end if;
-
-  select id, user_id, profile_type into prof from public.profiles where id=p_rater_profile_id;
-  if not found or prof.user_id <> auth.uid() then raise exception using errcode='P0001', message='not_profile_owner'; end if;
-  if prof.profile_type <> 'player' then raise exception using errcode='P0001', message='organiser_cannot_rate_game'; end if;
-  r_user := prof.user_id;
-
-  if not public._user_played_in_game(r_user, p_game_id) then
-    raise exception using errcode='P0001', message='rater_not_in_game';
-  end if;
-
-  if exists (select 1 from public.game_rating_events where game_id=p_game_id and rater_user_id=r_user) then
-    raise exception using errcode='P0001', message='already_rated';
-  end if;
-
-  if p_scores is null or jsonb_typeof(p_scores) <> 'object' then
-    raise exception using errcode='P0001', message='invalid_scores';
-  end if;
-
-  for d in select key from public.game_rating_dimensions where is_active loop
-    if p_scores ? d.key then
-      v := (p_scores ->> d.key)::numeric;
-      if v is null then raise exception using errcode='P0001', message='score_not_numeric'; end if;
-      if v < 0 or v > 5 then raise exception using errcode='P0001', message='score_out_of_range'; end if;
-    end if;
-  end loop;
-
-  insert into public.game_rating_events(game_id, rater_user_id, rater_profile_id, scores, comment)
-  values (p_game_id, r_user, p_rater_profile_id, p_scores, left(p_comment, 280));
-
-  perform public.game_rating_recompute(p_game_id);
-
-  return 'ok';
-end;
-$function$;
-
--- [manifest 76] public.rpc_rate_user(uuid,uuid,uuid,jsonb,text)
-CREATE OR REPLACE FUNCTION public.rpc_rate_user(p_game_id uuid, p_rater_profile_id uuid, p_ratee_user_id uuid, p_scores jsonb, p_comment text DEFAULT NULL::text)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  g              record;
-  rater_user     uuid;
-  rprof          record;
-  ratee_is_host  boolean;
-  window_ok      boolean;
-  d              record;
-  k text; v numeric;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION USING errcode='P0001', message='auth_required'; END IF;
-
-  SELECT id, creator_user_id, start_at, end_at, is_cancelled INTO g FROM public.kan714_games_read WHERE id = p_game_id;
-  IF NOT FOUND OR g.is_cancelled THEN RAISE EXCEPTION USING errcode='P0001', message='game_not_ratable'; END IF;
-
-  window_ok := (now() <= g.end_at + interval '7 days');
-  IF NOT window_ok THEN RAISE EXCEPTION USING errcode='P0001', message='rating_window_closed'; END IF;
-
-  SELECT id, user_id, profile_type INTO rprof FROM public.profiles WHERE id = p_rater_profile_id;
-  IF NOT FOUND OR rprof.user_id <> auth.uid() THEN
-    RAISE EXCEPTION USING errcode='P0001', message='not_profile_owner';
-  END IF;
-  IF rprof.profile_type <> 'player' THEN
-    RAISE EXCEPTION USING errcode='P0001', message='organiser_cannot_rate_user';
-  END IF;
-
-  rater_user := rprof.user_id;
-
-  IF NOT EXISTS (SELECT 1 FROM public.game_roster WHERE game_id = p_game_id AND user_id = rater_user AND status = 'active') THEN
-    RAISE EXCEPTION USING errcode='P0001', message='rater_not_in_game';
-  END IF;
-
-  ratee_is_host := (p_ratee_user_id = g.creator_user_id);
-  IF NOT ratee_is_host AND NOT EXISTS (
-    SELECT 1 FROM public.game_roster WHERE game_id = p_game_id AND user_id = p_ratee_user_id AND status = 'active'
-  ) THEN RAISE EXCEPTION USING errcode='P0001', message='ratee_not_in_game'; END IF;
-
-  IF p_ratee_user_id = rater_user THEN
-    RAISE EXCEPTION USING errcode='P0001', message='cannot_rate_self';
-  END IF;
-
-  IF EXISTS (SELECT 1 FROM public.user_reputation_events WHERE game_id = p_game_id AND rater_user_id = rater_user AND ratee_user_id = p_ratee_user_id) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='already_rated';
-  END IF;
-
-  IF p_scores IS NULL OR jsonb_typeof(p_scores) <> 'object' THEN
-    RAISE EXCEPTION USING errcode='P0001', message='invalid_scores';
-  END IF;
-
-  FOR d IN
-    SELECT key FROM public.reputation_dimensions
-    WHERE is_active = true
-      AND (
-        (ratee_is_host     AND 'rate_organiser' = ANY(applicable_to)) OR
-        (NOT ratee_is_host AND 'rate_player'    = ANY(applicable_to))
-      )
-  LOOP
-    k := d.key;
-    IF p_scores ? k THEN
-      v := (p_scores ->> k)::numeric;
-      IF v IS NULL THEN RAISE EXCEPTION USING errcode='P0001', message='score_not_numeric'; END IF;
-      IF v < 0 OR v > 5 THEN RAISE EXCEPTION USING errcode='P0001', message='score_out_of_range'; END IF;
-    END IF;
-  END LOOP;
-
-  INSERT INTO public.user_reputation_events(game_id, rater_user_id, rater_profile_id, ratee_user_id, scores, comment)
-  VALUES (p_game_id, rater_user, p_rater_profile_id, p_ratee_user_id, p_scores, LEFT(p_comment, 280));
-
-  PERFORM public.reputation_recompute(p_ratee_user_id);
-  RETURN 'ok';
-END;
-$function$;
-
--- [manifest 77] public.rpc_rate_venue(uuid,uuid,uuid,jsonb,text)
-CREATE OR REPLACE FUNCTION public.rpc_rate_venue(p_game_id uuid, p_venue_id uuid, p_rater_profile_id uuid, p_scores jsonb, p_comment text DEFAULT NULL::text)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE
-  g      record;
-  prof   record;
-  r_user uuid;
-  d record; v numeric;
-  tied boolean;
-BEGIN
-  IF auth.uid() IS NULL THEN RAISE EXCEPTION USING errcode='P0001', message='auth_required'; END IF;
-
-  SELECT id, creator_user_id, end_at, is_cancelled INTO g FROM public.kan714_games_read WHERE id = p_game_id;
-  IF NOT FOUND OR g.is_cancelled THEN RAISE EXCEPTION USING errcode='P0001', message='game_not_ratable'; END IF;
-
-  IF NOT public._game_belongs_to_venue(p_game_id, p_venue_id) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='venue_mismatch';
-  END IF;
-  IF now() > g.end_at + interval '7 days' THEN
-    RAISE EXCEPTION USING errcode='P0001', message='rating_window_closed';
-  END IF;
-
-  SELECT id, user_id, profile_type INTO prof FROM public.profiles WHERE id = p_rater_profile_id;
-  IF NOT FOUND OR prof.user_id <> auth.uid() THEN
-    RAISE EXCEPTION USING errcode='P0001', message='not_profile_owner';
-  END IF;
-  r_user := prof.user_id;
-
-  IF prof.profile_type = 'player' THEN
-    tied := public._user_played_in_game(r_user, p_game_id);
-  ELSE
-    tied := public.kan714_user_hosted_game(r_user, p_game_id);
-  END IF;
-  IF NOT tied THEN RAISE EXCEPTION USING errcode='P0001', message='rater_not_tied_to_game'; END IF;
-
-  IF EXISTS (SELECT 1 FROM public.venue_rating_events WHERE game_id = p_game_id AND venue_id = p_venue_id AND rater_user_id = r_user) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='already_rated';
-  END IF;
-
-  IF p_scores IS NULL OR jsonb_typeof(p_scores) <> 'object' THEN
-    RAISE EXCEPTION USING errcode='P0001', message='invalid_scores';
-  END IF;
-
-  FOR d IN SELECT key FROM public.venue_rating_dimensions WHERE is_active LOOP
-    IF p_scores ? d.key THEN
-      v := (p_scores ->> d.key)::numeric;
-      IF v IS NULL THEN RAISE EXCEPTION USING errcode='P0001', message='score_not_numeric'; END IF;
-      IF v < 0 OR v > 5 THEN RAISE EXCEPTION USING errcode='P0001', message='score_out_of_range'; END IF;
-    END IF;
-  END LOOP;
-
-  INSERT INTO public.venue_rating_events(game_id, venue_id, rater_user_id, rater_profile_id, scores, comment)
-  VALUES (p_game_id, p_venue_id, r_user, p_rater_profile_id, p_scores, LEFT(p_comment, 280));
-
-  PERFORM public.venue_rating_recompute(p_venue_id);
-  RETURN 'ok';
-END;
-$function$;
-
--- [manifest 78] public.rpc_recreate_from_game(uuid,boolean)
-CREATE OR REPLACE FUNCTION public.rpc_recreate_from_game(p_game_id uuid, p_shift_week boolean DEFAULT true)
- RETURNS uuid
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-DECLARE g record; payload jsonb; did uuid;
-BEGIN
-  SELECT id, sport_id, venue_space_id, start_at, end_at, capacity, listing_visibility, join_policy, title
-  INTO g FROM public.kan714_games_read WHERE id = p_game_id;
-
-  IF NOT FOUND THEN RAISE EXCEPTION USING errcode='P0001', message='game_not_found'; END IF;
-
-  IF NOT EXISTS(
-    SELECT 1 FROM public.kan714_games_read gg
-    WHERE gg.id = p_game_id
-      AND (gg.creator_user_id = auth.uid() OR public.is_admin(auth.uid()))
-  ) THEN
-    RAISE EXCEPTION USING errcode='P0001', message='not_authorized';
-  END IF;
-
-  payload := jsonb_build_object(
-    'sport_id',           g.sport_id,
-    'venue_space_id',     g.venue_space_id,
-    'start_at',           CASE WHEN p_shift_week THEN public._next_week_same_time(g.start_at) ELSE g.start_at END,
-    'end_at',             CASE WHEN p_shift_week THEN public._next_week_same_time(g.end_at)   ELSE g.end_at   END,
-    'capacity',           g.capacity,
-    'listing_visibility', g.listing_visibility,
-    'join_policy',        g.join_policy,
-    'title',              g.title
-  );
-
-  did := public.rpc_draft_create('game', payload);
-  RETURN did;
-END;
-$function$;
-
--- [manifest 79] public.rpc_remove_player(uuid,uuid)
-CREATE OR REPLACE FUNCTION public.rpc_remove_player(p_game_id uuid, p_profile_id uuid)
- RETURNS text
- LANGUAGE plpgsql
- SECURITY DEFINER
- SET search_path TO 'public'
-AS $function$
-declare
-  v_creator uuid;
-  v_target record;
-  w_profile uuid;
-  upsert_ct int := 0;
-begin
-  select creator_user_id into v_creator
-  from public.kan714_games_read
-  where id = p_game_id and is_cancelled = false;
-  if v_creator is null then
-    raise exception using errcode='P0001', message='game_not_found';
-  end if;
-  if v_creator <> auth.uid() and not public.is_admin(auth.uid()) then
-    raise exception using errcode='P0001', message='not_host';
-  end if;
-
-  select * into v_target
-  from public.game_roster
-  where game_id = p_game_id and profile_id = p_profile_id and status = 'active'
-  for update;
-  if not found then
-    raise exception using errcode='P0001', message='player_not_on_roster';
-  end if;
-  if v_target.role = 'host' then
-    raise exception using errcode='P0001', message='cannot_remove_host';
-  end if;
-
-  update public.game_roster
-     set status = 'kicked', left_at = now()
-   where game_id = p_game_id and profile_id = p_profile_id;
-
-  if v_target.user_id is not null then
-    perform public.process_notification_event(
-      v_target.user_id,
-      'game.removed',
-      'game',
-      p_game_id,
-      auth.uid(),
-      'You''ve been removed from a game'
-    );
-  end if;
-
-  select wl.profile_id into w_profile
-  from public.game_waitlist wl
-  where wl.game_id = p_game_id
-  order by wl.position asc
-  limit 1;
-  if w_profile is null then return 'removed'; end if;
-
-  insert into public.game_roster (game_id, profile_id, role, status)
-  values (p_game_id, w_profile, 'player', 'active')
-  on conflict (game_id, profile_id) do update set status='active', left_at=null;
-  get diagnostics upsert_ct = row_count;
-  delete from public.game_waitlist
-  where game_id = p_game_id and profile_id = w_profile;
-
-  if upsert_ct > 0 then return 'removed_promoted_waitlist'; end if;
-  return 'removed';
-end$function$;
 
 -- [manifest 81] public.rpc_search_entities(text,text[],text,integer)
 CREATE OR REPLACE FUNCTION public.rpc_search_entities(p_q text, p_scope text[] DEFAULT ARRAY['people'::text, 'venues'::text, 'squads'::text, 'games'::text, 'arenas'::text], p_sport text DEFAULT NULL::text, p_limit integer DEFAULT 40)
@@ -2675,12 +1557,15 @@ BEGIN
         ORDER BY score DESC LIMIT p_limit_per_section) t),
     'games', (
       SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
-        SELECT 'game' AS entity_type, g.id AS entity_id, g.title AS title,
-          NULL::text AS subtitle, NULL::text AS image_url, '/game/' || g.id AS route,
-          ts_rank(g.search_tsv, v_tsquery) + CASE WHEN g.start_at > NOW() THEN 0.2 ELSE 0 END AS score
-        FROM public.kan714_games_read g
-        WHERE g.search_tsv @@ v_tsquery AND g.listing_visibility = 'public' AND g.is_cancelled = FALSE
-        ORDER BY score DESC LIMIT p_limit_per_section) t),
+        SELECT 'game' AS entity_type, e.id AS entity_id, e.title AS title,
+          NULL::text AS subtitle, NULL::text AS image_url, '/game/' || e.id AS route,
+          ts_rank(e.search_tsv, v_tsquery) + CASE WHEN e.start_at > NOW() THEN 0.2 ELSE 0 END AS score
+        FROM public.events e
+        JOIN public.kan714_games_read g ON g.event_id = e.id
+        WHERE e.event_type = 'game' AND e.search_tsv @@ v_tsquery
+          AND e.listing_visibility = 'public' AND e.is_cancelled = FALSE
+          AND g.listing_visibility = 'public' AND g.is_cancelled = FALSE
+        ORDER BY score DESC, e.start_at, e.id LIMIT p_limit_per_section) t),
     'venues', (
       SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
         SELECT 'venue' AS entity_type, v.id AS entity_id, v.name_en AS title,
@@ -2697,12 +1582,15 @@ BEGIN
         ORDER BY score DESC LIMIT p_limit_per_section) t),
     'meetups', (
       SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
-        SELECT 'meetup' AS entity_type, m.id AS entity_id, m.title AS title,
-          m.location_name AS subtitle, NULL::text AS image_url, '/meetup/' || m.id AS route,
+        SELECT 'meetup' AS entity_type, e.id AS entity_id, e.title AS title,
+          m.location_name AS subtitle, NULL::text AS image_url, '/meetup/' || e.id AS route,
           ts_rank(m.search_tsv, v_tsquery) AS score
-        FROM public.kan714_meetups_read m WHERE m.search_tsv @@ v_tsquery
+        FROM public.kan714_meetups_read m
+        JOIN public.events e ON e.id = m.event_id
+        WHERE e.event_type = 'meetup' AND m.search_tsv @@ v_tsquery
+          AND e.listing_visibility = 'public' AND e.is_cancelled = FALSE
           AND m.listing_visibility = 'public' AND m.is_cancelled = FALSE
-        ORDER BY score DESC LIMIT p_limit_per_section) t),
+        ORDER BY score DESC, e.start_at, e.id LIMIT p_limit_per_section) t),
     'challenges', (
       SELECT COALESCE(jsonb_agg(row_to_json(t)), '[]'::jsonb) FROM (
         SELECT 'challenge' AS entity_type, c.id AS entity_id, c.title AS title,
@@ -2741,13 +1629,17 @@ begin
     raise exception using errcode='P0001', message='auth_required';
   end if;
 
-  -- T-069 Q1: organiser and sport are DERIVED, never accepted. games.creator_user_id is the
+  -- T-069 Q1: organiser and sport are DERIVED, never accepted. KAN-729 (KAN-714 B10): both are
+  -- SHARED facts and are read from the game's events parent — events.creator_user_id is the
   -- authoritative identity (profiles.id is a surrogate and is not an auth uid); the sport text key
-  -- is sports.sport_key, reached through games.sport_id (NOT NULL, FK -> sports).
-  select g.creator_user_id, s.sport_key
+  -- is sports.sport_key, reached through events.sport_id (events_game_sport_required holds it
+  -- NOT NULL for event_type='game', FK -> sports). games stays the lookup key: p_game_id is a
+  -- games.id, games.event_id is NOT NULL + FK-validated (KAN-712), events.id is the PK.
+  select e.creator_user_id, s.sport_key
     into v_organiser_user_id, v_sport
   from public.kan714_games_read g
-  join public.sports s on s.id = g.sport_id
+  join public.events e on e.id = g.event_id and e.event_type = 'game'
+  join public.sports s on s.id = e.sport_id
   where g.id = p_game_id;
 
   if not found then
@@ -2948,8 +1840,10 @@ BEGIN
     RETURN NEW;
   END IF;
 
-  SELECT m.creator_user_id, m.title INTO v_host_uid, v_title
-    FROM public.kan714_meetups_read m WHERE m.id = NEW.meetup_id;
+  SELECT e.creator_user_id, e.title INTO v_host_uid, v_title
+    FROM public.kan714_meetups_read m
+    JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup'   -- KAN-731: shared columns from events
+   WHERE m.id = NEW.meetup_id;
   IF v_host_uid IS NULL THEN RETURN NEW; END IF;
 
   SELECT p.display_name INTO v_name
@@ -3092,8 +1986,8 @@ BEGIN
     RAISE EXCEPTION 'KAN-714/2 post: kan714_preimage_2 readable by an API role';
   END IF;
   SELECT count(*) INTO n FROM public.kan714_preimage_2;
-  IF n <> 39 + 5 THEN
-    RAISE EXCEPTION 'KAN-714/2 post: kan714_preimage_2 has % rows, expected %', n, 39 + 5;
+  IF n <> 22 + 5 THEN
+    RAISE EXCEPTION 'KAN-714/2 post: kan714_preimage_2 has % rows, expected %', n, 22 + 5;
   END IF;
 END
 $post$;
