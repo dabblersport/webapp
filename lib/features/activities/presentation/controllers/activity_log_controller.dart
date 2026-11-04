@@ -22,6 +22,7 @@ class ActivityLogState {
     this.feedError,
     this.socialError,
     this.category = 'all',
+    this.query = '',
     this.feedCursor,
     this.feedHasMore = true,
     this.socialOffset = 0,
@@ -37,6 +38,9 @@ class ActivityLogState {
   final String? feedError;
   final String? socialError;
   final String category;
+
+  /// KAN-874: the search text, applied after [category]. Blank = no search.
+  final String query;
   final DateTime? feedCursor;
   final bool feedHasMore;
   final int socialOffset;
@@ -44,8 +48,11 @@ class ActivityLogState {
 
   String? get error => feedError ?? socialError;
   bool get hasMore => feedHasMore || socialHasMore;
+
+  /// Category first, then search. [activities] stays the full list, so the
+  /// Last 7 days statistics (read from it) never see the query.
   List<ActivityFeedEvent> get filteredActivities =>
-      filterActivityLog(activities, category);
+      searchActivityLog(filterActivityLog(activities, category), query);
 
   /// A genuinely empty log: every source answered, and answered nothing.
   bool get isEmpty => loaded && error == null && activities.isEmpty;
@@ -60,6 +67,7 @@ class ActivityLogState {
     Object? feedError = _keep,
     Object? socialError = _keep,
     String? category,
+    String? query,
     Object? feedCursor = _keep,
     bool? feedHasMore,
     int? socialOffset,
@@ -76,6 +84,7 @@ class ActivityLogState {
         ? this.socialError
         : socialError as String?,
     category: category ?? this.category,
+    query: query ?? this.query,
     feedCursor: identical(feedCursor, _keep)
         ? this.feedCursor
         : feedCursor as DateTime?,
@@ -104,7 +113,11 @@ class ActivityLogController extends StateNotifier<ActivityLogState> {
 
   /// First page of both sources. Also the Retry and pull-to-refresh action.
   Future<void> load() async {
-    state = ActivityLogState(isLoading: true, category: state.category);
+    state = ActivityLogState(
+      isLoading: true,
+      category: state.category,
+      query: state.query,
+    );
     final results = await Future.wait(<Future<_Page>>[
       _fetchFeed(null),
       _fetchSocial(0),
@@ -136,6 +149,11 @@ class ActivityLogController extends StateNotifier<ActivityLogState> {
   /// Selects a chip. `all` restores the full list.
   void changeCategory(String? category) {
     state = state.copyWith(category: category ?? 'all');
+  }
+
+  /// KAN-874: sets the search text. The category is kept.
+  void changeQuery(String query) {
+    state = state.copyWith(query: query);
   }
 
   void _apply(_Page feed, _Page social, List<ActivityFeedEvent> existing) {
