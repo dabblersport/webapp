@@ -26,9 +26,9 @@
 \set fut_pre  f10269f818183d9a3eb7289cbcff03a2
 \set can_post 3efd11063a2140fadb93bfa50ea493c6
 \set can_pre  ec5ee9a4f81371da8f49d57f0147eea4
-\set occ_w ff5fc97a110d512d95e68702c4875377
-\set fut_w ae0eb67d40f150276cca5e8d9483d812
-\set can_w 5dfc8373693466514bcfca3e169aa932
+\set occ_w be3938f0b159dc143078453459882869
+\set fut_w 0e3c35846ebd4a3fe1ca84beca17b31e
+\set can_w 8493f1848f68cba137c86d5a05af3bab
 \set a1 00000000-0000-0000-0000-0000000000a1
 \set a2 00000000-0000-0000-0000-0000000000a2
 \set a3 00000000-0000-0000-0000-0000000000a3
@@ -127,7 +127,7 @@ SELECT pg_temp.chk('S-' || f.k || '-' || k.k, k.got, k.want)
      ('vol',    p.provolatile::text, 'v'),
      ('owner',  pg_get_userbyid(p.proowner), 'postgres'),
      ('lang',   (SELECT lanname FROM pg_language l WHERE l.oid = p.prolang)::text, 'plpgsql'),
-     ('config', p.proconfig::text, CASE WHEN f.inner_fn THEN '{"search_path=public, pg_temp"}' ELSE '{"search_path=\"\"",kan712.contract=on}' END),
+     ('config', p.proconfig::text, CASE WHEN f.inner_fn THEN '{"search_path=public, pg_temp"}' ELSE '{"search_path=\"\""}' END),  -- KAN-850 step 6c
      ('acl',    p.proacl::text, CASE WHEN f.inner_fn THEN '{postgres=X/postgres}' ELSE '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}' END)
   ) k(k, got, want)
  ORDER BY f.k, k.k;
@@ -151,9 +151,9 @@ SELECT pg_temp.chk('D-occ-wrapper', md5(pg_get_functiondef('public.rpc_edit_game
 SELECT pg_temp.chk('D-fut-wrapper', md5(pg_get_functiondef('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)'::regprocedure)), :'fut_w');
 SELECT pg_temp.chk('D-can-wrapper', md5(pg_get_functiondef('public.rpc_cancel_game_series(uuid,text)'::regprocedure)), :'can_w');
 SELECT pg_temp.chk('D-untouched-' || fn, md5(pg_get_functiondef(fn::regprocedure)), md)
-  FROM (VALUES ('public.fn_generate_game_series_occurrences(uuid)', '9502f276a2158bf9f57b6130a796ae29'),
+  FROM (VALUES ('public.fn_generate_game_series_occurrences(uuid)', '89f358af2af7d98468c59055d8639190'),
                ('public.fn_generate_game_series_occurrences_kan712_inner(uuid)', '382e19ce66e66b1b0660f50163de36e3'),
-               ('public.rpc_cancel_game(uuid,text)', 'bf9763ac173e917cab60949d801e86f2')) t(fn, md);
+               ('public.rpc_cancel_game(uuid,text)', '8d12b2b734153a7b45759f027f012927')) t(fn, md);
 
 -- ---------------------------------------------------------------- legacy: the pre-image inner bodies, verbatim, in pg_temp
 CREATE FUNCTION pg_temp.legacy_occ(p_game_id uuid, p_title text DEFAULT NULL::text, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_capacity integer DEFAULT NULL::integer, p_venue_space_id uuid DEFAULT NULL::uuid)

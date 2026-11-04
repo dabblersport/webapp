@@ -107,7 +107,7 @@ DECLARE r record;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
       ('public.rpc_cancel_game_kan712_inner(uuid,text)', 'e12056fd977b7305f8318e60a49b6f1b', '0b5bd8bbda5cfac206e75b262503c0cf'),
-      ('public.rpc_cancel_game(uuid,text)',              'bf9763ac173e917cab60949d801e86f2', '04c4a67e76499824dc9a632fd70e63fc')
+      ('public.rpc_cancel_game(uuid,text)',              '8d12b2b734153a7b45759f027f012927', '32e9b96473d6351cc2a10db926212822')
     ) AS t(fn, md_def, md_src)
   LOOP
     IF to_regprocedure(r.fn) IS NULL THEN
@@ -217,7 +217,7 @@ BEGIN
   -- New inner definition pinned; wrapper byte-identical to the pre-image.
   FOR r IN SELECT * FROM (VALUES
       ('public.rpc_cancel_game_kan712_inner(uuid,text)', '89cb182331912604be5f093b650e83d7'),
-      ('public.rpc_cancel_game(uuid,text)',              'bf9763ac173e917cab60949d801e86f2')) AS t(fn, md)
+      ('public.rpc_cancel_game(uuid,text)',              '8d12b2b734153a7b45759f027f012927')) AS t(fn, md)
   LOOP
     v := md5(pg_get_functiondef(to_regprocedure(r.fn)));
     IF v IS DISTINCT FROM r.md THEN
@@ -243,7 +243,8 @@ BEGIN
          ON p.pronamespace = 'public'::regnamespace AND p.proname = w.name
         AND pg_get_function_identity_arguments(p.oid) = w.identity_args
        WHERE w.name = 'rpc_cancel_game'
-         AND 'kan712.contract=on' = ANY (p.proconfig)
+         AND p.proconfig = ARRAY['search_path=""']  -- KAN-850 step 6c: flag set in the body, no SET clause
+         AND position('set_config(''kan712.contract'', ''on'', true)' IN p.prosrc) > 0
          AND p.prosrc LIKE '%public.' || w.inner_name || '(%'
          AND p.prosrc LIKE '%FOR UPDATE%'
          AND p.proacl::text IS NOT DISTINCT FROM w.original_acl::text) <> 1 THEN
@@ -281,12 +282,12 @@ COMMIT;
 -- ---------------------------------------------------------------------------------------------------------
 -- ROLLBACK (commented; run as one transaction, superuser). Restores the pre-image body through the same contract
 -- path. Pins: inner 89cb182331912604be5f093b650e83d7 before, e12056fd977b7305f8318e60a49b6f1b after; wrapper
--- bf9763ac173e917cab60949d801e86f2 throughout.
+-- 8d12b2b734153a7b45759f027f012927 throughout.
 -- ---------------------------------------------------------------------------------------------------------
 -- BEGIN;
 -- DO $rb$ BEGIN
 --   IF md5(pg_get_functiondef('public.rpc_cancel_game_kan712_inner(uuid,text)'::regprocedure)) <> '89cb182331912604be5f093b650e83d7'
---      OR md5(pg_get_functiondef('public.rpc_cancel_game(uuid,text)'::regprocedure)) <> 'bf9763ac173e917cab60949d801e86f2' THEN
+--      OR md5(pg_get_functiondef('public.rpc_cancel_game(uuid,text)'::regprocedure)) <> '8d12b2b734153a7b45759f027f012927' THEN
 --     RAISE EXCEPTION 'KAN-810 rollback: not the KAN-810 post-image, stop';
 --   END IF;
 -- END $rb$;
@@ -312,7 +313,7 @@ COMMIT;
 -- SELECT public.kan712_wrap_rpc('public.rpc_cancel_game(uuid,text)'::regprocedure, lock_spec) FROM pg_temp.kan810_rb;
 -- DO $rb2$ BEGIN
 --   IF md5(pg_get_functiondef('public.rpc_cancel_game_kan712_inner(uuid,text)'::regprocedure)) <> 'e12056fd977b7305f8318e60a49b6f1b'
---      OR md5(pg_get_functiondef('public.rpc_cancel_game(uuid,text)'::regprocedure)) <> 'bf9763ac173e917cab60949d801e86f2'
+--      OR md5(pg_get_functiondef('public.rpc_cancel_game(uuid,text)'::regprocedure)) <> '8d12b2b734153a7b45759f027f012927'
 --      OR (SELECT proacl::text FROM pg_proc WHERE oid = 'public.rpc_cancel_game(uuid,text)'::regprocedure)
 --         IS DISTINCT FROM '{postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}'
 --      OR (SELECT proacl::text FROM pg_proc WHERE oid = 'public.rpc_cancel_game_kan712_inner(uuid,text)'::regprocedure)

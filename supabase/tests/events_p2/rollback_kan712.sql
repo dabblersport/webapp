@@ -113,7 +113,9 @@ BEGIN
                  aclexplode(coalesce(p.proacl, acldefault('f', p.proowner))) a WHERE p.oid = r.f AND a.grantee <> p.proowner)) THEN
       RAISE EXCEPTION 'KAN-712 rollback: ACL of %(%) not restored', r.name, r.identity_args;
     END IF;
-    IF EXISTS (SELECT 1 FROM pg_proc WHERE oid = r.f AND 'kan712.contract=on' = ANY (coalesce(proconfig, '{}'))) THEN
+    IF EXISTS (SELECT 1 FROM pg_proc WHERE oid = r.f AND ('kan712.contract=on' = ANY  -- pre-KAN-850 wrapper shape (history)
+                  (coalesce(proconfig, '{}'))
+                 OR position('set_config(''kan712.contract'', ''on'', true)' IN prosrc) > 0)) THEN  -- KAN-850 wrapper shape
       RAISE EXCEPTION 'KAN-712 rollback: %(%) is still a wrapper', r.name, r.identity_args;
     END IF;
   END LOOP;
