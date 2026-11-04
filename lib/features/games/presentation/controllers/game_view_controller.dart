@@ -459,8 +459,10 @@ class GameViewController extends StateNotifier<GameViewState> {
         (table: SupabaseConfig.gameRosterTable, column: 'game_id'),
         (table: SupabaseConfig.gameWaitlistTable, column: 'game_id'),
         (table: SupabaseConfig.gameJoinRequestsTable, column: 'game_id'),
+        // KAN-864: no games entry. Every game field (capacity, skill, ...)
+        // lives on events (KAN-710) and every games write routes its shared
+        // values to events first (KAN-712), so the events entry covers edits.
         (table: SupabaseConfig.eventsTable, column: 'id'),
-        (table: SupabaseConfig.gamesTable, column: 'id'),
       ],
       gameId,
       _scheduleRealtimeRefresh,

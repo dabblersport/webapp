@@ -111,8 +111,9 @@ void main() {
     expect(writes, isEmpty, reason: 'controller wrote to events/games');
   });
 
-  test('one game_view channel carries events + games beside the three '
-      'existing listeners, each filtered by the game id', () async {
+  test('one game_view channel carries events beside the three '
+      'existing listeners, each filtered by the game id (KAN-864: no games)',
+      () async {
     final c = build();
     addTearDown(c.dispose);
     await settle();
@@ -126,8 +127,12 @@ void main() {
       (table: SupabaseConfig.gameWaitlistTable, column: 'game_id'),
       (table: SupabaseConfig.gameJoinRequestsTable, column: 'game_id'),
       (table: 'events', column: 'id'),
-      (table: 'games', column: 'id'),
     ]);
+    expect(
+      ch.listeners.where((l) => l.table == SupabaseConfig.gamesTable),
+      isEmpty,
+      reason: 'KAN-864: the legacy games table is no longer subscribed',
+    );
   });
 
   test('a burst of change callbacks yields exactly one reload', () async {

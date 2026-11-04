@@ -1426,8 +1426,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String query,
   ) => guard(() async {
     final rows = await _db
-        .from(SupabaseConfig.gamesTable)
-        .select('id, title, sport, game_type, start_at, end_at')
+        // KAN-715: event-backed card (public.games is RLS-on, no policy; and
+        // it has no `sport` column). sport is the sport key, as the sheet reads.
+        .from(SupabaseConfig.vGameCardTable)
+        .select('id, title, sport:sport_key, game_type, start_at, end_at')
         .ilike('title', '%$query%')
         .eq('is_cancelled', false)
         .limit(20)

@@ -1,4 +1,5 @@
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/profile/organiser_profile.dart';
@@ -73,7 +74,7 @@ final sportProfileCoreProvider = FutureProvider.autoDispose
             .eq('sport', args.sportKey)
             .maybeSingle()
             .then<dynamic>((row) => row);
-        final hostedGamesFuture = _fetchHostedGameRows(
+        final hostedGamesFuture = fetchHostedGameRows(
           supabase: supabase,
           args: args,
         );
@@ -247,14 +248,20 @@ List<SportProfileMetric> _buildPlayerMetrics(
   ];
 }
 
-Future<List<Map<String, dynamic>>> _fetchHostedGameRows({
+/// KAN-715: hosted games for the organiser metrics come from the event-backed
+/// v_game_card (public.games is RLS-on with no policy, so reading it returned
+/// no rows). The card has no creator_user_id; it is scoped by the persona's
+/// creator_profile_id instead (KAN-744 precedent). The card is
+/// visibility-gated, so only games the viewer may see are counted.
+@visibleForTesting
+Future<List<Map<String, dynamic>>> fetchHostedGameRows({
   required dynamic supabase,
   required SportProfileRouteArgs args,
 }) async {
   final hostedRows = await supabase
-      .from(SupabaseConfig.gamesTable)
+      .from(SupabaseConfig.vGameCardTable)
       .select('id, is_cancelled, start_at')
-      .eq('creator_user_id', args.userId)
+      .eq('creator_profile_id', args.profileId)
       .eq('sport_id', args.sportId);
   return (hostedRows as List).cast<Map<String, dynamic>>();
 }
