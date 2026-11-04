@@ -63,7 +63,6 @@ class _Acts extends StateNotifier<PublicActivitiesState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-
 UserProfile _me() => UserProfile(
   id: 'profile-c',
   userId: 'user-1',
@@ -79,7 +78,12 @@ UserProfile _me() => UserProfile(
 );
 
 const List<Sport> _sports = [
-  Sport(id: 'sport-football', nameEn: 'Football', sportKey: 'football', emoji: 'x'),
+  Sport(
+    id: 'sport-football',
+    nameEn: 'Football',
+    sportKey: 'football',
+    emoji: 'x',
+  ),
   Sport(id: 'sport-padel', nameEn: 'Padel', sportKey: 'padel', emoji: 'x'),
 ];
 
@@ -210,11 +214,13 @@ void main() {
     await loadRenderFonts();
   });
 
-  testWidgets('hero with no sport chosen opens /activities', (tester) async {
+  testWidgets('hero with no sport chosen opens nothing: All Activities moved '
+      'to the Home bell (KAN-852)', (tester) async {
     final _Landed l = await _pump(tester);
-    await tester.tap(find.byType(DabblerStatTile).first);
+    await tester.tap(find.byType(DabblerStatTile).first, warnIfMissed: false);
     await _settle(tester);
-    expect(l.uri?.path, RoutePaths.activities);
+    expect(l.uri, isNull);
+    expect(l.uri?.path, isNot(RoutePaths.activities));
   });
 
   testWidgets('hero with a sport chosen opens that personal Sport Profile', (
@@ -232,7 +238,9 @@ void main() {
     expect(l.uri?.queryParameters['persona'], 'contributor');
   });
 
-  testWidgets('Followers and Following push the own profile id', (tester) async {
+  testWidgets('Followers and Following push the own profile id', (
+    tester,
+  ) async {
     final _Landed l = await _pump(tester);
     await tester.tap(find.textContaining('Followers').first);
     await _settle(tester);
@@ -247,39 +255,43 @@ void main() {
     expect(l.params['profileId'], 'profile-c');
   });
 
-  testWidgets('Upcoming and organised rows open the game; Create game opens the composer', (
-    tester,
-  ) async {
-    final _Landed l = await _pump(tester);
-    await tester.tap(find.byKey(const ValueKey<String>('contributor-game-g-play')));
-    await _settle(tester);
-    expect(l.uri?.path, RoutePaths.gameDetail('g-play'));
-    GoRouter.of(tester.element(find.text('landed'))).pop();
-    await _settle(tester);
-    l.reset();
-    // g-org sits in Upcoming and in Games I organise; tap the organised copy.
-    await tester.tap(
-      find.byKey(const ValueKey<String>('contributor-game-g-org')).last,
-    );
-    await _settle(tester);
-    expect(l.uri?.path, RoutePaths.gameDetail('g-org'));
-    GoRouter.of(tester.element(find.text('landed'))).pop();
-    await _settle(tester);
-    l.reset();
-    await tester.tap(find.text('Create game'));
-    await _settle(tester);
-    expect(l.uri?.path, RoutePaths.createGame);
-  });
+  testWidgets(
+    'Upcoming and organised rows open the game; Create game opens the composer',
+    (tester) async {
+      final _Landed l = await _pump(tester);
+      await tester.tap(
+        find.byKey(const ValueKey<String>('contributor-game-g-play')),
+      );
+      await _settle(tester);
+      expect(l.uri?.path, RoutePaths.gameDetail('g-play'));
+      GoRouter.of(tester.element(find.text('landed'))).pop();
+      await _settle(tester);
+      l.reset();
+      // g-org sits in Upcoming and in Games I organise; tap the organised copy.
+      await tester.tap(
+        find.byKey(const ValueKey<String>('contributor-game-g-org')).last,
+      );
+      await _settle(tester);
+      expect(l.uri?.path, RoutePaths.gameDetail('g-org'));
+      GoRouter.of(tester.element(find.text('landed'))).pop();
+      await _settle(tester);
+      l.reset();
+      await tester.tap(find.text('Create game'));
+      await _settle(tester);
+      expect(l.uri?.path, RoutePaths.createGame);
+    },
+  );
 
-  testWidgets('new contributor: hero is inert, Find a game opens the Games tab', (
-    tester,
-  ) async {
-    final _Landed l = await _pump(tester, empty: true);
-    await tester.tap(find.byType(DabblerStatTile).first);
-    await _settle(tester);
-    expect(l.uri, isNull);
-    await tester.tap(find.text('Find a game'));
-    await _settle(tester);
-    expect(l.uri?.path, RoutePaths.gamesTab);
-  });
+  testWidgets(
+    'new contributor: hero is inert, Find a game opens the Games tab',
+    (tester) async {
+      final _Landed l = await _pump(tester, empty: true);
+      await tester.tap(find.byType(DabblerStatTile).first);
+      await _settle(tester);
+      expect(l.uri, isNull);
+      await tester.tap(find.text('Find a game'));
+      await _settle(tester);
+      expect(l.uri?.path, RoutePaths.gamesTab);
+    },
+  );
 }
