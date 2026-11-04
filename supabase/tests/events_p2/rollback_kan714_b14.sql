@@ -3,7 +3,7 @@
 -- Restores the pre-images of the three KAN-712 inner bodies verbatim (pg_get_functiondef of the KAN-713 stage
 -- catalogue) through the same KAN712_CONTRACT.md path the migration uses: kan712_unwrap_rpc -> CREATE OR REPLACE of
 -- the unwrapped public name -> kan712_wrap_rpc with the recorded lock_spec. The KAN-712 wrapper is regenerated and
--- asserted identical to its pre-image (md5, ACL, kan712.contract=on); inner oids, owners and ACLs are unchanged;
+-- asserted identical to its pre-image (md5, ACL, proconfig {search_path=""} and the body set_config of kan712.contract -- KAN-850); inner oids, owners and ACLs are unchanged;
 -- kan712_wrapped_rpcs is identical except wrapped_at of the three rows; every other wrapped RPC is byte-identical.
 -- Must run BEFORE any KAN-712 rollback (which renames the inners back); if the inners no longer exist it refuses.
 -- Refuses unless ALL THREE live inner definitions are exactly the migration's post-images, so a second run, a partial
@@ -234,9 +234,9 @@ BEGIN
       ('public.rpc_edit_game_series_occurrence_kan712_inner(uuid,text,timestamptz,timestamptz,integer,uuid)', '76a813d1110538c2f3be870b65ead001'),
       ('public.rpc_edit_game_series_future_kan712_inner(uuid,text,integer,time,integer,uuid,date,boolean)',   'f10269f818183d9a3eb7289cbcff03a2'),
       ('public.rpc_cancel_game_series_kan712_inner(uuid,text)',                                               'ec5ee9a4f81371da8f49d57f0147eea4'),
-      ('public.rpc_edit_game_series_occurrence(uuid,text,timestamptz,timestamptz,integer,uuid)',              'ff5fc97a110d512d95e68702c4875377'),
-      ('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)',                'ae0eb67d40f150276cca5e8d9483d812'),
-      ('public.rpc_cancel_game_series(uuid,text)',                                                            '5dfc8373693466514bcfca3e169aa932')) AS t(fn, md)
+      ('public.rpc_edit_game_series_occurrence(uuid,text,timestamptz,timestamptz,integer,uuid)',              'be3938f0b159dc143078453459882869'),
+      ('public.rpc_edit_game_series_future(uuid,text,integer,time,integer,uuid,date,boolean)',                '0e3c35846ebd4a3fe1ca84beca17b31e'),
+      ('public.rpc_cancel_game_series(uuid,text)',                                                            '8493f1848f68cba137c86d5a05af3bab')) AS t(fn, md)
   LOOP
     v := md5(pg_get_functiondef(to_regprocedure(r.fn)));
     IF v IS DISTINCT FROM r.md THEN
@@ -261,12 +261,13 @@ BEGIN
      OR EXISTS (SELECT row_text FROM kan733_rb_now EXCEPT SELECT row_text FROM kan733_rb_wrapped) THEN
     RAISE EXCEPTION 'KAN-733 rollback post: kan712_wrapped_rpcs changed';
   END IF;
-  -- The wrapper is back: kan712.contract=on, calls its inner, ACL = recorded original ACL.
+  -- The wrapper is back: body set_config kan712.contract (KAN-850), calls its inner, ACL = recorded original ACL.
   IF (SELECT count(*) FROM public.kan712_wrapped_rpcs w JOIN pg_proc p
          ON p.pronamespace = 'public'::regnamespace AND p.proname = w.name
         AND pg_get_function_identity_arguments(p.oid) = w.identity_args
        WHERE w.name IN ('rpc_edit_game_series_occurrence', 'rpc_edit_game_series_future', 'rpc_cancel_game_series')
-         AND 'kan712.contract=on' = ANY (p.proconfig) AND p.prosrc LIKE '%public.' || w.inner_name || '(%'
+         AND p.proconfig = ARRAY['search_path=""'] AND position('set_config(''kan712.contract'', ''on'', true)' IN p.prosrc) > 0  -- KAN-850 step 6c
+         AND p.prosrc LIKE '%public.' || w.inner_name || '(%'
          AND p.proacl::text IS NOT DISTINCT FROM w.original_acl::text) <> 3 THEN
     RAISE EXCEPTION 'KAN-733 rollback post: a series RPC is not wrapped again as KAN-712 recorded it';
   END IF;

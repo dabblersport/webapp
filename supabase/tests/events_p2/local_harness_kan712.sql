@@ -20,7 +20,21 @@
 --     rpc_meetup_card.
 --   trg_meetups_aaa_host_actor_stub: the repo rpc_create_meetup body does not set meetups.host_actor_id (NOT NULL,
 --     no default in the repo). Live must fill it some other way that this seat cannot see; the stub fills it from
---     creator_profile_id so local creates run. Recorded in KAN712_CONTRACT.md.
+--     the creator of the meetup's public.events parent so local creates run. Recorded in KAN712_CONTRACT.md.
+--     KAN-818 (KAN-805 follow-up): the stub no longer reads any meetups column KAN-719 Z01 removes. An explicit
+--     host_actor_id still wins. When the parent is written relative to the BEFORE INSERT:
+--       * events row written FIRST (event-first create, the post-Z01 shape): trg_meetups_aaa_host_actor_stub reads
+--         events.creator_profile_id by NEW.event_id.
+--       * no parent row yet (KAN-712 stage B: trg_zz_kan712_meetups_guard inserts it and must stay the LAST BEFORE
+--         ROW trigger, which the cutover asserts; KAN-711 phase 1: the AFTER mirror writes it): the stub takes the
+--         creator of the parent row about to be written, (public.kan711_events_map_meetup(NEW)).creator_profile_id,
+--         when that function exists. The guard and the mirror both copy the creator from the same NEW row
+--         (write contract 2b / KAN-711 map), and no BEFORE trigger between "aaa" and the guard changes it.
+--       * before KAN-710 (no public.events): nothing is filled; every harness insert there passes host_actor_id.
+--     KAN-818 fix 1: the column reads above live in public.harness_meetup_creator(public.meetups), which the stub
+--     calls; the stub body itself names no creator column at all (C1 reads its prosrc literally).
+--     Both are SECURITY DEFINER (owner postgres, EXECUTE revoked from PUBLIC/anon/authenticated/service_role) so the
+--     read is not filtered by events' FORCE RLS for an API-role insert.
 
 -- Reference rows used by the KAN-712 scenarios. ---------------------------------------------------------------
 ALTER TABLE public.profiles ADD COLUMN persona_type text NOT NULL DEFAULT 'player',
@@ -77,8 +91,24 @@ CREATE FUNCTION public.is_venue_admin(p_uid uuid, p_venue uuid) RETURNS boolean 
 CREATE FUNCTION public.rpc_meetup_card(p_meetup_id uuid) RETURNS jsonb LANGUAGE sql STABLE SECURITY DEFINER SET search_path TO 'public' AS
 $$ SELECT jsonb_build_object('id', m.id, 'title', m.title, 'start_at', m.start_at, 'capacity', m.capacity) FROM public.meetups m WHERE m.id = p_meetup_id $$;
 
-CREATE FUNCTION public.harness_host_actor_stub() RETURNS trigger LANGUAGE plpgsql AS $$
-BEGIN NEW.host_actor_id := coalesce(NEW.host_actor_id, NEW.creator_profile_id); RETURN NEW; END $$;
+-- KAN-818: the column reads live in harness_meetup_creator, so the stub body names no meetups/events creator column.
+CREATE FUNCTION public.harness_meetup_creator(p_row public.meetups) RETURNS uuid LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
+DECLARE v_creator uuid; v_parent boolean;
+BEGIN
+  IF to_regclass('public.events') IS NULL THEN RETURN NULL; END IF;
+  SELECT e.creator_profile_id, true INTO v_creator, v_parent   -- event-first: the parent row is already written
+    FROM public.events e WHERE e.id = coalesce(p_row.event_id, p_row.id) AND e.event_type = 'meetup';
+  IF v_parent IS NULL AND to_regprocedure('public.kan711_events_map_meetup(public.meetups)') IS NOT NULL THEN
+    v_creator := (public.kan711_events_map_meetup(p_row)).creator_profile_id;  -- parent not written yet
+  END IF;
+  RETURN v_creator;
+END $$;
+CREATE FUNCTION public.harness_host_actor_stub() RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path TO '' AS $$
+BEGIN
+  IF NEW.host_actor_id IS NOT NULL OR to_regclass('public.events') IS NULL THEN RETURN NEW; END IF;  -- explicit wins
+  NEW.host_actor_id := public.harness_meetup_creator(NEW);
+  RETURN NEW;
+END $$;
 CREATE TRIGGER trg_meetups_aaa_host_actor_stub BEFORE INSERT ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.harness_host_actor_stub();
 
 -- Create paths (stay UNWRAPPED; the guard routes their INSERT) --------------------------------------------------
@@ -884,7 +914,7 @@ BEGIN
   FOR f IN SELECT p.oid::regprocedure AS sig FROM pg_proc p
             WHERE p.pronamespace = 'public'::regnamespace
               AND p.proname IN ('effective_actor_uid','choose_actor','is_admin','is_venue_admin','rpc_meetup_card',
-                'harness_host_actor_stub','rpc_create_game_legacy_v2','rpc_create_game_legacy_v1','rpc_create_game',
+                'harness_host_actor_stub','harness_meetup_creator','rpc_create_game_legacy_v2','rpc_create_game_legacy_v1','rpc_create_game',
                 'rpc_create_meetup_legacy_v2','rpc_create_meetup_legacy_v1','rpc_create_meetup','rpc_challenge_spawn_game',
                 'admin_cleanup_user_data','rpc_update_game','rpc_update_game_legacy_v1','rpc_reschedule_game',
                 'rpc_cancel_game','rpc_booking_hold_for_game','rpc_meetup_cancel','rpc_meetup_update',

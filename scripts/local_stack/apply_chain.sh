@@ -54,6 +54,8 @@ f migrations/20261102120000_kan711_events_backfill.sql
 r "CALL public.kan711_events_backfill_run(200); SELECT public.kan711_events_validate_links();" \
   -c "CALL public.kan711_events_backfill_run(200)" -c "SELECT public.kan711_events_validate_links()"
 f migrations/20261103100000_kan712_events_write_contract.sql
+f migrations/20261103104000_kan851_capture_run_seed_meetup_template.sql
+f migrations/20261103105000_kan844_kan712_contract_flag_set_config.sql
 f migrations/20261103110000_kan712_cutover.sql
 f migrations/20261104100000_kan713_access_helpers.sql
 f migrations/20261104110000_kan713_location_triggers.sql

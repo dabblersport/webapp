@@ -183,7 +183,7 @@ BEGIN
   FOR r IN SELECT * FROM (VALUES
       ('public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)',           '446285fd3e9d6b814fbed14af8121c27'),
       ('public._slot_conflicts_game(uuid,timestamp with time zone,timestamp with time zone)',                       '42729f5c67c2b2fa453addf51fec26c6'),
-      ('public.rpc_booking_hold_for_game(uuid,uuid,timestamp with time zone,timestamp with time zone)',             '5857515b031fcb57926549d754af89a5'),
+      ('public.rpc_booking_hold_for_game(uuid,uuid,timestamp with time zone,timestamp with time zone)',             '14d9fc1630e8ba77d736d0851f3e3eaf'),
       ('public.rpc_booking_hold_for_game_kan712_inner(uuid,uuid,timestamp with time zone,timestamp with time zone)', 'ddb9fe12e37d1a651c0ee3104988ec6b'),
       ('public.rpc_booking_cancel(uuid)',                                                                            '97e9c289b9d768ff7212529876ecff08'),
       ('public._game_belongs_to_venue(uuid,uuid)',                                                                   '6e5901ff6904c44012897b99d5b0c830')) AS t(fn, md)
@@ -299,7 +299,7 @@ BEGIN
   FOR r IN SELECT * FROM (VALUES
       ('public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)',           '9d113b77a82df489569a765ad30445f7'),
       ('public._slot_conflicts_game(uuid,timestamp with time zone,timestamp with time zone)',                       '6b55caf2dd120676bef075536014370b'),
-      ('public.rpc_booking_hold_for_game(uuid,uuid,timestamp with time zone,timestamp with time zone)',             '5857515b031fcb57926549d754af89a5'),
+      ('public.rpc_booking_hold_for_game(uuid,uuid,timestamp with time zone,timestamp with time zone)',             '14d9fc1630e8ba77d736d0851f3e3eaf'),
       ('public.rpc_booking_hold_for_game_kan712_inner(uuid,uuid,timestamp with time zone,timestamp with time zone)', 'ddb9fe12e37d1a651c0ee3104988ec6b'),
       ('public.rpc_booking_cancel(uuid)',                                                                            '97e9c289b9d768ff7212529876ecff08'),
       ('public._game_belongs_to_venue(uuid,uuid)',                                                                   '6e5901ff6904c44012897b99d5b0c830')) AS t(fn, md)

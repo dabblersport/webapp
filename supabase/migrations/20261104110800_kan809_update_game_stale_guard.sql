@@ -36,8 +36,10 @@
 --   would make kan712_unwrap_rpc DROP it and then try to RENAME a non-existent 18-arg inner (rollback aborts), and
 --   would break probe H8's count (11). Unregistered, rollback leaves it in place and it keeps working (above).
 --
--- ATTRIBUTES: SECURITY DEFINER, SET search_path = '', SET kan712.contract = 'on' (same proconfig as the wrapper),
---   owner postgres, EXECUTE exactly as the existing public rpc_update_game: authenticated + service_role, no anon,
+-- ATTRIBUTES: SECURITY DEFINER, SET search_path = '' (same proconfig as the wrapper). KAN-850: no SET kan712.contract
+--   clause (a placeholder SET clause needs superuser; Supabase postgres is not one). Like the KAN-712 wrapper after
+--   step 6c, the body sets the flag with set_config('kan712.contract', 'on', true) and restores the caller's value before returning.
+--   Owner postgres, EXECUTE exactly as the existing public rpc_update_game: authenticated + service_role, no anon,
 --   no PUBLIC (pg_default_acl grants anon by name, so it is revoked by name and the resulting proacl is asserted).
 --
 -- CALLER NOTE (not a server change): the client must send the events.updated_at it read, as an exact timestamptz.
@@ -71,10 +73,11 @@ begin
     left join pg_proc p on p.oid = to_regprocedure('public.rpc_update_game(uuid,timestamptz,timestamptz,text,uuid,boolean,text,text,boolean,boolean,integer,integer,boolean,jsonb,integer,integer,numeric)')
    where p.oid is null
       or not p.prosecdef
-      or p.proconfig is distinct from array['search_path=""', 'kan712.contract=on']
+      or p.proconfig is distinct from array['search_path=""']
+      or position('set_config(''kan712.contract'', ''on'', true)' in p.prosrc) = 0
       or p.proowner <> 'postgres'::regrole
       or p.proacl is distinct from '{postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres}'::aclitem[]
-      or md5(p.prosrc) <> '742f0a18ddeaae48904263fbf86aa578';
+      or md5(p.prosrc) <> 'cf869fd1507bf17c273a57af599840cb';
   if v_bad is not null then
     raise exception 'KAN-809 pre: existing rpc_update_game absent or drifted (re-measure on the live catalogue): %', v_bad;
   end if;
@@ -108,18 +111,22 @@ CREATE FUNCTION public.rpc_update_game(p_game_id uuid, p_start_at timestamp with
  LANGUAGE plpgsql
  SECURITY DEFINER
  SET search_path TO ''
- SET "kan712.contract" TO 'on'
 AS $function$
 DECLARE
+  v_prev text := current_setting('kan712.contract', true);
+  v_result text;
   v_updated_at timestamp with time zone;
 BEGIN
+  PERFORM set_config('kan712.contract', 'on', true);
   -- Same lock as the KAN-712 wrapper, taken first; the comparison reads the LOCKED (latest committed) row.
   SELECT e.updated_at INTO v_updated_at FROM public.events e WHERE e.id = $1 AND e.event_type = 'game' FOR UPDATE;
   IF FOUND AND p_expected_updated_at IS NOT NULL AND v_updated_at IS DISTINCT FROM p_expected_updated_at THEN
     RAISE EXCEPTION USING ERRCODE = '40001', MESSAGE = 'stale_update',
       DETAIL = 'events.updated_at changed since it was read; re-read the game and retry.';
   END IF;
-  RETURN public.rpc_update_game($1, $2, $3, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);
+  v_result := public.rpc_update_game($1, $2, $3, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18);
+  PERFORM set_config('kan712.contract', coalesce(v_prev, ''), true);
+  RETURN v_result;
 END
 $function$;
 
