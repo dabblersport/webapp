@@ -18,6 +18,8 @@
 --         (created with check_function_bodies off, as the baseline dump does: its body names columns meetups
 --         does not have, so every call raises 42703 — the state the test pins in R1)
 --   4. asserts md5(pg_get_functiondef) of each pre-image equals the migration's drift pin.
+-- KAN-789 note: rpc_meetup_my was RETIRED by KAN-785 (20261104110400, DROP FUNCTION). The 3c lines below are
+-- deliberate: they reconstruct the historical pre-KAN-785 B06 pre-image, loaded before B06 and before KAN-785.
 
 \set ON_ERROR_STOP 1
 DO $$ BEGIN

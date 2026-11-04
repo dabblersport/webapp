@@ -7,7 +7,8 @@
 -- No migration belongs to this ticket; this file measures and asserts.
 --
 -- BASELINE. The ticket says "against the E1 baseline". No E1 performance artifact exists in the repository
--- (grep: "E1" appears only as KAN714_CONTRACT.md exception E1 = rpc_meetup_my, unrelated). The baseline is
+-- (grep: "E1" appears only as KAN714_CONTRACT.md exception E1 = rpc_meetup_my, unrelated;
+-- rpc_meetup_my itself was since RETIRED by KAN-785, 20261104110400). The baseline is
 -- therefore defined as the PRE-IMAGE: the database the existing harness chain builds BEFORE B01/B02/B04/B05,
 -- i.e. the legacy definitions verbatim from the repo (local_harness_kan714.sql for both views and
 -- rpc_games_following_joined, local_harness_kan724.sql for rpc_unified_search_sectioned, and the 6-arg

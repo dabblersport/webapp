@@ -7,7 +7,7 @@ cluster.
 ## Baseline
 
 The ticket says to compare against "the E1 baseline". **There is no E1 performance artifact in the repository.** The only "E1"
-is `KAN714_CONTRACT.md` exception E1 (`rpc_meetup_my`), which is unrelated. So the baseline is defined here as the
+is `KAN714_CONTRACT.md` exception E1 (`rpc_meetup_my`, since RETIRED by KAN-785, migration 20261104110400), which is unrelated. So the baseline is defined here as the
 **pre-image**: the database the existing harness chain builds *before* B01/B02/B04/B05. Its sources are:
 
 | Surface | Pre-image source |
