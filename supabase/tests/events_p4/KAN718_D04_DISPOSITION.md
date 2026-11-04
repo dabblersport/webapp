@@ -9,9 +9,10 @@ Proof: `supabase/tests/events_p4/kan718_d04_last_reads.sql` checks T2–T5 and D
 Rollback: `supabase/tests/events_p4/kan718_d04_rollback.sql` (pg_get_functiondef pre-images).
 Local harness for baseline-only functions: `supabase/tests/events_p4/local_harness_kan772.sql`.
 
-Totals: **CONVERTED 8 · NO LEGACY READ (proved, no change needed) 2 · BLOCKER 24** (8 readers broken on every chain:
-#5 #6 #8 #9 #11 #12 #25 #29; 11 write RPCs absent from the local chain; 5 trigger functions absent from the local
-chain). 8 + 2 + 24 = 34.
+Totals: **CONVERTED 8 · NO LEGACY READ (proved, no change needed) 2 · RETIRE 2 · BLOCKER 22** (8 readers broken on every chain:
+#5 #6 #8 #9 #11 #12 #25 #29; 9 write RPCs absent from the local chain; 5 trigger functions absent from the local
+chain; RETIRE #20 #21 per KAN-812). 8 + 2 + 2 + 22 = 34.
+> Stale 2026-11-04: most BLOCKER rows are now converted by follow-ups; see `KAN718_HANDOFF.md` (b).
 
 ## Table
 
@@ -36,8 +37,8 @@ chain). 8 + 2 + 24 = 34.
 | 17 | `rpc_invite_user(uuid,uuid)` | **BLOCKER — absent from the local chain** | as #16 (host gate in a write path; baseline only) | backend (follow-up via po) |
 | 18 | `rpc_join_game(text,uuid,uuid)` | **NO LEGACY READ — no change needed** | `SELECT * INTO g FROM games … FOR UPDATE` is a row lock; `g` is never read. Every decision comes from `can_current_user_join_game` and `game_slots_left` (both events, B08/B15). D12: events capacity full → `waitlisted` while legacy capacity says 10 | — |
 | 19 | `rpc_meetup_decide_request(uuid,uuid,text)` | **BLOCKER — absent from the local chain** | latest def `20260915120000` (meetups_hardening); not on the local chain; rowtype read of `meetups` inside a write path | backend (follow-up via po) |
-| 20 | `rpc_meetup_invite_user(uuid,uuid,timestamptz)` | **BLOCKER — absent from the local chain** | baseline only; host gate in a write path | backend (follow-up via po) |
-| 21 | `rpc_meetup_mint_link(uuid,timestamptz,integer)` | **BLOCKER — absent from the local chain** | baseline only; host gate in a write path | backend (follow-up via po) |
+| 20 | `rpc_meetup_invite_user(uuid,uuid,timestamptz)` | **RETIRE (class B, DROP FUNCTION) — not a Z01 blocker (KAN-802)** | baseline-only (baseline:13792; ACL only at 20260915120000:749-750); host gate reads nonexistent meetups.owner_user_id → 42703 on every chain; no caller in lib/ or supabase/functions on Alpha/main/Canary; dropped after Z01 per KAN-812 | backend (follow-up via po) |
+| 21 | `rpc_meetup_mint_link(uuid,timestamptz,integer)` | **RETIRE (class B, DROP FUNCTION) — not a Z01 blocker (KAN-802)** | baseline-only (baseline:13815; ACL only at 20260915120000:752-753); host gate reads nonexistent meetups.owner_user_id → 42703 on every chain; no caller in lib/ or supabase/functions on Alpha/main/Canary; dropped after Z01 per KAN-812 | backend (follow-up via po) |
 | 22 | `rpc_meetup_remove_attendee(uuid,uuid)` | **BLOCKER — absent from the local chain** | latest def `20260915120000`; rowtype read in a write path | backend (follow-up via po) |
 | 23 | `rpc_meetup_rsvp(uuid,text,uuid,uuid)` | **BLOCKER — absent from the local chain** | latest def `20260912190747`; gate in a write path | backend (follow-up via po) |
 | 24 | `rpc_meetup_set_attendee(uuid,uuid,text)` | **BLOCKER — absent from the local chain** | baseline only; host gate in a write path | backend (follow-up via po) |
