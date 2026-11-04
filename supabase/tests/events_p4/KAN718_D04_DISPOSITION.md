@@ -12,6 +12,7 @@ Local harness for baseline-only functions: `supabase/tests/events_p4/local_harne
 Totals: **CONVERTED 8 · NO LEGACY READ (proved, no change needed) 2 · RETIRE 2 · BLOCKER 22** (8 readers broken on every chain:
 #5 #6 #8 #9 #11 #12 #25 #29; 9 write RPCs absent from the local chain; 5 trigger functions absent from the local
 chain; RETIRE #20 #21 per KAN-812). 8 + 2 + 2 + 22 = 34.
+> Stale 2026-11-04: most BLOCKER rows are now converted by follow-ups; see `KAN718_HANDOFF.md` (b).
 
 ## Table
 

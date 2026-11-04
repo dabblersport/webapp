@@ -229,6 +229,8 @@ Probe totals: P6 114 ran / 3 refused / 13 skipped; P9 44 columns, 28 constraints
 
 ## Findings (reported, not fixed: KAN-774 and the migrations are not edited by this ticket)
 
+> 2026-11-04: F1 and F5 resolved in authored migrations; see `KAN718_HANDOFF.md` (e).
+
 - **F1 — manifest gap: `trg_zz_kan712_events_compat_mirror` is not in the manifest.** Once the columns are
   gone, every `UPDATE public.events` fails with `42703 column g.creator_profile_id does not exist` while the
   mirror is enabled (P7). The phase-4 migration must disable or drop it in the same transaction. If it does
