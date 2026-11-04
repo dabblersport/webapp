@@ -180,3 +180,56 @@ bodies. KAN-834's position in the ruling order is not given in the extract.
 - No md5 is given for the post-images of KAN-798, KAN-799 or KAN-800. Those files carry no post literal,
   and the post-images were not measured, because they do not bear on whether part 2's pin matches.
 - Production bodies were not read for any row.
+
+## KAN-858: pins now in part 2
+
+Part 2 was re-authored under KAN-858 (KAN-839 ruling, Jira comment 15440: X1 option c, X2 part 2 only). The
+16 "drop" rows are out of the file. It now pins 22 functions plus H1-H3, and the re-pinned rows' bodies are
+`pg_get_functiondef` of the step-30 bodies, with only `public.games` / `public.meetups` reads moved to the
+overlays. Measured on the local step-29 chain (`build_kan810.sh`). Production was not read. Proof:
+`supabase/tests/events_p4/kan858_part2_guard_test.sh`.
+
+| # | Function | Step-30 md5 (above) | Part 2 pin now | Equal | Note |
+|---|---|---|---|---|---|
+| 2 | `admin_cleanup_user_data` | `09baee67932be2618af9043c89155db2` | not pinned | — | **removed from part 2**: its step-30 body touches `public.games` only as a DELETE target, so it has no read to move, and the post-condition "body changed" could not hold |
+| 3 | `admin_overview_row` | `42573e04bc2aae0af755ded1f8eceb5a` | `42573e04bc2aae0af755ded1f8eceb5a` | yes | re-authored |
+| 7 | `get_games_needing_players` | `c818c2082bf1a29e40202776869ad42b` | `c818c2082bf1a29e40202776869ad42b` | yes | re-authored |
+| 8 | `get_open_games_for_seeding` | `30333cbe1d77a6a5ca5b1e757e3e945f` | `30333cbe1d77a6a5ca5b1e757e3e945f` | yes | re-authored |
+| 9 | `msg_authorize` | `b55e059bcf494df887e48ebdf8139949` | `b55e059bcf494df887e48ebdf8139949` | yes | re-authored |
+| 10 | `msg_evaluate` | `3276466a3d192afd4ee4675135637859` | `3276466a3d192afd4ee4675135637859` | yes | re-authored |
+| 11 | `msg_my_conversations` | `1297831ca8202108ba9001a750c8935d` | `1297831ca8202108ba9001a750c8935d` | yes | re-authored |
+| 16 | `rpc_booking_hold_for_meetup` | `0b7e53391b2a44007316d42036d95134` | `0b7e53391b2a44007316d42036d95134` | yes | re-authored |
+| 17 | `rpc_create_game` | `e565a2ba82469724f878435a2f8aaeae` | `e565a2ba82469724f878435a2f8aaeae` | yes | re-authored; **pending Hazard 4** (production drift, not established) |
+| 18 | `rpc_create_meetup` | `77a14a223d4ad16d2f62db46a8ddbcb9` | `77a14a223d4ad16d2f62db46a8ddbcb9` | yes | re-authored; **pending Hazard 4** |
+| 35 | `rpc_unified_search_sectioned` | `399680ac808bddb5a34ef081410dfbd4` | `399680ac808bddb5a34ef081410dfbd4` | yes | re-authored |
+| 36 | `settle_game` | `ee62121d87bee5c6dd1109e6ad11d8b4` | `ee62121d87bee5c6dd1109e6ad11d8b4` | yes | re-authored |
+| 39 | `trg_meetup_rsvps_notify` | `a22ed63dec19a237b005e30e9c038dc1` | `a22ed63dec19a237b005e30e9c038dc1` | yes | re-authored |
+| H1 | `game_slots_left` | `bd773c6f559b9692753fdfccd1eee959` | `bd773c6f559b9692753fdfccd1eee959` | yes | twin `kan714_game_slots_left` re-authored |
+| H2 | `meetup_slots_left` | `17e5926db75031e80ffdf8aedbb803a5` | `17e5926db75031e80ffdf8aedbb803a5` | yes | twin re-authored, as INVOKER (the original is DEFINER) |
+| H3 | `_user_hosted_game` | `41a0f3b192055a68f7dbaea2807c9933` | `41a0f3b192055a68f7dbaea2807c9933` | yes | twin re-authored. **KAN-834 must apply after part 2**, or this pin trips |
+
+The 10 "none" rows keep their bodies and pins. The 7 baseline-only functions reproduce those pins.
+
+After X2, none of the 22 retained functions calls a twin. The step-30 helpers already read `public.events`
+themselves when the caller can. The twins are kept because the brief says to re-author H1-H3.
+
+**Stage guard (X1).** The part 1 check is gone. It is replaced by B01-B07/D04 post-image pins. Functions are
+pinned by md5(prosrc). Views are pinned by md5 of the sorted `schema.relation.column` list from `pg_depend`
+on their rewrite rule. D04 is also held by rows 7, 8, 17, 18 and H3.
+
+| From | Object | Pin |
+|---|---|---|
+| B01 | `v_game_card` / `v_my_games` | `d7c7c593…` / `3b765364…` |
+| B02 | `v_meetup_list` / `v_meetup_counts` | `8724655e…` / `372835d5…` |
+| B03 | `v_rateable_after_game` | `1eeadf5e…` |
+| B04 | `rpc_games_following_joined(uuid[])` | `2ca02c52…` (B04 post; the step-29 chain has B04's pre `d3b31f55…`, see RED-A) |
+| B05 | `rpc_unified_search_sectioned` | `399680ac…` |
+| B06 | `rpc_meetup_card(uuid,text)` / `rpc_meetup_attendees` | `c63da3ea…` / `59bdc97a…` |
+| B07 | `rpc_sport_overview(uuid,text)` / `v_host_weekly_metrics` | `e7eb361a…` / `6ad1f78d…` |
+| D04 | `meetup_counts(uuid)` | `e5982fbd…` |
+
+**Not established.**
+- These pins are local. The view dependency pins assume the production views depend on the same columns.
+- `nearby_games`'s body (baseline, "none" row) reads `games.sport`. The local harness has no such column,
+  so with `check_function_bodies` on the file fails there locally. Whether production has `games.sport` was
+  not checked.
