@@ -128,7 +128,7 @@ BEGIN
   FOR r IN SELECT * FROM (VALUES
       ('v_rateable_after_game', '1e6a11420e215a3f621928c055996116',
        'game_roster.game_id,game_roster.status,game_roster.user_id,games.creator_user_id,games.end_at,games.id'),
-      ('v_game_rating',         '98e6f13a1a9a3f74467e722395688334',
+      ('v_game_rating',         '92d98259f98ac7159e14a5e6746d52eb',
        'game_rating_aggregate.composite_score,game_rating_aggregate.dim_counts,game_rating_aggregate.dim_sums,'
        || 'game_rating_aggregate.event_count,game_rating_aggregate.game_id,game_rating_aggregate.last_event_at,games.id'))
       AS t(vw, sig, dep)
@@ -210,7 +210,7 @@ BEGIN
       ('v_rateable_after_game', '1e6a11420e215a3f621928c055996116',
        'events.creator_user_id,events.end_at,events.event_type,events.id,game_roster.game_id,game_roster.status,'
        || 'game_roster.user_id,games.event_id,games.id'),
-      ('v_game_rating',         '98e6f13a1a9a3f74467e722395688334',
+      ('v_game_rating',         '92d98259f98ac7159e14a5e6746d52eb',
        'game_rating_aggregate.composite_score,game_rating_aggregate.dim_counts,game_rating_aggregate.dim_sums,'
        || 'game_rating_aggregate.event_count,game_rating_aggregate.game_id,game_rating_aggregate.last_event_at,games.id'))
       AS t(vw, sig, dep)
