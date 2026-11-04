@@ -130,20 +130,22 @@ BEGIN
     RAISE EXCEPTION 'KAN-859 pre: unexpected other overload(s): %', v_bad;
   END IF;
 
-  -- The known pre-image (drift guard).
-  IF EXISTS (SELECT 1 FROM pg_proc p WHERE p.oid = v_inv AND NOT (
-       md5(p.prosrc) = '08d8cc7c0d7b99653b81d9cbeaf33b82'
-       AND p.prolang = (SELECT oid FROM pg_language WHERE lanname = 'plpgsql')
-       AND p.prosecdef AND p.prorettype = 'uuid'::regtype AND NOT p.proretset
-       AND p.proconfig = ARRAY['search_path=public'])) THEN
+  -- The known pre-image (drift guard). Null-safe (KAN-859 C2): every term is IS NOT DISTINCT FROM / IS TRUE /
+  -- IS FALSE and the whole predicate is COALESCE(..., false), so a NULL anywhere (e.g. proconfig after RESET ALL)
+  -- refuses instead of passing.
+  IF EXISTS (SELECT 1 FROM pg_proc p WHERE p.oid = v_inv AND NOT COALESCE((
+       md5(p.prosrc) IS NOT DISTINCT FROM '08d8cc7c0d7b99653b81d9cbeaf33b82'
+       AND p.prolang IS NOT DISTINCT FROM (SELECT oid FROM pg_language WHERE lanname = 'plpgsql')
+       AND p.prosecdef IS TRUE AND p.prorettype IS NOT DISTINCT FROM 'uuid'::regtype AND p.proretset IS FALSE
+       AND p.proconfig IS NOT DISTINCT FROM ARRAY['search_path=public']::text[]), false)) THEN
     RAISE EXCEPTION 'KAN-859 pre: rpc_meetup_invite_user drifted from the retired pre-image (md5 %), refusing to drop',
       (SELECT md5(prosrc) FROM pg_proc WHERE oid = v_inv);
   END IF;
-  IF EXISTS (SELECT 1 FROM pg_proc p WHERE p.oid = v_mnt AND NOT (
-       md5(p.prosrc) = '2364638777f63f9f8fe6fa9e704b4153'
-       AND p.prolang = (SELECT oid FROM pg_language WHERE lanname = 'plpgsql')
-       AND p.prosecdef AND p.prorettype = 'uuid'::regtype AND NOT p.proretset
-       AND p.proconfig = ARRAY['search_path=public'])) THEN
+  IF EXISTS (SELECT 1 FROM pg_proc p WHERE p.oid = v_mnt AND NOT COALESCE((
+       md5(p.prosrc) IS NOT DISTINCT FROM '2364638777f63f9f8fe6fa9e704b4153'
+       AND p.prolang IS NOT DISTINCT FROM (SELECT oid FROM pg_language WHERE lanname = 'plpgsql')
+       AND p.prosecdef IS TRUE AND p.prorettype IS NOT DISTINCT FROM 'uuid'::regtype AND p.proretset IS FALSE
+       AND p.proconfig IS NOT DISTINCT FROM ARRAY['search_path=public']::text[]), false)) THEN
     RAISE EXCEPTION 'KAN-859 pre: rpc_meetup_mint_link drifted from the retired pre-image (md5 %), refusing to drop',
       (SELECT md5(prosrc) FROM pg_proc WHERE oid = v_mnt);
   END IF;
