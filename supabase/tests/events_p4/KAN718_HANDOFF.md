@@ -5,9 +5,11 @@ Everything below was re-run on **local throwaway PG16 clusters only** (ports 557
 No hosted database was read or written. Scripts and logs: `/Users/moataz/.claude/jobs/48b1590f/tmp/`.
 
 **Headline.** Deletion (KAN-719 Z01) is still **BLOCKED**. Supported consumers still depend on slated columns:
-the app's direct `games` reads in `lib/`, the homeless meetups columns read by `v_meetup_list` and
-`kan718_meetups_compat`, and the D04 readers with no conversion. Old store builds **block** deletion. The
-compat projection only helps them through a rename swap that no migration authors.
+the app's direct `games` reads in `lib/` and the D04 readers with no conversion. Old store builds blocked
+deletion; that is **resolved by CTO ruling (C)** in dreq-8ae9bcfa (see (h)): the client-read `games` columns are
+retained and their deletion is deferred to KAN-719b. The three meetups columns `v_meetup_list` and
+`kan718_meetups_compat` read are now **retained** by the same ruling. KAN-718 is a blocked tracking parent.
+**The D06 manifest, Z01 and G6 have NOT been re-scoped to the ruling yet** (F8).
 
 ## (a) D-series status
 
@@ -47,14 +49,17 @@ migration and passes.
 
 ## (b) Coverage: slated column × consumer class
 
-Slated set (D06 M1): 47 columns (games 23, meetups 24). 19 retained.
+Slated set: **44 columns (games 23, meetups 21). 22 retained**, per CTO ruling 2 in dreq-8ae9bcfa (was 47 slated,
+19 retained). Moved from slated to retained: `meetups.description`, `meetups.location_name`, `meetups.is_indoor`.
+D06 M1 in `kan718_d06_manifest_check.sql` still asserts the old 47 until F8 re-scopes it. Ruling 1 also retains
+every `games` column D03 lists as client-read; that set is not yet subtracted from the games 23 here (F8).
 
 | Consumer class | State | Pending consumers (owner) |
 |---|---|---|
 | SQL functions, direct | mostly **converted** by D04, 798–810, 834 and 794 (authored) | #5/#6 `get_nearby_games`, #8 `getnearbygames`, #9 `getnearbymeetups` (no ticket; named only as B05 exceptions X1–X4). #25 `rpc_meetup_visible` (**no ticket**). #11 `nearby_games`, #12 `rpc_autocomplete_entities`, #29 `rpc_search_entities` (rewritten in KAN-714 part 2 `20261105110000`, but its required part 1 `20261105100000_kan714_events_parent_reads.sql` is **absent on this branch**. That slot holds Z01) |
 | Transitive helpers / %ROWTYPE / composite | pending **by design** | `kan711_events_map_game(games)` and the KAN-711/712 mirror and guard read the `games` row type. Z01 removes them in the same transaction (seq 334 drops `trg_zz_kan712_events_compat_mirror`) |
 | Dynamic SQL | D02: 1 function. Still BLOCKED | per D02 |
-| Views | **still-pending** | `v_meetup_list` and `kan718_meetups_compat` read `meetups.description`, `location_name` and `is_indoor`. These are the homeless columns, with no events column (D06 contract gap; Z01 G6; manifest 704/722/723). Owner: **no ticket**, needs a CTO/product shape ruling |
+| Views | **resolved by ruling 2, not yet in the manifest** | `v_meetup_list` and `kan718_meetups_compat` read `meetups.description`, `location_name` and `is_indoor`. These are now **retained subtype columns** (dreq-8ae9bcfa ruling 2); both views are unchanged. Clears D06 M2 and Z01 G6 for this cause once F8 re-scopes the manifest (704/722/723) and G6 |
 | Compat projection | `kan718_games_compat` reads only retained `games` columns plus `event_id` | none |
 | Policies | `games` has RLS on and no policy (KAN-671) | per D02 (4 policies) |
 | Triggers | 803/804 converted the frozen guards and posts geo. The KAN-711/712/713 infra is removed with Z01 | none outside Z01 |
@@ -62,12 +67,14 @@ Slated set (D06 M1): 47 columns (games 23, meetups 24). 19 retained.
 | RETIRE | #20 `rpc_meetup_invite_user`, #21 `rpc_meetup_mint_link` (KAN-802/812) | **no DROP authored** |
 | Edge Functions | `supabase/functions/*` contains no reference to `games`, `meetups` or slated column names (`git grep`) | none |
 | Scripts | no tracked `scripts/` reference | none |
-| `lib/` direct reads | **still-pending**: 19 `.from(gamesTable)` sites (games datasource ×13, post repo, sport profile, data export ×2, data retention) | client migration: **no ticket named on this branch** |
+| `lib/` direct reads | **still-pending**, columns **retained** by ruling (C): 19 `.from(gamesTable)` sites (games datasource ×13, post repo, sport profile, data export ×2, data retention) | F10 (frontend conversion); column drop F11 (KAN-719b) |
 
 ## (c) Old clients
 
-D03 verdict stands: **old store builds 1.3.0–1.7.8 and web main/Canary/Alpha BREAK on a games column drop.
-They block deletion.**
+D03 verdict: old store builds 1.3.0–1.7.8 and web main/Canary/Alpha BREAK on a games column drop, so they
+**blocked deletion → resolved by (C): client-read games columns retained; deletion deferred to KAN-719b**
+(dreq-8ae9bcfa ruling 1). Options (A) rename-swap compat view and (B) `app_min_version` floor were rejected. The
+points below are kept for the record; under (C) they no longer gate KAN-719.
 
 D05 serves them only if `games` is renamed to `games_subtype` and the view is renamed to `games`. That swap
 exists only as header text in `20261104110200`. Z01 drops the columns directly and does no swap. Three
@@ -87,7 +94,8 @@ further points:
   `k788full` = build_kan810 + 806/808/809/807b/810/834.
   - The manifest has no statement for the compat view that reads the three homeless columns.
   - Z01 G6 already refuses on it.
-  - It is part of the same homeless-column gap, not a new consumer class.
+  - It is part of the same homeless-column gap, not a new consumer class. Ruling 2 retains those columns; the
+    manifest is **not yet re-scoped** (F8).
 - D07 series uniqueness: PASS 35/0, so the manifest's series index assumptions hold.
 
 ## (e) Runbook (D08)
@@ -133,18 +141,52 @@ Limitations:
 - 801 and 807 could not be re-run (the chains are lost).
 - The 13 baseline-only indexes (Z01 G3) cannot be checked locally.
 
-Prerequisites:
+Prerequisites (each now maps to a follow-up in (h); none is a ticket yet):
 
-1. A ruling on the three homeless meetups columns (`description`, `location_name`, `is_indoor`). They are
-   read by `v_meetup_list` and `kan718_meetups_compat`. **CTO shape question; no ticket.**
-2. Convert or retire `get_nearby_games`, `getnearbygames`, `getnearbymeetups` and `rpc_meetup_visible`. **No
-   ticket.**
-3. KAN-714 part 1 (`…_kan714_events_parent_reads.sql`) is missing on this branch. Its filename slot is
-   occupied by Z01. Part 2 cannot pass its own stage guard.
-4. DROP for RETIRE #20/#21 (KAN-802/812). Not authored.
-5. Client: the 19 direct `games` reads in `lib/`, and a policy for old store builds. That means one of:
-   author and prove the rename swap (including embeds and realtime), enforce `app_min_version`, or accept the
-   breakage. **PO/CEO decision.**
-6. Apply the authored KAN-718 migrations to production under G-002, then re-run D06/D09/Z01 G1–G6 against that
-   catalogue, then clear the Z04 FAILs.
-7. Re-establish the 801 and 807 chains (or re-prove both on a new tracked builder) before they count as green.
+1. Homeless meetups columns: **resolved** by ruling 2 (retained). Re-scoping the manifest, Z01 and G6 to it is
+   **F8**, not done.
+2. Convert or retire `get_nearby_games` ×2 (**F1**), `getnearbygames` (**F2**), `getnearbymeetups` (**F3**) and
+   `rpc_meetup_visible` (**F4**, PEER).
+3. KAN-714 part 1 (`…_kan714_events_parent_reads.sql`) is missing on this branch; its slot is occupied by Z01.
+   Re-author it in a non-colliding version slot: **F5**.
+4. DROP for RETIRE #20 `rpc_meetup_invite_user` / #21 `rpc_meetup_mint_link` (KAN-802/812): **F6**.
+5. Client: old-store-build policy **resolved by (C)**. Converting the 19 `lib/` `games` reads is **F10**; dropping
+   the client-read columns is **F11** (KAN-719b), after F10 ships and an install-share check.
+6. Re-scope Z01, the D06 manifest and G6 to rulings 1 and 2: **F8** (blocked by F1–F6).
+7. Apply the authored KAN-718 migrations to production under G-002, then re-run D06/D09/Z01 G1–G6 against that
+   catalogue and clear the Z04 FAILs: **F9** (PEER, blocked by F5–F8).
+8. Re-establish the 801 and 807 chains, or re-prove both on a new tracked builder, before they count as green:
+   **F7**.
+
+## (h) CTO ruling dreq-8ae9bcfa (2026-11-04)
+
+Ruled by cto (Khnum) on decision `dreq-8ae9bcfa-e8bd-46d4-903a-c3b840ab79ec`.
+
+1. **Old clients: option (C).** Keep every legacy `games` shared column a supported client reads (D03's 19 `lib/`
+   reads). They stay until those reads are converted and shipped to the store, and builds 1.3.0–1.7.8 no longer
+   have meaningful installs. (A) rename-swap compat view and (B) `app_min_version` floor were rejected; (B) would
+   need CPO + CEO product agreement. Z01 is re-scoped to drop nothing in `games` that D03 lists as client-read.
+   Deleting those columns becomes a later ticket, KAN-719b.
+2. **`meetups.description`, `location_name`, `is_indoor` are RETAINED subtype columns.** Slated 47 → 44,
+   retained 19 → 22. `v_meetup_list` and `kan718_meetups_compat` are unchanged. This clears D06 M2 and Z01 G6
+   for this cause once the manifest is re-scoped.
+3. **KAN-718 disposition:** blocked tracking parent. Blocked reason: "deletion gated on §4 follow-ups and the
+   ruling (C) in dreq-8ae9bcfa". `f2485ae5` is kept.
+
+**Not yet done:** the D06 manifest, Z01 and G6 have **NOT** been re-scoped to rulings 1 and 2. That is F8.
+
+Follow-ups for the PM (the CTO creates none; these are not tickets yet):
+
+| # | Ticket | Capability | Blocked by |
+|---|---|---|---|
+| F1 | Convert or retire `get_nearby_games` ×2 | backend | none |
+| F2 | Convert or retire `getnearbygames` | backend | none |
+| F3 | Convert or retire `getnearbymeetups` | backend | none |
+| F4 | Convert `rpc_meetup_visible` (PEER) | backend | none |
+| F5 | Re-author KAN-714 part 1 in a non-colliding version slot | backend | none |
+| F6 | DROP `rpc_meetup_invite_user` / `rpc_meetup_mint_link` | backend | none |
+| F7 | Track the kan801/kan807 chain builders | backend | none |
+| F8 | Re-scope Z01 + D06 manifest + G6 to rulings 1 and 2 | backend | F1–F6 |
+| F9 | Ops-apply under G-002 (PEER) | backend | F5–F8 |
+| F10 | Convert the 19 `lib/` `games` reads | frontend | none |
+| F11 | KAN-719b: drop the client-read `games` columns | backend | F10 shipped + install-share check |
