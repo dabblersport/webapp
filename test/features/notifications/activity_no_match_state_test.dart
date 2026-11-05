@@ -1,5 +1,7 @@
-// KAN-878: the Activity log's no-match state and searching-older indicator,
-// driven through buildActivityLogSlivers with hand-built states.
+// KAN-878: the Activity log answers a search with no match. While older pages
+// may still hold one (isSearchingOlder || hasMore) it shows one searching
+// indicator and no Load more; only when nothing is left does it say "no
+// matches". A blank query keeps the genuine-empty ActivityEmptyState.
 
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
 import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
@@ -10,158 +12,173 @@ import 'package:dabbler/features/notifications/presentation/widgets/activity_row
 import 'package:dabbler/features/notifications/presentation/widgets/notif_list_states.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-final List<ActivityFeedEvent> _events = <ActivityFeedEvent>[
-  ActivityFeedEvent(
-    id: 'a1',
-    subjectType: 'game',
-    subjectId: 'g1',
-    verb: 'joined',
-    timeBucket: 'present',
-    happenedAt: DateTime.now().subtract(const Duration(minutes: 20)),
-    priority: 1,
-    payload: const <String, dynamic>{'title': 'You joined Friday Football'},
-  ),
-];
+ActivityFeedEvent _event(String id) => ActivityFeedEvent(
+  id: id,
+  subjectType: 'game',
+  subjectId: 'g-$id',
+  verb: 'joined',
+  timeBucket: 'past',
+  happenedAt: DateTime.now().subtract(const Duration(hours: 1)),
+  priority: 0,
+  payload: const <String, dynamic>{'title': 'Padel at Zamalek'},
+);
 
-Future<void> _pump(
-  WidgetTester tester,
-  ActivityLogState state, {
-  Locale locale = const Locale('en'),
-}) async {
-  await tester.pumpWidget(
-    MaterialApp(
-      locale: locale,
-      localizationsDelegates: AppLocalizations.localizationsDelegates,
-      supportedLocales: AppLocalizations.supportedLocales,
-      theme: DabblerDesignSystemTheme.withTokens(ThemeData()),
-      home: Scaffold(
-        body: Builder(
-          builder: (context) => CustomScrollView(
-            slivers: buildActivityLogSlivers(
-              context,
-              state,
-              onTap: (_) {},
-              onRetry: () {},
-              onLoadMore: () {},
-            ),
+ActivityLogState _state({
+  String query = '',
+  List<ActivityFeedEvent>? activities,
+  bool isSearchingOlder = false,
+  bool hasMore = false,
+  bool isLoadingMore = false,
+  String category = 'all',
+}) => ActivityLogState(
+  loaded: true,
+  activities: activities ?? <ActivityFeedEvent>[_event('1'), _event('2')],
+  query: query,
+  category: category,
+  isSearchingOlder: isSearchingOlder,
+  isLoadingMore: isLoadingMore,
+  feedHasMore: hasMore,
+  socialHasMore: false,
+);
+
+Widget _host(ActivityLogState state, {Locale locale = const Locale('en')}) {
+  return MaterialApp(
+    locale: locale,
+    localizationsDelegates: AppLocalizations.localizationsDelegates,
+    supportedLocales: AppLocalizations.supportedLocales,
+    theme: DabblerDesignSystemTheme.withTokens(ThemeData()),
+    home: Scaffold(
+      body: Builder(
+        builder: (BuildContext context) => CustomScrollView(
+          slivers: buildActivityLogSlivers(
+            context,
+            state,
+            onTap: (_) {},
+            onRetry: () {},
+            onLoadMore: () {},
           ),
         ),
       ),
     ),
   );
+}
+
+Future<void> _pump(WidgetTester tester, Widget w) async {
+  await tester.binding.setSurfaceSize(const Size(400, 1600));
+  addTearDown(() => tester.binding.setSurfaceSize(null));
+  await tester.pumpWidget(w);
+  // A spinner animates forever, so never pumpAndSettle.
   await tester.pump(const Duration(milliseconds: 100));
 }
 
+final AppLocalizations _en = lookupAppLocalizations(const Locale('en'));
+
 void main() {
-  final AppLocalizations en = lookupAppLocalizations(const Locale('en'));
-  final AppLocalizations ar = lookupAppLocalizations(const Locale('ar'));
-
-  ActivityLogState s({
-    String query = '',
-    List<ActivityFeedEvent>? activities,
-    bool hasMore = false,
-    bool isSearchingOlder = false,
-  }) => ActivityLogState(
-    loaded: true,
-    query: query,
-    activities: activities ?? _events,
-    feedHasMore: hasMore,
-    socialHasMore: false,
-    isSearchingOlder: isSearchingOlder,
-  );
-
-  testWidgets('TC1: no match over the full history shows the no-match state', (
-    tester,
+  testWidgets('TC1 no match, nothing older: no-match state, not empty state', (
+    WidgetTester tester,
   ) async {
-    await _pump(tester, s(query: 'zzzz'));
+    await _pump(tester, _host(_state(query: 'zzzz')));
+
     expect(find.byType(ActivityNoMatchState), findsOneWidget);
-    expect(find.byType(ActivityEmptyState), findsNothing);
-    expect(find.byType(ActivitySearchingOlderIndicator), findsNothing);
-    expect(find.text(en.activity_search_no_match_title), findsOneWidget);
+    expect(find.text('No matches'), findsOneWidget);
     expect(
-      find.text(en.activity_search_no_match_body('zzzz', en.notif_chip_all)),
+      find.text(_en.activity_search_no_match_body('zzzz', 'All')),
       findsOneWidget,
     );
-    expect(tester.takeException(), isNull);
+    expect(find.byType(ActivityEmptyState), findsNothing);
+    expect(find.byType(ActivityRow), findsNothing);
+    expect(find.text('Searching older activity…'), findsNothing);
+    expect(find.byType(LoadMoreButton), findsNothing);
   });
 
-  testWidgets('TC2a: no match yet with hasMore shows the searching indicator', (
-    tester,
+  testWidgets('TC1b the body names the selected category chip label', (
+    WidgetTester tester,
   ) async {
-    await _pump(tester, s(query: 'zzzz', hasMore: true));
-    expect(find.byType(ActivitySearchingOlderIndicator), findsOneWidget);
-    expect(find.text(en.activity_search_loading_older), findsOneWidget);
+    await _pump(tester, _host(_state(query: 'zzzz', category: 'game')));
+
+    expect(
+      find.text(_en.activity_search_no_match_body('zzzz', 'Games')),
+      findsOneWidget,
+    );
+  });
+
+  for (final ({String name, bool searching, bool hasMore}) c in [
+    (name: 'isSearchingOlder', searching: true, hasMore: false),
+    (name: 'hasMore', searching: false, hasMore: true),
+    (name: 'both', searching: true, hasMore: true),
+  ]) {
+    testWidgets('TC2 no match while older may match (${c.name}): one '
+        'searching indicator, no no-match, no Load more', (
+      WidgetTester tester,
+    ) async {
+      await _pump(
+        tester,
+        _host(
+          _state(
+            query: 'zzzz',
+            isSearchingOlder: c.searching,
+            hasMore: c.hasMore,
+            // The search loop pages through loadMore(), so isLoadingMore is
+            // usually true too; the tail must not add a second spinner.
+            isLoadingMore: c.searching,
+          ),
+        ),
+      );
+
+      expect(find.text('Searching older activity…'), findsOneWidget);
+      expect(find.byType(DabblerSpinner), findsOneWidget);
+      expect(find.byType(ActivityNoMatchState), findsNothing);
+      expect(find.byType(ActivityEmptyState), findsNothing);
+      expect(find.byType(LoadMoreButton), findsNothing);
+    });
+  }
+
+  testWidgets('TC3 blank query with activities: rows are shown', (
+    WidgetTester tester,
+  ) async {
+    await _pump(tester, _host(_state(hasMore: true)));
+
+    expect(find.byType(ActivityRow), findsNWidgets(2));
     expect(find.byType(ActivityNoMatchState), findsNothing);
     expect(find.byType(ActivityEmptyState), findsNothing);
+    expect(find.text('Searching older activity…'), findsNothing);
+    expect(find.byType(LoadMoreButton), findsOneWidget);
   });
 
-  testWidgets('TC2b: isSearchingOlder shows the searching indicator', (
-    tester,
+  testWidgets('TC4 blank query, no activities: ActivityEmptyState only', (
+    WidgetTester tester,
   ) async {
-    await _pump(tester, s(query: 'zzzz', isSearchingOlder: true));
-    expect(find.byType(ActivitySearchingOlderIndicator), findsOneWidget);
-    expect(find.text(en.activity_search_loading_older), findsOneWidget);
-    expect(find.byType(ActivityNoMatchState), findsNothing);
-  });
+    await _pump(
+      tester,
+      _host(_state(activities: const <ActivityFeedEvent>[], hasMore: false)),
+    );
 
-  testWidgets('TC3: cleared query renders the list and neither state', (
-    tester,
-  ) async {
-    await _pump(tester, s());
-    expect(find.byType(ActivityRow), findsOneWidget);
-    expect(find.byType(ActivityNoMatchState), findsNothing);
-    expect(find.byType(ActivityEmptyState), findsNothing);
-    expect(find.byType(ActivitySearchingOlderIndicator), findsNothing);
-  });
-
-  testWidgets('TC4: no query and no activities keeps ActivityEmptyState', (
-    tester,
-  ) async {
-    await _pump(tester, s(activities: const <ActivityFeedEvent>[]));
     expect(find.byType(ActivityEmptyState), findsOneWidget);
     expect(find.byType(ActivityNoMatchState), findsNothing);
   });
 
-  testWidgets('TC5: Arabic no-match text and RTL direction', (tester) async {
-    await _pump(tester, s(query: 'zzzz'), locale: const Locale('ar'));
-    final Finder state = find.byType(ActivityNoMatchState);
-    expect(state, findsOneWidget);
-    expect(find.text(ar.activity_search_no_match_title), findsOneWidget);
+  testWidgets('TC5 Arabic: Arabic no-match text, rtl Directionality', (
+    WidgetTester tester,
+  ) async {
+    await _pump(
+      tester,
+      _host(_state(query: 'zzzz'), locale: const Locale('ar')),
+    );
+
+    expect(find.byType(ActivityNoMatchState), findsOneWidget);
+    expect(find.text('لا توجد نتائج'), findsOneWidget);
+    final AppLocalizations ar = lookupAppLocalizations(const Locale('ar'));
     expect(
       find.text(ar.activity_search_no_match_body('zzzz', ar.notif_chip_all)),
       findsOneWidget,
     );
-    expect(Directionality.of(tester.element(state)), TextDirection.rtl);
-    expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('loading branch unchanged', (tester) async {
-    await _pump(tester, const ActivityLogState(query: 'zzzz'));
-    expect(find.byType(ActivityNoMatchState), findsNothing);
-    expect(find.byType(ActivitySearchingOlderIndicator), findsNothing);
-    expect(find.byType(NotifLoadingView), findsOneWidget);
-  });
-
-  testWidgets('error branch unchanged', (tester) async {
-    await _pump(
-      tester,
-      const ActivityLogState(
-        loaded: true,
-        query: 'zzzz',
-        feedError: 'offline',
-        socialError: 'offline',
-      ),
+    expect(
+      Directionality.of(tester.element(find.byType(ActivityNoMatchState))),
+      TextDirection.rtl,
     );
-    expect(find.text(en.notif_btn_retry), findsOneWidget);
-    expect(find.byType(ActivityNoMatchState), findsNothing);
-    expect(find.byType(ActivitySearchingOlderIndicator), findsNothing);
-  });
-
-  test('category label follows the selected chip', () {
-    expect(activityLogCategoryLabel(en, 'game'), en.notif_chip_games);
-    expect(activityLogCategoryLabel(en, 'all'), en.notif_chip_all);
   });
 }

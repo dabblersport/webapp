@@ -1,35 +1,38 @@
-// KAN-878: the Activity log's search states. Same visual family as
-// ActivityEmptyState (activity_empty_state.dart), which still owns the
-// no-query empty log; these two only appear while a search is active.
+// KAN-878: the Activity log's answer to a search that matched nothing, with
+// nothing older left to page in. Same DabblerEmptyState family as
+// ActivityEmptyState, but a search glyph and its own copy so "no matches"
+// never reads as "no activity".
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
-/// The localized label of the Activity log chip [category], mirroring the
-/// chips the notifications screen builds (`all`, `me`, `game`, `booking`,
-/// `social`, `reward`, `security`). Unknown keys fall back to "All".
-String activityLogCategoryLabel(AppLocalizations l10n, String category) =>
-    switch (category) {
-      'me' => l10n.notif_chip_you,
-      'game' => l10n.notif_chip_games,
-      'booking' => l10n.notif_chip_bookings,
-      'social' => l10n.notif_chip_social,
-      'reward' => l10n.notif_chip_rewards,
-      'security' => l10n.notif_chip_security,
-      _ => l10n.notif_chip_all,
-    };
-
-/// A search ran over the whole history and nothing matched.
 class ActivityNoMatchState extends StatelessWidget {
   const ActivityNoMatchState({
     super.key,
     required this.query,
-    required this.categoryLabel,
+    required this.category,
   });
 
+  /// The search text as typed; trimmed for display.
   final String query;
-  final String categoryLabel;
+
+  /// The ActivityLogState category key ('all', 'me', 'game', ...).
+  final String category;
+
+  /// The label of the category chip for [category]. Mirrors the keys and l10n
+  /// getters of the Activity chips row (notifications_screen_v2.dart
+  /// `_activityChips`); an unknown key reads as All.
+  static String categoryLabel(AppLocalizations l10n, String category) =>
+      switch (category) {
+        'me' => l10n.notif_chip_you,
+        'game' => l10n.notif_chip_games,
+        'booking' => l10n.notif_chip_bookings,
+        'social' => l10n.notif_chip_social,
+        'reward' => l10n.notif_chip_rewards,
+        'security' => l10n.notif_chip_security,
+        _ => l10n.notif_chip_all,
+      };
 
   @override
   Widget build(BuildContext context) {
@@ -42,38 +45,11 @@ class ActivityNoMatchState extends StatelessWidget {
       child: DabblerEmptyState(
         icon: 'search-normal',
         title: l10n.activity_search_no_match_title,
-        text: l10n.activity_search_no_match_body(query.trim(), categoryLabel),
+        text: l10n.activity_search_no_match_body(
+          query.trim(),
+          categoryLabel(l10n, category),
+        ),
         size: DabblerEmptyStateSize.page,
-      ),
-    );
-  }
-}
-
-/// No match yet, but older pages are still being searched.
-class ActivitySearchingOlderIndicator extends StatelessWidget {
-  const ActivitySearchingOlderIndicator({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final AppLocalizations l10n = AppLocalizations.of(context);
-    final String label = l10n.activity_search_loading_older;
-    return Padding(
-      padding: const EdgeInsets.all(DabblerSpacing.space6),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          DabblerSpinner(label: label),
-          const SizedBox(height: DabblerSpacing.space3),
-          ExcludeSemantics(
-            child: Text(
-              label,
-              textAlign: TextAlign.center,
-              style: DabblerType.smallRelaxed
-                  .resolveForDirection(Directionality.of(context))
-                  .copyWith(color: DabblerColors.of(context).textSecondary),
-            ),
-          ),
-        ],
       ),
     );
   }

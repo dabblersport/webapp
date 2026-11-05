@@ -1,6 +1,9 @@
 // KAN-852: the Activity log list, extracted from notifications_screen_v2.dart.
 // Loading, error-with-Retry, partial failure, genuine empty, date-grouped rows
 // and Load more — over the merged personal log.
+// KAN-878: a search with no match shows one "searching older" indicator while
+// older pages may still match, then ActivityNoMatchState — never the empty
+// state, and never a Load more button beside the indicator.
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -43,33 +46,26 @@ List<Widget> buildActivityLogSlivers(
         child: ActivityLogPartialError(message: error, onRetry: onRetry),
       ),
   ];
-  final bool searching = state.query.trim().isNotEmpty;
-  // KAN-878: an active search with no match yet is still searching while
-  // older pages remain; "no match" only once the whole history is in.
-  final bool searchingOlder =
-      searching &&
-      activities.isEmpty &&
-      (state.isSearchingOlder || state.hasMore);
-  if (searchingOlder) {
-    widgets.add(
-      const SliverToBoxAdapter(child: ActivitySearchingOlderIndicator()),
-    );
-    return widgets;
-  }
   if (activities.isEmpty) {
-    widgets.add(
-      SliverToBoxAdapter(
-        child: searching
-            ? ActivityNoMatchState(
-                query: state.query,
-                categoryLabel: activityLogCategoryLabel(
-                  AppLocalizations.of(context),
-                  state.category,
+    if (state.query.trim().isEmpty) {
+      widgets.add(const SliverToBoxAdapter(child: ActivityEmptyState()));
+    } else {
+      // A searched miss owns the whole tail: older pages that may still match
+      // get one indicator (the search loop drives loadMore() itself, so no
+      // Load more and no second spinner); nothing left means no match.
+      final bool olderMayMatch = state.isSearchingOlder || state.hasMore;
+      widgets.add(
+        SliverToBoxAdapter(
+          child: olderMayMatch
+              ? const ActivitySearchingOlder()
+              : ActivityNoMatchState(
+                  query: state.query,
+                  category: state.category,
                 ),
-              )
-            : const ActivityEmptyState(),
-      ),
-    );
+        ),
+      );
+      return widgets;
+    }
   }
 
   final Map<String, List<ActivityFeedEvent>> grouped =
@@ -154,6 +150,31 @@ class ActivityLogPartialError extends StatelessWidget {
         size: DabblerEmptyStateSize.inline,
         onRetry: onRetry,
         retryLabel: l10n.notif_btn_retry,
+      ),
+    );
+  }
+}
+
+/// KAN-878: the search found nothing yet, but older pages may still match.
+class ActivitySearchingOlder extends StatelessWidget {
+  const ActivitySearchingOlder({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.all(DabblerSpacing.space6),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const DabblerSpinner(),
+          const SizedBox(height: DabblerSpacing.space3),
+          DabblerText(
+            AppLocalizations.of(context).activity_search_loading_older,
+            style: DabblerType.caption1,
+            tone: DabblerTextTone.secondary,
+            textAlign: TextAlign.center,
+          ),
+        ],
       ),
     );
   }
