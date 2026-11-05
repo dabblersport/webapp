@@ -164,10 +164,13 @@ class DeviceLocationStore {
     String? cityId,
     String? country,
     String? countryCode,
+    bool clearArea = false,
     DateTime? now,
   }) async {
     final DeviceLocation? cur = read();
-    if (cur != null && cur.city == city) {
+    // [clearArea]: the user chose the city on its own (KAN-588), so even the
+    // city they are already in drops its area and point.
+    if (cur != null && cur.city == city && !(clearArea && cur.hasPoint)) {
       // Same name is the same city unless both sides carry an identity and it
       // differs (Paris, France versus Paris, Texas).
       final bool differs =

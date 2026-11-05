@@ -64,6 +64,28 @@ void main() {
       expect(same.distanceControlsEnabled, isTrue);
     });
 
+    test(
+      'KAN-588: city only in the city already selected clears area and point',
+      () async {
+        final s = await _store('u1');
+        await s.setManual(
+          city: 'Dubai',
+          area: 'Al Barsha',
+          lat: 25.1,
+          lng: 55.2,
+        );
+        final DeviceLocation next = await s.changeCity(
+          'Dubai',
+          clearArea: true,
+        );
+        expect(next.city, 'Dubai');
+        expect(next.area, isNull);
+        expect(next.hasPoint, isFalse);
+        expect(next.distanceControlsEnabled, isFalse);
+        expect(s.read()!.hasPoint, isFalse);
+      },
+    );
+
     test('choosing an area afterwards re-enables distance', () async {
       final s = await _store('u1');
       await s.changeCity('Abu Dhabi');

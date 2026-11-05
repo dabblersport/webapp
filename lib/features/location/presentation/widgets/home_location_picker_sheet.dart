@@ -226,6 +226,7 @@ class _HomeLocationPickerSheetState
           currentState: currentState,
           onSaved: _useSaved,
           onArea: _useManual,
+          onCity: _useCity,
           onAdd: () => startAddSavedPlace(context, ref),
         ),
         // The end-of-list room the root padding gave, as a trailing gap.
@@ -285,6 +286,15 @@ class _HomeLocationPickerSheetState
 
   Future<void> _useSaved(ProfileLocation location) async {
     await ref.read(activeLocationProvider.notifier).useSavedLocation(location);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  /// KAN-588: the city on its own. Clears any previous area and point, so the
+  /// listings scope to the city and the distance controls turn off.
+  Future<void> _useCity(Area city) async {
+    await ref
+        .read(activeLocationProvider.notifier)
+        .useManualCity(city.city, country: city.country, clearArea: true);
     if (mounted) Navigator.of(context).pop();
   }
 

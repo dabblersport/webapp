@@ -30,6 +30,8 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import 'package:dabbler/features/venues/experiment/places_ui_kit_experiment.dart';
+
 // =============================================================================
 // SCREEN
 // =============================================================================
@@ -750,8 +752,16 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
 
     return DabblerCardVenue(
       name: venue.name,
-      // KAN-638: details-only card; the cover slot is omitted, so no media
-      // space is reserved whether or not the venue has a photo.
+      // KAN-638: details-only card; with no experiment the cover slot is
+      // omitted, so no media space is reserved whether or not the venue has a
+      // photo.
+      // KAN-629: the experiment returns null (no cover) unless its default-off
+      // flag is on and the venue is one of the nine.
+      cover: experimentCover(
+        venueId: venue.id,
+        height: DabblerCardVenue.coverHeight,
+        baseline: null,
+      ),
       area: locationLine,
       tags: [
         // KAN-446: the tag always shows; without a distance it says so.

@@ -570,12 +570,14 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     String? cityId,
     String? country,
     String? countryCode,
+    bool clearArea = false,
   }) async {
     final DeviceLocation? next = await (await _store())?.changeCity(
       city,
       cityId: cityId,
       country: country,
       countryCode: countryCode,
+      clearArea: clearArea,
     );
     if (next != null && next.hasPoint) {
       state = AsyncData(_fromDeviceLocation(next));

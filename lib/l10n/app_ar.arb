@@ -2894,5 +2894,6 @@
   "profile_tag_organising_playing": "ينظّم · يلعب",
   "profile_invite_action_semantic": "دعوة",
   "profile_stat_games_played_visitor": "المباريات التي لعبها",
-  "profile_stat_sport_matches_visitor": "مباريات {sport}"
+  "profile_stat_sport_matches_visitor": "مباريات {sport}",
+  "listing_use_city_only": "استخدام المدينة فقط"
 }

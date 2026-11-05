@@ -8541,4 +8541,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String profile_stat_sport_matches_visitor(String sport) {
     return 'مباريات $sport';
   }
+
+  @override
+  String get listing_use_city_only => 'استخدام المدينة فقط';
 }

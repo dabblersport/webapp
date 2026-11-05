@@ -14908,6 +14908,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{sport} matches'**
   String profile_stat_sport_matches_visitor(String sport);
+
+  /// KAN-588 action on a city row in the Change location picker: choose the city on its own, with no area.
+  ///
+  /// In en, this message translates to:
+  /// **'Use city only'**
+  String get listing_use_city_only;
 }
 
 class _AppLocalizationsDelegate
