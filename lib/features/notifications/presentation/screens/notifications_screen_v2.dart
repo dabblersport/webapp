@@ -195,7 +195,18 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
             SliverToBoxAdapter(
               child: ActivitySummaryCard(state: activityState),
             ),
-            const SliverToBoxAdapter(child: ActivitySearchRow()),
+            // KAN-873: search is wired to the controller; the category is kept.
+            SliverToBoxAdapter(
+              child: ActivitySearchRow(
+                query: activityState.query,
+                onChanged: (String q) => ref
+                    .read(activityLogControllerProvider.notifier)
+                    .changeQuery(q),
+                onClear: () => ref
+                    .read(activityLogControllerProvider.notifier)
+                    .changeQuery(''),
+              ),
+            ),
           ],
           if (isNotif)
             ..._buildNotificationsSlivers(userId, notificationState)
