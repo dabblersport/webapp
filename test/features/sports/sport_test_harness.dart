@@ -328,6 +328,7 @@ class FakeLocation extends ActiveLocationNotifier {
     String? cityId,
     String? country,
     String? countryCode,
+    bool clearArea = false,
   }) async {
     // The page-local City must never reach here: counting is the assertion.
     manualCityCalls++;
