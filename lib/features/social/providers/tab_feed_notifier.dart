@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -336,6 +337,12 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
   },
 );
 
+/// The on-device cache key of the Nearby first page for [city] (KAN-588).
+@visibleForTesting
+String nearbyCacheKey(String? city) => city == null || city.trim().isEmpty
+    ? 'feed.nearby'
+    : 'feed.nearby.${city.trim()}';
+
 TabFeedNotifier _buildNearbyNotifier(
   NearbyFeedLoader loader,
   NearbyScope? appScope, {
@@ -357,7 +364,9 @@ TabFeedNotifier _buildNearbyNotifier(
     autoLoad: appScope != null,
     cache: cache,
     accountId: accountId,
-    cacheKey: 'feed.nearby',
+    // Per city (KAN-588), so a change of city never shows the previous city's
+    // cached posts while the new city loads.
+    cacheKey: nearbyCacheKey(appScope?.city),
   );
 }
 
