@@ -639,33 +639,78 @@ class DataExportService {
     }
   }
 
+  // KAN-865: the RPC scopes to auth.uid() (creator OR roster) and the
+  // creator-only rows are dropped client-side, so userId is no longer sent.
   Future<List<Map<String, dynamic>>?> _getEnhancedGameHistoryData(
     String userId,
   ) async {
     try {
-      final response = await _supabase
-          .from(SupabaseConfig.gamesTable)
-          .select('''
-            *,
-            game_roster!inner(user_id, joined_at, status, role)
-          ''')
-          .eq('game_roster.user_id', userId)
-          .order('created_at', ascending: false);
-
-      return response
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'games, game_roster tables',
-              'purpose': 'Game history and social interaction tracking',
-              'legal_basis': 'Contract performance and legitimate interest',
-            },
-          )
-          .toList();
+      return await fetchOwnGameHistoryVia(
+        (fn, params) async => _supabase.rpc(fn, params: params),
+      );
     } catch (e) {
       Logger.warning('Could not fetch game history data', e);
       return null;
     }
+  }
+
+  // Defined by supabase/migrations/20261105130000_kan865_export_own_game_history.sql.
+  // No SupabaseConfig constant exists for it yet and that file is outside this
+  // ticket's scope, so the name is held here until it is moved.
+  static const String _exportOwnGameHistoryRpc = 'export_own_game_history';
+
+  static Future<List<Map<String, dynamic>>> _ownGameHistoryRows(
+    Future<dynamic> Function(String fn, Map<String, dynamic> params) rpc,
+  ) async {
+    final response = await rpc(_exportOwnGameHistoryRpc, const {});
+    return (response as List)
+        .map((row) => Map<String, dynamic>.from(row as Map))
+        .toList();
+  }
+
+  /// Calls `export_own_game_history` (no params), keeps only the rows where
+  /// the caller has a roster row (the old `game_roster!inner` join dropped
+  /// creator-only games), and maps each with [mapGameHistoryRow], keeping the
+  /// RPC's created_at DESC order.
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> fetchOwnGameHistoryVia(
+    Future<dynamic> Function(String fn, Map<String, dynamic> params) rpc,
+  ) async => [
+    for (final row in await _ownGameHistoryRows(rpc))
+      if (row['my_roster'] != null) mapGameHistoryRow(row),
+  ];
+
+  /// Legacy export: every game the caller created or played (the old
+  /// `creator OR participant` filter), mapped with [mapLegacyGameRow].
+  @visibleForTesting
+  static Future<List<Map<String, dynamic>>> fetchLegacyGamesVia(
+    Future<dynamic> Function(String fn, Map<String, dynamic> params) rpc,
+  ) async => (await _ownGameHistoryRows(rpc)).map(mapLegacyGameRow).toList();
+
+  /// Strips the two RPC-only keys so a row carries exactly the old `games.*`
+  /// key set.
+  @visibleForTesting
+  static Map<String, dynamic> mapLegacyGameRow(Map<String, dynamic> row) =>
+      Map<String, dynamic>.of(row)
+        ..remove('my_roster')
+        ..remove('event_type');
+
+  /// Maps one `export_own_game_history` row onto the key set the old
+  /// `games.*, game_roster!inner(...)` export produced: `my_roster` goes back
+  /// into `game_roster` (a one-row list, or empty when the caller is only the
+  /// creator) and `event_type`, which games.* never had, is not exported.
+  @visibleForTesting
+  static Map<String, dynamic> mapGameHistoryRow(Map<String, dynamic> row) {
+    final myRoster = row['my_roster'];
+    return {
+      ...mapLegacyGameRow(row),
+      'game_roster': [
+        if (myRoster != null) Map<String, dynamic>.from(myRoster as Map),
+      ],
+      'data_source': 'games, game_roster tables',
+      'purpose': 'Game history and social interaction tracking',
+      'legal_basis': 'Contract performance and legitimate interest',
+    };
   }
 
   Future<Map<String, dynamic>?> _getPrivacySettingsData(String userId) async {
@@ -1778,11 +1823,10 @@ Last Updated: ${DateTime.now().toIso8601String()}
       userData['profile'] = profileResponse;
 
       // Games data
-      final gamesResponse = await _supabase
-          .from(SupabaseConfig.gamesTable)
-          .select()
-          .or('creator_id.eq.$userId,participants.cs.{$userId}');
-      userData['games'] = gamesResponse;
+      // KAN-865: through export_own_game_history (auth.uid()-scoped).
+      userData['games'] = await fetchLegacyGamesVia(
+        (fn, params) async => _supabase.rpc(fn, params: params),
+      );
 
       // Add other data sources...
       // (keeping original implementation for compatibility)
