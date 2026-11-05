@@ -253,10 +253,24 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                   ),
                 ),
                 const DabblerGap.v(DabblerSpacing.space5),
-                AuthAccountLine(
-                  prefix: l10n.auth_already_have_account,
-                  action: l10n.auth_log_in,
-                  onAction: _isLoading ? null : _handleLogin,
+                // The line is one control to assistive tech and e2e: a button
+                // named by the whole sentence. The visible "Log in" span keeps
+                // its own tap for pointers.
+                authIdentify(
+                  'auth-welcome-log-in',
+                  Semantics(
+                    button: true,
+                    enabled: !_isLoading,
+                    label:
+                        '${l10n.auth_already_have_account} ${l10n.auth_log_in}',
+                    onTap: _isLoading ? null : _handleLogin,
+                    excludeSemantics: true,
+                    child: AuthAccountLine(
+                      prefix: l10n.auth_already_have_account,
+                      action: l10n.auth_log_in,
+                      onAction: _isLoading ? null : _handleLogin,
+                    ),
+                  ),
                 ),
                 const DabblerGap.v(DabblerSpacing.space4),
                 const AuthLegalNotice(),
