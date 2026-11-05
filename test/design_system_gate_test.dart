@@ -73,6 +73,13 @@ const _domainDurationReason =
 
 const List<GateAllow> allowList = [
   GateAllow(
+    'lib/experiment_places_main.dart',
+    ['numeric named arg', 'Material visual widget', 'EdgeInsets numeric'],
+    'KAN-629 throwaway device harness for the Places UI Kit experiment; a '
+        'separate entrypoint that never ships in the app, so it has no design '
+        'tokens to draw from.',
+  ),
+  GateAllow(
     'lib/widgets/connection_banner.dart',
     ['Duration literal'],
     'KAN-604 design timing: height 220ms and opacity 160ms ease-out; the '

@@ -153,6 +153,10 @@ Widget? experimentCover({
   final host = PlacesExperiment.host;
   if (placeId == null || host == null) return baseline;
   if (PlacesExperiment.guard.remaining <= 0) return baseline;
-  return host.buildCover(placeId, height: height, fallback: baseline) ??
+  return host.buildCover(
+        placeId,
+        height: height,
+        fallback: baseline ?? const SizedBox.shrink(),
+      ) ??
       baseline;
 }

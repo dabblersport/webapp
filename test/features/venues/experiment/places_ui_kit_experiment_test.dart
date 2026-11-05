@@ -76,7 +76,7 @@ void main() {
 
   test('flag on and everything present: the host cover', () {
     final w = _cover();
-    expect((w.key as ValueKey).value, 'google');
+    expect((w!.key as ValueKey).value, 'google');
     expect(host.builds, 1);
   });
 
