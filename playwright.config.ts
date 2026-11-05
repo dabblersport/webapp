@@ -20,8 +20,13 @@ const NAVIGATION_TIMEOUT_MS = 15_000; // route settle
 const UI_STATE_TIMEOUT_MS = 10_000; // expected-UI-state assertion
 const TEST_TIMEOUT_MS = 90_000; // upper end of the 60-90s individual-test bound
 
+// Staging (CEO order 2026-11-05): staging.dabbler.pro serves the Alpha
+// branch and is the single test environment, so a plain `playwright test`
+// runs against it. E2E_BASE_URL overrides it; `npm run test:e2e` points it
+// at the locally built bundle, and only a local URL starts the static server.
 const PORT = process.env.E2E_PORT ?? '4173';
-const BASE_URL = `http://127.0.0.1:${PORT}`;
+const BASE_URL = process.env.E2E_BASE_URL ?? 'https://staging.dabbler.pro';
+const IS_LOCAL = /^https?:\/\/(127\.0\.0\.1|localhost)(:|\/|$)/.test(BASE_URL);
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -76,7 +81,7 @@ export default defineConfig({
     },
   ],
 
-  webServer: {
+  webServer: IS_LOCAL ? {
     // Serves the already-built static bundle (see tests/e2e/support/static-server.mjs).
     // The build itself happens in `npm run e2e:build`, which `test:e2e` runs
     // first — kept out of this command so the 60s server-ready ceiling
@@ -94,5 +99,5 @@ export default defineConfig({
     timeout: SERVER_READY_TIMEOUT_MS,
     reuseExistingServer: !process.env.CI,
     env: { E2E_PORT: PORT },
-  },
+  } : undefined,
 });

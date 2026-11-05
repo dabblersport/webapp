@@ -10,7 +10,8 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "e2e:build": "node tests/e2e/support/build-web.mjs",
-    "test:e2e": "npm run e2e:build && playwright test",
+    "test:e2e": "npm run e2e:build && E2E_BASE_URL=http://127.0.0.1:${E2E_PORT:-4173} playwright test",
+    "test:e2e:staging": "playwright test",
     "test:e2e:failing": "npm run e2e:build && playwright test --config=playwright.failing.config.ts",
     "test:api": "bash tests/api/run.sh",
     "test:maestro": "bash tests/maestro/run.sh",
