@@ -129,7 +129,8 @@ begin
   -- P5, P6, P7
   for r in select * from (values
     ('rpc_get_activity_feed', 'public.rpc_get_activity_feed(text,integer,timestamp with time zone)', '73036a69dbec39c5bd44209b80147f1e', '{"search_path=public, pg_temp"}', 'v'),
-    ('trg_meetup_rsvps_notify', 'public.trg_meetup_rsvps_notify()', '55efefd5cf5b5556d11f6ac093fd64b8', '{"search_path=public, pg_temp"}', 'v'),
+    -- KAN-883 (CTO 2026-11-05): accept the authored 55efefd5 or the comment-free prod body 0dbf2b3c.
+    ('trg_meetup_rsvps_notify', 'public.trg_meetup_rsvps_notify()', (case when (select md5(prosrc) from pg_proc where oid = to_regprocedure('public.trg_meetup_rsvps_notify()')) = '0dbf2b3c3f4c10ac48acc8117afba537' then '0dbf2b3c3f4c10ac48acc8117afba537' else '55efefd5cf5b5556d11f6ac093fd64b8' end), '{"search_path=public, pg_temp"}', 'v'),
     ('trg_meetups_cancel_notify', 'public.trg_meetups_cancel_notify()', '48990a6a71e751614d5fbd6f29c2fdde', '{"search_path=public, pg_temp"}', 'v'),
     ('active_stream', 'public.active_stream(text[],text,integer,timestamp with time zone,text,uuid)', '0e7b7eddfce6dee2746734fb47fbf332', '{"search_path=public, pg_temp"}', 's')
     ) t(fn, sig, md5, cfg, vol) loop
