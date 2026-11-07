@@ -263,6 +263,26 @@ void main() {
     });
   });
 
+  test('search resumes after an independently loading page', () async {
+    final FakeFeed feed = FakeFeed(pages: 4, needlePage: 2, gated: true);
+    final ActivityLogController c = make(feed);
+    await c.load();
+    final Future<void> page = c.loadMore();
+    await settle();
+    c.changeQuery('needle');
+    expect(c.state.isLoadingMore, isTrue);
+    feed.release();
+    await page;
+    await settle();
+    expect(feed.calls, 3);
+    expect(c.state.isSearchingOlder, isTrue);
+    feed.release();
+    await settle();
+    expect(c.state.filteredActivities.map((e) => e.id), <String>['e100']);
+    expect(c.state.isSearchingOlder, isFalse);
+    c.dispose();
+  });
+
   group('AC4 cancellation', () {
     test('clearing the query mid-loop stops it with no later writes', () async {
       final FakeFeed feed = FakeFeed(pages: 10, gated: true);

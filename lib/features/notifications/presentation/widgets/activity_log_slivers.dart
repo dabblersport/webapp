@@ -2,7 +2,7 @@
 // Loading, error-with-Retry, partial failure, genuine empty, date-grouped rows
 // and Load more — over the merged personal log.
 // KAN-878: a search with no match shows one "searching older" indicator while
-// older pages may still match, then ActivityNoMatchState — never the empty
+// older pages are loading, then ActivityNoMatchState — never the empty
 // state, and never a Load more button beside the indicator.
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -50,10 +50,10 @@ List<Widget> buildActivityLogSlivers(
     if (state.query.trim().isEmpty) {
       widgets.add(const SliverToBoxAdapter(child: ActivityEmptyState()));
     } else {
-      // A searched miss owns the whole tail: older pages that may still match
-      // get one indicator (the search loop drives loadMore() itself, so no
-      // Load more and no second spinner); nothing left means no match.
-      final bool olderMayMatch = state.isSearchingOlder || state.hasMore;
+      // A searched miss owns the whole tail: active pagination gets one
+      // indicator, without a Load more button or a second spinner. Once
+      // pagination stops, show the no-match state for the loaded results.
+      final bool olderMayMatch = state.isSearchingOlder || state.isLoadingMore;
       widgets.add(
         SliverToBoxAdapter(
           child: olderMayMatch

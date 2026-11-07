@@ -166,6 +166,11 @@ class ActivityLogController extends StateNotifier<ActivityLogState> {
     if (!mounted) return;
     _apply(results[0], results[1], s.activities);
     state = state.copyWith(isLoadingMore: false);
+    // A query may have started while this independently requested page was
+    // in flight. Resume its search once the page has finished.
+    if (!state.isSearchingOlder && _queryHasNoMatch && state.error == null) {
+      unawaited(_searchOlder());
+    }
   }
 
   /// Selects a chip. `all` restores the full list.

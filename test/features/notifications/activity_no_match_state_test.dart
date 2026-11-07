@@ -1,7 +1,7 @@
 // KAN-878: the Activity log answers a search with no match. While older pages
-// may still hold one (isSearchingOlder || hasMore) it shows one searching
-// indicator and no Load more; only when nothing is left does it say "no
-// matches". A blank query keeps the genuine-empty ActivityEmptyState.
+// are being loaded it shows one searching
+// indicator and no Load more; once loading stops it says "no matches"
+// for the loaded results. A blank query keeps the genuine-empty ActivityEmptyState.
 
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
 import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
@@ -34,8 +34,10 @@ ActivityLogState _state({
   bool hasMore = false,
   bool isLoadingMore = false,
   String category = 'all',
+  String? feedError,
 }) => ActivityLogState(
   loaded: true,
+  feedError: feedError,
   activities: activities ?? <ActivityFeedEvent>[_event('1'), _event('2')],
   query: query,
   category: category,
@@ -108,7 +110,6 @@ void main() {
 
   for (final ({String name, bool searching, bool hasMore}) c in [
     (name: 'isSearchingOlder', searching: true, hasMore: false),
-    (name: 'hasMore', searching: false, hasMore: true),
     (name: 'both', searching: true, hasMore: true),
   ]) {
     testWidgets('TC2 no match while older may match (${c.name}): one '
@@ -136,6 +137,37 @@ void main() {
       expect(find.byType(LoadMoreButton), findsNothing);
     });
   }
+
+  testWidgets('stopped search with more pages does not keep spinning', (
+    WidgetTester tester,
+  ) async {
+    await _pump(tester, _host(_state(query: 'zzzz', hasMore: true)));
+    expect(find.byType(ActivitySearchingOlder), findsNothing);
+    expect(find.byType(ActivityNoMatchState), findsOneWidget);
+  });
+
+  testWidgets('pagination failure stops the indicator and shows retry', (
+    WidgetTester tester,
+  ) async {
+    await _pump(
+      tester,
+      _host(_state(query: 'zzzz', hasMore: true, feedError: 'page failed')),
+    );
+    expect(find.byType(ActivitySearchingOlder), findsNothing);
+    expect(find.byType(ActivityLogPartialError), findsOneWidget);
+    expect(find.byType(ActivityNoMatchState), findsOneWidget);
+  });
+
+  testWidgets('an independently loading page keeps the indicator visible', (
+    WidgetTester tester,
+  ) async {
+    await _pump(
+      tester,
+      _host(_state(query: 'zzzz', hasMore: true, isLoadingMore: true)),
+    );
+    expect(find.byType(ActivitySearchingOlder), findsOneWidget);
+    expect(find.byType(ActivityNoMatchState), findsNothing);
+  });
 
   testWidgets('TC3 blank query with activities: rows are shown', (
     WidgetTester tester,
