@@ -101,6 +101,11 @@ void main() {
   // Widget tests otherwise use Ahem and platform fallback glyphs, which hide
   // the real labels and produce different pixels on macOS and Linux.
   setUpAll(() async {
+    final icons = FontLoader('packages/iconsax_flutter/FlutterIconsax')
+      ..addFont(
+        rootBundle.load('packages/iconsax_flutter/fonts/FlutterIconsax.ttf'),
+      );
+    await icons.load();
     for (final entry in <String, List<String>>{
       'Glory': [
         'Glory-Regular.ttf',
@@ -203,14 +208,15 @@ void main() {
 
   // The same fonts rasterize differently on macOS and Linux. Keep exact
   // comparisons for each supported host rather than tolerating pixel changes.
-  final platform = Platform.isLinux
-      ? 'linux'
-      : Platform.isMacOS
-      ? 'macos'
-      : throw UnsupportedError('Rating goldens support Linux and macOS only');
-
   for (final lang in ['en', 'ar']) {
     testWidgets('golden $lang', (t) async {
+      final platform = Platform.isLinux
+          ? 'linux'
+          : Platform.isMacOS
+          ? 'macos'
+          : throw UnsupportedError(
+              'Rating goldens support Linux and macOS only',
+            );
       final repo = _Repo(Ok(RatingAggregate.fromRow(_row(), _labels)));
       await _pump(t, _host(repo, locale: Locale(lang)));
       expect(
