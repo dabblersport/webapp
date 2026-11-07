@@ -1,3 +1,5 @@
+import 'dart:io' show Platform;
+
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/ratings/data/rating_aggregate_repository.dart';
@@ -8,6 +10,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -23,7 +26,11 @@ const _labels = {
     labelAr: 'الالتزام',
   ),
   'skill': RatingTag(key: 'skill', labelEn: 'Skill', labelAr: 'المهارة'),
-  'teamwork': RatingTag(key: 'teamwork', labelEn: 'Teamwork', labelAr: 'الفريق'),
+  'teamwork': RatingTag(
+    key: 'teamwork',
+    labelEn: 'Teamwork',
+    labelAr: 'الفريق',
+  ),
 };
 
 Map<String, dynamic> _row({int? count = 12}) => {
@@ -58,7 +65,10 @@ Widget _host(_Repo repo, {String? userId = 'u1', Locale? locale}) =>
         locale: locale ?? const Locale('en'),
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
-        theme: DabblerDesignSystemTheme.withTokens(ThemeData()),
+        theme: DabblerDesignSystemTheme.withFonts(
+          DabblerDesignSystemTheme.withTokens(ThemeData()),
+          locale: locale ?? const Locale('en'),
+        ),
         home: Scaffold(
           body: RepaintBoundary(
             key: const Key('shot'),
@@ -86,6 +96,36 @@ Future<void> _pump(WidgetTester t, Widget w) async {
 }
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
+  // Widget tests otherwise use Ahem and platform fallback glyphs, which hide
+  // the real labels and produce different pixels on macOS and Linux.
+  setUpAll(() async {
+    for (final entry in <String, List<String>>{
+      'Glory': [
+        'Glory-Regular.ttf',
+        'Glory-Medium.ttf',
+        'Glory-SemiBold.ttf',
+        'Glory-Bold.ttf',
+      ],
+      'Meral Sans': [
+        'meral-sans-regular.ttf',
+        'meral-sans-medium.ttf',
+        'meral-sans-semibold.ttf',
+        'meral-sans-bold.ttf',
+      ],
+      'Gloock': ['Gloock-Regular.ttf'],
+      'Wingx': ['Wingx-Regular.otf'],
+    }.entries) {
+      final loader = FontLoader('packages/dabbler_design_system/${entry.key}');
+      for (final file in entry.value) {
+        loader.addFont(
+          rootBundle.load('packages/dabbler_design_system/fonts/$file'),
+        );
+      }
+      await loader.load();
+    }
+  });
   group('RatingAggregate.fromRow', () {
     test('average, count and the three best labelled tags', () {
       final a = RatingAggregate.fromRow(_row(), _labels);
@@ -109,7 +149,8 @@ void main() {
     expect(find.byType(DabblerChip), findsNothing);
     expect(find.textContaining('rating'), findsNothing);
     final gap =
-        t.getTopLeft(find.text('below')).dy - t.getBottomLeft(find.text('above')).dy;
+        t.getTopLeft(find.text('below')).dy -
+        t.getBottomLeft(find.text('above')).dy;
     expect(gap, lessThan(2));
   });
 
@@ -125,7 +166,9 @@ void main() {
     expect(repo.asked, isNull);
   });
 
-  testWidgets('aggregate renders star, average, count and tag chips', (t) async {
+  testWidgets('aggregate renders star, average, count and tag chips', (
+    t,
+  ) async {
     final repo = _Repo(Ok(RatingAggregate.fromRow(_row(), _labels)));
     await _pump(t, _host(repo));
     expect(repo.asked, 'u1');
@@ -158,13 +201,30 @@ void main() {
     expect(find.byType(BottomSheet), findsNothing);
   });
 
+  // The same fonts rasterize differently on macOS and Linux. Keep exact
+  // comparisons for each supported host rather than tolerating pixel changes.
+  final platform = Platform.isLinux
+      ? 'linux'
+      : Platform.isMacOS
+      ? 'macos'
+      : throw UnsupportedError('Rating goldens support Linux and macOS only');
+
   for (final lang in ['en', 'ar']) {
     testWidgets('golden $lang', (t) async {
       final repo = _Repo(Ok(RatingAggregate.fromRow(_row(), _labels)));
       await _pump(t, _host(repo, locale: Locale(lang)));
+      expect(
+        find.text(lang == 'ar' ? 'الروح الرياضية' : 'Sportsmanship'),
+        findsOneWidget,
+      );
+      expect(find.byType(DabblerChip), findsNWidgets(3));
+      expect(
+        Directionality.of(t.element(find.byType(RatingSummaryView))),
+        lang == 'ar' ? TextDirection.rtl : TextDirection.ltr,
+      );
       await expectLater(
         find.byKey(const Key('shot')),
-        matchesGoldenFile('goldens/summary_$lang.png'),
+        matchesGoldenFile('goldens/summary_${lang}_$platform.png'),
       );
     });
   }
