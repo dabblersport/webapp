@@ -35,3 +35,16 @@ flutter build web --release \
   --dart-define=GIPHY_API_KEY="${GIPHY_API_KEY:-}" \
   --dart-define=MAPBOX_ACCESS_TOKEN="${MAPBOX_ACCESS_TOKEN:-}" \
   --dart-define=MAPBOX_TOKEN="${MAPBOX_ACCESS_TOKEN:-}"
+
+# Let staging QA verify the exact deployed commit without exposing client secrets.
+python3 - <<'PY'
+import json, os
+from pathlib import Path
+from urllib.parse import urlparse
+Path('build/web/delivery.json').write_text(json.dumps({
+    'sha': os.environ.get('CF_PAGES_COMMIT_SHA', ''),
+    'branch': os.environ.get('CF_PAGES_BRANCH', ''),
+    'environment': os.environ['ENVIRONMENT'],
+    'backend_host': urlparse(os.environ['SUPABASE_URL']).hostname,
+}))
+PY
