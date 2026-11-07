@@ -12,9 +12,10 @@ ThemeData renderThemeBase() =>
     : ThemeData.light();
 
 /// Root folder render tests write PNGs under (`--dart-define=SHOTS_ROOT=...`).
+/// By default, output stays in the checkout's build directory.
 const String kShotsRoot = String.fromEnvironment(
   'SHOTS_ROOT',
-  defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan',
+  defaultValue: 'build/render-shots',
 );
 
 /// Lets bundled and network images load for real (asset IO happens outside
