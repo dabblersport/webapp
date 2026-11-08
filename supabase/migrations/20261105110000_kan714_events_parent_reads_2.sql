@@ -171,8 +171,8 @@ BEGIN
       ('public.rpc_booking_cancel(uuid)', '574e008d904dbb4e40db298559a9192d'),
       ('public.rpc_booking_hold_for_game_kan712_inner(uuid,uuid,timestamp with time zone,timestamp with time zone)', 'df2359a7c9fb031cb350836139a13ab9'),
       ('public.rpc_booking_hold_for_meetup(uuid,uuid,timestamp with time zone,timestamp with time zone)', '0b7e53391b2a44007316d42036d95134'),
-      ('public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)', 'e565a2ba82469724f878435a2f8aaeae'),
-      ('public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)', '77a14a223d4ad16d2f62db46a8ddbcb9'),
+      ('public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)', '5b8883b2ab8b55f8d2119c6fbd023dcc'),
+      ('public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)', '0f5ba02e7123f095436350842f229dae'),
       ('public.rpc_search_entities(text,text[],text,integer)', '802a43a24f290110b614aa1ff9c04570'),
       ('public.rpc_unified_search_sectioned(text,uuid,double precision,double precision,double precision,integer)', '399680ac808bddb5a34ef081410dfbd4'),
       ('public.settle_game(uuid,boolean)', 'ee62121d87bee5c6dd1109e6ad11d8b4'),
@@ -1284,6 +1284,10 @@ begin
 end;
 $function$;
 
+-- KAN-887 (CTO ruling dreq-9e4edd4c): rpc_create_game / rpc_create_meetup are the step-25 bodies
+-- (20261105120000_kan794_d04_on_live_bodies.sql, post-image md5(prosrc) 5b8883b2 / 0f5ba02e) with only part 2's
+-- own delta: the request_id replay lookup reads the overlay instead of public.games / public.meetups.
+-- Post-image md5(prosrc) 1b3aa6f2b8033bdf64c5bc856d6c7f43 / f347168e1c1a6b424ebabea41ff3e85f, asserted in section 5.
 -- [manifest 49] public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)
 CREATE OR REPLACE FUNCTION public.rpc_create_game(p_actor_type text, p_sport_id uuid, p_sport_variant_id uuid, p_title text DEFAULT NULL::text, p_venue_space_id uuid DEFAULT NULL::uuid, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_bench_slots integer DEFAULT 0, p_listing_visibility text DEFAULT 'public'::text, p_join_policy text DEFAULT 'open'::text, p_min_skill integer DEFAULT NULL::integer, p_max_skill integer DEFAULT NULL::integer, p_rules jsonb DEFAULT NULL::jsonb, p_squad_id uuid DEFAULT NULL::uuid, p_allow_spectators boolean DEFAULT false, p_allows_waitlist boolean DEFAULT false, p_sport_specific_data jsonb DEFAULT NULL::jsonb, p_cost_cover text DEFAULT NULL::text, p_geo_location_id uuid DEFAULT NULL::uuid, p_area_id uuid DEFAULT NULL::uuid, p_lat double precision DEFAULT NULL::double precision, p_lng double precision DEFAULT NULL::double precision, p_min_players integer DEFAULT NULL::integer, p_max_players integer DEFAULT NULL::integer, p_price_aed numeric DEFAULT NULL::numeric, p_request_id uuid DEFAULT NULL::uuid)
  RETURNS uuid
@@ -1292,28 +1296,18 @@ CREATE OR REPLACE FUNCTION public.rpc_create_game(p_actor_type text, p_sport_id 
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_uid uuid; gid uuid; v_constraint text;
+  pid uuid; gid uuid;
 BEGIN
   IF p_request_id IS NULL THEN
     RETURN public.rpc_create_game_legacy_v2(p_actor_type, p_sport_id, p_sport_variant_id, p_title, p_venue_space_id, p_start_at, p_end_at, p_bench_slots, p_listing_visibility, p_join_policy, p_min_skill, p_max_skill, p_rules, p_squad_id, p_allow_spectators, p_allows_waitlist, p_sport_specific_data, p_cost_cover, p_geo_location_id, p_area_id, p_lat, p_lng, p_min_players, p_max_players, p_price_aed);
   END IF;
-  -- Request-id lookup FIRST, before every guard and limit. Only the creator is ever served the row.
-  v_uid := public.effective_actor_uid();
-  IF v_uid IS NOT NULL THEN
-    SELECT g.id INTO gid FROM public.kan714_games_read g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
-    IF gid IS NOT NULL THEN RETURN gid; END IF;
-  END IF;
+  -- choose_actor re-asserts the caller owns the acting profile; a replay is only ever served to the creator.
+  pid := public.choose_actor(p_actor_type);
+  PERFORM pg_advisory_xact_lock(hashtextextended('rpc_create_game:' || pid::text || ':' || p_request_id::text, 0));
+  SELECT g.id INTO gid FROM public.kan714_games_read g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game' WHERE e.creator_profile_id = pid AND e.request_id = p_request_id;  -- KAN-823: creator + request_id from events (KAN-772 D04)
+  IF FOUND THEN RETURN gid; END IF;
   PERFORM set_config('thebes.create_request_id', p_request_id::text, true);
-  BEGIN
-    gid := public.rpc_create_game_legacy_v2(p_actor_type, p_sport_id, p_sport_variant_id, p_title, p_venue_space_id, p_start_at, p_end_at, p_bench_slots, p_listing_visibility, p_join_policy, p_min_skill, p_max_skill, p_rules, p_squad_id, p_allow_spectators, p_allows_waitlist, p_sport_specific_data, p_cost_cover, p_geo_location_id, p_area_id, p_lat, p_lng, p_min_players, p_max_players, p_price_aed);
-  EXCEPTION WHEN unique_violation THEN
-    GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
-    PERFORM set_config('thebes.create_request_id', '', true);
-    IF v_constraint IS DISTINCT FROM 'games_creator_user_request_id_key' THEN RAISE; END IF;
-    SELECT g.id INTO gid FROM public.kan714_games_read g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
-    IF gid IS NULL THEN RAISE; END IF;
-    RETURN gid;
-  END;
+  gid := public.rpc_create_game_legacy_v2(p_actor_type, p_sport_id, p_sport_variant_id, p_title, p_venue_space_id, p_start_at, p_end_at, p_bench_slots, p_listing_visibility, p_join_policy, p_min_skill, p_max_skill, p_rules, p_squad_id, p_allow_spectators, p_allows_waitlist, p_sport_specific_data, p_cost_cover, p_geo_location_id, p_area_id, p_lat, p_lng, p_min_players, p_max_players, p_price_aed);
   PERFORM set_config('thebes.create_request_id', '', true);
   RETURN gid;
 END;
@@ -1327,28 +1321,17 @@ CREATE OR REPLACE FUNCTION public.rpc_create_meetup(p_actor_type text, p_sport_i
  SET search_path TO 'public', 'pg_temp'
 AS $function$
 DECLARE
-  v_uid uuid; mid uuid; v_constraint text;
+  pid uuid; mid uuid;
 BEGIN
   IF p_request_id IS NULL THEN
     RETURN public.rpc_create_meetup_legacy_v2(p_actor_type, p_sport_id, p_sport_variant_id, p_title, p_description, p_venue_id, p_location_name, p_geo_location_id, p_area_id, p_start_at, p_end_at, p_capacity, p_listing_visibility, p_rsvp_policy, p_members_only, p_min_skill, p_max_skill, p_vibe_key, p_meta, p_is_indoor);
   END IF;
-  -- Request-id lookup FIRST, before every guard and limit. Only the creator is ever served the row.
-  v_uid := public.effective_actor_uid();
-  IF v_uid IS NOT NULL THEN
-    SELECT m.id INTO mid FROM public.kan714_meetups_read m JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
-    IF mid IS NOT NULL THEN RETURN mid; END IF;
-  END IF;
+  pid := public.choose_actor(p_actor_type);
+  PERFORM pg_advisory_xact_lock(hashtextextended('rpc_create_meetup:' || pid::text || ':' || p_request_id::text, 0));
+  SELECT m.id INTO mid FROM public.kan714_meetups_read m JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup' WHERE e.creator_profile_id = pid AND e.request_id = p_request_id;  -- KAN-823: creator + request_id from events (KAN-772 D04)
+  IF FOUND THEN RETURN mid; END IF;
   PERFORM set_config('thebes.create_request_id', p_request_id::text, true);
-  BEGIN
-    mid := public.rpc_create_meetup_legacy_v2(p_actor_type, p_sport_id, p_sport_variant_id, p_title, p_description, p_venue_id, p_location_name, p_geo_location_id, p_area_id, p_start_at, p_end_at, p_capacity, p_listing_visibility, p_rsvp_policy, p_members_only, p_min_skill, p_max_skill, p_vibe_key, p_meta, p_is_indoor);
-  EXCEPTION WHEN unique_violation THEN
-    GET STACKED DIAGNOSTICS v_constraint = CONSTRAINT_NAME;
-    PERFORM set_config('thebes.create_request_id', '', true);
-    IF v_constraint IS DISTINCT FROM 'meetups_creator_user_request_id_key' THEN RAISE; END IF;
-    SELECT m.id INTO mid FROM public.kan714_meetups_read m JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup' WHERE e.creator_user_id = v_uid AND e.request_id = p_request_id;  -- KAN-772: creator + request_id from events
-    IF mid IS NULL THEN RAISE; END IF;
-    RETURN mid;
-  END;
+  mid := public.rpc_create_meetup_legacy_v2(p_actor_type, p_sport_id, p_sport_variant_id, p_title, p_description, p_venue_id, p_location_name, p_geo_location_id, p_area_id, p_start_at, p_end_at, p_capacity, p_listing_visibility, p_rsvp_policy, p_members_only, p_min_skill, p_max_skill, p_vibe_key, p_meta, p_is_indoor);
   PERFORM set_config('thebes.create_request_id', '', true);
   RETURN mid;
 END;
@@ -1985,6 +1968,17 @@ BEGIN
      OR has_table_privilege('service_role', 'public.kan714_preimage_2', 'SELECT') THEN
     RAISE EXCEPTION 'KAN-714/2 post: kan714_preimage_2 readable by an API role';
   END IF;
+  -- KAN-887: the two rpc_create_* post-images (step-25 body + the overlay read only).
+  SELECT string_agg(t.f || ' (' || coalesce(md5(p.prosrc), 'absent') || ')', '; ') INTO v
+    FROM (VALUES
+      ('public.rpc_create_game(text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid)', '1b3aa6f2b8033bdf64c5bc856d6c7f43'),
+      ('public.rpc_create_meetup(text,uuid,uuid,text,text,uuid,text,uuid,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,boolean,integer,integer,text,jsonb,boolean,uuid)', 'f347168e1c1a6b424ebabea41ff3e85f')) AS t(f, h)
+    LEFT JOIN pg_proc p ON p.oid = to_regprocedure(t.f)
+   WHERE p.oid IS NULL OR md5(p.prosrc) <> t.h;
+  IF v IS NOT NULL THEN
+    RAISE EXCEPTION 'KAN-714/2 post: rpc_create_* body is not the reviewed post-image: %', v;
+  END IF;
+
   SELECT count(*) INTO n FROM public.kan714_preimage_2;
   IF n <> 22 + 5 THEN
     RAISE EXCEPTION 'KAN-714/2 post: kan714_preimage_2 has % rows, expected %', n, 22 + 5;
