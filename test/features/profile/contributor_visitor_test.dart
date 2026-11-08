@@ -145,6 +145,18 @@ ContributorProfileData _data({
 
 late _FakeProfile _global;
 
+// Upcoming dates can have the same text as a header count.
+Finder _headerCount(String count) => find.descendant(
+  of: find.byType(OwnProfileHeader),
+  matching: find.text(count),
+);
+
+Future<void> settle(WidgetTester tester) async {
+  for (int i = 0; i < 6; i++) {
+    await tester.pump(const Duration(milliseconds: 100));
+  }
+}
+
 /// What the last pushed route carried (KAN-689 tap-through assertions).
 class _Landed {
   Uri? uri;
@@ -290,9 +302,35 @@ void main() {
     // Show-up / Minutes / Partners are declared gaps: omitted, not zero.
     expect(find.byType(DabblerStatTile), findsNWidgets(4));
     // Header counters are Followers / Following / Posts, all real.
-    expect(find.text('34'), findsOneWidget);
-    expect(find.text('12'), findsOneWidget);
-    expect(find.text('77'), findsOneWidget);
+    expect(_headerCount('34'), findsOneWidget);
+    expect(_headerCount('12'), findsOneWidget);
+    expect(_headerCount('77'), findsOneWidget);
+  });
+
+  testWidgets('following count is distinct from an upcoming date', (
+    tester,
+  ) async {
+    final _Landed l = _Landed();
+    await _pump(
+      tester,
+      landed: l,
+      data: () async => _data(
+        games: SourceData<List<ContributorEntity>>(<ContributorEntity>[
+          ContributorEntity(
+            kind: ContributorEntityKind.game,
+            id: 'g-day-12',
+            title: 'Upcoming game',
+            startAt: DateTime(_now.year, _now.month + 1, 12),
+            sportId: 's-padel',
+            takesPart: true,
+          ),
+        ]),
+      ),
+    );
+    expect(find.text('12'), findsNWidgets(2));
+    await tester.tap(_headerCount('12'));
+    await settle(tester);
+    expect(l.uri?.path, '${RoutePaths.following}/p-omar');
   });
 
   testWidgets('selecting a sport scopes the bento and drops Sport profiles', (
@@ -478,12 +516,6 @@ void main() {
     expect(find.byKey(OwnProfileHeader.copyLinkKey), findsOneWidget);
   });
 
-  Future<void> settle(WidgetTester tester) async {
-    for (int i = 0; i < 6; i++) {
-      await tester.pump(const Duration(milliseconds: 100));
-    }
-  }
-
   testWidgets('taps: selected-sport hero opens the visited Sport Profile', (
     tester,
   ) async {
@@ -522,14 +554,14 @@ void main() {
   ) async {
     final _Landed l = _Landed();
     await _pump(tester, landed: l);
-    await tester.tap(find.text('34'));
+    await tester.tap(_headerCount('34'));
     await settle(tester);
     expect(l.uri?.path, '${RoutePaths.followers}/p-omar');
     expect(l.params['profileId'], 'p-omar');
     GoRouter.of(tester.element(find.text('landed'))).pop();
     await settle(tester);
     l.reset();
-    await tester.tap(find.text('12'));
+    await tester.tap(_headerCount('12'));
     await settle(tester);
     expect(l.uri?.path, '${RoutePaths.following}/p-omar');
     expect(l.params['profileId'], 'p-omar');
