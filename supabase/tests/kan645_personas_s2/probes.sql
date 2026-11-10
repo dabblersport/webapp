@@ -85,7 +85,7 @@ BEGIN
       AND r.onboarding_intention = ints[i] AND r.onboard AND r.is_active AND r.primary_sport = s1 AND r.preferred_sport = s1, ints[i]);
     PERFORM pg_temp.chk('P1.'||i||' exactly one profile row', (SELECT count(*) FROM public.profiles WHERE user_id=u) = 1);
     PERFORM pg_temp.chk('P1.'||i||' legacy carriers', (r.profile_type, r.is_player, r.intention) IS NOT DISTINCT FROM
-      CASE WHEN i<4 THEN ROW('personal',true,'player') ELSE ROW('venue',false,'host') END, r.profile_type||'/'||r.is_player||'/'||r.intention);
+      CASE WHEN i<4 THEN ROW('personal'::text,true,'player'::text) ELSE ROW('venue'::text,false,'host'::text) END, r.profile_type||'/'||r.is_player||'/'||r.intention);
     IF i < 4 THEN
       PERFORM pg_temp.chk('P1.'||i||' player+organiser on SAME profile id, organiser.sport=Primary key',
         (SELECT count(*) FROM public.player WHERE profile_id=v)=1 AND (SELECT count(*) FROM public.organiser WHERE profile_id=v AND sport=k1)=1
