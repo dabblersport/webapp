@@ -41,7 +41,7 @@ dependencies:
   # Dabbler design system (KAN-407): tokens, typography, bundled fonts and the
   # Dabbler* components the Alpha redesign renders from. Git dependency on
   # branch alpha-ds, pinned by pubspec.lock. For local DS work add an uncommitted
-  # pubspec_overrides.yaml (see docs/local-design-system.md).
+  # pubspec_overrides.yaml (see dabbler-docs/dabbler-code/local-design-system.md).
   dabbler_design_system:
     git:
       url: https://github.com/dabblersport/dabbler-design-system.git

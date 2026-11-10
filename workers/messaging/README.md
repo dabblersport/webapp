@@ -6,7 +6,7 @@ secret exists for this code. `wrangler.toml` has no `database_id` and no account
 ## Purpose
 The first code of the game-chat Worker (D1, CEO-approved): the authorisation pipeline, the local D1 message schema
 with a gap-free per-conversation `seq`, and a load script for the D26 bar. Contract: `docs/messaging/openapi.yaml`,
-`docs/messaging/README.md`, `docs/decisions/messaging-architecture-draft.md` (T7).
+`docs/messaging/README.md`, `dabbler-docs/dabbler-code/decisions/messaging-architecture-draft.md` (T7).
 
 ## Architecture (D24 auth flow)
 ```

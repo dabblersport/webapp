@@ -32,7 +32,7 @@ jobs:
         run: flutter pub get
 
       - name: Analyze
-        # Warnings are fatal; infos are advisory — see docs/CONVENTIONS.md #11.
+        # Warnings are fatal; infos are advisory — see dabbler-docs/dabbler-code/CONVENTIONS.md #11.
         run: flutter analyze --no-fatal-infos
 
       - name: Test

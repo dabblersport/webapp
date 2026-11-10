@@ -9,7 +9,7 @@ These probes check server capability and actor compatibility for the Contributor
 | `../../migrations/20261026120000_kan646_personas_s3_capabilities.sql` | The migration. It has **not been applied**; Memphis (ops) applies it under G-002. |
 | `probes.sql` | The probe set. It is one `BEGIN; … ROLLBACK;` with no COMMIT, no DROP, no `auth.*` write and named column lists only. |
 | `rollback.sql` | Code-only inverse of the migration. It contains no DROP. `actor_is_host(uuid)` is made inert by revoking EXECUTE, not dropped. |
-| `../../../docs/personas/kan646_operation_matrix.md` | The operation matrix. Probe ids map to its rows. |
+| `dabbler-docs/dabbler-code/personas/kan646_operation_matrix.md` | The operation matrix. Probe ids map to its rows. |
 
 ## Contract
 
