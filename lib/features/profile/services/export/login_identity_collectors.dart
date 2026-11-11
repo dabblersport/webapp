@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/constants/timing/export_timing.dart';
 
 /// PDPL/GDPR export collectors for login history and linked sign-in
 /// identities (KAN-890). Copied verbatim in behaviour from
@@ -23,7 +24,9 @@ Future<List<Map<String, dynamic>>?> collectLoginHistory(
     // DEFINER wrapper instead, which filters strictly to auth.uid() so
     // only the caller's own login events ever come back - same pattern
     // as `can_view_venue_bookings`.
-    final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
+    final sixMonthsAgo = DateTime.now().subtract(
+      ExportTiming.loginHistoryExportWindow,
+    );
     final response = await client.rpc(
       SupabaseConfig.getMyLoginHistoryFn,
       params: {'p_since': sixMonthsAgo.toIso8601String(), 'p_limit': 1000},
