@@ -1,6 +1,8 @@
 // KAN-852: the merged Activity log — identity, paging over both sources,
 // filter reset, error vs empty, and partial failure.
 
+import 'dart:async';
+
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
@@ -216,6 +218,50 @@ void main() {
     expect(c.state.isEmpty, isTrue);
     expect(c.state.hasMore, isFalse);
   });
+
+  test(
+    'empty only after a successful fetch: not before, not while loading',
+    () async {
+      final Completer<List<ActivityFeedEvent>> feedDone =
+          Completer<List<ActivityFeedEvent>>();
+      final Completer<Result<List<PublicActivity>, Failure>> socialDone =
+          Completer<Result<List<PublicActivity>, Failure>>();
+      when(
+        ds.getActivityFeed(
+          period: anyNamed('period'),
+          limit: anyNamed('limit'),
+          cursor: anyNamed('cursor'),
+        ),
+      ).thenAnswer((_) => feedDone.future);
+      when(
+        repo.fetchUserActivities(
+          profileId: anyNamed('profileId'),
+          limit: anyNamed('limit'),
+          offset: anyNamed('offset'),
+        ),
+      ).thenAnswer((_) => socialDone.future);
+
+      final ActivityLogController c = make();
+      // Before any fetch: not loaded, so not empty.
+      expect(c.state.loaded, isFalse);
+      expect(c.state.isEmpty, isFalse);
+
+      final Future<void> pending = c.load();
+      await Future<void>.delayed(Duration.zero);
+      // While both sources are in flight: loading, still not empty.
+      expect(c.state.isLoading, isTrue);
+      expect(c.state.loaded, isFalse);
+      expect(c.state.isEmpty, isFalse);
+
+      feedDone.complete(const <ActivityFeedEvent>[]);
+      socialDone.complete(const Ok(<PublicActivity>[]));
+      await pending;
+      // Only now, after a successful empty answer from both, is it empty.
+      expect(c.state.isLoading, isFalse);
+      expect(c.state.error, isNull);
+      expect(c.state.isEmpty, isTrue);
+    },
+  );
 
   test('one source fails: the other keeps its rows and the error shows; '
       'Retry clears it', () async {

@@ -2,7 +2,7 @@
 #
 # THE ONE ENTRY POINT is "Run workflow" on this workflow (workflow_dispatch). Nothing else
 # publishes: no push to Alpha, Canary or main, no pull request, no schedule. See
-# docs/ANDROID_RELEASE.md for the sequence, the credential names and recovery.
+# dabbler-docs/dabbler-code/ANDROID_RELEASE.md for the sequence, the credential names and recovery.
 #
 #   mode=release  build + verify (+ publish when track is internal or production)
 #   mode=status   read-only: report where an already uploaded versionCode stands
@@ -253,7 +253,7 @@ jobs:
           set -euo pipefail
           umask 077
           for n in KS_B64 KS_PASS KEY_ALIAS_IN KEY_PASS; do
-            [[ -n "${!n}" ]] || { echo "::error::a required Android signing secret is empty (see docs/ANDROID_RELEASE.md for the secret names)"; exit 1; }
+            [[ -n "${!n}" ]] || { echo "::error::a required Android signing secret is empty (see dabbler-docs/dabbler-code/ANDROID_RELEASE.md for the secret names)"; exit 1; }
           done
           KS="$RUNNER_TEMP/release-keystore.jks"
           printf '%s' "$KS_B64" | base64 -d > "$KS"
@@ -316,7 +316,7 @@ jobs:
           KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           # The recorded (public) upload-certificate fingerprint. A renewed upload key is a
-          # deliberate change of this repository variable (docs/ANDROID_RELEASE.md).
+          # deliberate change of this repository variable (dabbler-docs/dabbler-code/ANDROID_RELEASE.md).
           EXPECTED_UPLOAD_CERT_SHA256: ${{ vars.ANDROID_UPLOAD_CERT_SHA256 || '3D:3A:63:C9:DA:82:E3:41:D7:0F:3A:E2:E4:98:54:70:C9:91:C3:9B:42:F7:13:69:11:77:28:BC:61:B9:6F:CE' }}
           VNAME: ${{ needs.prepare.outputs.version_name }}
           VCODE: ${{ needs.prepare.outputs.version_code }}
@@ -375,7 +375,7 @@ jobs:
     timeout-minutes: 30
     # A GitHub Environment named android-internal / android-production. Required reviewers
     # on android-production (set in repository settings) put a person between "run" and
-    # "publish to production"; see docs/ANDROID_RELEASE.md.
+    # "publish to production"; see dabbler-docs/dabbler-code/ANDROID_RELEASE.md.
     environment: android-${{ needs.prepare.outputs.track }}
     steps:
       - name: Checkout the resolved commit (release tooling)
@@ -444,7 +444,7 @@ jobs:
             echo '```json'
             cat "$RUNNER_TEMP/play-readback.json"
             echo '```'
-            echo "Upload and track assignment are distinct from store review and availability. Review is not exposed by the Play API; \`available\` stays \`unconfirmed\` until an independent signal confirms it. Follow it with mode=status (docs/ANDROID_RELEASE.md)."
+            echo "Upload and track assignment are distinct from store review and availability. Review is not exposed by the Play API; \`available\` stays \`unconfirmed\` until an independent signal confirms it. Follow it with mode=status (dabbler-docs/dabbler-code/ANDROID_RELEASE.md)."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove the service-account file

@@ -15,8 +15,6 @@ import 'package:flutter_test/flutter_test.dart';
 const Map<String, int> _knownDirectWrites = {
   // Legacy repository: no importers anywhere in lib/ or test/ (dead code).
   'data/repositories/games_repository_impl.dart': 3,
-  // Retention purge filters on a column games does not have (inventory D4).
-  'features/profile/services/data_retention_service.dart': 1,
 };
 
 const String _legacyRepo = 'data/repositories/games_repository_impl.dart';

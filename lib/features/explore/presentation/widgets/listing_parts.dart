@@ -57,7 +57,7 @@ Future<void> showListingFilterSheet(
 }
 
 /// The geometry the three listing screens share (`Listings.dc.html`, measured
-/// in `Dabbler-Alpha-Plan/listings/diff-table.md`). Every value is a DS token.
+/// in the listings diff table). Every value is a DS token.
 abstract final class ListingLayout {
   /// The screen gutter — `padding: 0 18px`.
   static const double gutter = DabblerSpacing.space6;
