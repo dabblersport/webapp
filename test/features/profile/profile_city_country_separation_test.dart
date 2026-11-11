@@ -212,7 +212,6 @@ void main() {
       expect(
         readers,
         unorderedEquals([
-          'lib/features/profile/services/data_export_service.dart',
           'lib/features/profile/services/export/media_location_collectors.dart',
         ]),
       );
