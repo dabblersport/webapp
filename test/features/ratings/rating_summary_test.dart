@@ -158,6 +158,7 @@ void main() {
     expect(find.byType(BottomSheet), findsNothing);
   });
 
+  // goldens are generated on Linux (CI); regenerate with --update-goldens on Linux
   for (final lang in ['en', 'ar']) {
     testWidgets('golden $lang', (t) async {
       final repo = _Repo(Ok(RatingAggregate.fromRow(_row(), _labels)));
