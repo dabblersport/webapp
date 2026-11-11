@@ -14,7 +14,7 @@
 set -euo pipefail
 
 for n in IOS_DISTRIBUTION_CERT_P12_BASE64 IOS_DISTRIBUTION_CERT_PASSWORD IOS_PROVISIONING_PROFILE_BASE64; do
-  [[ -n "${!n:-}" ]] || { echo "::error::a required iOS signing secret is empty (see docs/IOS_RELEASE.md for the secret names)"; exit 1; }
+  [[ -n "${!n:-}" ]] || { echo "::error::a required iOS signing secret is empty (see dabbler-docs/dabbler-code/IOS_RELEASE.md for the secret names)"; exit 1; }
 done
 
 umask 077

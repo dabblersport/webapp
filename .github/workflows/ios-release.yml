@@ -3,7 +3,7 @@
 #
 # THE ONE ENTRY POINT is "Run workflow" on this workflow (workflow_dispatch). Nothing else
 # publishes: no push to Alpha, Canary or main, no pull request, no schedule. See
-# docs/MOBILE_RELEASE.md (both platforms) and docs/IOS_RELEASE.md (this one).
+# dabbler-docs/dabbler-code/MOBILE_RELEASE.md (both platforms) and dabbler-docs/dabbler-code/IOS_RELEASE.md (this one).
 #
 #   mode=release  build + verify (+ upload to TestFlight when target=testflight)
 #   mode=status   read-only: report the distinct stages of an uploaded build
@@ -290,7 +290,7 @@ jobs:
           set -euo pipefail
           umask 077
           for n in ASC_KEY ASC_KEY_ID ASC_ISSUER; do
-            [[ -n "${!n}" ]] || { echo "::error::an App Store Connect secret is empty (see docs/IOS_RELEASE.md for the secret names)"; exit 1; }
+            [[ -n "${!n}" ]] || { echo "::error::an App Store Connect secret is empty (see dabbler-docs/dabbler-code/IOS_RELEASE.md for the secret names)"; exit 1; }
           done
           mkdir -p "$RUNNER_TEMP/asc"
           printf '%s' "$ASC_KEY" > "$RUNNER_TEMP/asc/AuthKey_${ASC_KEY_ID}.p8"
@@ -435,7 +435,7 @@ jobs:
             echo '```json'
             cat "$RUNNER_TEMP/readback.json"
             echo '```'
-            echo "Upload, processing and TestFlight state are distinct from App Review and store availability. Nothing was submitted for review and no external tester was invited. Follow this build with mode=status (docs/IOS_RELEASE.md)."
+            echo "Upload, processing and TestFlight state are distinct from App Review and store availability. Nothing was submitted for review and no external tester was invited. Follow this build with mode=status (dabbler-docs/dabbler-code/IOS_RELEASE.md)."
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Remove signing material from the runner

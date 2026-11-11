@@ -10,7 +10,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_measure_fixtures.dart' show framePost;
 
-/// KAN-594: the examples in docs/kan594/nearby_ranking_examples.md, with the
+/// KAN-594: the examples in dabbler-docs/dabbler-code/kan594/nearby_ranking_examples.md, with the
 /// values the product approved (H = 24 h, D = 5 km, missing = 2 x D).
 final _asOf = DateTime.utc(2026, 10, 22, 12);
 const _origin = NearbyOrigin(25.0, 55.0);

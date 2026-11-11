@@ -11,10 +11,12 @@ ThemeData renderThemeBase() =>
     ? ThemeData.dark()
     : ThemeData.light();
 
-/// Root folder render tests write PNGs under (`--dart-define=SHOTS_ROOT=...`).
+/// Root folder render tests would write PNGs under (`--dart-define=SHOTS_ROOT=...`).
+/// CEO 2026-11-10: no screenshots are saved for now; `test/flutter_test_config.dart`
+/// discards every PNG write and shots folder.
 const String kShotsRoot = String.fromEnvironment(
   'SHOTS_ROOT',
-  defaultValue: '/Users/moataz/Desktop/Dabbler-Alpha-Plan',
+  defaultValue: 'build/test_shots',
 );
 
 /// Lets bundled and network images load for real (asset IO happens outside
