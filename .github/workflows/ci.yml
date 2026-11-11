@@ -4,9 +4,12 @@ on:
   push:
     branches:
       - Canary
+      - staging
+      - 'staging-*'
   pull_request:
     branches:
       - main
+      - staging
 
 jobs:
   analyze-and-test:
