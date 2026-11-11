@@ -5,7 +5,7 @@
 # or changes anything: it reads Google Play and App Store Connect and reports the distinct
 # stages (uploaded, processing, TestFlight, submission, review, available).
 #
-# How the result reaches people (docs/MOBILE_RELEASE.md): a terminal state (rejected, blocked)
+# How the result reaches people (dabbler-docs/dabbler-code/MOBILE_RELEASE.md): a terminal state (rejected, blocked)
 # makes this run RED, which GitHub emails to the repository's watchers; every run writes a
 # summary table; and the operations (Memphis) release dispatch reads the latest run with
 # `gh run view` and reports each state change in its result, which Thebes posts on the Jira

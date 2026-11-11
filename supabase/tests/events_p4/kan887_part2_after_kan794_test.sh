@@ -33,13 +33,36 @@ PORT="${2:?usage: kan887_part2_after_kan794_test.sh <new-datadir> <port>}"
 case "$DATADIR" in /tmp/*|/private/tmp/*) ;; *) echo "datadir must be under /tmp" >&2; exit 1 ;; esac
 case "$PORT" in 55461|55854) echo "port $PORT is reserved by another proof" >&2; exit 1 ;; esac
 
-REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
-SRC="$(mktemp -d /private/tmp/kan887_src.XXXXXX)"
+# Claim a private workspace atomically before registering cleanup. All generated
+# files, including the cluster and its siblings, live inside this directory.
+if [ -e "$DATADIR" ] || [ -L "$DATADIR" ]; then
+  echo "datadir already exists; refusing" >&2; exit 1
+fi
+PARENT="$(dirname "$DATADIR")"
+PHYSICAL_PARENT="$(cd "$PARENT" && pwd -P)"
+case "$DATADIR" in /tmp/*) EXPECTED_PARENT="/private$(dirname "$DATADIR")" ;; *) EXPECTED_PARENT="$PARENT" ;; esac
+[ "$PHYSICAL_PARENT" = "$EXPECTED_PARENT" ] || { echo "symlinked or noncanonical parent; refusing" >&2; exit 1; }
+(umask 077; mkdir "$DATADIR") || { echo "cannot claim datadir; refusing" >&2; exit 1; }
+WORK="$DATADIR"
+WORK_ID="$(ls -di "$WORK" | awk '{print $1}')"
+DATADIR="$WORK/cluster"
 cleanup() {
-  pg_ctl -D "$DATADIR" stop -m fast >/dev/null 2>&1 || true
-  rm -rf "$DATADIR" "$DATADIR.log" "$DATADIR.fixtures" "$SRC"
+  # Do not touch a replacement at the same pathname.
+  [ ! -L "$WORK" ] && [ -d "$WORK" ] && [ "$(ls -di "$WORK" | awk '{print $1}')" = "$WORK_ID" ] || return 0
+  if [ -f "$DATADIR/postmaster.pid" ] && [ ! -L "$DATADIR" ]; then
+    if ! pg_ctl -D "$DATADIR" stop -m fast >/dev/null 2>&1; then
+      echo "cleanup: could not stop cluster; preserving $WORK" >&2
+      return 1
+    fi
+  fi
+  rm -rf -- "$WORK"
 }
 trap cleanup EXIT
+trap 'exit 130' INT
+trap 'exit 143' TERM
+REPO="$(cd "$(dirname "$0")/../../.." && pwd)"
+SRC="$WORK/src"
+mkdir "$SRC"
 
 M=supabase/migrations
 PART2="$REPO/$M/20261105110000_kan714_events_parent_reads_2.sql"
