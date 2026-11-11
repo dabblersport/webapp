@@ -278,7 +278,7 @@ the alias binds games/meetups.
 | 8 | `getnearbygames` | `double precision,double precision,double precision` | 20260829080500 | - | open-read | no | reader still references legacy shared columns; no B migration converts it |
 | 9 | `getnearbymeetups` | `double precision,double precision,double precision` | 20260829080500 | - | open-read | no | reader still references legacy shared columns; no B migration converts it |
 | 10 | `meetup_counts` | `uuid` | 20260915120000 | - | open-read | yes | reader still references legacy shared columns; no B migration converts it |
-| 11 | `nearby_games` | `double precision,double precision,integer,text,integer,integer` | 20260829080500 | - | open-read | no | reader still references legacy shared columns; no B migration converts it |
+| 11 | `nearby_games` | `double precision,double precision,integer,text,integer,integer` | 20260829080500 | KAN-910 (20261111121200) | open-read | no | reader still references legacy shared columns; no B migration converts it. **Dropped by KAN-910 (20261111121200)**: no caller; no later check may expect it |
 | 12 | `rpc_autocomplete_entities` | `text,text[],text,integer` | 20260829080500 | - | open-read | no | reader still references legacy shared columns; no B migration converts it |
 | 13 | `rpc_challenge_spawn_game` | `uuid,timestamp with time zone,uuid` | 20260829080500 | - | open-write | yes | write/mutation RPC still reading legacy shared columns (auth gate / validation); not converted by any B |
 | 14 | `rpc_create_game` | `text,uuid,uuid,text,uuid,timestamp with time zone,timestamp with time zone,integer,text,text,integer,integer,jsonb,uuid,boolean,boolean,jsonb,text,uuid,uuid,double precision,double precision,integer,integer,numeric,uuid` | 20261021120200 | - | open-write | yes | write/mutation RPC still reading legacy shared columns (auth gate / validation); not converted by any B |
@@ -380,7 +380,7 @@ These are listed by capability. Every one is backend schema work, and each needs
 are also named by the untracked, uncommitted `20261105100000_kan714_events_parent_reads.sql` /
 `20261105110000_*_2.sql` in this worktree.** Those files belong to no B ticket I own, are excluded from this audit by
 the brief, and are not evidence of conversion: get_games_needing_players, get_open_games_for_seeding, meetup_counts,
-nearby_games, rpc_autocomplete_entities, rpc_create_game, rpc_create_meetup, rpc_decide_join_request,
+nearby_games (since dropped by KAN-910, 20261111121200), rpc_autocomplete_entities, rpc_create_game, rpc_create_meetup, rpc_decide_join_request,
 rpc_invite_user, rpc_join_game, rpc_meetup_decide_request, rpc_meetup_remove_attendee, rpc_meetup_rsvp,
 rpc_mint_join_link, rpc_recreate_from_game, rpc_remove_player, rpc_search_entities.
 
@@ -394,7 +394,7 @@ rpc_mint_join_link, rpc_recreate_from_game, rpc_remove_player, rpc_search_entiti
   - `getnearbygames`
   - `getnearbymeetups`
   - `meetup_counts(uuid)`
-  - `nearby_games`
+  - `nearby_games` (dropped by KAN-910, 20261111121200)
   - `rpc_autocomplete_entities`
   - `rpc_meetup_visible`
   - `rpc_search_entities`
