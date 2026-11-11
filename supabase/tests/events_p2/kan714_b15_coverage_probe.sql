@@ -247,7 +247,7 @@ INSERT INTO k734_manifest VALUES
  ('function', 'msg_my_conversations', 'integer', 'converted', 'KAN-730 B11', 'B'),
  ('function', 'msg_my_conversations_v1', 'integer', 'unchanged', '-', 'legacy'),
  ('function', 'msg_system_game_trg', '', 'unchanged', '-', 'name-only'),
- ('function', 'nearby_games', 'double precision,double precision,integer,text,integer,integer', 'open', '-', 'open-read'),
+ ('function', 'nearby_games', 'double precision,double precision,integer,text,integer,integer', 'open', 'KAN-910 dropped', 'open-read'), -- KAN-910: dropped by 20261111121200; row kept as 'open' so C1 (function:open=34) still describes the B15-stage catalogue this probe runs on
  ('function', 'normalize_game_scores', 'jsonb', 'unchanged', '-', 'name-only'),
  ('function', 'process_notification_event', 'uuid,text,text,uuid,uuid,text,text', 'unchanged', '-', 'fp'),
  ('function', 'rpc_autocomplete_entities', 'text,text[],text,integer', 'open', '-', 'open-read'),
