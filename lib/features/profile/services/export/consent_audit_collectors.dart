@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/constants/timing/export_timing.dart';
 
 /// PDPL/GDPR export collectors for consent history and audit logs
 /// (KAN-891). Copied verbatim in behaviour from
@@ -42,7 +43,9 @@ Future<List<Map<String, dynamic>>?> collectAuditLogs(
   String userId,
 ) async {
   try {
-    final twoYearsAgo = DateTime.now().subtract(const Duration(days: 730));
+    final twoYearsAgo = DateTime.now().subtract(
+      ExportTiming.consentAuditExportWindow,
+    );
     final response = await client
         .from(SupabaseConfig.auditEventsTable)
         .select()
