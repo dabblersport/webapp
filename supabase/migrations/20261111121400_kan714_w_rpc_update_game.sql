@@ -41,7 +41,7 @@
 -- g.<KAN-866 column> remains (SET targets are bare names and do not match); post md5(prosrc) 6638b5cfed53f133eed91385f72284a5.
 -- No BEGIN/COMMIT: the Supabase CLI runs each migration in one transaction (with psql use --single-transaction).
 --
--- AUTHORED ONLY. Memphis applies it (D-043). Local proof:
+-- Applied live 2026-11-12 by backend-1 via execute_sql (TH-079). Local proof:
 --   supabase/tests/events_p4/kan714_w_rpc_update_game_test.sql
 --
 -- ROLLBACK (after COMMIT). Run uncommented, in one transaction, as postgres. Pre-image, as pg_get_functiondef gives it
@@ -130,6 +130,7 @@ declare
   v_before jsonb;
   v_after  jsonb;
   v_bad  text;
+  v_n    bigint;
 begin
   v_oid := to_regprocedure(c_sig);
   if v_oid is null then
@@ -138,6 +139,10 @@ begin
   end if;
 
   select md5(prosrc) into v_md5 from pg_proc where oid = v_oid;
+  if v_md5 = c_post then
+    raise notice 'KAN-912: inner already reads from events (md5(prosrc) %); nothing to do', v_md5;
+    return;
+  end if;
   if v_md5 <> c_pre then
     raise exception 'KAN-912 pre: pre-image drift on % (md5(prosrc) is %, expected %); re-author from pg_get_functiondef',
       c_sig, v_md5, c_pre;
@@ -149,6 +154,20 @@ begin
     into v_before from pg_proc p where p.oid = v_oid;
   if not (v_before->>'secdef')::boolean then
     raise exception 'KAN-912 pre: % is SECURITY INVOKER; stop and re-measure', c_sig;
+  end if;
+
+  -- Added 2026-11-12: semantics hold only while every game has its parent and both agree on every column the body
+  -- now reads from e (KAN-711 parity). Refuse otherwise.
+  select count(*) into v_n
+    from public.games g left join public.events e on e.id = g.event_id and e.event_type = 'game'
+   where e.id is null
+      or e.creator_user_id is distinct from g.creator_user_id or e.is_cancelled is distinct from g.is_cancelled
+      or e.end_at is distinct from g.end_at or e.title is distinct from g.title
+      or e.listing_visibility is distinct from g.listing_visibility or e.join_policy is distinct from g.join_policy
+      or e.min_skill is distinct from g.min_skill or e.max_skill is distinct from g.max_skill
+      or e.capacity is distinct from g.capacity;
+  if v_n <> 0 then
+    raise exception 'KAN-912 pre: % games row(s) without their game event or differing on a column the body reads', v_n;
   end if;
 
   execute $ddl$

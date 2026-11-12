@@ -49,7 +49,7 @@
 -- post md5(prosrc) eb1a06eb5a534c778530ddbc6ee549ca, md5(pg_get_functiondef) 1ae1bbf4f6fc68d1ef994b1c6592ae0d.
 -- No BEGIN/COMMIT: the Supabase CLI runs each migration in one transaction (with psql use --single-transaction).
 --
--- AUTHORED ONLY. Memphis applies it (D-043). Local proof:
+-- Applied live 2026-11-13 by backend-1 via execute_sql (TH-079). Live proof: supabase/tests/events_p4/kan714_w_rpc_edit_game_series_occurrence_kan712_inner_live_test.sql. Local proof:
 --   supabase/tests/events_p4/kan714_w_rpc_edit_game_series_occurrence_kan712_inner_test.sql
 --
 -- ROLLBACK (after COMMIT). Run uncommented, in one transaction, as postgres. Pre-image, as pg_get_functiondef gives it

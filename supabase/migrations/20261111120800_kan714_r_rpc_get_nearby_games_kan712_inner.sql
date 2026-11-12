@@ -36,7 +36,7 @@
 -- check pins the new body (8ba97b088c722df60f863eca264c4de0) and asserts no g.<KAN-866 column> remains.
 -- No BEGIN/COMMIT: the Supabase CLI runs each migration in one transaction (with psql use --single-transaction).
 --
--- AUTHORED ONLY. Memphis applies it (D-043). Local proof:
+-- Applied live 2026-11-12 by backend-1 via execute_sql (TH-079). Local proof:
 --   supabase/tests/events_p4/kan714_r_rpc_get_nearby_games_kan712_inner_test.sql
 --
 -- ROLLBACK (after COMMIT, only if the 5-arg exists). Run uncommented, in one transaction, as postgres. Pre-image,
@@ -272,3 +272,178 @@ $ddl$;
   end if;
 end
 $kan906$;
+
+-- =====================================================================================================================
+-- KAN-906 PART 2 (added 2026-11-12, authored from the live catalogue, T-058). THE 6-ARGUMENT OVERLOAD.
+-- pg_get_functiondef on wtncuzcskpigqpmnxwws: the 5-arg overload above is ABSENT live (part 1 is a notice-only no-op
+-- there); the only public.rpc_get_nearby_games is the 6-arg (..., p_max_price numeric). KAN-807
+-- (20261104110900_kan807_d04_residual_a.sql) was never applied live: its md5(prosrc) is still the KAN-807 pre-image
+-- b96323a71f8726e0ce6ab8ccc1a1dc69 and it still carries the games-side KAN-723 visibility block (g.listing_visibility,
+-- g.creator_user_id). Part 2 installs the KAN-807 body verbatim (md5(prosrc) 3a27dca7144c61e9615f25517ba814c9), which
+-- is exactly the live body minus that block, with "access intersected." -> "access from events (KAN-807)." (proved:
+-- md5(replace(replace(live prosrc, <block>, ''), 'access intersected.', 'access from events (KAN-807).')) = 3a27dca7...).
+-- Already at 3a27dca7 -> notice, nothing done. Any other body -> exception. CREATE OR REPLACE keeps oid, owner, ACL
+-- ({postgres=X/postgres,authenticated=X/postgres,service_role=X/postgres,anon=X/postgres}), SECURITY DEFINER, STABLE,
+-- SET search_path TO 'public', 'pg_temp'. A parity guard refuses unless every game's parent agrees on
+-- listing_visibility and creator_user_id, which is what makes the deleted half redundant.
+-- Live proof: supabase/tests/events_p4/kan714_r_rpc_get_nearby_games_6arg_live_test.sql
+-- ROLLBACK (part 2): replace the 6-arg with the live pre-image: the body below with the games-side block
+--   and  ((g.listing_visibility = 'public' and not public.is_blocked(auth.uid(), g.creator_user_id))
+--         or g.creator_user_id = auth.uid()
+--         or public.can_view_with_scope(auth.uid(), g.creator_user_id, g.listing_visibility, g.squad_id))
+-- re-inserted before the events-side block and the comment set back to "access intersected." (md5 b96323a7...).
+-- =====================================================================================================================
+
+do $kan906b$
+declare
+  c_sig  constant text := 'public.rpc_get_nearby_games(double precision,double precision,integer,uuid,text,numeric)';
+  c_pre  constant text := 'b96323a71f8726e0ce6ab8ccc1a1dc69';
+  c_post constant text := '3a27dca7144c61e9615f25517ba814c9';
+  v_oid  oid;
+  v_md5  text;
+  v_n    bigint;
+  v_bad  text;
+  v_before jsonb;
+  v_after  jsonb;
+begin
+  v_oid := to_regprocedure(c_sig);
+  if v_oid is null then
+    raise notice 'KAN-906 part 2: 6-arg rpc_get_nearby_games absent; nothing to do';
+    return;
+  end if;
+  select md5(prosrc) into v_md5 from pg_proc where oid = v_oid;
+  if v_md5 = c_post then
+    raise notice 'KAN-906 part 2: 6-arg already reads access from events (md5 %); nothing to do', v_md5;
+    return;
+  end if;
+  if v_md5 <> c_pre then
+    raise exception 'KAN-906 part 2 pre: pre-image drift on % (md5(prosrc) %, expected %); re-author from pg_get_functiondef',
+      c_sig, v_md5, c_pre;
+  end if;
+
+  select count(*) into v_n
+    from public.games g left join public.events e on e.id = g.event_id and e.event_type = 'game'
+   where e.id is null or e.creator_user_id is distinct from g.creator_user_id
+      or e.listing_visibility is distinct from g.listing_visibility;
+  if v_n <> 0 then
+    raise exception 'KAN-906 part 2 pre: % games row(s) without their game event or differing on creator_user_id / listing_visibility', v_n;
+  end if;
+
+  select jsonb_build_object('owner', p.proowner, 'acl', p.proacl::text, 'secdef', p.prosecdef, 'vol', p.provolatile,
+                            'config', p.proconfig, 'lang', p.prolang, 'res', pg_get_function_result(p.oid),
+                            'args', pg_get_function_arguments(p.oid))
+    into v_before from pg_proc p where p.oid = v_oid;
+
+  execute $ddl$
+CREATE OR REPLACE FUNCTION public.rpc_get_nearby_games(p_lat double precision, p_lng double precision, p_radius_meters integer DEFAULT 10000, p_sport_id uuid DEFAULT NULL::uuid, p_sort text DEFAULT 'distance'::text, p_max_price numeric DEFAULT NULL::numeric)
+ RETURNS TABLE(id uuid, title text, sport_name text, scheduled_at timestamp with time zone, status text, venue_name text, latitude double precision, longitude double precision, distance_meters double precision, player_count integer, spots_remaining integer, is_public boolean, min_skill integer, max_skill integer, end_at timestamp with time zone, variant_name_en text, variant_name_ar text, cost_cover text, joining_rule text, host_verified boolean, favorite_count integer, favourited_by_me boolean, price_aed numeric)
+ LANGUAGE sql
+ STABLE SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+  -- KAN-723: shared facts from events e (authoritative); game-only fields from g; access from events (KAN-807).
+  select
+    g.id,
+    coalesce(e.title, 'Untitled Game')    as title,
+    s.name_en                              as sport_name,
+    e.start_at                             as scheduled_at,
+    case
+      when e.is_cancelled         then 'cancelled'
+      when now() >= e.end_at      then 'ended'
+      when now() >= e.start_at    then 'live'
+      else                             'upcoming'
+    end                                    as status,
+    ven.name_en                            as venue_name,
+    st_y(gl.location::geometry)            as latitude,
+    st_x(gl.location::geometry)            as longitude,
+    st_distance(
+      gl.location,
+      st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
+    )                                      as distance_meters,
+    coalesce(roster.cnt, 0)::int           as player_count,
+    greatest(e.capacity - coalesce(roster.cnt, 0), 0)::int as spots_remaining,
+    (e.listing_visibility = 'public')      as is_public,
+    e.min_skill::int                       as min_skill,
+    e.max_skill::int                       as max_skill,
+    e.end_at,
+    sv.name_en                             as variant_name_en,
+    sv.name_ar                             as variant_name_ar,
+    e.cost_cover,
+    e.joining_rule,
+    (coalesce((select pv.verified from profile_verifications pv
+                where pv.profile_id = e.creator_profile_id), false)
+     or exists (select 1 from organiser o
+                where o.profile_id = e.creator_profile_id and o.sport = s.sport_key
+                  and o.is_verified and o.is_active)) as host_verified,
+    (select count(*) from public.favorites f where f.game_id = g.id)::int as favorite_count,
+    exists (select 1 from public.favorites f
+            where f.game_id = g.id and f.user_id = auth.uid()) as favourited_by_me,
+    g.price_aed
+  from   games g
+  join public.events e on e.id = g.event_id and e.event_type = 'game'
+  join   geo_locations gl on e.geo_location_id = gl.id
+  join   sports s         on s.id = e.sport_id
+  left   join sport_variants sv on sv.id = g.sport_variant_id
+  left   join venue_spaces vs on vs.id = g.venue_space_id
+  left   join venues ven      on ven.id = coalesce(vs.venue_id, e.venue_id)
+  left   join lateral (
+    select count(*) as cnt
+    from   game_roster gr
+    where  gr.game_id = g.id
+      and  gr.status  = 'active'
+      and  (gr.role = 'player' or (gr.role = 'host' and g.game_type = 'hosted'))
+  ) roster on true
+  where  e.is_cancelled = false
+    and  e.start_at > now()
+    and  st_dwithin(
+           gl.location,
+           st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography,
+           p_radius_meters
+         )
+    and  (p_sport_id is null or e.sport_id = p_sport_id)
+    and  (p_max_price is null or g.price_aed <= p_max_price)
+    and  (
+           (e.listing_visibility = 'public' and not public.is_blocked(auth.uid(), e.creator_user_id))
+           or e.creator_user_id = auth.uid()
+           or public.can_view_with_scope(
+                auth.uid(), e.creator_user_id, e.listing_visibility, g.squad_id
+              )
+         )
+  order  by
+    case when p_sort = 'distance'
+         then st_distance(
+                gl.location,
+                st_setsrid(st_makepoint(p_lng, p_lat), 4326)::geography
+              )
+    end asc nulls last,
+    case when p_sort = 'price' then g.price_aed end asc nulls last,
+    e.start_at asc
+  limit 50;
+$function$
+$ddl$;
+
+  if to_regprocedure(c_sig) is distinct from v_oid then
+    raise exception 'KAN-906 part 2 post: % is not the same function oid after CREATE OR REPLACE', c_sig;
+  end if;
+  select md5(prosrc) into v_md5 from pg_proc where oid = v_oid;
+  if v_md5 <> c_post then
+    raise exception 'KAN-906 part 2 post: % body md5 is %, expected %', c_sig, v_md5, c_post;
+  end if;
+  select jsonb_build_object('owner', p.proowner, 'acl', p.proacl::text, 'secdef', p.prosecdef, 'vol', p.provolatile,
+                            'config', p.proconfig, 'lang', p.prolang, 'res', pg_get_function_result(p.oid),
+                            'args', pg_get_function_arguments(p.oid))
+    into v_after from pg_proc p where p.oid = v_oid;
+  if v_after is distinct from v_before then
+    raise exception 'KAN-906 part 2 post: % attributes changed: % -> %', c_sig, v_before, v_after;
+  end if;
+  select string_agg(distinct lower(m[1]), ', ') into v_bad
+    from pg_proc p, regexp_matches(p.prosrc, '\mg\.([a-z_][a-z0-9_]*)', 'gi') m
+   where p.oid = v_oid
+     and lower(m[1]) = any ('{creator_profile_id,creator_user_id,title,start_at,end_at,capacity,listing_visibility,
+                              join_policy,is_cancelled,cancelled_at,cancelled_reason,sport_id,area_id,geo_location_id,
+                              venue_id,min_skill,max_skill,joining_rule,cost_cover,request_id,created_at,updated_at}'::text[]);
+  if v_bad is not null then
+    raise exception 'KAN-906 part 2 post: % still reads KAN-866 games column(s): %', c_sig, v_bad;
+  end if;
+end
+$kan906b$;
