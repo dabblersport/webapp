@@ -9,6 +9,15 @@ import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as path;
 import 'package:uuid/uuid.dart';
 
+import 'export/connections_collector.dart';
+import 'export/consent_audit_collectors.dart';
+import 'export/game_history_collector.dart';
+import 'export/login_identity_collectors.dart';
+import 'export/media_location_collectors.dart';
+import 'export/payment_collector.dart';
+import 'export/profile_settings_collectors.dart';
+import 'export/sports_statistics_collectors.dart';
+
 // import '../domain/entities/user_profile.dart';
 // import 'package:dabbler/core/utils/logger.dart';
 // import '../../../core/error/exceptions.dart';
@@ -83,19 +92,6 @@ class DataExportService {
 
   DataExportService({SupabaseClient? supabase})
     : _supabase = supabase ?? Supabase.instance.client;
-
-  bool _isMissingTableError(Object error, String tableName) {
-    if (error is! PostgrestException) {
-      return false;
-    }
-
-    final lowerMessage = error.message.toLowerCase();
-    final normalizedName = tableName.replaceFirst('public.', '').toLowerCase();
-
-    return error.code == 'PGRST205' ||
-        lowerMessage.contains("could not find the table '$tableName'") ||
-        lowerMessage.contains("could not find the table '$normalizedName'");
-  }
 
   /// Request a new comprehensive data export for GDPR compliance
   Future<DataExportRequest> requestGDPRDataExport({
@@ -284,6 +280,12 @@ class DataExportService {
     }
   }
 
+  /// Test seam for the export assembly (KAN-898); runs the same gathering
+  /// the async GDPR export runs.
+  @visibleForTesting
+  Future<UserExportData> gatherExportDataForTesting(String userId) =>
+      _gatherComprehensiveUserData(userId);
+
   /// Gather comprehensive user data for GDPR compliance
   Future<UserExportData> _gatherComprehensiveUserData(String userId) async {
     Logger.info('$_logTag: Gathering comprehensive user data for: $userId');
@@ -295,45 +297,54 @@ class DataExportService {
 
     try {
       // Core Profile Information
-      exportData.profile = await _getEnhancedProfileData(userId);
+      exportData.profile = await collectProfile(_supabase, userId);
 
       // User Preferences and Settings
-      exportData.preferences = await _getEnhancedPreferencesData(userId);
+      exportData.preferences = await collectPreferences(_supabase, userId);
 
       // Sports Profiles and Statistics
-      exportData.sportsProfiles = await _getEnhancedSportsProfileData(userId);
-      exportData.statistics = await _getEnhancedStatisticsData(userId);
+      exportData.sportsProfiles = await collectSportsProfiles(
+        _supabase,
+        userId,
+      );
+      exportData.statistics = await collectStatistics(_supabase, userId);
 
       // Complete Game History
-      exportData.gameHistory = await _getEnhancedGameHistoryData(userId);
+      exportData.gameHistory = await collectGameHistory(_supabase, userId);
 
       // Privacy Settings and Consents
-      exportData.privacySettings = await _getPrivacySettingsData(userId);
-      exportData.consents = await _getConsentHistory(userId);
+      exportData.privacySettings = await collectPrivacySettings(
+        _supabase,
+        userId,
+      );
+      exportData.consents = await collectConsentHistory(_supabase, userId);
 
       // Account Activity and Audit Logs (last 2 years)
-      exportData.auditLogs = await _getAuditLogsData(userId);
-      exportData.loginHistory = await _getLoginHistory(userId);
+      exportData.auditLogs = await collectAuditLogs(_supabase, userId);
+      exportData.loginHistory = await collectLoginHistory(_supabase, userId);
 
       // Social Connections and Interactions
-      exportData.connections = await _getConnectionsData(userId);
+      exportData.connections = await collectConnections(_supabase, userId);
       // No messages export: Dabbler has no private-messaging feature (P-033).
       exportData.notifications = await _getNotificationsData(userId);
 
       // Content and Media (metadata only)
-      exportData.media = await _getMediaMetadata(userId);
+      exportData.media = await collectMediaMetadata(_supabase, userId);
 
       // Location Data (if collected)
-      exportData.locationData = await _getLocationData(userId);
+      exportData.locationData = await collectLocationData(_supabase, userId);
 
       // Device and Technical Data
       exportData.deviceInfo = await _getDeviceInformation(userId);
 
       // Payment and Subscription Data
-      exportData.paymentData = await _getPaymentData(userId);
+      exportData.paymentData = await collectPaymentData(_supabase, userId);
 
       // Third-party Integrations
-      exportData.integrations = await _getThirdPartyData(userId);
+      exportData.integrations = await collectLinkedIdentities(
+        _supabase,
+        userId,
+      );
 
       Logger.info('$_logTag: Comprehensive user data gathering completed');
       return exportData;
@@ -465,195 +476,6 @@ class DataExportService {
     return _generateGDPRJsonExport(data, fileName);
   }
 
-  // Enhanced data gathering methods for GDPR compliance
-  Future<Map<String, dynamic>?> _getEnhancedProfileData(String userId) async {
-    try {
-      final response = await _supabase
-          .from(SupabaseConfig.usersTable) // 'profiles' table
-          .select('*')
-          .eq('user_id', userId) // Match by user_id FK
-          .single();
-
-      return {
-        ...response,
-        'data_source': 'profiles_table',
-        'purpose': 'User identification and profile management',
-        'legal_basis': 'Contract performance and legitimate interest',
-        'retention_period': '2 years after account deletion',
-      };
-    } catch (e) {
-      Logger.warning('Could not fetch enhanced profile data', e);
-      return null;
-    }
-  }
-
-  Future<Map<String, dynamic>?> _getEnhancedPreferencesData(
-    String userId,
-  ) async {
-    try {
-      final settingsResponse = await _supabase
-          .from(SupabaseConfig.userSettingsTable)
-          .select()
-          .eq('user_id', userId);
-
-      final preferencesResponse = await _supabase
-          .from(SupabaseConfig.userPreferencesTable)
-          .select()
-          .eq('user_id', userId);
-
-      return {
-        'settings': settingsResponse,
-        'preferences': preferencesResponse,
-        'data_source': 'user_settings, user_preferences tables',
-        'purpose': 'Personalization and user experience optimization',
-        'legal_basis': 'User consent and legitimate interest',
-        'retention_period': 'Until account deletion or consent withdrawal',
-      };
-    } catch (e) {
-      if (_isMissingTableError(e, 'public.user_preferences')) {
-        Logger.info(
-          '$_logTag: user_preferences table missing; exporting settings only',
-        );
-
-        try {
-          final settingsResponse = await _supabase
-              .from(SupabaseConfig.userSettingsTable)
-              .select()
-              .eq('user_id', userId);
-
-          return {
-            'settings': settingsResponse,
-            'preferences': const [],
-            'data_source': 'user_settings table',
-            'purpose': 'Personalization and user experience optimization',
-            'legal_basis': 'User consent and legitimate interest',
-            'retention_period': 'Until account deletion or consent withdrawal',
-          };
-        } catch (settingsError) {
-          Logger.warning('Could not fetch settings data', settingsError);
-          return null;
-        }
-      }
-
-      Logger.warning('Could not fetch preferences data', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getEnhancedSportsProfileData(
-    String userId,
-  ) async {
-    try {
-      // First get profile_id from user_id
-      final profileResponse = await _supabase
-          .from(SupabaseConfig.usersTable)
-          .select('id')
-          .eq('user_id', userId)
-          .eq('profile_type', 'personal')
-          .maybeSingle();
-
-      if (profileResponse == null) {
-        return [];
-      }
-
-      final profileId = profileResponse['id'] as String;
-
-      final response = await _supabase
-          .from(SupabaseConfig.sportProfilesTable)
-          .select('*')
-          .eq('profile_id', profileId);
-
-      return response
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'sport_profiles table',
-              'purpose': 'Sports skill assessment and matching',
-              'legal_basis': 'User consent and contract performance',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch sports profile data', e);
-      return null;
-    }
-  }
-
-  Future<Map<String, dynamic>?> _getEnhancedStatisticsData(
-    String userId,
-  ) async {
-    try {
-      // Reconciled (KAN-103): `user_game_statistics` and
-      // `performance_metrics` never existed as tables. The real gameplay
-      // performance data lives directly on `sport_profiles` (per-sport
-      // columns: matches_played, xp_*, form_score, attendance/cancellation/
-      // punctuality/teamwork/reliability scores, performance_highlights,
-      // performance_by_venue), and the cross-sport reputation aggregate
-      // lives in `user_reputation_aggregate`. This is not a rename of a
-      // missing table into an existing one used for something else — it's
-      // the actual data this category was always meant to describe.
-      final profileResponse = await _supabase
-          .from(SupabaseConfig.usersTable)
-          .select('id')
-          .eq('user_id', userId)
-          .eq('profile_type', 'personal')
-          .maybeSingle();
-
-      List<dynamic> perSportPerformance = const [];
-      if (profileResponse != null) {
-        final profileId = profileResponse['id'] as String;
-        perSportPerformance = await _supabase
-            .from(SupabaseConfig.sportProfilesTable)
-            .select(
-              'sport, skill_level, overall_level, xp_total, xp_level, '
-              'matches_played, form_score, form_trend, last_5_matches, '
-              'attendance_rate, cancellation_rate, punctuality_score, '
-              'teamwork_score, reliability_score, rating_count, '
-              'rating_total, performance_highlights, performance_by_venue',
-            )
-            .eq('profile_id', profileId);
-      }
-
-      final reputationAggregate = await _supabase
-          .from(SupabaseConfig.userReputationAggregateTable)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      return {
-        'per_sport_performance': perSportPerformance,
-        'reputation_aggregate': reputationAggregate,
-        'data_source':
-            'sport_profiles (performance columns), user_reputation_aggregate tables',
-        'purpose': 'Performance tracking and skill assessment',
-        'legal_basis': 'User consent',
-        'retention_period': '3 years or until consent withdrawal',
-        'note':
-            'There is no separate user_game_statistics/performance_metrics '
-            'table - this reflects the actual gameplay performance and '
-            'reputation data Dabbler stores about you.',
-      };
-    } catch (e) {
-      Logger.warning('Could not fetch statistics data', e);
-      return null;
-    }
-  }
-
-  // KAN-865: the RPC scopes to auth.uid() (creator OR roster) and the
-  // creator-only rows are dropped client-side, so userId is no longer sent.
-  Future<List<Map<String, dynamic>>?> _getEnhancedGameHistoryData(
-    String userId,
-  ) async {
-    try {
-      return await fetchOwnGameHistoryVia(
-        (fn, params) async => _supabase.rpc(fn, params: params),
-      );
-    } catch (e) {
-      Logger.warning('Could not fetch game history data', e);
-      return null;
-    }
-  }
-
   // Defined by supabase/migrations/20261105130000_kan865_export_own_game_history.sql.
   // No SupabaseConfig constant exists for it yet and that file is outside this
   // ticket's scope, so the name is held here until it is moved.
@@ -713,150 +535,6 @@ class DataExportService {
     };
   }
 
-  Future<Map<String, dynamic>?> _getPrivacySettingsData(String userId) async {
-    try {
-      final response = await _supabase
-          .from(SupabaseConfig.privacySettingsTable)
-          .select()
-          .eq('user_id', userId)
-          .single();
-
-      return {
-        ...response,
-        'data_source': 'privacy_settings table',
-        'purpose': 'Privacy preference management',
-        'legal_basis': 'User consent',
-        'your_rights': 'You can modify these settings at any time',
-      };
-    } catch (e) {
-      Logger.warning('Could not fetch privacy settings', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getConsentHistory(String userId) async {
-    try {
-      final response = await _supabase
-          .from(SupabaseConfig.consentRecordsTable)
-          .select()
-          .eq('user_id', userId)
-          .order('created_at', ascending: false);
-
-      return response
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'consent_records table',
-              'purpose': 'Legal compliance and consent tracking',
-              'legal_basis': 'Legal obligation (GDPR Article 7)',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch consent history', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getAuditLogsData(String userId) async {
-    try {
-      final twoYearsAgo = DateTime.now().subtract(Duration(days: 730));
-      final response = await _supabase
-          .from(SupabaseConfig.auditEventsTable)
-          .select()
-          .eq('actor_user_id', userId)
-          .gte('created_at', twoYearsAgo.toIso8601String())
-          .order('created_at', ascending: false)
-          .limit(5000);
-
-      return response
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'audit_events table',
-              'purpose': 'Security monitoring and compliance',
-              'legal_basis': 'Legitimate interest (security)',
-              'retention_period': '2 years',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch audit logs', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getLoginHistory(String userId) async {
-    try {
-      // Reconciled (KAN-103): `login_history` never existed as a public
-      // table. Real login events live in Supabase's own
-      // `auth.audit_log_entries`, which isn't directly client-readable
-      // (PostgREST doesn't expose `auth`, and anon/authenticated have no
-      // grants on it). This calls the `get_my_login_history` SECURITY
-      // DEFINER wrapper instead, which filters strictly to auth.uid() so
-      // only the caller's own login events ever come back - same pattern
-      // as `can_view_venue_bookings`.
-      final sixMonthsAgo = DateTime.now().subtract(const Duration(days: 180));
-      final response = await _supabase.rpc(
-        SupabaseConfig.getMyLoginHistoryFn,
-        params: {'p_since': sixMonthsAgo.toIso8601String(), 'p_limit': 1000},
-      );
-
-      return (response as List)
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...(item as Map<String, dynamic>),
-              'data_source':
-                  'auth.audit_log_entries (via get_my_login_history)',
-              'purpose': 'Security monitoring and fraud prevention',
-              'legal_basis': 'Legitimate interest (security)',
-              'retention_period': '6 months',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch login history', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getConnectionsData(String userId) async {
-    try {
-      // Note: exports the follow graph (who this user follows / is followed
-      // by), not circle membership. `circles`/`circle_members` is the other
-      // "connections" concept in this schema and isn't interchangeable with
-      // follows — revisit if export scope is meant to mean "my circles".
-      final follows = await _supabase
-          .from(SupabaseConfig.profileFollowsTable)
-          .select()
-          .or('follower_profile_id.eq.$userId,following_profile_id.eq.$userId');
-
-      final blockedUsers = await _supabase
-          .from(SupabaseConfig.userBlocksTable)
-          .select('*, profiles!blocked_user_id(name)')
-          .eq('blocker_user_id', userId);
-
-      return [
-            ...follows.map((item) => {...item, 'connection_type': 'follow'}),
-            ...blockedUsers.map(
-              (item) => {...item, 'connection_type': 'blocked'},
-            ),
-          ]
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'profile_follows, user_blocks tables',
-              'purpose': 'Social connection management',
-              'legal_basis': 'User consent and contract performance',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch connections data', e);
-      return null;
-    }
-  }
-
   Future<List<Map<String, dynamic>>?> _getNotificationsData(
     String userId,
   ) async {
@@ -880,60 +558,6 @@ class DataExportService {
           .toList();
     } catch (e) {
       Logger.warning('Could not fetch notifications data', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getMediaMetadata(String userId) async {
-    try {
-      // Note: covers media attached to this user's posts (post_media joined
-      // via posts.author) — there is no general per-user upload library
-      // table, so media never attached to a post is out of scope here.
-      final response = await _supabase
-          .from(SupabaseConfig.postMediaTable)
-          .select('media_type, url, posts!inner(author)')
-          .eq('posts.author', userId);
-
-      return response
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'post_media table (joined via posts.author)',
-              'purpose': 'Profile and content management',
-              'legal_basis': 'User consent',
-              'note':
-                  'Only media attached to your posts is included - metadata only, actual files not exported for security',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch media metadata', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getLocationData(String userId) async {
-    try {
-      final response = await _supabase
-          .from(SupabaseConfig.profileLocationsTable)
-          .select('lat, lng, label, area_id, geo_location_id, is_primary')
-          .eq('profile_id', userId)
-          .order('is_primary', ascending: false);
-
-      return response
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...item,
-              'data_source': 'profile_locations table',
-              'purpose': 'Location-based game matching and services',
-              'legal_basis': 'User consent',
-              'note':
-                  'Only approximate locations stored - precise coordinates not retained',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch location data', e);
       return null;
     }
   }
@@ -962,63 +586,6 @@ class DataExportService {
           .toList();
     } catch (e) {
       Logger.warning('Could not fetch device information', e);
-      return null;
-    }
-  }
-
-  Future<Map<String, dynamic>?> _getPaymentData(String userId) async {
-    try {
-      // Note: this is the personal payment-attempt record for this user, not
-      // the organiser/settlement views (financial_ledger, wallet_ledger).
-      final response = await _supabase
-          .from(SupabaseConfig.paymentIntentsTable)
-          .select('booking_id, amount, currency, provider, status')
-          .eq('user_id', userId);
-
-      return {
-        'transactions': response,
-        'data_source': 'payment_intents table',
-        'purpose': 'Billing and subscription management',
-        'legal_basis': 'Contract performance and legal obligation',
-        'note':
-            'Sensitive payment details (card numbers) are not stored or exported',
-        'retention_period': '7 years for tax compliance',
-      };
-    } catch (e) {
-      Logger.warning('Could not fetch payment data', e);
-      return null;
-    }
-  }
-
-  Future<List<Map<String, dynamic>>?> _getThirdPartyData(String userId) async {
-    try {
-      // Reconciled (KAN-103): `third_party_connections` never existed as a
-      // public table. The real record of which third-party sign-in
-      // providers are linked to this account (e.g. Google Sign-In) lives
-      // in Supabase's own `auth.identities`, which isn't directly
-      // client-readable. This calls the `get_my_linked_identities`
-      // SECURITY DEFINER wrapper instead, filtered strictly to auth.uid()
-      // - same pattern as `get_my_login_history` /
-      // `can_view_venue_bookings`. Only connection metadata comes back;
-      // OAuth tokens and provider profile payloads are never exposed.
-      final response = await _supabase.rpc(
-        SupabaseConfig.getMyLinkedIdentitiesFn,
-      );
-
-      return (response as List)
-          .map<Map<String, dynamic>>(
-            (item) => {
-              ...(item as Map<String, dynamic>),
-              'data_source': 'auth.identities (via get_my_linked_identities)',
-              'purpose': 'Sign-in method management and account security',
-              'legal_basis': 'User consent',
-              'note':
-                  'Third-party data is not stored - only connection metadata',
-            },
-          )
-          .toList();
-    } catch (e) {
-      Logger.warning('Could not fetch third-party data', e);
       return null;
     }
   }
