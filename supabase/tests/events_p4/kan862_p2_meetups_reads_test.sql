@@ -28,6 +28,8 @@
 --   T11 negative controls: each mutant differs from its twin
 --   T12 capture not trivial
 --   T13 attributes / ACL unchanged on all nine
+--   T14 guard: in the fixture every enabled traffic campaign is inside its active window (the fixture opens it to 0..24),
+--       so the jobs reach the meetup checks at any hour; without that, T7/T8 pass vacuously outside 09-22 Dubai
 -- VALID ONLY BEFORE Z01: the twins read the columns Z01 drops.
 BEGIN;
 SET LOCAL client_min_messages = warning;
@@ -703,6 +705,14 @@ BEGIN
       UPDATE public.traffic_jobs SET created_at = created_at - interval '2 days', scheduled_at = scheduled_at - interval '2 days',
              expires_at = expires_at - interval '2 days', finished_at = finished_at - interval '2 days'
        WHERE created_at > now() - interval '2 days';
+      -- Time independence: plan/run skip every campaign outside active_hour_start..active_hour_end (local), before any
+      -- meetup check. Open the window to the whole day so the fixture exercises the meetup paths at any hour. T14 guards it.
+      UPDATE public.traffic_campaigns SET active_hour_start = 0, active_hour_end = 24 WHERE enabled;
+      INSERT INTO pg_temp.k862_cap
+      SELECT ph, 'guard', 'guard', 'window',
+             count(*) || ' enabled, ' || count(*) FILTER (WHERE extract(hour FROM now() AT TIME ZONE c.timezone) < c.active_hour_start
+                                                              OR extract(hour FROM now() AT TIME ZONE c.timezone) >= c.active_hour_end) || ' outside window'
+        FROM public.traffic_campaigns c WHERE c.enabled;
       SELECT c.id, c.sport_id INTO v_camp, v_sport FROM public.traffic_campaigns c WHERE c.enabled ORDER BY c.id LIMIT 1;
       INSERT INTO public.traffic_jobs (campaign_id, actor_profile_id, target_activity_id, action_type, scheduled_at, expires_at)
       -- Fb jobs first, ahead of the aged backlog, so the worker's LIMIT reaches them; actors with no RSVP on Fb/Fd.
@@ -910,6 +920,13 @@ INSERT INTO k862_tap SELECT 13,
     ('public.rpc_meetup_visible()', false, 's', '{"search_path=public, pg_temp"}', '{=X/postgres,postgres=X/postgres,anon=X/postgres,authenticated=X/postgres,service_role=X/postgres}', 'sql')
   ) k(fn, secdef, vol, cfg, acl, lang)
   JOIN pg_proc p ON p.oid = k.fn::regprocedure;
+
+-- T14: the fixture's traffic jobs are not skipped for the time window (a vacuous T7/T8 is red, not green)
+INSERT INTO k862_tap SELECT 14,
+  count(*) = 1 AND bool_and(v ~ '^[1-9][0-9]* enabled, 0 outside window$'),
+  'fixture: every enabled traffic campaign is inside its active window, so plan/run reach the meetup checks',
+  coalesce(string_agg(v, ' | '), 'no guard row')
+  FROM k862_cap WHERE fn = 'guard' AND ph = 'fixture';
 
 SELECT string_agg(CASE WHEN ok THEN 'ok ' ELSE 'not ok ' END || n || ' - ' || label || coalesce(' [' || detail || ']', ''), E'\n' ORDER BY n) AS tap
   FROM k862_tap;
