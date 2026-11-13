@@ -31,14 +31,35 @@ const READ_ONLY: Record<string, "left_read_only" | "game_ended" | "game_cancelle
 
 const malformed = () => upstreamError(502, "result malformed");
 
-export async function getGameConversation(request: Request, env: Env, gameId: string): Promise<Response> {
-  if (!UUID.test(gameId)) return reasonError("invalid_request", "gameId");
+// KAN-928: GET /v1/meetups/{meetupId}/conversation is this same handler over msg_meetup_conversation
+// (supabase/migrations/20261113224428_kan928_msg_meetup_conversation.sql): the same verdict row keyed by meetup_id,
+// answered with kind 'meetup' and meetup_id where a game answers kind 'game' and game_id. Nothing else differs.
+type Parent = { rpc: string; param: string; kind: "game" | "meetup"; field: "game_id" | "meetup_id"; pathName: string };
+const GAME: Parent = { rpc: "msg_game_conversation", param: "p_game_id", kind: "game", field: "game_id", pathName: "gameId" };
+const MEETUP: Parent = {
+  rpc: "msg_meetup_conversation",
+  param: "p_meetup_id",
+  kind: "meetup",
+  field: "meetup_id",
+  pathName: "meetupId",
+};
+
+export function getGameConversation(request: Request, env: Env, gameId: string): Promise<Response> {
+  return getParentConversation(request, env, gameId, GAME);
+}
+
+export function getMeetupConversation(request: Request, env: Env, meetupId: string): Promise<Response> {
+  return getParentConversation(request, env, meetupId, MEETUP);
+}
+
+async function getParentConversation(request: Request, env: Env, parentId: string, p: Parent): Promise<Response> {
+  if (!UUID.test(parentId)) return reasonError("invalid_request", p.pathName);
   if (!hasBearer(request)) return unauthenticated();
   if (!env.SUPABASE_URL || !env.SUPABASE_ANON_KEY) return upstreamError(500, "authorisation not configured");
 
   let res: Response;
   try {
-    res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/msg_game_conversation`, {
+    res = await fetch(`${env.SUPABASE_URL}/rest/v1/rpc/${p.rpc}`, {
       method: "POST",
       headers: {
         apikey: env.SUPABASE_ANON_KEY,
@@ -46,7 +67,7 @@ export async function getGameConversation(request: Request, env: Env, gameId: st
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ p_game_id: gameId.toLowerCase(), p_access_mode: accessMode(env) }),
+      body: JSON.stringify({ [p.param]: parentId.toLowerCase(), p_access_mode: accessMode(env) }),
     });
   } catch {
     return upstreamError(502, "request unavailable");
@@ -113,8 +134,8 @@ export async function getGameConversation(request: Request, env: Env, gameId: st
 
   return ok({
     id: conversationId,
-    kind: "game",
-    game_id: gameId.toLowerCase(),
+    kind: p.kind,
+    [p.field]: parentId.toLowerCase(),
     writable,
     read_only_reason: readOnlyReason,
     boundary: leftAtSeq === null ? null : { kind: "left_at_seq", seq: leftAtSeq },

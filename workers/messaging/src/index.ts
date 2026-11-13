@@ -9,6 +9,7 @@
 //   GET  /v1/moderation/reports/{reportId}/message  audited moderator read of one reported message (T18, src/moderation.ts).
 //   POST /v1/dm  GET /v1/conversations/summary  POST /v1/conversations/{id}/mute  DMs (KAN-561, src/dm.ts, src/conversations.ts)
 //   GET /v1/games/{gameId}/conversation  PUT|DELETE /v1/conversations/{id}/mute  (KAN-563, src/games.ts, src/dm.ts)
+//   GET /v1/meetups/{meetupId}/conversation  the meetup chat, same handler (KAN-928, src/games.ts)
 //   POST /v1/conversations/{id}/attachments  GET /v1/attachments/{id}  private image upload and authorised read (KAN-581, src/attachments.ts)
 //   POST /v1/messages/{id}/report  report a message (T17, KAN-512): ids + reason relayed, legal hold set.
 // List applies the D4 group block filter from msg_authorize's hidden_sender_ids (T17).
@@ -24,7 +25,7 @@ import { listPage, toApiMessage } from "./messages";
 import { preflightResponse, withCors } from "./cors";
 import { conversationSummary } from "./conversations";
 import { putMuted, setMuted, startDm } from "./dm";
-import { getGameConversation } from "./games";
+import { getGameConversation, getMeetupConversation } from "./games";
 import { WaitUntilContext, scheduleNotify } from "./notify";
 import { handleSystemLine } from "./system_line";
 import { MODERATION_PATH, readReportedMessage } from "./moderation";
@@ -42,6 +43,7 @@ const MAX_BODY = 2000;
 const MESSAGES_PATH = /^\/v1\/conversations\/([^/]+)\/messages$/;
 const MUTE_PATH = /^\/v1\/conversations\/([^/]+)\/mute$/;
 const GAME_CONVERSATION_PATH = /^\/v1\/games\/([^/]+)\/conversation$/;
+const MEETUP_CONVERSATION_PATH = /^\/v1\/meetups\/([^/]+)\/conversation$/;
 const REPORT_PATH = /^\/v1\/messages\/([^/]+)\/report$/;
 // The existing ten-value public.report_reason enum (docs/messaging/openapi.yaml ReportRequest). No new values.
 export const REPORT_REASONS = ["spam", "abuse", "hate", "harassment", "nudity", "illegal", "danger", "scam", "impersonation", "other"] as const;
@@ -111,6 +113,9 @@ const router = {
     if (mute && request.method === "DELETE") return putMuted(request, env, mute[1], false);
     const game = GAME_CONVERSATION_PATH.exec(url.pathname);
     if (game && request.method === "GET") return getGameConversation(request, env, game[1]);
+    // KAN-928: the meetup chat, the same handler over msg_meetup_conversation.
+    const meetup = MEETUP_CONVERSATION_PATH.exec(url.pathname);
+    if (meetup && request.method === "GET") return getMeetupConversation(request, env, meetup[1]);
 
     // KAN-579: ephemeral typing presence. No D1, no stored row; see src/typing.ts.
     const typing = TYPING_PATH.exec(url.pathname);
