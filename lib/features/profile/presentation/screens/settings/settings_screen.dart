@@ -36,7 +36,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
   final FocusNode _searchFocus = FocusNode();
   late final HeaderCollapseController _collapse;
   String _searchQuery = '';
-  final String _appVersion = '1.7.8';
+  final String _appVersion = '1.7.10';
 
   @override
   void initState() {
