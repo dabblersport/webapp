@@ -161,11 +161,12 @@ npx wrangler deploy --env production
 
 ### CORS allowlist
 
-Exactly three origins, exact string match only (no wildcard, pattern or subdomain rule), defined in `src/cors.ts`:
+Exactly four origins, exact string match only (no wildcard, pattern or subdomain rule), defined in `src/cors.ts`:
 
 - `https://canary.dabbler.pro`
 - `https://alpha.dabbler.pro`
 - `https://app.dabbler.pro`
+- `https://staging.dabbler.pro` (KAN-717: the staging web app)
 
 Only `/v1` and `/v1/*` get CORS handling. `/health` and `/internal/*` get none, from any origin.
 

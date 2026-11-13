@@ -1,4 +1,4 @@
-// KAN-538 (+ KAN-546: https://app.dabbler.pro, the production web app): exact-match CORS origin allowlist for the public /v1/ routes, so the web app can call the Worker.
+// KAN-538 (+ KAN-546: https://app.dabbler.pro, the production web app; + KAN-717: https://staging.dabbler.pro, the staging web app): exact-match CORS origin allowlist for the public /v1/ routes, so the web app can call the Worker.
 // Not secret; this constant is the one place the list lives. Exact string match only: no wildcard, no pattern, no
 // subdomain rule. No credentials header (the app sends a bearer token, not cookies). /health and /internal/* never
 // get CORS handling: /internal/system-line is called by the database, not by a browser.
@@ -7,6 +7,7 @@ export const CORS_ALLOWED_ORIGINS: readonly string[] = [
   "https://canary.dabbler.pro",
   "https://alpha.dabbler.pro",
   "https://app.dabbler.pro",
+  "https://staging.dabbler.pro",
 ];
 
 export const CORS_ALLOWED_METHODS = "GET, POST, PUT, DELETE, OPTIONS";

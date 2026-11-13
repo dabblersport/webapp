@@ -8,7 +8,12 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const ALLOWED = ["https://canary.dabbler.pro", "https://alpha.dabbler.pro", "https://app.dabbler.pro"];
+const ALLOWED = [
+  "https://canary.dabbler.pro",
+  "https://alpha.dabbler.pro",
+  "https://app.dabbler.pro",
+  "https://staging.dabbler.pro",
+];
 const MESSAGES = `https://worker.local/v1/conversations/${CONV_A}/messages`;
 
 const preflight = (url: string, origin?: string) =>
