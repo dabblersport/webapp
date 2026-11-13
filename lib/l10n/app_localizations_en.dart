@@ -8468,4 +8468,21 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get listing_use_city_only => 'Use city only';
+
+  @override
+  String get update_required_title => 'Update required';
+
+  @override
+  String get update_required_message_store =>
+      'This version of Dabbler is no longer supported. Update the app to keep playing.';
+
+  @override
+  String get update_required_message_web =>
+      'This version of Dabbler is no longer supported. Reload the page to get the latest version.';
+
+  @override
+  String get update_required_action_update => 'Update';
+
+  @override
+  String get update_required_action_reload => 'Reload';
 }

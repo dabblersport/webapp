@@ -126,6 +126,8 @@ class SupabaseConfig {
   };
 
   // ---- P4-1: table name constants (auto-generated from call sites) ----
+  /// KAN-926: minimum supported app build per platform (web/ios/android).
+  static const String appMinVersionsTable = 'app_min_versions';
   static const String areasTable = 'areas';
   static const String refCitiesTable = 'ref_cities';
   static const String banTermsTable = 'ban_terms';

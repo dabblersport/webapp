@@ -14914,6 +14914,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Use city only'**
   String get listing_use_city_only;
+
+  /// KAN-926 title of the blocking screen shown when this app build is older than the server's minimum supported build.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get update_required_title;
+
+  /// KAN-926 one-line explanation on the blocking update screen (iOS/Android).
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Dabbler is no longer supported. Update the app to keep playing.'**
+  String get update_required_message_store;
+
+  /// KAN-926 one-line explanation on the blocking update screen (web).
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Dabbler is no longer supported. Reload the page to get the latest version.'**
+  String get update_required_message_web;
+
+  /// KAN-926 button that opens the App Store / Play Store listing.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update_required_action_update;
+
+  /// KAN-926 button that reloads the web page to fetch the latest build.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get update_required_action_reload;
 }
 
 class _AppLocalizationsDelegate

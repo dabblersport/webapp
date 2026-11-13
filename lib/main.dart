@@ -28,6 +28,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/features/app_boot/startup_splash.dart';
+import 'package:dabbler/features/app_boot/min_build/min_build_gate.dart';
+import 'package:dabbler/features/app_boot/min_build/min_build_providers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
@@ -197,6 +199,12 @@ Future<Widget> _bootstrap() async {
     );
 
     ThemeService().attachAccountSyncListener();
+
+    // KAN-926: the minimum-supported-build check runs alongside the theme
+    // hydration below, so the launch splash covers it. It never throws and is
+    // bounded by a short timeout; any uncertainty resolves to "not blocked".
+    final container = ProviderContainer();
+    final minBuildCheck = container.read(minBuildStatusProvider.future);
     // Bounded (KAN-603): on a dead network the launch carries on with the
     // theme already stored on the device instead of waiting on the account.
     try {
@@ -242,7 +250,14 @@ Future<Widget> _bootstrap() async {
 
     // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
 
-    return const ProviderScope(child: MyApp());
+    await minBuildCheck;
+
+    // The root: the min-build gate covers the whole app, before routing and
+    // auth, so a signed-out user below the minimum is gated too.
+    return UncontrolledProviderScope(
+      container: container,
+      child: const MinBuildGate(child: MyApp()),
+    );
   } catch (e, st) {
     // Always log bootstrap errors so production web isn't a black box.
     // ignore: avoid_print

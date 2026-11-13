@@ -8544,4 +8544,21 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get listing_use_city_only => 'استخدام المدينة فقط';
+
+  @override
+  String get update_required_title => 'يلزم تحديث التطبيق';
+
+  @override
+  String get update_required_message_store =>
+      'لم يعد هذا الإصدار من دابلر مدعومًا. حدّث التطبيق لتواصل اللعب.';
+
+  @override
+  String get update_required_message_web =>
+      'لم يعد هذا الإصدار من دابلر مدعومًا. أعد تحميل الصفحة للحصول على أحدث إصدار.';
+
+  @override
+  String get update_required_action_update => 'تحديث';
+
+  @override
+  String get update_required_action_reload => 'إعادة التحميل';
 }

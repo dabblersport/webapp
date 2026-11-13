@@ -2895,5 +2895,10 @@
   "profile_invite_action_semantic": "دعوة",
   "profile_stat_games_played_visitor": "المباريات التي لعبها",
   "profile_stat_sport_matches_visitor": "مباريات {sport}",
-  "listing_use_city_only": "استخدام المدينة فقط"
+  "listing_use_city_only": "استخدام المدينة فقط",
+  "update_required_title": "يلزم تحديث التطبيق",
+  "update_required_message_store": "لم يعد هذا الإصدار من دابلر مدعومًا. حدّث التطبيق لتواصل اللعب.",
+  "update_required_message_web": "لم يعد هذا الإصدار من دابلر مدعومًا. أعد تحميل الصفحة للحصول على أحدث إصدار.",
+  "update_required_action_update": "تحديث",
+  "update_required_action_reload": "إعادة التحميل"
 }

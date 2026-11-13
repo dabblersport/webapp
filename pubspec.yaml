@@ -152,6 +152,7 @@ dependencies:
   flutter_map: ^7.0.2
   latlong2: ^0.9.0
   lottie: ^3.6.1
+  package_info_plus: ^9.0.1
 dependency_overrides:
   # share_plus 13.2+ declares win32 ^6 but file_picker 8 only compiles against
   # win32 5. Pinned down — win32 code paths only run on Windows desktop builds,

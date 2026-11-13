@@ -3198,5 +3198,15 @@
   "profile_stat_sport_matches_visitor": "{sport} matches",
   "@profile_stat_sport_matches_visitor": {"description": "KAN-688 hero label with a sport selected (Profiles.dc.html line 576).", "placeholders": {"sport": {"type": "String"}}},
   "listing_use_city_only": "Use city only",
-  "@listing_use_city_only": {"description": "KAN-588 action on a city row in the Change location picker: choose the city on its own, with no area."}
+  "@listing_use_city_only": {"description": "KAN-588 action on a city row in the Change location picker: choose the city on its own, with no area."},
+  "update_required_title": "Update required",
+  "@update_required_title": {"description": "KAN-926 title of the blocking screen shown when this app build is older than the server's minimum supported build."},
+  "update_required_message_store": "This version of Dabbler is no longer supported. Update the app to keep playing.",
+  "@update_required_message_store": {"description": "KAN-926 one-line explanation on the blocking update screen (iOS/Android)."},
+  "update_required_message_web": "This version of Dabbler is no longer supported. Reload the page to get the latest version.",
+  "@update_required_message_web": {"description": "KAN-926 one-line explanation on the blocking update screen (web)."},
+  "update_required_action_update": "Update",
+  "@update_required_action_update": {"description": "KAN-926 button that opens the App Store / Play Store listing."},
+  "update_required_action_reload": "Reload",
+  "@update_required_action_reload": {"description": "KAN-926 button that reloads the web page to fetch the latest build."}
 }
