@@ -1,3 +1,5 @@
+import 'package:dabbler/core/utils/instant.dart';
+
 /// A nearby game row returned by the `rpc_get_nearby_games` PostGIS RPC.
 ///
 /// Plain Dart class (no Freezed) matching the pattern in [NearbyVenueModel].
@@ -174,7 +176,7 @@ class NearbyGameModel {
       title: json['title'] as String? ?? 'Untitled Game',
       sportName: json['sport_name'] as String?,
       scheduledAt: json['scheduled_at'] != null
-          ? DateTime.tryParse(json['scheduled_at'] as String)
+          ? parseInstantLocal(json['scheduled_at'])
           : null,
       status: json['status'] as String?,
       venueName: json['venue_name'] as String?,
@@ -188,9 +190,7 @@ class NearbyGameModel {
       isJoined: json['is_joined'] as bool? ?? false,
       minSkill: json['min_skill'] as int?,
       maxSkill: json['max_skill'] as int?,
-      endAt: json['end_at'] != null
-          ? DateTime.tryParse(json['end_at'] as String)
-          : null,
+      endAt: json['end_at'] != null ? parseInstantLocal(json['end_at']) : null,
       variantNameEn: json['variant_name_en'] as String?,
       variantNameAr: json['variant_name_ar'] as String?,
       hostVerified: json['host_verified'] as bool? ?? false,
@@ -206,7 +206,7 @@ class NearbyGameModel {
     'id': id,
     'title': title,
     'sport_name': sportName,
-    'scheduled_at': scheduledAt?.toIso8601String(),
+    'scheduled_at': toWireInstantOrNull(scheduledAt),
     'status': status,
     'venue_name': venueName,
     'latitude': latitude,
@@ -219,7 +219,7 @@ class NearbyGameModel {
     'is_joined': isJoined,
     'min_skill': minSkill,
     'max_skill': maxSkill,
-    'end_at': endAt?.toIso8601String(),
+    'end_at': toWireInstantOrNull(endAt),
     'variant_name_en': variantNameEn,
     'variant_name_ar': variantNameAr,
     'host_verified': hostVerified,

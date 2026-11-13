@@ -13,10 +13,16 @@ class Conversation extends Equatable {
     required this.lastSeq,
     this.readOnlyReason,
     this.boundary,
+    this.meetupId,
   });
 
   final String id;
+
+  /// The game of a game chat; empty for a meetup chat or a DM.
   final String gameId;
+
+  /// The meetup of a meetup chat (KAN-928, `kind: "meetup"`); null otherwise.
+  final String? meetupId;
 
   /// True iff the caller may send now: the game is not cancelled, its `end_at`
   /// has not passed, and the caller is still an active member.
@@ -38,12 +44,15 @@ class Conversation extends Equatable {
   /// implementation catches it and returns a failure.
   factory Conversation.fromJson(Map<String, dynamic> json) {
     final id = json['id'];
-    final gameId = json['game_id'];
+    // A meetup chat carries meetup_id in place of game_id (KAN-928).
+    final meetupId = json['kind'] == 'meetup' ? json['meetup_id'] : null;
+    final gameId = json['kind'] == 'meetup' ? '' : json['game_id'];
     final writable = json['writable'];
     final muted = json['muted'];
     final lastSeq = json['last_seq'];
     if (id is! String ||
         gameId is! String ||
+        (json['kind'] == 'meetup' && meetupId is! String) ||
         writable is! bool ||
         muted is! bool ||
         lastSeq is! int) {
@@ -60,13 +69,19 @@ class Conversation extends Equatable {
           ? MessagingReason.fromWire(reason)
           : null,
       boundary: ViewBoundary.tryFromJson(json['boundary']),
+      meetupId: meetupId is String ? meetupId : null,
     );
   }
 
   Map<String, dynamic> toJson() => {
     'id': id,
-    'kind': 'game',
-    'game_id': gameId,
+    if (meetupId != null) ...{
+      'kind': 'meetup',
+      'meetup_id': meetupId,
+    } else ...{
+      'kind': 'game',
+      'game_id': gameId,
+    },
     'writable': writable,
     'read_only_reason': readOnlyReason?.wireName,
     'boundary': boundary?.toJson(),
@@ -78,6 +93,7 @@ class Conversation extends Equatable {
   List<Object?> get props => [
     id,
     gameId,
+    meetupId,
     writable,
     readOnlyReason,
     boundary,

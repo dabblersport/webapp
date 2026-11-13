@@ -43,6 +43,7 @@ export 'features/explore/providers/feed_providers.dart';
 // Games
 export 'features/games/providers/game_history_providers.dart';
 export 'features/games/data/repositories/game_series_repository.dart';
+export 'features/games/data/repositories/game_host_repository.dart';
 
 // News
 export 'features/meetups/presentation/providers/meetup_providers.dart';
@@ -51,6 +52,7 @@ export 'features/news/providers/news_actions_provider.dart';
 export 'features/news/providers/news_comments_provider.dart';
 
 // Messaging (KAN-507; repository defaults to the in-memory fake)
+export 'features/messaging/presentation/providers/meetup_chat_providers.dart';
 export 'features/messaging/presentation/providers/messaging_providers.dart';
 export 'features/messaging/presentation/providers/messaging_realtime_providers.dart';
 

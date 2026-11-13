@@ -50,7 +50,7 @@ void main() {
       expect(m.title, isNull);
       expect(m.endAt, isNull);
       expect(m.sportId, isNull);
-      expect(m.startAt, DateTime.utc(2026, 11, 10, 6));
+      expect(m.startAt, DateTime.utc(2026, 11, 10, 6).toLocal()); // KAN-927
     });
 
     test('toJson round-trips event_id', () {

@@ -5651,6 +5651,52 @@ class AppLocalizationsEn extends AppLocalizations {
   String get game_error_not_editable => 'This game can no longer be edited.';
 
   @override
+  String get game_error_stale_update =>
+      'Someone else changed this game. The latest version is loaded: check it and save again.';
+
+  @override
+  String get game_join_err_closed => 'This game isn\'t taking players.';
+
+  @override
+  String get game_join_err_started => 'This game has already started.';
+
+  @override
+  String get game_join_err_cancelled => 'This game was cancelled.';
+
+  @override
+  String get game_join_err_not_visible => 'This game isn\'t available to you.';
+
+  @override
+  String get game_join_err_invite_only => 'This game is invite-only.';
+
+  @override
+  String get game_join_err_circle_only =>
+      'Only the host\'s circle can join this game.';
+
+  @override
+  String get game_join_err_squad_only =>
+      'Only the host\'s squad can join this game.';
+
+  @override
+  String get game_join_err_link =>
+      'You need a valid invite link to join this game.';
+
+  @override
+  String get game_join_err_requested => 'You already asked to join this game.';
+
+  @override
+  String get game_join_err_joined => 'You\'re already in this game.';
+
+  @override
+  String get game_join_err_host => 'You\'re the host of this game.';
+
+  @override
+  String get game_join_request_sent => 'Join request sent.';
+
+  @override
+  String get game_join_waitlisted => 'Added to waitlist.';
+
+  @override
   String get game_error_player_range =>
       'Min players cannot exceed max players.';
 
@@ -5857,6 +5903,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get meetups_load_detail_failed => 'Couldn\'t load this meetup';
 
   @override
+  String get meetups_about => 'About';
+
+  @override
+  String get meetups_load_more => 'Load more';
+
+  @override
   String get meetups_back => 'Back';
 
   @override
@@ -5963,6 +6015,20 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get game_err_create_refused =>
       'You can\'t create a game right now. Try again later.';
+
+  @override
+  String get game_err_auth_required => 'Sign in to create a game.';
+
+  @override
+  String get game_err_series_invalid =>
+      'This repeat schedule can\'t be used. Check the date and the repeat option.';
+
+  @override
+  String get game_err_paid_space_price =>
+      'This venue space is paid. Enter a price above 0.';
+
+  @override
+  String get game_create_as => 'Create as';
 
   @override
   String get meetups_err_create_refused =>
@@ -8485,4 +8551,36 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get update_required_action_reload => 'Reload';
+
+  @override
+  String get game_cancel_action => 'Cancel game';
+
+  @override
+  String get game_cancel_title => 'Cancel this game?';
+
+  @override
+  String get game_cancel_body =>
+      'Everyone who joined is told the game is off. This cannot be undone.';
+
+  @override
+  String get game_cancel_reason_label => 'Reason (optional)';
+
+  @override
+  String get game_cancel_reason_placeholder => 'Let players know why';
+
+  @override
+  String get game_cancel_confirm => 'Cancel game';
+
+  @override
+  String get game_cancel_keep => 'Keep game';
+
+  @override
+  String get game_cancel_failed => 'Could not cancel the game. Try again.';
+
+  @override
+  String get game_cancelled_toast => 'Game cancelled';
+
+  @override
+  String get game_share_link_failed =>
+      'Could not create the invite link. Try again.';
 }

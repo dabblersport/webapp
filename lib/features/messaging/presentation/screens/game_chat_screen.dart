@@ -9,6 +9,7 @@ import 'package:go_router/go_router.dart';
 import 'package:dabbler/features/messaging/presentation/controllers/game_chat_controller.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
 import 'package:dabbler/features/messaging/presentation/controllers/dm_chat_controller.dart';
+import 'package:dabbler/features/messaging/presentation/providers/meetup_chat_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
@@ -55,14 +56,34 @@ import 'package:dabbler/features/messaging/presentation/widgets/chat_composer_in
 /// lines. The game chat path is unchanged.
 class GameChatScreen extends ConsumerStatefulWidget {
   const GameChatScreen({super.key, required this.gameId, this.gameEndAt})
-    : conversationId = null;
+    : conversationId = null,
+      meetupId = null,
+      title = null;
 
   /// The direct message [conversationId] (KAN-556).
   const GameChatScreen.dm({super.key, required String this.conversationId})
     : gameId = '',
-      gameEndAt = null;
+      gameEndAt = null,
+      meetupId = null,
+      title = null;
+
+  /// The chat of [meetupId] (KAN-928): the game chat with a meetup open,
+  /// titled with the meetup's [title] when the caller knows it.
+  const GameChatScreen.meetup({
+    super.key,
+    required String this.meetupId,
+    this.title,
+  }) : gameId = '',
+       gameEndAt = null,
+       conversationId = null;
 
   final String gameId;
+
+  /// Set for a meetup chat; null otherwise.
+  final String? meetupId;
+
+  /// The top bar title in place of the generic chat title; null for that.
+  final String? title;
 
   /// Set for a direct message; null for a game chat.
   final String? conversationId;
@@ -144,6 +165,8 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   AsyncNotifierFamilyProvider<GameChatController, GameChatViewState, String>
   get _provider => _isDm
       ? dmChatControllerProvider(widget.conversationId!)
+      : widget.meetupId != null
+      ? meetupChatControllerProvider(widget.meetupId!)
       : gameChatControllerProvider(widget.gameId);
 
   @override
@@ -503,7 +526,9 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     }
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: l10n.messaging_chat_title,
+        title: (widget.title?.trim().isNotEmpty ?? false)
+            ? widget.title!.trim()
+            : l10n.messaging_chat_title,
         backLabel: l10n.auth_back,
         onBack: () => context.canPop() ? context.pop() : null,
         actions: [if (view?.conversation != null) _muteAction(l10n, view!)],

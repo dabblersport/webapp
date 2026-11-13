@@ -1,5 +1,6 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/domain/meetup_conversation_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
@@ -20,6 +21,7 @@ import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 class UnavailableMessagingRepository
     implements
         MessagingRepository,
+        MeetupConversationRepository,
         MyConversationsRepository,
         DmRepository,
         ModerationReportsRepository,
@@ -36,6 +38,11 @@ class UnavailableMessagingRepository
   @override
   Future<Result<Conversation, Failure>> getGameConversation(
     String gameId,
+  ) async => _no();
+
+  @override
+  Future<Result<Conversation, Failure>> getMeetupConversation(
+    String meetupId,
   ) async => _no();
 
   @override

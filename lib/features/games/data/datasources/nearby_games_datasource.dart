@@ -1,4 +1,5 @@
 import 'package:dabbler/core/errors/request_timeout.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -117,8 +118,8 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
     final now = DateTime.now();
     return rows.map((r) {
       final row = Map<String, dynamic>.from(r as Map);
-      final startAt = DateTime.tryParse(row['start_at'] as String? ?? '');
-      final endAt = DateTime.tryParse(row['end_at'] as String? ?? '');
+      final startAt = parseInstantLocal(row['start_at']);
+      final endAt = parseInstantLocal(row['end_at']);
       final isCancelled = row['is_cancelled'] as bool? ?? false;
 
       final String status;

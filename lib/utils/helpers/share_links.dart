@@ -15,16 +15,22 @@ abstract final class ShareLinks {
     fallback: RoutePaths.webLinkBase,
   );
 
-  static String _link(SharedItemType type, String id, String? sharer) =>
-      DeepLinks.link(
-        origin: origin(),
-        type: type,
-        id: id,
-        sharerProfileId: sharer,
-      );
+  static String _link(
+    SharedItemType type,
+    String id,
+    String? sharer, {
+    String? linkToken,
+  }) => DeepLinks.link(
+    origin: origin(),
+    type: type,
+    id: id,
+    sharerProfileId: sharer,
+    linkToken: linkToken,
+  );
 
-  static String game(String id, {String? sharerProfileId}) =>
-      _link(SharedItemType.game, id, sharerProfileId);
+  /// [linkToken] (KAN-939): the join-link token of a link-policy game.
+  static String game(String id, {String? sharerProfileId, String? linkToken}) =>
+      _link(SharedItemType.game, id, sharerProfileId, linkToken: linkToken);
   static String meetup(String id, {String? sharerProfileId}) =>
       _link(SharedItemType.meetup, id, sharerProfileId);
   static String venue(String id, {String? sharerProfileId}) =>

@@ -4,8 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/features/messaging/presentation/dm_thread_route.dart';
-import 'package:dabbler/features/messaging/presentation/providers/meetup_conversation_provider.dart';
+import 'package:dabbler/features/messaging/presentation/meetup_chat_route.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// The flags the meetup-chat entry reads. Defaults to the real compile-time
@@ -45,23 +44,25 @@ bool meetupChatEntryVisible(
     );
 
 /// The one entry to a meetup's chat (KAN-559), on the meetup detail screen.
-/// It opens the shared thread route with the conversation id resolved from
-/// the member's Messages list. While that resolves the button is loading;
-/// when the member has no conversation row for this meetup (not created yet)
-/// or the list failed, the button stays visible but disabled, with a
-/// semantic label saying the chat is not available yet. It never guesses an
-/// id. With the committed messaging flags it draws nothing.
+/// KAN-928: it opens `/meetups/{id}/chat`, whose Worker route creates the
+/// conversation on first open for the organiser or a 'going' member, so
+/// there is no id to resolve first and the button is always enabled. With
+/// the committed messaging flags it draws nothing.
 class MeetupChatEntry extends ConsumerWidget {
   const MeetupChatEntry({
     super.key,
     required this.meetupId,
     required this.isHost,
     required this.myStatus,
+    this.title,
   });
 
   final String meetupId;
   final bool isHost;
   final String? myStatus;
+
+  /// The meetup's title, for the chat's top bar.
+  final String? title;
 
   static const buttonKey = ValueKey<String>('messaging-meetup-chat-entry');
 
@@ -72,29 +73,16 @@ class MeetupChatEntry extends ConsumerWidget {
       return const SizedBox.shrink();
     }
     final l10n = AppLocalizations.of(context);
-    final resolved = ref.watch(meetupConversationIdProvider(meetupId));
-    final id = resolved.valueOrNull;
-    final loading = resolved.isLoading;
-    final unavailable = !loading && id == null;
     return DabblerButton(
       key: buttonKey,
       label: l10n.messaging_meetup_chat_open,
-      semanticLabel: unavailable
-          ? l10n.messaging_meetup_chat_unavailable
-          : l10n.messaging_meetup_chat_semantic,
+      semanticLabel: l10n.messaging_meetup_chat_semantic,
       // Text only, like the profile Message action: an icon beside the
       // label overflows the button at 200% text scale.
       tone: DabblerButtonTone.outlined,
       size: DabblerButtonSize.full,
       fullWidth: true,
-      loading: loading,
-      disabled: id == null,
-      onPressed: id == null
-          ? null
-          : () => context.pushNamed(
-              dmThreadRouteName,
-              pathParameters: {dmThreadRouteParam: id},
-            ),
+      onPressed: () => context.push(meetupChatLocation(meetupId), extra: title),
     );
   }
 }

@@ -12,10 +12,12 @@ _$MeetupListItemImpl _$$MeetupListItemImplFromJson(Map<String, dynamic> json) =>
       eventId: json['event_id'] as String?,
       title: json['title'] as String?,
       description: json['description'] as String?,
-      startAt: DateTime.parse(json['start_at'] as String),
-      endAt: json['end_at'] == null
-          ? null
-          : DateTime.parse(json['end_at'] as String),
+      startAt: const LocalInstantConverter().fromJson(
+        json['start_at'] as String,
+      ),
+      endAt: const LocalInstantOrNullConverter().fromJson(
+        json['end_at'] as String?,
+      ),
       capacity: (json['capacity'] as num?)?.toInt(),
       membersOnly: json['members_only'] as bool? ?? false,
       listingVisibility: json['listing_visibility'] as String? ?? 'public',
@@ -71,8 +73,8 @@ Map<String, dynamic> _$$MeetupListItemImplToJson(
   'event_id': instance.eventId,
   'title': instance.title,
   'description': instance.description,
-  'start_at': instance.startAt.toIso8601String(),
-  'end_at': instance.endAt?.toIso8601String(),
+  'start_at': const LocalInstantConverter().toJson(instance.startAt),
+  'end_at': const LocalInstantOrNullConverter().toJson(instance.endAt),
   'capacity': instance.capacity,
   'members_only': instance.membersOnly,
   'listing_visibility': instance.listingVisibility,
@@ -118,26 +120,27 @@ _$NearbyMeetupImpl _$$NearbyMeetupImplFromJson(Map<String, dynamic> json) =>
       id: json['id'] as String,
       eventId: json['event_id'] as String?,
       title: json['title'] as String,
-      startsAt: json['starts_at'] == null
-          ? null
-          : DateTime.parse(json['starts_at'] as String),
+      startsAt: const LocalInstantOrNullConverter().fromJson(
+        json['starts_at'] as String?,
+      ),
       lat: (json['lat'] as num?)?.toDouble(),
       lng: (json['lng'] as num?)?.toDouble(),
       areaId: json['areaid'] as String?,
       distanceM: (json['distance_m'] as num?)?.toDouble(),
     );
 
-Map<String, dynamic> _$$NearbyMeetupImplToJson(_$NearbyMeetupImpl instance) =>
-    <String, dynamic>{
-      'id': instance.id,
-      'event_id': instance.eventId,
-      'title': instance.title,
-      'starts_at': instance.startsAt?.toIso8601String(),
-      'lat': instance.lat,
-      'lng': instance.lng,
-      'areaid': instance.areaId,
-      'distance_m': instance.distanceM,
-    };
+Map<String, dynamic> _$$NearbyMeetupImplToJson(
+  _$NearbyMeetupImpl instance,
+) => <String, dynamic>{
+  'id': instance.id,
+  'event_id': instance.eventId,
+  'title': instance.title,
+  'starts_at': const LocalInstantOrNullConverter().toJson(instance.startsAt),
+  'lat': instance.lat,
+  'lng': instance.lng,
+  'areaid': instance.areaId,
+  'distance_m': instance.distanceM,
+};
 
 _$MeetupAvatarImpl _$$MeetupAvatarImplFromJson(Map<String, dynamic> json) =>
     _$MeetupAvatarImpl(
@@ -189,12 +192,12 @@ _$MeetupCardImpl _$$MeetupCardImplFromJson(Map<String, dynamic> json) =>
       eventId: json['event_id'] as String?,
       title: json['title'] as String?,
       description: json['description'] as String?,
-      startAt: json['start_at'] == null
-          ? null
-          : DateTime.parse(json['start_at'] as String),
-      endAt: json['end_at'] == null
-          ? null
-          : DateTime.parse(json['end_at'] as String),
+      startAt: const LocalInstantOrNullConverter().fromJson(
+        json['start_at'] as String?,
+      ),
+      endAt: const LocalInstantOrNullConverter().fromJson(
+        json['end_at'] as String?,
+      ),
       locationName: json['location_name'] as String?,
       capacity: (json['capacity'] as num?)?.toInt(),
       isCancelled: json['is_cancelled'] as bool? ?? false,
@@ -228,8 +231,8 @@ Map<String, dynamic> _$$MeetupCardImplToJson(_$MeetupCardImpl instance) =>
       'event_id': instance.eventId,
       'title': instance.title,
       'description': instance.description,
-      'start_at': instance.startAt?.toIso8601String(),
-      'end_at': instance.endAt?.toIso8601String(),
+      'start_at': const LocalInstantOrNullConverter().toJson(instance.startAt),
+      'end_at': const LocalInstantOrNullConverter().toJson(instance.endAt),
       'location_name': instance.locationName,
       'capacity': instance.capacity,
       'is_cancelled': instance.isCancelled,

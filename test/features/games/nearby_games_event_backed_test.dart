@@ -74,7 +74,10 @@ void main() {
       // (B04:142 coalesce(e.title, 'Untitled Game')); the model mirrors it
       // for the view path and the cache, and adds no other value.
       expect(m.title, 'Untitled Game');
-      expect(m.scheduledAt, DateTime.parse('2026-11-10T18:00:00Z'));
+      expect(
+        m.scheduledAt,
+        DateTime.parse('2026-11-10T18:00:00Z').toLocal(),
+      ); // KAN-927
     });
 
     test('game id stays the id; an event id is never taken for it', () {

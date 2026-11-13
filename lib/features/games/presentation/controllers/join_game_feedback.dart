@@ -30,11 +30,8 @@ Future<Result<JoinActionResult, Failure>> joinGameWithFeedback(
           label: l.feedback_joining,
         ),
         task: () => _join(container, id),
-        success: (action) => FeedbackResult.success(
-          action == JoinActionResult.joined
-              ? l.listing_joined
-              : joinActionMessage(action),
-        ),
+        success: (action) =>
+            FeedbackResult.success(joinActionMessageL10n(l, action)),
         // The controller's own error copy (the detail screen's), else ours.
         failure: (f, retry) => FeedbackResult.error(
           f.message.isNotEmpty ? f.message : l.feedback_join_failed,

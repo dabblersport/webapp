@@ -13,8 +13,15 @@ class RoutePaths {
   static const String webLinkBase = 'https://app.dabbler.pro';
 
   /// The production origin; share links use [ShareLinks] (KAN-597), which picks the running environment's origin.
-  static String gameLink(String gameId, {String? sharerProfileId}) =>
-      ShareLinks.game(gameId, sharerProfileId: sharerProfileId);
+  static String gameLink(
+    String gameId, {
+    String? sharerProfileId,
+    String? linkToken,
+  }) => ShareLinks.game(
+    gameId,
+    sharerProfileId: sharerProfileId,
+    linkToken: linkToken,
+  );
 
   /// The public link to a meetup; the same host serves /meetups/:id, which the
   /// router opens (behind FeatureFlags.enableMeetups).

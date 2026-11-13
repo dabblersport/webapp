@@ -25,6 +25,9 @@ import '../location/manual_location_surfaces_support.dart';
 /// A recording fake of the meetup repository.
 class FakeMeetupRepository implements MeetupRepository {
   List<MeetupListItem> list = <MeetupListItem>[];
+
+  /// The `limit` of every list fetch, in order (KAN-932 paging).
+  final List<int> listLimits = <int>[];
   Object? listError;
   Completer<void>? listGate;
   MeetupCard card = const MeetupCard(id: 'm1');
@@ -60,6 +63,7 @@ class FakeMeetupRepository implements MeetupRepository {
     int limit = 20,
     int offset = 0,
   }) async {
+    listLimits.add(limit);
     await listGate?.future;
     if (listError != null) return Err(Failure(message: '$listError'));
     return Ok(list);

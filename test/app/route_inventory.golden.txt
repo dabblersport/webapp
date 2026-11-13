@@ -32,6 +32,7 @@
 /meetups	meetups	GoRoute
 /sports/games/:gameId	game-detail	GoRoute
 /meetups/:meetupId	meetup-detail	GoRoute
+/meetup/:meetupId	-	GoRoute
 /meetups/:meetupId/manage	meetup-manage	GoRoute
 /meetups/:meetupId/edit	meetup-edit	GoRoute
 /news/:newsId	news-detail	GoRoute
@@ -96,6 +97,7 @@
 /social-messages	social-messages	GoRoute
 /social-chat/:conversationId	social-chat	GoRoute
 /messaging/game/:gameId	messagingGameChat	GoRoute
+/meetups/:meetupId/chat	messagingMeetupChat	GoRoute
 /messaging	messagingList	GoRoute
 /messaging/thread/:conversationId	messagingThread	GoRoute
 /social-edit-post	social-edit-post	GoRoute

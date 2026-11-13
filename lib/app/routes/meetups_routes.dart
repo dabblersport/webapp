@@ -25,6 +25,14 @@ RouteBase get meetupDetailRoute => GoRoute(
   ),
 );
 
+// /meetup/:meetupId — legacy singular link (the search RPC used to return it,
+// KAN-933); redirects to the canonical /meetups/:meetupId.
+RouteBase get legacyMeetupRedirectRoute => GoRoute(
+  path: '/meetup/:meetupId',
+  redirect: (context, state) =>
+      RoutePaths.meetupDetail(state.pathParameters['meetupId']!),
+);
+
 // /meetups/:meetupId/manage — host-only roster and actions. The Details entry
 // shows only when the card says is_host; every action is checked server-side.
 RouteBase get meetupManageRoute => GoRoute(

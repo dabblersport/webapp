@@ -37,7 +37,10 @@ void main() {
     expect(c.counterpartAvatar, 'https://img.example.invalid/a.png');
     expect(c.muted, isTrue);
     expect(c.isDmReadOnly, isFalse);
-    expect(c.lastActivityAt, DateTime.utc(2026, 10, 15, 11, 55));
+    expect(
+      c.lastActivityAt,
+      DateTime.utc(2026, 10, 15, 11, 55).toLocal(),
+    ); // KAN-927
     expect(MyConversation.parse(c.toJson()).requireValue, c);
   });
 

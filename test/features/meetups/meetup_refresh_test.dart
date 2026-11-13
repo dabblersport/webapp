@@ -180,7 +180,7 @@ void main() {
     );
     final MeetupCard card = c.read(meetupCardProvider(meetupId)).requireValue;
     expect(card.title, 'Evening run');
-    expect(card.startAt, DateTime.utc(2026, 11, 10, 18));
+    expect(card.startAt, DateTime.utc(2026, 11, 10, 18).toLocal()); // KAN-927
     expect(card.locationName, 'Corniche');
     expect(card.isCancelled, isTrue);
     expect(card.id, meetupId);

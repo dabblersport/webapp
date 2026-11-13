@@ -71,7 +71,7 @@ void main() {
       expect(g.id, gameId);
       expect(g.title, isNull);
       expect(g.sportId, isNull);
-      expect(g.startAt, DateTime.utc(2026, 11, 10, 18));
+      expect(g.startAt, DateTime.utc(2026, 11, 10, 18).toLocal()); // KAN-927
       expect(g.isCancelled, isFalse);
       expect(g.isOrganiser, isTrue);
       expect(g.takesPart, isFalse);

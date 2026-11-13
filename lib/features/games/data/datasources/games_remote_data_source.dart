@@ -191,7 +191,8 @@ abstract class GamesRemoteDataSource {
   Future<int?> getWaitlistPosition(String gameId, String userId);
 
   /// Requests to join a game (for games with "request" join policy)
-  /// Returns the join request ID on success
+  /// through `rpc_join_game`. Returns the RPC's result (`request_submitted`
+  /// for a request-policy game; a pending request is the same outcome).
   Future<String> requestToJoinGame(
     String gameId,
     String playerId, {

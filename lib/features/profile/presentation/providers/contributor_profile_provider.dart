@@ -1,4 +1,5 @@
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_counts.dart';
 import 'package:dabbler/features/profile/presentation/models/contributor_profile_data.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -173,7 +174,7 @@ List<ContributorEntity> gameRowsToEntities(
   final List<ContributorEntity> out = <ContributorEntity>[];
   for (final Map<String, dynamic> row in rows) {
     final String? id = row['id'] as String?;
-    final DateTime? start = DateTime.tryParse(row['start_at'] as String? ?? '');
+    final DateTime? start = parseInstantLocal(row['start_at']);
     if (id == null || start == null) continue;
     out.add(
       ContributorEntity(
@@ -203,7 +204,7 @@ List<ContributorEntity> meetupRowsToEntities(
   final List<ContributorEntity> out = <ContributorEntity>[];
   for (final Map<String, dynamic> row in rows) {
     final String? id = row['id'] as String?;
-    final DateTime? start = DateTime.tryParse(row['start_at'] as String? ?? '');
+    final DateTime? start = parseInstantLocal(row['start_at']);
     if (id == null || start == null) continue;
     out.add(
       ContributorEntity(

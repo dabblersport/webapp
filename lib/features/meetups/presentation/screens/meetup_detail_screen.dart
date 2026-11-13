@@ -284,7 +284,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
             ?vibeLabel,
           ],
           title: c.title ?? '',
-          place: c.locationName,
+          place: c.locationName ?? c.venueName,
           meta: distance == null
               ? null
               : l.meetups_km_away((distance / 1000).toStringAsFixed(1)),
@@ -346,22 +346,40 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
               label: l.meetups_tile_entry,
               fitValue: true,
             ),
-            if (c.locationName != null)
+            if ((c.locationName ?? c.venueName) != null)
               DabblerStatTile(
                 size: DabblerStatTileSize.detail,
                 tone: DabblerStatTileTone.amber,
                 icon: glyph('location'),
-                value: c.locationName!,
+                value: (c.locationName ?? c.venueName)!,
                 label: l.meetups_tile_meeting_point,
                 span: 6,
                 fitValue: true,
               ),
           ],
         ),
+        // KAN-932: the organiser's description, when there is one.
+        if (c.description?.trim().isNotEmpty ?? false)
+          DabblerSection(
+            style: DabblerSectionStyle.label,
+            title: l.meetups_about,
+            children: <Widget>[
+              DabblerText(
+                c.description!.trim(),
+                style: DabblerType.footnoteRelaxed,
+                tone: DabblerTextTone.secondary,
+              ),
+            ],
+          ),
         if (hostName != null) _HostSection(host: c.host!, name: hostName),
         // KAN-559: the one meetup-chat entry; draws nothing unless every
         // messaging flag is on and the viewer is the organiser or going.
-        MeetupChatEntry(meetupId: c.id, isHost: c.isHost, myStatus: c.myStatus),
+        MeetupChatEntry(
+          meetupId: c.id,
+          isHost: c.isHost,
+          myStatus: c.myStatus,
+          title: c.title,
+        ),
         if (c.isHost)
           DabblerActionRow(
             icon: 'setting-2',

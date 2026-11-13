@@ -78,7 +78,8 @@ void main() {
 
     test('game and meetup share through the environment-aware builders', () {
       for (final f in [
-        'lib/features/games/presentation/screens/join_game/game_detail_screen.dart',
+        // KAN-939: game detail builds its link (with the join token) here.
+        'lib/features/games/presentation/screens/join_game/game_host_actions.dart',
         'lib/features/games/presentation/widgets/games_listing_card.dart',
         'lib/features/meetups/presentation/screens/meetup_detail_screen.dart',
         'lib/features/meetups/presentation/widgets/meetup_listing_card.dart',

@@ -26,7 +26,10 @@ void main() {
     expect(g.storedTitle, isNull);
     expect(g.storedEndAt, isNull);
     expect(g.storedSport, isNull);
-    expect(g.scheduledDate, DateTime.utc(2026, 11, 10, 18));
+    expect(
+      g.scheduledDate,
+      DateTime.utc(2026, 11, 10, 18).toLocal(),
+    ); // KAN-927
     expect(g.createdAt, DateTime.utc(2026, 11, 1, 9, 30));
     expect(g.updatedAt, DateTime.utc(2026, 11, 2, 10, 45));
   });
@@ -41,9 +44,7 @@ void main() {
   });
 
   test('a source without event_id parses with a null eventId', () {
-    final GameModel g = GameModel.fromJson(
-      nullSharedRow()..remove('event_id'),
-    );
+    final GameModel g = GameModel.fromJson(nullSharedRow()..remove('event_id'));
     expect(g.id, gameId);
     expect(g.eventId, isNull);
   });
@@ -57,13 +58,16 @@ void main() {
     );
     expect(g.storedTitle, 'Friday 5s');
     expect(g.storedSport, 'padel');
-    expect(g.storedEndAt, DateTime.utc(2026, 11, 10, 19, 30));
+    expect(
+      g.storedEndAt,
+      DateTime.utc(2026, 11, 10, 19, 30).toLocal(),
+    ); // KAN-927
   });
 
   test('copyWith keeps eventId and the stored values', () {
-    final GameModel g = GameModel.fromJson(nullSharedRow()).copyWith(
-      currentPlayers: 3,
-    );
+    final GameModel g = GameModel.fromJson(
+      nullSharedRow(),
+    ).copyWith(currentPlayers: 3);
     expect(g.id, gameId);
     expect(g.eventId, eventId);
     expect(g.storedTitle, isNull);

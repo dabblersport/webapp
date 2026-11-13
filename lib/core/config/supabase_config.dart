@@ -308,6 +308,16 @@ class SupabaseConfig {
   static const String rpcChallengeCreateFn = 'rpc_challenge_create';
   static const String rpcJoinGameFn = 'rpc_join_game';
 
+  /// KAN-937: host cancels one game (p_game_id, p_reason; reason may be null).
+  static const String rpcCancelGameFn = 'rpc_cancel_game';
+
+  /// KAN-939: host mints a join-link token for a link-policy game.
+  static const String rpcMintJoinLinkFn = 'rpc_mint_join_link';
+
+  /// KAN-939: the game card for a holder of a valid link token (zero rows
+  /// otherwise) — the detail read when v_game_card hides the game.
+  static const String rpcGameCardByLinkFn = 'rpc_game_card_by_link';
+
   /// KAN-621/KAN-622: the Sport Overview aggregates (followers, city-scoped counts).
   static const String rpcSportOverviewFn = 'rpc_sport_overview';
   static const String rpcLeaveGameFn = 'rpc_leave_game';

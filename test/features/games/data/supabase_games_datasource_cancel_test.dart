@@ -50,10 +50,14 @@ void main() {
   Iterable<http.Request> rpcCancels() =>
       seen.where((r) => r.url.path == '/rest/v1/rpc/rpc_cancel_game');
 
-  test('cancelGame calls rpc_cancel_game with p_game_id only', () async {
+  test('cancelGame calls rpc_cancel_game with p_game_id and p_reason '
+      '(KAN-937: the live signature has no default for the reason)', () async {
     final ds = build();
     expect(await ds.cancelGame('game-1'), isTrue);
-    expect(jsonDecode(rpcCancels().single.body), {'p_game_id': 'game-1'});
+    expect(jsonDecode(rpcCancels().single.body), {
+      'p_game_id': 'game-1',
+      'p_reason': null,
+    });
     // No client-invented cancel date, no direct write.
     expect(tableWrites(), isEmpty);
   });
@@ -70,7 +74,10 @@ void main() {
   test('updateGameStatus(cancelled) uses rpc_cancel_game', () async {
     final ds = build();
     expect(await ds.updateGameStatus('game-2', 'cancelled'), isTrue);
-    expect(jsonDecode(rpcCancels().single.body), {'p_game_id': 'game-2'});
+    expect(jsonDecode(rpcCancels().single.body), {
+      'p_game_id': 'game-2',
+      'p_reason': null,
+    });
     expect(tableWrites(), isEmpty);
   });
 

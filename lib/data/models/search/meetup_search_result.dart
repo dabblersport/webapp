@@ -1,3 +1,5 @@
+import 'package:dabbler/core/utils/instant.dart';
+
 /// Lightweight model for a meetup returned by the unified search RPC.
 class MeetupSearchResult {
   final String id;
@@ -24,7 +26,7 @@ class MeetupSearchResult {
       title: (json['title'] ?? '').toString(),
       description: (json['subtitle'] ?? json['description'])?.toString(),
       startAt: json['start_at'] != null
-          ? DateTime.tryParse(json['start_at'].toString())
+          ? parseInstantLocal(json['start_at'])
           : null,
     );
   }

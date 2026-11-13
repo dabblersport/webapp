@@ -5677,6 +5677,53 @@ class AppLocalizationsAr extends AppLocalizations {
   String get game_error_not_editable => 'لم يعد بالإمكان تعديل هذه المباراة.';
 
   @override
+  String get game_error_stale_update =>
+      'عدّل شخص آخر هذه المباراة. حمّلنا أحدث نسخة، راجعها ثم احفظ مرة أخرى.';
+
+  @override
+  String get game_join_err_closed => 'هذه المباراة لا تستقبل لاعبين.';
+
+  @override
+  String get game_join_err_started => 'بدأت هذه المباراة بالفعل.';
+
+  @override
+  String get game_join_err_cancelled => 'أُلغيت هذه المباراة.';
+
+  @override
+  String get game_join_err_not_visible => 'هذه المباراة غير متاحة لك.';
+
+  @override
+  String get game_join_err_invite_only => 'هذه المباراة بالدعوة فقط.';
+
+  @override
+  String get game_join_err_circle_only =>
+      'الانضمام إلى هذه المباراة متاح لدائرة المنظّم فقط.';
+
+  @override
+  String get game_join_err_squad_only =>
+      'الانضمام إلى هذه المباراة متاح لفريق المنظّم فقط.';
+
+  @override
+  String get game_join_err_link =>
+      'تحتاج إلى رابط دعوة صالح للانضمام إلى هذه المباراة.';
+
+  @override
+  String get game_join_err_requested =>
+      'سبق أن طلبت الانضمام إلى هذه المباراة.';
+
+  @override
+  String get game_join_err_joined => 'أنت منضم إلى هذه المباراة بالفعل.';
+
+  @override
+  String get game_join_err_host => 'أنت منظّم هذه المباراة.';
+
+  @override
+  String get game_join_request_sent => 'أُرسل طلب الانضمام.';
+
+  @override
+  String get game_join_waitlisted => 'أُضفت إلى قائمة الانتظار.';
+
+  @override
   String get game_error_player_range =>
       'لا يمكن أن يتجاوز الحد الأدنى للاعبين الحد الأقصى.';
 
@@ -5896,6 +5943,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get meetups_load_detail_failed => 'تعذّر تحميل هذا اللقاء';
 
   @override
+  String get meetups_about => 'عن اللقاء';
+
+  @override
+  String get meetups_load_more => 'عرض المزيد';
+
+  @override
   String get meetups_back => 'رجوع';
 
   @override
@@ -6019,6 +6072,20 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get game_err_create_refused =>
       'لا يمكنك إنشاء مباراة الآن. حاول مرة أخرى لاحقًا.';
+
+  @override
+  String get game_err_auth_required => 'سجّل الدخول لإنشاء مباراة.';
+
+  @override
+  String get game_err_series_invalid =>
+      'لا يمكن استخدام جدول التكرار هذا. تحقّق من التاريخ وخيار التكرار.';
+
+  @override
+  String get game_err_paid_space_price =>
+      'هذه المساحة مدفوعة. أدخل سعرًا أكبر من 0.';
+
+  @override
+  String get game_create_as => 'الإنشاء بصفة';
 
   @override
   String get meetups_err_create_refused =>
@@ -8561,4 +8628,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get update_required_action_reload => 'إعادة التحميل';
+
+  @override
+  String get game_cancel_action => 'إلغاء اللعبة';
+
+  @override
+  String get game_cancel_title => 'هل تريد إلغاء هذه اللعبة؟';
+
+  @override
+  String get game_cancel_body =>
+      'سيُبلَّغ كل من انضم بأن اللعبة أُلغيت. لا يمكن التراجع عن ذلك.';
+
+  @override
+  String get game_cancel_reason_label => 'السبب (اختياري)';
+
+  @override
+  String get game_cancel_reason_placeholder => 'أخبر اللاعبين بالسبب';
+
+  @override
+  String get game_cancel_confirm => 'إلغاء اللعبة';
+
+  @override
+  String get game_cancel_keep => 'إبقاء اللعبة';
+
+  @override
+  String get game_cancel_failed => 'تعذّر إلغاء اللعبة. حاول مرة أخرى.';
+
+  @override
+  String get game_cancelled_toast => 'أُلغيت اللعبة';
+
+  @override
+  String get game_share_link_failed =>
+      'تعذّر إنشاء رابط الدعوة. حاول مرة أخرى.';
 }

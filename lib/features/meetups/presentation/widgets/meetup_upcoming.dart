@@ -31,7 +31,8 @@ class MeetupUpcoming extends StatelessWidget {
     for (var i = 0; i < meetups.length; i++) {
       final m = meetups[i];
       final c = meetupCountdown(l, m.startAt, clock);
-      final place = m.venueName ?? m.locationName ?? m.areaName;
+      // KAN-932: the edited meeting point wins over the venue's own name.
+      final place = m.locationName ?? m.venueName ?? m.areaName;
       final tone = tones[(i + 2) % tones.length];
       if (meetups.length == 1) {
         final end = m.endAt;

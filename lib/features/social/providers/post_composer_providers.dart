@@ -21,6 +21,7 @@ import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/social/domain/posted_from.dart';
+import 'package:dabbler/core/utils/instant.dart';
 
 // =============================================================================
 // COMPOSER STATE
@@ -904,7 +905,7 @@ final composerJoinedGamesProvider =
             'id': g.id,
             'title': g.title,
             'sport': g.sport,
-            'start_at': g.getScheduledStartDateTime().toIso8601String(),
+            'start_at': toWireInstant(g.getScheduledStartDateTime()),
           },
       ];
     });

@@ -570,8 +570,11 @@ void main() {
         'p_actor_type': 'player',
         'p_sport_id': 's-padel',
         'p_sport_variant_id': 'v-doubles',
-        'p_start_at': start.toIso8601String(),
-        'p_end_at': start.add(const Duration(minutes: 60)).toIso8601String(),
+        'p_start_at': start.toUtc().toIso8601String(), // KAN-927
+        'p_end_at': start
+            .add(const Duration(minutes: 60))
+            .toUtc()
+            .toIso8601String(),
         'p_bench_slots': 0,
         'p_listing_visibility': 'public',
         'p_join_policy': 'request',
@@ -663,8 +666,14 @@ void main() {
       expect(calls, hasLength(1));
       expect(calls.single.$2, <String, dynamic>{
         'p_game_id': 'g-1',
-        'p_start_at': '2026-11-02T18:30:00.000',
-        'p_end_at': '2026-11-02T19:30:00.000',
+        'p_start_at': DateTime(
+          2026,
+          11,
+          2,
+          18,
+          30,
+        ).toUtc().toIso8601String(), // KAN-927
+        'p_end_at': DateTime(2026, 11, 2, 19, 30).toUtc().toIso8601String(),
         'p_listing_visibility': 'public',
         'p_join_policy': 'open',
         'p_allow_spectators': true,

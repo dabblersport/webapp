@@ -14,10 +14,15 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/utils/create_request_id.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/games/domain/models/game_recurrence.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show activePersonaProvider;
 import 'package:dabbler/features/location/providers/profile_location_providers.dart'
     show profileLocationRepositoryProvider;
+import 'package:dabbler/features/games/presentation/widgets/game_composer_error.dart';
+import 'package:dabbler/features/games/presentation/widgets/game_composer_formats.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_names.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_parts.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_repeat.dart';
@@ -32,95 +37,7 @@ import 'package:dabbler/features/social/providers/post_providers.dart'
 import 'package:dabbler/services/moderation_service.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
-// ─── Errors ───────────────────────────────────────────────────────────────────
-
-/// Why a Create game load / submit failed. The notifier holds the code (and
-/// its data); the widget turns it into words with `AppLocalizations`, so no
-/// English text lives in the notifier (KAN-477).
-enum GameComposerErrorCode {
-  loadFailed,
-  dailyLimit,
-  sportUnavailable,
-  invalidFormat,
-  invalidTimeRange,
-  profileIncomplete,
-  notEditable,
-  playerRange,
-  playerCountMin,
-  priceRequired,
-
-  /// Repeat is on but there is neither a venue nor a saved location (KAN-697).
-  seriesLocationRequired,
-
-  /// A failure with no code of its own; shows the server's own text.
-  unknown,
-}
-
-/// A [GameComposerErrorCode] with the data its message needs.
-class GameComposerError {
-  const GameComposerError(this.code, {this.resetAt, this.raw});
-
-  final GameComposerErrorCode code;
-
-  /// [GameComposerErrorCode.dailyLimit]: when the daily limit resets.
-  final DateTime? resetAt;
-
-  /// [GameComposerErrorCode.unknown]: the server's text, shown as it is.
-  final String? raw;
-
-  /// The code for a server error message (`rpc_create_game` / `rpc_update_game`
-  /// raise these as the exception message); anything else is [unknown] and
-  /// keeps its text.
-  factory GameComposerError.fromServer(String message) => switch (message) {
-    'sport_not_challenge_eligible' => const GameComposerError(
-      GameComposerErrorCode.sportUnavailable,
-    ),
-    'invalid_sport_variant' => const GameComposerError(
-      GameComposerErrorCode.invalidFormat,
-    ),
-    'invalid_time_range' => const GameComposerError(
-      GameComposerErrorCode.invalidTimeRange,
-    ),
-    'creator_profile_not_found' => const GameComposerError(
-      GameComposerErrorCode.profileIncomplete,
-    ),
-    'not_host_or_not_found' => const GameComposerError(
-      GameComposerErrorCode.notEditable,
-    ),
-    'invalid_player_range' => const GameComposerError(
-      GameComposerErrorCode.playerRange,
-    ),
-    'price_required' => const GameComposerError(
-      GameComposerErrorCode.priceRequired,
-    ),
-    'invalid_min_players' || 'invalid_max_players' => const GameComposerError(
-      GameComposerErrorCode.playerCountMin,
-    ),
-    _ => GameComposerError(GameComposerErrorCode.unknown, raw: message),
-  };
-
-  /// The message in [l]'s language; [locale] formats the daily-limit reset.
-  String text(AppLocalizations l, String locale) => switch (code) {
-    GameComposerErrorCode.loadFailed => l.game_load_failed,
-    GameComposerErrorCode.dailyLimit => l.game_error_daily_limit(
-      DateFormat(
-        'MMM d, HH:mm',
-        locale,
-      ).format(resetAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
-    ),
-    GameComposerErrorCode.sportUnavailable => l.game_error_sport_unavailable,
-    GameComposerErrorCode.invalidFormat => l.game_error_invalid_format,
-    GameComposerErrorCode.invalidTimeRange => l.game_error_invalid_time_range,
-    GameComposerErrorCode.profileIncomplete => l.game_error_profile_incomplete,
-    GameComposerErrorCode.notEditable => l.game_error_not_editable,
-    GameComposerErrorCode.playerRange => l.game_error_player_range,
-    GameComposerErrorCode.playerCountMin => l.game_error_player_count_min,
-    GameComposerErrorCode.priceRequired => l.game_price_required,
-    GameComposerErrorCode.seriesLocationRequired =>
-      l.recurring_location_required,
-    GameComposerErrorCode.unknown => raw ?? '',
-  };
-}
+export 'package:dabbler/features/games/presentation/widgets/game_composer_error.dart';
 
 // ─── The sheet ────────────────────────────────────────────────────────────────
 
@@ -176,6 +93,7 @@ Future<bool?> showGameComposerSheet(
 class _ComposerState {
   const _ComposerState({
     this.editingGameId,
+    this.expectedUpdatedAt,
     this.sports = const [],
     this.sportsLoaded = false,
     this.sportId,
@@ -197,6 +115,8 @@ class _ComposerState {
     this.venueSpaceNameAr,
     this.venueGeoLocationId,
     this.venueAreaId,
+    this.venueJoiningRule,
+    this.actorChoice,
     this.repeat = GameRepeat.none,
     this.repeatEnd,
     this.repeatSwitchedOffForPrice = false,
@@ -219,6 +139,12 @@ class _ComposerState {
 
   /// Non-null when the composer edits an existing game instead of creating.
   final String? editingGameId;
+
+  /// Edit mode: the game's `updated_at` exactly as read (`v_game_card`, which
+  /// carries `events.updated_at`), sent back as `p_expected_updated_at` so
+  /// `rpc_update_game` refuses a save over a newer edit (KAN-935). Kept as the
+  /// server's string so no precision is lost.
+  final String? expectedUpdatedAt;
 
   /// Sport rows loaded from `public.sports`. Cached in state so chip
   /// rendering is reactive without a separate FutureProvider.
@@ -250,6 +176,14 @@ class _ComposerState {
   /// The chosen venue's own place (KAN-697): where a series is created.
   final String? venueGeoLocationId;
   final String? venueAreaId;
+
+  /// KAN-934: the chosen space's `venue_spaces.joining_rule` ('paid' / 'free').
+  /// At a paid space the price must be above 0.
+  final String? venueJoiningRule;
+
+  /// KAN-934: the actor a Contributor picked ('player' / 'organiser'); null
+  /// until picked. A one-capability persona never sets it.
+  final String? actorChoice;
 
   /// KAN-697: how the game repeats, and the optional last date of the series.
   final GameRepeat repeat;
@@ -291,6 +225,10 @@ class _ComposerState {
 
   bool get isRepeating => repeat != GameRepeat.none;
 
+  /// KAN-934 (rule decided): a paid space takes a price above 0.
+  bool get freePriceAtPaidSpace =>
+      venueJoiningRule == 'paid' && priceAed != null && priceAed! <= 0;
+
   bool get canSubmit =>
       sportId != null &&
       variantId != null &&
@@ -300,6 +238,7 @@ class _ComposerState {
 
   _ComposerState copyWith({
     String? editingGameId,
+    String? expectedUpdatedAt,
     List<Map<String, dynamic>>? sports,
     bool? sportsLoaded,
     String? sportId,
@@ -321,6 +260,8 @@ class _ComposerState {
     String? venueSpaceNameAr,
     String? venueGeoLocationId,
     String? venueAreaId,
+    String? venueJoiningRule,
+    String? actorChoice,
     GameRepeat? repeat,
     DateTime? repeatEnd,
     bool? repeatSwitchedOffForPrice,
@@ -348,6 +289,7 @@ class _ComposerState {
   }) {
     return _ComposerState(
       editingGameId: editingGameId ?? this.editingGameId,
+      expectedUpdatedAt: expectedUpdatedAt ?? this.expectedUpdatedAt,
       sports: sports ?? this.sports,
       sportsLoaded: sportsLoaded ?? this.sportsLoaded,
       sportId: sportId ?? this.sportId,
@@ -375,6 +317,10 @@ class _ComposerState {
           ? null
           : venueGeoLocationId ?? this.venueGeoLocationId,
       venueAreaId: clearVenue ? null : venueAreaId ?? this.venueAreaId,
+      venueJoiningRule: clearVenue
+          ? null
+          : venueJoiningRule ?? this.venueJoiningRule,
+      actorChoice: actorChoice ?? this.actorChoice,
       repeat: repeat ?? this.repeat,
       repeatEnd: clearRepeatEnd ? null : repeatEnd ?? this.repeatEnd,
       repeatSwitchedOffForPrice:
@@ -447,10 +393,9 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           .single();
 
       final rules = (row['rules'] as Map?)?.cast<String, dynamic>() ?? const {};
-      // Round-trips the naive-local timestamps exactly as create wrote them
-      // (no toLocal — GameView parses the same way for display).
-      final startAt = DateTime.parse(row['start_at'] as String);
-      final endAt = DateTime.parse(row['end_at'] as String);
+      // KAN-927: timestamptz -> viewer-local; submit sends the UTC instant.
+      final startAt = parseInstantLocal(row['start_at'])!;
+      final endAt = parseInstantLocal(row['end_at'])!;
       final duration =
           rules['duration_minutes'] as int? ??
           endAt.difference(startAt).inMinutes;
@@ -467,6 +412,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
       state = state.copyWith(
         editingGameId: gameId,
+        expectedUpdatedAt: row['updated_at'] as String?,
         sportId: row['sport_id'] as String?,
         sportNameEn: row['sport_name_en'] as String?,
         sportEmoji: sport['emoji'] as String?,
@@ -509,6 +455,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         state = state.copyWith(
           venueNameAr: venue['name_ar'] as String?,
           venueSpaceNameAr: sp['name_ar'] as String?,
+          venueJoiningRule: sp['joining_rule'] as String?,
         );
         break;
       }
@@ -539,9 +486,31 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
           .eq('sport_id', sportId)
           .eq('is_active', true)
           .order('name_en');
-      _variants = List<Map<String, dynamic>>.from(rows as List);
+      _variants = withVenueSpaces(
+        List<Map<String, dynamic>>.from(rows as List),
+        await _spaceVariantKeys(sportId),
+      );
     } catch (_) {
       _variants = [];
+    }
+  }
+
+  /// KAN-934: the variant keys the sport's active venue spaces carry, or null
+  /// when they could not be read (then no format is hidden).
+  Future<Set<String>?> _spaceVariantKeys(String sportId) async {
+    try {
+      final rows = await _db
+          .from(SupabaseConfig.venueSpacesTable)
+          .select('sport_variant_keys')
+          .eq('sport_id', sportId)
+          .eq('is_active', true);
+      return <String>{
+        for (final r in rows as List)
+          for (final k in ((r as Map)['sport_variant_keys'] as List?) ?? [])
+            '$k',
+      };
+    } catch (_) {
+      return null;
     }
   }
 
@@ -562,7 +531,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       final rows = await _db
           .from(SupabaseConfig.venueSpacesTable)
           .select(
-            'id, name_en, name_ar, sport_id, sport_variant_keys, '
+            'id, name_en, name_ar, sport_id, sport_variant_keys, joining_rule, '
             'venue:venues(id, name_en, name_ar, area, geo_location_id, area_id)',
           )
           .eq('sport_id', sportId)
@@ -625,6 +594,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       venueSpaceNameAr: space['name_ar'] as String?,
       venueGeoLocationId: venue['geo_location_id'] as String?,
       venueAreaId: venue['area_id'] as String?,
+      venueJoiningRule: space['joining_rule'] as String?,
     );
   }
 
@@ -666,7 +636,11 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
     final next = state.copyWith(priceText: v);
     // KAN-697: a paid game cannot repeat, so Repeat turns itself off.
     final dropRepeat = next.isPaid && next.isRepeating;
+    final clearPaidSpace =
+        next.error?.code == GameComposerErrorCode.paidSpacePrice &&
+        !next.freePriceAtPaidSpace;
     state = next.copyWith(
+      clearError: clearPaidSpace,
       priceError: next.priceAed == null,
       repeat: dropRepeat ? GameRepeat.none : null,
       clearRepeatEnd: dropRepeat,
@@ -676,10 +650,21 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
 
   /// False (and the field shows its error) while the price is missing.
   bool validatePrice() {
-    if (state.priceAed != null) return true;
-    state = state.copyWith(priceError: true);
-    return false;
+    if (state.priceAed == null) {
+      state = state.copyWith(priceError: true);
+      return false;
+    }
+    if (state.freePriceAtPaidSpace) {
+      state = state.copyWith(
+        error: const GameComposerError(GameComposerErrorCode.paidSpacePrice),
+      );
+      return false;
+    }
+    return true;
   }
+
+  void setActorChoice(String actor) =>
+      state = state.copyWith(actorChoice: actor);
 
   void setRepeat(GameRepeat v) {
     if (v != GameRepeat.none && state.isPaid) return;
@@ -710,6 +695,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
   Future<bool> submit({
     String? requestId,
     Future<SeriesLocation?> Function()? profileLocation,
+    String actorType = 'player',
   }) async {
     if (!state.canSubmit) return false;
     state = state.copyWith(isSubmitting: true, clearError: true);
@@ -778,8 +764,11 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       if (state.isEditing) {
         final params = <String, dynamic>{
           'p_game_id': state.editingGameId!,
-          'p_start_at': startAt.toIso8601String(),
-          'p_end_at': endAt.toIso8601String(),
+          // KAN-935: the stale-update guard (KAN-862 P4 overload).
+          if (state.expectedUpdatedAt != null)
+            'p_expected_updated_at': state.expectedUpdatedAt,
+          'p_start_at': toWireInstant(startAt),
+          'p_end_at': toWireInstant(endAt),
           'p_listing_visibility': state.listingVisibility,
           'p_join_policy': state.joinPolicy,
           'p_allow_spectators': state.allowSpectators,
@@ -822,7 +811,7 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
         await _db.rpc(
           SupabaseConfig.rpcCreateGameSeriesFn,
           params: <String, dynamic>{
-            'p_actor_type': 'player',
+            'p_actor_type': actorType,
             'p_sport_id': state.sportId!,
             'p_sport_variant_id': state.variantId!,
             'p_geo_location_id': seriesPlace.geoLocationId,
@@ -848,11 +837,11 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       }
 
       final params = <String, dynamic>{
-        'p_actor_type': 'player',
+        'p_actor_type': actorType,
         'p_sport_id': state.sportId!,
         'p_sport_variant_id': state.variantId!,
-        'p_start_at': startAt.toIso8601String(),
-        'p_end_at': endAt.toIso8601String(),
+        'p_start_at': toWireInstant(startAt),
+        'p_end_at': toWireInstant(endAt),
         'p_bench_slots': 0,
         'p_listing_visibility': state.listingVisibility,
         'p_join_policy': state.joinPolicy,
@@ -893,6 +882,18 @@ class _ComposerNotifier extends StateNotifier<_ComposerState> {
       return true;
     } on PostgrestException catch (e) {
       final msg = GameComposerError.fromServer(e.message);
+      if (state.isEditing && msg.code == GameComposerErrorCode.staleUpdate) {
+        // KAN-935: someone saved first. Reload the current values from a
+        // clean form (so a field they cleared stays cleared), then say why.
+        final gameId = state.editingGameId!;
+        state = _ComposerState(
+          sports: state.sports,
+          sportsLoaded: state.sportsLoaded,
+        );
+        await initForEdit(gameId);
+        state = state.copyWith(isSubmitting: false, error: msg);
+        return false;
+      }
       state = state.copyWith(isSubmitting: false, error: msg);
       return false;
     } catch (e) {
@@ -1023,6 +1024,7 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     s.minPlayers,
     s.maxPlayers,
     s.priceText,
+    s.actorChoice,
   ];
 
   /// The signed-in profile's saved place for a series (KAN-697): the primary
@@ -1060,11 +1062,32 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       );
       return;
     }
-    if (!ref.read(_gameComposerProvider.notifier).validatePrice()) return;
+    if (!ref.read(_gameComposerProvider.notifier).validatePrice()) {
+      final err = ref.read(_gameComposerProvider).error;
+      if (err != null) {
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: err.text(
+              AppLocalizations.of(context),
+              Localizations.localeOf(context).toString(),
+            ),
+            tone: DabblerToastTone.error,
+          ),
+        );
+      }
+      return;
+    }
     final requestId = _isEditing ? null : _requestId.begin();
     final ok = await ref
         .read(_gameComposerProvider.notifier)
-        .submit(requestId: requestId, profileLocation: _profileSeriesLocation);
+        .submit(
+          requestId: requestId,
+          profileLocation: _profileSeriesLocation,
+          actorType: gameComposerActorFor(
+            ref.read(activePersonaProvider),
+            ref.read(_gameComposerProvider).actorChoice,
+          ),
+        );
     if (ok && !_isEditing) {
       _requestId.clear();
     }
@@ -1094,6 +1117,12 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
     final state = ref.watch(_gameComposerProvider);
     final notifier = ref.read(_gameComposerProvider.notifier);
     final l = AppLocalizations.of(context);
+    final persona = ref.watch(activePersonaProvider);
+    // KAN-934: only a persona that can create as both picks the actor.
+    final picksActor =
+        !_isEditing &&
+        (persona?.hasPlayerCapabilities ?? false) &&
+        (persona?.hasOrganiserCapabilities ?? false);
 
     // The Create game frame's scroller (`Home Feed.dc.html:934-1061`): one
     // column, `gap:12px`; the DS sheet supplies the 18 gutters and the 18 at
@@ -1107,7 +1136,19 @@ class _GameComposerScreenState extends ConsumerState<GameComposerScreen> {
       child: Builder(
         builder: (context) => DabblerSheetBody(
           children: <Widget>[
-            GameSectionLabel(l.game_sport, first: true),
+            if (picksActor) ...<Widget>[
+              GameSectionLabel(l.game_create_as, first: true),
+              GameOptionPills<String>(
+                key: const ValueKey<String>('game-composer-actor'),
+                options: <(String, String)>[
+                  ('player', l.persona_player_name),
+                  ('organiser', l.persona_organiser_name),
+                ],
+                selected: gameComposerActorFor(persona, state.actorChoice),
+                onSelect: notifier.setActorChoice,
+              ),
+            ],
+            GameSectionLabel(l.game_sport, first: !picksActor),
             // Sport is locked in edit mode — capacity and the roster derive from
             // the sport/format chosen at creation.
             DabblerInert(

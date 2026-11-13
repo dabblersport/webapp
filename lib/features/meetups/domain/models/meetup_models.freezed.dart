@@ -29,8 +29,10 @@ mixin _$MeetupListItem {
   String? get eventId => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  @LocalInstantConverter()
   @JsonKey(name: 'start_at')
   DateTime get startAt => throw _privateConstructorUsedError;
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'end_at')
   DateTime? get endAt => throw _privateConstructorUsedError;
   int? get capacity => throw _privateConstructorUsedError;
@@ -120,8 +122,8 @@ abstract class $MeetupListItemCopyWith<$Res> {
     @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
-    @JsonKey(name: 'start_at') DateTime startAt,
-    @JsonKey(name: 'end_at') DateTime? endAt,
+    @LocalInstantConverter() @JsonKey(name: 'start_at') DateTime startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') DateTime? endAt,
     int? capacity,
     @JsonKey(name: 'members_only') bool membersOnly,
     @JsonKey(name: 'listing_visibility') String listingVisibility,
@@ -386,8 +388,8 @@ abstract class _$$MeetupListItemImplCopyWith<$Res>
     @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
-    @JsonKey(name: 'start_at') DateTime startAt,
-    @JsonKey(name: 'end_at') DateTime? endAt,
+    @LocalInstantConverter() @JsonKey(name: 'start_at') DateTime startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') DateTime? endAt,
     int? capacity,
     @JsonKey(name: 'members_only') bool membersOnly,
     @JsonKey(name: 'listing_visibility') String listingVisibility,
@@ -644,8 +646,8 @@ class _$MeetupListItemImpl extends _MeetupListItem {
     @JsonKey(name: 'event_id') this.eventId,
     this.title,
     this.description,
-    @JsonKey(name: 'start_at') required this.startAt,
-    @JsonKey(name: 'end_at') this.endAt,
+    @LocalInstantConverter() @JsonKey(name: 'start_at') required this.startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') this.endAt,
     this.capacity,
     @JsonKey(name: 'members_only') this.membersOnly = false,
     @JsonKey(name: 'listing_visibility') this.listingVisibility = 'public',
@@ -699,9 +701,11 @@ class _$MeetupListItemImpl extends _MeetupListItem {
   @override
   final String? description;
   @override
+  @LocalInstantConverter()
   @JsonKey(name: 'start_at')
   final DateTime startAt;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'end_at')
   final DateTime? endAt;
   @override
@@ -955,8 +959,12 @@ abstract class _MeetupListItem extends MeetupListItem {
     @JsonKey(name: 'event_id') final String? eventId,
     final String? title,
     final String? description,
-    @JsonKey(name: 'start_at') required final DateTime startAt,
-    @JsonKey(name: 'end_at') final DateTime? endAt,
+    @LocalInstantConverter()
+    @JsonKey(name: 'start_at')
+    required final DateTime startAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'end_at')
+    final DateTime? endAt,
     final int? capacity,
     @JsonKey(name: 'members_only') final bool membersOnly,
     @JsonKey(name: 'listing_visibility') final String listingVisibility,
@@ -1009,9 +1017,11 @@ abstract class _MeetupListItem extends MeetupListItem {
   @override
   String? get description;
   @override
+  @LocalInstantConverter()
   @JsonKey(name: 'start_at')
   DateTime get startAt;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'end_at')
   DateTime? get endAt;
   @override
@@ -1132,6 +1142,7 @@ mixin _$NearbyMeetup {
   @JsonKey(name: 'event_id')
   String? get eventId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'starts_at')
   DateTime? get startsAt => throw _privateConstructorUsedError;
   double? get lat => throw _privateConstructorUsedError;
@@ -1162,7 +1173,9 @@ abstract class $NearbyMeetupCopyWith<$Res> {
     String id,
     @JsonKey(name: 'event_id') String? eventId,
     String title,
-    @JsonKey(name: 'starts_at') DateTime? startsAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'starts_at')
+    DateTime? startsAt,
     double? lat,
     double? lng,
     @JsonKey(name: 'areaid') String? areaId,
@@ -1247,7 +1260,9 @@ abstract class _$$NearbyMeetupImplCopyWith<$Res>
     String id,
     @JsonKey(name: 'event_id') String? eventId,
     String title,
-    @JsonKey(name: 'starts_at') DateTime? startsAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'starts_at')
+    DateTime? startsAt,
     double? lat,
     double? lng,
     @JsonKey(name: 'areaid') String? areaId,
@@ -1324,7 +1339,7 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
     required this.id,
     @JsonKey(name: 'event_id') this.eventId,
     required this.title,
-    @JsonKey(name: 'starts_at') this.startsAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'starts_at') this.startsAt,
     this.lat,
     this.lng,
     @JsonKey(name: 'areaid') this.areaId,
@@ -1345,6 +1360,7 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
   @override
   final String title;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'starts_at')
   final DateTime? startsAt;
   @override
@@ -1413,7 +1429,9 @@ abstract class _NearbyMeetup implements NearbyMeetup {
     required final String id,
     @JsonKey(name: 'event_id') final String? eventId,
     required final String title,
-    @JsonKey(name: 'starts_at') final DateTime? startsAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'starts_at')
+    final DateTime? startsAt,
     final double? lat,
     final double? lng,
     @JsonKey(name: 'areaid') final String? areaId,
@@ -1434,6 +1452,7 @@ abstract class _NearbyMeetup implements NearbyMeetup {
   @override
   String get title;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'starts_at')
   DateTime? get startsAt;
   @override
@@ -2117,8 +2136,10 @@ mixin _$MeetupCard {
   String? get eventId => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'start_at')
   DateTime? get startAt => throw _privateConstructorUsedError;
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'end_at')
   DateTime? get endAt => throw _privateConstructorUsedError;
   @JsonKey(name: 'location_name')
@@ -2173,8 +2194,8 @@ abstract class $MeetupCardCopyWith<$Res> {
     @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
-    @JsonKey(name: 'start_at') DateTime? startAt,
-    @JsonKey(name: 'end_at') DateTime? endAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'start_at') DateTime? startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') DateTime? endAt,
     @JsonKey(name: 'location_name') String? locationName,
     int? capacity,
     @JsonKey(name: 'is_cancelled') bool isCancelled,
@@ -2375,8 +2396,8 @@ abstract class _$$MeetupCardImplCopyWith<$Res>
     @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
-    @JsonKey(name: 'start_at') DateTime? startAt,
-    @JsonKey(name: 'end_at') DateTime? endAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'start_at') DateTime? startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') DateTime? endAt,
     @JsonKey(name: 'location_name') String? locationName,
     int? capacity,
     @JsonKey(name: 'is_cancelled') bool isCancelled,
@@ -2547,8 +2568,8 @@ class _$MeetupCardImpl implements _MeetupCard {
     @JsonKey(name: 'event_id') this.eventId,
     this.title,
     this.description,
-    @JsonKey(name: 'start_at') this.startAt,
-    @JsonKey(name: 'end_at') this.endAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'start_at') this.startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') this.endAt,
     @JsonKey(name: 'location_name') this.locationName,
     this.capacity,
     @JsonKey(name: 'is_cancelled') this.isCancelled = false,
@@ -2584,9 +2605,11 @@ class _$MeetupCardImpl implements _MeetupCard {
   @override
   final String? description;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'start_at')
   final DateTime? startAt;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'end_at')
   final DateTime? endAt;
   @override
@@ -2744,8 +2767,12 @@ abstract class _MeetupCard implements MeetupCard {
     @JsonKey(name: 'event_id') final String? eventId,
     final String? title,
     final String? description,
-    @JsonKey(name: 'start_at') final DateTime? startAt,
-    @JsonKey(name: 'end_at') final DateTime? endAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'start_at')
+    final DateTime? startAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'end_at')
+    final DateTime? endAt,
     @JsonKey(name: 'location_name') final String? locationName,
     final int? capacity,
     @JsonKey(name: 'is_cancelled') final bool isCancelled,
@@ -2781,9 +2808,11 @@ abstract class _MeetupCard implements MeetupCard {
   @override
   String? get description;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'start_at')
   DateTime? get startAt;
   @override
+  @LocalInstantOrNullConverter()
   @JsonKey(name: 'end_at')
   DateTime? get endAt;
   @override

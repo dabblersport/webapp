@@ -6,8 +6,12 @@ import '../../domain/models/meetup_inputs.dart';
 import 'meetup_datasource.dart';
 
 class SupabaseMeetupDataSource implements MeetupDataSource {
-  SupabaseMeetupDataSource(this._client);
+  SupabaseMeetupDataSource(this._client, {DateTime Function()? now})
+    : _now = now ?? DateTime.now;
   final SupabaseClient _client;
+
+  /// The clock the list's "from now" bound is read from (KAN-932).
+  final DateTime Function() _now;
 
   static List<Map<String, dynamic>> _rows(dynamic data) =>
       (data as List<dynamic>).cast<Map<String, dynamic>>();
@@ -20,8 +24,11 @@ class SupabaseMeetupDataSource implements MeetupDataSource {
   }) async {
     var q = _client.from(SupabaseConfig.vMeetupListView).select();
     if (sportId != null) q = q.eq('sport_id', sportId);
+    // KAN-932: upcoming only, soonest first, so a page is never filled with
+    // meetups that already started and a new one is reachable.
     final data = await q
         .eq('is_cancelled', false)
+        .gte('start_at', _now().toUtc().toIso8601String())
         .order('start_at', ascending: true)
         .range(offset, offset + limit - 1);
     return _rows(data);

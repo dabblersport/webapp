@@ -1,4 +1,5 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -120,7 +121,7 @@ class _ComposerGameLinkSheetState extends ConsumerState<ComposerGameLinkSheet> {
   ) {
     final id = game['id'] as String;
     final title = game['title'] as String? ?? l.composer_untitled_game;
-    final start = DateTime.tryParse(game['start_at'] as String? ?? '');
+    final start = parseInstantLocal(game['start_at']);
     final sport = (game['sport'] as String? ?? '').replaceAll('_', '-');
     return DabblerGameLinkRow(
       month: start == null ? '' : DateFormat.MMM(locale).format(start),

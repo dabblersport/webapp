@@ -7,7 +7,7 @@ import 'package:intl/date_symbol_data_local.dart';
 /// KAN-477: the Create game notifier holds a typed error code (plus data), and
 /// the words come from the ARB in the viewer's language. English is word for
 /// word what the notifier used to write; Arabic is Arabic. Unknown server text
-/// is shown as it is.
+/// is never shown (KAN-934).
 void main() {
   setUpAll(() async {
     await initializeDateFormatting('en');
@@ -116,13 +116,43 @@ void main() {
     expect(e.text(ar, 'ar'), isNot('Failed to load game'));
   });
 
-  test('unknown server text keeps showing as it is, in both languages', () {
-    final e = GameComposerError.fromServer('some_new_server_code');
-    expect(e.code, GameComposerErrorCode.unknown);
-    expect(e.raw, 'some_new_server_code');
-    expect(e.text(en, 'en'), 'some_new_server_code');
-    expect(e.text(ar, 'ar'), 'some_new_server_code');
-  });
+  test(
+    'unknown server text is never shown: the generic sentence (KAN-934)',
+    () {
+      final e = GameComposerError.fromServer('some_new_server_code');
+      expect(e.code, GameComposerErrorCode.unknown);
+      expect(e.raw, 'some_new_server_code');
+      expect(e.text(en, 'en'), en.game_error_generic);
+      expect(e.text(ar, 'ar'), ar.game_error_generic);
+      expect(e.text(ar, 'ar'), isNot(contains('some_new_server_code')));
+    },
+  );
+
+  // KAN-934: the create-path codes the server raises, each with copy.
+  for (final (String server, GameComposerErrorCode code) in const [
+    ('persona_not_allowed', GameComposerErrorCode.createRefused),
+    ('no_profile_of_requested_type', GameComposerErrorCode.createRefused),
+    ('organiser_required', GameComposerErrorCode.createRefused),
+    ('not_authenticated', GameComposerErrorCode.authRequired),
+    ('free_meetups_only', GameComposerErrorCode.seriesPaid),
+    ('series_paid_not_supported', GameComposerErrorCode.seriesPaid),
+    ('series_frequency_invalid', GameComposerErrorCode.seriesInvalid),
+    ('series_schedule_required', GameComposerErrorCode.seriesInvalid),
+    ('invalid_sport', GameComposerErrorCode.sportUnavailable),
+    ('sport_not_challenge', GameComposerErrorCode.sportUnavailable),
+    ('invalid_bench_slots', GameComposerErrorCode.playerCountMin),
+  ]) {
+    test('$server has EN and AR copy, never the code (KAN-934)', () {
+      final e = GameComposerError.fromServer(server);
+      expect(e.code, code);
+      final english = e.text(en, 'en');
+      final arabic = e.text(ar, 'ar');
+      expect(english, isNotEmpty);
+      expect(english, isNot(contains(server)));
+      expect(arabic, isNot(english));
+      expect(RegExp(r'[؀-ۿ]').hasMatch(arabic), isTrue, reason: arabic);
+    });
+  }
 
   test('the notifier-side error carries a code, never an English string', () {
     // The state's error is a GameComposerError (code + data), not a String.

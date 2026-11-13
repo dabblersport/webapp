@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:intl/intl.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -25,9 +26,8 @@ const _historyColumns =
 
 PastGame _rowToGame(Map<String, dynamic> row) {
   final timeFormat = DateFormat('h:mm a');
-  final startAt =
-      DateTime.tryParse(row['start_at'] as String? ?? '') ?? DateTime.now();
-  final endAt = DateTime.tryParse(row['end_at'] as String? ?? '');
+  final startAt = parseInstantLocal(row['start_at']) ?? DateTime.now();
+  final endAt = parseInstantLocal(row['end_at']);
   return PastGame(
     id: row['id'] as String,
     title: row['title'] as String? ?? 'Untitled Game',

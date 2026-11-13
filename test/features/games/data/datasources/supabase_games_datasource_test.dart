@@ -222,7 +222,7 @@ void main() {
     expect(g.venueId, 'venue-1');
     expect(g.isPublic, isTrue);
     expect(g.allowsWaitlist, isTrue);
-    expect(g.scheduledDate, DateTime.utc(2099, 11, 5, 18));
+    expect(g.scheduledDate, DateTime.utc(2099, 11, 5, 18).toLocal()); // KAN-927
   }
 
   void expectBothIds(dynamic g) {

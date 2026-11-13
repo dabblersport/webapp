@@ -13,6 +13,7 @@ import 'package:dabbler/features/meetups/presentation/providers/meetup_providers
 import 'package:dabbler/features/meetups/presentation/providers/meetup_setting.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_listing_card.dart';
+import 'package:dabbler/features/meetups/presentation/widgets/meetup_load_more.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_upcoming.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -296,6 +297,8 @@ class _MeetupsBody extends ConsumerWidget {
     // a list with nothing to show.
     return list.when(
       skipError: keepsRows(list),
+      // KAN-932: "Load more" keeps the rows on screen while the page loads.
+      skipLoadingOnReload: true,
       loading: () =>
           const ListingSkeletons(kind: DabblerListingSkeletonKind.meetup),
       error: (_, __) => ListingError(
@@ -379,6 +382,7 @@ class _MeetupsBody extends ConsumerWidget {
                   ),
                 ),
               ],
+              MeetupLoadMore(sportId: sportId),
             ],
           ),
         );

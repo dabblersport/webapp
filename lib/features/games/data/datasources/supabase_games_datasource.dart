@@ -692,7 +692,9 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       await _supabaseClient.rpc(
         _rpcCancelGameFn,
-        params: {'p_game_id': gameId},
+        // KAN-937: the live function is (p_game_id, p_reason) with no default
+        // for the reason, so it is always sent.
+        params: {'p_game_id': gameId, 'p_reason': null},
       );
       return true;
     } catch (e) {
@@ -1119,52 +1121,33 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     String playerId, {
     String? message,
   }) async {
+    // KAN-930: through rpc_join_game, never a direct insert. games has RLS and
+    // no client SELECT policy, so the join-request guard refuses a client
+    // insert with game_not_found; the RPC (security definer) decides and
+    // writes the request itself. The caller is the signed-in user.
     try {
-      // Get profile_id from user_id
-      final profileId = await _getProfileId(playerId);
-
-      // Check if request already exists
-      final existingRequest = await _supabaseClient
-          .from(SupabaseConfig.gameJoinRequestsTable)
-          .select('id, status')
-          .eq('game_id', gameId)
-          .eq('from_user_id', playerId)
-          .eq('status', 'pending')
-          .maybeSingle();
-
-      if (existingRequest != null) {
-        return existingRequest['id'] as String;
+      final rows =
+          await _supabaseClient.rpc(
+                SupabaseConfig.rpcJoinGameFn,
+                params: {'p_actor_type': 'player', 'p_game_id': gameId},
+              )
+              as List;
+      final result = rows.isEmpty
+          ? null
+          : (rows.first as Map)['result'] as String?;
+      if (result == null) {
+        throw GameServerException('Failed to create join request');
       }
-
-      // Create new join request
-      final response = await _supabaseClient
-          .from(SupabaseConfig.gameJoinRequestsTable)
-          .insert({
-            'game_id': gameId,
-            'from_profile_id': profileId,
-            'from_user_id': playerId,
-            'status': 'pending',
-          })
-          .select('id')
-          .single();
-
-      final requestId = response['id'] as String;
-      return requestId;
+      return result;
     } on PostgrestException catch (e) {
-      if (e.code == '23505') {
-        // Unique violation - request already exists (race condition)
-        final existingRequest = await _supabaseClient
-            .from(SupabaseConfig.gameJoinRequestsTable)
-            .select('id')
-            .eq('game_id', gameId)
-            .eq('from_user_id', playerId)
-            .eq('status', 'pending')
-            .maybeSingle();
-        if (existingRequest != null) {
-          return existingRequest['id'] as String;
-        }
-      }
-      throw GameServerException('Database error: ${e.message}');
+      // The RPC raises can_current_user_join_game's cta as the message.
+      final code = e.message.replaceAll('P0001: ', '');
+      // A pending request already exists: the same outcome, idempotently.
+      if (code == 'requested') return 'request_submitted';
+      if (code == 'started') throw GameAlreadyStartedException(code);
+      throw GameServerException(code);
+    } on GameServerException {
+      rethrow;
     } catch (e) {
       throw GameServerException(
         'Failed to create join request: ${e.toString()}',

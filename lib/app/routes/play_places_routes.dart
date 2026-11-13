@@ -46,11 +46,15 @@ RouteBase get sportsGamesGameIdRoute =>
         // ?focus=requests (join-request notifications) scrolls the detail
         // screen down to the pending-requests card.
         final focus = state.uri.queryParameters['focus'];
+        // KAN-939: ?lt=<uuid> is a link-policy game's join token; it rides
+        // through to rpc_join_game. Anything not a UUID is dropped.
+        final lt = state.uri.queryParameters[DeepLinks.linkTokenParam];
         return SharedAxisTransitionPage(
           key: state.pageKey,
           child: GameDetailScreen(
             gameId: gameId,
             focusRequests: focus == 'requests',
+            linkToken: DeepLinks.isValidId(lt) ? lt!.toLowerCase() : null,
           ),
           type: SharedAxisType.horizontal,
         );

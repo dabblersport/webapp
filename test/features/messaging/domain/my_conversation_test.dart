@@ -29,10 +29,13 @@ void main() {
       expect(c.gameId, 'g1');
       expect(c.title, 'Friday football');
       expect(c.sport, 'Football');
-      expect(c.startAt, DateTime.utc(2026, 10, 17, 19));
-      expect(c.endAt, DateTime.utc(2026, 10, 17, 21));
+      expect(c.startAt, DateTime.utc(2026, 10, 17, 19).toLocal()); // KAN-927
+      expect(c.endAt, DateTime.utc(2026, 10, 17, 21).toLocal()); // KAN-927
       expect(c.state, MyConversationState.send);
-      expect(c.lastActivityAt, DateTime.utc(2026, 10, 15, 11, 55));
+      expect(
+        c.lastActivityAt,
+        DateTime.utc(2026, 10, 15, 11, 55).toLocal(),
+      ); // KAN-927
       expect(MyConversation.parse(c.toJson()).requireValue, c);
     });
 

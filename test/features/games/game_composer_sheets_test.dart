@@ -85,7 +85,8 @@ const List<Map<String, dynamic>> _spaces = <Map<String, dynamic>>[
     'id': 'vs-1',
     'name_en': 'Court 1',
     'sport_id': 's-padel',
-    'sport_variant_keys': ['doubles'],
+    // Both formats have a space, so the format sheet lists both (KAN-934).
+    'sport_variant_keys': ['singles', 'doubles'],
     'venue': {'id': 'ven-1', 'name_en': 'Padel Pro', 'area': 'Marina'},
   },
 ];
@@ -816,8 +817,11 @@ void main() {
           'p_actor_type': 'player',
           'p_sport_id': 's-padel',
           'p_sport_variant_id': 'v-doubles',
-          'p_start_at': start.toIso8601String(),
-          'p_end_at': start.add(const Duration(minutes: 60)).toIso8601String(),
+          'p_start_at': start.toUtc().toIso8601String(), // KAN-927
+          'p_end_at': start
+              .add(const Duration(minutes: 60))
+              .toUtc()
+              .toIso8601String(),
           'p_bench_slots': 0,
           'p_listing_visibility': 'public',
           'p_join_policy': 'request',

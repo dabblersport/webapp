@@ -7,6 +7,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
+import 'package:dabbler/features/messaging/domain/meetup_conversation_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
@@ -27,6 +28,7 @@ import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 class WorkerMessagingRepository
     implements
         MessagingRepository,
+        MeetupConversationRepository,
         MyConversationsRepository,
         DmRepository,
         ModerationReportsRepository,
@@ -48,6 +50,17 @@ class WorkerMessagingRepository
         ok: const {200},
         parse: (b) => Conversation.fromJson(_map(b)),
       );
+
+  /// KAN-928: the meetup twin of [getGameConversation].
+  @override
+  Future<Result<Conversation, Failure>> getMeetupConversation(
+    String meetupId,
+  ) => _call(
+    'GET',
+    '/meetups/${Uri.encodeComponent(meetupId)}/conversation',
+    ok: const {200},
+    parse: (b) => Conversation.fromJson(_map(b)),
+  );
 
   @override
   Future<Result<MessagePage, Failure>> listMessages({

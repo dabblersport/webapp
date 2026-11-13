@@ -2,6 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
 
 /// The caller's state in one of their conversations, as `msg_my_conversations`
@@ -196,7 +197,7 @@ class MyConversation extends Equatable {
   );
 
   static DateTime? _date(Object? v) =>
-      v is String ? DateTime.tryParse(v) : null;
+      v is String ? parseInstantLocal(v) : null; // KAN-927: viewer-local
 
   Map<String, dynamic> toJson() => {
     'conversation_id': conversationId,

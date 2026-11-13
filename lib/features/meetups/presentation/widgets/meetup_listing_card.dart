@@ -123,7 +123,8 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
     final now = widget.now ?? DateTime.now();
     final state = rsvpStateFromListItem(m, now);
     final action = rsvpActionFor(state);
-    final place = m.venueName ?? m.locationName ?? m.areaName;
+    // KAN-932: the edited meeting point wins over the venue's own name.
+    final place = m.locationName ?? m.venueName ?? m.areaName;
     final distance = widget.distanceMeters;
     final skill = gamesSkillTierFor(m.minSkill, m.maxSkill);
     final fav =

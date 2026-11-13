@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/features/games/domain/models/game_creation_state.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 
 class GameCreationController extends StateNotifier<GameCreationState> {
@@ -127,8 +128,8 @@ class GameCreationController extends StateNotifier<GameCreationState> {
             'p_sport_variant_id': s.sportVariantId,
             'p_title': s.title,
             'p_venue_space_id': s.venueSpaceId,
-            'p_start_at': s.startAt?.toIso8601String(),
-            'p_end_at': s.endAt?.toIso8601String(),
+            'p_start_at': toWireInstantOrNull(s.startAt),
+            'p_end_at': toWireInstantOrNull(s.endAt),
             'p_bench_slots': s.benchSlots,
             'p_listing_visibility': s.listingVisibility ?? 'public',
             'p_join_policy': s.joinPolicy ?? 'open',

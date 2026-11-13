@@ -15,6 +15,8 @@ import 'package:dabbler/features/games/presentation/controllers/game_view_contro
 import 'package:dabbler/features/games/presentation/controllers/join_action_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_content.dart';
+import 'package:dabbler/features/games/data/repositories/game_host_repository.dart';
+import 'package:dabbler/features/games/presentation/screens/join_game/game_host_actions.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_series_widgets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_entry.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -32,12 +34,16 @@ class GameDetailScreen extends ConsumerStatefulWidget {
     super.key,
     required this.gameId,
     this.focusRequests = false,
+    this.linkToken,
   });
   final String gameId;
 
   /// When true (join-request notification deep link), auto-scrolls to the
   /// squad section once the game has loaded.
   final bool focusRequests;
+
+  /// KAN-939: the share URL's join token (`?lt=`), for the read and the join.
+  final String? linkToken;
 
   @override
   ConsumerState<GameDetailScreen> createState() => _GameDetailScreenState();
@@ -59,7 +65,11 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     // notification tap). Reload so this entry never shows stale data.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        ref.read(gameViewControllerProvider(widget.gameId).notifier).refresh();
+        final ctrl = ref.read(
+          gameViewControllerProvider(widget.gameId).notifier,
+        );
+        if (widget.linkToken != null) ctrl.linkToken = widget.linkToken;
+        ctrl.refresh();
       }
     });
   }
@@ -88,7 +98,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     );
   }
 
-  void _shareGame(GameView game) {
+  Future<void> _shareGame(GameView game) async {
     final when = DateFormat('EEE, MMM d · h:mm a').format(game.startAt);
     final where = [
       game.venueName,
@@ -102,16 +112,20 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     // share_plus: uri and text are mutually exclusive — sharing the uri makes
     // the game link a first-class URL attachment (rich preview in messengers)
     // instead of plain text. The headline rides along as title/subject.
-    SharePlus.instance.share(
-      ShareParams(
-        uri: Uri.parse(
-          RoutePaths.gameLink(
-            game.id,
-            sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
-          ),
-        ),
-        title: headline,
-        subject: headline,
+    final failed = AppLocalizations.of(context).game_share_link_failed;
+    final ctrl = ref.read(gameViewControllerProvider(widget.gameId).notifier);
+    final link = await buildGameShareLink(
+      game: game,
+      isHost: ctrl.isHost,
+      repo: ref.read(gameHostRepositoryProvider),
+      arrivedToken: widget.linkToken,
+      sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+    );
+    if (!mounted) return;
+    link.fold(
+      (_) => _toast(failed, isError: true),
+      (url) => SharePlus.instance.share(
+        ShareParams(uri: Uri.parse(url), title: headline, subject: headline),
       ),
     );
   }
@@ -217,6 +231,14 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
             fullWidth: true,
             onPressed: () => _openCancelSeries(game, ctrl),
           ),
+        ?gameCancelEntry(
+          context,
+          game: game,
+          isHost: ctrl.isHost,
+          repo: ref.read(gameHostRepositoryProvider),
+          onDone: ctrl.refresh,
+          toast: (m, err) => _toast(m, isError: err),
+        ),
         ...gameSquadSections(
           context,
           state: state,
@@ -301,7 +323,10 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         // Custom scheme: opens the installed app straight on this game; the
         // browser shows its own "open in Dabbler?" prompt. No-op if missing.
         onPressed: () => launchUrl(
-          Uri.parse('${RoutePaths.deepLinkPrefix}/game/$gameId'),
+          Uri.parse(
+            '${RoutePaths.deepLinkPrefix}/game/$gameId'
+            '${widget.linkToken == null ? '' : '?lt=${widget.linkToken}'}',
+          ),
           mode: LaunchMode.externalApplication,
         ),
       ),

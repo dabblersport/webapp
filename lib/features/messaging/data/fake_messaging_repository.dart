@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
+import 'package:dabbler/features/messaging/domain/meetup_conversation_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
 import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
@@ -46,6 +47,7 @@ enum FakeDmOp { startDm, setMuted }
 class FakeMessagingRepository
     implements
         MessagingRepository,
+        MeetupConversationRepository,
         MyConversationsRepository,
         DmRepository,
         MessagingImageRepository {
@@ -208,6 +210,49 @@ class FakeMessagingRepository
     return Ok(conversation);
   }
 
+  /// KAN-928: the meetup chat; seeded with [seedMeetupConversation]. Offline
+  /// and scripted failures follow [FakeMessagingOp.getGameConversation].
+  @override
+  Future<Result<Conversation, Failure>> getMeetupConversation(
+    String meetupId,
+  ) async {
+    final scripted = _scripted(FakeMessagingOp.getGameConversation);
+    if (scripted != null) return _err(scripted);
+    final conversation = _byId[_meetupConversationIds[meetupId]];
+    if (conversation == null) return _err(_failure(MessagingReason.notFound));
+    return Ok(conversation);
+  }
+
+  /// Creates the meetup chat of [meetupId] (kind meetup, no game).
+  Conversation seedMeetupConversation(String meetupId, {int messageCount = 0}) {
+    final id = 'conv-meetup-$meetupId';
+    final conversation = Conversation(
+      id: id,
+      gameId: '',
+      meetupId: meetupId,
+      writable: true,
+      muted: false,
+      lastSeq: messageCount,
+    );
+    _messages[id] = [
+      for (var seq = 1; seq <= messageCount; seq++)
+        Message(
+          id: _idGenerator(),
+          conversationId: id,
+          seq: seq,
+          senderUserId: 'member-${seq % 3}',
+          kind: MessageKind.text,
+          body: 'm$seq',
+          createdAt: _clock(),
+        ),
+    ];
+    _byId[id] = conversation;
+    _meetupConversationIds[meetupId] = id;
+    return conversation;
+  }
+
+  final Map<String, String> _meetupConversationIds = {};
+
   @override
   Future<Result<MessagePage, Failure>> listMessages({
     required String conversationId,
@@ -304,6 +349,7 @@ class FakeMessagingRepository
       lastSeq: seq,
       readOnlyReason: conversation.readOnlyReason,
       boundary: conversation.boundary,
+      meetupId: conversation.meetupId,
     );
     _byId[conversationId] = updated;
     _byGame[conversation.gameId] = updated;
@@ -405,6 +451,7 @@ class FakeMessagingRepository
       lastSeq: seq,
       readOnlyReason: conversation.readOnlyReason,
       boundary: conversation.boundary,
+      meetupId: conversation.meetupId,
     );
     _byGame[conversation.gameId] = _byId[conversationId]!;
     return Ok(message);
@@ -455,6 +502,7 @@ class FakeMessagingRepository
       lastSeq: c.lastSeq,
       readOnlyReason: c.readOnlyReason,
       boundary: c.boundary,
+      meetupId: c.meetupId,
     );
     _byId[c.id] = updated;
     _byGame[c.gameId] = updated;

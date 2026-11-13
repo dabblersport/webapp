@@ -1,5 +1,7 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
+import 'package:dabbler/core/utils/instant.dart';
+
 import 'meetup_enums.dart';
 
 part 'meetup_models.freezed.dart';
@@ -19,8 +21,10 @@ abstract class MeetupListItem with _$MeetupListItem {
     @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
-    @JsonKey(name: 'start_at') required DateTime startAt,
-    @JsonKey(name: 'end_at') DateTime? endAt,
+    @LocalInstantConverter()
+    @JsonKey(name: 'start_at')
+    required DateTime startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') DateTime? endAt,
     int? capacity,
     @JsonKey(name: 'members_only') @Default(false) bool membersOnly,
     @JsonKey(name: 'listing_visibility')
@@ -86,7 +90,9 @@ abstract class NearbyMeetup with _$NearbyMeetup {
     /// route key); null when the payload carries no `event_id`.
     @JsonKey(name: 'event_id') String? eventId,
     required String title,
-    @JsonKey(name: 'starts_at') DateTime? startsAt,
+    @LocalInstantOrNullConverter()
+    @JsonKey(name: 'starts_at')
+    DateTime? startsAt,
     double? lat,
     double? lng,
     @JsonKey(name: 'areaid') String? areaId,
@@ -149,8 +155,8 @@ abstract class MeetupCard with _$MeetupCard {
     @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
-    @JsonKey(name: 'start_at') DateTime? startAt,
-    @JsonKey(name: 'end_at') DateTime? endAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'start_at') DateTime? startAt,
+    @LocalInstantOrNullConverter() @JsonKey(name: 'end_at') DateTime? endAt,
     @JsonKey(name: 'location_name') String? locationName,
     int? capacity,
     @JsonKey(name: 'is_cancelled') @Default(false) bool isCancelled,

@@ -6,8 +6,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
+import 'package:dabbler/features/games/presentation/controllers/join_action_toast.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 // ─── Models ──────────────────────────────────────────────────────────────────
@@ -204,15 +208,16 @@ class GameView {
   }
 
   factory GameView.fromJson(Map<String, dynamic> j) {
-    final startAt = DateTime.parse(j['start_at'] as String);
-    final endAt = j['end_at'] as String?;
+    // KAN-927: timestamptz -> viewer-local.
+    final startAt = parseInstantLocal(j['start_at'])!;
+    final endAt = parseInstantLocal(j['end_at']);
     return GameView(
       id: j['id'] as String,
       title: j['title'] as String? ?? 'Untitled Game',
       gameType: j['game_type'] as String? ?? 'casual',
       startAt: startAt,
       // KAN-749: an events-backed row may carry no end yet.
-      endAt: endAt == null ? startAt : DateTime.parse(endAt),
+      endAt: endAt ?? startAt,
       capacity: j['capacity'] as int? ?? 0,
       benchSlots: j['bench_slots'] as int? ?? 0,
       totalSlots: j['total_slots'] as int? ?? 0,
@@ -379,7 +384,9 @@ class GameViewController extends StateNotifier<GameViewState> {
     String? accountId,
     // Test seam only; production passes nothing.
     GameViewRealtime? realtime,
+    AppLocalizations Function()? l10n,
   }) : _db = supabase,
+       _l10n = l10n,
        _realtime = realtime ?? SupabaseGameViewRealtime(supabase),
        _cache = cache,
        _accountId = accountId,
@@ -391,8 +398,16 @@ class GameViewController extends StateNotifier<GameViewState> {
 
   final SupabaseClient _db;
   final GameViewRealtime _realtime;
+
+  /// The app's strings in the current locale, for the join refusal copy
+  /// (KAN-930). Null keeps the server's code as the error.
+  final AppLocalizations Function()? _l10n;
   final String gameId;
   final String? currentUserId;
+
+  /// KAN-939: the join-link token the viewer arrived with (`?lt=`), sent as
+  /// `p_link_token` so a link-policy game can be joined. Set by the screen.
+  String? linkToken;
 
   // KAN-605: a game the viewer opened is shown from the on-device cache first
   // and refreshed in the background.
@@ -509,12 +524,15 @@ class GameViewController extends StateNotifier<GameViewState> {
   Future<void> _fetchGame() async {
     final started = DateTime.now();
     try {
-      final row = await _db
-          .from(SupabaseConfig.vGameCardTable)
-          .select()
-          .eq('id', gameId)
-          .single()
-          .timeout(kRequestTimeout);
+      final row =
+          await _db
+              .from(SupabaseConfig.vGameCardTable)
+              .select()
+              .eq('id', gameId)
+              .maybeSingle()
+              .timeout(kRequestTimeout) ??
+          await _fetchGameByLink();
+      if (row == null) throw StateError('game_not_visible');
       if (!mounted) return;
       state = state.copyWith(game: GameView.fromJson(row));
       if (_cacheOn) {
@@ -526,6 +544,22 @@ class GameViewController extends StateNotifier<GameViewState> {
         state = state.copyWith(error: 'Failed to load game');
       }
     }
+  }
+
+  /// KAN-939: a link-policy game v_game_card hides from a non-member is read
+  /// through the holder's token instead; null without a token or a valid one.
+  Future<Map<String, dynamic>?> _fetchGameByLink() async {
+    final token = linkToken;
+    if (token == null) return null;
+    final rows =
+        await _db
+                .rpc(
+                  SupabaseConfig.rpcGameCardByLinkFn,
+                  params: {'p_game_id': gameId, 'p_link_token': token},
+                )
+                .timeout(kRequestTimeout)
+            as List;
+    return rows.isEmpty ? null : Map<String, dynamic>.from(rows.first as Map);
   }
 
   Future<void> _fetchRoster() async {
@@ -626,7 +660,11 @@ class GameViewController extends StateNotifier<GameViewState> {
       final rows =
           await _db.rpc(
                 SupabaseConfig.rpcJoinGameFn,
-                params: {'p_actor_type': 'player', 'p_game_id': gameId},
+                params: {
+                  'p_actor_type': 'player',
+                  'p_game_id': gameId,
+                  'p_link_token': ?linkToken,
+                },
               )
               as List;
 
@@ -673,7 +711,10 @@ class GameViewController extends StateNotifier<GameViewState> {
       await _load();
       state = state.copyWith(isActing: false, lastAction: action);
     } catch (e) {
-      final msg = _extractRpcError(e);
+      final l = _l10n?.call();
+      final msg = l != null && e is PostgrestException
+          ? joinRefusalMessage(l, e.message.replaceAll('P0001: ', ''))
+          : _extractRpcError(e);
       state = state.copyWith(isActing: false, error: msg);
     }
   }
@@ -782,5 +823,6 @@ final gameViewControllerProvider = StateNotifierProvider.family
         currentUserId: currentUserId,
         cache: ref.watch(offlineCacheProvider),
         accountId: ref.watch(cacheAccountIdProvider),
+        l10n: () => lookupAppLocalizations(ref.read(localeProvider)),
       );
     });

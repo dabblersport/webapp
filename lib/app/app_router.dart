@@ -29,6 +29,7 @@ import 'routes/identity_routes.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'routes/meetups_routes.dart';
 import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
+import 'package:dabbler/features/messaging/presentation/meetup_chat_route.dart';
 import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
 import 'package:dabbler/features/messaging/presentation/dm_thread_route.dart';
 import 'routes/notification_routes.dart';
@@ -448,6 +449,7 @@ class AppRouter {
     homeShellRoute,
     sportsGamesGameIdRoute,
     if (FeatureFlags.enableMeetups) meetupDetailRoute,
+    if (FeatureFlags.enableMeetups) legacyMeetupRedirectRoute,
     if (FeatureFlags.enableMeetups) meetupManageRoute,
     if (FeatureFlags.enableMeetups) meetupEditRoute,
     newsNewsIdRoute,
@@ -512,6 +514,8 @@ class AppRouter {
     // KAN-507: game chat skeleton; always registered, its redirect sends
     // to home unless messaging AND enableMessagingGameChat are on.
     gameChatRoute(parentNavigatorKey: rootNavigatorKey),
+    // KAN-928: the meetup chat; unavailable state unless the flags are on.
+    meetupChatRoute(parentNavigatorKey: rootNavigatorKey),
     // KAN-549: Messages list; shows the unavailable state unless messaging
     // AND enableMessagingGameChat are on.
     messagesListRoute(parentNavigatorKey: rootNavigatorKey),

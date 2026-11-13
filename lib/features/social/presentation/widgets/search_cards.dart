@@ -380,6 +380,7 @@ class SearchVenueCard extends StatelessWidget {
     icon: 'buildings',
     title: venue.name,
     query: query,
+    onTap: () => context.push(RoutePaths.venueDetail(venue.id)),
     meta: venue.address == null
         ? null
         : DabblerText(
@@ -407,6 +408,8 @@ class SearchMeetupCard extends StatelessWidget {
     icon: 'calendar',
     title: meetup.title,
     query: query,
+    // KAN-933: the app's own route from the id, never the RPC's route string.
+    onTap: () => context.push(RoutePaths.meetupDetail(meetup.id)),
     meta: meetup.startAt == null
         ? null
         : DabblerText(
@@ -617,8 +620,8 @@ class SearchGameEventCard extends StatelessWidget {
   }
 }
 
-/// A meet-up as the events row of `View_all_events`. The app has no RSVP or
-/// meet-up detail route, so it carries no action.
+/// A meet-up as the events row of `View_all_events`; the card opens the
+/// meet-up detail. It carries no RSVP action.
 class SearchMeetupEventCard extends StatelessWidget {
   const SearchMeetupEventCard({
     super.key,
@@ -640,6 +643,7 @@ class SearchMeetupEventCard extends StatelessWidget {
       time: d == null ? '' : _formatWhen(d),
       title: meetup.title,
       query: searchNeedle(query),
+      onTap: () => context.push(RoutePaths.meetupDetail(meetup.id)),
     );
   }
 }

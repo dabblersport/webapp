@@ -39,7 +39,7 @@ void main() {
       Map<String, dynamic>.from(_wire(g.toJson()) as Map),
     );
     expect(back.toJson(), g.toJson());
-    expect(back.scheduledAt, g.scheduledAt);
+    expect(back.scheduledAt, g.scheduledAt!.toLocal()); // KAN-927
     expect(back.isJoined, isTrue);
   });
 

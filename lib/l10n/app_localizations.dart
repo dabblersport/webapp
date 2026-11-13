@@ -10175,6 +10175,90 @@ abstract class AppLocalizations {
   /// **'This game can no longer be edited.'**
   String get game_error_not_editable;
 
+  /// KAN-935 edit refused: the game changed since it was opened (rpc_update_game stale_update).
+  ///
+  /// In en, this message translates to:
+  /// **'Someone else changed this game. The latest version is loaded: check it and save again.'**
+  String get game_error_stale_update;
+
+  /// KAN-930 join refused: closed.
+  ///
+  /// In en, this message translates to:
+  /// **'This game isn\'t taking players.'**
+  String get game_join_err_closed;
+
+  /// KAN-930 join refused: started.
+  ///
+  /// In en, this message translates to:
+  /// **'This game has already started.'**
+  String get game_join_err_started;
+
+  /// KAN-930 join refused: cancelled.
+  ///
+  /// In en, this message translates to:
+  /// **'This game was cancelled.'**
+  String get game_join_err_cancelled;
+
+  /// KAN-930 join refused: not_visible.
+  ///
+  /// In en, this message translates to:
+  /// **'This game isn\'t available to you.'**
+  String get game_join_err_not_visible;
+
+  /// KAN-930 join refused: invite_only.
+  ///
+  /// In en, this message translates to:
+  /// **'This game is invite-only.'**
+  String get game_join_err_invite_only;
+
+  /// KAN-930 join refused: circle_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host\'s circle can join this game.'**
+  String get game_join_err_circle_only;
+
+  /// KAN-930 join refused: squad_only.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the host\'s squad can join this game.'**
+  String get game_join_err_squad_only;
+
+  /// KAN-930 join refused: link_required / link_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'You need a valid invite link to join this game.'**
+  String get game_join_err_link;
+
+  /// KAN-930 join refused: a request is already pending.
+  ///
+  /// In en, this message translates to:
+  /// **'You already asked to join this game.'**
+  String get game_join_err_requested;
+
+  /// KAN-930 join refused: already on the roster.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re already in this game.'**
+  String get game_join_err_joined;
+
+  /// KAN-930 join refused: the viewer is the host.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re the host of this game.'**
+  String get game_join_err_host;
+
+  /// KAN-930 toast: rpc_join_game returned request_submitted.
+  ///
+  /// In en, this message translates to:
+  /// **'Join request sent.'**
+  String get game_join_request_sent;
+
+  /// KAN-930 toast: rpc_join_game returned waitlisted.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to waitlist.'**
+  String get game_join_waitlisted;
+
   /// Create game player range validation error.
   ///
   /// In en, this message translates to:
@@ -10523,6 +10607,18 @@ abstract class AppLocalizations {
   /// **'Couldn\'t load this meetup'**
   String get meetups_load_detail_failed;
 
+  /// KAN-932 Meetup detail: heading over the organiser's description.
+  ///
+  /// In en, this message translates to:
+  /// **'About'**
+  String get meetups_about;
+
+  /// KAN-932 Meetups list: button at the end that loads the next page of upcoming meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get meetups_load_more;
+
   /// No description provided for @meetups_back.
   ///
   /// In en, this message translates to:
@@ -10720,6 +10816,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You can\'t create a game right now. Try again later.'**
   String get game_err_create_refused;
+
+  /// No description provided for @game_err_auth_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign in to create a game.'**
+  String get game_err_auth_required;
+
+  /// No description provided for @game_err_series_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'This repeat schedule can\'t be used. Check the date and the repeat option.'**
+  String get game_err_series_invalid;
+
+  /// No description provided for @game_err_paid_space_price.
+  ///
+  /// In en, this message translates to:
+  /// **'This venue space is paid. Enter a price above 0.'**
+  String get game_err_paid_space_price;
+
+  /// No description provided for @game_create_as.
+  ///
+  /// In en, this message translates to:
+  /// **'Create as'**
+  String get game_create_as;
 
   /// No description provided for @meetups_err_create_refused.
   ///
@@ -14944,6 +15064,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Reload'**
   String get update_required_action_reload;
+
+  /// KAN-937 host button on game detail that opens the cancel dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel game'**
+  String get game_cancel_action;
+
+  /// KAN-937 cancel-game dialog title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this game?'**
+  String get game_cancel_title;
+
+  /// KAN-937 cancel-game dialog body.
+  ///
+  /// In en, this message translates to:
+  /// **'Everyone who joined is told the game is off. This cannot be undone.'**
+  String get game_cancel_body;
+
+  /// KAN-937 label of the optional cancel reason field.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get game_cancel_reason_label;
+
+  /// KAN-937 placeholder of the optional cancel reason field.
+  ///
+  /// In en, this message translates to:
+  /// **'Let players know why'**
+  String get game_cancel_reason_placeholder;
+
+  /// KAN-937 destructive confirm button of the cancel-game dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel game'**
+  String get game_cancel_confirm;
+
+  /// KAN-937 dismiss button of the cancel-game dialog.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep game'**
+  String get game_cancel_keep;
+
+  /// KAN-937 error when rpc_cancel_game fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not cancel the game. Try again.'**
+  String get game_cancel_failed;
+
+  /// KAN-937 toast after the host cancels a game.
+  ///
+  /// In en, this message translates to:
+  /// **'Game cancelled'**
+  String get game_cancelled_toast;
+
+  /// KAN-939 error when minting a join link for a link-policy game fails.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not create the invite link. Try again.'**
+  String get game_share_link_failed;
 }
 
 class _AppLocalizationsDelegate

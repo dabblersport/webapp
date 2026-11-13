@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/data/models/games/game.dart';
 
 class GameModel extends Game {
@@ -47,13 +48,10 @@ class GameModel extends Game {
   factory GameModel.fromJson(Map<String, dynamic> json) {
     try {
       // Parse start/end times from start_at and end_at timestamps
-      final startAt = json['start_at'] != null
-          ? DateTime.parse(json['start_at'] as String)
-          : DateTime.now();
+      // KAN-927: timestamptz -> viewer-local, so startTime/endTime are local.
+      final startAt = parseInstantLocal(json['start_at']) ?? DateTime.now();
       // KAN-715: a null end stays null (empty endTime), never start + 1h.
-      final endAt = json['end_at'] != null
-          ? DateTime.parse(json['end_at'] as String)
-          : null;
+      final endAt = parseInstantLocal(json['end_at']);
       // games has no `sport` column; event-backed rows carry `sport_key`.
       final sport = json['sport'] as String? ?? json['sport_key'] as String?;
 
@@ -230,8 +228,9 @@ class GameModel extends Game {
       'description': description,
       'sport': sport,
       'venue_id': venueId,
-      'start_at': scheduledDate
-          .toIso8601String(), // Changed from scheduled_date to start_at, full datetime
+      'start_at': toWireInstant(
+        scheduledDate,
+      ), // Changed from scheduled_date to start_at, full datetime
       'start_time': startTime,
       'end_time': endTime,
       'min_players': minPlayers,
@@ -261,8 +260,9 @@ class GameModel extends Game {
       'description': description,
       'sport': sport,
       if (venueId != null) 'venue_id': venueId,
-      'start_at': scheduledDate
-          .toIso8601String(), // Changed from scheduled_date to start_at
+      'start_at': toWireInstant(
+        scheduledDate,
+      ), // Changed from scheduled_date to start_at
       'start_time': startTime,
       'end_time': endTime,
       'min_players': minPlayers,
@@ -288,8 +288,9 @@ class GameModel extends Game {
       'description': description,
       'sport': sport,
       if (venueId != null) 'venue_id': venueId,
-      'start_at': scheduledDate
-          .toIso8601String(), // Changed from scheduled_date to start_at
+      'start_at': toWireInstant(
+        scheduledDate,
+      ), // Changed from scheduled_date to start_at
       'start_time': startTime,
       'end_time': endTime,
       'min_players': minPlayers,

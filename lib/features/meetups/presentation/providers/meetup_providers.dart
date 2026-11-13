@@ -125,16 +125,38 @@ final meetupRefreshProvider = Provider.autoDispose<MeetupRefresher>((ref) {
 
 // reads ------------------------------------------------------------------------
 
-/// Upcoming public meetups from v_meetup_list, optionally per sport id.
+/// One page of the meetups list (KAN-932).
+const int meetupListPageSize = 20;
+
+/// How many pages of the list, per sport id, are loaded; "Load more" adds one.
+/// Back to one page when nothing watches the list.
+final meetupListPagesProvider = StateProvider.autoDispose.family<int, String?>(
+  (ref, sportId) => 1,
+);
+
+/// Whether [items] filled every loaded page, so another may exist.
+bool meetupListHasMore(List<MeetupListItem> items, int pages) =>
+    items.length >= meetupListPageSize * pages;
+
+/// Upcoming public meetups from v_meetup_list (from now, soonest first),
+/// optionally per sport id, [meetupListPagesProvider] pages long.
 final meetupListProvider = FutureProvider.autoDispose
     .family<List<MeetupListItem>, String?>((ref, sportId) {
       ref.watch(meetupRefreshProvider);
       final repo = ref.watch(meetupRepositoryProvider);
+      final pages = ref.watch(meetupListPagesProvider(sportId));
       // KAN-605: stale-while-revalidate, kept on the device per account.
       return swrFetch<List<MeetupListItem>>(
         ref,
-        key: 'meetups.list.$sportId',
-        fetch: () => _unwrap(repo.fetchMeetups(sportId: sportId)),
+        key: pages == 1
+            ? 'meetups.list.$sportId'
+            : 'meetups.list.$sportId.p$pages',
+        fetch: () => _unwrap(
+          repo.fetchMeetups(
+            sportId: sportId,
+            limit: meetupListPageSize * pages,
+          ),
+        ),
         encode: (items) => [for (final i in items) i.toJson()],
         decode: (json) => [
           for (final j in (json as List))

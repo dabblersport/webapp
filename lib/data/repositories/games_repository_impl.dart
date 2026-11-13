@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/data/models/games/game_model.dart';
 import 'package:dabbler/data/models/games/game.dart' as domain;
 import 'base_repository.dart';
@@ -72,8 +73,8 @@ class GamesRepositoryImpl extends BaseRepository implements GamesRepository {
       'host_profile_id': hostProfileId,
       'host_user_id': uid,
       if (venueSpaceId != null) 'venue_space_id': venueSpaceId,
-      'start_at': startAt.toIso8601String(),
-      'end_at': endAt.toIso8601String(),
+      'start_at': toWireInstant(startAt),
+      'end_at': toWireInstant(endAt),
       'capacity': capacity,
       'listing_visibility': listingVisibility,
       'join_policy': joinPolicy,
@@ -157,10 +158,10 @@ class GamesRepositoryImpl extends BaseRepository implements GamesRepository {
       patch['venue_space_id'] = venueSpaceId;
     }
     if (startAt != null) {
-      patch['start_at'] = startAt.toIso8601String();
+      patch['start_at'] = toWireInstant(startAt);
     }
     if (endAt != null) {
-      patch['end_at'] = endAt.toIso8601String();
+      patch['end_at'] = toWireInstant(endAt);
     }
     if (capacity != null) {
       patch['capacity'] = capacity;
@@ -267,10 +268,10 @@ class GamesRepositoryImpl extends BaseRepository implements GamesRepository {
         query = query.eq('sport', sport);
       }
       if (from != null) {
-        query = query.gte('start_at', from.toIso8601String());
+        query = query.gte('start_at', toWireInstant(from));
       }
       if (to != null) {
-        query = query.lte('start_at', to.toIso8601String());
+        query = query.lte('start_at', toWireInstant(to));
       }
       if (visibility != null) {
         query = query.eq('listing_visibility', visibility);
@@ -314,10 +315,10 @@ class GamesRepositoryImpl extends BaseRepository implements GamesRepository {
       dynamic query = svc.from(table).select().eq('host_user_id', uid);
 
       if (from != null) {
-        query = query.gte('start_at', from.toIso8601String());
+        query = query.gte('start_at', toWireInstant(from));
       }
       if (to != null) {
-        query = query.lte('end_at', to.toIso8601String());
+        query = query.lte('end_at', toWireInstant(to));
       }
       if (!includeCancelled) {
         query = query.eq('is_cancelled', false);

@@ -137,7 +137,10 @@ void main() {
       expect(g.maxPlayers, 0);
       expect(g.venueId, isNull);
       expect(g.organizerId, '');
-      expect(g.scheduledDate, DateTime.utc(2099, 11, 10, 18));
+      expect(
+        g.scheduledDate,
+        DateTime.utc(2099, 11, 10, 18).toLocal(),
+      ); // KAN-927
       expect(g.createdAt, DateTime.utc(2026, 11, 1, 9, 30));
       expect(g.updatedAt, DateTime.utc(2026, 11, 2, 10, 45));
     });

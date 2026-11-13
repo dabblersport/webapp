@@ -9,28 +9,34 @@
 //  * the sharer (`sp`, the sharing profile id) must also be a UUID or it is dropped. It is ATTRIBUTION ONLY: it is
 //    never used to sign anyone in, to pick an account, or to widen access (the destination screens still apply the
 //    viewer's own permissions);
-//  * no auth token, session or secret ever appears in a link or its query;
+//  * no auth token, session or secret ever appears in a link or its query. The one carried value is a game's
+//    join-link token (`lt`, KAN-939): a UUID minted by rpc_mint_join_link that only lets a holder join a link-policy
+//    game; it signs nobody in, and rpc_join_game checks it again;
 //  * the share origin comes from the environment the app is running in, not a fixed production host.
 
 enum SharedItemType { post, venue, game, meetup, profile }
 
 /// A validated shared destination. [sharerProfileId] is attribution, never identity.
 class SharedItem {
-  const SharedItem(this.type, this.id, {this.sharerProfileId});
+  const SharedItem(this.type, this.id, {this.sharerProfileId, this.linkToken});
 
   final SharedItemType type;
   final String id;
   final String? sharerProfileId;
+
+  /// KAN-939: a game's join-link token; only ever set for [SharedItemType.game].
+  final String? linkToken;
 
   @override
   bool operator ==(Object other) =>
       other is SharedItem &&
       other.type == type &&
       other.id == id &&
-      other.sharerProfileId == sharerProfileId;
+      other.sharerProfileId == sharerProfileId &&
+      other.linkToken == linkToken;
 
   @override
-  int get hashCode => Object.hash(type, id, sharerProfileId);
+  int get hashCode => Object.hash(type, id, sharerProfileId, linkToken);
 
   @override
   String toString() => 'SharedItem($type, $id)';
@@ -53,6 +59,9 @@ abstract final class DeepLinks {
 
   /// The query parameter that carries the sharing profile id.
   static const String sharerParam = 'sp';
+
+  /// KAN-939: the query parameter that carries a game's join-link token.
+  static const String linkTokenParam = 'lt';
 
   /// Hosts a share origin may use: the production, alpha and canary web apps. Anything else falls back to [fallback].
   static bool isAllowedOrigin(String origin) {
@@ -88,14 +97,19 @@ abstract final class DeepLinks {
     required SharedItemType type,
     required String id,
     String? sharerProfileId,
+    String? linkToken,
   }) {
     // The item id is escaped, never trusted: a share button must not crash on an odd id, and the receiving side
     // validates it again (a non-UUID id resolves to the safe fallback there).
     final safeId = isValidId(id) ? id.toLowerCase() : Uri.encodeComponent(id);
     final base = '$origin/${entrySegment[type]}/$safeId';
-    return isValidId(sharerProfileId)
-        ? '$base?$sharerParam=${sharerProfileId!.toLowerCase()}'
-        : base;
+    final query = [
+      if (isValidId(sharerProfileId))
+        '$sharerParam=${sharerProfileId!.toLowerCase()}',
+      if (type == SharedItemType.game && isValidId(linkToken))
+        '$linkTokenParam=${linkToken!.toLowerCase()}',
+    ];
+    return query.isEmpty ? base : '$base?${query.join('&')}';
   }
 
   /// Parses an incoming link (https web link or `dabbler://app/...`) into a validated [SharedItem], or null when it is
@@ -113,10 +127,14 @@ abstract final class DeepLinks {
     final id = segments[1];
     if (!isValidId(id)) return null;
     final sp = uri.queryParameters[sharerParam];
+    final lt = uri.queryParameters[linkTokenParam];
     return SharedItem(
       type,
       id.toLowerCase(),
       sharerProfileId: isValidId(sp) ? sp!.toLowerCase() : null,
+      linkToken: type == SharedItemType.game && isValidId(lt)
+          ? lt!.toLowerCase()
+          : null,
     );
   }
 
@@ -131,11 +149,12 @@ abstract final class DeepLinks {
       SharedItemType.post => '/social-post-detail/$id',
       SharedItemType.profile => '/user-profile/$id?profileId=$id',
     };
-    final sp = item.sharerProfileId;
-    if (sp == null) return base;
-    return base.contains('?')
-        ? '$base&$sharerParam=$sp'
-        : '$base?$sharerParam=$sp';
+    final query = [
+      if (item.sharerProfileId != null) '$sharerParam=${item.sharerProfileId}',
+      if (item.linkToken != null) '$linkTokenParam=${item.linkToken}',
+    ];
+    if (query.isEmpty) return base;
+    return '$base${base.contains('?') ? '&' : '?'}${query.join('&')}';
   }
 
   /// The router location for an incoming link, or null when it is not a shared-item link at all. A recognised link

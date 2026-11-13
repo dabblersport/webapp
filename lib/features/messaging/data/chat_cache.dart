@@ -26,6 +26,7 @@ class ChatCache {
   static const String listKey = 'messages.list';
   static String gameThreadKey(String gameId) => 'chat.game.$gameId';
   static String dmThreadKey(String conversationId) => 'chat.dm.$conversationId';
+  static String meetupThreadKey(String meetupId) => 'chat.meetup.$meetupId';
 
   Future<void> saveList(List<MyConversation> rows) =>
       _cache.write(_accountId, listKey, [for (final r in rows) r.toJson()]);
