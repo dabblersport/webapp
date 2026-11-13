@@ -83,6 +83,15 @@ BEGIN
   GRANT EXECUTE ON FUNCTION pg_temp.k862p4_cancel_noguard(uuid,text) TO authenticated;
 END $mk$;
 
+-- Fixture, undone by the final ROLLBACK: the first future, uncancelled game with a non-admin creator gets a price if it
+-- has none, so the case below never depends on live data having a priced future game.
+UPDATE public.games g SET price_aed = 25
+ WHERE g.price_aed IS NULL AND g.id = (
+   SELECT g2.id FROM public.games g2 JOIN public.events e ON e.id = g2.event_id AND e.event_type = 'game'
+    WHERE e.start_at > now() + interval '1 day' AND NOT e.is_cancelled
+      AND e.creator_user_id IS NOT NULL AND NOT public.is_admin(e.creator_user_id)
+    ORDER BY e.start_at, g2.id LIMIT 1);
+
 CREATE TEMP TABLE k862p4_case ON COMMIT DROP AS
 SELECT g.id AS gid, e.creator_user_id AS h, e.start_at AS s, e.end_at AS en, e.updated_at AS u, g.price_aed AS price
   FROM public.games g JOIN public.events e ON e.id = g.event_id AND e.event_type = 'game'
