@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/data/chat_cache.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/my_conversation.dart';
@@ -64,6 +65,9 @@ class DmChatController extends GameChatController {
       ),
     );
   }
+
+  @override
+  String cacheKey(String arg) => ChatCache.dmThreadKey(arg);
 
   /// The most rows the open asks `listMyConversations` for (the RPC's max).
   static const int dmLookupLimit = 100;

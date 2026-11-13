@@ -10,6 +10,7 @@ import 'package:dabbler/features/profile/presentation/controllers/profile_contro
 import 'package:dabbler/features/profile/presentation/controllers/sports_profile_controller.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/profile_screen.dart';
+import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_feed.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -23,7 +24,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 
 import '../home/home_test_harness.dart';
 import '../../support/render_mode.dart';
@@ -283,51 +283,68 @@ void main() {
       await _shoot(tester, 'profile-takedown-$dir');
     });
 
-    testWidgets('profile tabs switch - $dir', (tester) async {
-      await _pump(
-        tester,
-        locale: locale,
-        profileState: ProfileState(profile: _profile('player')),
+    testWidgets(
+      'profile tabs switch; owner has no Activity tab (KAN-852) - $dir',
+      (tester) async {
+        await _pump(
+          tester,
+          locale: locale,
+          profileState: ProfileState(profile: _profile('player')),
+        );
+        final l10n = AppLocalizations.of(
+          tester.element(find.byType(ProfileScreen)),
+        );
+        // The owner's personal activity moved to Home bell -> Activity log.
+        expect(find.text(l10n.profile_tab_activity), findsNothing);
+        await tester.ensureVisible(find.text(l10n.profile_tab_replies));
+        await tester.tap(find.text(l10n.profile_tab_replies));
+        await _settle(tester);
+        expect(tester.takeException(), isNull);
+        expect(find.text(l10n.profile_empty_no_replies), findsOneWidget);
+      },
+    );
+
+    testWidgets('visitor feed keeps the Activity tab (KAN-852) - $dir', (
+      tester,
+    ) async {
+      Future<List<Post>> none(
+        Ref ref,
+        ({String profileId, int page}) p,
+      ) async => <Post>[];
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: [
+            userPostsProvider.overrideWith(none),
+            userCommentedPostsProvider.overrideWith(none),
+            userLikedPostsProvider.overrideWith(none),
+            userRepostedPostsProvider.overrideWith(none),
+            userActivitiesProvider.overrideWith((ref, id) => _Acts()),
+          ],
+          child: MaterialApp(
+            locale: locale,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            supportedLocales: AppLocalizations.supportedLocales,
+            theme: DabblerDesignSystemTheme.withFonts(
+              DabblerDesignSystemTheme.withTokens(renderThemeBase()),
+              locale: locale,
+            ),
+            home: const Scaffold(
+              body: SingleChildScrollView(
+                child: OwnProfileFeed(profileId: 'someone-else'),
+              ),
+            ),
+          ),
+        ),
       );
+      await _settle(tester);
       final l10n = AppLocalizations.of(
-        tester.element(find.byType(ProfileScreen)),
+        tester.element(find.byType(OwnProfileFeed)),
       );
       await tester.ensureVisible(find.text(l10n.profile_tab_activity));
       await tester.tap(find.text(l10n.profile_tab_activity));
       await _settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.text(l10n.profile_empty_no_activity), findsOneWidget);
-    });
-
-    testWidgets('switch-profile sheet - $dir', (tester) async {
-      final player = _profile('player');
-      await _pump(
-        tester,
-        locale: locale,
-        profileState: ProfileState(profile: player),
-        available: [player],
-        personaState: const PersonaState(
-          activeProfiles: [
-            ActivePersonaProfile(
-              profileId: 'profile-player',
-              personaType: PersonaType.player,
-              displayName: 'Moataz Mustapha',
-            ),
-          ],
-        ),
-      );
-      final l10n = AppLocalizations.of(
-        tester.element(find.byType(ProfileScreen)),
-      );
-      await tester.tap(
-        find.bySemanticsLabel(l10n.profile_btn_manage_profiles_tooltip),
-      );
-      await _settle(tester);
-      expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerSheet), findsOneWidget);
-      expect(find.text(l10n.profile_manage_profiles_title), findsWidgets);
-      expect(find.text(l10n.profile_create_another_profile), findsOneWidget);
-      await _shoot(tester, 'profile-switch-sheet-$dir');
     });
   }
 }

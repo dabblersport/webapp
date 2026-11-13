@@ -2,16 +2,59 @@
 // Public rather than library-private: Dart privacy is per-file, so the classes
 // must widen to be usable from the screen. No behaviour change.
 //
-// KAN-420: the search box and the filter button were inert placeholders and
-// still are (no handler); they are now DS controls. The field is disabled so it
-// does not take focus or promise typing.
+// KAN-877: the Activity log search is now one editable, full-width DS search
+// field. The filter button is gone: the category chips already filter. The
+// widget holds no search logic — it owns only its TextEditingController and
+// reports through [onChanged] / [onClear]. Wiring is KAN-879.
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
-class ActivitySearchRow extends StatelessWidget {
-  const ActivitySearchRow({super.key});
+class ActivitySearchRow extends StatefulWidget {
+  const ActivitySearchRow({
+    super.key,
+    this.query = '',
+    this.onChanged,
+    this.onClear,
+  });
+
+  /// The current query, owned by the parent.
+  final String query;
+
+  /// Called on every edit.
+  final ValueChanged<String>? onChanged;
+
+  /// Called after the clear button empties the field.
+  final VoidCallback? onClear;
+
+  @override
+  State<ActivitySearchRow> createState() => _ActivitySearchRowState();
+}
+
+class _ActivitySearchRowState extends State<ActivitySearchRow> {
+  late final TextEditingController _controller = TextEditingController(
+    text: widget.query,
+  );
+
+  @override
+  void didUpdateWidget(covariant ActivitySearchRow oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    // Only a change the parent made, and only if the field does not already
+    // show it — so a parent rebuild with a lagging query never wipes typing.
+    if (widget.query != oldWidget.query && widget.query != _controller.text) {
+      _controller.value = TextEditingValue(
+        text: widget.query,
+        selection: TextSelection.collapsed(offset: widget.query.length),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -21,22 +64,14 @@ class ActivitySearchRow extends StatelessWidget {
         end: DabblerSpacing.space6,
         bottom: DabblerSpacing.space3,
       ),
-      child: Row(
-        children: [
-          Expanded(
-            child: DabblerSearchField(
-              placeholder: AppLocalizations.of(context).activity_search_hint,
-              enabled: false,
-              clearable: false,
-            ),
-          ),
-          const SizedBox(width: DabblerSpacing.space2),
-          const DabblerButton.icon(
-            icon: 'filter',
-            semanticLabel: 'Filter',
-            tone: DabblerButtonTone.outlined,
-          ),
-        ],
+      child: SizedBox(
+        width: double.infinity,
+        child: DabblerSearchField(
+          controller: _controller,
+          placeholder: AppLocalizations.of(context).activity_search_hint,
+          onChanged: (String value) => widget.onChanged?.call(value),
+          onCleared: () => widget.onClear?.call(),
+        ),
       ),
     );
   }

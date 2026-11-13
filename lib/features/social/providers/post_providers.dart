@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -162,8 +163,18 @@ final postDetailProvider = FutureProvider.autoDispose.family<Post, String>((
   postId,
 ) async {
   final repo = ref.watch(postRepositoryProvider);
-  final result = await repo.getPost(postId);
-  return result.fold((err) => throw Exception(err.message), (post) => post);
+  // KAN-605: an opened post is cached per account; reopening shows it at once
+  // and refreshes in the background (offline, the cached copy opens).
+  return swrFetch<Post>(
+    ref,
+    key: 'post_detail.$postId',
+    fetch: () async {
+      final result = await repo.getPost(postId);
+      return result.fold((err) => throw Exception(err.message), (post) => post);
+    },
+    encode: (post) => post.toJson(),
+    decode: (json) => Post.fromJson(Map<String, dynamic>.from(json! as Map)),
+  );
 });
 
 // =============================================================================
@@ -327,7 +338,8 @@ final sportsProvider = FutureProvider.autoDispose<List<Sport>>((ref) async {
 
 /// Active sports filtered by the user's selected country code.
 /// Resolves country name → ISO code via ref_countries, then filters sports
-/// by popularity_countries. Falls back to all active sports when no match.
+/// by popularity_countries. All active sports are returned when the country
+/// is unknown, is GLOBAL, or matches no active sport.
 final sportsForSelectedCountryProvider =
     FutureProvider.autoDispose<List<Sport>>((ref) async {
       final repo = ref.watch(sportsRepositoryProvider);

@@ -1,3 +1,5 @@
+import 'package:dabbler/core/errors/request_outcome.dart';
+
 import 'dart:async';
 
 /// Lightweight Result type to avoid throwing across boundaries.
@@ -36,8 +38,11 @@ abstract class Result<T, E> {
     E Function(Object error) mapError,
   ) async {
     try {
-      return Ok<T, E>(await body());
+      final value = await body();
+      RequestOutcome.success();
+      return Ok<T, E>(value);
     } catch (e) {
+      RequestOutcome.failure(e);
       return Err<T, E>(mapError(e));
     }
   }

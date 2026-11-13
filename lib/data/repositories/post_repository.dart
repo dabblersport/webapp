@@ -36,10 +36,12 @@ abstract class PostRepository {
 
   /// Original posts with geo coordinates, sorted by distance from [lat]/[lng].
   /// Excludes system-origin and non-original-kind posts, and falls back to
-  /// recency when no geo data is available.
+  /// recency when no geo data is available. With no point but a [city]
+  /// (KAN-588) it is that city's posts, newest first.
   Future<Result<List<Post>, Failure>> getNearbyFeed({
     double? lat,
     double? lng,
+    String? city,
     int limit = 20,
     int offset = 0,
   });

@@ -233,9 +233,15 @@ void main() {
       }
       // ...and the Dart enum adds only the two client-side reasons.
       // `under_age` is a DM reason from the Worker's start-DM call (KAN-557),
-      // outside this game-chat contract.
+      // outside this game-chat contract. The two image reasons (KAN-581) come
+      // from the attachment routes, documented in docs/messaging/images-kan581.md.
+      const outsideContract = {
+        MessagingReason.underAge,
+        MessagingReason.payloadTooLarge,
+        MessagingReason.unsupportedMediaType,
+      };
       final dartServer = MessagingReason.values
-          .where((r) => r.isServerReason && r != MessagingReason.underAge)
+          .where((r) => r.isServerReason && !outsideContract.contains(r))
           .map((r) => r.wireName)
           .toSet();
       expect(dartServer, contract.toSet());

@@ -1,4 +1,8 @@
+import 'package:dabbler/core/sync/pending_settings_store.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
 import 'dart:convert';
+import 'package:dabbler/core/errors/request_timeout.dart';
+import 'package:dabbler/core/fp/failure.dart' show FailureCode, classifyError;
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'dart:math';
 
@@ -20,6 +24,8 @@ import '../../utils/constants/route_constants.dart';
 import '../models/google_sign_in_failure.dart';
 import '../models/google_sign_in_result.dart';
 import '../utils/identifier_detector.dart';
+import '../fp/result.dart';
+import '../../features/auth_onboarding/data/unified_onboarding_client.dart';
 
 class AuthService {
   static final AuthService _instance = AuthService._internal();
@@ -346,7 +352,20 @@ class AuthService {
   /// local event batching had nothing to do.)
   Future<void> signOut() async {
     try {
-      await PushNotificationService.instance.revokeToken();
+      // Bounded (KAN-603): a dead network must not hold sign-out.
+      await PushNotificationService.instance.revokeToken().timeout(
+        kRequestTimeout,
+      );
+    } catch (_) {
+      // Best-effort — see doc comment above.
+    }
+
+    try {
+      // KAN-605: the on-device feed and listing cache goes first; it needs no
+      // network, so an offline sign-out wipes it too.
+      await OfflineCache.wipeAll();
+      // KAN-608: edits still waiting for the server are discarded too.
+      await const PendingSettingsStore().wipe();
     } catch (_) {
       // Best-effort — see doc comment above.
     }
@@ -361,8 +380,15 @@ class AuthService {
     }
 
     try {
-      await _supabase.auth.signOut();
+      await _supabase.auth.signOut().timeout(kRequestTimeout);
     } catch (e) {
+      // The session is removed on this device before the server call is made,
+      // so when only the network failed (timeout or no internet, KAN-603) the
+      // local sign-out is complete: report success.
+      final FailureCode kind = classifyError(e);
+      if (kind == FailureCode.timeout || kind == FailureCode.noInternet) {
+        return;
+      }
       throw Exception('Sign out failed: $e');
     }
   }
@@ -504,14 +530,24 @@ class AuthService {
     }
   }
 
-  /// Sign in with Apple (iOS).
+  /// Sign in with Apple.
   ///
-  /// Generates a raw nonce client-side, hashes it with SHA-256, asks Apple for
-  /// an identity token bound to the hashed nonce, then exchanges the token with
-  /// Supabase using `signInWithIdToken`. Supabase verifies the nonce against
-  /// the hashed value Apple signed.
+  /// iOS: generates a raw nonce client-side, hashes it with SHA-256, asks Apple
+  /// for an identity token bound to the hashed nonce, then exchanges the token
+  /// with Supabase using `signInWithIdToken`. Supabase verifies the nonce
+  /// against the hashed value Apple signed.
+  /// Web and Android: Supabase's hosted Apple OAuth (see [signInWithAppleOAuth]).
   /// Returns false if the user cancelled the Apple sign-in sheet.
   Future<bool> signInWithApple() async {
+    if (kIsWeb || defaultTargetPlatform != TargetPlatform.iOS) {
+      return signInWithAppleOAuth(
+        isWeb: kIsWeb,
+        auth: _supabase.auth,
+        authenticate: (url, scheme) =>
+            FlutterWebAuth2.authenticate(url: url, callbackUrlScheme: scheme),
+      );
+    }
+
     final rawNonce = _generateRawNonce();
     final hashedNonce = sha256.convert(utf8.encode(rawNonce)).toString();
 
@@ -539,6 +575,63 @@ class AuthService {
       idToken: idToken,
       nonce: rawNonce,
     );
+    return true;
+  }
+
+  /// Apple sign-in through Supabase's hosted OAuth, for web and Android.
+  ///
+  /// Web redirects the page and the auth state listener picks the session up on
+  /// return. Android runs the flow in an in-app sheet and exchanges the PKCE
+  /// code. [isWeb], [auth] and [authenticate] are injected so a test can drive
+  /// either platform.
+  @visibleForTesting
+  static Future<bool> signInWithAppleOAuth({
+    required bool isWeb,
+    required GoTrueClient auth,
+    required Future<String> Function(String url, String callbackUrlScheme)
+    authenticate,
+    String? webOrigin,
+    Future<void> Function(
+      OAuthProvider provider, {
+      String? redirectTo,
+      String? scopes,
+    })?
+    webSignIn,
+  }) async {
+    if (isWeb) {
+      // signInWithOAuth is an extension method, so a test injects it here.
+      await (webSignIn ?? auth.signInWithOAuth)(
+        OAuthProvider.apple,
+        redirectTo: webOrigin ?? Uri.base.origin,
+        scopes: 'name email',
+      );
+      return true;
+    }
+
+    final oauth = await auth.getOAuthSignInUrl(
+      provider: OAuthProvider.apple,
+      redirectTo: '${RoutePaths.deepLinkPrefix}/',
+      scopes: 'name email',
+    );
+
+    final String resultUrl;
+    try {
+      resultUrl = await authenticate(
+        oauth.url,
+        Uri.parse(RoutePaths.deepLinkPrefix).scheme,
+      );
+    } on PlatformException catch (e) {
+      // User dismissed the in-app auth sheet: a no-op, not an error.
+      if (e.code == 'CANCELED') return false;
+      rethrow;
+    }
+
+    final code = Uri.parse(resultUrl).queryParameters['code'];
+    if (code == null || code.isEmpty) {
+      throw Exception('Apple sign-in did not return an authorization code.');
+    }
+
+    await auth.exchangeCodeForSession(code);
     return true;
   }
 
@@ -751,6 +844,68 @@ class AuthService {
       return Map<String, dynamic>.from(response.first);
     } catch (e) {
       return null;
+    }
+  }
+
+  static const bool _qaFailProfileLookup = bool.fromEnvironment(
+    'QA_FAIL_PROFILE_LOOKUP',
+  );
+
+  /// KAN-602: the profile lookup with three honest outcomes. Unlike
+  /// [getUserProfile], a failed check is never reported as "no profile":
+  /// only a query that succeeded and returned no row is
+  /// [ProfileLookupConfirmedNoProfile]. Any thrown error, timeout or lost
+  /// connection (and a missing signed-in user, which cannot be checked) is
+  /// [ProfileLookupCouldNotCheck].
+  Future<ProfileLookupResult> lookupUserProfile({
+    List<String>? fields,
+    String? personaType,
+  }) {
+    return classifyProfileQuery(() async {
+      // QA switch: `--dart-define=QA_FAIL_PROFILE_LOOKUP=true` makes the check
+      // fail after sign-in succeeded, so the could-not-check path can be driven
+      // in a running build without a network conditioner. Ignored in release.
+      if (_qaFailProfileLookup && !kReleaseMode) {
+        throw StateError('QA_FAIL_PROFILE_LOOKUP');
+      }
+      final user = _supabase.auth.currentUser;
+      // No signed-in user: nothing to look up, and that is not an absence.
+      if (user == null) throw StateError('no signed-in user');
+
+      final selectFields = (fields == null || fields.isEmpty)
+          ? '*'
+          : fields.join(',');
+
+      var query = _supabase
+          .from(SupabaseConfig.usersTable)
+          .select(selectFields)
+          .eq('user_id', user.id)
+          .eq('is_active', true);
+
+      if (personaType != null) {
+        query = query.eq('persona_type', personaType);
+      }
+
+      final response = await query
+          .order('updated_at', ascending: false)
+          .limit(1);
+      return response as List<dynamic>;
+    });
+  }
+
+  /// Turns a profile query into the three outcomes: rows -> found, a
+  /// completed query with no rows -> confirmed no profile, any throw (socket,
+  /// timeout, server) -> could not check.
+  @visibleForTesting
+  static Future<ProfileLookupResult> classifyProfileQuery(
+    Future<List<dynamic>> Function() query,
+  ) async {
+    try {
+      final rows = await query();
+      if (rows.isEmpty) return const ProfileLookupConfirmedNoProfile();
+      return ProfileLookupFound(Map<String, dynamic>.from(rows.first as Map));
+    } catch (_) {
+      return const ProfileLookupCouldNotCheck();
     }
   }
 
@@ -1019,7 +1174,9 @@ class AuthService {
             .maybeSingle();
 
         if (existingSportProfile == null) {
-          await _supabase.from(SupabaseConfig.sportProfilesTable).insert(sportProfileData);
+          await _supabase
+              .from(SupabaseConfig.sportProfilesTable)
+              .insert(sportProfileData);
         }
       } catch (e) {
         // Log but don't fail - sport profile is important but not critical
@@ -1044,7 +1201,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingPlayerProfile == null) {
-            await _supabase.from(SupabaseConfig.playerTable).insert(playerProfileData);
+            await _supabase
+                .from(SupabaseConfig.playerTable)
+                .insert(playerProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1069,7 +1228,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingOrganiserProfile == null) {
-            await _supabase.from(SupabaseConfig.organiserTable).insert(organiserProfileData);
+            await _supabase
+                .from(SupabaseConfig.organiserTable)
+                .insert(organiserProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1092,7 +1253,9 @@ class AuthService {
               .maybeSingle();
 
           if (existingHostProfile == null) {
-            await _supabase.from(SupabaseConfig.hostTable).insert(hostProfileData);
+            await _supabase
+                .from(SupabaseConfig.hostTable)
+                .insert(hostProfileData);
           }
         } catch (e) {
           // Log but don't fail completely
@@ -1167,10 +1330,14 @@ class AuthService {
       await _supabase.auth.updateUser(UserAttributes(password: password));
     }
 
-    await _supabase.auth.updateUser(UserAttributes(data: {
-      'display_name': displayName,
-      if (username.isNotEmpty) 'username': username,
-    }));
+    await _supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'display_name': displayName,
+          if (username.isNotEmpty) 'username': username,
+        },
+      ),
+    );
 
     // Normalize country name → ISO code (e.g. "United Arab Emirates" → "AE")
     // The profiles.country FK targets ref_countries.code, not name_en.
@@ -1178,23 +1345,73 @@ class AuthService {
 
     // Use SECURITY DEFINER RPC to avoid PostgREST citext type-inference issues
     // and bypass legacy-field triggers (profile_type / is_player / intention)
-    final profileId = await _supabase.rpc(SupabaseConfig.rpcOnboardProfileFn, params: {
-      'p_user_id': user.id,
-      'p_display_name': displayName,
-      'p_username': username,
-      'p_age': age,
-      'p_gender': gender,
-      'p_persona_type': personaType,
-      if (preferredSport.isNotEmpty) 'p_preferred_sport': preferredSport,
-      if (interests != null && interests.isNotEmpty) 'p_interests': interests,
-      if (countryCode != null) 'p_country': countryCode,
-      if (city != null) 'p_city': city,
-    }) as String;
+    final profileId =
+        await _supabase.rpc(
+              SupabaseConfig.rpcOnboardProfileFn,
+              params: {
+                'p_user_id': user.id,
+                'p_display_name': displayName,
+                'p_username': username,
+                'p_age': age,
+                'p_gender': gender,
+                'p_persona_type': personaType,
+                if (preferredSport.isNotEmpty)
+                  'p_preferred_sport': preferredSport,
+                if (interests != null && interests.isNotEmpty)
+                  'p_interests': interests,
+                if (countryCode != null) 'p_country': countryCode,
+                if (city != null) 'p_city': city,
+              },
+            )
+            as String;
 
-    await DefaultAvatarService(client: _supabase)
-        .ensureProfileAvatar(userId: user.id, profileId: profileId);
+    await DefaultAvatarService(
+      client: _supabase,
+    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
 
     return profileId;
+  }
+
+  /// KAN-650: creates the account's profile through the unified RPC. Returns
+  /// the server's profile id or a typed refusal. It does not set `onboard`,
+  /// call the legacy onboarding RPC or insert extension/tier rows; a retry
+  /// passes the same [input], so the intention key is unchanged.
+  Future<Result<String, UnifiedOnboardingFailure>> onboardUnifiedProfile(
+    UnifiedOnboardingInput input,
+  ) {
+    return UnifiedOnboardingClient(
+      _supabase,
+      resolveCountryCode: _resolveCountryCode,
+    ).onboard(input);
+  }
+
+  /// KAN-648: the auth-metadata half of onboarding, run before the unified
+  /// RPC exactly as the legacy path runs it. Throws if the user is signed out.
+  Future<void> syncOnboardingAuthMetadata({
+    required String displayName,
+    required String username,
+  }) async {
+    if (_supabase.auth.currentUser == null) {
+      throw Exception('User not authenticated');
+    }
+    await _supabase.auth.updateUser(
+      UserAttributes(
+        data: {
+          'display_name': displayName,
+          if (username.isNotEmpty) 'username': username,
+        },
+      ),
+    );
+  }
+
+  /// KAN-648: the avatar step for a profile the unified RPC returned. It is
+  /// idempotent, so a retry with the same [profileId] is safe.
+  Future<void> ensureOnboardingAvatar(String profileId) async {
+    final user = _supabase.auth.currentUser;
+    if (user == null) throw Exception('User not authenticated');
+    await DefaultAvatarService(
+      client: _supabase,
+    ).ensureProfileAvatar(userId: user.id, profileId: profileId);
   }
 
   /// Check if username already exists — uses RPC to avoid btrim(uuid) when
@@ -1206,7 +1423,9 @@ class AuthService {
         params: {'p_username': username.trim()},
       );
       final row = (response is List)
-          ? (response.isNotEmpty ? response.first as Map<String, dynamic> : null)
+          ? (response.isNotEmpty
+                ? response.first as Map<String, dynamic>
+                : null)
           : response as Map<String, dynamic>?;
       if (row == null) return false;
       return !(row['available'] as bool? ?? true);
@@ -1563,4 +1782,26 @@ class AuthService {
       return null;
     }
   }
+}
+
+/// KAN-602: the outcome of [AuthService.lookupUserProfile].
+sealed class ProfileLookupResult {
+  const ProfileLookupResult();
+}
+
+/// The profile row exists.
+class ProfileLookupFound extends ProfileLookupResult {
+  const ProfileLookupFound(this.profile);
+  final Map<String, dynamic> profile;
+}
+
+/// The query succeeded and there is no profile: a genuinely new user.
+class ProfileLookupConfirmedNoProfile extends ProfileLookupResult {
+  const ProfileLookupConfirmedNoProfile();
+}
+
+/// The lookup failed (offline, timeout, server error). Says nothing about
+/// whether a profile exists, so it must never route to onboarding.
+class ProfileLookupCouldNotCheck extends ProfileLookupResult {
+  const ProfileLookupCouldNotCheck();
 }

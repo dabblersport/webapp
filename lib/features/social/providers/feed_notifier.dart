@@ -5,6 +5,10 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/cache/news_item_codec.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/following_sport_filter.dart';
@@ -36,6 +40,9 @@ sealed class FeedState {
   bool get hasMore => false;
   String? get error => null;
   bool get hasNewPosts => false;
+
+  /// KAN-606: the last next-page load failed; the list ends in a retry row.
+  bool get loadMoreFailed => false;
 }
 
 final class FeedLoading extends FeedState {
@@ -62,6 +69,7 @@ final class FeedData extends FeedState {
     this.hasMore = true,
     this.loadingMore = false,
     this.hasNewPosts = false,
+    this.loadMoreFailed = false,
     this.cursor,
   });
 
@@ -82,11 +90,15 @@ final class FeedData extends FeedState {
   /// Cursor for next page — `created_at` of last fetched row from the RPC.
   final DateTime? cursor;
 
+  @override
+  final bool loadMoreFailed;
+
   FeedData copyWith({
     List<FeedItem>? items,
     bool? hasMore,
     bool? loadingMore,
     bool? hasNewPosts,
+    bool? loadMoreFailed,
     Object? cursor = _sentinel,
   }) {
     return FeedData(
@@ -94,6 +106,7 @@ final class FeedData extends FeedState {
       hasMore: hasMore ?? this.hasMore,
       loadingMore: loadingMore ?? this.loadingMore,
       hasNewPosts: hasNewPosts ?? this.hasNewPosts,
+      loadMoreFailed: loadMoreFailed ?? this.loadMoreFailed,
       cursor: cursor == _sentinel ? this.cursor : cursor as DateTime?,
     );
   }
@@ -111,10 +124,70 @@ final class FeedData extends FeedState {
 ///   1. Opens a Realtime channel subscribed to INSERT/DELETE/UPDATE on [posts].
 ///   2. Calls [load] to fetch the initial page via [get_home_feed].
 class FeedNotifier extends StateNotifier<FeedState> {
-  FeedNotifier(this._repo, this._db, {this.activePersonaType})
-    : super(const FeedLoading()) {
+  /// [cache] / [accountId] (KAN-605): the first page is shown from the
+  /// on-device cache at once, then [load] refreshes it in the background.
+  FeedNotifier(
+    this._repo,
+    this._db, {
+    this.activePersonaType,
+    OfflineCache? cache,
+    String? accountId,
+  }) : _cache = cache,
+       _accountId = accountId,
+       super(const FeedLoading()) {
     _subscribeRealtime();
+    _hydrate();
     load();
+  }
+
+  final OfflineCache? _cache;
+  final String? _accountId;
+  static const String _cacheKey = 'feed.foryou';
+
+  bool get _cacheOn => _cache != null && _accountId != null;
+
+  Future<void> _hydrate() async {
+    if (!_cacheOn) return;
+    final hit = await _cache!.read(_accountId!, _cacheKey);
+    if (hit == null || !mounted || state is FeedData) return;
+    try {
+      final map = hit.payload as Map;
+      final items = <FeedItem>[
+        for (final e in (map['items'] as List))
+          switch ((e as Map)['k']) {
+            'n' => FeedNewsItem.fromJson(
+              Map<String, dynamic>.from(e['v'] as Map),
+            ),
+            _ => FeedPostItem(
+              Post.fromJson(Map<String, dynamic>.from(e['v'] as Map)),
+            ),
+          },
+      ];
+      if (items.isEmpty) return;
+      final cursorRaw = map['cursor'] as String?;
+      state = FeedData(
+        items: items,
+        hasMore: map['hasMore'] as bool? ?? true,
+        cursor: cursorRaw == null ? null : DateTime.tryParse(cursorRaw),
+      );
+    } catch (_) {
+      // A cached shape that no longer parses is the same as no cache.
+    }
+  }
+
+  void _persist(FeedData data, DateTime started) {
+    if (!_cacheOn) return;
+    _cache!.write(_accountId!, _cacheKey, {
+      'items': [
+        for (final i in data.items)
+          if (i is FeedPostItem)
+            {'k': 'p', 'v': i.post.toJson()}
+          else if (i is FeedNewsItem)
+            {'k': 'n', 'v': i.toCacheJson()},
+      ],
+      'hasMore': data.hasMore,
+      'cursor': data.cursor?.toUtc().toIso8601String(),
+    }, requestStartedAt: started);
   }
 
   final PostRepository _repo;
@@ -126,6 +199,10 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   static const int _pageSize = 20;
   bool _channelReady = false;
+
+  /// Bumped by every [load]; a next page that lands after a reload started
+  /// belongs to the old list and is dropped.
+  int _generation = 0;
 
   // ── Realtime ────────────────────────────────────────────────────────────────
 
@@ -266,22 +343,39 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   // ── Pagination ──────────────────────────────────────────────────────────────
 
-  Future<void> load() async {
-    if (!mounted) return;
-    state = const FeedLoading();
+  /// Loads the first page. KAN-606: a reload over a feed that has items keeps
+  /// them on screen while it runs and when it fails; only a feed with nothing
+  /// to show goes through [FeedLoading] and [FeedFailure]. Returns whether the
+  /// load succeeded, so a pull-to-refresh can say a failed refresh kept the
+  /// items.
+  Future<bool> load() async {
+    if (!mounted) return false;
+    final generation = ++_generation;
+    if (state.items.isEmpty) state = const FeedLoading();
 
+    final started = DateTime.now();
     try {
-      final page = await _fetchPage(cursor: null);
-      if (!mounted) return;
-      state = FeedData(
+      final page = await _fetchPage(cursor: null).timeout(kRequestTimeout);
+      if (!mounted || generation != _generation) return false;
+      final data = FeedData(
         items: page.items,
         hasMore: page.rawCount >= _pageSize,
         cursor: page.cursor,
         hasNewPosts: false,
       );
+      state = data;
+      _persist(data, started);
+      return true;
     } catch (e) {
-      if (!mounted) return;
-      state = FeedFailure(e.toString());
+      if (!mounted || generation != _generation) return false;
+      final current = state;
+      if (current is FeedData && current.items.isNotEmpty) {
+        // The items stay; a running next page was dropped by the generation.
+        state = current.copyWith(loadingMore: false);
+      } else {
+        state = FeedFailure(e.toString());
+      }
+      return false;
     }
   }
 
@@ -291,7 +385,8 @@ class FeedNotifier extends StateNotifier<FeedState> {
       return;
     }
 
-    state = data.copyWith(loadingMore: true);
+    final generation = _generation;
+    state = data.copyWith(loadingMore: true, loadMoreFailed: false);
 
     try {
       // A raw page can merge down to zero NEW visible items (unsupported
@@ -301,7 +396,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
       var cursor = data.cursor;
       for (var attempt = 0; attempt < 5; attempt++) {
         final page = await _fetchPage(cursor: cursor);
-        if (!mounted) return;
+        if (!mounted || generation != _generation) return;
         final current = state;
         if (current is! FeedData) return;
 
@@ -332,11 +427,12 @@ class FeedNotifier extends StateNotifier<FeedState> {
         state = current.copyWith(loadingMore: false, cursor: cursor);
       }
     } catch (e) {
-      if (!mounted) return;
+      if (!mounted || generation != _generation) return;
       final current = state;
-      // A load-more failure keeps existing data; just stop the spinner.
+      // A load-more failure keeps existing data; the list ends in a retry row
+      // (KAN-606) and [loadMore] is the retry.
       if (current is FeedData) {
-        state = current.copyWith(loadingMore: false);
+        state = current.copyWith(loadingMore: false, loadMoreFailed: true);
       }
     }
   }
@@ -503,5 +599,11 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((
   final db = Supabase.instance.client;
   // KAN-593: rebuilt (and so reloaded) when the active persona switches.
   final persona = ref.watch(activePersonaProvider)?.name;
-  return FeedNotifier(repo, db, activePersonaType: persona);
+  return FeedNotifier(
+    repo,
+    db,
+    activePersonaType: persona,
+    cache: ref.watch(offlineCacheProvider),
+    accountId: ref.watch(cacheAccountIdProvider),
+  );
 });

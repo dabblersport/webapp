@@ -1,3 +1,5 @@
+import 'package:dabbler/core/sync/settings_sync.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'dart:async';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
@@ -7,6 +9,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
 import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
@@ -25,6 +28,8 @@ import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:dabbler/features/app_boot/startup_splash.dart';
+import 'package:dabbler/features/app_boot/min_build/min_build_gate.dart';
+import 'package:dabbler/features/app_boot/min_build/min_build_providers.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter/foundation.dart';
@@ -194,7 +199,19 @@ Future<Widget> _bootstrap() async {
     );
 
     ThemeService().attachAccountSyncListener();
-    await ThemeService().hydrateFromAccount();
+
+    // KAN-926: the minimum-supported-build check runs alongside the theme
+    // hydration below, so the launch splash covers it. It never throws and is
+    // bounded by a short timeout; any uncertainty resolves to "not blocked".
+    final container = ProviderContainer();
+    final minBuildCheck = container.read(minBuildStatusProvider.future);
+    // Bounded (KAN-603): on a dead network the launch carries on with the
+    // theme already stored on the device instead of waiting on the account.
+    try {
+      await ThemeService().hydrateFromAccount().timeout(kRequestTimeout);
+    } catch (_) {
+      // Timeout or failure: local theme state stands.
+    }
 
     // Push notification service — initialize on mobile to set up
     // foreground handling, token refresh, and notification tap listeners.
@@ -233,7 +250,14 @@ Future<Widget> _bootstrap() async {
 
     // TODO(post-rebuild): reinitialize realtime post updates when new service is ready
 
-    return const ProviderScope(child: MyApp());
+    await minBuildCheck;
+
+    // The root: the min-build gate covers the whole app, before routing and
+    // auth, so a signed-out user below the minimum is gated too.
+    return UncontrolledProviderScope(
+      container: container,
+      child: const MinBuildGate(child: MyApp()),
+    );
   } catch (e, st) {
     // Always log bootstrap errors so production web isn't a black box.
     // ignore: avoid_print
@@ -257,6 +281,11 @@ class MyApp extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // The one connection state stays alive for the whole app (KAN-603): it
+    // listens to the OS and to every guarded request's outcome.
+    ref.watch(connectivityProvider);
+    // KAN-608: the offline settings queue lives as long as the app.
+    ref.watch(settingsSyncProvider.notifier);
     final locale = ref.watch(localeProvider);
     ref.listen<UserProfile?>(currentUserProfileProvider, (prev, next) {
       if (next == null) return;

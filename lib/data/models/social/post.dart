@@ -66,6 +66,11 @@ class Post with _$Post {
     @JsonKey(name: 'sport_id') String? sportId,
     @JsonKey(name: 'location_tag_id') String? locationTagId,
     @JsonKey(name: 'location_name') String? locationName,
+
+    /// KAN-592: where the author posted from. Independent of [locationName]
+    /// (the place the post is about). Null = legacy row, shown as Dubai.
+    @JsonKey(name: 'posted_from_city') String? postedFromCity,
+    @JsonKey(name: 'posted_from_area') String? postedFromArea,
     @JsonKey(name: 'vibe_id') String? primaryVibeId,
     @JsonKey(name: 'origin_id') String? originId,
     @JsonKey(name: 'content_class') String? contentClass,

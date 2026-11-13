@@ -6,17 +6,21 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/core/widgets/sport_selection_sheet.dart';
 import 'package:dabbler/features/social/presentation/composer_emoji.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_game_link_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_place_sheet.dart';
+import 'package:dabbler/features/social/presentation/widgets/composer_posted_from_sheet.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/social/presentation/widgets/composer_vibes_sheet.dart';
 import 'package:dabbler/features/social/presentation/widgets/gif_picker_sheet.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/sport.dart';
-import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/social/providers/post_composer_providers.dart';
@@ -99,6 +103,21 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     result.fold(
       (err) {
         if (!mounted) return;
+        // KAN-618: a second tap during a submit; the first one decides.
+        if (err.category == FailureCode.cancelled) return;
+        // KAN-592: no posting city is known. Ask for one; the draft is state,
+        // untouched, and Post is tapped again once a city is chosen.
+        if (err.message == kPostedFromRequired) {
+          showComposerPostedFromSheet(_sheetContext, ref, prompt: true);
+          return;
+        }
+        // KAN-612: offline; nothing was sent and the draft is untouched.
+        if (err.message == kCreateOfflineRefused) {
+          _errorToast(AppLocalizations.of(context).offline_create_refused);
+          return;
+        }
+        // KAN-639: the banner already shows this failure; it is shown once.
+        if (ref.read(postComposerProvider).error != null) return;
         _errorToast(err.message);
       },
       (post) {
@@ -335,98 +354,6 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     );
   }
 
-  Future<void> _showProfileSwitchPicker() async {
-    final profiles = await ref.read(availableProfilesProvider.future);
-
-    if (!mounted || profiles.isEmpty) {
-      return;
-    }
-
-    final activeType = ref.read(activeProfileTypeProvider);
-
-    showComposerSheet<void>(
-      _sheetContext,
-      title: AppLocalizations.of(context).composer_post_as,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          for (final profile in profiles)
-            Builder(
-              builder: (_) {
-                final effectiveType =
-                    (profile.personaType ?? profile.profileType ?? '')
-                        .toLowerCase();
-                final isActive =
-                    effectiveType.isNotEmpty &&
-                    effectiveType == activeType?.toLowerCase();
-                final colors = DabblerColors.of(ctx);
-
-                return DabblerInputRow(
-                  leading: DabblerAvatar(
-                    seed: profile.displayName,
-                    imageUrl: profile.avatarUrl,
-                    size: DabblerAvatarSize.sm,
-                  ),
-                  title: profile.displayName,
-                  subtitle: effectiveType.isNotEmpty
-                      ? _prettifyLabel(effectiveType)
-                      : null,
-                  trailing: isActive
-                      ? DabblerIcon(
-                          'tick-circle',
-                          weight: DabblerIconWeight.bold,
-                          size: DabblerSizing.iconRow,
-                          color: colors.brandPrimary,
-                        )
-                      : null,
-                  onTap: () async {
-                    if (isActive || effectiveType.isEmpty) {
-                      Navigator.pop(ctx);
-                      return;
-                    }
-
-                    final switched = await ref
-                        .read(personaServiceProvider.notifier)
-                        .switchActiveProfile(effectiveType);
-
-                    if (!switched) {
-                      if (mounted) {
-                        _errorToast(
-                          ref.read(personaServiceProvider).errorMessage ??
-                              AppLocalizations.of(
-                                context,
-                              ).composer_switch_failed,
-                        );
-                      }
-                      return;
-                    }
-
-                    ref.read(activeProfileTypeProvider.notifier).state =
-                        effectiveType;
-                    unawaited(persistActiveProfileType(effectiveType));
-                    ref
-                        .read(postComposerProvider.notifier)
-                        .setPersonaTypeSnapshot(effectiveType);
-
-                    final userId = _authService.getCurrentUser()?.id;
-                    if (userId != null) {
-                      await clearProfileCache(ref, userId);
-                    }
-
-                    await _loadUserProfile();
-
-                    if (ctx.mounted) {
-                      Navigator.pop(ctx);
-                    }
-                  },
-                );
-              },
-            ),
-        ],
-      ),
-    );
-  }
-
   // ═══════════════════════════════════════════════════════════════════════
   // BUILD
   // ═══════════════════════════════════════════════════════════════════════
@@ -441,7 +368,9 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
       canSubmit: composerState.canSubmit,
       isSubmitting: composerState.isSubmitting,
       onCtaTap: _submit,
-      errorMessage: composerState.error,
+      errorMessage: composerState.error == kPostFailed
+          ? AppLocalizations.of(context).composer_post_failed
+          : composerState.error,
       designFrame: true,
       children: [
         Padding(
@@ -514,47 +443,39 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
     final avatarUrl = _userProfile?['avatar_url'] as String?;
     final composerState = ref.watch(postComposerProvider);
     final activePersona = ref.watch(activeProfileTypeProvider);
-    final canSwitch = activePersona != null && activePersona.isNotEmpty;
+    final showPersona = activePersona != null && activePersona.isNotEmpty;
 
     return Semantics(
-      label: canSwitch
-          ? AppLocalizations.of(
-              context,
-            ).composer_posting_as_switch(_isolate(context, displayName))
-          : AppLocalizations.of(
-              context,
-            ).composer_posting_as(_isolate(context, displayName)),
-      button: canSwitch,
+      label: AppLocalizations.of(
+        context,
+      ).composer_posting_as(_isolate(context, displayName)),
       excludeSemantics: true,
-      child: DabblerFeedTappable(
-        onTap: canSwitch ? _showProfileSwitchPicker : null,
-        child: Row(
-          children: [
-            DabblerAvatar(
-              seed: displayName,
-              imageUrl: avatarUrl,
-              size: DabblerAvatarSize.md,
-            ),
-            const SizedBox(width: DabblerSpacing.space4),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  DabblerText(displayName, style: DabblerType.subheadline),
-                  if (canSwitch)
-                    DabblerText(
-                      _prettifyLabel(
-                        composerState.personaTypeSnapshot ?? activePersona,
-                      ),
-                      style: DabblerType.footnote,
-                      tone: DabblerTextTone.secondary,
+      child: Row(
+        children: [
+          DabblerAvatar(
+            seed: displayName,
+            imageUrl: avatarUrl,
+            size: DabblerAvatarSize.md,
+          ),
+          const SizedBox(width: DabblerSpacing.space4),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DabblerText(displayName, style: DabblerType.subheadline),
+                if (showPersona)
+                  DabblerText(
+                    _prettifyLabel(
+                      composerState.personaTypeSnapshot ?? activePersona,
                     ),
-                ],
-              ),
+                    style: DabblerType.footnote,
+                    tone: DabblerTextTone.secondary,
+                  ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -565,6 +486,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
 
   Widget _buildKindVisibilityRow(PostComposerState composerState) {
     final colors = DabblerColors.of(context);
+    final l = AppLocalizations.of(context);
+    // KAN-592: where this post is posted from. Never the place tag.
+    final postedFrom =
+        ref.watch(composerPostedFromProvider) ??
+        postedFromOfActive(ref.watch(activeLocationProvider).valueOrNull);
+    final postedFromLabel = postedFrom == null
+        ? l.composer_posted_from_choose
+        : l.composer_posted_from_pill(postedFrom.city);
     return Wrap(
       spacing: DabblerSpacing.space3,
       runSpacing: DabblerSpacing.space3,
@@ -586,6 +515,14 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
               '${_visibilityLabel(composerState.visibility)}. '
               '${AppLocalizations.of(context).composer_tap_to_change}',
           onTap: _showVisibilityPicker,
+        ),
+        DabblerSelectPill(
+          key: const Key('composer-posted-from-pill'),
+          label: postedFromLabel,
+          icon: 'location',
+          tone: colors.warning,
+          semanticLabel: '$postedFromLabel. ${l.composer_tap_to_change}',
+          onTap: () => showComposerPostedFromSheet(_sheetContext, ref),
         ),
       ],
     );

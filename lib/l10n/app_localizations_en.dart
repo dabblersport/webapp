@@ -27,6 +27,13 @@ class AppLocalizationsEn extends AppLocalizations {
   String get error_generic => 'Something went wrong';
 
   @override
+  String get bootstrap_error_title => 'Dabbler couldn\'t start';
+
+  @override
+  String get bootstrap_error_message =>
+      'Something went wrong while starting the app. Check your connection and open the app again.';
+
+  @override
   String get game_full => 'Game is full';
 
   @override
@@ -390,6 +397,86 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get persona_player_cta => 'Find my first game';
+
+  @override
+  String get persona_contributor_name => 'Contributor';
+
+  @override
+  String get persona_contributor_headline => 'You’re in. Let’s play.';
+
+  @override
+  String get persona_contributor_principle =>
+      'Join a game this week, or start one of your own.';
+
+  @override
+  String get persona_contributor_list_title => 'Don’t forget';
+
+  @override
+  String get persona_contributor_item1 =>
+      'Only confirm when you know you can play.';
+
+  @override
+  String get persona_contributor_item2 =>
+      'Respect the organiser’s rules and kickoff time.';
+
+  @override
+  String get persona_contributor_item3 =>
+      'When you organise, share details early and accurately.';
+
+  @override
+  String get persona_contributor_cta => 'Find my first game';
+
+  @override
+  String get persona_contributor_connect_headline =>
+      'Your sports circle starts here.';
+
+  @override
+  String get persona_contributor_connect_principle =>
+      'Follow what you love, meet your people, join when it feels right.';
+
+  @override
+  String get persona_contributor_connect_list_title => 'How this works';
+
+  @override
+  String get persona_contributor_connect_item1 =>
+      'Follow the sports and people you care about.';
+
+  @override
+  String get persona_contributor_connect_item2 =>
+      'Join the conversation, then join the game.';
+
+  @override
+  String get persona_contributor_connect_item3 =>
+      'Keep it friendly — everyone here is someone’s teammate.';
+
+  @override
+  String get persona_contributor_connect_cta => 'Start exploring';
+
+  @override
+  String get persona_contributor_organise_headline =>
+      'Time to bring the game together.';
+
+  @override
+  String get persona_contributor_organise_principle =>
+      'Good games start with good organisation.';
+
+  @override
+  String get persona_contributor_organise_list_title => 'What players expect';
+
+  @override
+  String get persona_contributor_organise_item1 =>
+      'Accurate details — venue, time, level, price.';
+
+  @override
+  String get persona_contributor_organise_item2 =>
+      'Changes shared early, not at kickoff.';
+
+  @override
+  String get persona_contributor_organise_item3 =>
+      'Attendance managed fairly, every time.';
+
+  @override
+  String get persona_contributor_organise_cta => 'Create my first game';
 
   @override
   String get persona_organiser_name => 'Organiser';
@@ -1292,6 +1379,20 @@ class AppLocalizationsEn extends AppLocalizations {
       'We’ll make it the primary sport on your venue profile.';
 
   @override
+  String get onb_sports_title_contributor => 'What sports are you into?';
+
+  @override
+  String get onb_sports_subtitle_contributor =>
+      'Pick the sports you follow, play or organise. You can change these anytime.';
+
+  @override
+  String get onb_primary_title_contributor => 'What’s your main sport?';
+
+  @override
+  String get onb_primary_subtitle_contributor =>
+      'We’ll put it first across your feed, games and profile.';
+
+  @override
   String get onb_sports_search => 'Search sports';
 
   @override
@@ -1301,11 +1402,14 @@ class AppLocalizationsEn extends AppLocalizations {
   String get onb_sports_count_zero => 'Pick at least one to continue.';
 
   @override
-  String get onb_sports_count_one => '1 sport selected';
-
-  @override
-  String onb_sports_count_many(int count) {
-    return '$count sports selected';
+  String onb_sports_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count sports selected',
+      one: '1 sport selected',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2423,6 +2527,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activity_search_hint => 'Search activity…';
 
   @override
+  String get activity_search_no_match_title => 'No matches';
+
+  @override
+  String activity_search_no_match_body(String query, String category) {
+    return 'We couldn\'t find “$query” in $category.';
+  }
+
+  @override
+  String get activity_search_loading_older => 'Searching older activity…';
+
+  @override
+  String get activity_search_clear => 'Clear search';
+
+  @override
   String get activity_pill_upcoming => 'Upcoming';
 
   @override
@@ -3073,6 +3191,20 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get priv_save_failed => 'Failed to save settings. Please try again.';
+
+  @override
+  String get settings_not_synced_retry => 'Not synced. Tap to retry.';
+
+  @override
+  String get settings_will_sync_online => 'Will sync when online';
+
+  @override
+  String get settings_updated_elsewhere =>
+      'This setting was updated on another device. Showing the newer value.';
+
+  @override
+  String get settings_change_rejected =>
+      'This change could not be saved. Showing the saved value.';
 
   @override
   String get priv_saved => 'Saved';
@@ -4261,6 +4393,9 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get composer_create_post => 'Create post';
+
+  @override
+  String get composer_post_failed => 'Couldn\'t post. Please try again.';
 
   @override
   String get composer_post_cta => 'Post';
@@ -5620,6 +5755,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get profile_stat_minutes_played => 'Minutes played';
 
   @override
+  String get profile_stat_games_organised => 'Games organised';
+
+  @override
+  String get profile_section_games_organised => 'Games I organise';
+
+  @override
   String get meetups_tab_all => 'All';
 
   @override
@@ -6313,6 +6454,37 @@ class AppLocalizationsEn extends AppLocalizations {
   String get messaging_chat_offline_retry => 'Try again';
 
   @override
+  String get offline_banner_offline => 'No internet connection – offline mode';
+
+  @override
+  String get offline_banner_poor => 'Poor connection – updates may be slow';
+
+  @override
+  String get offline_saved_content_hint => 'Showing saved content';
+
+  @override
+  String get offline_refresh_failed =>
+      'Couldn\'t refresh. Showing saved content.';
+
+  @override
+  String get offline_load_more_failed => 'Couldn\'t load more. Tap to retry.';
+
+  @override
+  String get offline_setting_not_synced => 'Not synced. Tap to retry.';
+
+  @override
+  String get offline_auth_error_generic =>
+      'We couldn\'t complete sign-in. Check your connection and try again.';
+
+  @override
+  String get offline_bootstrap_failed =>
+      'Couldn\'t start the app. Please try again.';
+
+  @override
+  String get offline_create_refused =>
+      'Creating needs an internet connection. Nothing was created, and what you typed is still here.';
+
+  @override
   String get messaging_chat_error => 'Couldn\'t load this chat. Try again.';
 
   @override
@@ -6735,4 +6907,1582 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get email_password_error_profile_failed =>
       'You are signed in, but we couldn\'t load your account. Try again.';
+
+  @override
+  String get auth_profile_check_failed =>
+      'We couldn\'t check your account right now. Check your connection and try again.';
+
+  @override
+  String get auth_profile_check_retry => 'Try again';
+
+  @override
+  String get auth_otp_generic_error =>
+      'Something went wrong. Please try again.';
+
+  @override
+  String get auth_otp_resend_failed =>
+      'We couldn\'t send a new code. Please try again.';
+
+  @override
+  String get messaging_typing_dm => 'typing…';
+
+  @override
+  String messaging_typing_one(String name) {
+    return '$name is typing';
+  }
+
+  @override
+  String messaging_typing_two(String first, String second) {
+    return '$first and $second are typing';
+  }
+
+  @override
+  String messaging_typing_many(String name, int count) {
+    return '$name and $count others are typing';
+  }
+
+  @override
+  String get messaging_typing_someone => 'Someone';
+
+  @override
+  String get composer_gif_search_placeholder => 'Search GIPHY…';
+
+  @override
+  String get composer_gif_attribution => 'Powered by GIPHY';
+
+  @override
+  String get composer_gif_empty => 'No GIFs found';
+
+  @override
+  String get composer_gif_offline_title => 'You\'re offline';
+
+  @override
+  String get composer_gif_offline_text =>
+      'Check your connection and try again.';
+
+  @override
+  String get composer_gif_unavailable_title =>
+      'GIFs aren\'t available right now';
+
+  @override
+  String get composer_gif_unavailable_text =>
+      'You can still send text. Try again later.';
+
+  @override
+  String get composer_gif_retry => 'Try again';
+
+  @override
+  String get messaging_chat_attach_gif => 'Add a GIF';
+
+  @override
+  String get messaging_gif_badge => 'GIF · GIPHY';
+
+  @override
+  String get messaging_gif_semantic => 'GIF from GIPHY';
+
+  @override
+  String get messaging_receipt_sent => 'Sent';
+
+  @override
+  String get messaging_receipt_sending => 'Sending';
+
+  @override
+  String get messaging_receipt_retrying => 'Retrying';
+
+  @override
+  String get messaging_receipt_delivered => 'Delivered';
+
+  @override
+  String get messaging_receipt_seen => 'Seen';
+
+  @override
+  String get messaging_receipt_not_sent => 'Not sent';
+
+  @override
+  String get messaging_receipt_seen_everyone => 'Seen by everyone';
+
+  @override
+  String messaging_receipt_seen_by_count(int seen, int total) {
+    return 'Seen by $seen of $total';
+  }
+
+  @override
+  String messaging_receipt_delivered_to_count(int delivered, int total) {
+    return 'Delivered to $delivered of $total';
+  }
+
+  @override
+  String get messaging_receipts_title => 'Message info';
+
+  @override
+  String get messaging_receipts_seen_by => 'Seen by';
+
+  @override
+  String get messaging_receipts_delivered_to => 'Delivered to';
+
+  @override
+  String get messaging_receipts_not_yet => 'Not delivered yet';
+
+  @override
+  String get messaging_receipts_not_yet_short => 'Not yet';
+
+  @override
+  String get messaging_receipts_unknown_person => 'Someone';
+
+  @override
+  String get messaging_receipts_all => 'All';
+
+  @override
+  String get messaging_receipts_nobody => 'Nobody';
+
+  @override
+  String get composer_posted_from_title => 'Posted from';
+
+  @override
+  String composer_posted_from_pill(String city) {
+    return 'Posted from $city';
+  }
+
+  @override
+  String get composer_posted_from_choose => 'Choose city';
+
+  @override
+  String get composer_posted_from_search => 'Search cities';
+
+  @override
+  String get composer_posted_from_prompt =>
+      'Choose the city you are posting from, then tap Post. Your draft is kept.';
+
+  @override
+  String get composer_posted_from_none => 'No cities match that search';
+
+  @override
+  String get post_legacy_city => 'Dubai';
+
+  @override
+  String get messaging_share_title => 'Share';
+
+  @override
+  String get messaging_share_gallery => 'Photo library';
+
+  @override
+  String get messaging_share_camera => 'Camera';
+
+  @override
+  String get messaging_share_file => 'Image file';
+
+  @override
+  String get messaging_share_file_hint => 'Images only';
+
+  @override
+  String get messaging_share_gif => 'Search GIFs';
+
+  @override
+  String get messaging_share_gif_hint => 'Powered by GIPHY';
+
+  @override
+  String messaging_image_uploading(int percent) {
+    return 'Uploading · $percent%';
+  }
+
+  @override
+  String get messaging_image_cancel => 'Cancel upload';
+
+  @override
+  String get messaging_image_retry => 'Retry upload';
+
+  @override
+  String get messaging_image_failed => 'Upload failed';
+
+  @override
+  String get messaging_image_open => 'Open image';
+
+  @override
+  String get messaging_image_remove => 'Remove photo';
+
+  @override
+  String get messaging_image_close => 'Close';
+
+  @override
+  String get messaging_image_viewer_title => 'Photo';
+
+  @override
+  String get messaging_image_too_large => 'That image is too large to send.';
+
+  @override
+  String get messaging_image_unsupported =>
+      'Only JPG, PNG and WebP images can be sent.';
+
+  @override
+  String get messaging_image_camera_denied =>
+      'Camera access is off. Allow it in Settings to take a photo.';
+
+  @override
+  String get messaging_image_library_denied =>
+      'Photo access is off. Allow it in Settings to choose a photo.';
+
+  @override
+  String get messaging_image_pick_failed =>
+      'Couldn\'t get that image. Try again.';
+
+  @override
+  String get settings_tile_location => 'Location';
+
+  @override
+  String get location_saved_places => 'Saved places';
+
+  @override
+  String get location_page_private =>
+      'Where you are on this device, and the private places you’ve named. Only you see this page.';
+
+  @override
+  String get location_saved_places_header => 'Saved places · Private';
+
+  @override
+  String get location_saved_places_note =>
+      'Only you see these. They name your location in the app and are never shown on your profile.';
+
+  @override
+  String get location_add_place => 'Add a place';
+
+  @override
+  String get location_custom_name_required => 'Enter a name for this place';
+
+  @override
+  String get sport_overview_title => 'Sport';
+
+  @override
+  String get sport_overview_tab_overview => 'Overview';
+
+  @override
+  String get sport_overview_tab_games => 'Games';
+
+  @override
+  String get sport_overview_tab_meetups => 'Meetups';
+
+  @override
+  String get sport_overview_tab_venues => 'Venues';
+
+  @override
+  String get sport_overview_tab_posts => 'Posts';
+
+  @override
+  String get sport_overview_follow => 'Follow';
+
+  @override
+  String get sport_overview_following => 'Following';
+
+  @override
+  String sport_overview_followers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count followers',
+      one: '1 follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sport_overview_stat_games => 'Games in 7 days';
+
+  @override
+  String get sport_overview_stat_meetups => 'Meetups in 7 days';
+
+  @override
+  String get sport_overview_stat_venues => 'Venues';
+
+  @override
+  String get sport_overview_stat_spaces => 'Spaces';
+
+  @override
+  String get sport_overview_stat_posts => 'Posts';
+
+  @override
+  String get sport_overview_see_all => 'See all';
+
+  @override
+  String get sport_overview_section_games => 'Next games';
+
+  @override
+  String get sport_overview_section_venues => 'Venues';
+
+  @override
+  String get sport_overview_section_posts => 'Latest posts';
+
+  @override
+  String get sport_overview_switch_venues => 'Venues';
+
+  @override
+  String get sport_overview_switch_spaces => 'Spaces';
+
+  @override
+  String get sport_overview_empty_games_title => 'No games in the next 7 days';
+
+  @override
+  String get sport_overview_empty_games_text =>
+      'When someone creates a game for this sport, it shows here.';
+
+  @override
+  String get sport_overview_empty_meetups_title =>
+      'No meetups in the next 7 days';
+
+  @override
+  String get sport_overview_empty_meetups_text =>
+      'When someone creates a meetup for this sport, it shows here.';
+
+  @override
+  String get sport_overview_empty_venues_title => 'No venues yet';
+
+  @override
+  String get sport_overview_empty_venues_text =>
+      'No venue offers this sport in the chosen city.';
+
+  @override
+  String get sport_overview_empty_spaces_title => 'No spaces yet';
+
+  @override
+  String get sport_overview_empty_spaces_text =>
+      'No space for this sport in the chosen city.';
+
+  @override
+  String get sport_overview_empty_posts_title => 'No posts yet';
+
+  @override
+  String get sport_overview_empty_posts_text =>
+      'Posts tagged with this sport show here.';
+
+  @override
+  String get sport_overview_error_title => 'Couldn\'t load this';
+
+  @override
+  String get sport_overview_error_text =>
+      'Check your connection and try again. Nothing is shown until it loads.';
+
+  @override
+  String get sport_overview_retry => 'Retry';
+
+  @override
+  String get sport_overview_load_more => 'Load more';
+
+  @override
+  String get sport_overview_page_error_title => 'This sport isn\'t available';
+
+  @override
+  String get sport_overview_page_error_text =>
+      'It may have been removed, or the page couldn\'t load.';
+
+  @override
+  String get sport_overview_city_label => 'City';
+
+  @override
+  String get sport_overview_city_all => 'All cities';
+
+  @override
+  String get sport_overview_city_pick_title => 'Choose a city';
+
+  @override
+  String get sport_overview_city_clear => 'Clear city';
+
+  @override
+  String get sport_overview_city_cta_title => 'Pick a city to see what\'s on';
+
+  @override
+  String get sport_overview_city_cta_text =>
+      'This only filters this page. Your location stays as it is.';
+
+  @override
+  String get sport_overview_city_cta_button => 'Choose a city';
+
+  @override
+  String sport_overview_city_unmapped(String city) {
+    return 'No listings are grouped under $city yet, so this shows every city.';
+  }
+
+  @override
+  String sport_overview_mutual_one(String a) {
+    return 'Followed by $a';
+  }
+
+  @override
+  String sport_overview_mutual_two(String a, String b) {
+    return 'Followed by $a and $b';
+  }
+
+  @override
+  String sport_overview_mutual_three(String a, String b, String c) {
+    return 'Followed by $a, $b and $c';
+  }
+
+  @override
+  String get sport_overview_create_game => 'Create game';
+
+  @override
+  String get sport_overview_follow_failed =>
+      'Couldn\'t update your Following. Try again.';
+
+  @override
+  String get sport_overview_unfollow_last =>
+      'You must follow at least one sport.';
+
+  @override
+  String get sport_overview_unfollow_practicing =>
+      'You play this sport, so you can\'t unfollow it.';
+
+  @override
+  String get sport_overview_unfollow_primary =>
+      'This is your primary sport, so you can\'t unfollow it.';
+
+  @override
+  String get sport_overview_join_profile_title =>
+      'Do you want to create profile?';
+
+  @override
+  String sport_overview_join_profile_text(String sport) {
+    return 'You need a $sport profile to join. It adds $sport to the sports you play and follow.';
+  }
+
+  @override
+  String get sport_overview_join_profile_yes => 'Yes';
+
+  @override
+  String get sport_overview_join_profile_no => 'No';
+
+  @override
+  String get sport_overview_join_profile_failed =>
+      'Couldn\'t create your profile, so you haven\'t joined. Try again.';
+
+  @override
+  String sport_overview_space_price(String price) {
+    return '$price AED / hour';
+  }
+
+  @override
+  String sport_overview_space_capacity(int count) {
+    return 'Up to $count players';
+  }
+
+  @override
+  String sport_overview_open_page(String sport) {
+    return 'Open $sport page';
+  }
+
+  @override
+  String get sport_overview_kind_plain => 'Sport';
+
+  @override
+  String sport_overview_kind_formats(String formats) {
+    return 'Sport · $formats';
+  }
+
+  @override
+  String get sport_overview_public_chip => 'Public sport page';
+
+  @override
+  String sport_overview_followers_label(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Followers',
+      one: 'Follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get sport_overview_posts_label => 'Posts';
+
+  @override
+  String get sport_overview_create_game_or_meetup => 'Create game or meetup';
+
+  @override
+  String sport_overview_follow_note(String sport) {
+    return '$sport posts, games and news will show in your feed. This doesn’t add $sport to your sports profile.';
+  }
+
+  @override
+  String sport_overview_nocity_title(String sport) {
+    return 'Select a city to see $sport near you';
+  }
+
+  @override
+  String get sport_overview_nocity_text =>
+      'Games, venues, places and posts are listed per city.';
+
+  @override
+  String sport_overview_banner_title(String sport, String city) {
+    return 'Couldn’t load $sport in $city';
+  }
+
+  @override
+  String get sport_overview_banner_text =>
+      'Check your connection and try again. Following still works.';
+
+  @override
+  String get sport_overview_banner_action => 'Try again';
+
+  @override
+  String sport_overview_empty_all_title(String sport, String city) {
+    return 'Nothing for $sport in $city yet';
+  }
+
+  @override
+  String get sport_overview_empty_all_text =>
+      'No games, venues, places or posts here so far. Try another city.';
+
+  @override
+  String get sport_overview_change_city => 'Change city';
+
+  @override
+  String sport_overview_empty_games_city_title(String sport, String city) {
+    return 'No $sport games in $city';
+  }
+
+  @override
+  String sport_overview_empty_meetups_city_title(String sport, String city) {
+    return 'No $sport meetups in $city';
+  }
+
+  @override
+  String get sport_overview_empty_next7_text =>
+      'Nothing scheduled in the next 7 days. Try another city.';
+
+  @override
+  String sport_overview_empty_venues_city_title(String sport, String city) {
+    return 'No $sport venues in $city';
+  }
+
+  @override
+  String sport_overview_empty_venues_city_text(String sport) {
+    return 'Venues are businesses with bookable spaces for $sport.';
+  }
+
+  @override
+  String sport_overview_empty_spaces_city_title(String sport, String city) {
+    return 'No $sport spaces in $city';
+  }
+
+  @override
+  String get sport_overview_empty_spaces_city_text =>
+      'Spaces are the pitches and courts you book inside a venue.';
+
+  @override
+  String sport_overview_play_in(String sport, String city) {
+    return 'Play $sport in $city';
+  }
+
+  @override
+  String get sport_overview_next_7_days => 'Next 7 days';
+
+  @override
+  String get sport_overview_tile_games_meetups => 'Games & meetups';
+
+  @override
+  String get sport_overview_tile_venues_sub => 'To book';
+
+  @override
+  String get sport_overview_tile_spaces_sub => 'Inside venues';
+
+  @override
+  String sport_overview_count_games(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_meetups(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count meetups',
+      one: '1 meetup',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_venues(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count venues',
+      one: '1 venue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_spaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count bookable spaces',
+      one: '1 bookable space',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_count_posts(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts',
+      one: '1 post',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_hero_next(String when) {
+    return 'Next: $when';
+  }
+
+  @override
+  String get sport_overview_section_top_venues => 'Top venues';
+
+  @override
+  String sport_overview_sub_next7(String city) {
+    return 'Next 7 days in $city · soonest first';
+  }
+
+  @override
+  String sport_overview_sub_venues(String sport, String city) {
+    return 'Businesses with $sport spaces in $city · top rated first';
+  }
+
+  @override
+  String sport_overview_sub_spaces(String city) {
+    return 'Pitches inside venues in $city · lowest price first';
+  }
+
+  @override
+  String sport_overview_sub_posts(String sport) {
+    return 'Tagged $sport · newest first';
+  }
+
+  @override
+  String get sport_overview_join => 'Join';
+
+  @override
+  String get sport_overview_book => 'Book';
+
+  @override
+  String get sport_overview_per_hour => 'per hour';
+
+  @override
+  String get sport_overview_currency => 'AED';
+
+  @override
+  String sport_overview_city_sheet_note_device(String city) {
+    return 'Changes this page only. Your location on this device stays $city.';
+  }
+
+  @override
+  String get sport_overview_city_sheet_note =>
+      'Changes this page only. Your location on this device isn’t changed.';
+
+  @override
+  String sport_overview_city_use_device(String city) {
+    return 'Use my location · $city';
+  }
+
+  @override
+  String sport_overview_unfollow_title(String sport) {
+    return 'Unfollow $sport?';
+  }
+
+  @override
+  String sport_overview_unfollow_text(String sport) {
+    return '$sport posts and games stop appearing in your feed. Your sports profile isn’t affected.';
+  }
+
+  @override
+  String get sport_overview_unfollow_confirm => 'Unfollow';
+
+  @override
+  String get sport_overview_unfollow_cancel => 'Cancel';
+
+  @override
+  String get listing_choose_city_title => 'Choose city';
+
+  @override
+  String get listing_select_city => 'Select city';
+
+  @override
+  String get location_intro_select_city => 'Select city';
+
+  @override
+  String location_intro_kicker(String name) {
+    return 'Welcome, $name';
+  }
+
+  @override
+  String get location_intro_title => 'Where do you play?';
+
+  @override
+  String get location_intro_subtitle =>
+      'Your city decides which games, venues and meetups you see. Adding an area turns on distances.';
+
+  @override
+  String get location_intro_manual => 'Enter location manually';
+
+  @override
+  String get location_intro_detecting => 'Finding your area';
+
+  @override
+  String get location_intro_try_again => 'Try again';
+
+  @override
+  String get location_intro_denied_title => 'Location access is off';
+
+  @override
+  String get location_intro_denied_message =>
+      'Turn it on in Settings, or enter your city yourself.';
+
+  @override
+  String get location_intro_no_gps_title => 'We couldn’t get a GPS fix';
+
+  @override
+  String get location_intro_no_gps_message =>
+      'Location services may be off or the signal is weak. Try again, or enter your city.';
+
+  @override
+  String get location_intro_country_title => 'Choose your country';
+
+  @override
+  String get location_intro_country_change => 'Change country';
+
+  @override
+  String get manual_location_search_city => 'Search for a city';
+
+  @override
+  String get manual_location_change_city => 'Change city';
+
+  @override
+  String get manual_location_area_hint => 'Only areas in this city are listed.';
+
+  @override
+  String manual_location_search_area(String city) {
+    return 'Search areas in $city';
+  }
+
+  @override
+  String manual_location_areas_in(String city) {
+    return 'Areas in $city';
+  }
+
+  @override
+  String get location_settings_device_title => 'Device location';
+
+  @override
+  String get location_device_section => 'Location on this device';
+
+  @override
+  String get location_mode_auto => 'Auto';
+
+  @override
+  String get location_mode_manual => 'Manual';
+
+  @override
+  String get location_mode_auto_hint => 'Follows this device\'s location.';
+
+  @override
+  String get location_mode_manual_hint => 'You choose where you are.';
+
+  @override
+  String get location_mode_change => 'Change';
+
+  @override
+  String get location_mode_none_chosen => 'No place chosen';
+
+  @override
+  String get saved_places_load_error => 'Could not load locations';
+
+  @override
+  String get saved_places_save_failed =>
+      'Couldn’t save this location. Try again.';
+
+  @override
+  String get saved_places_empty_title => 'No saved locations yet';
+
+  @override
+  String get saved_places_empty_text =>
+      'Save your home, work, or favourite spots so you can quickly tag them in posts.';
+
+  @override
+  String get saved_places_add_first => 'Add your first location';
+
+  @override
+  String get saved_places_delete => 'Delete';
+
+  @override
+  String get saved_places_delete_title => 'Delete location?';
+
+  @override
+  String saved_places_delete_body(String label) {
+    return 'Remove \"$label\" from your saved locations?';
+  }
+
+  @override
+  String get saved_places_set_primary => 'Set as primary';
+
+  @override
+  String get saved_places_rename => 'Rename';
+
+  @override
+  String get saved_places_rename_title => 'Rename location';
+
+  @override
+  String get saved_places_custom_name => 'Custom name';
+
+  @override
+  String get saved_places_label_school => 'School';
+
+  @override
+  String get saved_places_label_current => 'Current';
+
+  @override
+  String get saved_places_save_title => 'Save this location';
+
+  @override
+  String get saved_places_accuracy_unknown => 'Unknown accuracy';
+
+  @override
+  String get saved_places_search_hint => 'Search for a place…';
+
+  @override
+  String get saved_places_label => 'Label';
+
+  @override
+  String get saved_places_custom_hint => 'e.g. My gym, Parents\' house';
+
+  @override
+  String get saved_places_primary_toggle => 'Set as primary location';
+
+  @override
+  String get saved_places_save_action => 'Save location';
+
+  @override
+  String get saved_places_use_once => 'Use once';
+
+  @override
+  String get location_map_unavailable => 'Map unavailable';
+
+  @override
+  String get location_current_label => 'Current location';
+
+  @override
+  String get location_point_use => 'Use this location';
+
+  @override
+  String get location_point_selected => 'Selected location';
+
+  @override
+  String get location_point_hint =>
+      'Search a place, or tap the map to move the pin.';
+
+  @override
+  String get saved_places_duplicate =>
+      'You already have a saved place at this location.';
+
+  @override
+  String get saved_places_delete_failed =>
+      'Couldn’t delete this place. Try again.';
+
+  @override
+  String get location_search_no_results => 'No results found';
+
+  @override
+  String get location_search_failed => 'Couldn’t load results';
+
+  @override
+  String get onb_intention_title => 'What brings you to Dabbler?';
+
+  @override
+  String get onb_intention_subtitle =>
+      'Choose what brings you here. Your choice helps us understand your goals.';
+
+  @override
+  String get onb_intention_connect_play => 'Connect & play';
+
+  @override
+  String get onb_intention_play_organise => 'Play & organise';
+
+  @override
+  String get onb_intention_organise => 'Organise sport events';
+
+  @override
+  String get onb_intention_host_games => 'Host sports & events';
+
+  @override
+  String get onb_intention_connect_play_body =>
+      'Follow sports, meet people and join the fun.';
+
+  @override
+  String get onb_intention_play_organise_body =>
+      'Join games and bring people together for your own.';
+
+  @override
+  String get onb_intention_organise_body =>
+      'Bring players together and organise games and meetups.';
+
+  @override
+  String get onb_intention_host_games_body =>
+      'Welcome players to your venue and spots.';
+
+  @override
+  String get onb_intention_continue => 'Continue';
+
+  @override
+  String get onb_error_legacy_profile_requires_existing_flow =>
+      'This account already has a profile. Please continue with the existing sign-in flow.';
+
+  @override
+  String get onb_error_profile_migration_required =>
+      'Your profile needs an update before you can continue. Please try again later.';
+
+  @override
+  String get onb_error_persona_change_not_supported =>
+      'Changing the account type isn’t supported yet.';
+
+  @override
+  String get onb_error_single_profile_required =>
+      'An account can have only one profile.';
+
+  @override
+  String get onb_error_persona_conversion_blocked =>
+      'This profile can’t be converted right now.';
+
+  @override
+  String get onb_error_persona_write_via_rpc_only =>
+      'We couldn’t save that change. Please try again.';
+
+  @override
+  String get onb_error_onboarding_intention_mismatch =>
+      'Your choice doesn’t match what we saved. Please choose again.';
+
+  @override
+  String get onb_error_contributor_sports_incomplete =>
+      'Choose at least one sport to continue.';
+
+  @override
+  String get onb_error_generic => 'Something went wrong. Please try again.';
+
+  @override
+  String ratings_summary_from_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ratings',
+      one: '1 rating',
+    );
+    return 'from $_temp0';
+  }
+
+  @override
+  String ratings_summary_semantics(String average) {
+    return 'Rating $average out of 5';
+  }
+
+  @override
+  String get map_attribution_osm => '© OpenStreetMap contributors';
+
+  @override
+  String get games_view_map => 'Show map';
+
+  @override
+  String get games_view_list => 'Show list';
+
+  @override
+  String get games_map_empty_title => 'No games on the map';
+
+  @override
+  String get games_map_empty_text =>
+      'No upcoming public games match your filters. Change the filters or switch back to the list.';
+
+  @override
+  String get challenge_error_sport_required =>
+      'Pick a sport for your challenge, then try again.';
+
+  @override
+  String get challenge_error_invalid_sport =>
+      'That sport isn\'t available. Choose one from the list.';
+
+  @override
+  String get challenge_error_organiser_required =>
+      'Only organiser accounts can create challenges.';
+
+  @override
+  String get profile_upcoming_empty =>
+      'No games yet. Join one nearby or create your own.';
+
+  @override
+  String get profile_find_a_game => 'Find a game';
+
+  @override
+  String get profile_section_sports_you_play => 'Sports you play';
+
+  @override
+  String get profile_stat_games_meetups => 'Games & meetups';
+
+  @override
+  String get profile_stat_new_hero_sub =>
+      'Join or organise one to start your list';
+
+  @override
+  String get profile_stat_played => 'Played';
+
+  @override
+  String get profile_stat_organised => 'Organised';
+
+  @override
+  String get bench_row_title => 'Bench mode';
+
+  @override
+  String get bench_row_off => 'Off';
+
+  @override
+  String bench_row_until(String date) {
+    return 'On until $date';
+  }
+
+  @override
+  String get bench_row_no_end => 'On, no end date';
+
+  @override
+  String get bench_screen_title => 'Bench mode';
+
+  @override
+  String get bench_edit_title => 'Edit bench';
+
+  @override
+  String get bench_explain_title => 'Take a break from the social side';
+
+  @override
+  String get bench_explain_body =>
+      'Sit out for a while. You can still play and show up in game rosters.';
+
+  @override
+  String get bench_paused_head => 'Paused while on bench';
+
+  @override
+  String get bench_paused_1 => 'You can’t post, comment or like';
+
+  @override
+  String get bench_paused_2 =>
+      'You’re hidden from the feed and search, as you choose';
+
+  @override
+  String get bench_paused_3 => 'Friend requests are blocked, as you choose';
+
+  @override
+  String get bench_keep_head => 'Still works';
+
+  @override
+  String get bench_keep_1 => 'Join and play games';
+
+  @override
+  String get bench_keep_2 => 'Show up in game rosters';
+
+  @override
+  String get bench_reason_label => 'Reason (optional)';
+
+  @override
+  String get bench_reason_placeholder => 'A short note for yourself';
+
+  @override
+  String get bench_reason_helper => 'Keep it short.';
+
+  @override
+  String get bench_end_label => 'End date (optional)';
+
+  @override
+  String get bench_end_placeholder => 'No end date';
+
+  @override
+  String get bench_end_helper => 'You can end bench earlier any time.';
+
+  @override
+  String get bench_toggle_feed => 'Hide me in the feed';
+
+  @override
+  String get bench_toggle_feed_sub => 'Your activity won’t appear in feeds.';
+
+  @override
+  String get bench_toggle_search => 'Hide me in search';
+
+  @override
+  String get bench_toggle_search_sub => 'People can’t find you by name.';
+
+  @override
+  String get bench_toggle_friends => 'Block friend requests';
+
+  @override
+  String get bench_toggle_friends_sub => 'No new requests while on bench.';
+
+  @override
+  String get bench_toggle_notifs => 'Mute social notifications';
+
+  @override
+  String get bench_toggle_notifs_sub =>
+      'Likes, comments and friend activity stay quiet.';
+
+  @override
+  String get bench_start => 'Start bench';
+
+  @override
+  String get bench_save => 'Save changes';
+
+  @override
+  String get bench_confirm_title => 'Start bench mode?';
+
+  @override
+  String get bench_confirm_body =>
+      'This applies right away. You can end it any time.';
+
+  @override
+  String get bench_confirm_sum_feed => 'Hidden in the feed';
+
+  @override
+  String get bench_confirm_sum_search => 'Hidden in search';
+
+  @override
+  String get bench_confirm_sum_friends => 'Friend requests blocked';
+
+  @override
+  String get bench_confirm_sum_notifs => 'Social notifications muted';
+
+  @override
+  String bench_confirm_sum_end(String date) {
+    return 'Ends on $date';
+  }
+
+  @override
+  String get bench_confirm_sum_no_end => 'No end date';
+
+  @override
+  String get bench_cancel => 'Cancel';
+
+  @override
+  String get bench_back => 'Back';
+
+  @override
+  String get bench_retry => 'Try again';
+
+  @override
+  String get bench_manage => 'Manage';
+
+  @override
+  String get bench_status_badge => 'On bench';
+
+  @override
+  String get bench_status_head => 'You’re on bench';
+
+  @override
+  String get bench_status_since => 'Since';
+
+  @override
+  String get bench_status_until => 'Until';
+
+  @override
+  String get bench_status_reason => 'Reason';
+
+  @override
+  String get bench_status_hidden_head => 'What’s hidden';
+
+  @override
+  String get bench_status_feed => 'Feed';
+
+  @override
+  String get bench_status_search => 'Search';
+
+  @override
+  String get bench_status_friends => 'Friend requests';
+
+  @override
+  String get bench_status_notifs => 'Social notifications';
+
+  @override
+  String get bench_status_hidden => 'Hidden';
+
+  @override
+  String get bench_status_visible => 'Visible';
+
+  @override
+  String get bench_status_blocked => 'Blocked';
+
+  @override
+  String get bench_status_allowed => 'Allowed';
+
+  @override
+  String get bench_status_muted => 'Muted';
+
+  @override
+  String get bench_status_on => 'On';
+
+  @override
+  String get bench_status_no_end => 'No end date';
+
+  @override
+  String get bench_end => 'End bench';
+
+  @override
+  String get bench_edit_action => 'Edit';
+
+  @override
+  String get bench_end_confirm_title => 'End bench now?';
+
+  @override
+  String get bench_end_confirm_body =>
+      'You’ll be visible again and can post, comment and like.';
+
+  @override
+  String get bench_end_confirm_keep => 'Keep bench';
+
+  @override
+  String get bench_loading => 'Loading';
+
+  @override
+  String get bench_error_start_title => 'Couldn’t start bench';
+
+  @override
+  String get bench_error_start_body => 'Check your connection and try again.';
+
+  @override
+  String get bench_error_load_title => 'Couldn’t load bench mode';
+
+  @override
+  String get bench_error_load_body => 'Check your connection and try again.';
+
+  @override
+  String get bench_offline_title => 'You’re offline';
+
+  @override
+  String get bench_offline_body =>
+      'Connect to end or edit bench. Your status shows as last saved.';
+
+  @override
+  String bench_indicator_home(String date) {
+    return 'On bench until $date';
+  }
+
+  @override
+  String get bench_indicator_home_no_end => 'On bench';
+
+  @override
+  String bench_indicator_profile(String date) {
+    return 'Hidden in the feed and search until $date.';
+  }
+
+  @override
+  String get recurring_repeat_label => 'Repeat';
+
+  @override
+  String get recurring_option_none => 'Does not repeat';
+
+  @override
+  String get recurring_option_weekly => 'Weekly';
+
+  @override
+  String get recurring_option_biweekly => 'Every 2 weeks';
+
+  @override
+  String recurring_summary_weekly(String weekday) {
+    return 'Repeats every week on $weekday';
+  }
+
+  @override
+  String recurring_summary_biweekly(String weekday) {
+    return 'Repeats every 2 weeks on $weekday';
+  }
+
+  @override
+  String get recurring_end_date_label => 'End date';
+
+  @override
+  String get recurring_end_date_none => 'No end date';
+
+  @override
+  String get recurring_end_date_hint =>
+      'Without an end date, the series runs until you end it.';
+
+  @override
+  String get recurring_end_date_pick => 'Choose an end date';
+
+  @override
+  String recurring_end_date_value(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Ends $dateString';
+  }
+
+  @override
+  String get recurring_end_date_clear => 'Remove end date';
+
+  @override
+  String get recurring_end_date_before_start =>
+      'The end date must be after the first game.';
+
+  @override
+  String recurring_limit_hint(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max games',
+      one: '1 game',
+    );
+    return 'Up to $_temp0 per series. Renew it when it ends to keep going.';
+  }
+
+  @override
+  String recurring_limit_reached(int max) {
+    String _temp0 = intl.Intl.pluralLogic(
+      max,
+      locale: localeName,
+      other: '$max games',
+      one: '1 game',
+    );
+    return 'This series has reached its limit of $_temp0. Renew it to schedule more.';
+  }
+
+  @override
+  String get recurring_limit_reached_title => 'Series limit reached';
+
+  @override
+  String recurring_preview_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games',
+      one: '1 game',
+    );
+    return 'This creates $_temp0.';
+  }
+
+  @override
+  String get recurring_renew_action => 'Renew series';
+
+  @override
+  String get recurring_paid_disabled => 'Paid games can\'t repeat yet';
+
+  @override
+  String get recurring_paid_free_hint =>
+      'Make the game free to turn on Repeat.';
+
+  @override
+  String get recurring_paid_switched_off =>
+      'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.';
+
+  @override
+  String get recurring_location_required =>
+      'Choose a venue or set your location to repeat this game.';
+
+  @override
+  String get recurring_badge_label => 'Series';
+
+  @override
+  String get recurring_badge_weekly => 'Weekly series';
+
+  @override
+  String get recurring_badge_biweekly => 'Every 2 weeks';
+
+  @override
+  String recurring_badge_ends(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Series ends $dateString';
+  }
+
+  @override
+  String get recurring_badge_open_ended => 'Runs until the organiser ends it';
+
+  @override
+  String get recurring_badge_semantics => 'Part of a recurring series';
+
+  @override
+  String get recurring_edit_title => 'Edit a recurring game';
+
+  @override
+  String get recurring_edit_subtitle =>
+      'This game is part of a series. What should your changes apply to?';
+
+  @override
+  String get recurring_edit_this_only => 'This game only';
+
+  @override
+  String recurring_edit_this_only_desc(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return 'Only the game on $dateString changes. The rest of the series stays as it is.';
+  }
+
+  @override
+  String get recurring_edit_all_future => 'All future games';
+
+  @override
+  String get recurring_edit_all_future_desc =>
+      'This game and every later game in the series change. Players who joined keep their spot on games that aren\'t rebuilt.';
+
+  @override
+  String get recurring_edit_continue => 'Continue';
+
+  @override
+  String get recurring_edit_close => 'Close';
+
+  @override
+  String get recurring_cancel_title => 'Cancel this series?';
+
+  @override
+  String recurring_cancel_future_line(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count future games will be cancelled.',
+      one: '1 future game will be cancelled.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recurring_cancel_players_line(int players) {
+    String _temp0 = intl.Intl.pluralLogic(
+      players,
+      locale: localeName,
+      other: '$players players have joined and will be notified.',
+      one: '1 player has joined and will be notified.',
+      zero: 'No players have joined yet.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_past_line => 'Past games and their history stay.';
+
+  @override
+  String get recurring_cancel_no_carry_over =>
+      'Nobody is moved to another game automatically.';
+
+  @override
+  String get recurring_cancel_confirm => 'Cancel series';
+
+  @override
+  String get recurring_cancel_keep => 'Keep series';
+
+  @override
+  String get recurring_cancel_done => 'Series cancelled';
+
+  @override
+  String get recurring_cancel_failed =>
+      'Couldn\'t cancel the series. Try again.';
+
+  @override
+  String get recurring_cancel_notif_title => 'Game cancelled';
+
+  @override
+  String recurring_cancel_notif_body(String game, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMEd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '$game on $dateString was cancelled. The organiser ended this series.';
+  }
+
+  @override
+  String get recurring_future_title_label => 'Game title';
+
+  @override
+  String get recurring_future_capacity_label => 'Players';
+
+  @override
+  String get recurring_future_save => 'Save for all future games';
+
+  @override
+  String get recurring_future_done => 'Series updated';
+
+  @override
+  String get recurring_future_failed =>
+      'Couldn\'t update the series. Try again.';
+
+  @override
+  String recurring_kept_with_players_notice(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count games with joined players keep their old details.',
+      one: '1 game with joined players keeps its old details.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recurring_cancel_action => 'Cancel series';
+
+  @override
+  String get profile_visitor_sports_title => 'Sports they play';
+
+  @override
+  String get profile_stat_games_visitor => 'Games';
+
+  @override
+  String profile_stat_sport_games(String sport) {
+    return '$sport games';
+  }
+
+  @override
+  String get profile_stat_as_player_or_organiser => 'As player or organiser';
+
+  @override
+  String get profile_stat_sport_profiles => 'Sport profiles';
+
+  @override
+  String get profile_visitor_upcoming_note =>
+      'Open games they are playing in or organising';
+
+  @override
+  String get profile_tag_playing => 'Playing';
+
+  @override
+  String get profile_tag_organising => 'Organising';
+
+  @override
+  String get profile_tag_organising_playing => 'Organising · Playing';
+
+  @override
+  String get profile_invite_action_semantic => 'Invite';
+
+  @override
+  String get profile_stat_games_played_visitor => 'Games played';
+
+  @override
+  String profile_stat_sport_matches_visitor(String sport) {
+    return '$sport matches';
+  }
+
+  @override
+  String get listing_use_city_only => 'Use city only';
+
+  @override
+  String get update_required_title => 'Update required';
+
+  @override
+  String get update_required_message_store =>
+      'This version of Dabbler is no longer supported. Update the app to keep playing.';
+
+  @override
+  String get update_required_message_web =>
+      'This version of Dabbler is no longer supported. Reload the page to get the latest version.';
+
+  @override
+  String get update_required_action_update => 'Update';
+
+  @override
+  String get update_required_action_reload => 'Reload';
 }

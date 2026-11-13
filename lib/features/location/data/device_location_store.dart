@@ -23,15 +23,31 @@ class DeviceLocation {
     required this.mode,
     required this.provenance,
     required this.updatedAt,
+    this.cityId,
+    this.country,
+    this.countryCode,
+    this.savedLabel,
   });
 
   final String city;
+
+  /// The map-service id and country of the chosen city, so two cities with the
+  /// same name (Paris, France / Paris, Texas) stay distinct. Null when the city
+  /// was derived from an area or a device fix.
+  final String? cityId;
+  final String? country;
+  final String? countryCode;
   final String? area;
   final double? lat;
   final double? lng;
   final DeviceLocationMode mode;
   final DeviceLocationProvenance provenance;
   final DateTime updatedAt;
+
+  /// The label of the saved place this location shows (KAN-589): set when the
+  /// user selected a saved place (Manual) or when Auto's area has exactly one
+  /// saved place. Null shows the area name. Per device, like the rest.
+  final String? savedLabel;
 
   /// Distance sort and radius filters need a point; a city alone has none.
   bool get hasPoint => lat != null && lng != null;
@@ -59,6 +75,9 @@ class DeviceLocationStore {
     if (city == null || mode == null || prov == null) return null;
     return DeviceLocation(
       city: city,
+      cityId: _prefs.getString(_k('cityId')),
+      country: _prefs.getString(_k('country')),
+      countryCode: _prefs.getString(_k('countryCode')),
       area: _prefs.getString(_k('area')),
       lat: _prefs.getDouble(_k('lat')),
       lng: _prefs.getDouble(_k('lng')),
@@ -71,12 +90,17 @@ class DeviceLocationStore {
       updatedAt:
           DateTime.tryParse(_prefs.getString(_k('updatedAt')) ?? '') ??
           DateTime.fromMillisecondsSinceEpoch(0),
+      savedLabel: _prefs.getString(_k('savedLabel')),
     );
   }
 
   Future<void> _write(DeviceLocation l) async {
     await _prefs.setString(_k('city'), l.city);
+    await _setOrRemoveString(_k('cityId'), l.cityId);
+    await _setOrRemoveString(_k('country'), l.country);
+    await _setOrRemoveString(_k('countryCode'), l.countryCode);
     await _setOrRemoveString(_k('area'), l.area);
+    await _setOrRemoveString(_k('savedLabel'), l.savedLabel);
     await _setOrRemoveDouble(_k('lat'), l.lat);
     await _setOrRemoveDouble(_k('lng'), l.lng);
     await _prefs.setString(_k('mode'), l.mode.name);
@@ -100,22 +124,33 @@ class DeviceLocationStore {
     }
   }
 
+  /// Stores [l] as this account's location unchanged: a Manual choice made
+  /// while signed out carried over at sign-in (KAN-589).
+  Future<void> adopt(DeviceLocation l) => _write(l);
+
   /// The user chose a city, and an area with its point. Mode becomes Manual.
   Future<DeviceLocation> setManual({
     required String city,
     String? area,
     required double lat,
     required double lng,
+    String? savedLabel,
     DateTime? now,
   }) async {
+    final DeviceLocation? cur = read();
+    final bool sameCity = cur != null && cur.city == city;
     final DeviceLocation next = DeviceLocation(
       city: city,
+      cityId: sameCity ? cur.cityId : null,
+      country: sameCity ? cur.country : null,
+      countryCode: sameCity ? cur.countryCode : null,
       area: area,
       lat: lat,
       lng: lng,
       mode: DeviceLocationMode.manual,
       provenance: DeviceLocationProvenance.manual,
       updatedAt: now ?? DateTime.now(),
+      savedLabel: savedLabel,
     );
     await _write(next);
     return next;
@@ -124,11 +159,50 @@ class DeviceLocationStore {
   /// The user changed the city. A different city clears the previous area and
   /// coordinates, so distance controls are off until a new area is chosen; the
   /// same city changes nothing. Mode becomes Manual.
-  Future<DeviceLocation> changeCity(String city, {DateTime? now}) async {
+  Future<DeviceLocation> changeCity(
+    String city, {
+    String? cityId,
+    String? country,
+    String? countryCode,
+    bool clearArea = false,
+    DateTime? now,
+  }) async {
     final DeviceLocation? cur = read();
-    if (cur != null && cur.city == city) return cur;
+    // [clearArea]: the user chose the city on its own (KAN-588), so even the
+    // city they are already in drops its area and point.
+    if (cur != null && cur.city == city && !(clearArea && cur.hasPoint)) {
+      // Same name is the same city unless both sides carry an identity and it
+      // differs (Paris, France versus Paris, Texas).
+      final bool differs =
+          (cityId != null && cur.cityId != null && cityId != cur.cityId) ||
+          (countryCode != null &&
+              cur.countryCode != null &&
+              countryCode.toLowerCase() != cur.countryCode!.toLowerCase());
+      if (!differs) {
+        if (cityId == null || cur.cityId != null) return cur;
+        // The same city, now with an identity: keep the area, add the identity.
+        final DeviceLocation withId = DeviceLocation(
+          city: cur.city,
+          cityId: cityId,
+          country: country ?? cur.country,
+          countryCode: countryCode ?? cur.countryCode,
+          area: cur.area,
+          lat: cur.lat,
+          lng: cur.lng,
+          mode: cur.mode,
+          provenance: cur.provenance,
+          updatedAt: cur.updatedAt,
+          savedLabel: cur.savedLabel,
+        );
+        await _write(withId);
+        return withId;
+      }
+    }
     final DeviceLocation next = DeviceLocation(
       city: city,
+      cityId: cityId,
+      country: country,
+      countryCode: countryCode,
       mode: DeviceLocationMode.manual,
       provenance: DeviceLocationProvenance.manual,
       updatedAt: now ?? DateTime.now(),
@@ -146,6 +220,7 @@ class DeviceLocationStore {
     required double lat,
     required double lng,
     bool explicit = false,
+    String? savedLabel,
     DateTime? now,
   }) async {
     final DeviceLocation? cur = read();
@@ -160,6 +235,7 @@ class DeviceLocationStore {
       mode: DeviceLocationMode.auto,
       provenance: DeviceLocationProvenance.gps,
       updatedAt: now ?? DateTime.now(),
+      savedLabel: savedLabel,
     );
     await _write(next);
     return next;
@@ -175,12 +251,16 @@ class DeviceLocationStore {
     if (!cur.hasPoint) return null;
     final DeviceLocation next = DeviceLocation(
       city: cur.city,
+      cityId: cur.cityId,
+      country: cur.country,
+      countryCode: cur.countryCode,
       area: cur.area,
       lat: cur.lat,
       lng: cur.lng,
       mode: DeviceLocationMode.auto,
       provenance: DeviceLocationProvenance.lastKnown,
       updatedAt: cur.updatedAt,
+      savedLabel: cur.savedLabel,
     );
     await _write(next);
     return next;

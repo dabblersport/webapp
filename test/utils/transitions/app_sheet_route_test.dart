@@ -183,6 +183,28 @@ void main() {
       expect(find.text('A'), findsNothing);
     });
 
+    testWidgets('KAN-619: scrim fades over the panel slide, open and close', (
+      tester,
+    ) async {
+      await pumpHost(tester);
+      openApp(_host, 'A');
+      await tester.pump();
+      // The old scrim ran DabblerMotion.base (120 ms) against a 200 ms slide.
+      // The sheet flips `open` a frame after the route starts, so the open
+      // scrim is judged at rest and by its duration, not by a frame count.
+      await tester.pumpAndSettle();
+      expect(scrimOpacity(), 1);
+
+      await tester.tapAt(const Offset(200, 20));
+      await tester.pump();
+      await tester.pump(DabblerMotion.slow - const Duration(milliseconds: 10));
+      expect(scrimOpacity(), greaterThan(0));
+      await tester.pump(const Duration(milliseconds: 10));
+      expect(scrimOpacity(), 0);
+      await tester.pumpAndSettle();
+      expect(find.text('A'), findsNothing);
+    });
+
     testWidgets('dismiss via back (Navigator.maybePop)', (tester) async {
       await pumpHost(tester);
       await sampleOpen(tester, openApp);

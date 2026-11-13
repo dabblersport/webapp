@@ -1,7 +1,14 @@
+import 'package:dabbler/core/services/connectivity_service.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart'
+    show DabblerMotion;
 import 'package:dabbler/utils/helpers/deep_links.dart';
 import 'dart:async';
 
 import 'package:flutter/foundation.dart';
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
+import 'package:dabbler/features/profile/domain/services/persona_service.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
+    show activePersonaProvider;
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -157,6 +164,37 @@ class AppRouter {
         return null;
       }
 
+      // KAN-647: one-profile accounts (contributor/partner) have no Add /
+      // Convert persona flow. A deep link into it is sent back to settings.
+      // (Cold links before the profile loads are refused by the creation
+      // service and the server, which never create a second profile.)
+      if (isAuthenticated && loc.startsWith('/add-persona/')) {
+        final target = singleProfileRedirect(
+          location: loc,
+          isAuthenticated: isAuthenticated,
+          personas: [
+            container.read(activePersonaProvider),
+            ...container
+                .read(personaServiceProvider)
+                .activeProfiles
+                .map((p) => p.personaType),
+          ],
+        );
+        if (target != null) {
+          logRoute('redirect (single-profile account, $loc) -> $target');
+          return target;
+        }
+      }
+
+      // KAN-602: a sign-in screen is checking the profile; stay on it until it
+      // routes (or shows its could-not-check message).
+      if (isAuthenticated &&
+          isOnAuthPage &&
+          routerRefreshNotifier.holdForProfileCheck) {
+        logRoute('allow (profile check in progress)');
+        return null;
+      }
+
       // ─── DEEP LINK RETENTION ───
       // A shared game link (https://app.dabbler.pro/game/<id> or
       // dabbler://app/game/<id>) tapped while logged out gets bounced through
@@ -194,14 +232,21 @@ class AppRouter {
       try {
         final supabase = Supabase.instance.client;
         final currentUser = supabase.auth.currentUser;
-        if (currentUser != null) {
+        // KAN-605: with no connection the check cannot answer, so the app
+        // goes straight on to Home and its cached feed; a slow connection
+        // gets a short wait instead of the full request timeout.
+        final connection = container.read(connectivityProvider);
+        if (currentUser != null && connection != ConnectionStatus.offline) {
           // Check if profile exists for this user
           final profileResponse = await supabase
               .from(SupabaseConfig.usersTable)
               .select('id')
               .eq('user_id', currentUser.id)
               .limit(1)
-              .maybeSingle();
+              .maybeSingle()
+              // Bounded (KAN-603/605): on timeout the catch below lets the
+              // normal flow continue with local state.
+              .timeout(DabblerMotion.timeoutShort);
 
           final hasProfile = profileResponse != null;
 
@@ -414,6 +459,7 @@ class AppRouter {
     profileShareLinkRoute,
     socialRoute,
     sportsExploreRoute,
+    sportOverviewRoute,
     activitiesRoute,
     rewardsRoute,
     profileRoute,
@@ -433,8 +479,10 @@ class AppRouter {
     editGameRoute,
     settingsAccountRoute,
     settingsPrivacyRoute,
+    if (FeatureFlags.benchMode) settingsBenchRoute,
     settingsNotificationsRoute,
     settingsThemeRoute,
+    settingsLocationRoute,
     settingsLanguageRoute,
     preferencesGamesRoute,
     helpCenterRoute,

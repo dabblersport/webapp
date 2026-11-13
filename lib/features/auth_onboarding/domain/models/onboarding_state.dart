@@ -1,3 +1,4 @@
+import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_intention.dart';
 import 'package:freezed_annotation/freezed_annotation.dart';
 
 part 'onboarding_state.freezed.dart';
@@ -44,6 +45,8 @@ class OnboardingData with _$OnboardingData {
     String? gender, // 'male' | 'female'
     // Persona
     String? personaType, // 'player' | 'organiser' | 'host'
+    // KAN-650: separate from the persona; never derived from a label.
+    OnboardingIntention? onboardingIntention,
     // Profile info
     String? displayName,
     String? username,

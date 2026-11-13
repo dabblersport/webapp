@@ -7,8 +7,14 @@ import 'package:dabbler/data/models/games/game_model.dart';
 import 'package:dabbler/data/models/games/player_model.dart';
 
 class SupabaseGamesDataSource implements GamesRemoteDataSource {
+  /// KAN-863: every games read goes through the events-backed projection
+  /// public.kan718_games_compat (KAN-773,
+  /// 20261104110200_kan718_d05_old_client_compat_projection.sql). Same column
+  /// names as public.games and the same row visibility, so models are
+  /// unchanged. No SupabaseConfig constant exists for it (KAN-863 brief).
+  static const _gamesReadView = 'kan718_games_compat';
+
   final SupabaseClient _supabaseClient;
-  StreamSubscription? _gamesSubscription;
 
   // Real-time controllers
   final StreamController<GameModel> _gameUpdatesController =
@@ -18,9 +24,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   final StreamController<Map<String, dynamic>> _gameStatusController =
       StreamController.broadcast();
 
-  SupabaseGamesDataSource(this._supabaseClient) {
-    _initializeRealTimeSubscriptions();
-  }
+  SupabaseGamesDataSource(this._supabaseClient);
 
   bool _isJwtExpired(PostgrestException e) {
     final msg = e.message.toLowerCase();
@@ -50,20 +54,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   Stream<Map<String, dynamic>> get gameStatusChanges =>
       _gameStatusController.stream;
 
-  void _initializeRealTimeSubscriptions() {
-    // Subscribe to games table changes
-    _gamesSubscription = _supabaseClient
-        .from(SupabaseConfig.gamesTable)
-        .stream(primaryKey: ['id'])
-        .listen((data) {
-          for (final record in data) {
-            try {
-              final gameModel = GameModel.fromJson(record);
-              _gameUpdatesController.add(gameModel);
-            } catch (e) {}
-          }
-        });
-  }
+  // KAN-715: no Realtime read of public.games is opened here. The former
+  // `.from(games).stream()` read the table directly (RLS on, no policy, so it
+  // delivered no rows) and nothing in lib/ listens to [gameUpdates]; it only
+  // carries the re-read row after [updateGame]. Change signals for listings and
+  // the game view are the payload-free KAN-755 channels.
 
   /// Helper method to get profile_id from user_id
   /// Returns the first active profile's id for the user
@@ -151,7 +146,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Get game details to check maxPlayers (capacity in DB)
       final gameResponse = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('capacity')
           .eq('id', gameId)
           .single();
@@ -195,29 +190,26 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     }
   }
 
+  /// Only the keys the authorised RPC understands (`p_*`) are forwarded.
+  /// Legacy column keys (host_*, status, ...) are dropped: the RPC derives the
+  /// host, roster row and mirrored columns itself.
+  Map<String, dynamic> _rpcParams(Map<String, dynamic> data) => {
+    for (final e in data.entries)
+      if (e.key.startsWith('p_')) e.key: e.value,
+  };
+
   @override
   Future<GameModel> createGame(Map<String, dynamic> gameData) async {
     try {
-      // Insert game
-      final gameResponse = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
-          .insert(gameData)
-          .select()
-          .single();
-
-      // Add organizer as first player
-      await _supabaseClient.from(SupabaseConfig.gameRosterTable).insert({
-        'game_id': gameResponse['id'],
-        'profile_id': gameData['host_profile_id'],
-        'user_id': gameData['host_user_id'],
-        'role': 'host',
-        'status': 'active', // Database uses 'active' not 'confirmed'
-        'joined_at': DateTime.now().toIso8601String(),
-      });
-
-      return GameModel.fromJson(gameResponse);
+      final id = await _supabaseClient.rpc(
+        SupabaseConfig.rpcCreateGameFn,
+        params: _rpcParams(gameData),
+      );
+      return await getGame(id.toString());
     } on PostgrestException catch (e) {
       throw GameServerException('Database error: ${e.message}');
+    } on GameServerException {
+      rethrow;
     } catch (e) {
       throw GameServerException('Failed to create game: ${e.toString()}');
     }
@@ -234,7 +226,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Query without venue join to avoid foreign key issues
       // Venue data can be fetched separately if needed
-      var query = _supabaseClient.from(SupabaseConfig.gamesTable).select('*');
+      // KAN-715: the event-backed, visibility-filtered projection (games.id
+      // stays the row id); public.games is not readable by the client.
+      var query = _supabaseClient
+          .from(SupabaseConfig.vGameCardTable)
+          .select('*');
 
       // Apply basic filters
       if (filters != null) {
@@ -245,7 +241,8 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
           query = query.lte('start_at', filters['end_date']);
         }
         if (filters['sport'] != null) {
-          query = query.eq('sport', filters['sport']);
+          // games has no `sport` column; the card carries the sport key.
+          query = query.eq('sport_key', filters['sport']);
         }
         // MVP Fix: Database uses 'is_cancelled' not 'status'
         if (filters['status'] != null) {
@@ -299,7 +296,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
 
       // Get game details
       final gameResponse = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('*')
           .eq('id', gameId)
           .single();
@@ -432,12 +429,18 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     Map<String, dynamic> updates,
   ) async {
     try {
+      await _supabaseClient.rpc(
+        SupabaseConfig.rpcUpdateGameFn,
+        params: {..._rpcParams(updates), 'p_game_id': gameId},
+      );
       final response = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
-          .update(updates)
+          .from(_gamesReadView)
+          .select('*')
           .eq('id', gameId)
-          .select()
-          .single();
+          .maybeSingle();
+      if (response == null) {
+        throw GameNotFoundException('Game not found');
+      }
 
       final updatedGame = GameModel.fromJson(response);
       _gameUpdatesController.add(updatedGame);
@@ -455,7 +458,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Get game data with player count
       final response = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('*')
           .eq('id', gameId)
           .maybeSingle();
@@ -501,8 +504,9 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // Get game IDs where user is either host OR joined as player
       // First, get games where user is host
+      // KAN-715: v_my_games is event-backed and exposes creator_user_id.
       final hostedGamesQuery = _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(SupabaseConfig.vMyGamesTable)
           .select('id')
           .eq('creator_user_id', userId);
 
@@ -530,9 +534,9 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
         return [];
       }
 
-      // Query games by IDs
+      // Query the event-backed card projection by games.id
       var query = _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(SupabaseConfig.vGameCardTable)
           .select('*')
           .inFilter('id', allGameIds.toList());
 
@@ -595,7 +599,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // MVP: Simplified query without venue join
       var searchQuery = _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('*')
           .textSearch('title', query);
 
@@ -680,16 +684,16 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }
 
   // Simplified implementations for remaining methods
+  /// Authorised cancel path (KAN-712 inventory S8); not yet in SupabaseConfig.
+  static const String _rpcCancelGameFn = 'rpc_cancel_game';
+
   @override
   Future<bool> cancelGame(String gameId) async {
     try {
-      await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
-          .update({
-            'status': 'cancelled',
-            'cancelled_at': DateTime.now().toIso8601String(),
-          })
-          .eq('id', gameId);
+      await _supabaseClient.rpc(
+        _rpcCancelGameFn,
+        params: {'p_game_id': gameId},
+      );
       return true;
     } catch (e) {
       throw GameServerException('Failed to cancel game: ${e.toString()}');
@@ -705,7 +709,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('*')
           .eq('sport', sportType)
           .eq('is_cancelled', false) // Changed from status to is_cancelled
@@ -772,9 +776,11 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   // Implement remaining abstract methods with basic functionality
   @override
   Future<bool> updateGameStatus(String gameId, String status) async {
+    // The only authorised status change is cancel (rpc_cancel_game). No RPC
+    // sets any other status, and a direct write is refused, so write nothing.
+    if (status != 'cancelled') return false;
     try {
-      await updateGame(gameId, {'status': status});
-      return true;
+      return await cancelGame(gameId);
     } catch (e) {
       return false;
     }
@@ -880,7 +886,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('*, game_favorites!inner(user_id)')
           .eq('game_favorites.user_id', userId)
           .order('start_at') // Changed from scheduled_date to start_at
@@ -917,7 +923,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }) async {
     try {
       final response = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('*, game_roster!inner(user_id)')
           .eq('game_roster.user_id', userId)
           .eq(
@@ -967,7 +973,7 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     try {
       // First get game capacity to determine waitlist
       final gameResponse = await _supabaseClient
-          .from(SupabaseConfig.gamesTable)
+          .from(_gamesReadView)
           .select('capacity')
           .eq('id', gameId)
           .maybeSingle();
@@ -1229,7 +1235,6 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
   }
 
   void dispose() {
-    _gamesSubscription?.cancel();
     _gameUpdatesController.close();
     _playerEventsController.close();
     _gameStatusController.close();

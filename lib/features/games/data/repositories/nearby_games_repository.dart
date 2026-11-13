@@ -13,7 +13,10 @@ abstract class NearbyGamesRepository {
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
   });
 
-  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({String? sportId});
+  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
+    String? sportId,
+    List<String>? areaIds,
+  });
 
   Future<Result<List<NearbyGameModel>, Failure>> getMyUpcomingGames({
     String? sportId,
@@ -43,7 +46,8 @@ class NearbyGamesRepositoryImpl implements NearbyGamesRepository {
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
     String? sportId,
-  }) => _datasource.getAllGames(sportId: sportId);
+    List<String>? areaIds,
+  }) => _datasource.getAllGames(sportId: sportId, areaIds: areaIds);
 
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getMyUpcomingGames({

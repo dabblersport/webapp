@@ -43,6 +43,7 @@
 /u/:profileId	-	GoRoute
 /social	social	GoRoute
 /sports-explore	sports	GoRoute
+/sport/:sportId	sport-overview	GoRoute
 /activities	activities	GoRoute
 /rewards	rewards	GoRoute
 /profile	profile	GoRoute
@@ -64,8 +65,10 @@
 /edit-game/:gameId	edit-game	GoRoute
 /settings/account	-	GoRoute
 /settings/privacy	-	GoRoute
+/settings/bench	settings-bench	GoRoute
 /settings/notifications	-	GoRoute
 /settings/theme	-	GoRoute
+/settings/location	-	GoRoute
 /settings/language	-	GoRoute
 /preferences/games	-	GoRoute
 /help/center	-	GoRoute

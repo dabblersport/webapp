@@ -7,6 +7,7 @@ import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/home/presentation/widgets/section_themed.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -22,6 +23,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/connectivity_overrides.dart';
 import '../../support/render_mode.dart';
 import 'meetup_screens_harness.dart';
 
@@ -123,6 +125,8 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         meetupClockProvider.overrideWithValue(() => _fixedNow),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(
@@ -131,6 +135,9 @@ Future<void> _pump(
           ),
         ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         ...overrides,
       ],
       child: MaterialApp(

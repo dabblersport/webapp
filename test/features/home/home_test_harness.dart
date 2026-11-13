@@ -29,14 +29,23 @@ import 'package:go_router/go_router.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../support/render_mode.dart';
+import '../location/manual_location_surfaces_support.dart';
 
 class FakeFeed extends StateNotifier<FeedState> implements FeedNotifier {
   FakeFeed(super.state);
   int loads = 0;
+  int loadMores = 0;
+
+  /// What [load] answers; true unless a test makes the refresh fail.
+  bool loadSucceeds = true;
   @override
-  Future<void> load() async => loads++;
+  Future<bool> load() async {
+    loads++;
+    return loadSucceeds;
+  }
+
   @override
-  Future<void> loadMore() async {}
+  Future<void> loadMore() async => loadMores++;
   @override
   void clearNewPostsBadge() {}
   @override
@@ -46,7 +55,7 @@ class FakeFeed extends StateNotifier<FeedState> implements FeedNotifier {
 class _Tab extends StateNotifier<TabFeedState> implements TabFeedNotifier {
   _Tab([TabFeedState state = const TabFeedLoading()]) : super(state);
   @override
-  Future<void> load() async {}
+  Future<bool> load() async => true;
   @override
   Future<void> loadMore() async {}
   @override
@@ -216,6 +225,8 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
+        fakeCountryOverride,
         initializeProfileDataProvider.overrideWith((ref) async => false),
         userUpcomingGamesProvider.overrideWith((ref) async => upcoming),
         feedNotifierProvider.overrideWith((ref) => feed),

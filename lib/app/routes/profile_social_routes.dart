@@ -20,9 +20,11 @@ import 'package:dabbler/features/profile/presentation/screens/settings/settings_
 import 'package:dabbler/features/profile/presentation/screens/settings/profile_sports_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/account_management_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/privacy_settings_screen.dart';
+import 'package:dabbler/features/bench/presentation/screens/bench_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/preferences/game_preferences_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/theme_settings_screen.dart';
+import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/support/contact_support_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/support/bug_report_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/about/terms_of_service_screen.dart';
@@ -171,6 +173,21 @@ RouteBase get settingsPrivacyRoute =>
       ),
     );
 
+// /settings/bench — Bench mode (KAN-706), gated by FeatureFlags.benchMode.
+RouteBase get settingsBenchRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.settingsBench,
+      name: RouteNames.settingsBench,
+      redirect: (context, state) =>
+          FeatureFlags.benchMode ? null : RoutePaths.home,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const BenchScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
 RouteBase get settingsNotificationsRoute =>
     GoRoute(
       parentNavigatorKey: rootNavigatorKey,
@@ -178,6 +195,19 @@ RouteBase get settingsNotificationsRoute =>
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
         child: const NotificationSettingsScreen(),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
+/// Settings > Location (KAN-589): this device's location and the owner-private
+/// Saved places. Reached from the Location tile on the Settings dashboard.
+RouteBase get settingsLocationRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: '/settings/location',
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: const SavedLocationsScreen(),
         type: SharedAxisType.horizontal,
       ),
     );

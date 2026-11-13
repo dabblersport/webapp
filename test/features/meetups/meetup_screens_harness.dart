@@ -5,6 +5,7 @@ import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_follow.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -19,6 +20,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import '../location/manual_location_surfaces_support.dart';
 
 /// A recording fake of the meetup repository.
 class FakeMeetupRepository implements MeetupRepository {
@@ -163,6 +165,12 @@ class _DeniedLocation extends ActiveLocationNotifier {
   Future<ActiveLocationState> build() async => ActiveLocationDenied();
 }
 
+/// No Area, but a city (KAN-588: a list needs a city to show anything).
+class _CityOnlyLocation extends ActiveLocationNotifier {
+  @override
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
+}
+
 class _ReadyLocation extends ActiveLocationNotifier {
   @override
   Future<ActiveLocationState> build() async => ActiveLocationReady(
@@ -203,8 +211,10 @@ MeetupListItem meetupRow(
   String? vibeKey,
   List<MeetupAvatar> faces = const <MeetupAvatar>[],
   DateTime? anchor,
+  String? areaId = 'a1',
 }) => MeetupListItem(
   id: id,
+  areaId: areaId,
   title: title,
   startAt: (anchor ?? DateTime.now()).add(startsIn),
   capacity: capacity,
@@ -227,6 +237,7 @@ Future<void> pumpMeetups(
   FakeMeetupRepository repo, {
   Locale locale = const Locale('en'),
   bool locationReady = false,
+  bool denied = false,
   FollowLog? follow,
   List<Override> overrides = const <Override>[],
 }) async {
@@ -237,12 +248,22 @@ Future<void> pumpMeetups(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
+        fakeCountryOverride,
         meetupRepositoryProvider.overrideWithValue(repo),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(
-          locationReady ? _ReadyLocation.new : _DeniedLocation.new,
+          locationReady
+              ? _ReadyLocation.new
+              : denied
+              ? _DeniedLocation.new
+              : _CityOnlyLocation.new,
         ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
+        // Every fixture row is in the Area `a1`, which is Dubai's.
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         isFollowingProvider.overrideWith((ref, p) async => log.following),
         meetupFollowActionProvider.overrideWithValue(({
           required String myProfileId,

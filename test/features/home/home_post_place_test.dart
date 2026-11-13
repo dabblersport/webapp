@@ -1,6 +1,6 @@
-// The feed row's place line shows the post's saved place name only. The area
-// name is never rendered as a place; a null, blank or whitespace name shows
-// no place. EN and AR.
+// KAN-592: the feed row's header names where the author POSTED FROM (area and
+// city, the city alone, or Dubai for a legacy post). The place the post is
+// about is its own pill (placeTagLabel) and never reaches the header. EN and AR.
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
@@ -17,7 +17,12 @@ import 'package:go_router/go_router.dart';
 import 'home_test_harness.dart';
 import '../../support/render_mode.dart';
 
-Post _post({String? locationName, String? areaId}) => Post(
+Post _post({
+  String? locationName,
+  String? areaId,
+  String? postedFromCity,
+  String? postedFromArea,
+}) => Post(
   id: 'p1',
   authorProfileId: 'prof1',
   authorUserId: 'user1',
@@ -29,6 +34,8 @@ Post _post({String? locationName, String? areaId}) => Post(
   body: 'Padel tonight',
   locationName: locationName,
   areaId: areaId,
+  postedFromCity: postedFromCity,
+  postedFromArea: postedFromArea,
   createdAt: DateTime.now().subtract(const Duration(hours: 2)),
   updatedAt: DateTime.now(),
 );
@@ -79,10 +86,8 @@ Future<void> _pump(
   await tester.pump(const Duration(milliseconds: 50));
 }
 
-void _noAreaAsPlace() {
-  expect(find.textContaining('Nad Al Sheba'), findsNothing);
-  expect(find.textContaining('Unknown area'), findsNothing);
-}
+DabblerPostRow _row(WidgetTester tester) =>
+    tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -90,45 +95,83 @@ void main() {
 
   for (final locale in const [Locale('en'), Locale('ar')]) {
     final tag = locale.languageCode;
+    final dubai = locale.languageCode == 'ar' ? '\u062f\u0628\u064a' : 'Dubai';
 
-    testWidgets('[$tag] saved place name is shown', (tester) async {
+    testWidgets('[$tag] header is the posting area and city', (tester) async {
+      await _pump(
+        tester,
+        _post(postedFromCity: 'Dubai', postedFromArea: 'Dubai Marina'),
+        locale: locale,
+      );
+      expect(_row(tester).place, 'Dubai Marina, Dubai');
+      expect(_row(tester).placeTagLabel, isNull);
+    });
+
+    testWidgets('[$tag] no area is invented: the header is the city alone', (
+      tester,
+    ) async {
+      await _pump(tester, _post(postedFromCity: 'Sharjah'), locale: locale);
+      expect(_row(tester).place, 'Sharjah');
+    });
+
+    testWidgets('[$tag] a post about an Abu Dhabi venue, posted from Dubai', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _post(
+          locationName: 'Zayed Sports City',
+          postedFromCity: 'Dubai',
+          postedFromArea: 'Dubai Marina',
+        ),
+        locale: locale,
+      );
+      expect(_row(tester).place, 'Dubai Marina, Dubai');
+      expect(_row(tester).placeTagLabel, 'Zayed Sports City');
+      expect(find.textContaining('Abu Dhabi'), findsNothing);
+    });
+
+    testWidgets('[$tag] legacy post (never recorded) reads Dubai, no tag', (
+      tester,
+    ) async {
+      await _pump(tester, _post(areaId: 'area-nas'), locale: locale);
+      expect(_row(tester).place, dubai);
+      expect(_row(tester).placeTagLabel, isNull);
+      expect(find.textContaining('Nad Al Sheba'), findsNothing);
+    });
+
+    testWidgets('[$tag] a genuinely stored tag on a legacy post is kept', (
+      tester,
+    ) async {
       await _pump(
         tester,
         _post(locationName: 'Marina Padel Club', areaId: 'area-nas'),
         locale: locale,
       );
-      expect(find.textContaining('Marina Padel Club'), findsWidgets);
-      _noAreaAsPlace();
-    });
-
-    testWidgets('[$tag] area name is never shown as the place', (tester) async {
-      await _pump(tester, _post(areaId: 'area-nas'), locale: locale);
-      _noAreaAsPlace();
+      expect(_row(tester).place, dubai);
+      expect(_row(tester).placeTagLabel, 'Marina Padel Club');
     });
 
     for (final name in <String?>[null, '', '   ']) {
-      testWidgets('[$tag] no place line when the name is "${name ?? 'null'}"', (
+      testWidgets('[$tag] no pill when the tag is "${name ?? 'null'}"', (
         tester,
       ) async {
         await _pump(
           tester,
-          _post(locationName: name, areaId: 'area-nas'),
+          _post(locationName: name, postedFromCity: 'Dubai'),
           locale: locale,
         );
-        _noAreaAsPlace();
-        final row = tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
-        expect(row.place, isEmpty);
+        expect(_row(tester).placeTagLabel, isNull);
       });
     }
 
-    testWidgets('[$tag] a padded saved name is trimmed', (tester) async {
+    testWidgets('[$tag] a padded tag is trimmed', (tester) async {
       await _pump(
         tester,
-        _post(locationName: '  Marina Padel Club '),
+        _post(locationName: '  Marina Padel Club ', postedFromCity: 'Dubai'),
         locale: locale,
       );
-      final row = tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
-      expect(row.place, 'Marina Padel Club');
+      expect(_row(tester).placeTagLabel, 'Marina Padel Club');
     });
   }
 }

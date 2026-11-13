@@ -361,9 +361,10 @@ void main() {
     }
 
     // The whole page on one tall canvas, so the lower sections are inspectable.
-    for (final e in [...gameScenes.entries, ...venueScenes.entries].where(
-      (e) => !e.key.endsWith('loading') && !e.key.endsWith('error'),
-    )) {
+    for (final e in [
+      ...gameScenes.entries,
+      ...venueScenes.entries,
+    ].where((e) => !e.key.endsWith('loading') && !e.key.endsWith('error'))) {
       testWidgets('renders ${e.key}-full - $dir', (tester) async {
         await _pump(
           tester,
@@ -479,9 +480,32 @@ void main() {
     );
     expect(find.bySemanticsLabel('Share venue'), findsOneWidget);
     expect(find.text('Open map'), findsOneWidget);
+    // KAN-597: the share stub is gone. With no share sheet in the test host the full venue link is copied.
+    final copied = <String>[];
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+      SystemChannels.platform,
+      (call) async {
+        if (call.method == 'Clipboard.setData') {
+          copied.add((call.arguments as Map)['text'] as String);
+        }
+        return null;
+      },
+    );
+    addTearDown(
+      () => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        SystemChannels.platform,
+        null,
+      ),
+    );
     await tester.tap(find.bySemanticsLabel('Share venue'));
+    await tester.runAsync(
+      () => Future<void>.delayed(const Duration(milliseconds: 200)),
+    );
     await tester.pump();
-    expect(find.text('Sharing coming soon'), findsOneWidget);
+    expect(find.text('Sharing coming soon'), findsNothing);
+    expect(copied, hasLength(1));
+    expect(copied.single, startsWith('https://'));
+    expect(copied.single, contains('/venue/v1'));
     await _unmount(tester);
   });
 }

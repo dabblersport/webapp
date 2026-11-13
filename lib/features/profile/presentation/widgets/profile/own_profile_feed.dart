@@ -15,10 +15,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// The profile's feed: the five tabs and the posts, replies, likes, reposts
 /// and activity of [profileId], each with the design's empty state.
+///
+/// KAN-852: the owner's own activity moved to Home bell → Activity log, so the
+/// owner's profile passes [showActivity] false; a visitor still sees the tab.
 class OwnProfileFeed extends ConsumerStatefulWidget {
-  const OwnProfileFeed({super.key, required this.profileId});
+  const OwnProfileFeed({
+    super.key,
+    required this.profileId,
+    this.showActivity = true,
+  });
 
   final String profileId;
+  final bool showActivity;
 
   @override
   ConsumerState<OwnProfileFeed> createState() => _OwnProfileFeedState();
@@ -47,7 +55,8 @@ class _OwnProfileFeedState extends ConsumerState<OwnProfileFeed> {
               DabblerTabItem(id: '1', label: l10n.profile_tab_replies),
               DabblerTabItem(id: '2', label: l10n.profile_tab_liked),
               DabblerTabItem(id: '3', label: l10n.profile_tab_reposts),
-              DabblerTabItem(id: '4', label: l10n.profile_tab_activity),
+              if (widget.showActivity)
+                DabblerTabItem(id: '4', label: l10n.profile_tab_activity),
             ],
           ),
         ),
@@ -75,7 +84,7 @@ class _OwnProfileFeedState extends ConsumerState<OwnProfileFeed> {
           ref.watch(userRepostedPostsProvider(key)),
           l10n.profile_empty_no_reposts,
         );
-      case 4:
+      case 4 when widget.showActivity:
         return _activity(l10n);
       default:
         return _posts(
@@ -108,11 +117,14 @@ class _OwnProfileFeedState extends ConsumerState<OwnProfileFeed> {
     return async.when(
       data: (List<Post> posts) {
         if (posts.isEmpty) return _Empty(empty);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            for (final Post post in posts) resolvePostLayout(post),
-          ],
+        return Padding(
+          padding: DabblerInsets.feedScreen,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: <Widget>[
+              for (final Post post in posts) resolvePostLayout(post),
+            ],
+          ),
         );
       },
       loading: () => const _Loading(),

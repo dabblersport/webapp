@@ -21,9 +21,11 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_sport_tap.dart';
 import 'package:dabbler/features/venues/presentation/widgets/place_picker_sheet.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
+import 'package:dabbler/utils/helpers/share_links.dart';
 import 'package:dabbler/features/social/utils/post_sport_label.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
@@ -263,7 +265,15 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
   }
 
   void _copyLink(Post post) {
-    Clipboard.setData(ClipboardData(text: post.id));
+    // KAN-597: the full web link for the running environment (Alpha shares Alpha), never the bare post id.
+    Clipboard.setData(
+      ClipboardData(
+        text: ShareLinks.post(
+          post.id,
+          sharerProfileId: ref.read(myProfileIdProvider).valueOrNull,
+        ),
+      ),
+    );
     _toast(AppLocalizations.of(context).post_detail_link_copied);
   }
 
@@ -604,6 +614,9 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
           : null,
       sportLabel: post.sport?.isNotEmpty == true
           ? resolvePostSportLabel(context, ref, post)
+          : null,
+      onSportTap: post.sport?.isNotEmpty == true
+          ? postSportTap(context, post)
           : null,
       // The saved place name only; never the area name.
       placeLabel: (post.locationName ?? '').trim().isEmpty

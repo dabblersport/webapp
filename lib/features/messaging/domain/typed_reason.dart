@@ -19,10 +19,14 @@ enum MessagingReason {
   // Starting a DM below the messaging minimum age (KAN-557). A DM reason sent
   // by the Worker; not in the game-chat `openapi.yaml` Reason enum.
   underAge('under_age', FailureCode.forbidden),
+  // KAN-581: image upload refusals. Sent by the Worker; not in the game-chat
+  // `openapi.yaml` Reason enum, which is an open list.
+  payloadTooLarge('payload_too_large', FailureCode.validation),
+  unsupportedMediaType('unsupported_media_type', FailureCode.validation),
   rateLimited('rate_limited', FailureCode.rateLimited),
   notFound('not_found', FailureCode.notFound),
   invalidRequest('invalid_request', FailureCode.validation),
-  offline('offline', FailureCode.network),
+  offline('offline', FailureCode.noInternet),
   unknown('unknown', FailureCode.unknown);
 
   const MessagingReason(this.wireName, this.category);

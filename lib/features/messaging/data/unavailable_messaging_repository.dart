@@ -1,6 +1,9 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
+import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
@@ -19,7 +22,8 @@ class UnavailableMessagingRepository
         MessagingRepository,
         MyConversationsRepository,
         DmRepository,
-        ModerationReportsRepository {
+        ModerationReportsRepository,
+        MessagingImageRepository {
   const UnavailableMessagingRepository();
 
   static Err<T, Failure> _no<T>() => Err(
@@ -48,6 +52,29 @@ class UnavailableMessagingRepository
     required String body,
     required String idempotencyKey,
   }) async => _no();
+
+  @override
+  Future<Result<MessageAttachment, Failure>> uploadImage({
+    required String conversationId,
+    required PickedImage image,
+    required String idempotencyKey,
+    UploadProgress? onProgress,
+    UploadCancel? cancel,
+  }) async => _no();
+
+  @override
+  Future<Result<Message, Failure>> sendImageMessage({
+    required String conversationId,
+    required String idempotencyKey,
+    required List<String> attachmentIds,
+    String caption = '',
+  }) async => _no();
+
+  @override
+  String attachmentUrl(String attachmentId) => '';
+
+  @override
+  Future<Map<String, String>?> authHeaders() async => null;
 
   @override
   Future<Result<void, Failure>> reportMessage({

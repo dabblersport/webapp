@@ -25,11 +25,11 @@ import '../../support/render_mode.dart';
 /// against `Listings.dc.html` — the card shell, the chrome-to-card and
 /// card-to-card spacing, LTR and RTL, a 2x text scale, dark-mode contrast of
 /// the text on a card, and the loading / empty / error states.
-/// Measurements: `Dabbler-Alpha-Plan/listings/diff-table.md`.
+/// Measurements: the listings diff table (no longer kept as a file).
 
 class _Location extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 const List<Sport> _sports = <Sport>[

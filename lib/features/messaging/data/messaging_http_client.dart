@@ -1,5 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:http/http.dart' as http;
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -17,6 +19,17 @@ typedef MessagingRpcCaller =
 /// expiry, and give up on a Worker request after this long.
 const int messagingTokenRefreshMarginSeconds = 60;
 const int messagingRequestTimeoutSeconds = 15;
+
+/// An image upload may take longer than a JSON request (KAN-581).
+const int messagingUploadTimeoutSeconds = 60;
+
+/// Bytes handed to the network per progress step.
+const int messagingUploadChunkBytes = 32 * 1024;
+
+/// Thrown by [MessagingHttpClient.upload] when the caller cancelled it.
+class UploadCancelledException implements Exception {
+  const UploadCancelledException();
+}
 
 /// The default token supplier: the current Supabase session's access token,
 /// refreshed through the Supabase client when it is expired or about to be.
@@ -70,11 +83,78 @@ class MessagingHttpClient {
   final String _base;
   final Duration timeout;
 
+  /// The caller's current access token, or null when signed out.
+  Future<String?> bearer() => _token();
+
   Uri uri(String path, [Map<String, String>? query]) {
     final u = Uri.parse('$_base/v1$path');
     return (query == null || query.isEmpty)
         ? u
         : u.replace(queryParameters: query);
+  }
+
+  /// Streams [bytes] as the raw request body (KAN-581), reporting progress as
+  /// the network takes each chunk, and stops with [UploadCancelledException]
+  /// when [isCancelled] turns true. The bearer is added like any other call.
+  Future<MessagingHttpResponse> upload(
+    String path, {
+    required Uint8List bytes,
+    required String contentType,
+    Map<String, String>? headers,
+    void Function(int sent, int total)? onProgress,
+    bool Function()? isCancelled,
+  }) async {
+    final token = await _token();
+    final request = http.StreamedRequest('POST', uri(path));
+    request.headers['Accept'] = 'application/json';
+    request.headers['Content-Type'] = contentType;
+    if (token != null && token.isNotEmpty) {
+      request.headers['Authorization'] = 'Bearer $token';
+    }
+    if (headers != null) request.headers.addAll(headers);
+    request.contentLength = bytes.length;
+    final pending = _client.send(request);
+    // A send that fails (no connection, refused) never reads the body, so
+    // feeding it would wait forever. The failure ends the feed instead.
+    final failed = Completer<void>();
+    unawaited(failed.future.catchError((Object _) {}));
+    final response = pending.then<http.StreamedResponse?>(
+      (r) => r,
+      onError: (Object e, StackTrace s) {
+        if (!failed.isCompleted) failed.completeError(e, s);
+        return null;
+      },
+    );
+    Stream<List<int>> chunks() async* {
+      var sent = 0;
+      while (sent < bytes.length) {
+        if (isCancelled?.call() ?? false) throw const UploadCancelledException();
+        final end = math.min(sent + messagingUploadChunkBytes, bytes.length);
+        yield Uint8List.sublistView(bytes, sent, end);
+        sent = end;
+        onProgress?.call(sent, bytes.length);
+      }
+    }
+
+    try {
+      await Future.any<void>([request.sink.addStream(chunks()), failed.future]);
+    } on UploadCancelledException {
+      await request.sink.close();
+      await response;
+      rethrow;
+    }
+    await request.sink.close();
+    final streamed = await pending.timeout(
+      const Duration(seconds: messagingUploadTimeoutSeconds),
+    );
+    final done = await http.Response.fromStream(
+      streamed,
+    ).timeout(const Duration(seconds: messagingUploadTimeoutSeconds));
+    final text = done.body;
+    return MessagingHttpResponse(
+      done.statusCode,
+      text.trim().isEmpty ? null : jsonDecode(text),
+    );
   }
 
   Future<MessagingHttpResponse> send(

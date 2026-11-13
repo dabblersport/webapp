@@ -14,6 +14,7 @@ export async function localD1() {
     modules: true,
     script: "export default { fetch() { return new Response('') } }",
     d1Databases: ["DB"],
+    r2Buckets: ["MEDIA"], // KAN-581: an in-memory private bucket; only attachments.test.ts uses it
   });
   const db = (await mf.getD1Database("DB")) as unknown as D1Database;
   // Every local migration in name order (0001, 0002, ...). A statement ends at a line ending in ";" unless that line
@@ -78,7 +79,7 @@ export function rpcJson(body: unknown, status = 200) {
 }
 
 export function env(db: D1Database, extra: Record<string, string> = {}) {
-  return { DB: db, SUPABASE_URL, SUPABASE_ANON_KEY: "test-placeholder-not-a-key", ...extra };
+  return { DB: db, SUPABASE_URL, SUPABASE_ANON_KEY: "test-placeholder-not-a-key", MESSAGING_ACCESS_MODE: "allowlist", ...extra };
 }
 
 /** One msg_authorize row in the real function's shape (KAN-505). */

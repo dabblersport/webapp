@@ -48,7 +48,15 @@ class SupabaseVenuesWithSportsDataSource implements VenuesWithSportsDataSource {
 
         // Apply optional filters
         if (city != null) {
-          query = query.eq('city', city);
+          // KAN-588: the selected city, matched without regard to case. No
+          // wildcard: the LIKE characters in the name are escaped.
+          query = query.ilike(
+            'city',
+            city
+                .replaceAll('\\', '\\\\')
+                .replaceAll('%', '\\%')
+                .replaceAll('_', '\\_'),
+          );
         }
 
         if (isActive != null) {

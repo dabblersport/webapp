@@ -7,6 +7,7 @@ import 'package:latlong2/latlong.dart';
 
 import 'package:dabbler/data/models/mapbox_place.dart';
 import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 
 /// Reusable Mapbox-powered location search field with dropdown overlay.
 class LocationSearchField extends ConsumerStatefulWidget {
@@ -29,6 +30,14 @@ class LocationSearchField extends ConsumerStatefulWidget {
   ConsumerState<LocationSearchField> createState() =>
       _LocationSearchFieldState();
 }
+
+const double _dropdownGap = 4;
+
+/// The list's own cap (five 56 px rows); never a keyboard height.
+const double _dropdownMaxHeight = 56.0 * 5;
+
+/// Below this much room under the field the list opens above it instead.
+const double _dropdownMinHeight = 160;
 
 class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
   late final TextEditingController _controller;
@@ -104,18 +113,43 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
     final size = renderBox.size;
 
     return OverlayEntry(
-      builder: (_) => Positioned(
-        width: size.width,
-        child: CompositedTransformFollower(
-          link: _layerLink,
-          showWhenUnlinked: false,
-          offset: Offset(0, size.height + 4),
-          child: TapRegion(
-            onTapOutside: (_) => _removeOverlay(),
-            child: _ResultsDropdown(query: _query, onSelected: _selectPlace),
+      builder: (overlayContext) {
+        // KAN-616: the list stays above the on-screen keyboard. The live inset
+        // is read here, so the entry rebuilds when the keyboard moves. It
+        // opens below the field when there is room for it, otherwise above.
+        final MediaQueryData media = MediaQuery.of(overlayContext);
+        final double fieldTop = renderBox.attached
+            ? renderBox.localToGlobal(Offset.zero).dy
+            : 0;
+        final double below =
+            media.size.height -
+            media.viewInsets.bottom -
+            (fieldTop + size.height + _dropdownGap) -
+            DabblerSpacing.space2;
+        final double above =
+            fieldTop - _dropdownGap - media.padding.top - DabblerSpacing.space2;
+        final bool flip = below < _dropdownMinHeight && above > below;
+        final double room = flip ? above : below;
+        final double listHeight = room.clamp(0, _dropdownMaxHeight).toDouble();
+        return Positioned(
+          width: size.width,
+          child: CompositedTransformFollower(
+            link: _layerLink,
+            showWhenUnlinked: false,
+            targetAnchor: flip ? Alignment.topLeft : Alignment.bottomLeft,
+            followerAnchor: flip ? Alignment.bottomLeft : Alignment.topLeft,
+            offset: Offset(0, flip ? -_dropdownGap : _dropdownGap),
+            child: TapRegion(
+              onTapOutside: (_) => _removeOverlay(),
+              child: _ResultsDropdown(
+                query: _query,
+                onSelected: _selectPlace,
+                maxHeight: listHeight,
+              ),
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -146,9 +180,14 @@ class _LocationSearchFieldState extends ConsumerState<LocationSearchField> {
 // =============================================================================
 
 class _ResultsDropdown extends ConsumerWidget {
-  const _ResultsDropdown({required this.query, required this.onSelected});
+  const _ResultsDropdown({
+    required this.query,
+    required this.onSelected,
+    required this.maxHeight,
+  });
 
   final String query;
+  final double maxHeight;
   final void Function(MapboxPlace) onSelected;
 
   @override
@@ -158,7 +197,7 @@ class _ResultsDropdown extends ConsumerWidget {
     return DabblerSurface(
       radius: DabblerRadius.lg,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxHeight: 280),
+        constraints: BoxConstraints(maxHeight: maxHeight),
         child: async.when(
           loading: () => const Padding(
             padding: EdgeInsets.all(DabblerSpacing.space5),
@@ -167,7 +206,7 @@ class _ResultsDropdown extends ConsumerWidget {
           error: (_, __) => Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space5),
             child: DabblerText(
-              'Couldn’t load results',
+              AppLocalizations.of(context).location_search_failed,
               style: DabblerType.subheadline,
               tone: DabblerTextTone.secondary,
             ),
@@ -177,7 +216,7 @@ class _ResultsDropdown extends ConsumerWidget {
               return Padding(
                 padding: const EdgeInsets.all(DabblerSpacing.space5),
                 child: DabblerText(
-                  'No results found',
+                  AppLocalizations.of(context).location_search_no_results,
                   style: DabblerType.subheadline,
                   tone: DabblerTextTone.secondary,
                 ),

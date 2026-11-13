@@ -1,7 +1,5 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-// Route type only (non-visual): "Add location" keeps its existing push.
-import 'package:flutter/material.dart' show MaterialPageRoute;
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,7 +11,7 @@ import 'package:dabbler/data/models/profile_location.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
-import 'package:dabbler/features/location/presentation/screens/saved_locations_screen.dart';
+import 'package:dabbler/features/location/presentation/add_saved_place.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_places.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -228,9 +226,8 @@ class _HomeLocationPickerSheetState
           currentState: currentState,
           onSaved: _useSaved,
           onArea: _useManual,
-          onAdd: () => Navigator.of(context).push(
-            MaterialPageRoute(builder: (_) => const SavedLocationsScreen()),
-          ),
+          onCity: _useCity,
+          onAdd: () => startAddSavedPlace(context, ref),
         ),
         // The end-of-list room the root padding gave, as a trailing gap.
         const SizedBox(height: DabblerSpacing.space9),
@@ -289,6 +286,15 @@ class _HomeLocationPickerSheetState
 
   Future<void> _useSaved(ProfileLocation location) async {
     await ref.read(activeLocationProvider.notifier).useSavedLocation(location);
+    if (mounted) Navigator.of(context).pop();
+  }
+
+  /// KAN-588: the city on its own. Clears any previous area and point, so the
+  /// listings scope to the city and the distance controls turn off.
+  Future<void> _useCity(Area city) async {
+    await ref
+        .read(activeLocationProvider.notifier)
+        .useManualCity(city.city, country: city.country, clearArea: true);
     if (mounted) Navigator.of(context).pop();
   }
 

@@ -1,3 +1,4 @@
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart'
@@ -36,6 +37,8 @@ class BootstrapErrorApp extends StatelessWidget {
     );
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: AppLocalizations.localizationsDelegates,
+      supportedLocales: AppLocalizations.supportedLocales,
       theme: ThemeData(extensions: <ThemeExtension<dynamic>>[colors]),
       home: Builder(
         builder: (context) {
@@ -49,8 +52,12 @@ class BootstrapErrorApp extends StatelessWidget {
                   children: [
                     DabblerBanner(
                       tone: DabblerBannerTone.error,
-                      title: 'Dabbler failed to start',
-                      message: '$error',
+                      // Localized and generic (KAN-603): the raw error is
+                      // logged by main(), never shown to the user.
+                      title: AppLocalizations.of(context).bootstrap_error_title,
+                      message: AppLocalizations.of(
+                        context,
+                      ).bootstrap_error_message,
                     ),
                     if (kDebugMode && stackTrace != null) ...[
                       const DabblerGap.v(DabblerSpacing.space4),

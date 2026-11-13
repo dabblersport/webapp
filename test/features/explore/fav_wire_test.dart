@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
@@ -35,6 +36,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../home/home_test_harness.dart';
 import '../meetups/meetup_screens_harness.dart';
+import '../../support/connectivity_overrides.dart';
 import '../../support/render_mode.dart';
 
 /// Favourites on the venue and meetup cards (CTO ruling v2): the heart is a
@@ -140,6 +142,8 @@ Future<void> _pumpVenues(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         activeLocationProvider.overrideWith(_Location.new),
         activeSportsByProfileCountryProvider.overrideWith(
           (ref) async => _sports,
@@ -209,6 +213,8 @@ Future<void> _pumpMeetups(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         meetupRepositoryProvider.overrideWithValue(
           FakeMeetupRepository()
             ..list = <MeetupListItem>[
@@ -218,6 +224,9 @@ Future<void> _pumpMeetups(
         ),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(_Location.new),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
         meetupSettingsProvider.overrideWith(
           (ref) async => const <String, bool?>{},

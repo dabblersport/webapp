@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -307,19 +308,29 @@ class DataRetentionService {
     return deleted;
   }
 
-  Future<int> _cleanupGameHistory(String userId) async {
+  // KAN-865: the server deletes the caller's own (auth.uid()) events, so
+  // userId is no longer sent; the 2-year floor is clamped server-side.
+  Future<int> _cleanupGameHistory(String userId) => cleanupOwnEventsVia(
+    (fn, params) async => _supabase.rpc(fn, params: params),
+  );
+
+  /// Calls `retention_cleanup_own_events` with a cutoff 2 years before [now]
+  /// and returns the RPC's deleted count; any error returns 0.
+  @visibleForTesting
+  static Future<int> cleanupOwnEventsVia(
+    Future<dynamic> Function(String fn, Map<String, dynamic> params) rpc, {
+    DateTime? now,
+  }) async {
     try {
-      final cutoffDate = DateTime.now().subtract(
-        Duration(days: 365 * 2),
+      final cutoffDate = (now ?? DateTime.now()).toUtc().subtract(
+        const Duration(days: 365 * 2),
       ); // Keep 2 years
 
-      final result = await _supabase
-          .from(SupabaseConfig.gamesTable)
-          .delete()
-          .eq('creator_id', userId)
-          .lt('created_at', cutoffDate.toIso8601String());
+      final result = await rpc(SupabaseConfig.retentionCleanupOwnEventsRpc, {
+        'p_cutoff': cutoffDate.toIso8601String(),
+      });
 
-      return result.length;
+      return result as int;
     } catch (e) {
       Logger.warning('$_logTag: Error cleaning up game history', e);
       return 0;

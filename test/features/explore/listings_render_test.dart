@@ -30,6 +30,7 @@ import '../home/home_test_harness.dart';
 import '../../support/geometry_dump.dart';
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import '../../support/render_mode.dart';
+import '../location/manual_location_surfaces_support.dart';
 
 /// Renders the Games and Venues listings (content, loading, empty, filter
 /// sheet) and the explore drawers/widgets under the design-system theme in LTR
@@ -60,7 +61,7 @@ Future<void> _shootC4(WidgetTester tester, Key key, String name) async {
 
 class _Location extends ActiveLocationNotifier {
   @override
-  Future<ActiveLocationState> build() async => ActiveLocationDenied();
+  Future<ActiveLocationState> build() async => ActiveLocationCityOnly('Dubai');
 }
 
 /// A ready location (Dubai), for frames the design draws with one.
@@ -208,6 +209,7 @@ List<VenueWithSportModel> _venues() => const <VenueWithSportModel>[
     id: 'v1',
     sportId: 's1',
     nameEn: 'Dubai Sports City Pitch 3',
+    coverUrl: 'https://example.invalid/pitch3.jpg',
     city: 'Dubai',
     area: 'Sports City',
     isIndoor: false,
@@ -261,6 +263,8 @@ Future<void> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        fakeCatalogOverride,
+        fakeCountryOverride,
         activeLocationProvider.overrideWith(
           locationReady ? _ReadyLocation.new : _Location.new,
         ),
@@ -548,6 +552,14 @@ void main() {
       expect(find.text(dir == 'rtl' ? 'ملاعب' : 'Venues'), findsOneWidget);
       expect(find.text('Dubai Sports City Pitch 3'), findsOneWidget);
       expect(find.byType(DabblerCardVenue), findsWidgets);
+      // KAN-638: details-only cards. No cover, with or without a photo URL
+      // (Pitch 3 has one, the other two do not), and no photo request.
+      expect(find.byType(DabblerImage), findsNothing);
+      for (final DabblerCardVenue card in tester.widgetList<DabblerCardVenue>(
+        find.byType(DabblerCardVenue),
+      )) {
+        expect(card.cover, isNull);
+      }
       // The favourite is the bare DS heart (Listings 2026-10-08b): no chip,
       // no share group.
       expect(find.byType(DabblerListingSocial), findsNothing);
@@ -619,7 +631,7 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(find.text('Select Location'), findsOneWidget);
-      expect(find.text('Downtown Dubai'), findsOneWidget);
+      expect(find.text(l.region_country_UAE), findsOneWidget);
       await _shoot(tester, key, 'manual-location-$dir');
     }, variant: desktop);
 

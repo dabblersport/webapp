@@ -18,6 +18,9 @@ export const REASON_STATUS = {
   // KAN-513 (T18): the moderator read refuses a caller the existing admin check rejects. The contract's reason
   // list is open (openapi.yaml, Reason); this reason belongs to the moderator endpoint, not the chat client.
   not_a_moderator: 403,
+  // KAN-581: image upload refusals. The reason list is open (openapi.yaml, Reason).
+  payload_too_large: 413,
+  unsupported_media_type: 415,
 } as const;
 
 export type Reason = keyof typeof REASON_STATUS;

@@ -1,6 +1,9 @@
-/// The app's service region (KAN-584): account-level, explicitly chosen by the
-/// user, never inferred from VPN, IP or device locale. Separate from the public
-/// profile country and from the device's current location.
+/// The app's service region (KAN-584): account-level and explicitly chosen by
+/// the user. KAN-640 R6: with nothing saved, the first screen preselects the
+/// country detected once from the IP (Global when unsupported or on failure); a
+/// manual choice always wins. Never inferred from VPN or device locale.
+/// Separate from the public profile country and from the device's current
+/// location.
 library;
 
 const String kGlobalRegion = 'Global';

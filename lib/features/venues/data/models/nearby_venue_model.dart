@@ -88,6 +88,32 @@ class NearbyVenueModel {
     );
   }
 
+  /// The row shape [NearbyVenueModel.fromJson] reads (KAN-605: the on-device
+  /// listing cache stores this).
+  Map<String, dynamic> toJson() => {
+    'id': id,
+    'name_en': nameEn,
+    'name_ar': nameAr,
+    'city': city,
+    'area': area,
+    'is_indoor': isIndoor,
+    'price_per_hour': pricePerHour,
+    'latitude': latitude,
+    'longitude': longitude,
+    'distance_meters': distanceMeters,
+    'sport_names': sportNames,
+    'cover_url': coverUrl,
+    'rating': rating,
+    'rating_count': ratingCount,
+    'is_verified': isVerified,
+    'is_open_now': isOpenNow,
+    'amenities': amenities,
+    'sports': sports,
+    'sports_ar': sportsAr,
+    'favorite_count': favoriteCount,
+    'favourited_by_me': favouritedByMe,
+  };
+
   static List<String> _parseStrings(dynamic raw) {
     if (raw == null) return const [];
     if (raw is List) return raw.map((e) => e.toString()).toList();

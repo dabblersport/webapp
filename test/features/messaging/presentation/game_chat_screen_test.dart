@@ -155,12 +155,9 @@ Future<void> _shot(WidgetTester tester, String name) async {
   });
 }
 
-Iterable<String> _iconNames(WidgetTester tester) =>
-    tester.widgetList<DabblerIcon>(find.byType(DabblerIcon)).map((i) => i.name);
-
-/// D8 and the out-of-scope list: nothing of these is drawn.
+/// The out-of-scope list: nothing of these is drawn. (KAN-580 supersedes D8:
+/// a sent message of your own now carries the Sent tick.)
 void _expectNothingForbidden(WidgetTester tester) {
-  expect(_iconNames(tester), isNot(contains('tick-circle')));
   expect(find.byType(DabblerTypingIndicator), findsNothing);
   expect(find.byType(DabblerReactionGroup), findsNothing);
   for (final s in const [
@@ -310,7 +307,7 @@ void main() {
         );
         expect(
           thread.items.whereType<DabblerThreadMessage>().last.deliveryState,
-          isNull,
+          DabblerDeliveryState.sent, // KAN-580: the server has it
         );
 
         // Failed.
@@ -336,7 +333,7 @@ void main() {
         );
         final retried = thread.items.whereType<DabblerThreadMessage>().last;
         expect(retried.content, 'again');
-        expect(retried.deliveryState, isNull);
+        expect(retried.deliveryState, DabblerDeliveryState.sent);
         expect(
           repo.storedMessages('conv-g1').where((m) => m.body == 'again'),
           hasLength(1),

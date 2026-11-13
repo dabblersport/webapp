@@ -148,7 +148,9 @@ void main() {
       const Locale('en'),
     );
     expect(find.text('Welcome back, Marcus'), findsOneWidget);
-    expect(find.textContaining('Adeyemi'), findsNothing);
+    // The poster's identity pill carries the full name; the greeting stays first-name only.
+    expect(find.text('Marcus Adeyemi'), findsOneWidget);
+    expect(find.textContaining('Welcome back, Marcus Adeyemi'), findsNothing);
   }, variant: desktop);
 
   testWidgets('email: continue is disabled until the email is valid', (

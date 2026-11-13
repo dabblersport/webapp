@@ -28,6 +28,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../support/render_mode.dart';
+import '../../support/connectivity_overrides.dart';
 
 /// KAN-472: the Create game composer mirrors the Home Feed design's Create
 /// game frame (`Home Feed.dc.html:925-1062`) inside the DS sheet, with the
@@ -173,7 +174,10 @@ Future<void> _pump(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
-      overrides: [activePersonaProvider.overrideWithValue(persona)],
+      overrides: [
+        onlineConnectivity(),
+        activePersonaProvider.overrideWithValue(persona),
+      ],
       child: MaterialApp.router(
         debugShowCheckedModeBanner: false,
         builder: (context, child) => DabblerToastProvider(
@@ -256,14 +260,13 @@ Future<DateTime> _fill(WidgetTester tester, AppLocalizations l) async {
     await tester.tap(find.bySemanticsLabel(RegExp('Next')).first);
     await _settle(tester);
   }
-  await tester.tap(
-    find
-        .descendant(
-          of: find.byType(DabblerCalendar),
-          matching: find.text('${day.day}'),
-        )
-        .last,
+  // The grid also shows the adjacent months' days: an early day of this
+  // month is the first match, a late one the last.
+  final Finder dayCells = find.descendant(
+    of: find.byType(DabblerCalendar),
+    matching: find.text('${day.day}'),
   );
+  await tester.tap(day.day <= 15 ? dayCells.first : dayCells.last);
   await _settle(tester);
   await _tap(tester, find.text(l.composer_continue_time));
   await _tap(tester, find.text(l.composer_confirm));
@@ -384,6 +387,12 @@ void main() {
       );
       expect(glyph.name, 'grid-2');
       expect(glyph.size, 20);
+
+      // KAN-697: Repeat is its own sunken row (36 circle), not a composer row.
+      expect(
+        find.byKey(const ValueKey<String>('game-repeat-row')),
+        findsOneWidget,
+      );
 
       // Icons by row, in the design's order.
       final List<String> icons = tester
@@ -523,6 +532,11 @@ void main() {
         ),
         '35',
       );
+      // KAN-697: the Repeat rows made the form taller; lift the pill clear of
+      // the sticky submit bar before tapping it.
+      await tester.ensureVisible(find.text(l.game_join_request));
+      await tester.drag(find.byType(Scrollable).first, const Offset(0, -160));
+      await _settle(tester, 2);
       await _tap(tester, find.text(l.game_join_request));
       await _tap(tester, find.byType(DabblerToggle).first);
       await tester.enterText(
@@ -549,7 +563,10 @@ void main() {
       final calls = _rpc.where((c) => c.$1 == 'rpc_create_game').toList();
       expect(calls, hasLength(1));
       // The pre-KAN-472 payload, key for key (see the baseline note).
-      expect(calls.single.$2, <String, dynamic>{
+      // KAN-612: the create also carries the attempt's request id.
+      final sent = Map<String, dynamic>.of(calls.single.$2);
+      expect(sent.remove('p_request_id'), isA<String>());
+      expect(sent, <String, dynamic>{
         'p_actor_type': 'player',
         'p_sport_id': 's-padel',
         'p_sport_variant_id': 'v-doubles',
@@ -711,6 +728,7 @@ void main() {
       await tester.pumpWidget(
         ProviderScope(
           overrides: [
+            onlineConnectivity(),
             activePersonaProvider.overrideWithValue(PersonaType.player),
             meetupSportsProvider.overrideWith(
               (ref) async => const <MeetupSport>[

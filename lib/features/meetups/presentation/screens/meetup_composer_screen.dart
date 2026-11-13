@@ -1,4 +1,6 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/widgets/composer_drawer_kit.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_inputs.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
@@ -99,7 +101,12 @@ class MeetupComposerScreen extends ConsumerStatefulWidget {
     this.initialDate,
     this.initialStart,
     this.initialPlace,
+    this.requestId,
   });
+
+  /// KAN-618: the holder of this create attempt's request id. A test passes
+  /// its own to read the id; by default the screen makes one.
+  final CreateRequestId? requestId;
 
   /// Pre-fills for tests and deep links.
   final DateTime? initialDate;
@@ -136,6 +143,11 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   bool _busy = false;
   String? _error;
 
+  /// KAN-618: one request id per create attempt. It is kept across failed
+  /// retries and cleared on success, on a form edit and when the drawer
+  /// closes. Sent to `rpc_create_meetup` (KAN-612).
+  late final CreateRequestId _requestId = widget.requestId ?? CreateRequestId();
+
   @override
   void initState() {
     super.initState();
@@ -155,9 +167,18 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
 
   @override
   void dispose() {
+    _requestId.clear();
     _title.dispose();
     _note.dispose();
     super.dispose();
+  }
+
+  /// A real form edit ends the current attempt, so the next Create gets a new
+  /// id even when the user later puts the old value back. Edits while a
+  /// request is in flight do not touch it.
+  void _edit(VoidCallback change) {
+    if (!_busy) _requestId.clear();
+    setState(change);
   }
 
   /// The frame's rule: the button is live once an activity is chosen
@@ -178,7 +199,16 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
       DateTime(d.year, d.month, d.day, t.hour, t.minute);
 
   Future<void> _submit() async {
+    // KAN-618: a second tap while one is in flight is dropped.
+    if (_busy) return;
     final l = AppLocalizations.of(context);
+    // KAN-612: creating offline is refused up front. Nothing is sent, no id
+    // is made and the form stays exactly as typed.
+    if (ref.read(connectivityProvider) == ConnectionStatus.offline) {
+      setState(() => _error = l.offline_create_refused);
+      return;
+    }
+    final requestId = _requestId.begin();
     final missing = _missing(l);
     if (missing != null) {
       setState(() {
@@ -224,6 +254,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             maxSkill: _maxSkill,
             vibeKey: _vibe?.key,
             isIndoor: place.venueId == null ? _indoor : null,
+            requestId: requestId,
           ),
         );
     if (!mounted) return;
@@ -233,6 +264,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
         _error = meetupErrorText(l, f, l.meetups_create_failed);
       }),
       (id) {
+        _requestId.clear();
         setState(() => _busy = false);
         final done = widget.onCreated;
         if (done != null) {
@@ -246,13 +278,13 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
 
   Future<void> _pickDate() async {
     final d = await pickMeetupDate(context, _date);
-    if (d != null && mounted) setState(() => _date = d);
+    if (d != null && mounted) _edit(() => _date = d);
   }
 
   Future<void> _pickTime({required bool end}) async {
     final t = await pickMeetupTime(context, end ? _end : _start);
     if (t != null && mounted) {
-      setState(() => end ? _end = t : _start = t);
+      _edit(() => end ? _end = t : _start = t);
     }
   }
 
@@ -266,7 +298,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
         if (_minSkill != null)
           ComposerClearRow(
             onClear: () {
-              setState(() {
+              _edit(() {
                 _minSkill = null;
                 _maxSkill = null;
               });
@@ -276,7 +308,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
         MeetupSkillRows(
           minSkill: _minSkill,
           onPick: (min, max) {
-            setState(() {
+            _edit(() {
               _minSkill = min;
               _maxSkill = max;
             });
@@ -305,7 +337,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
         if (_vibe != null)
           ComposerClearRow(
             onClear: () {
-              setState(() => _vibe = null);
+              _edit(() => _vibe = null);
               Navigator.pop(ctx);
             },
           ),
@@ -314,7 +346,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             title: v.label,
             selected: _vibe == v,
             onTap: () {
-              setState(() => _vibe = v);
+              _edit(() => _vibe = v);
               Navigator.pop(ctx);
             },
           ),
@@ -325,7 +357,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
   Future<void> _pickPlace() async {
     final p = await pickMeetupPlace(context, _place);
     if (p != null && mounted) {
-      setState(() {
+      _edit(() {
         _place = p;
         _settingMissing = false;
       });
@@ -344,7 +376,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             title: e.$2,
             selected: _policy == e.$1,
             onTap: () {
-              setState(() => _policy = e.$1);
+              _edit(() => _policy = e.$1);
               Navigator.pop(ctx);
             },
           ),
@@ -406,7 +438,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
                     emoji: s.emoji ?? '',
                     label: _sportName(s),
                     selected: _sport?.id == s.id,
-                    onTap: () => setState(() => _sport = s),
+                    onTap: () => _edit(() => _sport = s),
                   ),
               ],
             );
@@ -416,7 +448,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
         DabblerComposerField(
           controller: _title,
           placeholder: l.meetups_create_title_hint,
-          onChanged: (_) => setState(() {
+          onChanged: (_) => _edit(() {
             if (_error != null) _error = null;
           }),
         ),
@@ -424,6 +456,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
           controller: _note,
           placeholder: l.meetups_create_note_hint,
           multiline: true,
+          onChanged: (_) => _edit(() {}),
         ),
         DabblerComposerRow(
           icon: 'calendar',
@@ -464,7 +497,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
                 ComposerPolicyChip(
                   label: l.listing_indoor,
                   selected: _indoor == true,
-                  onTap: () => setState(() {
+                  onTap: () => _edit(() {
                     _indoor = true;
                     _settingMissing = false;
                   }),
@@ -472,7 +505,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
                 ComposerPolicyChip(
                   label: l.listing_outdoor,
                   selected: _indoor == false,
-                  onTap: () => setState(() {
+                  onTap: () => _edit(() {
                     _indoor = false;
                     _settingMissing = false;
                   }),
@@ -491,7 +524,7 @@ class _MeetupComposerScreenState extends ConsumerState<MeetupComposerScreen> {
             valueLabel: (v) => v > 0 ? '$v' : DabblerStepperPill.unlimited,
             decreaseLabel: l.game_fewer_max,
             increaseLabel: l.game_more_max,
-            onChanged: (v) => setState(() => _capacity = v),
+            onChanged: (v) => _edit(() => _capacity = v),
           ),
         ),
         // The frame's centred brand link with a chevron-circle glyph

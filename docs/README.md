@@ -1,26 +1,12 @@
-# docs/ — Dabbler technical documentation
+# docs
 
-This repo (`dabblersport/webapp`, pushed to GitHub) holds only the Flutter app and the
-technical docs that describe it. The multi-agent operation — `.claude/agents`,
-`.claude/agent-memory`, `CLAUDE.md`, and all governance docs (`DECISIONS.md`,
-`PROJECT_STATE.md`, `LEARN.md`, `CONTRACT.md`, `AGENTS.md`, `BRIEF.md`, `MANIFESTO.md`,
-`ROADMAP.md`, `WORKFLOWS.md`, `STATUS.md`, `status/`, `briefs/`) live one level up, in
-`../dabbler-docs/` (inside **One Brain**). Look there for anything about agent roles, the
-decision log, project-state audits, or how work is coordinated.
+Plans, release runbooks, architecture and conventions moved to the governance repository,
+`dabbler-docs/dabbler-code/` (https://github.com/dabblersport/dabbler-docs), on 2026-11-10.
 
-## What's still here
+Three things stay here on purpose, because code or CI reads them at run time:
 
-| File | What it is |
-|---|---|
-| `ARCHITECTURE.md` | How the system is actually put together. |
-| `SCHEMA.md` | Supabase: tables, RLS, buckets, RPCs, triggers, edge functions. |
-| `CONVENTIONS.md` | Coding conventions. |
-| `LOCATION.md` | Geo/location domain notes. |
-| `NOTIFICATIONS.md` | Notification domain notes (has drifted — see governance `LEARN.md` for current state). |
-| `APPLE_REVIEW_SIGNIN.md` | App Store review notes on Sign in with Apple. |
-| `PLAN.md` / `RESEARCH.md` | Working notes from prior sessions. |
-| `flutter_localization_checklist.md` | Arabic localization tracking. |
-| `screen-report.md` | A prior audit (2026-08-17). |
+- `SCHEMA.md` — `scripts/ci/check_anon_allowlist.sh` and `check_anon_function_grants.sh` parse it.
+- `LOCAL_RUN.md` — `lib/core/config/environment.dart` points to it, and its test checks that.
+- `messaging/` — `test/features/messaging/domain/contract_agreement_test.dart` reads it.
 
-None of these are governance documents and none of them override anything in
-`../dabbler-docs/`.
+`experiments/` also remains until someone decides where it belongs.

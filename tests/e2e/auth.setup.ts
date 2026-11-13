@@ -88,7 +88,8 @@ setup('log in once and save the session', async ({ page }) => {
   await expect(emailField).toHaveValue(EMAIL);
   await expect(passwordField).toHaveValue(PASSWORD);
 
-  const loginButton = page.getByRole('button', { name: /^login$/i });
+  // "Log in" since the KAN-426 design copy (auth_login_button, app_en.arb:106).
+  const loginButton = page.getByRole('button', { name: /^log in$/i });
   await expect(loginButton).toBeEnabled({ timeout: 10_000 });
   await loginButton.click();
 

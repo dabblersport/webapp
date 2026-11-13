@@ -1,3 +1,4 @@
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler/features/location/presentation/set_location_when_denied.dart';
@@ -10,6 +11,7 @@ import 'package:dabbler/features/games/providers/games_providers.dart'
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
@@ -27,6 +29,8 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import 'package:dabbler/features/venues/experiment/places_ui_kit_experiment.dart';
 
 // =============================================================================
 // SCREEN
@@ -102,9 +106,13 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
     final maxPrice = ref.watch(venueMaxPriceFilterProvider);
     final minRating = ref.watch(venueMinRatingFilterProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
+    final activeProfile = ref.watch(profileControllerProvider).profile;
     final isOrganiser =
-        ref.watch(profileControllerProvider).profile?.profileType ==
-        'organiser';
+        activeProfile?.profileType == 'organiser' ||
+        personaTypeOrNull(
+              activeProfile?.personaType,
+            )?.hasOrganiserCapabilities ==
+            true;
     final sports = widget.sports;
 
     final active = <DabblerFilterRailItem>[
@@ -226,6 +234,8 @@ class _VenuesFilterBody extends ConsumerWidget {
     final maxPrice = ref.watch(venueMaxPriceFilterProvider);
     final minRating = ref.watch(venueMinRatingFilterProvider);
     final sort = ref.watch(nearbyVenueSortProvider);
+    // Distance needs an Area or a location (KAN-586).
+    final canUseDistance = ref.watch(distanceControlsEnabledProvider);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
@@ -290,9 +300,13 @@ class _VenuesFilterBody extends ConsumerWidget {
             for (final value in VenueSortOrder.values)
               DabblerChip(
                 label: _sortLabel(l, value),
-                selected: sort == value,
-                onTap: () =>
-                    ref.read(nearbyVenueSortProvider.notifier).state = value,
+                selected:
+                    sort == value &&
+                    (canUseDistance || value != VenueSortOrder.distance),
+                onTap: value == VenueSortOrder.distance && !canUseDistance
+                    ? null
+                    : () => ref.read(nearbyVenueSortProvider.notifier).state =
+                          value,
               ),
           ],
         ),
@@ -324,6 +338,13 @@ class _AllVenuesList extends ConsumerWidget {
     final maxPrice = ref.watch(venueMaxPriceFilterProvider);
     final minRating = ref.watch(venueMinRatingFilterProvider);
 
+    // KAN-588: the location is still settling, then no city selected: nothing
+    // to list, a way to choose one.
+    if (ref.watch(listingCityPendingProvider)) return _loading();
+    if (ref.watch(listingCityMissingProvider)) {
+      return const ListingChooseCity();
+    }
+
     // Nearby path: PostGIS RPC filtered by the active location + radius.
     // While the filter is on but location isn't ready (locating/denied),
     // fall back to the unfiltered list.
@@ -346,9 +367,15 @@ class _AllVenuesList extends ConsumerWidget {
             ref.invalidate(nearbyVenuesProvider);
             ref.invalidate(venuesBySportWithFiltersProvider);
             await settle(ref.read(nearbyVenuesProvider(params).future));
+            // KAN-606: the list stays; the failure is a transient toast.
+            if (refreshFailedWithRows(ref.read(nearbyVenuesProvider(params)))) {
+              if (context.mounted) showListingRefreshFailedToast(context);
+            }
           });
 
+      // KAN-606: a failed refetch with rows keeps them.
       return nearbyAsync.when(
+        skipError: keepsRows(nearbyAsync),
         loading: _loading,
         error: (_, __) => _error(context, ref, refresh),
         data: (venues) => venues.isEmpty
@@ -395,8 +422,12 @@ class _AllVenuesList extends ConsumerWidget {
       );
     }
 
+    // KAN-588: the unlocated list is the selected city's. With no distance
+    // point it is alphabetical (the server orders by name); an explicit
+    // rating or price sort still applies.
     final filters = VenuesBySportFilters(
       sportId: sportId,
+      city: ref.watch(listingCityProvider)?.name,
       isActive: true,
       isIndoor: indoor,
       maxPrice: maxPrice,
@@ -413,9 +444,17 @@ class _AllVenuesList extends ConsumerWidget {
           await settle(
             ref.read(venuesBySportWithFiltersProvider(filters).future),
           );
+          // KAN-606: see the nearby branch.
+          if (refreshFailedWithRows(
+            ref.read(venuesBySportWithFiltersProvider(filters)),
+          )) {
+            if (context.mounted) showListingRefreshFailedToast(context);
+          }
         });
 
+    // KAN-606: see the nearby branch.
     return venuesAsync.when(
+      skipError: keepsRows(venuesAsync),
       loading: _loading,
       error: (_, __) => _error(context, ref, refresh),
       data: (rows) {
@@ -621,11 +660,10 @@ class _VenueCardData {
 }
 
 /// A venue on the design system's venue card (`Listings.dc.html:750-820`):
-/// the 170px cover (a placeholder until the venue has a photo), the aggregate
-/// rating, the "Top rated" / "Verified" / "Open now" badges, the distance chip,
-/// every sport and the keyed facilities; the heart toggles the favourite
-/// (`toggle_favorite`, `favorites` table) and the share glyph shares the
-/// venue's link.
+/// no cover (KAN-638), the aggregate rating, the "Top rated" / "Verified" /
+/// "Open now" badges, the distance chip, every sport and the keyed
+/// facilities; the heart toggles the favourite (`toggle_favorite`, `favorites`
+/// table) and the share glyph shares the venue's link.
 class _VenueCard extends ConsumerStatefulWidget {
   const _VenueCard({required this.venue});
 
@@ -714,13 +752,15 @@ class _VenueCardState extends ConsumerState<_VenueCard> {
 
     return DabblerCardVenue(
       name: venue.name,
-      // The cover slot always draws; without a photo it is the sunken fill
-      // with the gallery glyph.
-      cover: DabblerImage(
-        url: venue.coverUrl,
+      // KAN-638: details-only card; with no experiment the cover slot is
+      // omitted, so no media space is reserved whether or not the venue has a
+      // photo.
+      // KAN-629: the experiment returns null (no cover) unless its default-off
+      // flag is on and the venue is one of the nine.
+      cover: experimentCover(
+        venueId: venue.id,
         height: DabblerCardVenue.coverHeight,
-        radius: BorderRadius.zero,
-        placeholderGlyph: true,
+        baseline: null,
       ),
       area: locationLine,
       tags: [

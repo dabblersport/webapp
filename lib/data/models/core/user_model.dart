@@ -7,6 +7,9 @@ class UserModel {
   final String? bio;
   final String? profileImageUrl;
   final String language; // 'en' or 'ar'
+  // When `language` last changed, set by the server (KAN-615); null = never
+  // edited since the column existed. Offline settings sync compares on it.
+  final DateTime? languageUpdatedAt;
   final int? age;
   final String? gender;
   final List<String> sports;
@@ -28,6 +31,7 @@ class UserModel {
     this.bio,
     this.profileImageUrl,
     this.language = 'en',
+    this.languageUpdatedAt,
     this.age,
     this.gender,
     this.sports = const [],
@@ -89,6 +93,7 @@ class UserModel {
     String? bio,
     String? profileImageUrl,
     String? language,
+    DateTime? languageUpdatedAt,
     int? age,
     String? gender,
     List<String>? sports,
@@ -110,6 +115,7 @@ class UserModel {
       bio: bio ?? this.bio,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       language: language ?? this.language,
+      languageUpdatedAt: languageUpdatedAt ?? this.languageUpdatedAt,
       age: age ?? this.age,
       gender: gender ?? this.gender,
       sports: sports ?? this.sports,
@@ -134,6 +140,7 @@ class UserModel {
       'bio': bio,
       'profileImageUrl': profileImageUrl,
       'language': language,
+      'languageUpdatedAt': languageUpdatedAt?.toIso8601String(),
       'age': age,
       'gender': gender,
       'sports': sports,
@@ -158,6 +165,7 @@ class UserModel {
       bio: json['bio'] as String?,
       profileImageUrl: json['profileImageUrl'] as String?,
       language: json['language'] as String? ?? 'en',
+      languageUpdatedAt: _optionalDate(json['languageUpdatedAt']),
       age: json['age'] as int?,
       gender: json['gender'] as String?,
       sports: List<String>.from(json['sports'] ?? []),
@@ -188,6 +196,7 @@ class UserModel {
       bio: json['bio'] as String?,
       profileImageUrl: json['avatar_url'] as String?,
       language: json['language'] as String? ?? 'en',
+      languageUpdatedAt: _optionalDate(json['language_updated_at']),
       age: json['age'] as int?,
       gender: json['gender'] as String?,
       sports: List<String>.from(json['sports'] ?? []),
@@ -205,4 +214,7 @@ class UserModel {
       updatedAt: DateTime.parse(json['updated_at'] as String),
     );
   }
+
+  static DateTime? _optionalDate(Object? value) =>
+      value is String ? DateTime.tryParse(value) : null;
 }

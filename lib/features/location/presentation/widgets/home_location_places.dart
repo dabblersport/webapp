@@ -21,6 +21,7 @@ class HomeLocationPlaces extends StatelessWidget {
     required this.onSaved,
     required this.onArea,
     required this.onAdd,
+    this.onCity,
     this.recents = const <Area>[],
     this.frame = false,
   });
@@ -39,6 +40,10 @@ class HomeLocationPlaces extends StatelessWidget {
   final void Function(ProfileLocation location) onSaved;
   final void Function(Area area) onArea;
   final VoidCallback onAdd;
+
+  /// KAN-588: choose a city on its own, with no area. When null the sheet
+  /// lists no city rows.
+  final void Function(Area city)? onCity;
 
   static String _savedIcon(ProfileLocation location) =>
       switch (location.label) {
@@ -88,7 +93,26 @@ class HomeLocationPlaces extends StatelessWidget {
             if (e.value.any(hit)) e.key: e.value.where(hit).toList(),
         };
 
-        if (recentRows.isEmpty && savedRows.isEmpty && filtered.isEmpty) {
+        // KAN-588: one row per city that has Areas, matched on the city name
+        // (typing "Dubai" lists Dubai itself above its areas).
+        final cityRows = <Area>[];
+        if (onCity != null && q.isNotEmpty) {
+          final seen = <String>{};
+          for (final list in grouped.values) {
+            for (final a in list) {
+              final key = '${a.city.toLowerCase()}|${a.country.toLowerCase()}';
+              if (a.city.toLowerCase().contains(q) && seen.add(key)) {
+                cityRows.add(a);
+              }
+            }
+          }
+          cityRows.sort((a, b) => a.city.compareTo(b.city));
+        }
+
+        if (cityRows.isEmpty &&
+            recentRows.isEmpty &&
+            savedRows.isEmpty &&
+            filtered.isEmpty) {
           return Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerEmptyState(
@@ -153,6 +177,33 @@ class HomeLocationPlaces extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            if (cityRows.isNotEmpty) ...[
+              label(l10n.manual_location_cities_divider),
+              for (final city in cityRows)
+                DabblerListRow(
+                  key: Key('home-location-city-${city.city}'),
+                  flat: true,
+                  metrics: frame
+                      ? DabblerFeedMetrics.drawn
+                      : DabblerFeedMetrics.touch,
+                  leading: DabblerIcon(
+                    'buildings',
+                    size: frame
+                        ? DabblerHomeFrame.listRowGlyph
+                        : DabblerSizing.iconRow,
+                    color: colors.textTertiary,
+                  ),
+                  title: city.city,
+                  subtitle: city.country,
+                  trailing: DabblerButton(
+                    label: l10n.listing_use_city_only,
+                    tone: DabblerButtonTone.neutral,
+                    size: DabblerButtonSize.small,
+                    onPressed: () => onCity!(city),
+                  ),
+                  onTap: () => onCity!(city),
+                ),
+            ],
             label(l10n.home_location_recent),
             for (final area in recentRows)
               row(

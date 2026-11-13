@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/data/models/profile/privacy_settings.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
@@ -95,7 +97,10 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                     ? _blockedPage()
                     : settings == null
                     ? const []
-                    : _pageBody(l10n, settings),
+                    : [
+                        const SettingSyncHint([SettingKeys.privacy]),
+                        ..._pageBody(l10n, settings),
+                      ],
               ),
       ),
     );

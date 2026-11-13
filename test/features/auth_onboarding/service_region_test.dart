@@ -96,18 +96,22 @@ void main() {
       },
     );
 
-    test('nothing saved: Global, with no IP or locale lookup', () async {
-      final n = SelectedLocationNotifier(remote: _Remote());
+    test('nothing saved and detection failing: Global', () async {
+      final n = SelectedLocationNotifier(
+        remote: _Remote(),
+        detect: () async => throw Exception('offline'),
+      );
       expect(await _settled(n), 'Global');
     });
 
-    test('the region code never reads IP, locale or network detection', () {
+    // KAN-640 R6 (CEO): the first run may read the country from the IP, but
+    // never from the device locale (and never through LocationDetector).
+    test('the region code never reads the device locale', () {
       final src = File(
         'lib/features/auth_onboarding/presentation/providers/'
         'selected_country_provider.dart',
       ).readAsStringSync();
       expect(src.contains('LocationDetector'), isFalse);
-      expect(src.contains('ip_country'), isFalse);
       expect(src.contains('PlatformDispatcher'), isFalse);
     });
   });

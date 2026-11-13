@@ -11,9 +11,11 @@ import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.d
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/social/presentation/widgets/post_media_carousel.dart';
+import 'package:dabbler/features/social/presentation/widgets/post_sport_tap.dart';
 import 'package:dabbler/features/social/presentation/widgets/quote_repost_sheet.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -36,7 +38,12 @@ class HomePostRow extends ConsumerStatefulWidget {
     this.showNearbyChipInHeader = false,
     this.showActions = true,
     this.metrics = DabblerFeedMetrics.touch,
+    this.currentSportId,
   });
+
+  /// KAN-622: the sport whose page this row sits on (the Sport Overview posts
+  /// tab), so its own sport tag is not a link to the page already open.
+  final String? currentSportId;
 
   /// [DabblerFeedMetrics.drawn] draws the row exactly as the Home Feed frame
   /// measures it; the Home screen passes it. Every other screen that shows a
@@ -59,6 +66,7 @@ class HomePostRow extends ConsumerStatefulWidget {
     bool showActions = true,
     DabblerPostDetail? detail,
     DabblerFeedMetrics metrics = DabblerFeedMetrics.touch,
+    String? currentSportId,
   }) {
     if (post.originType == OriginType.repost) {
       return HomeRepostRow(post: post, detail: detail);
@@ -68,6 +76,7 @@ class HomePostRow extends ConsumerStatefulWidget {
       showNearbyChipInHeader: showNearbyChipInHeader,
       showActions: showActions,
       metrics: metrics,
+      currentSportId: currentSportId,
     );
   }
 
@@ -123,8 +132,22 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   }
 
   /// The reaction-breakdown chips: tapping one toggles that vibe, as before.
+  /// KAN-642: the vibe the author posted with, in the viewer's language; the
+  /// first pill of the post row's pill row (the same pill as sport and venue).
+  /// Null when the post has no vibe.
+  String? _postVibeLabel(Post post) {
+    final vibe = post.vibes.firstOrNull;
+    if (vibe == null) return null;
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    return ar && vibe.labelAr.isNotEmpty
+        ? vibe.labelAr
+        : (vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key);
+  }
+
   Widget? _reactionSummary(Post post, Set<String> myReactions) {
-    final entries = _reactionBreakdownEntries(post);
+    final entries = widget.showActions
+        ? _reactionBreakdownEntries(post)
+        : const <MapEntry<dynamic, dynamic>>[];
     if (entries.isEmpty) return null;
     final vibes = ref.watch(vibesProvider).valueOrNull ?? const [];
     return Wrap(
@@ -449,9 +472,14 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         ? null
         : (matchedSport?.localizedName(context) ?? post.sport!);
 
-    // The place line: the post's saved place name only. A post with no name
-    // shows no place; the area name is never used as a place.
-    final place = (post.locationName ?? '').trim();
+    // KAN-592: the header names where the author POSTED FROM (area and city,
+    // or the city alone; a legacy post reads Dubai). The place the post is
+    // about is its own pill, below, and never reaches the header.
+    final place = postedFromHeaderLabel(
+      post,
+      legacyCity: l10n.post_legacy_city,
+    );
+    final placeTag = postPlaceTagLabel(post);
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -486,14 +514,24 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   }
                 }
               : null,
-          reactions: widget.showActions
-              ? _reactionSummary(post, myReactions)
-              : null,
+          reactions: _reactionSummary(post, myReactions),
           showActions: widget.showActions,
           time: homeRelativeTime(post.createdAt),
           place: place,
           segments: _segments(post),
           sportLabel: sportLabel,
+          onSportTap: sportLabel == null
+              ? null
+              : postSportTap(
+                  context,
+                  post,
+                  currentSportId: widget.currentSportId,
+                ),
+          vibeTagLabel: _postVibeLabel(post),
+          placeTagLabel: placeTag,
+          placeTagLeading: placeTag == null
+              ? null
+              : DabblerIcon('location', size: DabblerSizing.iconXs),
           sportLeading: sportKey == null
               ? null
               : DabblerSportIcon.fromKey(sportKey, size: DabblerSizing.iconXs),

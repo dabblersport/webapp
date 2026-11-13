@@ -8,6 +8,13 @@ import 'package:dabbler/core/providers/geo_providers.dart';
 import '../domain/usecases/find_games_usecase.dart';
 import '../domain/usecases/join_game_usecase.dart';
 import 'package:dabbler/data/models/games/game.dart';
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/fp/result.dart' hide Result;
+import 'package:dabbler/core/fp/result.dart' as fp show Result;
+import 'package:dabbler/core/offline/cached_read.dart';
+import 'package:dabbler/core/offline/game_codec.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/data/models/games/venue.dart';
 import '../domain/repositories/bookings_repository.dart';
 import '../data/repositories/games_repository_impl.dart';
@@ -221,42 +228,65 @@ final currentUserIdProvider = Provider<String?>((ref) {
   return ref.watch(supabaseClientProvider).auth.currentUser?.id;
 });
 
-/// Fetches user's upcoming games from Supabase
+/// The user's upcoming games read through the on-device cache (KAN-655):
+/// fresh when online (and written through), the cached copy marked stale when
+/// offline or the fetch fails on the network, a typed offline `Err` on a miss.
+final userUpcomingGamesReadProvider = FutureProvider.autoDispose<
+  fp.Result<CachedRead<List<Game>>, Failure>
+>((ref) async {
+  final userId = ref.watch(currentUserIdProvider);
+  if (userId == null) {
+    return const Ok(CachedRead<List<Game>>(value: <Game>[]));
+  }
+
+  final repository = ref.watch(gamesRepositoryProvider);
+  return readThrough<List<Game>>(
+    cache: ref.read(offlineCacheProvider),
+    accountId: ref.watch(cacheAccountIdProvider),
+    key: 'games.upcoming.$userId',
+    isOffline: () => ref.read(connectivityProvider) == ConnectionStatus.offline,
+    fetch: () async {
+      final r = await repository.getMyGames(
+        userId,
+        status: 'upcoming',
+        limit: kUpcomingGamesFirstPage,
+      );
+      return r.fold(
+        (failure) => Err<List<Game>, Failure>(failure),
+        (games) => Ok<List<Game>, Failure>(games),
+      );
+    },
+    encode: encodeGames,
+    decode: decodeGames,
+    cap: (games) => games.take(kUpcomingGamesFirstPage).toList(),
+  );
+});
+
+/// First page kept per key for the upcoming-games cache.
+const int kUpcomingGamesFirstPage = 50;
+
+/// Fetches user's upcoming games (cached copy when offline)
 final userUpcomingGamesProvider = FutureProvider.autoDispose<List<Game>>((
   ref,
 ) async {
-  final userId = ref.watch(currentUserIdProvider);
-  if (userId == null) return [];
+  final read = await ref.watch(userUpcomingGamesReadProvider.future);
 
-  final repository = ref.watch(gamesRepositoryProvider);
-  final result = await repository.getMyGames(
-    userId,
-    status: 'upcoming',
-    limit: 50,
-  );
+  // An error returns an empty list to avoid breaking UI.
+  final games = read.fold((_) => <Game>[], (r) => r.value);
+  final now = DateTime.now();
+  final upcomingGames = games.where((game) {
+    try {
+      return game.getScheduledStartDateTime().isAfter(now);
+    } catch (_) {
+      // If we can't parse the date, default to keeping the game so it can be
+      // inspected in logs and fixed at the data source level.
+      return true;
+    }
+  }).toList();
 
-  return result.fold(
-    (failure) {
-      // Log error but return empty list to avoid breaking UI
-      return [];
-    },
-    (games) {
-      final now = DateTime.now();
-      final upcomingGames = games.where((game) {
-        try {
-          return game.getScheduledStartDateTime().isAfter(now);
-        } catch (_) {
-          // If we can't parse the date, default to keeping the game so it can be
-          // inspected in logs and fixed at the data source level.
-          return true;
-        }
-      }).toList();
-
-      // Sort by date (earliest first)
-      upcomingGames.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
-      return upcomingGames;
-    },
-  );
+  // Sort by date (earliest first)
+  upcomingGames.sort((a, b) => a.scheduledDate.compareTo(b.scheduledDate));
+  return upcomingGames;
 });
 
 /// Fetches user's next upcoming game

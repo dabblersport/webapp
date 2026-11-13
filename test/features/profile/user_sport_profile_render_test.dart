@@ -18,6 +18,7 @@ import 'package:dabbler/features/profile/presentation/controllers/sports_profile
 import 'package:dabbler/features/profile/presentation/models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profile_view_provider.dart';
+import 'package:dabbler/features/profile/presentation/providers/visited_profile_providers.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/sport_profile_screen.dart';
 import 'package:dabbler/features/profile/presentation/screens/profile/user_profile_screen.dart';
 import 'package:dabbler/features/social/block_providers.dart';
@@ -178,20 +179,25 @@ Future<void> _pumpUser(
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     _app(const UserProfileScreen(userId: 'u-aisha'), locale, [
-      profileControllerProvider.overrideWith(
-        (ref) => _FakeProfile(
+      // KAN-688: the visitor screen reads screen-scoped providers keyed by
+      // route identity, never the signed-in user's own controllers.
+      visitedProfileControllerProvider.overrideWith(
+        (ref, key) => _FakeProfile(
           error
               ? const ProfileState(errorMessage: 'Profile not available')
               : ProfileState(profile: _aisha()),
         ),
       ),
-      sportsProfileControllerProvider.overrideWith((ref) => _FakeSports()),
+      visitedSportsProfileControllerProvider.overrideWith(
+        (ref, key) => _FakeSports(),
+      ),
       currentUserProvider.overrideWithValue(null),
       myProfileIdProvider.overrideWith((ref) async => 'p-me'),
       sportsProvider.overrideWith((ref) async => _sports),
       sportProfileHeaderProvider.overrideWith((ref, key) async => null),
-      followingCountProvider.overrideWith((ref, id) async => 312),
-      followersCountProvider.overrideWith((ref, id) async => 1100),
+      visitedFollowingCountProvider.overrideWith((ref, id) async => 312),
+      visitedFollowersCountProvider.overrideWith((ref, id) async => 1100),
+      visitedPostsCountProvider.overrideWith((ref, id) async => 0),
       isFollowingProvider.overrideWith((ref, key) async => following),
       isBlockedProvider.overrideWith((ref, key) async => blocked),
       isUserBlockedProvider.overrideWith((ref, id) async => blocked),
@@ -390,7 +396,9 @@ void main() {
       expect(find.byType(DabblerStatTile), findsNWidgets(4));
       await _shoot(tester, 'sport-profile-$dir');
 
-      await tester.tap(find.text(lookupAppLocalizations(locale).notif_chip_achievements));
+      await tester.tap(
+        find.text(lookupAppLocalizations(locale).notif_chip_achievements),
+      );
       await _settle(tester);
       expect(tester.takeException(), isNull);
       expect(find.text('5-win streak'), findsOneWidget);
@@ -409,7 +417,9 @@ void main() {
       expect(find.text('No scoreboard data yet.'), findsOneWidget);
       await _shoot(tester, 'sport-profile-empty-$dir');
 
-      await tester.tap(find.text(lookupAppLocalizations(locale).notif_chip_achievements));
+      await tester.tap(
+        find.text(lookupAppLocalizations(locale).notif_chip_achievements),
+      );
       await _settle(tester);
       expect(find.text('No sport achievements yet.'), findsOneWidget);
 

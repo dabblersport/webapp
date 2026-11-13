@@ -190,7 +190,10 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
             );
           }
 
-          return resolvePostLayout(_posts[index - 1], showActions: false);
+          return Padding(
+            padding: DabblerInsets.feedScreen,
+            child: resolvePostLayout(_posts[index - 1], showActions: false),
+          );
         },
       ),
     );

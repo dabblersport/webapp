@@ -1,6 +1,3 @@
-import 'dart:async';
-import 'dart:io';
-
 import 'package:riverpod/riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -14,6 +11,24 @@ class SupabaseErrorMapper {
   const SupabaseErrorMapper();
 
   Failure map(Object error, {String? overrideMessage, StackTrace? stackTrace}) {
+    // Transport conditions first, by type, so native and web agree (KAN-603):
+    // a timeout is its own class and a retryable auth fetch failure is
+    // no-internet, not a server error.
+    final FailureCode transport = classifyError(error);
+    if (transport == FailureCode.timeout && error is! PostgrestException) {
+      return TimeoutFailure(
+        message: overrideMessage ?? 'The request timed out',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
+    if (transport == FailureCode.noInternet) {
+      return NetworkFailure(
+        message: overrideMessage ?? 'Network connection failed',
+        cause: error,
+        stackTrace: stackTrace,
+      );
+    }
     if (error is PostgrestException) {
       return _mapPostgrest(
         error,
@@ -36,13 +51,6 @@ class SupabaseErrorMapper {
         stackTrace: stackTrace,
       );
     }
-    if (error is TimeoutException || error is SocketException) {
-      return NetworkFailure(
-        message: overrideMessage ?? 'Network connection failed',
-        stackTrace: stackTrace,
-      );
-    }
-
     return UnexpectedFailure(
       message: overrideMessage ?? error.toString(),
       cause: error,

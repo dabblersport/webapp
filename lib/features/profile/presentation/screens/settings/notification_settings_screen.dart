@@ -1,3 +1,5 @@
+import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
+import 'package:dabbler/core/sync/settings_sync_handlers.dart' show SettingKeys;
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'dart:async';
@@ -209,6 +211,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
+        const SettingSyncHint([SettingKeys.notifications]),
         _buildGeneralSection(context, settings, controller),
         const SizedBox(height: DabblerSpacing.space7),
         _buildQuietHoursSection(context, settings, controller),

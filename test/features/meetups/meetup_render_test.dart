@@ -13,6 +13,7 @@ import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetups_screen.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -21,6 +22,7 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import '../../support/connectivity_overrides.dart';
 import '../../support/geometry_dump.dart';
 import '../../support/render_mode.dart';
 import 'meetup_screens_harness.dart';
@@ -66,8 +68,13 @@ Future<void> _shoot(
     ProviderScope(
       overrides: [
         meetupRepositoryProvider.overrideWithValue(repo),
+        // KAN-753: the meetup reads listen for reconnects; no plugin here.
+        onlineConnectivity(),
         activeLocationProvider.overrideWith(_Ready.new),
         myProfileIdProvider.overrideWith((ref) async => 'me'),
+        listingCityAreaIdsProvider.overrideWith(
+          (ref, city) async => <String>['a1'],
+        ),
         isFollowingProvider.overrideWith((ref, p) async => false),
         meetupFollowActionProvider.overrideWithValue(
           ({

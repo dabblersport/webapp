@@ -1,3 +1,4 @@
+import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 
@@ -23,15 +24,77 @@ final venuesRepositoryProvider = Provider<VenuesRepository>((ref) {
 final venueDetailProvider = FutureProvider.family<games_venue.Venue, String>((
   ref,
   venueId,
-) async {
+) {
   final repository = ref.watch(games_providers.venuesRepositoryProvider);
-  final result = await repository.getVenue(venueId);
-
-  return result.fold(
-    (failure) => throw Exception(failure.message),
-    (venue) => venue,
+  // KAN-605: a venue the viewer opened is kept for offline reading.
+  return swrFetch<games_venue.Venue>(
+    ref,
+    key: 'venues.detail.$venueId',
+    fetch: () async {
+      final result = await repository.getVenue(venueId);
+      return result.fold(
+        (failure) => throw Exception(failure.message),
+        (venue) => venue,
+      );
+    },
+    encode: _venueToJson,
+    decode: (json) => _venueFromJson(Map<String, dynamic>.from(json as Map)),
   );
 });
+
+Map<String, dynamic> _venueToJson(games_venue.Venue v) => {
+  'id': v.id,
+  'name': v.name,
+  'description': v.description,
+  'addressLine1': v.addressLine1,
+  'addressLine2': v.addressLine2,
+  'city': v.city,
+  'state': v.state,
+  'country': v.country,
+  'postalCode': v.postalCode,
+  'latitude': v.latitude,
+  'longitude': v.longitude,
+  'phone': v.phone,
+  'email': v.email,
+  'website': v.website,
+  'openingTime': v.openingTime,
+  'closingTime': v.closingTime,
+  'rating': v.rating,
+  'totalRatings': v.totalRatings,
+  'pricePerHour': v.pricePerHour,
+  'currency': v.currency,
+  'supportedSports': v.supportedSports,
+  'amenities': v.amenities,
+  'createdAt': v.createdAt.toIso8601String(),
+  'updatedAt': v.updatedAt.toIso8601String(),
+};
+
+games_venue.Venue _venueFromJson(Map<String, dynamic> j) => games_venue.Venue(
+  id: j['id'] as String,
+  name: j['name'] as String,
+  description: j['description'] as String,
+  addressLine1: j['addressLine1'] as String,
+  addressLine2: j['addressLine2'] as String?,
+  city: j['city'] as String,
+  state: j['state'] as String,
+  country: j['country'] as String,
+  postalCode: j['postalCode'] as String,
+  latitude: (j['latitude'] as num).toDouble(),
+  longitude: (j['longitude'] as num).toDouble(),
+  phone: j['phone'] as String?,
+  email: j['email'] as String?,
+  website: j['website'] as String?,
+  openingTime: j['openingTime'] as String,
+  closingTime: j['closingTime'] as String,
+  rating: (j['rating'] as num).toDouble(),
+  totalRatings: (j['totalRatings'] as num).toInt(),
+  pricePerHour: (j['pricePerHour'] as num).toDouble(),
+  currency: j['currency'] as String,
+  supportedSports: List<String>.from(j['supportedSports'] as List),
+  amenities: List<String>.from(j['amenities'] as List),
+  createdAt: DateTime.parse(j['createdAt'] as String),
+  updatedAt: DateTime.parse(j['updatedAt'] as String),
+);
 
 final activeVenuesProvider =
     FutureProvider.family<

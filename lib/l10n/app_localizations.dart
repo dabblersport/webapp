@@ -134,6 +134,18 @@ abstract class AppLocalizations {
   /// **'Something went wrong'**
   String get error_generic;
 
+  /// No description provided for @bootstrap_error_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler couldn\'t start'**
+  String get bootstrap_error_title;
+
+  /// No description provided for @bootstrap_error_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong while starting the app. Check your connection and open the app again.'**
+  String get bootstrap_error_message;
+
   /// No description provided for @game_full.
   ///
   /// In en, this message translates to:
@@ -793,6 +805,138 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Find my first game'**
   String get persona_player_cta;
+
+  /// No description provided for @persona_contributor_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Contributor'**
+  String get persona_contributor_name;
+
+  /// No description provided for @persona_contributor_headline.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re in. Let’s play.'**
+  String get persona_contributor_headline;
+
+  /// No description provided for @persona_contributor_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Join a game this week, or start one of your own.'**
+  String get persona_contributor_principle;
+
+  /// No description provided for @persona_contributor_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Don’t forget'**
+  String get persona_contributor_list_title;
+
+  /// No description provided for @persona_contributor_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirm when you know you can play.'**
+  String get persona_contributor_item1;
+
+  /// No description provided for @persona_contributor_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Respect the organiser’s rules and kickoff time.'**
+  String get persona_contributor_item2;
+
+  /// No description provided for @persona_contributor_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'When you organise, share details early and accurately.'**
+  String get persona_contributor_item3;
+
+  /// No description provided for @persona_contributor_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Find my first game'**
+  String get persona_contributor_cta;
+
+  /// KAN-681 design Contributor welcome variant (connect), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Your sports circle starts here.'**
+  String get persona_contributor_connect_headline;
+
+  /// No description provided for @persona_contributor_connect_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow what you love, meet your people, join when it feels right.'**
+  String get persona_contributor_connect_principle;
+
+  /// No description provided for @persona_contributor_connect_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'How this works'**
+  String get persona_contributor_connect_list_title;
+
+  /// No description provided for @persona_contributor_connect_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow the sports and people you care about.'**
+  String get persona_contributor_connect_item1;
+
+  /// No description provided for @persona_contributor_connect_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join the conversation, then join the game.'**
+  String get persona_contributor_connect_item2;
+
+  /// No description provided for @persona_contributor_connect_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it friendly — everyone here is someone’s teammate.'**
+  String get persona_contributor_connect_item3;
+
+  /// No description provided for @persona_contributor_connect_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Start exploring'**
+  String get persona_contributor_connect_cta;
+
+  /// KAN-681 design Contributor welcome variant (organise), from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Time to bring the game together.'**
+  String get persona_contributor_organise_headline;
+
+  /// No description provided for @persona_contributor_organise_principle.
+  ///
+  /// In en, this message translates to:
+  /// **'Good games start with good organisation.'**
+  String get persona_contributor_organise_principle;
+
+  /// No description provided for @persona_contributor_organise_list_title.
+  ///
+  /// In en, this message translates to:
+  /// **'What players expect'**
+  String get persona_contributor_organise_list_title;
+
+  /// No description provided for @persona_contributor_organise_item1.
+  ///
+  /// In en, this message translates to:
+  /// **'Accurate details — venue, time, level, price.'**
+  String get persona_contributor_organise_item1;
+
+  /// No description provided for @persona_contributor_organise_item2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes shared early, not at kickoff.'**
+  String get persona_contributor_organise_item2;
+
+  /// No description provided for @persona_contributor_organise_item3.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance managed fairly, every time.'**
+  String get persona_contributor_organise_item3;
+
+  /// No description provided for @persona_contributor_organise_cta.
+  ///
+  /// In en, this message translates to:
+  /// **'Create my first game'**
+  String get persona_contributor_organise_cta;
 
   /// No description provided for @persona_organiser_name.
   ///
@@ -2396,6 +2540,30 @@ abstract class AppLocalizations {
   /// **'We’ll make it the primary sport on your venue profile.'**
   String get onb_primary_subtitle_host;
 
+  /// No description provided for @onb_sports_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What sports are you into?'**
+  String get onb_sports_title_contributor;
+
+  /// No description provided for @onb_sports_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick the sports you follow, play or organise. You can change these anytime.'**
+  String get onb_sports_subtitle_contributor;
+
+  /// No description provided for @onb_primary_title_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s your main sport?'**
+  String get onb_primary_title_contributor;
+
+  /// No description provided for @onb_primary_subtitle_contributor.
+  ///
+  /// In en, this message translates to:
+  /// **'We’ll put it first across your feed, games and profile.'**
+  String get onb_primary_subtitle_contributor;
+
   /// No description provided for @onb_sports_search.
   ///
   /// In en, this message translates to:
@@ -2414,17 +2582,11 @@ abstract class AppLocalizations {
   /// **'Pick at least one to continue.'**
   String get onb_sports_count_zero;
 
-  /// No description provided for @onb_sports_count_one.
+  /// No description provided for @onb_sports_count.
   ///
   /// In en, this message translates to:
-  /// **'1 sport selected'**
-  String get onb_sports_count_one;
-
-  /// No description provided for @onb_sports_count_many.
-  ///
-  /// In en, this message translates to:
-  /// **'{count} sports selected'**
-  String onb_sports_count_many(int count);
+  /// **'{count, plural, =1{1 sport selected} other{{count} sports selected}}'**
+  String onb_sports_count(int count);
 
   /// No description provided for @onb_primary_more.
   ///
@@ -4409,6 +4571,30 @@ abstract class AppLocalizations {
   /// **'Search activity…'**
   String get activity_search_hint;
 
+  /// No description provided for @activity_search_no_match_title.
+  ///
+  /// In en, this message translates to:
+  /// **'No matches'**
+  String get activity_search_no_match_title;
+
+  /// No description provided for @activity_search_no_match_body.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t find “{query}” in {category}.'**
+  String activity_search_no_match_body(String query, String category);
+
+  /// No description provided for @activity_search_loading_older.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching older activity…'**
+  String get activity_search_loading_older;
+
+  /// No description provided for @activity_search_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear search'**
+  String get activity_search_clear;
+
   /// No description provided for @activity_pill_upcoming.
   ///
   /// In en, this message translates to:
@@ -5530,6 +5716,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Failed to save settings. Please try again.'**
   String get priv_save_failed;
+
+  /// No description provided for @settings_not_synced_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced. Tap to retry.'**
+  String get settings_not_synced_retry;
+
+  /// No description provided for @settings_will_sync_online.
+  ///
+  /// In en, this message translates to:
+  /// **'Will sync when online'**
+  String get settings_will_sync_online;
+
+  /// No description provided for @settings_updated_elsewhere.
+  ///
+  /// In en, this message translates to:
+  /// **'This setting was updated on another device. Showing the newer value.'**
+  String get settings_updated_elsewhere;
+
+  /// No description provided for @settings_change_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'This change could not be saved. Showing the saved value.'**
+  String get settings_change_rejected;
 
   /// No description provided for @priv_saved.
   ///
@@ -7660,6 +7870,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Create post'**
   String get composer_create_post;
+
+  /// No description provided for @composer_post_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t post. Please try again.'**
+  String get composer_post_failed;
 
   /// No description provided for @composer_post_cta.
   ///
@@ -10115,6 +10331,18 @@ abstract class AppLocalizations {
   /// **'Minutes played'**
   String get profile_stat_minutes_played;
 
+  /// No description provided for @profile_stat_games_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games organised'**
+  String get profile_stat_games_organised;
+
+  /// No description provided for @profile_section_games_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Games I organise'**
+  String get profile_section_games_organised;
+
   /// No description provided for @meetups_tab_all.
   ///
   /// In en, this message translates to:
@@ -11357,6 +11585,60 @@ abstract class AppLocalizations {
   /// **'Try again'**
   String get messaging_chat_offline_retry;
 
+  /// KAN-609 Offline banner text when the device has no internet connection and the app shows saved content (banner visual: its own design ticket). Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'No internet connection – offline mode'**
+  String get offline_banner_offline;
+
+  /// KAN-609 Banner text when the connection is slow or unstable; content still loads in the background. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Poor connection – updates may be slow'**
+  String get offline_banner_poor;
+
+  /// KAN-609 Short hint shown with cached feed, listings, profile or detail content while it is not fresh. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Showing saved content'**
+  String get offline_saved_content_hint;
+
+  /// KAN-609 Non-blocking message (toast or inline line) when a refresh fails and the cached content stays on screen. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing saved content.'**
+  String get offline_refresh_failed;
+
+  /// KAN-609 Tappable row at the end of a list when loading the next page fails; tapping retries. Wire in: KAN-610.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load more. Tap to retry.'**
+  String get offline_load_more_failed;
+
+  /// KAN-609 Visible failure state next to a setting that was saved on the device but could not be synced; tapping retries. Wire in: KAN-608.
+  ///
+  /// In en, this message translates to:
+  /// **'Not synced. Tap to retry.'**
+  String get offline_setting_not_synced;
+
+  /// KAN-609 Generic localized replacement for raw sign-in and one-time-code (OTP) error text. Never append the raw error. Wire in: KAN-606.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t complete sign-in. Check your connection and try again.'**
+  String get offline_auth_error_generic;
+
+  /// KAN-609 Message of the start-up failure screen (shown before the app and its localization are ready). Wire in: KAN-602.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t start the app. Please try again.'**
+  String get offline_bootstrap_failed;
+
+  /// KAN-612 Inline/snackbar message when the user taps Create on a post, a game or a meetup while offline. Nothing is sent and the form is kept.
+  ///
+  /// In en, this message translates to:
+  /// **'Creating needs an internet connection. Nothing was created, and what you typed is still here.'**
+  String get offline_create_refused;
+
   /// No description provided for @messaging_chat_error.
   ///
   /// In en, this message translates to:
@@ -12124,6 +12406,2544 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'You are signed in, but we couldn\'t load your account. Try again.'**
   String get email_password_error_profile_failed;
+
+  /// KAN-602 Shown on the sign-in, code and email-verification screens when the profile lookup after sign-in could not be completed. The user stays on the screen. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t check your account right now. Check your connection and try again.'**
+  String get auth_profile_check_failed;
+
+  /// KAN-602 Retry action beside the profile-check failure message. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get auth_profile_check_retry;
+
+  /// KAN-602 Generic code-screen error; replaces raw exception text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get auth_otp_generic_error;
+
+  /// KAN-602 Toast when resending the code fails; replaces raw exception text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t send a new code. Please try again.'**
+  String get auth_otp_resend_failed;
+
+  /// KAN-579 DM header subtitle while the other person types (design frame 25). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'typing…'**
+  String get messaging_typing_dm;
+
+  /// KAN-579 Group typing label, one person (design section 10). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is typing'**
+  String messaging_typing_one(String name);
+
+  /// KAN-579 Group typing label, two people. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{first} and {second} are typing'**
+  String messaging_typing_two(String first, String second);
+
+  /// KAN-579 Group typing label, three or more people; count is the number of OTHERS (at least 2). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count} others are typing'**
+  String messaging_typing_many(String name, int count);
+
+  /// KAN-579 Name shown in a typing label when the typer's name could not be loaded. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_typing_someone;
+
+  /// KAN-582 GIF picker search field placeholder. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIPHY…'**
+  String get composer_gif_search_placeholder;
+
+  /// KAN-582 GIPHY attribution line under the GIF picker (provider credit; keep the brand name). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get composer_gif_attribution;
+
+  /// KAN-582 GIF picker: no results for the search. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No GIFs found'**
+  String get composer_gif_empty;
+
+  /// KAN-582 GIF picker offline banner title. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline'**
+  String get composer_gif_offline_title;
+
+  /// KAN-582 GIF picker offline banner text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get composer_gif_offline_text;
+
+  /// KAN-582 GIF picker: the provider is unavailable (error banner title). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIFs aren\'t available right now'**
+  String get composer_gif_unavailable_title;
+
+  /// KAN-582 GIF picker unavailable banner text. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You can still send text. Try again later.'**
+  String get composer_gif_unavailable_text;
+
+  /// KAN-582 GIF picker retry action on the offline and unavailable banners. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get composer_gif_retry;
+
+  /// KAN-582 Accessible name of the chat composer's attach control (opens the GIF picker). Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a GIF'**
+  String get messaging_chat_attach_gif;
+
+  /// KAN-582 Mark on a GIF in a chat thread: the kind and the provider credit. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF · GIPHY'**
+  String get messaging_gif_badge;
+
+  /// KAN-582 Screen-reader label of a GIF message in a chat thread. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'GIF from GIPHY'**
+  String get messaging_gif_semantic;
+
+  /// No description provided for @messaging_receipt_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Sent'**
+  String get messaging_receipt_sent;
+
+  /// No description provided for @messaging_receipt_sending.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending'**
+  String get messaging_receipt_sending;
+
+  /// No description provided for @messaging_receipt_retrying.
+  ///
+  /// In en, this message translates to:
+  /// **'Retrying'**
+  String get messaging_receipt_retrying;
+
+  /// No description provided for @messaging_receipt_delivered.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered'**
+  String get messaging_receipt_delivered;
+
+  /// No description provided for @messaging_receipt_seen.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen'**
+  String get messaging_receipt_seen;
+
+  /// No description provided for @messaging_receipt_not_sent.
+  ///
+  /// In en, this message translates to:
+  /// **'Not sent'**
+  String get messaging_receipt_not_sent;
+
+  /// No description provided for @messaging_receipt_seen_everyone.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by everyone'**
+  String get messaging_receipt_seen_everyone;
+
+  /// KAN-580 Group message receipt: how many recipients have seen it. Approved Messaging design, section 11.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by {seen} of {total}'**
+  String messaging_receipt_seen_by_count(int seen, int total);
+
+  /// KAN-580 Group message receipt: how many recipients it reached. Approved Messaging design, section 11.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to {delivered} of {total}'**
+  String messaging_receipt_delivered_to_count(int delivered, int total);
+
+  /// No description provided for @messaging_receipts_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Message info'**
+  String get messaging_receipts_title;
+
+  /// No description provided for @messaging_receipts_seen_by.
+  ///
+  /// In en, this message translates to:
+  /// **'Seen by'**
+  String get messaging_receipts_seen_by;
+
+  /// No description provided for @messaging_receipts_delivered_to.
+  ///
+  /// In en, this message translates to:
+  /// **'Delivered to'**
+  String get messaging_receipts_delivered_to;
+
+  /// No description provided for @messaging_receipts_not_yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not delivered yet'**
+  String get messaging_receipts_not_yet;
+
+  /// No description provided for @messaging_receipts_not_yet_short.
+  ///
+  /// In en, this message translates to:
+  /// **'Not yet'**
+  String get messaging_receipts_not_yet_short;
+
+  /// No description provided for @messaging_receipts_unknown_person.
+  ///
+  /// In en, this message translates to:
+  /// **'Someone'**
+  String get messaging_receipts_unknown_person;
+
+  /// KAN-614 receipts stat-tile value when the whole group is in the state (Seen or Delivered).
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get messaging_receipts_all;
+
+  /// KAN-614 receipts stat-tile value when nobody is in the state (Not yet).
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody'**
+  String get messaging_receipts_nobody;
+
+  /// KAN-592 title of the sheet that picks the city a post is posted from, and the prefix of its pill.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted from'**
+  String get composer_posted_from_title;
+
+  /// KAN-592 composer pill showing the posting city.
+  ///
+  /// In en, this message translates to:
+  /// **'Posted from {city}'**
+  String composer_posted_from_pill(String city);
+
+  /// KAN-592 composer pill label while no posting city is known.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose city'**
+  String get composer_posted_from_choose;
+
+  /// KAN-592 search field placeholder in the posting-city sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Search cities'**
+  String get composer_posted_from_search;
+
+  /// KAN-592 line at the top of the posting-city sheet when it opens because Post was tapped with no city.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose the city you are posting from, then tap Post. Your draft is kept.'**
+  String get composer_posted_from_prompt;
+
+  /// KAN-592 empty result in the posting-city sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'No cities match that search'**
+  String get composer_posted_from_none;
+
+  /// KAN-592 header location of a post written before posting cities were recorded (CEO ruling: Dubai).
+  ///
+  /// In en, this message translates to:
+  /// **'Dubai'**
+  String get post_legacy_city;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Title of the chat Share drawer and the accessible name of the composer's attach control.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get messaging_share_title;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: choose a photo from the OS photo library.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo library'**
+  String get messaging_share_gallery;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: take a photo with the camera.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera'**
+  String get messaging_share_camera;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: choose an image file with the OS file picker.
+  ///
+  /// In en, this message translates to:
+  /// **'Image file'**
+  String get messaging_share_file;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Hint under the Image file row.
+  ///
+  /// In en, this message translates to:
+  /// **'Images only'**
+  String get messaging_share_file_hint;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Share drawer row: open the GIF search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search GIFs'**
+  String get messaging_share_gif;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Hint under the Search GIFs row. The design leaves the credit in English in both languages; the Arabic is PROVISIONAL pending content review (the parity test needs an Arabic value).
+  ///
+  /// In en, this message translates to:
+  /// **'Powered by GIPHY'**
+  String get messaging_share_gif_hint;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Over an image while it uploads; percent is a whole number from 0 to 100.
+  ///
+  /// In en, this message translates to:
+  /// **'Uploading · {percent}%'**
+  String messaging_image_uploading(int percent);
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of the cancel target on an uploading image.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel upload'**
+  String get messaging_image_cancel;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of the retry target on an image whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry upload'**
+  String get messaging_image_retry;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Over an image whose upload failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Upload failed'**
+  String get messaging_image_failed;
+
+  /// KAN-581 Copy taken verbatim from the Messaging design (Messaging.dc.html, messaging.jsx). Accessible name of a settled image in the thread; opens it full screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open image'**
+  String get messaging_image_open;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Accessible name of the remove target on a queued photo above the composer.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove photo'**
+  String get messaging_image_remove;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Closes the full-screen image.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get messaging_image_close;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Title of the full-screen image sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo'**
+  String get messaging_image_viewer_title;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when a picked image is over the size limit, or the server refuses it as too large.
+  ///
+  /// In en, this message translates to:
+  /// **'That image is too large to send.'**
+  String get messaging_image_too_large;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when a picked file is not a supported image, or the server refuses its type.
+  ///
+  /// In en, this message translates to:
+  /// **'Only JPG, PNG and WebP images can be sent.'**
+  String get messaging_image_unsupported;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the camera permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Camera access is off. Allow it in Settings to take a photo.'**
+  String get messaging_image_camera_denied;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when the photo library permission was refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Photo access is off. Allow it in Settings to choose a photo.'**
+  String get messaging_image_library_denied;
+
+  /// KAN-581 Copy written for this ticket; the design has no string for it. PROVISIONAL pending content review in EN and AR. Shown when picking an image failed for any other reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t get that image. Try again.'**
+  String get messaging_image_pick_failed;
+
+  /// KAN-589 Settings dashboard tile and screen title for the device location and Saved places.
+  ///
+  /// In en, this message translates to:
+  /// **'Location'**
+  String get settings_tile_location;
+
+  /// KAN-589 owner-private saved places list on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places'**
+  String get location_saved_places;
+
+  /// KAN-589 Location.dc.html L27 page subtitle on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Where you are on this device, and the private places you’ve named. Only you see this page.'**
+  String get location_page_private;
+
+  /// KAN-589 Location.dc.html L27/L30 Saved places section header.
+  ///
+  /// In en, this message translates to:
+  /// **'Saved places · Private'**
+  String get location_saved_places_header;
+
+  /// KAN-589 Location.dc.html L27/L30 Saved places privacy note.
+  ///
+  /// In en, this message translates to:
+  /// **'Only you see these. They name your location in the app and are never shown on your profile.'**
+  String get location_saved_places_note;
+
+  /// KAN-589 add-a-saved-place action on Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a place'**
+  String get location_add_place;
+
+  /// KAN-589 shown when a custom label is chosen and its name is empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a name for this place'**
+  String get location_custom_name_required;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get sport_overview_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Overview'**
+  String get sport_overview_tab_overview;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get sport_overview_tab_games;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get sport_overview_tab_meetups;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_tab_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_tab_posts;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get sport_overview_follow;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get sport_overview_following;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 follower} other{{count} followers}}'**
+  String sport_overview_followers(int count);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Games in 7 days'**
+  String get sport_overview_stat_games;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups in 7 days'**
+  String get sport_overview_stat_meetups;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_stat_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces'**
+  String get sport_overview_stat_spaces;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_stat_posts;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'See all'**
+  String get sport_overview_see_all;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Next games'**
+  String get sport_overview_section_games;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_section_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Latest posts'**
+  String get sport_overview_section_posts;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get sport_overview_switch_venues;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces'**
+  String get sport_overview_switch_spaces;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No games in the next 7 days'**
+  String get sport_overview_empty_games_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone creates a game for this sport, it shows here.'**
+  String get sport_overview_empty_games_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No meetups in the next 7 days'**
+  String get sport_overview_empty_meetups_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'When someone creates a meetup for this sport, it shows here.'**
+  String get sport_overview_empty_meetups_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No venues yet'**
+  String get sport_overview_empty_venues_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No venue offers this sport in the chosen city.'**
+  String get sport_overview_empty_venues_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No spaces yet'**
+  String get sport_overview_empty_spaces_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No space for this sport in the chosen city.'**
+  String get sport_overview_empty_spaces_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No posts yet'**
+  String get sport_overview_empty_posts_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts tagged with this sport show here.'**
+  String get sport_overview_empty_posts_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this'**
+  String get sport_overview_error_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again. Nothing is shown until it loads.'**
+  String get sport_overview_error_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get sport_overview_retry;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Load more'**
+  String get sport_overview_load_more;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'This sport isn\'t available'**
+  String get sport_overview_page_error_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'It may have been removed, or the page couldn\'t load.'**
+  String get sport_overview_page_error_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'City'**
+  String get sport_overview_city_label;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'All cities'**
+  String get sport_overview_city_all;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a city'**
+  String get sport_overview_city_pick_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear city'**
+  String get sport_overview_city_clear;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a city to see what\'s on'**
+  String get sport_overview_city_cta_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'This only filters this page. Your location stays as it is.'**
+  String get sport_overview_city_cta_text;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a city'**
+  String get sport_overview_city_cta_button;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No listings are grouped under {city} yet, so this shows every city.'**
+  String sport_overview_city_unmapped(String city);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {a}'**
+  String sport_overview_mutual_one(String a);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {a} and {b}'**
+  String sport_overview_mutual_two(String a, String b);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Followed by {a}, {b} and {c}'**
+  String sport_overview_mutual_three(String a, String b, String c);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game'**
+  String get sport_overview_create_game;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update your Following. Try again.'**
+  String get sport_overview_follow_failed;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'You must follow at least one sport.'**
+  String get sport_overview_unfollow_last;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'You play this sport, so you can\'t unfollow it.'**
+  String get sport_overview_unfollow_practicing;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your primary sport, so you can\'t unfollow it.'**
+  String get sport_overview_unfollow_primary;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Do you want to create profile?'**
+  String get sport_overview_join_profile_title;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'You need a {sport} profile to join. It adds {sport} to the sports you play and follow.'**
+  String sport_overview_join_profile_text(String sport);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes'**
+  String get sport_overview_join_profile_yes;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get sport_overview_join_profile_no;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t create your profile, so you haven\'t joined. Try again.'**
+  String get sport_overview_join_profile_failed;
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'{price} AED / hour'**
+  String sport_overview_space_price(String price);
+
+  /// KAN-622 Sport Overview page.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {count} players'**
+  String sport_overview_space_capacity(int count);
+
+  /// KAN-622 entry from a sport chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Open {sport} page'**
+  String sport_overview_open_page(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport'**
+  String get sport_overview_kind_plain;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport · {formats}'**
+  String sport_overview_kind_formats(String formats);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Public sport page'**
+  String get sport_overview_public_chip;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Follower} other{Followers}}'**
+  String sport_overview_followers_label(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Posts'**
+  String get sport_overview_posts_label;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Create game or meetup'**
+  String get sport_overview_create_game_or_meetup;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} posts, games and news will show in your feed. This doesn’t add {sport} to your sports profile.'**
+  String sport_overview_follow_note(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Select a city to see {sport} near you'**
+  String sport_overview_nocity_title(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Games, venues, places and posts are listed per city.'**
+  String get sport_overview_nocity_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load {sport} in {city}'**
+  String sport_overview_banner_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again. Following still works.'**
+  String get sport_overview_banner_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get sport_overview_banner_action;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing for {sport} in {city} yet'**
+  String sport_overview_empty_all_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No games, venues, places or posts here so far. Try another city.'**
+  String get sport_overview_empty_all_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get sport_overview_change_city;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} games in {city}'**
+  String sport_overview_empty_games_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} meetups in {city}'**
+  String sport_overview_empty_meetups_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing scheduled in the next 7 days. Try another city.'**
+  String get sport_overview_empty_next7_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} venues in {city}'**
+  String sport_overview_empty_venues_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Venues are businesses with bookable spaces for {sport}.'**
+  String sport_overview_empty_venues_city_text(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'No {sport} spaces in {city}'**
+  String sport_overview_empty_spaces_city_title(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Spaces are the pitches and courts you book inside a venue.'**
+  String get sport_overview_empty_spaces_city_text;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Play {sport} in {city}'**
+  String sport_overview_play_in(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days'**
+  String get sport_overview_next_7_days;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Games & meetups'**
+  String get sport_overview_tile_games_meetups;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'To book'**
+  String get sport_overview_tile_venues_sub;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Inside venues'**
+  String get sport_overview_tile_spaces_sub;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game} other{{count} games}}'**
+  String sport_overview_count_games(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 meetup} other{{count} meetups}}'**
+  String sport_overview_count_meetups(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 venue} other{{count} venues}}'**
+  String sport_overview_count_venues(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 bookable space} other{{count} bookable spaces}}'**
+  String sport_overview_count_spaces(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post} other{{count} posts}}'**
+  String sport_overview_count_posts(int count);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next: {when}'**
+  String sport_overview_hero_next(String when);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Top venues'**
+  String get sport_overview_section_top_venues;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Next 7 days in {city} · soonest first'**
+  String sport_overview_sub_next7(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Businesses with {sport} spaces in {city} · top rated first'**
+  String sport_overview_sub_venues(String sport, String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Pitches inside venues in {city} · lowest price first'**
+  String sport_overview_sub_spaces(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Tagged {sport} · newest first'**
+  String sport_overview_sub_posts(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Join'**
+  String get sport_overview_join;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Book'**
+  String get sport_overview_book;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'per hour'**
+  String get sport_overview_per_hour;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'AED'**
+  String get sport_overview_currency;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes this page only. Your location on this device stays {city}.'**
+  String sport_overview_city_sheet_note_device(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Changes this page only. Your location on this device isn’t changed.'**
+  String get sport_overview_city_sheet_note;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Use my location · {city}'**
+  String sport_overview_city_use_device(String city);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow {sport}?'**
+  String sport_overview_unfollow_title(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} posts and games stop appearing in your feed. Your sports profile isn’t affected.'**
+  String sport_overview_unfollow_text(String sport);
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Unfollow'**
+  String get sport_overview_unfollow_confirm;
+
+  /// KAN-591 Sport Overview v2.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get sport_overview_unfollow_cancel;
+
+  /// No description provided for @listing_choose_city_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose city'**
+  String get listing_choose_city_title;
+
+  /// No description provided for @listing_select_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get listing_select_city;
+
+  /// KAN-628 city-first CTA when no city is set (intro screen and device section).
+  ///
+  /// In en, this message translates to:
+  /// **'Select city'**
+  String get location_intro_select_city;
+
+  /// KAN-640 first line of the Location intro (Location.dc.html `welcome`), first name only.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome, {name}'**
+  String location_intro_kicker(String name);
+
+  /// No description provided for @location_intro_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Where do you play?'**
+  String get location_intro_title;
+
+  /// No description provided for @location_intro_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Your city decides which games, venues and meetups you see. Adding an area turns on distances.'**
+  String get location_intro_subtitle;
+
+  /// No description provided for @location_intro_manual.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter location manually'**
+  String get location_intro_manual;
+
+  /// No description provided for @location_intro_detecting.
+  ///
+  /// In en, this message translates to:
+  /// **'Finding your area'**
+  String get location_intro_detecting;
+
+  /// No description provided for @location_intro_try_again.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get location_intro_try_again;
+
+  /// No description provided for @location_intro_denied_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Location access is off'**
+  String get location_intro_denied_title;
+
+  /// No description provided for @location_intro_denied_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn it on in Settings, or enter your city yourself.'**
+  String get location_intro_denied_message;
+
+  /// No description provided for @location_intro_no_gps_title.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t get a GPS fix'**
+  String get location_intro_no_gps_title;
+
+  /// No description provided for @location_intro_no_gps_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Location services may be off or the signal is weak. Try again, or enter your city.'**
+  String get location_intro_no_gps_message;
+
+  /// No description provided for @location_intro_country_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your country'**
+  String get location_intro_country_title;
+
+  /// No description provided for @location_intro_country_change.
+  ///
+  /// In en, this message translates to:
+  /// **'Change country'**
+  String get location_intro_country_change;
+
+  /// No description provided for @manual_location_search_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a city'**
+  String get manual_location_search_city;
+
+  /// No description provided for @manual_location_change_city.
+  ///
+  /// In en, this message translates to:
+  /// **'Change city'**
+  String get manual_location_change_city;
+
+  /// No description provided for @manual_location_area_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Only areas in this city are listed.'**
+  String get manual_location_area_hint;
+
+  /// No description provided for @manual_location_search_area.
+  ///
+  /// In en, this message translates to:
+  /// **'Search areas in {city}'**
+  String manual_location_search_area(String city);
+
+  /// No description provided for @manual_location_areas_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Areas in {city}'**
+  String manual_location_areas_in(String city);
+
+  /// KAN-628 section title of the device location block in Settings > Location.
+  ///
+  /// In en, this message translates to:
+  /// **'Device location'**
+  String get location_settings_device_title;
+
+  /// KAN-589 Section heading on Settings > Location above Saved places. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Location on this device'**
+  String get location_device_section;
+
+  /// KAN-589 Segmented option: the logo label follows this device's GPS. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Auto'**
+  String get location_mode_auto;
+
+  /// KAN-589 Segmented option: the user picks the place. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Manual'**
+  String get location_mode_manual;
+
+  /// KAN-589 Caption under the section when Auto is on. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Follows this device\'s location.'**
+  String get location_mode_auto_hint;
+
+  /// KAN-589 Caption under the section when Manual is on. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You choose where you are.'**
+  String get location_mode_manual_hint;
+
+  /// KAN-589 Action that opens the City/Area picker in Manual mode. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Change'**
+  String get location_mode_change;
+
+  /// KAN-589 Manual mode with no place picked yet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No place chosen'**
+  String get location_mode_none_chosen;
+
+  /// KAN-589 Error state of the saved places list. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not load locations'**
+  String get saved_places_load_error;
+
+  /// KAN-589 toast when saving a place fails; the sheet stays open. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t save this location. Try again.'**
+  String get saved_places_save_failed;
+
+  /// KAN-589 Empty state title. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No saved locations yet'**
+  String get saved_places_empty_title;
+
+  /// KAN-589 Empty state body. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save your home, work, or favourite spots so you can quickly tag them in posts.'**
+  String get saved_places_empty_text;
+
+  /// KAN-589 Empty state action. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Add your first location'**
+  String get saved_places_add_first;
+
+  /// KAN-589 Swipe action and dialog confirm for a saved place. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get saved_places_delete;
+
+  /// KAN-589 Delete confirmation title. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete location?'**
+  String get saved_places_delete_title;
+
+  /// KAN-589 Delete confirmation body. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{label}\" from your saved locations?'**
+  String saved_places_delete_body(String label);
+
+  /// KAN-589 Accessibility label of the star button. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as primary'**
+  String get saved_places_set_primary;
+
+  /// KAN-589 Accessibility label of the edit button. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get saved_places_rename;
+
+  /// KAN-589 Rename dialog title. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename location'**
+  String get saved_places_rename_title;
+
+  /// KAN-589 Placeholder of the custom name field. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom name'**
+  String get saved_places_custom_name;
+
+  /// KAN-589 Saved place label chip. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'School'**
+  String get saved_places_label_school;
+
+  /// KAN-589 Saved place label chip. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Current'**
+  String get saved_places_label_current;
+
+  /// KAN-589 Title of the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save this location'**
+  String get saved_places_save_title;
+
+  /// KAN-589 Badge when the fix has no accuracy. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown accuracy'**
+  String get saved_places_accuracy_unknown;
+
+  /// KAN-589 Search field hint in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search for a place…'**
+  String get saved_places_search_hint;
+
+  /// KAN-589 Heading of the label chips in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Label'**
+  String get saved_places_label;
+
+  /// KAN-589 Placeholder for a custom label name. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'e.g. My gym, Parents\' house'**
+  String get saved_places_custom_hint;
+
+  /// KAN-589 Toggle row in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Set as primary location'**
+  String get saved_places_primary_toggle;
+
+  /// KAN-589 Save button in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save location'**
+  String get saved_places_save_action;
+
+  /// KAN-589 Use-once button in the save sheet. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Use once'**
+  String get saved_places_use_once;
+
+  /// KAN-589 shown in place of the map on Settings > Location when the map cannot load (no map key). AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Map unavailable'**
+  String get location_map_unavailable;
+
+  /// KAN-589 label of a location that comes from the device GPS. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Current location'**
+  String get location_current_label;
+
+  /// KAN-589 confirm button of the Set location point picker. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Use this location'**
+  String get location_point_use;
+
+  /// KAN-589 label of a point picked on the map without a place name. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Selected location'**
+  String get location_point_selected;
+
+  /// KAN-589 hint under the Set location map. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Search a place, or tap the map to move the pin.'**
+  String get location_point_hint;
+
+  /// KAN-589 toast when a new saved place is within 25 m of another saved place; nothing is saved. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'You already have a saved place at this location.'**
+  String get saved_places_duplicate;
+
+  /// KAN-589 toast when deleting a saved place fails. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t delete this place. Try again.'**
+  String get saved_places_delete_failed;
+
+  /// KAN-589 place search dropdown with no match. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'No results found'**
+  String get location_search_no_results;
+
+  /// KAN-589 place search dropdown when the search request failed. AR pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load results'**
+  String get location_search_failed;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'What brings you to Dabbler?'**
+  String get onb_intention_title;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'Choose what brings you here. Your choice helps us understand your goals.'**
+  String get onb_intention_subtitle;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect & play'**
+  String get onb_intention_connect_play;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Play & organise'**
+  String get onb_intention_play_organise;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'Organise sport events'**
+  String get onb_intention_organise;
+
+  /// KAN-650 onboarding intention copy. AR signed off by content-manager (KAN-681).
+  ///
+  /// In en, this message translates to:
+  /// **'Host sports & events'**
+  String get onb_intention_host_games;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow sports, meet people and join the fun.'**
+  String get onb_intention_connect_play_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Join games and bring people together for your own.'**
+  String get onb_intention_play_organise_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Bring players together and organise games and meetups.'**
+  String get onb_intention_organise_body;
+
+  /// KAN-681 step 2 card helper text, from Auth and Onboarding.dc.html INTENTIONS.
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome players to your venue and spots.'**
+  String get onb_intention_host_games_body;
+
+  /// KAN-650 onboarding intention copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get onb_intention_continue;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This account already has a profile. Please continue with the existing sign-in flow.'**
+  String get onb_error_legacy_profile_requires_existing_flow;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your profile needs an update before you can continue. Please try again later.'**
+  String get onb_error_profile_migration_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Changing the account type isn’t supported yet.'**
+  String get onb_error_persona_change_not_supported;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'An account can have only one profile.'**
+  String get onb_error_single_profile_required;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'This profile can’t be converted right now.'**
+  String get onb_error_persona_conversion_blocked;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn’t save that change. Please try again.'**
+  String get onb_error_persona_write_via_rpc_only;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Your choice doesn’t match what we saved. Please choose again.'**
+  String get onb_error_onboarding_intention_mismatch;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose at least one sport to continue.'**
+  String get onb_error_contributor_sports_incomplete;
+
+  /// KAN-650 onboarding intention/error copy. AR pending content review unless reused.
+  ///
+  /// In en, this message translates to:
+  /// **'Something went wrong. Please try again.'**
+  String get onb_error_generic;
+
+  /// KAN-666 profile rating summary.
+  ///
+  /// In en, this message translates to:
+  /// **'from {count, plural, =1{1 rating} other{{count} ratings}}'**
+  String ratings_summary_from_count(int count);
+
+  /// KAN-666 profile rating summary, screen reader label.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating {average} out of 5'**
+  String ratings_summary_semantics(String average);
+
+  /// KAN-667 map tile attribution, required by the OSM tile licence. Keep the © sign.
+  ///
+  /// In en, this message translates to:
+  /// **'© OpenStreetMap contributors'**
+  String get map_attribution_osm;
+
+  /// KAN-669 Games discovery: switch to the map view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show map'**
+  String get games_view_map;
+
+  /// KAN-669 Games discovery: switch back to the list view (semantic label of the toggle).
+  ///
+  /// In en, this message translates to:
+  /// **'Show list'**
+  String get games_view_list;
+
+  /// KAN-669 empty state title when no upcoming public game matches the filters.
+  ///
+  /// In en, this message translates to:
+  /// **'No games on the map'**
+  String get games_map_empty_title;
+
+  /// No description provided for @games_map_empty_text.
+  ///
+  /// In en, this message translates to:
+  /// **'No upcoming public games match your filters. Change the filters or switch back to the list.'**
+  String get games_map_empty_text;
+
+  /// KAN-680 shown when creating a challenge without a sport.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick a sport for your challenge, then try again.'**
+  String get challenge_error_sport_required;
+
+  /// KAN-680 shown when the chosen sport key is not a known sport.
+  ///
+  /// In en, this message translates to:
+  /// **'That sport isn\'t available. Choose one from the list.'**
+  String get challenge_error_invalid_sport;
+
+  /// KAN-680 shown when a non-organiser tries to create a challenge.
+  ///
+  /// In en, this message translates to:
+  /// **'Only organiser accounts can create challenges.'**
+  String get challenge_error_organiser_required;
+
+  /// No description provided for @profile_upcoming_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'No games yet. Join one nearby or create your own.'**
+  String get profile_upcoming_empty;
+
+  /// No description provided for @profile_find_a_game.
+  ///
+  /// In en, this message translates to:
+  /// **'Find a game'**
+  String get profile_find_a_game;
+
+  /// No description provided for @profile_section_sports_you_play.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports you play'**
+  String get profile_section_sports_you_play;
+
+  /// No description provided for @profile_stat_games_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Games & meetups'**
+  String get profile_stat_games_meetups;
+
+  /// No description provided for @profile_stat_new_hero_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Join or organise one to start your list'**
+  String get profile_stat_new_hero_sub;
+
+  /// No description provided for @profile_stat_played.
+  ///
+  /// In en, this message translates to:
+  /// **'Played'**
+  String get profile_stat_played;
+
+  /// No description provided for @profile_stat_organised.
+  ///
+  /// In en, this message translates to:
+  /// **'Organised'**
+  String get profile_stat_organised;
+
+  /// No description provided for @bench_row_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench mode'**
+  String get bench_row_title;
+
+  /// No description provided for @bench_row_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off'**
+  String get bench_row_off;
+
+  /// No description provided for @bench_row_until.
+  ///
+  /// In en, this message translates to:
+  /// **'On until {date}'**
+  String bench_row_until(String date);
+
+  /// No description provided for @bench_row_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'On, no end date'**
+  String get bench_row_no_end;
+
+  /// No description provided for @bench_screen_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Bench mode'**
+  String get bench_screen_title;
+
+  /// No description provided for @bench_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit bench'**
+  String get bench_edit_title;
+
+  /// No description provided for @bench_explain_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Take a break from the social side'**
+  String get bench_explain_title;
+
+  /// No description provided for @bench_explain_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Sit out for a while. You can still play and show up in game rosters.'**
+  String get bench_explain_body;
+
+  /// No description provided for @bench_paused_head.
+  ///
+  /// In en, this message translates to:
+  /// **'Paused while on bench'**
+  String get bench_paused_head;
+
+  /// No description provided for @bench_paused_1.
+  ///
+  /// In en, this message translates to:
+  /// **'You can’t post, comment or like'**
+  String get bench_paused_1;
+
+  /// No description provided for @bench_paused_2.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re hidden from the feed and search, as you choose'**
+  String get bench_paused_2;
+
+  /// No description provided for @bench_paused_3.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests are blocked, as you choose'**
+  String get bench_paused_3;
+
+  /// No description provided for @bench_keep_head.
+  ///
+  /// In en, this message translates to:
+  /// **'Still works'**
+  String get bench_keep_head;
+
+  /// No description provided for @bench_keep_1.
+  ///
+  /// In en, this message translates to:
+  /// **'Join and play games'**
+  String get bench_keep_1;
+
+  /// No description provided for @bench_keep_2.
+  ///
+  /// In en, this message translates to:
+  /// **'Show up in game rosters'**
+  String get bench_keep_2;
+
+  /// No description provided for @bench_reason_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get bench_reason_label;
+
+  /// No description provided for @bench_reason_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'A short note for yourself'**
+  String get bench_reason_placeholder;
+
+  /// No description provided for @bench_reason_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep it short.'**
+  String get bench_reason_helper;
+
+  /// No description provided for @bench_end_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End date (optional)'**
+  String get bench_end_label;
+
+  /// No description provided for @bench_end_placeholder.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_end_placeholder;
+
+  /// No description provided for @bench_end_helper.
+  ///
+  /// In en, this message translates to:
+  /// **'You can end bench earlier any time.'**
+  String get bench_end_helper;
+
+  /// No description provided for @bench_toggle_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide me in the feed'**
+  String get bench_toggle_feed;
+
+  /// No description provided for @bench_toggle_feed_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Your activity won’t appear in feeds.'**
+  String get bench_toggle_feed_sub;
+
+  /// No description provided for @bench_toggle_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide me in search'**
+  String get bench_toggle_search;
+
+  /// No description provided for @bench_toggle_search_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'People can’t find you by name.'**
+  String get bench_toggle_search_sub;
+
+  /// No description provided for @bench_toggle_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Block friend requests'**
+  String get bench_toggle_friends;
+
+  /// No description provided for @bench_toggle_friends_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'No new requests while on bench.'**
+  String get bench_toggle_friends_sub;
+
+  /// No description provided for @bench_toggle_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute social notifications'**
+  String get bench_toggle_notifs;
+
+  /// No description provided for @bench_toggle_notifs_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Likes, comments and friend activity stay quiet.'**
+  String get bench_toggle_notifs_sub;
+
+  /// No description provided for @bench_start.
+  ///
+  /// In en, this message translates to:
+  /// **'Start bench'**
+  String get bench_start;
+
+  /// No description provided for @bench_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save changes'**
+  String get bench_save;
+
+  /// No description provided for @bench_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Start bench mode?'**
+  String get bench_confirm_title;
+
+  /// No description provided for @bench_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'This applies right away. You can end it any time.'**
+  String get bench_confirm_body;
+
+  /// No description provided for @bench_confirm_sum_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the feed'**
+  String get bench_confirm_sum_feed;
+
+  /// No description provided for @bench_confirm_sum_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in search'**
+  String get bench_confirm_sum_search;
+
+  /// No description provided for @bench_confirm_sum_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests blocked'**
+  String get bench_confirm_sum_friends;
+
+  /// No description provided for @bench_confirm_sum_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications muted'**
+  String get bench_confirm_sum_notifs;
+
+  /// No description provided for @bench_confirm_sum_end.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends on {date}'**
+  String bench_confirm_sum_end(String date);
+
+  /// No description provided for @bench_confirm_sum_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_confirm_sum_no_end;
+
+  /// No description provided for @bench_cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get bench_cancel;
+
+  /// No description provided for @bench_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get bench_back;
+
+  /// No description provided for @bench_retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get bench_retry;
+
+  /// No description provided for @bench_manage.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage'**
+  String get bench_manage;
+
+  /// No description provided for @bench_status_badge.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench'**
+  String get bench_status_badge;
+
+  /// No description provided for @bench_status_head.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re on bench'**
+  String get bench_status_head;
+
+  /// No description provided for @bench_status_since.
+  ///
+  /// In en, this message translates to:
+  /// **'Since'**
+  String get bench_status_since;
+
+  /// No description provided for @bench_status_until.
+  ///
+  /// In en, this message translates to:
+  /// **'Until'**
+  String get bench_status_until;
+
+  /// No description provided for @bench_status_reason.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get bench_status_reason;
+
+  /// No description provided for @bench_status_hidden_head.
+  ///
+  /// In en, this message translates to:
+  /// **'What’s hidden'**
+  String get bench_status_hidden_head;
+
+  /// No description provided for @bench_status_feed.
+  ///
+  /// In en, this message translates to:
+  /// **'Feed'**
+  String get bench_status_feed;
+
+  /// No description provided for @bench_status_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search'**
+  String get bench_status_search;
+
+  /// No description provided for @bench_status_friends.
+  ///
+  /// In en, this message translates to:
+  /// **'Friend requests'**
+  String get bench_status_friends;
+
+  /// No description provided for @bench_status_notifs.
+  ///
+  /// In en, this message translates to:
+  /// **'Social notifications'**
+  String get bench_status_notifs;
+
+  /// No description provided for @bench_status_hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden'**
+  String get bench_status_hidden;
+
+  /// No description provided for @bench_status_visible.
+  ///
+  /// In en, this message translates to:
+  /// **'Visible'**
+  String get bench_status_visible;
+
+  /// No description provided for @bench_status_blocked.
+  ///
+  /// In en, this message translates to:
+  /// **'Blocked'**
+  String get bench_status_blocked;
+
+  /// No description provided for @bench_status_allowed.
+  ///
+  /// In en, this message translates to:
+  /// **'Allowed'**
+  String get bench_status_allowed;
+
+  /// No description provided for @bench_status_muted.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get bench_status_muted;
+
+  /// No description provided for @bench_status_on.
+  ///
+  /// In en, this message translates to:
+  /// **'On'**
+  String get bench_status_on;
+
+  /// No description provided for @bench_status_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get bench_status_no_end;
+
+  /// No description provided for @bench_end.
+  ///
+  /// In en, this message translates to:
+  /// **'End bench'**
+  String get bench_end;
+
+  /// No description provided for @bench_edit_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit'**
+  String get bench_edit_action;
+
+  /// No description provided for @bench_end_confirm_title.
+  ///
+  /// In en, this message translates to:
+  /// **'End bench now?'**
+  String get bench_end_confirm_title;
+
+  /// No description provided for @bench_end_confirm_body.
+  ///
+  /// In en, this message translates to:
+  /// **'You’ll be visible again and can post, comment and like.'**
+  String get bench_end_confirm_body;
+
+  /// No description provided for @bench_end_confirm_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep bench'**
+  String get bench_end_confirm_keep;
+
+  /// No description provided for @bench_loading.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get bench_loading;
+
+  /// No description provided for @bench_error_start_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t start bench'**
+  String get bench_error_start_title;
+
+  /// No description provided for @bench_error_start_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get bench_error_start_body;
+
+  /// No description provided for @bench_error_load_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t load bench mode'**
+  String get bench_error_load_title;
+
+  /// No description provided for @bench_error_load_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get bench_error_load_body;
+
+  /// No description provided for @bench_offline_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re offline'**
+  String get bench_offline_title;
+
+  /// No description provided for @bench_offline_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to end or edit bench. Your status shows as last saved.'**
+  String get bench_offline_body;
+
+  /// No description provided for @bench_indicator_home.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench until {date}'**
+  String bench_indicator_home(String date);
+
+  /// No description provided for @bench_indicator_home_no_end.
+  ///
+  /// In en, this message translates to:
+  /// **'On bench'**
+  String get bench_indicator_home_no_end;
+
+  /// No description provided for @bench_indicator_profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden in the feed and search until {date}.'**
+  String bench_indicator_profile(String date);
+
+  /// No description provided for @recurring_repeat_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat'**
+  String get recurring_repeat_label;
+
+  /// No description provided for @recurring_option_none.
+  ///
+  /// In en, this message translates to:
+  /// **'Does not repeat'**
+  String get recurring_option_none;
+
+  /// No description provided for @recurring_option_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly'**
+  String get recurring_option_weekly;
+
+  /// No description provided for @recurring_option_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get recurring_option_biweekly;
+
+  /// No description provided for @recurring_summary_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats every week on {weekday}'**
+  String recurring_summary_weekly(String weekday);
+
+  /// No description provided for @recurring_summary_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeats every 2 weeks on {weekday}'**
+  String recurring_summary_biweekly(String weekday);
+
+  /// No description provided for @recurring_end_date_label.
+  ///
+  /// In en, this message translates to:
+  /// **'End date'**
+  String get recurring_end_date_label;
+
+  /// No description provided for @recurring_end_date_none.
+  ///
+  /// In en, this message translates to:
+  /// **'No end date'**
+  String get recurring_end_date_none;
+
+  /// No description provided for @recurring_end_date_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Without an end date, the series runs until you end it.'**
+  String get recurring_end_date_hint;
+
+  /// No description provided for @recurring_end_date_pick.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose an end date'**
+  String get recurring_end_date_pick;
+
+  /// No description provided for @recurring_end_date_value.
+  ///
+  /// In en, this message translates to:
+  /// **'Ends {date}'**
+  String recurring_end_date_value(DateTime date);
+
+  /// No description provided for @recurring_end_date_clear.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove end date'**
+  String get recurring_end_date_clear;
+
+  /// No description provided for @recurring_end_date_before_start.
+  ///
+  /// In en, this message translates to:
+  /// **'The end date must be after the first game.'**
+  String get recurring_end_date_before_start;
+
+  /// No description provided for @recurring_limit_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Up to {max, plural, =1{1 game} other{{max} games}} per series. Renew it when it ends to keep going.'**
+  String recurring_limit_hint(int max);
+
+  /// No description provided for @recurring_limit_reached.
+  ///
+  /// In en, this message translates to:
+  /// **'This series has reached its limit of {max, plural, =1{1 game} other{{max} games}}. Renew it to schedule more.'**
+  String recurring_limit_reached(int max);
+
+  /// No description provided for @recurring_limit_reached_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Series limit reached'**
+  String get recurring_limit_reached_title;
+
+  /// No description provided for @recurring_preview_count.
+  ///
+  /// In en, this message translates to:
+  /// **'This creates {count, plural, =1{1 game} other{{count} games}}.'**
+  String recurring_preview_count(int count);
+
+  /// No description provided for @recurring_renew_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Renew series'**
+  String get recurring_renew_action;
+
+  /// No description provided for @recurring_paid_disabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Paid games can\'t repeat yet'**
+  String get recurring_paid_disabled;
+
+  /// No description provided for @recurring_paid_free_hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Make the game free to turn on Repeat.'**
+  String get recurring_paid_free_hint;
+
+  /// No description provided for @recurring_paid_switched_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Repeat was turned off because this game is paid. Paid games can\'t repeat yet.'**
+  String get recurring_paid_switched_off;
+
+  /// No description provided for @recurring_location_required.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a venue or set your location to repeat this game.'**
+  String get recurring_location_required;
+
+  /// No description provided for @recurring_badge_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Series'**
+  String get recurring_badge_label;
+
+  /// No description provided for @recurring_badge_weekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Weekly series'**
+  String get recurring_badge_weekly;
+
+  /// No description provided for @recurring_badge_biweekly.
+  ///
+  /// In en, this message translates to:
+  /// **'Every 2 weeks'**
+  String get recurring_badge_biweekly;
+
+  /// No description provided for @recurring_badge_ends.
+  ///
+  /// In en, this message translates to:
+  /// **'Series ends {date}'**
+  String recurring_badge_ends(DateTime date);
+
+  /// No description provided for @recurring_badge_open_ended.
+  ///
+  /// In en, this message translates to:
+  /// **'Runs until the organiser ends it'**
+  String get recurring_badge_open_ended;
+
+  /// No description provided for @recurring_badge_semantics.
+  ///
+  /// In en, this message translates to:
+  /// **'Part of a recurring series'**
+  String get recurring_badge_semantics;
+
+  /// No description provided for @recurring_edit_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Edit a recurring game'**
+  String get recurring_edit_title;
+
+  /// No description provided for @recurring_edit_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This game is part of a series. What should your changes apply to?'**
+  String get recurring_edit_subtitle;
+
+  /// No description provided for @recurring_edit_this_only.
+  ///
+  /// In en, this message translates to:
+  /// **'This game only'**
+  String get recurring_edit_this_only;
+
+  /// No description provided for @recurring_edit_this_only_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the game on {date} changes. The rest of the series stays as it is.'**
+  String recurring_edit_this_only_desc(DateTime date);
+
+  /// No description provided for @recurring_edit_all_future.
+  ///
+  /// In en, this message translates to:
+  /// **'All future games'**
+  String get recurring_edit_all_future;
+
+  /// No description provided for @recurring_edit_all_future_desc.
+  ///
+  /// In en, this message translates to:
+  /// **'This game and every later game in the series change. Players who joined keep their spot on games that aren\'t rebuilt.'**
+  String get recurring_edit_all_future_desc;
+
+  /// No description provided for @recurring_edit_continue.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue'**
+  String get recurring_edit_continue;
+
+  /// No description provided for @recurring_edit_close.
+  ///
+  /// In en, this message translates to:
+  /// **'Close'**
+  String get recurring_edit_close;
+
+  /// No description provided for @recurring_cancel_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel this series?'**
+  String get recurring_cancel_title;
+
+  /// No description provided for @recurring_cancel_future_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 future game will be cancelled.} other{{count} future games will be cancelled.}}'**
+  String recurring_cancel_future_line(int count);
+
+  /// No description provided for @recurring_cancel_players_line.
+  ///
+  /// In en, this message translates to:
+  /// **'{players, plural, =0{No players have joined yet.} =1{1 player has joined and will be notified.} other{{players} players have joined and will be notified.}}'**
+  String recurring_cancel_players_line(int players);
+
+  /// No description provided for @recurring_cancel_past_line.
+  ///
+  /// In en, this message translates to:
+  /// **'Past games and their history stay.'**
+  String get recurring_cancel_past_line;
+
+  /// No description provided for @recurring_cancel_no_carry_over.
+  ///
+  /// In en, this message translates to:
+  /// **'Nobody is moved to another game automatically.'**
+  String get recurring_cancel_no_carry_over;
+
+  /// No description provided for @recurring_cancel_confirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel series'**
+  String get recurring_cancel_confirm;
+
+  /// No description provided for @recurring_cancel_keep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep series'**
+  String get recurring_cancel_keep;
+
+  /// No description provided for @recurring_cancel_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Series cancelled'**
+  String get recurring_cancel_done;
+
+  /// No description provided for @recurring_cancel_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t cancel the series. Try again.'**
+  String get recurring_cancel_failed;
+
+  /// No description provided for @recurring_cancel_notif_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Game cancelled'**
+  String get recurring_cancel_notif_title;
+
+  /// No description provided for @recurring_cancel_notif_body.
+  ///
+  /// In en, this message translates to:
+  /// **'{game} on {date} was cancelled. The organiser ended this series.'**
+  String recurring_cancel_notif_body(String game, DateTime date);
+
+  /// No description provided for @recurring_future_title_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Game title'**
+  String get recurring_future_title_label;
+
+  /// No description provided for @recurring_future_capacity_label.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get recurring_future_capacity_label;
+
+  /// No description provided for @recurring_future_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save for all future games'**
+  String get recurring_future_save;
+
+  /// No description provided for @recurring_future_done.
+  ///
+  /// In en, this message translates to:
+  /// **'Series updated'**
+  String get recurring_future_done;
+
+  /// No description provided for @recurring_future_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update the series. Try again.'**
+  String get recurring_future_failed;
+
+  /// No description provided for @recurring_kept_with_players_notice.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 game with joined players keeps its old details.} other{{count} games with joined players keep their old details.}}'**
+  String recurring_kept_with_players_notice(int count);
+
+  /// No description provided for @recurring_cancel_action.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel series'**
+  String get recurring_cancel_action;
+
+  /// No description provided for @profile_visitor_sports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Sports they play'**
+  String get profile_visitor_sports_title;
+
+  /// No description provided for @profile_stat_games_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get profile_stat_games_visitor;
+
+  /// No description provided for @profile_stat_sport_games.
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} games'**
+  String profile_stat_sport_games(String sport);
+
+  /// No description provided for @profile_stat_as_player_or_organiser.
+  ///
+  /// In en, this message translates to:
+  /// **'As player or organiser'**
+  String get profile_stat_as_player_or_organiser;
+
+  /// No description provided for @profile_stat_sport_profiles.
+  ///
+  /// In en, this message translates to:
+  /// **'Sport profiles'**
+  String get profile_stat_sport_profiles;
+
+  /// No description provided for @profile_visitor_upcoming_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Open games they are playing in or organising'**
+  String get profile_visitor_upcoming_note;
+
+  /// No description provided for @profile_tag_playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing'**
+  String get profile_tag_playing;
+
+  /// No description provided for @profile_tag_organising.
+  ///
+  /// In en, this message translates to:
+  /// **'Organising'**
+  String get profile_tag_organising;
+
+  /// No description provided for @profile_tag_organising_playing.
+  ///
+  /// In en, this message translates to:
+  /// **'Organising · Playing'**
+  String get profile_tag_organising_playing;
+
+  /// KAN-689 icon-only Invite button on another user's profile header (Profiles.dc.html OTHER_ACTIONS calendar-add). Screen-reader label only. Arabic is PROVISIONAL pending content review.
+  ///
+  /// In en, this message translates to:
+  /// **'Invite'**
+  String get profile_invite_action_semantic;
+
+  /// No description provided for @profile_stat_games_played_visitor.
+  ///
+  /// In en, this message translates to:
+  /// **'Games played'**
+  String get profile_stat_games_played_visitor;
+
+  /// KAN-688 hero label with a sport selected (Profiles.dc.html line 576).
+  ///
+  /// In en, this message translates to:
+  /// **'{sport} matches'**
+  String profile_stat_sport_matches_visitor(String sport);
+
+  /// KAN-588 action on a city row in the Change location picker: choose the city on its own, with no area.
+  ///
+  /// In en, this message translates to:
+  /// **'Use city only'**
+  String get listing_use_city_only;
+
+  /// KAN-926 title of the blocking screen shown when this app build is older than the server's minimum supported build.
+  ///
+  /// In en, this message translates to:
+  /// **'Update required'**
+  String get update_required_title;
+
+  /// KAN-926 one-line explanation on the blocking update screen (iOS/Android).
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Dabbler is no longer supported. Update the app to keep playing.'**
+  String get update_required_message_store;
+
+  /// KAN-926 one-line explanation on the blocking update screen (web).
+  ///
+  /// In en, this message translates to:
+  /// **'This version of Dabbler is no longer supported. Reload the page to get the latest version.'**
+  String get update_required_message_web;
+
+  /// KAN-926 button that opens the App Store / Play Store listing.
+  ///
+  /// In en, this message translates to:
+  /// **'Update'**
+  String get update_required_action_update;
+
+  /// KAN-926 button that reloads the web page to fetch the latest build.
+  ///
+  /// In en, this message translates to:
+  /// **'Reload'**
+  String get update_required_action_reload;
 }
 
 class _AppLocalizationsDelegate

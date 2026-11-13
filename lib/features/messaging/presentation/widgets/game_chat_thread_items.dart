@@ -1,7 +1,10 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dabbler/features/messaging/domain/gif_message.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
+import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -11,9 +14,13 @@ import 'package:dabbler/l10n/app_localizations.dart';
 /// system lines, and a client-drawn "game finished" line at [gameEndAt] once
 /// it has passed.
 ///
-/// D8: the only delivery states passed are `sending` and `failed`; a sent
-/// message carries none, so no tick is ever drawn (and the thread is a group
-/// context, where the DS hides sent/delivered/read anyway).
+/// KAN-580 delivery metadata, outgoing messages only. A pending send is
+/// `sending`, a manual Retry in flight `retrying`, a rejected one `failed`.
+/// Once the server has it: in a direct chat ([isDm]) it is `sent`, `delivered`
+/// or `seen` from [receipts] (the newest outgoing message also spells the
+/// word); in a group it carries a [DabblerReceipt] tally ("Seen by 4 of 9")
+/// and the DS draws the count. Without [receipts] (an old Worker, the fake
+/// backend) a sent message is just `sent`. Incoming messages carry none.
 List<DabblerThreadItem> gameChatThreadItems({
   required List<ChatItem> items,
   required AppLocalizations l10n,
@@ -22,11 +29,27 @@ List<DabblerThreadItem> gameChatThreadItems({
   required void Function(String clientKey) onRetry,
   DateTime? gameEndAt,
   bool includeSystem = true,
+  bool isDm = false,
+  Map<int, ReceiptCounts> receipts = const <int, ReceiptCounts>{},
+  Set<String> freshIds = const <String>{},
+  Widget? Function(ChatItem item)? imageOf,
 }) {
   final out = <DabblerThreadItem>[];
   final today = _day(now.toLocal());
   DateTime? lastDay;
   final endLocal = gameEndAt?.toLocal();
+  // The newest outgoing message that the server has: the one that spells the
+  // delivery word in a direct chat.
+  final newestOwnId = items
+      .where(
+        (i) =>
+            i.message != null &&
+            i.message!.kind != MessageKind.system &&
+            (i.clientKey != null || i.message!.clientKey != null),
+      )
+      .lastOrNull
+      ?.message
+      ?.id;
   var finishedDrawn = endLocal == null || endLocal.isAfter(now.toLocal());
 
   void dateRow(DateTime local) {
@@ -72,6 +95,11 @@ List<DabblerThreadItem> gameChatThreadItems({
     // Own: a pending send, or a server message carrying our idempotency key.
     final own = m == null || item.clientKey != null || m.clientKey != null;
     final key = item.clientKey;
+    // KAN-582: a body that is one GIPHY media URL is drawn as a GIF.
+    final gifUrl = gifUrlOfBody(item.body);
+    // KAN-581: an image of the caller's (uploading or failed) or a settled one.
+    final image = imageOf?.call(item);
+    final counts = m == null ? null : receipts[m.seq];
     out.add(
       DabblerThreadMessage(
         id: m?.id ?? key,
@@ -81,13 +109,50 @@ List<DabblerThreadItem> gameChatThreadItems({
         sender: own ? null : m.senderUserId,
         avatarSeed: own ? null : m.senderUserId,
         showSender: false,
-        content: item.body,
+        content: gifUrl != null || (image != null && item.body.isEmpty)
+            ? null
+            : item.body,
+        attachment: image != null
+            ? DabblerMessageAttachment.image(child: image)
+            : gifUrl == null
+            ? null
+            : DabblerMessageAttachment.image(
+                child: DabblerImage(
+                  url: gifUrl,
+                  width: DabblerMessage.imageSize.width,
+                  height: DabblerMessage.imageSize.height,
+                  radius: DabblerRadius.lgAll,
+                  semanticLabel: l10n.messaging_gif_semantic,
+                  overlay: DabblerBadge(label: l10n.messaging_gif_badge),
+                ),
+              ),
         timestamp: time,
-        deliveryState: switch (item.state) {
-          OutgoingState.sending => DabblerDeliveryState.sending,
-          OutgoingState.failed => DabblerDeliveryState.failed,
-          OutgoingState.sent => null,
-        },
+        deliveryState: !own
+            ? null
+            : switch (item.state) {
+                OutgoingState.sending => DabblerDeliveryState.sending,
+                OutgoingState.retrying => DabblerDeliveryState.retrying,
+                OutgoingState.failed => DabblerDeliveryState.failed,
+                OutgoingState.sent => switch (counts?.level) {
+                  ReceiptLevel.seen => DabblerDeliveryState.seen,
+                  ReceiptLevel.delivered => DabblerDeliveryState.delivered,
+                  _ => DabblerDeliveryState.sent,
+                },
+              },
+        receipt:
+            own &&
+                !isDm &&
+                item.state == OutgoingState.sent &&
+                counts != null &&
+                counts.total > 0
+            ? DabblerReceipt(
+                seen: counts.seen,
+                delivered: counts.delivered,
+                total: counts.total,
+              )
+            : null,
+        showDeliveryLabel: own && isDm && m != null && m.id == newestOwnId,
+        fresh: !own && freshIds.contains(m.id),
         retryLabel: l10n.messaging_chat_retry,
         onRetry: item.state == OutgoingState.failed && key != null
             ? () => onRetry(key)

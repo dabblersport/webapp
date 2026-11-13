@@ -6,6 +6,7 @@ import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
+import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
@@ -39,7 +40,8 @@ Post framePost(
   personaTypeSnapshot: 'player',
   body: body,
   sport: sport,
-  locationName: place,
+  // KAN-592: the frame's header place is where the author posted from.
+  postedFromCity: place,
   tags: const <String>[],
   likeCount: likes,
   commentCount: comments,
@@ -47,11 +49,18 @@ Post framePost(
   updatedAt: DateTime.now(),
 );
 
+/// The instant the Upcoming fixtures are dated from, and the clock Home reads
+/// while they are pumped. Fixed in October because the frame's month label is
+/// "OCT" and its rect is measured on those glyphs (KAN-784). The 30 seconds
+/// matter: start times are whole minutes, so the floored countdown reads the
+/// frame's "in 12h 30m", not "in 12h 31m".
+final DateTime frameNow = DateTime(2026, 10, 14, 10, 0, 30);
+
 /// Three upcoming games: the frame's `UPCOMING[0..2]`. The first keeps its
 /// 19:30 start; the other two start 12h 31m and 46h 1m out, so the countdown
 /// reads the frame's "in 12h 30m" and "in 1d" (the minute is floored).
 List<Game> frameGames(FrameData d) {
-  final DateTime now = DateTime.now();
+  final DateTime now = frameNow;
   String hhmm(DateTime t) =>
       '${t.hour.toString().padLeft(2, '0')}:${t.minute.toString().padLeft(2, '0')}';
   Game game(String id, String title, String venue, DateTime at, String start) =>
@@ -134,6 +143,7 @@ Future<void> pumpFrameHome(
       homeNewsReactionCountsProvider.overrideWith(
         (ref, id) async => <String, int>{'loving': 128},
       ),
+      homeNowProvider.overrideWithValue(() => frameNow),
       ...extra,
     ],
     upcoming: frameGames(d),

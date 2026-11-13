@@ -233,9 +233,12 @@ void main() {
     testWidgets('step 2 persona — $dir', (tester) async {
       await _pump(tester, const IntentSelectionScreen(), locale, key);
       expect(tester.takeException(), isNull);
-      await tester.tap(find.text(lookupAppLocalizations(locale).onb_persona_player_hook));
+      // KAN-648: the four intentions on the same four-card layout.
+      expect(find.byType(DabblerSelectableCard), findsNWidgets(4));
+      await tester.tap(
+        find.text(lookupAppLocalizations(locale).onb_intention_connect_play),
+      );
       await _settle(tester);
-      expect(find.byType(DabblerSelectableCard), findsNWidgets(2));
       await _shoot(tester, key, 'step2-$dir');
     }, variant: desktop);
 

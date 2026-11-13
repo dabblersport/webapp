@@ -7,7 +7,10 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
 import 'package:dabbler/features/messaging/domain/dm_failure.dart';
+import 'package:dabbler/features/messaging/domain/messaging_image_repository.dart';
 import 'package:dabbler/features/messaging/domain/messaging_repository.dart';
+import 'package:dabbler/features/messaging/domain/models/message_attachment.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
 import 'package:dabbler/features/messaging/domain/models/conversation.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/models/message_page.dart';
@@ -26,7 +29,8 @@ class WorkerMessagingRepository
         MessagingRepository,
         MyConversationsRepository,
         DmRepository,
-        ModerationReportsRepository {
+        ModerationReportsRepository,
+        MessagingImageRepository {
   WorkerMessagingRepository({
     required MessagingHttpClient http,
     required MessagingRpcCaller rpc,
@@ -77,6 +81,82 @@ class WorkerMessagingRepository
     ok: const {200, 201},
     parse: (b) => Message.fromJson(_map(b)),
   );
+
+  @override
+  Future<Result<MessageAttachment, Failure>> uploadImage({
+    required String conversationId,
+    required PickedImage image,
+    required String idempotencyKey,
+    UploadProgress? onProgress,
+    UploadCancel? cancel,
+  }) async {
+    final MessagingHttpResponse response;
+    try {
+      response = await _http.upload(
+        '/conversations/${Uri.encodeComponent(conversationId)}/attachments',
+        bytes: image.bytes,
+        contentType: image.mimeType,
+        headers: {'Idempotency-Key': idempotencyKey},
+        onProgress: onProgress,
+        isCancelled: () => cancel?.isCancelled ?? false,
+      );
+    } on UploadCancelledException {
+      return Err(
+        MessagingFailure(
+          reason: MessagingReason.unknown,
+          message: 'Upload cancelled',
+        ),
+      );
+    } catch (e, st) {
+      return Err(_thrown(e, st));
+    }
+    // 201 stored; 200 the same upload already finished (a retry).
+    if (response.status != 200 && response.status != 201) {
+      return Err(errorFailure(response.status, response.body));
+    }
+    try {
+      return Ok(MessageAttachment.fromJson(_map(_map(response.body)['attachment'])));
+    } catch (e, st) {
+      return Err(
+        MessagingFailure(
+          reason: MessagingReason.unknown,
+          httpStatus: response.status,
+          message: 'Malformed messaging payload',
+          cause: e,
+          stackTrace: st,
+        ),
+      );
+    }
+  }
+
+  @override
+  Future<Result<Message, Failure>> sendImageMessage({
+    required String conversationId,
+    required String idempotencyKey,
+    required List<String> attachmentIds,
+    String caption = '',
+  }) => _call(
+    'POST',
+    '/conversations/${Uri.encodeComponent(conversationId)}/messages',
+    headers: {'Idempotency-Key': idempotencyKey},
+    jsonBody: {
+      if (caption.isNotEmpty) 'body': caption,
+      'attachment_ids': attachmentIds,
+    },
+    ok: const {200, 201},
+    parse: (b) => Message.fromJson(_map(b)),
+  );
+
+  @override
+  String attachmentUrl(String attachmentId) =>
+      _http.uri('/attachments/${Uri.encodeComponent(attachmentId)}').toString();
+
+  @override
+  Future<Map<String, String>?> authHeaders() async {
+    final token = await _http.bearer();
+    if (token == null || token.isEmpty) return null;
+    return {'Authorization': 'Bearer $token'};
+  }
 
   @override
   Future<Result<void, Failure>> reportMessage({

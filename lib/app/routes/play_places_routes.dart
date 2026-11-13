@@ -9,6 +9,7 @@ import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 // `_PlaceholderScreen` -> `PlaceholderScreen` are renamed. Declaration order is
 // preserved by lib/app/app_router.dart's `_routes`, not by this file.
 
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
@@ -16,6 +17,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
 import 'package:dabbler/features/explore/presentation/screens/sports_screen.dart';
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_screen.dart';
+import 'package:dabbler/features/sports/presentation/screens/sport_overview_screen.dart';
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_create_gate.dart';
 import 'package:dabbler/features/games/presentation/widgets/game_composer_sheet_page.dart';
@@ -132,6 +134,22 @@ RouteBase get sportsExploreRoute =>
       ),
     );
 
+// KAN-622: /sport/:sportId — the public page of one sport (root-level, no
+// shell). Gated on FeatureFlags.sportOverview.
+RouteBase get sportOverviewRoute =>
+    GoRoute(
+      parentNavigatorKey: rootNavigatorKey,
+      path: RoutePaths.sportOverview,
+      name: RouteNames.sportOverview,
+      redirect: (context, state) =>
+          FeatureFlags.sportOverview ? null : RoutePaths.home,
+      pageBuilder: (context, state) => SharedAxisTransitionPage(
+        key: state.pageKey,
+        child: SportOverviewScreen(sportId: state.pathParameters['sportId']!),
+        type: SharedAxisType.horizontal,
+      ),
+    );
+
 // Organiser Venue Submissions
 RouteBase get myVenueSubmissionsRoute =>
     GoRoute(
@@ -142,7 +160,13 @@ RouteBase get myVenueSubmissionsRoute =>
         final container = ProviderScope.containerOf(context, listen: false);
         final profileState = container.read(profileControllerProvider);
         final profileType = profileState.profile?.profileType;
-        if (profileType != 'organiser') {
+        final canOrganise =
+            profileType == 'organiser' ||
+            personaTypeOrNull(
+                  profileState.profile?.personaType,
+                )?.hasOrganiserCapabilities ==
+                true;
+        if (!canOrganise) {
           return RoutePaths.home;
         }
         return null;
@@ -215,7 +239,11 @@ RouteBase get createGameRoute =>
       // tap closes it, as Create meet-up presents.
       pageBuilder: (context, state) => GameComposerSheetPage(
         key: state.pageKey,
-        child: const GameCreateGate(child: GameComposerScreen()),
+        child: GameCreateGate(
+          child: GameComposerScreen(
+            initialSportId: state.uri.queryParameters['sport'],
+          ),
+        ),
       ),
     );
 

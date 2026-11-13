@@ -1,6 +1,8 @@
 import 'dart:io';
 
+import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/data/models/models.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 /// Progress callback for file upload operations
 typedef UploadProgressCallback = void Function(double progress);
@@ -183,15 +185,73 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
   final Map<String, ProfileStatisticsModel> _statsCache = {};
   final Map<String, DateTime> _timestamps = {};
 
+  /// Profiles are also kept on disk (KAN-607) in the per-account
+  /// [OfflineCache], so a profile seen online opens after a restart with no
+  /// network. Keys are the profile's `userId`, so the signed-in user's own and
+  /// every other user viewed earlier are cached the same way. The disk copy
+  /// holds the profile row only (what the server returned to this account):
+  /// no email, phone, tokens or secrets.
+  OfflineCache _disk = OfflineCache.instance;
+  String? Function() _accountId = _signedInAccountId;
+
+  /// Tests: a fake disk cache and a fixed account.
+  void useDiskForTest(OfflineCache disk, String? Function() accountId) {
+    _disk = disk;
+    _accountId = accountId;
+  }
+
+  /// Tests: a restart, in memory only.
+  void clearMemoryForTest() {
+    _profileCache.clear();
+    _sportsCache.clear();
+    _statsCache.clear();
+    _timestamps.clear();
+  }
+
+  static String? _signedInAccountId() {
+    try {
+      return Supabase.instance.client.auth.currentUser?.id;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  static String _diskKey(String userId) => 'profile.$userId';
+
   @override
-  Future<UserProfile?> getCachedProfile(String userId) async =>
-      _profileCache[userId];
+  Future<UserProfile?> getCachedProfile(String userId) async {
+    final memory = _profileCache[userId];
+    if (memory != null) return memory;
+    final account = _accountId();
+    if (account == null) return null;
+    final hit = await _disk.read(account, _diskKey(userId));
+    if (hit == null) return null;
+    try {
+      final profile = UserProfile.fromJson(
+        Map<String, dynamic>.from(hit.payload as Map),
+      );
+      _profileCache[userId] = profile;
+      _timestamps[userId] = hit.fetchedAt;
+      return profile;
+    } catch (_) {
+      return null; // a shape that no longer parses: treat as no cache
+    }
+  }
 
   @override
   Future<void> cacheProfile(UserProfile profile) async {
     // Use userId (auth UUID) as cache key to match getCachedProfile(userId) lookups
     _profileCache[profile.userId] = profile;
-    _timestamps[profile.userId] = DateTime.now();
+    final now = DateTime.now();
+    _timestamps[profile.userId] = now;
+    final account = _accountId();
+    if (account == null) return;
+    await _disk.write(
+      account,
+      _diskKey(profile.userId),
+      profile.toJson(),
+      fetchedAt: now,
+    );
   }
 
   @override
@@ -200,6 +260,12 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
     _sportsCache.remove(userId);
     _statsCache.remove(userId);
     _timestamps.remove(userId);
+    await _removeDisk(userId);
+  }
+
+  Future<void> _removeDisk(String userId) async {
+    final account = _accountId();
+    if (account != null) await _disk.remove(account, _diskKey(userId));
   }
 
   @override
@@ -231,6 +297,7 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
 
   @override
   Future<bool> isCacheValid(String userId) async {
+    await getCachedProfile(userId); // loads the disk timestamp into memory
     final ts = _timestamps[userId];
     if (ts == null) return false;
     return DateTime.now().difference(ts) < const Duration(hours: 12);
@@ -246,6 +313,9 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
     _sportsCache.clear();
     _statsCache.clear();
     _timestamps.clear();
+    // Sign-out path: every account's disk entries go (CacheAccountNotifier
+    // also wipes them; this covers a sign-out that bypasses it).
+    await OfflineCache.wipeAll();
   }
 
   @override
@@ -254,6 +324,7 @@ class ProfileLocalDataSourceImpl implements ProfileLocalDataSource {
     _sportsCache.remove(userId);
     _statsCache.remove(userId);
     _timestamps.remove(userId);
+    await _removeDisk(userId);
   }
 
   @override

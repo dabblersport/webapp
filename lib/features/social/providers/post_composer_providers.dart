@@ -4,9 +4,11 @@ import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/core/services/gps_service.dart';
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/core/utils/create_request_id.dart';
 import 'package:dabbler/core/utils/language_detector.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_create_request.dart';
@@ -17,12 +19,42 @@ import 'package:dabbler/features/games/providers/games_providers.dart'
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/social/domain/posted_from.dart';
 
 // =============================================================================
 // COMPOSER STATE
 // =============================================================================
 
 /// Holds all composer field values. Managed by [PostComposerNotifier].
+/// KAN-639: the composer error for a post the server refused. The screen
+/// shows its own localized words for it, never the database's text.
+const String kPostFailed = 'post-failed';
+
+/// KAN-639: the error the composer keeps for a failed post. Connection and
+/// rate-limit failures carry words the app wrote; anything else may be raw
+/// database text, so it becomes [kPostFailed].
+String composerFailureText(Failure f) {
+  switch (f.category) {
+    case FailureCode.network:
+    case FailureCode.noInternet:
+    case FailureCode.timeout:
+    case FailureCode.rateLimited:
+      return f.message;
+    default:
+      return kPostFailed;
+  }
+}
+
+/// KAN-639: origin of a post made in the composer. `posts_content_model_check`
+/// allows `venue` and `game` origins only for allocated (system) posts, so a
+/// post a person writes stays `manual` even with a venue or game attached;
+/// the link lives in `venue_id` and `game_id`.
+({OriginType type, String? id}) resolveComposerOrigin({
+  required OriginType originType,
+  String? originId,
+}) => (type: originType, id: originId);
+
 class PostComposerState {
   const PostComposerState({
     this.visibility = PostVisibility.public,
@@ -133,6 +165,40 @@ class PostComposerState {
   /// True when the post has enough content to submit.
   bool get canSubmit => hasBody || hasVibe || hasSport || hasMedia;
 
+  /// True when [other] has the same form content. [isSubmitting] and [error]
+  /// are not form content. Lists compare by identity: every edit that changes
+  /// one builds a new list.
+  bool sameFormAs(PostComposerState other) =>
+      visibility == other.visibility &&
+      postType == other.postType &&
+      body == other.body &&
+      vibeId == other.vibeId &&
+      vibeName == other.vibeName &&
+      vibeEmoji == other.vibeEmoji &&
+      sportId == other.sportId &&
+      sportName == other.sportName &&
+      sportEmoji == other.sportEmoji &&
+      venueId == other.venueId &&
+      venueName == other.venueName &&
+      locationName == other.locationName &&
+      locationTagId == other.locationTagId &&
+      areaId == other.areaId &&
+      geoLat == other.geoLat &&
+      geoLng == other.geoLng &&
+      identical(media, other.media) &&
+      allowReposts == other.allowReposts &&
+      expiresAt == other.expiresAt &&
+      circleId == other.circleId &&
+      squadId == other.squadId &&
+      gameId == other.gameId &&
+      gameName == other.gameName &&
+      identical(tags, other.tags) &&
+      contentClass == other.contentClass &&
+      originType == other.originType &&
+      originId == other.originId &&
+      personaTypeSnapshot == other.personaTypeSnapshot &&
+      isPinned == other.isPinned;
+
   PostComposerState copyWith({
     PostVisibility? visibility,
     PostType? postType,
@@ -215,7 +281,42 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   PostComposerNotifier(this._ref) : super(const PostComposerState());
   final Ref _ref;
 
+  final CreateRequestId _requestId = CreateRequestId();
+
+  /// KAN-618: the client request id of the current create attempt; null until
+  /// the first Create tap. Sent to the create call (KAN-612).
+  String? get requestId => _requestId.current;
+
+  /// Editing the form ends the attempt, so the next Create gets a new id.
+  /// Changes to [PostComposerState.isSubmitting] and [PostComposerState.error]
+  /// alone are not edits.
+  @override
+  set state(PostComposerState value) {
+    if (!state.sameFormAs(value)) _requestId.clear();
+    super.state = value;
+  }
+
+  /// The composer was discarded: the attempt ends with it.
+  void discard() => _requestId.clear();
+
+  @override
+  void dispose() {
+    _requestId.clear();
+    super.dispose();
+  }
+
   PostRepository get _repo => _ref.read(postRepositoryProvider);
+
+  /// KAN-592: the city this post is posted from. The user's explicit choice
+  /// wins; otherwise the device location's city. Null when neither exists
+  /// (location denied, nothing chosen), which is when Post asks for a city.
+  /// Independent of the place tag: tagging or removing a place never moves it.
+  PostedFrom? resolvePostedFrom() =>
+      _ref.read(composerPostedFromProvider) ??
+      postedFromOfActive(_ref.read(activeLocationProvider).valueOrNull);
+
+  void setPostedFrom(PostedFrom? value) =>
+      _ref.read(composerPostedFromProvider.notifier).state = value;
 
   // ── Field Setters ───────────────────────────────────────────────────
 
@@ -530,6 +631,25 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
   Future<Result<Post, Failure>> submit() async {
     final s = state;
 
+    // KAN-618: a second tap while one is in flight is dropped, and the whole
+    // attempt, retries included, shares one request id.
+    if (s.isSubmitting) {
+      return const Err(
+        Failure(category: FailureCode.cancelled, message: 'Already posting.'),
+      );
+    }
+    // KAN-612: creating offline is refused up front. Nothing is sent, no id
+    // is made and the form stays exactly as typed.
+    if (_ref.read(connectivityProvider) == ConnectionStatus.offline) {
+      return const Err(
+        Failure(
+          category: FailureCode.noInternet,
+          message: kCreateOfflineRefused,
+        ),
+      );
+    }
+    final requestId = _requestId.begin();
+
     // 1. Validate
     if (!s.canSubmit) {
       final err = const Failure(
@@ -560,6 +680,16 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       return Err(err);
     }
 
+    // KAN-592: every new post has a posting city. With none known the post
+    // is NOT sent and the draft stays exactly as typed; the screen opens the
+    // city sheet from this failure.
+    final postedFrom = resolvePostedFrom();
+    if (postedFrom == null) {
+      return const Err(
+        Failure(category: FailureCode.validation, message: kPostedFromRequired),
+      );
+    }
+
     state = s.copyWith(isSubmitting: true, error: null);
 
     // 2. Detect language
@@ -584,16 +714,13 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       linkToken = const Uuid().v4();
     }
 
-    // 5. Auto-resolve origin_type + origin_id from linked entities
-    OriginType resolvedOriginType = s.originType;
-    String? resolvedOriginId = s.originId;
-    if (s.gameId != null && resolvedOriginType == OriginType.manual) {
-      resolvedOriginType = OriginType.game;
-      resolvedOriginId ??= s.gameId;
-    } else if (s.venueId != null && resolvedOriginType == OriginType.manual) {
-      resolvedOriginType = OriginType.venue;
-      resolvedOriginId ??= s.venueId;
-    }
+    // 5. origin_type + origin_id (KAN-639: see [resolveComposerOrigin])
+    final origin = resolveComposerOrigin(
+      originType: s.originType,
+      originId: s.originId,
+    );
+    final resolvedOriginType = origin.type;
+    final resolvedOriginId = origin.id;
 
     // 6. Capture persona_type_snapshot from active profile
     String? persona = s.personaTypeSnapshot;
@@ -635,6 +762,8 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       locationTagId: s.locationTagId,
       areaId: areaId,
       locationName: s.locationName,
+      postedFromCity: postedFrom.city,
+      postedFromArea: postedFrom.area,
       geoLat: s.geoLat,
       geoLng: s.geoLng,
       linkToken: linkToken,
@@ -648,6 +777,7 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
       originId: resolvedOriginId,
       personaTypeSnapshot: persona,
       isPinned: s.isPinned,
+      requestId: requestId,
     );
 
     // 8. Insert
@@ -656,9 +786,15 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
     result.fold(
       (err) {
         debugPrint('[PostComposer] submit FAILED: ${err.message}');
-        state = state.copyWith(isSubmitting: false, error: err.message);
+        // KAN-639: the database's own text is never shown; see
+        // [composerFailureText].
+        state = state.copyWith(
+          isSubmitting: false,
+          error: composerFailureText(err),
+        );
       },
       (_) {
+        _requestId.clear();
         state = state.copyWith(isSubmitting: false);
         // Invalidate feeds.
         _ref.invalidate(homeFeedProvider);
@@ -722,10 +858,18 @@ class PostComposerNotifier extends StateNotifier<PostComposerState> {
 // =============================================================================
 
 /// Composer state provider — auto-disposed when the screen is closed.
+/// KAN-592: the posting city the user chose in the composer. Auto-disposed
+/// with the composer, so the next post starts from the device location again.
+final composerPostedFromProvider = StateProvider.autoDispose<PostedFrom?>(
+  (ref) => null,
+);
+
 final postComposerProvider =
     StateNotifierProvider.autoDispose<PostComposerNotifier, PostComposerState>((
       ref,
     ) {
+      // Keep the chosen city alive exactly as long as the composer.
+      ref.listen(composerPostedFromProvider, (_, _) {});
       return PostComposerNotifier(ref);
     });
 

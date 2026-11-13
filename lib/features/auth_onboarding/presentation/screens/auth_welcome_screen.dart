@@ -1,4 +1,5 @@
 import 'package:dabbler/core/models/google_sign_in_result.dart';
+import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_providers.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/auth_entry_parts.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -37,6 +38,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
       }
       if (kIsWeb) return;
       final result = await authService.handleGoogleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'google');
       if (!mounted) return;
       switch (result) {
         case GoogleSignInResultGoToOnboarding():
@@ -94,6 +96,7 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
       final signedIn = await authService.signInWithApple();
       if (!signedIn) return; // User cancelled the Apple sheet.
       final result = await authService.handleAppleSignInFlow();
+      AnalyticsService.trackOAuthSignup(result, provider: 'apple');
       if (!mounted) return;
       switch (result) {
         case GoogleSignInResultGoToOnboarding():
@@ -145,7 +148,6 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final showApple = !kIsWeb && defaultTargetPlatform == TargetPlatform.iOS;
 
     return DabblerPage(
       maxContentWidth: DabblerPage.readableWidth,
@@ -238,25 +240,37 @@ class _AuthWelcomeScreenState extends ConsumerState<AuthWelcomeScreen> {
                     onPressed: _isLoading ? null : _handleGoogle,
                   ),
                 ),
-                if (showApple) ...<Widget>[
-                  const DabblerGap.v(DabblerSpacing.space4),
-                  authIdentify(
-                    'auth-welcome-continue-apple',
-                    DabblerButton(
-                      label: l10n.auth_entry_continue_apple,
-                      tone: DabblerButtonTone.outlined,
-                      size: DabblerButtonSize.full,
-                      fullWidth: true,
-                      disabled: _isLoading,
-                      onPressed: _isLoading ? null : _handleApple,
+                const DabblerGap.v(DabblerSpacing.space4),
+                authIdentify(
+                  'auth-welcome-continue-apple',
+                  DabblerButton(
+                    label: l10n.auth_entry_continue_apple,
+                    tone: DabblerButtonTone.outlined,
+                    size: DabblerButtonSize.full,
+                    fullWidth: true,
+                    disabled: _isLoading,
+                    onPressed: _isLoading ? null : _handleApple,
+                  ),
+                ),
+                const DabblerGap.v(DabblerSpacing.space5),
+                // The line is one control to assistive tech and e2e: a button
+                // named by the whole sentence. The visible "Log in" span keeps
+                // its own tap for pointers.
+                authIdentify(
+                  'auth-welcome-log-in',
+                  Semantics(
+                    button: true,
+                    enabled: !_isLoading,
+                    label:
+                        '${l10n.auth_already_have_account} ${l10n.auth_log_in}',
+                    onTap: _isLoading ? null : _handleLogin,
+                    excludeSemantics: true,
+                    child: AuthAccountLine(
+                      prefix: l10n.auth_already_have_account,
+                      action: l10n.auth_log_in,
+                      onAction: _isLoading ? null : _handleLogin,
                     ),
                   ),
-                ],
-                const DabblerGap.v(DabblerSpacing.space5),
-                AuthAccountLine(
-                  prefix: l10n.auth_already_have_account,
-                  action: l10n.auth_log_in,
-                  onAction: _isLoading ? null : _handleLogin,
                 ),
                 const DabblerGap.v(DabblerSpacing.space4),
                 const AuthLegalNotice(),

@@ -61,6 +61,10 @@ const _maxWidthReason =
 const _aspectReason =
     'Media aspect ratio: the design system has no media aspect-ratio role '
     'yet (filed as a DS gap).';
+const _deviceBytesReason =
+    'KAN-581 pre-upload preview: the picked photo exists only as device bytes '
+    'and DabblerImage loads network URLs only, with no bytes input and no '
+    'centred veil slot (filed as a DS gap: DabblerImage.bytes + veil).';
 const _pickerReason =
     'Image-picker downscale bound in pixels for upload size; not rendered.';
 const _domainDurationReason =
@@ -68,6 +72,33 @@ const _domainDurationReason =
     'not design timing.';
 
 const List<GateAllow> allowList = [
+  GateAllow(
+    'lib/experiment_places_main.dart',
+    ['numeric named arg', 'Material visual widget', 'EdgeInsets numeric'],
+    'KAN-629 throwaway device harness for the Places UI Kit experiment; a '
+        'separate entrypoint that never ships in the app, so it has no design '
+        'tokens to draw from.',
+  ),
+  GateAllow(
+    'lib/widgets/connection_banner.dart',
+    ['Duration literal'],
+    'KAN-604 design timing: height 220ms and opacity 160ms ease-out; the '
+        'design system has no 220/160 motion token (DabblerMotion.slow is '
+        '200ms). The 1us tick only avoids a zero-duration AnimatedSize assert.',
+    match: 'static const Duration',
+  ),
+  GateAllow(
+    'lib/widgets/connection_banner.dart',
+    ['AnimatedOpacity literal'],
+    'KAN-604 design: the notice fades over 160ms as it collapses.',
+    match: 'AnimatedOpacity(',
+  ),
+  GateAllow(
+    'lib/widgets/connection_banner.dart',
+    ['numeric named arg'],
+    'Opacity target 1/0 of the fade (visible/hidden), not a visual value.',
+    match: 'opacity: visible',
+  ),
   GateAllow(
     'lib/core/services/gps_service.dart',
     ['Duration literal'],
@@ -123,12 +154,6 @@ const List<GateAllow> allowList = [
     match: 'maxWidth: 700',
   ),
   GateAllow(
-    'lib/features/location/presentation/widgets/location_search_field.dart',
-    ['numeric named arg'],
-    _maxWidthReason,
-    match: 'maxHeight: 280',
-  ),
-  GateAllow(
     'lib/features/home/presentation/widgets/home_post_row.dart',
     ['numeric named arg'],
     _aspectReason,
@@ -139,6 +164,16 @@ const List<GateAllow> allowList = [
     ['numeric named arg'],
     _aspectReason,
     match: 'aspectRatio: 16 / 9',
+  ),
+  GateAllow(
+    'lib/features/messaging/presentation/widgets/chat_image_widgets.dart',
+    ['Image.'],
+    _deviceBytesReason,
+  ),
+  GateAllow(
+    'lib/features/messaging/presentation/widgets/chat_attachment_tray.dart',
+    ['Image.'],
+    _deviceBytesReason,
   ),
   GateAllow(
     'lib/features/social/presentation/widgets/post_media_carousel.dart',
@@ -167,6 +202,9 @@ const List<GateAllow> allowList = [
   GateAllow('lib/core/config/supabase_config.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
+  GateAllow('lib/core/cache/cache_policy.dart', [
+    'Domain duration literal',
+  ], _domainDurationReason),
   GateAllow('lib/core/services/cache_service.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
@@ -192,9 +230,6 @@ const List<GateAllow> allowList = [
     'Domain duration literal',
   ], _domainDurationReason),
   GateAllow('lib/data/models/games/booking.dart', [
-    'Domain duration literal',
-  ], _domainDurationReason),
-  GateAllow('lib/data/models/games/game_model.dart', [
     'Domain duration literal',
   ], _domainDurationReason),
   GateAllow('lib/data/models/games/game_session.dart', [
@@ -536,7 +571,12 @@ final RegExp _widgetClass = RegExp(
 );
 
 /// Reasoned, permanent exceptions to the fidelity gate (path -> reason).
-const Map<String, String> fidelityAllow = {};
+const Map<String, String> fidelityAllow = {
+  'lib/features/messaging/presentation/widgets/chat_image_widgets.dart':
+      _deviceBytesReason,
+  'lib/features/messaging/presentation/widgets/chat_attachment_tray.dart':
+      _deviceBytesReason,
+};
 
 List<GateHit> scanStructure(String path, String src) {
   final code = stripCode(src);

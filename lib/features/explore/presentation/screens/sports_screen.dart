@@ -1,3 +1,4 @@
+import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 // Material is imported for one non-visual symbol only: the
@@ -29,6 +30,7 @@ import 'package:dabbler/features/venues/presentation/providers/venues_with_sport
 import 'package:dabbler/features/venues/presentation/screens/venue_detail_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/utils/helpers/date_formatter.dart';
+import 'package:dabbler/features/sports/presentation/widgets/sport_page_link.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
 /// No design frame exists for this screen (route `/sports-explore`): it is
@@ -281,8 +283,11 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
   bool _shouldShowJoinButton() {
     final profileState = ref.watch(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
+    final persona = personaTypeOrNull(
+      profileState.profile?.personaType ?? profileType,
+    );
 
-    if (profileType == 'player') {
+    if (profileType == 'player' || persona == PersonaType.contributor) {
       return FeatureFlags.enablePlayerGameJoining;
     } else if (profileType == 'organiser') {
       return FeatureFlags.enableOrganiserGameJoining;
@@ -725,7 +730,12 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
 
     final profileState = ref.watch(profileControllerProvider);
     final profileType = profileState.profile?.profileType;
-    final isOrganiser = profileType == 'organiser';
+    final isOrganiser =
+        profileType == 'organiser' ||
+        personaTypeOrNull(
+              profileState.profile?.personaType,
+            )?.hasOrganiserCapabilities ==
+            true;
     final isVenuesTab = _mainTabIndex == 1;
 
     // Prefer GPS-reverse-geocoded area; fall back to the nearest area from the
@@ -912,6 +922,8 @@ class _ExploreScreenState extends ConsumerState<ExploreScreen> {
           leadingIcon: _sportIcon(name),
           onTap: onTap,
         ),
+        if (selected && name.trim().toLowerCase() != 'all')
+          SportPageLink(sportName: name),
         if (showCount) ...[
           const DabblerGap.h(DabblerSpacing.space1),
           DabblerBadge(label: '$venueCount'),

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 
@@ -14,7 +15,7 @@ class MeetupRepositoryImpl implements MeetupRepository {
   final MeetupDataSource _ds;
 
   Future<Result<T, Failure>> _guard<T>(Future<T> Function() body) =>
-      Result.guard<T, Failure>(body, MeetupFailures.from);
+      guardWithTimeout<T>(body, mapError: MeetupFailures.from);
 
   @override
   Future<Result<List<MeetupListItem>, Failure>> fetchMeetups({

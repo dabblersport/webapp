@@ -2,11 +2,18 @@ library;
 
 export 'core/providers/locale_provider.dart';
 export 'core/services/analytics/analytics_service.dart';
+export 'core/services/connectivity_service.dart';
+export 'core/offline/cached_read.dart';
+export 'core/offline/game_codec.dart';
 export 'core/analytics/analytics_helpers.dart';
 export 'features/app_boot/providers.dart';
 export 'features/app_boot/schema_guard.dart';
+export 'features/app_boot/min_build/min_build_providers.dart';
+export 'features/app_boot/min_build/min_build_repository.dart';
+export 'features/app_boot/min_build/min_build_gate.dart';
 export 'features/profile/providers.dart';
 export 'features/profile/presentation/providers/sport_profiles_providers.dart';
+export 'features/profile/presentation/providers/visited_profile_providers.dart';
 export 'features/venues/providers.dart';
 export 'features/venue_submissions/providers.dart';
 export 'core/data/supabase_remote_data_source.dart';
@@ -18,6 +25,9 @@ export 'features/social/providers/post_composer_providers.dart';
 export 'features/social/providers/tab_feed_notifier.dart';
 export 'features/social/providers/active_feed_notifier.dart';
 export 'features/social/providers/public_activity_providers.dart';
+// KAN-852: Home bell → Activity log (merged personal log).
+export 'features/activities/presentation/providers/activity_providers.dart'
+    show activityLogControllerProvider;
 export 'features/venues/presentation/providers/place_providers.dart';
 export 'features/location/providers/location_providers.dart';
 export 'features/home/presentation/providers/home_providers.dart';
@@ -32,6 +42,7 @@ export 'features/explore/providers/feed_providers.dart';
 
 // Games
 export 'features/games/providers/game_history_providers.dart';
+export 'features/games/data/repositories/game_series_repository.dart';
 
 // News
 export 'features/meetups/presentation/providers/meetup_providers.dart';
@@ -47,3 +58,5 @@ export 'features/messaging/presentation/providers/messaging_realtime_providers.d
 export 'core/feedback/feedback_center.dart';
 export 'core/feedback/feedback_intent.dart';
 export 'core/feedback/presentation_context.dart';
+export 'features/sports/presentation/providers/sport_overview_providers.dart';
+export 'features/bench/presentation/providers/bench_providers.dart';

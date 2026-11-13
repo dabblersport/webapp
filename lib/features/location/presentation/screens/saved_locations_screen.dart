@@ -1,19 +1,23 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:geolocator/geolocator.dart';
 
-import 'package:dabbler/core/services/gps_service.dart';
+import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/profile_location.dart';
-import 'package:dabbler/features/location/presentation/widgets/save_location_sheet.dart';
+import 'package:dabbler/features/location/presentation/add_saved_place.dart';
+import 'package:dabbler/features/location/presentation/device_location_section.dart';
+import 'package:dabbler/features/location/presentation/saved_place_labels.dart';
+import 'package:dabbler/features/location/presentation/widgets/location_map_preview.dart';
+import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/location_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
-/// Saved locations. No design frame: DS defaults (DabblerPage, titled top
-/// bar, DabblerSwipeAction rows, a full-width add button in the page's bottom
-/// overlay in place of the extended FAB). The wide-screen shell
-/// wrapper is dropped as in the earlier waves; the app shell owns navigation.
+/// Settings > Location (KAN-589): the owner-private Saved places (Home, Work,
+/// custom labels such as Gym). Tapping a place makes it this device's Manual
+/// location. DS defaults (DabblerPage, titled top bar, DabblerSwipeAction rows,
+/// a full-width add button in the page's bottom overlay). Public Profile
+/// city/country is not managed here and is never touched from here.
 class SavedLocationsScreen extends ConsumerWidget {
   const SavedLocationsScreen({super.key});
 
@@ -21,113 +25,77 @@ class SavedLocationsScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final asyncLocations = ref.watch(profileLocationNotifierProvider);
     final canPop = Navigator.of(context).canPop();
+    final l10n = AppLocalizations.of(context);
 
     return DabblerPage(
       topBar: DabblerNavigationTopBar.titled(
-        title: 'Saved Locations',
+        title: l10n.settings_tile_location,
         onBack: canPop ? () => Navigator.of(context).maybePop() : null,
       ),
       bottomOverlay: DabblerButton(
-        label: AppLocalizations.of(context).location_add,
+        label: l10n.location_add_place,
         icon: 'location-add',
         fullWidth: true,
-        onPressed: () => _addLocation(context, ref),
+        onPressed: () => startAddSavedPlace(context, ref),
       ),
       body: asyncLocations.when(
         loading: () => const Center(child: DabblerSpinner()),
-        error: (e, _) => const Center(
-          child: DabblerEmptyState.error(title: 'Could not load locations'),
+        error: (e, _) => Center(
+          child: DabblerEmptyState.error(title: l10n.saved_places_load_error),
         ),
         data: (locations) {
-          if (locations.isEmpty) {
-            return Center(
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(DabblerSpacing.space9),
-                child: DabblerEmptyState(
-                  icon: 'location-slash',
-                  title: 'No saved locations yet',
-                  text:
-                      'Save your home, work, or favourite spots so you can '
-                      'quickly tag them in posts.',
-                  size: DabblerEmptyStateSize.page,
-                  action: DabblerButton(
-                    label: 'Add your first location',
-                    icon: 'location-add',
-                    onPressed: () => _addLocation(context, ref),
-                  ),
-                ),
-              ),
-            );
-          }
-
           // Primary pinned at top, rest sorted newest first (already from repo)
           final primary = locations.where((l) => l.isPrimary).toList();
           final rest = locations.where((l) => !l.isPrimary).toList();
           final sorted = [...primary, ...rest];
 
-          return ListView.separated(
+          return ListView(
             padding: const EdgeInsetsDirectional.fromSTEB(
               DabblerSpacing.space5,
               DabblerSpacing.space5,
               DabblerSpacing.space5,
               DabblerSpacing.floatingBarClearance,
             ),
-            itemCount: sorted.length,
-            separatorBuilder: (_, __) =>
-                const DabblerGap.v(DabblerSpacing.space3),
-            itemBuilder: (ctx, i) => _LocationTile(location: sorted[i]),
+            children: [
+              DabblerText(
+                l10n.location_page_private,
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              ),
+              const DabblerGap.v(DabblerSpacing.space5),
+              const LocationMapPreview(),
+              const DabblerGap.v(DabblerSpacing.space5),
+              const DeviceLocationSection(),
+              const DabblerGap.v(DabblerSpacing.space6),
+              DabblerText(
+                l10n.location_saved_places_header,
+                style: DabblerType.headline,
+              ),
+              const DabblerGap.v(DabblerSpacing.space2),
+              DabblerText(
+                l10n.location_saved_places_note,
+                style: DabblerType.footnote,
+                tone: DabblerTextTone.secondary,
+              ),
+              if (sorted.isEmpty) ...[
+                const DabblerGap.v(DabblerSpacing.space4),
+                DabblerEmptyState(
+                  icon: 'location-slash',
+                  title: l10n.saved_places_empty_title,
+                  text: l10n.saved_places_empty_text,
+                  size: DabblerEmptyStateSize.page,
+                ),
+              ] else ...[
+                for (final place in sorted) ...[
+                  const DabblerGap.v(DabblerSpacing.space3),
+                  _LocationTile(location: place),
+                ],
+              ],
+            ],
           );
         },
       ),
     );
-  }
-
-  Future<void> _addLocation(BuildContext context, WidgetRef ref) async {
-    final gps = ref.read(gpsServiceProvider);
-    final result = await gps.getCurrentLocation(cap: GpsService.fixCap);
-
-    if (!context.mounted) return;
-
-    void toast(String message) => DabblerToastProvider.of(
-      context,
-    ).show(DabblerToastSpec(message: message));
-
-    switch (result) {
-      case LocationDenied():
-        toast('Location permission denied');
-        return;
-      case LocationDeniedForever():
-        toast('Enable location in Settings to continue');
-        await Geolocator.openAppSettings();
-        return;
-      case LocationServiceOff():
-        toast('Please enable location services');
-        return;
-      case LocationTimeout():
-        toast('Could not get location — try again');
-        return;
-      case LocationError(:final message):
-        toast('Location error: $message');
-        return;
-      case LocationSuccess(:final lat, :final lng, :final accuracyMeters):
-        // Resolve nearest area
-        final area = await ref.read(
-          resolvedNearestAreaProvider((lat: lat, lng: lng)).future,
-        );
-        if (!context.mounted) return;
-        if (area == null) {
-          toast('Could not resolve area');
-          return;
-        }
-        await SaveLocationSheet.show(
-          context,
-          lat: lat,
-          lng: lng,
-          areaId: area.id,
-          areaName: area.name,
-          accuracyMeters: accuracyMeters,
-        );
-    }
   }
 }
 
@@ -142,6 +110,10 @@ class _LocationTile extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final notifier = ref.read(profileLocationNotifierProvider.notifier);
+    final selected = _isSelected(
+      ref.watch(activeLocationProvider).valueOrNull,
+      location,
+    );
 
     // Was a Dismissible (end-to-start) with a confirm dialog; the DS swipe
     // reveals a Delete action that runs the same confirm, then deletes.
@@ -149,13 +121,10 @@ class _LocationTile extends ConsumerWidget {
       key: ValueKey(location.id),
       actions: [
         DabblerSwipeActionItem(
-          label: 'Delete',
+          label: AppLocalizations.of(context).saved_places_delete,
           icon: 'trash',
           tone: DabblerSwipeActionTone.destructive,
-          onPressed: () async {
-            final confirmed = await _confirmDelete(context);
-            if (confirmed == true) notifier.deleteLocation(location.id);
-          },
+          onPressed: () => _delete(context, ref),
         ),
       ],
       child: DabblerSurface(
@@ -168,44 +137,61 @@ class _LocationTile extends ConsumerWidget {
         ),
         child: Row(
           children: [
-            DabblerIconTile.named(
-              _labelIcon(location.label),
-              tone: location.isPrimary
-                  ? DabblerIconTileTone.brand
-                  : DabblerIconTileTone.info,
-            ),
-            const DabblerGap.h(DabblerSpacing.space4),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () => ref
+                    .read(activeLocationProvider.notifier)
+                    .useSavedLocation(location),
+                child: Semantics(
+                  button: true,
+                  selected: selected,
+                  child: Row(
                     children: [
-                      Flexible(
-                        child: DabblerText(
-                          location.effectiveLabel,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: DabblerType.headline,
+                      DabblerIconTile.named(
+                        _labelIcon(location.label),
+                        tone: location.isPrimary
+                            ? DabblerIconTileTone.brand
+                            : DabblerIconTileTone.info,
+                      ),
+                      const DabblerGap.h(DabblerSpacing.space4),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Row(
+                              children: [
+                                Flexible(
+                                  child: DabblerText(
+                                    location.effectiveLabel,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: DabblerType.headline,
+                                  ),
+                                ),
+                                if (location.isPrimary) ...[
+                                  const DabblerGap.h(DabblerSpacing.space2),
+                                  // The old badge text carried a star emoji; the star
+                                  // is now a DabblerIcon (CEO rule: no emoji).
+                                  DabblerBadge(
+                                    label: AppLocalizations.of(
+                                      context,
+                                    ).primary_sport_badge,
+                                    icon: DabblerIcon('star'),
+                                  ),
+                                ],
+                              ],
+                            ),
+                            if (location.areaId != null)
+                              _AreaName(areaId: location.areaId!),
+                          ],
                         ),
                       ),
-                      if (location.isPrimary) ...[
-                        const DabblerGap.h(DabblerSpacing.space2),
-                        // The old badge text carried a star emoji; the star
-                        // is now a DabblerIcon (CEO rule: no emoji).
-                        DabblerBadge(
-                          label: AppLocalizations.of(
-                            context,
-                          ).primary_sport_badge,
-                          icon: DabblerIcon('star'),
-                        ),
-                      ],
+                      if (selected) const DabblerIcon('tick-circle'),
                     ],
                   ),
-                  if (location.areaId != null)
-                    _AreaName(areaId: location.areaId!),
-                ],
+                ),
               ),
             ),
             // Star = set as primary
@@ -213,15 +199,25 @@ class _LocationTile extends ConsumerWidget {
               DabblerButton.icon(
                 tone: DabblerButtonTone.text,
                 icon: 'star',
-                semanticLabel: 'Set as primary',
+                semanticLabel: AppLocalizations.of(
+                  context,
+                ).saved_places_set_primary,
                 onPressed: () => notifier.setPrimary(location.id),
               ),
             // Rename
             DabblerButton.icon(
               tone: DabblerButtonTone.text,
               icon: 'edit',
-              semanticLabel: 'Rename',
+              semanticLabel: AppLocalizations.of(context).saved_places_rename,
               onPressed: () => _rename(context, ref),
+            ),
+            // Delete (KAN-589): always visible; a swipe alone cannot be done
+            // with a mouse on web.
+            DabblerButton.icon(
+              tone: DabblerButtonTone.text,
+              icon: 'trash',
+              semanticLabel: AppLocalizations.of(context).saved_places_delete,
+              onPressed: () => _delete(context, ref),
             ),
           ],
         ),
@@ -229,25 +225,50 @@ class _LocationTile extends ConsumerWidget {
     );
   }
 
+  /// Confirm, delete, refresh; a failed delete says so (KAN-589).
+  Future<void> _delete(BuildContext context, WidgetRef ref) async {
+    final confirmed = await _confirmDelete(context);
+    if (confirmed != true || !context.mounted) return;
+    final toast = DabblerToastProvider.of(context);
+    final message = AppLocalizations.of(context).saved_places_delete_failed;
+    final bool gone = await ref
+        .read(profileLocationNotifierProvider.notifier)
+        .deleteLocation(location.id);
+    if (!gone) toast.show(DabblerToastSpec(message: message));
+  }
+
   Future<bool?> _confirmDelete(BuildContext context) {
     return showDabblerDialog<bool>(
       context: context,
       builder: (ctx) => DabblerDialog(
         onClose: () => Navigator.pop(ctx, false),
-        title: 'Delete location?',
-        description:
-            'Remove "${location.effectiveLabel}" from your saved locations?',
+        title: AppLocalizations.of(context).saved_places_delete_title,
+        description: AppLocalizations.of(
+          context,
+        ).saved_places_delete_body(location.effectiveLabel),
         destructive: true,
         secondaryAction: DabblerDialogAction(
           label: AppLocalizations.of(context).home_location_cancel,
           onPressed: () => Navigator.pop(ctx, false),
         ),
         primaryAction: DabblerDialogAction(
-          label: 'Delete',
+          label: AppLocalizations.of(context).saved_places_delete,
           onPressed: () => Navigator.pop(ctx, true),
         ),
       ),
     );
+  }
+
+  /// This place is the device's current selection: the selected saved place
+  /// (by id), or the stored Manual point of this place after a restart.
+  bool _isSelected(ActiveLocationState? s, ProfileLocation p) {
+    if (s is! ActiveLocationReady) return false;
+    final l = s.location;
+    if (l.savedLocationId != null) return l.savedLocationId == p.id;
+    return l.source == ActiveLocationSource.manual &&
+        l.lat == p.lat &&
+        l.lng == p.lng &&
+        l.savedLocationLabel == p.effectiveLabel;
   }
 
   String _labelIcon(ProfileLocationLabel label) {
@@ -276,7 +297,7 @@ class _LocationTile extends ConsumerWidget {
       builder: (ctx) => StatefulBuilder(
         builder: (ctx, setState) => DabblerDialog(
           onClose: () => Navigator.pop(ctx, false),
-          title: 'Rename location',
+          title: AppLocalizations.of(context).saved_places_rename_title,
           secondaryAction: DabblerDialogAction(
             label: AppLocalizations.of(context).home_location_cancel,
             onPressed: () => Navigator.pop(ctx, false),
@@ -294,7 +315,7 @@ class _LocationTile extends ConsumerWidget {
                 runSpacing: DabblerSpacing.space3,
                 children: ProfileLocationLabel.values.map((l) {
                   return DabblerChip(
-                    label: l.displayName,
+                    label: savedPlaceLabelName(AppLocalizations.of(context), l),
                     selected: selectedLabel == l,
                     onTap: () => setState(() => selectedLabel = l),
                   );
@@ -304,7 +325,9 @@ class _LocationTile extends ConsumerWidget {
                 const DabblerGap.v(DabblerSpacing.space4),
                 DabblerTextField(
                   controller: customController,
-                  placeholder: 'Custom name',
+                  placeholder: AppLocalizations.of(
+                    context,
+                  ).saved_places_custom_name,
                 ),
               ],
             ],
@@ -313,6 +336,20 @@ class _LocationTile extends ConsumerWidget {
       ),
     );
 
+    final customName = customController.text.trim();
+    if (confirmed == true &&
+        selectedLabel == ProfileLocationLabel.custom &&
+        customName.isEmpty) {
+      if (context.mounted) {
+        DabblerToastProvider.of(context).show(
+          DabblerToastSpec(
+            message: AppLocalizations.of(context).location_custom_name_required,
+          ),
+        );
+      }
+      customController.dispose();
+      return;
+    }
     if (confirmed == true) {
       await ref
           .read(profileLocationNotifierProvider.notifier)

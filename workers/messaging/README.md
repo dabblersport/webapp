@@ -6,7 +6,7 @@ secret exists for this code. `wrangler.toml` has no `database_id` and no account
 ## Purpose
 The first code of the game-chat Worker (D1, CEO-approved): the authorisation pipeline, the local D1 message schema
 with a gap-free per-conversation `seq`, and a load script for the D26 bar. Contract: `docs/messaging/openapi.yaml`,
-`docs/messaging/README.md`, `docs/decisions/messaging-architecture-draft.md` (T7).
+`docs/messaging/README.md`, `dabbler-docs/dabbler-code/decisions/messaging-architecture-draft.md` (T7).
 
 ## Architecture (D24 auth flow)
 ```
@@ -81,7 +81,7 @@ steps up by `STEP_PCT` until the error-rate or p95 budget is breached and record
 |---|---|
 | D1 game chat first | **CEO-approved** |
 | D13 CEO first moderation reviewer; no agent reads content; no "24 hours" promise | **CEO-approved** |
-| D18 per-user private Realtime topics `user:<id>`, polling fallback, no typing indicator | **CEO-approved** (not built here: P3) |
+| D18 per-user private Realtime topics `user:<id>`, polling fallback, no typing indicator | **CEO-approved** (not built here: P3). "No typing indicator" is superseded for KAN-579: the CEO-approved Messaging design (frames 25-26, 44, 47-48) and the ticket's acceptance criteria add ephemeral typing; see "Typing presence (KAN-579)" |
 | D24 bearer pass-through to `msg_authorize`, trust only returned `user_id`, no cache, no JWKS/shared secret | **Recommended, NOT YET APPROVED** (built and unit-tested against) |
 | D26 load bar: sustain 2× pilot peak, then step up and record the ceiling | **Recommended, NOT YET APPROVED** |
 | D5 lifecycle: writable iff not cancelled and `end_at >= now()`, derived per request; nothing deleted | **Recommended, NOT YET APPROVED** (enforced by `msg_authorize`/T14, not here) |
@@ -171,6 +171,14 @@ Only `/v1` and `/v1/*` get CORS handling. `/health` and `/internal/*` get none, 
 
 ### Kill switch: dashboard edit vs redeploy (`MESSAGING_ACCESS_MODE`)
 
+**KAN-625: dashboard-only, fails closed.** `MESSAGING_ACCESS_MODE` is changed only by an admin in the Cloudflare
+dashboard (Workers -> the messaging Worker -> Settings -> Variables). No client, migration, database edit or Worker route
+writes it, and the Flutter app does not read it; the Worker only reads it (`accessMode(env)` in `src/auth.ts`, the one
+place the value is derived). A value that is absent, empty or not exactly `off`, `allowlist` or `all` is treated as
+`off`, so the Worker sends `p_access_mode: "off"` and the refusal is the same 403 with no reason as the KAN-553 off signal.
+A dashboard edit takes effect without a release (about 1 s); the evidence is the KAN-553 drill,
+`docs/messaging/killswitch-drill-kan553.md`. The current setting stays `all`.
+
 Source read 2026-10-15: Wrangler configuration, https://developers.cloudflare.com/workers/wrangler/configuration/
 ("Source of truth" and the `keep_vars` key):
 
@@ -192,6 +200,14 @@ is **also** defined in the committed `[env.production.vars]`. **Verify once, on 
 read `MESSAGING_ACCESS_MODE` (Worker -> Settings -> Variables) before and after the deploy. If the dashboard value is
 reset anyway, remove `MESSAGING_ACCESS_MODE` from the committed vars and manage it only in the dashboard. Until that
 check is done, re-read the dashboard value after every deploy. No Worker deploy was made by KAN-554's flag commit.
+
+**Finding, KAN-581 deploy 2026-10-22 (version 119b23d7): the question is still OPEN.** The CEO confirmed the live dashboard
+value was `"all"` while the committed value was `"off"`. To make the deploy risk-free the committed value was first aligned
+to `"all"` (and `MESSAGING_UPLOADS = "on"` plus the `MEDIA` R2 binding were added), so the deploy could not show whether
+`keep_vars` keeps a dashboard value that differs from the committed one. After the deploy `wrangler versions view` lists
+`MESSAGING_ACCESS_MODE ("all")`: unchanged, as expected from the equal values. The committed value is now `"all"`, so the
+fail-safe `"off"` starting value described above no longer applies. Making the variable dashboard-only, which is what
+resolves this, is a separate follow-up and was not done here.
 
 ## Direct messages (KAN-561)
 Authorisation stays the database's: a DM is a conversation id like any other, so `POST/GET .../messages` and the report
@@ -283,3 +299,18 @@ The contract's `getGameConversation`, `muteConversation` and `unmuteConversation
   are idempotent (read-or-create, set a flag), so an over-limit call changes nothing a normal call would not, and it
   still gets 429 `rate_limited` + `Retry-After`. No earlier "read scope" existed in `src/rate_limit.ts`; this one is new.
 - **CORS:** preflight now allows `GET, POST, PUT, DELETE, OPTIONS`.
+
+## Typing presence (KAN-579)
+`POST /v1/conversations/{id}/typing` with `{"typing": true|false}` answers `204`. It stores **nothing**: no D1 write, no
+message row, no notification or push. The Worker runs `msg_authorize` (so a removed, left, blocked or non-member caller is
+refused with its typed reason, and the kill switch applies), then schedules `public.msg_typing` (migration
+`20261020140000_kan579_msg_typing.sql`, **authored, not applied: needs-ops**) with the caller's own bearer, which
+re-checks that the caller may send and broadcasts `{type:"typing", conversation_id, user_id, on}` on each other current
+member's private `user:<id>` topic (event `typing`). Ids and one boolean only; no text, name or draft; nothing is logged.
+- **Throttle:** the app sends at most one "typing" per 3 s and always ends with a "stop"; receivers also expire a typer 6 s
+  after the last signal, so a lost stop (airplane mode, killed app) clears itself.
+- **Cost:** no D1 rows. One request per typer per ~3 s while typing is a **Worker request plus two subrequests**
+  (`msg_authorize`, `msg_typing`), which count against the Free plan's request budget (100,000 requests/day).
+- **Residual risk:** this route has no limiter of its own (the KAN-548 limiter writes a D1 row per call, and the static
+  guard forbids an in-isolate cache). A client that ignores its throttle is bounded only by the authorisation call each
+  request costs and by Supabase Realtime's own message rate. Add a limiter if abuse appears.

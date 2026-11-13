@@ -154,7 +154,7 @@ void main() {
     test('offline() is a network failure with the offline reason', () {
       final f = MessagingFailure.offline();
       expect(f.reason, MessagingReason.offline);
-      expect(f.category, FailureCode.network);
+      expect(f.category, FailureCode.noInternet); // KAN-603: shared taxonomy
     });
 
     test('it travels inside Result<T, Failure> and keeps its reason', () {

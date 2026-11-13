@@ -15,6 +15,7 @@ import 'package:dabbler/features/games/presentation/controllers/game_view_contro
 import 'package:dabbler/features/games/presentation/controllers/join_action_toast.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_content.dart';
+import 'package:dabbler/features/games/presentation/screens/join_game/game_series_widgets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_entry.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -204,8 +205,18 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
           allowed: ctrl.isHost || ctrl.isOnRoster,
           gameEndAt: game.endAt,
         ),
+        ?gameSeriesBadge(context, game),
         gameFactTiles(context, game),
         gameHostCard(context, game),
+        if (ctrl.isHost && game.isSeries && !game.isCancelled)
+          DabblerButton(
+            key: const ValueKey<String>('game-series-cancel'),
+            label: AppLocalizations.of(context).recurring_cancel_action,
+            tone: DabblerButtonTone.destructive,
+            size: DabblerButtonSize.full,
+            fullWidth: true,
+            onPressed: () => _openCancelSeries(game, ctrl),
+          ),
         ...gameSquadSections(
           context,
           state: state,
@@ -387,8 +398,29 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       policy == 'request' ? 'send' : 'tick-circle';
 
   Future<void> _openEditGame(String gameId, GameViewController ctrl) async {
+    final game = ref.read(gameViewControllerProvider(widget.gameId)).game;
+    if (game != null && game.isSeries) {
+      final scope = await showSeriesEditScopeSheet(
+        context,
+        gameStart: game.startAt,
+      );
+      if (scope == null || !mounted) return;
+      if (scope == SeriesEditScope.allFuture) {
+        final changed = await showSeriesFutureEditSheet(context, game: game);
+        if (changed == true) await ctrl.refresh();
+        return;
+      }
+    }
+    if (!mounted) return;
     final updated = await showGameComposerSheet(context, editGameId: gameId);
     if (updated == true) await ctrl.refresh();
+  }
+
+  Future<void> _openCancelSeries(GameView game, GameViewController ctrl) async {
+    final seriesId = game.seriesId;
+    if (seriesId == null) return;
+    final cancelled = await showSeriesCancelSheet(context, seriesId: seriesId);
+    if (cancelled == true) await ctrl.refresh();
   }
 
   Future<void> _confirmLeave() async {

@@ -124,7 +124,7 @@ void main() {
     test('11 stable keys map to bundled WebPs under 400 KB', () {
       expect(welcomeSportPosters.keys.toSet(), _sources.keys.toSet());
       for (final e in welcomeSportPosters.entries) {
-        expect(e.value, 'assets/images/sport_welcome/${e.key}.webp');
+        expect(e.value, 'assets/images/sport_background/${e.key}.webp');
         final f = File(e.value);
         expect(f.existsSync(), isTrue, reason: e.value);
         expect(f.lengthSync(), lessThan(400 * 1024), reason: e.value);
@@ -140,7 +140,7 @@ void main() {
         isFalse,
       );
       final pubspec = File('pubspec.yaml').readAsStringSync();
-      expect(pubspec, contains('- assets/images/sport_welcome/'));
+      expect(pubspec, contains('- assets/images/sport_background/'));
       final listed = pubspec
           .split('\n')
           .where((l) => l.trim().startsWith('- assets/'))

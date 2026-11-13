@@ -1,3 +1,4 @@
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -14,7 +15,11 @@ abstract class NearbyGamesDatasource {
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
   });
 
-  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({String? sportId});
+  /// Public upcoming games; with [areaIds] only those in those Areas (a city).
+  Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
+    String? sportId,
+    List<String>? areaIds,
+  });
 
   /// The viewer's own upcoming games — created by them or where they're on
   /// the active roster. Location-independent (pinned "My games" section).
@@ -23,6 +28,9 @@ abstract class NearbyGamesDatasource {
   });
 }
 
+/// Reads only. KAN-743: `rpc_get_nearby_games` (KAN-723, B04) and
+/// `v_game_card` (KAN-720, B01) are event-backed under the same names and
+/// columns; every row's `id` is the game id.
 class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   const SupabaseNearbyGamesDatasource(this._svc);
 
@@ -35,7 +43,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
     required int radiusMeters,
     String? sportId,
     NearbySortOrder sortOrder = NearbySortOrder.nearest,
-  }) => Result.guard(() async {
+  }) => guardWithTimeout(() async {
     final response = await _svc.client.rpc(
       'rpc_get_nearby_games',
       params: {
@@ -53,7 +61,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
           (r) => NearbyGameModel.fromJson(Map<String, dynamic>.from(r as Map)),
         )
         .toList();
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 
   static const _cardColumns =
       'id, title, sport_name_en, start_at, end_at, is_cancelled, '
@@ -64,7 +72,11 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getAllGames({
     String? sportId,
-  }) => Result.guard(() async {
+    List<String>? areaIds,
+  }) => guardWithTimeout(() async {
+    // KAN-588: a city with no Area rows holds no game; ask nothing.
+    if (areaIds != null && areaIds.isEmpty) return <NearbyGameModel>[];
+
     var query = _svc.client
         .from(SupabaseConfig.vGameCardTable)
         .select(_cardColumns);
@@ -72,15 +84,18 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
     if (sportId != null) {
       query = query.eq('sport_id', sportId);
     }
+    if (areaIds != null) {
+      query = query.inFilter('area_id', areaIds);
+    }
 
     final rows = await query.order('start_at').limit(100) as List<dynamic>;
     return _mapCardRows(rows);
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 
   @override
   Future<Result<List<NearbyGameModel>, Failure>> getMyUpcomingGames({
     String? sportId,
-  }) => Result.guard(() async {
+  }) => guardWithTimeout(() async {
     var query = _svc.client
         .from(SupabaseConfig.vGameCardTable)
         .select(_cardColumns)
@@ -94,7 +109,7 @@ class SupabaseNearbyGamesDatasource implements NearbyGamesDatasource {
 
     final rows = await query.order('start_at').limit(50) as List<dynamic>;
     return _mapCardRows(rows);
-  }, (e) => Failure.from(e));
+  }, mapError: (e) => Failure.from(e));
 
   /// Maps v_game_card rows to [NearbyGameModel] (status computed here — the
   /// view has no status column; distance is 0, these paths are location-free).

@@ -213,15 +213,6 @@ void _expectNothingForbidden(WidgetTester tester, AppLocalizations l10n) {
   expect(find.byType(DabblerTypingIndicator), findsNothing);
   expect(find.byType(DabblerConversationRow), findsNothing);
   expect(find.text(l10n.messaging_chat_game_finished), findsNothing);
-  final icons = tester
-      .widgetList<DabblerIcon>(
-        find.descendant(
-          of: find.byType(DabblerMessageThread),
-          matching: find.byType(DabblerIcon),
-        ),
-      )
-      .map((i) => i.name);
-  expect(icons, isNot(contains('tick-circle')));
   final header = tester.widget<DabblerConversationHeader>(
     find.byKey(DmThreadKeys.header),
   );

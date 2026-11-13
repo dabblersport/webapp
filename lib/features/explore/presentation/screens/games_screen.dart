@@ -5,6 +5,7 @@ import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
 import 'dart:async';
 
 import 'package:dabbler/data/models/social/sport.dart';
+import 'package:dabbler/features/explore/presentation/widgets/games_map_view.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_parts.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/games/data/models/nearby_game_model.dart';
@@ -16,6 +17,7 @@ import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
 import 'package:dabbler/features/location/presentation/widgets/home_location_picker_sheet.dart';
 import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chips.dart';
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
+import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/providers.dart' hide nearbyGamesProvider;
@@ -76,6 +78,7 @@ NearbyGamesParams _paramsFor(WidgetRef ref, String? sportId) {
     sportId: sportId,
     sortOrder:
         ref.watch(nearbyGameSortProvider) ?? NearbySortOrder.defaultOrder,
+    city: ref.watch(listingCityProvider),
   );
 }
 
@@ -150,6 +153,15 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
   Widget build(BuildContext context) {
     // The header's count and the applied-filters rail both follow every filter
     // that narrows the list.
+    // KAN-755: a title, time, place or cancel change refetches this listing.
+    ref.watch(
+      listingChangeFeedProvider(
+        ListingChangeSignalArgs(
+          'games',
+          () async => ref.invalidate(nearbyGamesProvider),
+        ),
+      ),
+    );
     final l = AppLocalizations.of(context);
     final nearby = ref.watch(nearbyGamesFilterEnabledProvider);
     final radius = ref.watch(gamesRadiusProvider);
@@ -188,6 +200,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     ];
 
     final denied = activeLocationNeedsManualChange(locState);
+    final mapMode = ref.watch(gamesMapModeProvider);
 
     return SetLocationWhenDenied(
       child: DabblerPage(
@@ -218,6 +231,13 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
                 semanticLabel: l.listing_search,
                 onPressed: () => context.push(RoutePaths.socialSearch),
               ),
+              // KAN-669: List (default) / Map toggle.
+              DabblerPageHeaderAction(
+                icon: mapMode ? 'row-vertical' : 'map',
+                semanticLabel: mapMode ? l.games_view_list : l.games_view_map,
+                onPressed: () =>
+                    ref.read(gamesMapModeProvider.notifier).state = !mapMode,
+              ),
               DabblerPageHeaderAction(
                 icon: 'filter',
                 semanticLabel: l.listing_filters,
@@ -243,7 +263,10 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
               sports: widget.sports,
               sportId: _sportIdForTab(i),
               scrollController: _scrollControllers[i],
-              onRetry: () => ref.invalidate(nearbyGamesProvider),
+              onRetry: () {
+                ref.invalidate(nearbyGamesProvider);
+                ref.invalidate(myPinnedGamesProvider);
+              },
               onChangeFilters: _openFilters,
             ),
           ),
@@ -383,15 +406,25 @@ class _GameTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
+    // KAN-588: the location is still settling, then no city selected: nothing
+    // to list, a way to choose one.
+    if (ref.watch(listingCityPendingProvider)) {
+      return const ListingSkeletons(kind: DabblerListingSkeletonKind.game);
+    }
+    if (ref.watch(listingCityMissingProvider)) {
+      return const ListingChooseCity(icon: 'game');
+    }
     final params = _paramsFor(ref, sportId);
     final isFiltered = params.lat != null;
 
     final gamesAsync = ref.watch(nearbyGamesProvider(params));
     // Pinned section: the viewer's created/joined upcoming games,
     // independent of the location filter.
-    final pinned =
-        ref.watch(myPinnedGamesProvider(sportId)).valueOrNull ??
-        const <NearbyGameModel>[];
+    // KAN-606: a failed refetch keeps the rows it had (valueOrNull); a first
+    // load that failed has none, and is never read as "no games".
+    final pinnedAsync = ref.watch(myPinnedGamesProvider(sportId));
+    final pinned = pinnedAsync.valueOrNull ?? const <NearbyGameModel>[];
+    final pinnedFailed = pinnedAsync.hasError && !pinnedAsync.hasValue;
 
     // KAN-598: the feed's pull-to-refresh on every state with a list or an
     // answer. Refetches THIS tab's query under the current filters (they are
@@ -406,18 +439,34 @@ class _GameTabBody extends ConsumerWidget {
             settle(ref.read(nearbyGamesProvider(params).future)),
             settle(ref.read(myPinnedGamesProvider(sportId).future)),
           ]);
+          // KAN-606: the list stays; the failure is a transient toast.
+          if (refreshFailedWithRows(ref.read(nearbyGamesProvider(params))) ||
+              refreshFailedWithRows(ref.read(myPinnedGamesProvider(sportId)))) {
+            if (context.mounted) showListingRefreshFailedToast(context);
+          }
         });
 
+    final error = ListingError(
+      title: l.listing_load_games_failed,
+      retryLabel: l.feed_retry,
+      onRetry: onRetry,
+      onRefresh: refresh,
+    );
+
+    // KAN-606: a failed refetch with rows keeps them; the error answer is for
+    // a list with nothing to show.
     return gamesAsync.when(
+      skipError: keepsRows(gamesAsync),
       loading: () =>
           const ListingSkeletons(kind: DabblerListingSkeletonKind.game),
-      error: (e, _) => ListingError(
-        title: l.listing_load_games_failed,
-        retryLabel: l.feed_retry,
-        onRetry: onRetry,
-        onRefresh: refresh,
-      ),
+      error: (e, _) => error,
       data: (games) {
+        if (ref.watch(gamesMapModeProvider)) {
+          final now = DateTime.now();
+          return GamesMapView(
+            games: games.where((g) => _passes(ref, g, now)).toList(),
+          );
+        }
         final pinnedIds = {for (final g in pinned) g.id};
 
         // Pinned "Upcoming" games stay visible — the filters narrow
@@ -433,13 +482,20 @@ class _GameTabBody extends ConsumerWidget {
             .where((g) => _passes(ref, g, now))
             .toList();
         // Default order is starting soonest (CEO 2026-10-08), whichever path
-        // served the rows; "Nearest" keeps the server's distance order.
-        if (ref.watch(nearbyGameSortProvider) != NearbySortOrder.nearest) {
+        // served the rows; "Nearest" keeps the server's distance order. With
+        // only a city and no sort chosen the list is alphabetical (KAN-588).
+        final chosenSort = ref.watch(nearbyGameSortProvider);
+        if (chosenSort == null && ref.watch(listingCityOnlyProvider)) {
+          listed.sort(_byTitle);
+        } else if (chosenSort != NearbySortOrder.nearest) {
           listed.sort(_bySoonest);
         }
         // One "N following" fetch per set of visible cards, either data path.
         final others = watchGamesWithFollowing(ref, listed);
 
+        // KAN-606: nothing listed and the pinned fetch failed is a failure,
+        // not "no games".
+        if (pinnedFailed && others.isEmpty) return error;
         if (pinned.isEmpty && others.isEmpty) {
           // `Listings.2026-10-08.dc.html:211-212` whenever anything narrows
           // the list; "No games yet" only for the bare, unlocated list, which
@@ -605,6 +661,11 @@ class _UpcomingRail extends StatelessWidget {
       onTap: () => context.push(RoutePaths.gameDetail(g.id)),
     );
   }
+}
+
+int _byTitle(NearbyGameModel a, NearbyGameModel b) {
+  final int byName = a.title.toLowerCase().compareTo(b.title.toLowerCase());
+  return byName != 0 ? byName : _bySoonest(a, b);
 }
 
 int _bySoonest(NearbyGameModel a, NearbyGameModel b) {

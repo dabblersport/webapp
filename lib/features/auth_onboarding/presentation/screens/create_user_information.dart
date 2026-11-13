@@ -10,6 +10,7 @@ import 'package:dabbler/features/auth_onboarding/presentation/providers/onboardi
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_step_frame.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/widgets/birth_date_sheet.dart';
+import 'package:dabbler/features/auth_onboarding/presentation/widgets/onboarding_tone.dart';
 
 class RegistrationData {
   String email;
@@ -482,7 +483,11 @@ class _CreateUserInformationState extends ConsumerState<CreateUserInformation> {
       leading: DabblerAvatar(seed: label, size: DabblerAvatarSize.md),
       title: label,
       selected: _selectedGender == value,
-      tone: DabblerHueTone.gender(hue),
+      tone: onboardingHueTone(
+        hue,
+        DabblerColors.of(context).brightness,
+        gender: true,
+      ),
       onChanged: (_) => setState(
         () => _selectedGender = _selectedGender == value ? '' : value,
       ),

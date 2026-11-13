@@ -24,6 +24,7 @@ class SearchResultsView extends StatelessWidget {
     required this.mode,
     required this.onViewAll,
     required this.onProfileTap,
+    required this.onRetry,
   });
 
   final SearchState state;
@@ -31,10 +32,21 @@ class SearchResultsView extends StatelessWidget {
   final ValueChanged<SearchMode> onViewAll;
   final ValueChanged<Profile> onProfileTap;
 
+  /// Runs the failed search again (KAN-606).
+  final VoidCallback onRetry;
+
   @override
   Widget build(BuildContext context) {
+    // KAN-606: the localized failure, never the raw error, with Retry.
     if (state.error != null && !state.hasResults) {
-      return Center(child: DabblerEmptyState.error(title: state.error!));
+      final l10n = AppLocalizations.of(context);
+      return Center(
+        child: DabblerEmptyState.error(
+          title: l10n.composer_search_failed,
+          retryLabel: l10n.feed_retry,
+          onRetry: onRetry,
+        ),
+      );
     }
     if (!state.hasResults && !state.isLoading) {
       return Center(

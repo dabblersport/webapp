@@ -7,7 +7,7 @@
 // reads are D1: the conversation's newest seq (conversation_seq, one primary-key row; no message is read) and the
 // per-user limit row. No message text is read. No logging.
 
-import { DEFAULT_ACCESS_MODE, Env, hasBearer } from "./auth";
+import { Env, accessMode, hasBearer } from "./auth";
 import { Reason, deniedWithoutReason, ok, reasonError, unauthenticated, upstreamError } from "./errors";
 import { enforceConversationOps } from "./rate_limit";
 
@@ -46,7 +46,7 @@ export async function getGameConversation(request: Request, env: Env, gameId: st
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({ p_game_id: gameId.toLowerCase(), p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE }),
+      body: JSON.stringify({ p_game_id: gameId.toLowerCase(), p_access_mode: accessMode(env) }),
     });
   } catch {
     return upstreamError(502, "request unavailable");

@@ -30,6 +30,18 @@ class RouterRefreshNotifier extends ChangeNotifier {
 
   bool get needsPostLoginWelcome => _needsPostLoginWelcome;
 
+  /// KAN-602: while a sign-in screen is checking (or failed to check) the
+  /// user's profile, the router must not move the user on: it would otherwise
+  /// send them to Welcome / Home on the sign-in event alone, before we know
+  /// whether the profile exists.
+  bool _holdForProfileCheck = false;
+
+  bool get holdForProfileCheck => _holdForProfileCheck;
+
+  void holdForProfile() => _holdForProfileCheck = true;
+
+  void releaseProfileHold() => _holdForProfileCheck = false;
+
   void requirePostLoginWelcome() {
     _needsPostLoginWelcome = true;
     notifyListeners();

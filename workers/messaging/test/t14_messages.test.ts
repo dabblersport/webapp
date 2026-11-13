@@ -58,7 +58,7 @@ describe("reason mapping (one table, one test per reason)", () => {
 });
 
 describe("RPC request", () => {
-  it("sends p_conversation_id and p_access_mode (code default 'allowlist'; env override passed through)", async () => {
+  it("sends p_conversation_id and p_access_mode (test env sets 'allowlist'; env override passed through)", async () => {
     const { calls } = rpc(authRow({ allowed_action: null, reason: "not_member" }));
     const { db } = spyDb();
     await list(db);

@@ -8,7 +8,7 @@
 // headers, the body and the message text must never reach a log anyway. The outcome is only the returned status
 // code (null when the call could not be made), which the waitUntil promise carries and tests can read.
 
-import { DEFAULT_ACCESS_MODE, Env } from "./auth";
+import { Env, accessMode } from "./auth";
 
 /** The part of the Workers ExecutionContext this code uses. */
 export interface WaitUntilContext {
@@ -36,7 +36,7 @@ export async function notifyMembers(
       body: JSON.stringify({
         p_conversation_id: conversationId,
         p_seq: seq,
-        p_access_mode: env.MESSAGING_ACCESS_MODE || DEFAULT_ACCESS_MODE,
+        p_access_mode: accessMode(env),
       }),
       signal: AbortSignal.timeout(NOTIFY_TIMEOUT_MS),
     });

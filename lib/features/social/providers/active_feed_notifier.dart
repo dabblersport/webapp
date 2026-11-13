@@ -2,6 +2,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
+import 'package:dabbler/core/cache/offline_cache.dart';
+import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 
@@ -224,10 +227,56 @@ final class ActiveFeedData extends ActiveFeedState {
 /// Events are sorted by score DESC. Does NOT mix with the Post feed logic.
 /// NOT autoDispose — caches across tab switches.
 class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
-  ActiveFeedNotifier(this._db, {bool autoLoad = false})
-    : super(const ActiveFeedLoading()) {
+  /// [cache] / [accountId] (KAN-605): the first page is shown from the
+  /// on-device cache at once; [load] refreshes it in the background.
+  ActiveFeedNotifier(
+    this._db, {
+    bool autoLoad = false,
+    OfflineCache? cache,
+    String? accountId,
+  }) : _cache = cache,
+       _accountId = accountId,
+       super(const ActiveFeedLoading()) {
+    _hydrated = _hydrate();
     if (autoLoad) ensureLoaded();
   }
+
+  final OfflineCache? _cache;
+  final String? _accountId;
+  static const String _cacheKey = 'feed.active';
+  late final Future<void> _hydrated;
+  bool _networkLoaded = false;
+
+  bool get _cacheOn => _cache != null && _accountId != null;
+
+  Future<void> _hydrate() async {
+    if (!_cacheOn) return;
+    final hit = await _cache!.read(_accountId!, _cacheKey);
+    if (hit == null || !mounted || state is ActiveFeedData) return;
+    try {
+      final events = <ActiveEvent>[
+        for (final j in (hit.payload as List))
+          _gameCreated(Map<String, dynamic>.from(j as Map)),
+      ];
+      if (events.isEmpty) return;
+      state = ActiveFeedData(
+        events: events,
+        hasMore: events.length >= _pageSize,
+      );
+    } catch (_) {
+      // A cached shape that no longer parses is the same as no cache.
+    }
+  }
+
+  static GameCreatedEvent _gameCreated(Map<String, dynamic> row) =>
+      GameCreatedEvent(
+        id: row['id']?.toString() ?? '',
+        createdAt: ActiveEvent._parseCreatedAt(row['created_at']),
+        gameId: row['id']?.toString(),
+        gameTitle: row['title']?.toString(),
+        sport: row['sport_name_en']?.toString(),
+        venueName: (row['venue_name'] ?? row['area_name'])?.toString(),
+      );
 
   final SupabaseClient _db;
   static const int _pageSize = 20;
@@ -235,25 +284,48 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
 
   /// Loads the first page only if not yet loaded.
   Future<void> ensureLoaded() async {
-    if (state is ActiveFeedData) return;
+    await _hydrated;
+    if (_networkLoaded) return;
+    if (state is ActiveFeedData && !_cacheOn) return;
     await load();
   }
 
   /// Force-reload from first page.
   Future<void> load() async {
     if (!mounted) return;
-    state = const ActiveFeedLoading();
+    // KAN-605: a reload over cached or earlier events keeps them on screen
+    // while it runs and when it fails.
+    if (state is! ActiveFeedData) state = const ActiveFeedLoading();
     _activePage = 0;
 
+    final started = DateTime.now();
     final result = await _fetch(limit: _pageSize, offset: 0);
     if (!mounted) return;
 
     result.fold(
-      (err) => state = ActiveFeedFailure(err.message),
-      (events) => state = ActiveFeedData(
-        events: events,
-        hasMore: events.length >= _pageSize,
-      ),
+      (err) {
+        if (state is! ActiveFeedData) state = ActiveFeedFailure(err.message);
+      },
+      (events) {
+        _networkLoaded = true;
+        state = ActiveFeedData(
+          events: events,
+          hasMore: events.length >= _pageSize,
+        );
+        if (_cacheOn) {
+          _cache!.write(_accountId!, _cacheKey, [
+            for (final e in events)
+              if (e is GameCreatedEvent)
+                {
+                  'id': e.id,
+                  'created_at': e.createdAt.toIso8601String(),
+                  'title': e.gameTitle,
+                  'sport_name_en': e.sport,
+                  'venue_name': e.venueName,
+                },
+          ], requestStartedAt: started);
+        }
+      },
     );
   }
 
@@ -308,21 +380,14 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
             'roster_count, capacity, creator_display_name, creator_avatar_url, created_at',
           )
           .order('created_at', ascending: false)
-          .range(offset, offset + limit - 1);
+          .range(offset, offset + limit - 1)
+          .timeout(kRequestTimeout);
 
       // Only `game_created` events are produced today — this notifier queries
       // `v_game_card`. The other ActiveEvent variants exist for when the feed
       // emits richer event types; construct GameCreatedEvent directly here.
       final events = (rows as List<dynamic>).map<ActiveEvent>((r) {
-        final row = Map<String, dynamic>.from(r as Map);
-        return GameCreatedEvent(
-          id: row['id']?.toString() ?? '',
-          createdAt: ActiveEvent._parseCreatedAt(row['created_at']),
-          gameId: row['id']?.toString(),
-          gameTitle: row['title']?.toString(),
-          sport: row['sport_name_en']?.toString(),
-          venueName: (row['venue_name'] ?? row['area_name'])?.toString(),
-        );
+        return _gameCreated(Map<String, dynamic>.from(r as Map));
       }).toList();
 
       return Ok(events);
@@ -338,5 +403,10 @@ class ActiveFeedNotifier extends StateNotifier<ActiveFeedState> {
 
 final activeFeedProvider =
     StateNotifierProvider<ActiveFeedNotifier, ActiveFeedState>((ref) {
-      return ActiveFeedNotifier(Supabase.instance.client, autoLoad: false);
+      return ActiveFeedNotifier(
+        Supabase.instance.client,
+        autoLoad: false,
+        cache: ref.watch(offlineCacheProvider),
+        accountId: ref.watch(cacheAccountIdProvider),
+      );
     });

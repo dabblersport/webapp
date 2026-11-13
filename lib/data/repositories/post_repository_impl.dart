@@ -14,6 +14,10 @@ import 'base_repository.dart';
 import 'following_sport_filter.dart';
 import 'post_repository.dart';
 
+/// The city a post written before posting cities were recorded belongs to
+/// (KAN-592 CEO ruling; the same value as `kLegacyPostedFromCity`).
+const String _legacyPostsCity = 'Dubai';
+
 /// Concrete [PostRepository] backed by Supabase.
 ///
 /// All visibility filtering is handled by RLS + `can_view_post()` at the
@@ -467,6 +471,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   Future<Result<List<Post>, Failure>> getNearbyFeed({
     double? lat,
     double? lng,
+    String? city,
     int limit = 20,
     int offset = 0,
   }) => guard(() async {
@@ -514,6 +519,35 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       // Apply offset + limit after sort.
       rows = rows.skip(offset).take(limit).toList();
+    } else if (city != null) {
+      // KAN-588: only the city is known, so no distance: the posts posted
+      // from that city, newest first. A post written before posting cities
+      // were recorded (no posted_from_city) belongs to Dubai (CEO ruling).
+      var cityQuery = _db
+          .from(SupabaseConfig.postsTable)
+          .select()
+          .eq('kind', 'original')
+          .neq('origin_type', 'system')
+          .eq('is_deleted', false)
+          .eq('is_hidden_admin', false);
+      if (city.trim().toLowerCase() == _legacyPostsCity.toLowerCase()) {
+        cityQuery = cityQuery.or(
+          'posted_from_city.ilike.$_legacyPostsCity,posted_from_city.is.null',
+        );
+      } else {
+        cityQuery = cityQuery.ilike(
+          'posted_from_city',
+          city
+              .trim()
+              .replaceAll('\\', '\\\\')
+              .replaceAll('%', '\\%')
+              .replaceAll('_', '\\_'),
+        );
+      }
+      if (followOr != null) cityQuery = cityQuery.or(followOr);
+      rows = await cityQuery
+          .order('created_at', ascending: false)
+          .range(offset, offset + limit - 1);
     } else {
       // Fallback: most recent posts with any location tag.
       var recentQuery = _db
@@ -1011,7 +1045,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         final res = await _db.rpc(
           'create_post',
           params: buildCreatePostRpcParams(
-            kind: 'moment',
+            kind: 'original',
             postType: postType,
             originType: 'manual',
             body: body,
@@ -1042,7 +1076,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       final data = <String, dynamic>{
         if (body != null) 'body': body,
         'visibility': visibility,
-        'kind': 'moment',
+        'kind': 'original',
         'post_type': postType,
         'origin_type': 'manual',
         'content_class': 'social',
@@ -1156,9 +1190,28 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
             geoLng: request.geoLng,
             locationTagId: request.locationTagId,
             areaId: request.areaId,
+            requestId: request.requestId,
           ),
         );
-        final post = Post.fromJson(res as Map<String, dynamic>);
+        var post = Post.fromJson(res as Map<String, dynamic>);
+        // KAN-592: the create_post RPC takes no posting city, so the author's
+        // own new row is stamped right after it. The tagged place above is a
+        // different field and is not touched.
+        final city = request.postedFromCity;
+        if (city != null) {
+          await _db
+              .from(SupabaseConfig.postsTable)
+              .update({
+                'posted_from_city': city,
+                if (request.postedFromArea != null)
+                  'posted_from_area': request.postedFromArea,
+              })
+              .eq('id', post.id);
+          post = post.copyWith(
+            postedFromCity: city,
+            postedFromArea: request.postedFromArea,
+          );
+        }
         // Link hashtags to public.hashtags / post_hashtags tables.
         await _linkHashtags(
           postId: post.id,
@@ -1171,16 +1224,22 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
 
       // Squad-visibility: insert post + link to post_squads junction.
       if (request.visibility.name == 'squad' && request.squadId != null) {
-        final row = await _db
-            .from(SupabaseConfig.postsTable)
-            .insert(payload)
-            .select()
-            .single();
-        // Link to squad junction table.
-        await _db.from(SupabaseConfig.postSquadsTable).insert({
-          'post_id': row['id'],
-          'squad_id': request.squadId,
-        });
+        final inserted = await _insertPostRow(
+          payload,
+          requestId: request.requestId,
+          authorProfileId: authorProfileId,
+        );
+        final row = inserted.row;
+        // Link to squad junction table. On a replay the first attempt may
+        // already have linked it, so a failure there is not an error.
+        try {
+          await _db.from(SupabaseConfig.postSquadsTable).insert({
+            'post_id': row['id'],
+            'squad_id': request.squadId,
+          });
+        } catch (_) {
+          if (!inserted.replayed) rethrow;
+        }
         final post = Post.fromJson(row);
         await _linkHashtags(
           postId: post.id,
@@ -1192,12 +1251,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       }
 
       // Standard insert path.
-      final row = await _db
-          .from(SupabaseConfig.postsTable)
-          .insert(payload)
-          .select()
-          .single();
-      final post = Post.fromJson(row);
+      final inserted = await _insertPostRow(
+        payload,
+        requestId: request.requestId,
+        authorProfileId: authorProfileId,
+      );
+      final post = Post.fromJson(inserted.row);
       await _linkHashtags(
         postId: post.id,
         tags: request.tags,
@@ -1206,6 +1265,34 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       );
       return post;
     });
+  }
+
+  /// KAN-612: inserts the post row. A retry of the same request id meets the
+  /// unique index on (author_profile_id, request_id) (`23505`); the row the
+  /// first attempt made is returned, so the retry never makes a second post.
+  Future<({Map<String, dynamic> row, bool replayed})> _insertPostRow(
+    Map<String, dynamic> payload, {
+    required String? requestId,
+    required String authorProfileId,
+  }) async {
+    try {
+      final row = await _db
+          .from(SupabaseConfig.postsTable)
+          .insert(payload)
+          .select()
+          .single();
+      return (row: row, replayed: false);
+    } on PostgrestException catch (e) {
+      if (requestId == null || e.code != '23505') rethrow;
+      final existing = await _db
+          .from(SupabaseConfig.postsTable)
+          .select()
+          .eq('author_profile_id', authorProfileId)
+          .eq('request_id', requestId)
+          .maybeSingle();
+      if (existing == null) rethrow;
+      return (row: existing, replayed: true);
+    }
   }
 
   // ── Hashtag linking ────────────────────────────────────────────────
@@ -1339,8 +1426,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     String query,
   ) => guard(() async {
     final rows = await _db
-        .from(SupabaseConfig.gamesTable)
-        .select('id, title, sport, game_type, start_at, end_at')
+        // KAN-715: event-backed card (public.games is RLS-on, no policy; and
+        // it has no `sport` column). sport is the sport key, as the sheet reads.
+        .from(SupabaseConfig.vGameCardTable)
+        .select('id, title, sport:sport_key, game_type, start_at, end_at')
         .ilike('title', '%$query%')
         .eq('is_cancelled', false)
         .limit(20)
@@ -1699,6 +1788,7 @@ Map<String, dynamic> buildCreatePostRpcParams({
   double? geoLng,
   String? locationTagId,
   String? areaId,
+  String? requestId,
 }) => <String, dynamic>{
   'p_kind': kind,
   'p_visibility': 'circle',
@@ -1717,4 +1807,6 @@ Map<String, dynamic> buildCreatePostRpcParams({
   if (geoLng != null) 'p_geo_lng': geoLng,
   if (locationTagId != null) 'p_location_tag_id': locationTagId,
   if (areaId != null) 'p_area_id': areaId,
+  // KAN-612: a retry of the same attempt replays the first post.
+  if (requestId != null) 'p_request_id': requestId,
 };

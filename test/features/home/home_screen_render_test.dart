@@ -258,6 +258,8 @@ void main() {
           activeState: ActiveFeedData(events: _events, hasMore: false),
           followingState: TabFeedData(posts: posts, hasMore: false),
           nearbyState: TabFeedData(posts: posts, hasMore: false),
+          // The Nearby tab needs a city (KAN-588) to show posts.
+          locationName: 'Dubai Marina',
           newsState: NewsTabState(
             items: _feed.items.whereType<FeedNewsItem>().toList(),
             loaded: true,

@@ -22,7 +22,12 @@ MeetupListItem _$MeetupListItemFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MeetupListItem {
   String get id => throw _privateConstructorUsedError;
-  String get title => throw _privateConstructorUsedError;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @JsonKey(name: 'event_id')
+  String? get eventId => throw _privateConstructorUsedError;
+  String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'start_at')
   DateTime get startAt => throw _privateConstructorUsedError;
@@ -112,7 +117,8 @@ abstract class $MeetupListItemCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
-    String title,
+    @JsonKey(name: 'event_id') String? eventId,
+    String? title,
     String? description,
     @JsonKey(name: 'start_at') DateTime startAt,
     @JsonKey(name: 'end_at') DateTime? endAt,
@@ -168,7 +174,8 @@ class _$MeetupListItemCopyWithImpl<$Res, $Val extends MeetupListItem>
   @override
   $Res call({
     Object? id = null,
-    Object? title = null,
+    Object? eventId = freezed,
+    Object? title = freezed,
     Object? description = freezed,
     Object? startAt = null,
     Object? endAt = freezed,
@@ -211,10 +218,14 @@ class _$MeetupListItemCopyWithImpl<$Res, $Val extends MeetupListItem>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
-            title: null == title
+            eventId: freezed == eventId
+                ? _value.eventId
+                : eventId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            title: freezed == title
                 ? _value.title
                 : title // ignore: cast_nullable_to_non_nullable
-                      as String,
+                      as String?,
             description: freezed == description
                 ? _value.description
                 : description // ignore: cast_nullable_to_non_nullable
@@ -372,7 +383,8 @@ abstract class _$$MeetupListItemImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
-    String title,
+    @JsonKey(name: 'event_id') String? eventId,
+    String? title,
     String? description,
     @JsonKey(name: 'start_at') DateTime startAt,
     @JsonKey(name: 'end_at') DateTime? endAt,
@@ -427,7 +439,8 @@ class __$$MeetupListItemImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
-    Object? title = null,
+    Object? eventId = freezed,
+    Object? title = freezed,
     Object? description = freezed,
     Object? startAt = null,
     Object? endAt = freezed,
@@ -470,10 +483,14 @@ class __$$MeetupListItemImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
-        title: null == title
+        eventId: freezed == eventId
+            ? _value.eventId
+            : eventId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        title: freezed == title
             ? _value.title
             : title // ignore: cast_nullable_to_non_nullable
-                  as String,
+                  as String?,
         description: freezed == description
             ? _value.description
             : description // ignore: cast_nullable_to_non_nullable
@@ -624,7 +641,8 @@ class __$$MeetupListItemImplCopyWithImpl<$Res>
 class _$MeetupListItemImpl extends _MeetupListItem {
   const _$MeetupListItemImpl({
     required this.id,
-    required this.title,
+    @JsonKey(name: 'event_id') this.eventId,
+    this.title,
     this.description,
     @JsonKey(name: 'start_at') required this.startAt,
     @JsonKey(name: 'end_at') this.endAt,
@@ -670,8 +688,14 @@ class _$MeetupListItemImpl extends _MeetupListItem {
 
   @override
   final String id;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
   @override
-  final String title;
+  @JsonKey(name: 'event_id')
+  final String? eventId;
+  @override
+  final String? title;
   @override
   final String? description;
   @override
@@ -785,7 +809,7 @@ class _$MeetupListItemImpl extends _MeetupListItem {
 
   @override
   String toString() {
-    return 'MeetupListItem(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, capacity: $capacity, membersOnly: $membersOnly, listingVisibility: $listingVisibility, rsvpPolicy: $rsvpPolicy, isCancelled: $isCancelled, vibeKey: $vibeKey, createdAt: $createdAt, updatedAt: $updatedAt, creatorProfileId: $creatorProfileId, creatorDisplayName: $creatorDisplayName, creatorUsername: $creatorUsername, creatorAvatarUrl: $creatorAvatarUrl, sportId: $sportId, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, sportEmoji: $sportEmoji, areaId: $areaId, areaName: $areaName, venueId: $venueId, venueName: $venueName, locationName: $locationName, geoLocationId: $geoLocationId, minSkill: $minSkill, maxSkill: $maxSkill, joiningRule: $joiningRule, costCover: $costCover, goingCount: $goingCount, interestedCount: $interestedCount, declinedCount: $declinedCount, myRsvpStatus: $myRsvpStatus, attendeeAvatars: $attendeeAvatars)';
+    return 'MeetupListItem(id: $id, eventId: $eventId, title: $title, description: $description, startAt: $startAt, endAt: $endAt, capacity: $capacity, membersOnly: $membersOnly, listingVisibility: $listingVisibility, rsvpPolicy: $rsvpPolicy, isCancelled: $isCancelled, vibeKey: $vibeKey, createdAt: $createdAt, updatedAt: $updatedAt, creatorProfileId: $creatorProfileId, creatorDisplayName: $creatorDisplayName, creatorUsername: $creatorUsername, creatorAvatarUrl: $creatorAvatarUrl, sportId: $sportId, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, sportEmoji: $sportEmoji, areaId: $areaId, areaName: $areaName, venueId: $venueId, venueName: $venueName, locationName: $locationName, geoLocationId: $geoLocationId, minSkill: $minSkill, maxSkill: $maxSkill, joiningRule: $joiningRule, costCover: $costCover, goingCount: $goingCount, interestedCount: $interestedCount, declinedCount: $declinedCount, myRsvpStatus: $myRsvpStatus, attendeeAvatars: $attendeeAvatars)';
   }
 
   @override
@@ -794,6 +818,7 @@ class _$MeetupListItemImpl extends _MeetupListItem {
         (other.runtimeType == runtimeType &&
             other is _$MeetupListItemImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.eventId, eventId) || other.eventId == eventId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.description, description) ||
                 other.description == description) &&
@@ -868,6 +893,7 @@ class _$MeetupListItemImpl extends _MeetupListItem {
   int get hashCode => Object.hashAll([
     runtimeType,
     id,
+    eventId,
     title,
     description,
     startAt,
@@ -926,7 +952,8 @@ class _$MeetupListItemImpl extends _MeetupListItem {
 abstract class _MeetupListItem extends MeetupListItem {
   const factory _MeetupListItem({
     required final String id,
-    required final String title,
+    @JsonKey(name: 'event_id') final String? eventId,
+    final String? title,
     final String? description,
     @JsonKey(name: 'start_at') required final DateTime startAt,
     @JsonKey(name: 'end_at') final DateTime? endAt,
@@ -971,8 +998,14 @@ abstract class _MeetupListItem extends MeetupListItem {
 
   @override
   String get id;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
   @override
-  String get title;
+  @JsonKey(name: 'event_id')
+  String? get eventId;
+  @override
+  String? get title;
   @override
   String? get description;
   @override
@@ -1093,6 +1126,11 @@ NearbyMeetup _$NearbyMeetupFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$NearbyMeetup {
   String get id => throw _privateConstructorUsedError;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @JsonKey(name: 'event_id')
+  String? get eventId => throw _privateConstructorUsedError;
   String get title => throw _privateConstructorUsedError;
   @JsonKey(name: 'starts_at')
   DateTime? get startsAt => throw _privateConstructorUsedError;
@@ -1122,6 +1160,7 @@ abstract class $NearbyMeetupCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
+    @JsonKey(name: 'event_id') String? eventId,
     String title,
     @JsonKey(name: 'starts_at') DateTime? startsAt,
     double? lat,
@@ -1147,6 +1186,7 @@ class _$NearbyMeetupCopyWithImpl<$Res, $Val extends NearbyMeetup>
   @override
   $Res call({
     Object? id = null,
+    Object? eventId = freezed,
     Object? title = null,
     Object? startsAt = freezed,
     Object? lat = freezed,
@@ -1160,6 +1200,10 @@ class _$NearbyMeetupCopyWithImpl<$Res, $Val extends NearbyMeetup>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
+            eventId: freezed == eventId
+                ? _value.eventId
+                : eventId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             title: null == title
                 ? _value.title
                 : title // ignore: cast_nullable_to_non_nullable
@@ -1201,6 +1245,7 @@ abstract class _$$NearbyMeetupImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
+    @JsonKey(name: 'event_id') String? eventId,
     String title,
     @JsonKey(name: 'starts_at') DateTime? startsAt,
     double? lat,
@@ -1225,6 +1270,7 @@ class __$$NearbyMeetupImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? eventId = freezed,
     Object? title = null,
     Object? startsAt = freezed,
     Object? lat = freezed,
@@ -1238,6 +1284,10 @@ class __$$NearbyMeetupImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
+        eventId: freezed == eventId
+            ? _value.eventId
+            : eventId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         title: null == title
             ? _value.title
             : title // ignore: cast_nullable_to_non_nullable
@@ -1272,6 +1322,7 @@ class __$$NearbyMeetupImplCopyWithImpl<$Res>
 class _$NearbyMeetupImpl implements _NearbyMeetup {
   const _$NearbyMeetupImpl({
     required this.id,
+    @JsonKey(name: 'event_id') this.eventId,
     required this.title,
     @JsonKey(name: 'starts_at') this.startsAt,
     this.lat,
@@ -1285,6 +1336,12 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
 
   @override
   final String id;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @override
+  @JsonKey(name: 'event_id')
+  final String? eventId;
   @override
   final String title;
   @override
@@ -1303,7 +1360,7 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
 
   @override
   String toString() {
-    return 'NearbyMeetup(id: $id, title: $title, startsAt: $startsAt, lat: $lat, lng: $lng, areaId: $areaId, distanceM: $distanceM)';
+    return 'NearbyMeetup(id: $id, eventId: $eventId, title: $title, startsAt: $startsAt, lat: $lat, lng: $lng, areaId: $areaId, distanceM: $distanceM)';
   }
 
   @override
@@ -1312,6 +1369,7 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
         (other.runtimeType == runtimeType &&
             other is _$NearbyMeetupImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.eventId, eventId) || other.eventId == eventId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.startsAt, startsAt) ||
                 other.startsAt == startsAt) &&
@@ -1327,6 +1385,7 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
   int get hashCode => Object.hash(
     runtimeType,
     id,
+    eventId,
     title,
     startsAt,
     lat,
@@ -1352,6 +1411,7 @@ class _$NearbyMeetupImpl implements _NearbyMeetup {
 abstract class _NearbyMeetup implements NearbyMeetup {
   const factory _NearbyMeetup({
     required final String id,
+    @JsonKey(name: 'event_id') final String? eventId,
     required final String title,
     @JsonKey(name: 'starts_at') final DateTime? startsAt,
     final double? lat,
@@ -1365,6 +1425,12 @@ abstract class _NearbyMeetup implements NearbyMeetup {
 
   @override
   String get id;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @override
+  @JsonKey(name: 'event_id')
+  String? get eventId;
   @override
   String get title;
   @override
@@ -2044,6 +2110,11 @@ MeetupCard _$MeetupCardFromJson(Map<String, dynamic> json) {
 /// @nodoc
 mixin _$MeetupCard {
   String get id => throw _privateConstructorUsedError;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @JsonKey(name: 'event_id')
+  String? get eventId => throw _privateConstructorUsedError;
   String? get title => throw _privateConstructorUsedError;
   String? get description => throw _privateConstructorUsedError;
   @JsonKey(name: 'start_at')
@@ -2099,6 +2170,7 @@ abstract class $MeetupCardCopyWith<$Res> {
   @useResult
   $Res call({
     String id,
+    @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
     @JsonKey(name: 'start_at') DateTime? startAt,
@@ -2142,6 +2214,7 @@ class _$MeetupCardCopyWithImpl<$Res, $Val extends MeetupCard>
   @override
   $Res call({
     Object? id = null,
+    Object? eventId = freezed,
     Object? title = freezed,
     Object? description = freezed,
     Object? startAt = freezed,
@@ -2170,6 +2243,10 @@ class _$MeetupCardCopyWithImpl<$Res, $Val extends MeetupCard>
                 ? _value.id
                 : id // ignore: cast_nullable_to_non_nullable
                       as String,
+            eventId: freezed == eventId
+                ? _value.eventId
+                : eventId // ignore: cast_nullable_to_non_nullable
+                      as String?,
             title: freezed == title
                 ? _value.title
                 : title // ignore: cast_nullable_to_non_nullable
@@ -2295,6 +2372,7 @@ abstract class _$$MeetupCardImplCopyWith<$Res>
   @useResult
   $Res call({
     String id,
+    @JsonKey(name: 'event_id') String? eventId,
     String? title,
     String? description,
     @JsonKey(name: 'start_at') DateTime? startAt,
@@ -2339,6 +2417,7 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
   @override
   $Res call({
     Object? id = null,
+    Object? eventId = freezed,
     Object? title = freezed,
     Object? description = freezed,
     Object? startAt = freezed,
@@ -2367,6 +2446,10 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
             ? _value.id
             : id // ignore: cast_nullable_to_non_nullable
                   as String,
+        eventId: freezed == eventId
+            ? _value.eventId
+            : eventId // ignore: cast_nullable_to_non_nullable
+                  as String?,
         title: freezed == title
             ? _value.title
             : title // ignore: cast_nullable_to_non_nullable
@@ -2461,6 +2544,7 @@ class __$$MeetupCardImplCopyWithImpl<$Res>
 class _$MeetupCardImpl implements _MeetupCard {
   const _$MeetupCardImpl({
     required this.id,
+    @JsonKey(name: 'event_id') this.eventId,
     this.title,
     this.description,
     @JsonKey(name: 'start_at') this.startAt,
@@ -2489,6 +2573,12 @@ class _$MeetupCardImpl implements _MeetupCard {
 
   @override
   final String id;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @override
+  @JsonKey(name: 'event_id')
+  final String? eventId;
   @override
   final String? title;
   @override
@@ -2555,7 +2645,7 @@ class _$MeetupCardImpl implements _MeetupCard {
 
   @override
   String toString() {
-    return 'MeetupCard(id: $id, title: $title, description: $description, startAt: $startAt, endAt: $endAt, locationName: $locationName, capacity: $capacity, isCancelled: $isCancelled, isHost: $isHost, visibility: $visibility, ownerProfileId: $ownerProfileId, host: $host, counts: $counts, myStatus: $myStatus, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, minSkill: $minSkill, maxSkill: $maxSkill, areaName: $areaName, venueName: $venueName, attendees: $attendees)';
+    return 'MeetupCard(id: $id, eventId: $eventId, title: $title, description: $description, startAt: $startAt, endAt: $endAt, locationName: $locationName, capacity: $capacity, isCancelled: $isCancelled, isHost: $isHost, visibility: $visibility, ownerProfileId: $ownerProfileId, host: $host, counts: $counts, myStatus: $myStatus, sportKey: $sportKey, sportNameEn: $sportNameEn, sportNameAr: $sportNameAr, minSkill: $minSkill, maxSkill: $maxSkill, areaName: $areaName, venueName: $venueName, attendees: $attendees)';
   }
 
   @override
@@ -2564,6 +2654,7 @@ class _$MeetupCardImpl implements _MeetupCard {
         (other.runtimeType == runtimeType &&
             other is _$MeetupCardImpl &&
             (identical(other.id, id) || other.id == id) &&
+            (identical(other.eventId, eventId) || other.eventId == eventId) &&
             (identical(other.title, title) || other.title == title) &&
             (identical(other.description, description) ||
                 other.description == description) &&
@@ -2609,6 +2700,7 @@ class _$MeetupCardImpl implements _MeetupCard {
   int get hashCode => Object.hashAll([
     runtimeType,
     id,
+    eventId,
     title,
     description,
     startAt,
@@ -2649,6 +2741,7 @@ class _$MeetupCardImpl implements _MeetupCard {
 abstract class _MeetupCard implements MeetupCard {
   const factory _MeetupCard({
     required final String id,
+    @JsonKey(name: 'event_id') final String? eventId,
     final String? title,
     final String? description,
     @JsonKey(name: 'start_at') final DateTime? startAt,
@@ -2677,6 +2770,12 @@ abstract class _MeetupCard implements MeetupCard {
 
   @override
   String get id;
+
+  /// The `public.events` parent id. [id] keeps meaning the meetups id (the
+  /// route key); null when the payload carries no `event_id`.
+  @override
+  @JsonKey(name: 'event_id')
+  String? get eventId;
   @override
   String? get title;
   @override

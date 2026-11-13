@@ -569,6 +569,12 @@ Every name below was independently confirmed `anon`-readable with no
   a CI-gate call.
 * `v_space_slots_today` — `BUG-05`, errors for every role including `postgres`; not a
   security finding.
+* `kan718_games_compat`, `kan718_meetups_compat` — `KAN-773` (KAN-718 D05) compatibility
+  projections owned by `postgres`, `security_barrier`, restating the legacy tables' row
+  security in the view (API roles have no SELECT on `events`). Measured live 2026-11-13 as
+  `anon`: `kan718_games_compat` 0 rows (= `games`), `kan718_meetups_compat` 32 rows (= the 32
+  `meetups` rows `anon` sees through `meetups_select_visible`). Same visibility as the tables
+  they stand in for; nothing newly exposed.
 
 **Adding a name here without one of these justifications is exactly the review conversation
 `T-002` exists to force — don't add one to make the gate pass without checking why it is
@@ -577,6 +583,8 @@ newly anon-readable.**
 <!-- ANON_ALLOWLIST_START -->
 geography_columns
 geometry_columns
+kan718_games_compat
+kan718_meetups_compat
 v_challenge_card
 v_game_card
 v_meetup_list

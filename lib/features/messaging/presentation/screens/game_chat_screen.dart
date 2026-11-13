@@ -12,6 +12,18 @@ import 'package:dabbler/features/messaging/presentation/controllers/dm_chat_cont
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messaging_realtime_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/receipts_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/typing_providers.dart';
+import 'package:dabbler/features/messaging/presentation/providers/chat_gif_providers.dart';
+import 'package:dabbler/features/messaging/domain/image_policy.dart';
+import 'package:dabbler/features/messaging/domain/picked_image.dart';
+import 'package:dabbler/features/messaging/presentation/providers/chat_image_providers.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_attachment_tray.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_image_viewer.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_image_widgets.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/chat_share_sheet.dart';
+import 'package:dabbler/features/messaging/domain/typing.dart';
+import 'package:dabbler/features/messaging/domain/receipt_summary.dart';
 import 'package:dabbler/features/messaging/presentation/view_models/game_chat_view_state.dart';
 import 'package:dabbler/features/messaging/domain/models/message.dart';
 import 'package:dabbler/features/messaging/domain/typed_reason.dart';
@@ -21,6 +33,8 @@ import 'package:dabbler/features/messaging/presentation/widgets/game_chat_access
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_reason_text.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_safety_sheets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_thread_items.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/message_info_sheet.dart';
+import 'package:dabbler/features/messaging/presentation/widgets/typing_thread_item.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/chat_composer_inset.dart';
@@ -73,9 +87,31 @@ class GameChatScreen extends ConsumerStatefulWidget {
 class _GameChatScreenState extends ConsumerState<GameChatScreen>
     with WidgetsBindingObserver {
   String _draft = '';
+
+  /// KAN-581: the picked images waiting above the composer.
+  List<PickedImage> _tray = const [];
   DabblerOlderMessagesState _older = DabblerOlderMessagesState.idle;
   Timer? _poll;
   GameChatController? _controllerRef;
+
+  /// KAN-579: this client's own typing state, sent throttled and always ended
+  /// by a stop (send, blur, background, leaving the chat, idle).
+  TypingPublisher? _typing;
+
+  /// The open conversation's id once the chat has loaded (for the typing row
+  /// and the typing sender); empty before.
+  String _conversationId = '';
+
+  /// KAN-580: whether the app is in the foreground. "Seen" is acknowledged
+  /// only while it is; "delivered" as soon as new messages reach the device.
+  bool _foreground = true;
+
+  /// KAN-580: refreshes the delivered/seen counts of the caller's own
+  /// messages while the thread is open. Receipts have no push channel.
+  Timer? _receiptsPoll;
+
+  /// Ids on screen when the thread first loaded; later incoming ones fade in.
+  Set<String>? _baselineIds;
 
   @override
   void initState() {
@@ -84,7 +120,21 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     final controller = ref.read(_provider.notifier);
     _controllerRef = controller;
     controller.setOpen(true);
+    final typingTransport = ref.read(typingTransportProvider);
+    _typing = TypingPublisher(
+      send: (typing) => _conversationId.isEmpty
+          ? Future<void>.value()
+          : typingTransport.send(_conversationId, typing),
+    );
     _startPoll(ref.read(gameChatEffectivePollProvider));
+    _receiptsPoll = Timer.periodic(Duration(seconds: receiptsRefreshSeconds), (
+      _,
+    ) {
+      if (!mounted || !_foreground) return;
+      final view = ref.read(_provider).valueOrNull;
+      _ackIncoming(view); // repeats an acknowledgement the network lost
+      _refreshReceipts(view);
+    });
   }
 
   bool get _isDm => widget.conversationId != null;
@@ -97,16 +147,23 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
 
   @override
   void dispose() {
+    _typing?.dispose();
     WidgetsBinding.instance.removeObserver(this);
     _controllerRef?.setOpen(false);
     _poll?.cancel();
+    _receiptsPoll?.cancel();
     super.dispose();
   }
 
   /// One catch-up fetch when the app comes back to the foreground (KAN-544).
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed || !mounted) return;
+    // Backgrounding ends "typing" for the others at once (KAN-579).
+    if (state != AppLifecycleState.resumed) _typing?.stop();
+    _foreground = state == AppLifecycleState.resumed;
+    if (!_foreground || !mounted) return;
+    _ackIncoming(ref.read(_provider).valueOrNull);
+    _refreshReceipts(ref.read(_provider).valueOrNull);
     ref.read(_provider.notifier).refreshNewest();
   }
 
@@ -134,11 +191,161 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     );
   }
 
+  /// KAN-580: tells the backend how far this user has received (always) and
+  /// seen (only while the thread is on screen in the foreground) the other
+  /// people's messages. Monotonic and fire-and-forget; see [ReceiptAcker].
+  void _ackIncoming(GameChatViewState? view) {
+    final id = view?.conversation?.id;
+    if (id == null || id.isEmpty || view == null) return;
+    var through = 0;
+    for (final item in view.items) {
+      final m = item.message;
+      if (m == null || item.clientKey != null || m.clientKey != null) continue;
+      if (m.seq > through) through = m.seq;
+    }
+    if (through <= 0) return;
+    final acker = ref.read(receiptAckerProvider);
+    if (_foreground && mounted) {
+      acker.seen(id, through);
+    } else {
+      acker.delivered(id, through);
+    }
+  }
+
+  /// The seqs of the caller's own messages the server has.
+  Iterable<int> _ownSeqs(GameChatViewState view) sync* {
+    for (final item in view.items) {
+      final m = item.message;
+      if (m != null && (item.clientKey != null || m.clientKey != null)) {
+        yield m.seq;
+      }
+    }
+  }
+
+  /// KAN-580: re-reads delivered/seen counts for the caller's own messages.
+  void _refreshReceipts(GameChatViewState? view) {
+    final id = view?.conversation?.id;
+    if (view == null || id == null || id.isEmpty) return;
+    ref.read(receiptCountsProvider(id).notifier).refresh(_ownSeqs(view));
+  }
+
+  /// Opens the Message info drawer for the tapped receipt count.
+  void _openReceipts(GameChatViewState view, DabblerThreadMessage m) {
+    final item = view.items.where((i) => i.message?.id == m.id).firstOrNull;
+    final message = item?.message;
+    final id = view.conversation?.id;
+    if (message == null || id == null || id.isEmpty) return;
+    showMessageInfo(
+      context: context,
+      ref: ref,
+      conversationId: id,
+      seq: message.seq,
+      preview: message.body,
+    );
+  }
+
   void _send() {
     final body = _draft.trim();
+    if (_tray.isNotEmpty) {
+      _sendTray();
+      return;
+    }
     if (body.isEmpty) return;
+    _typing?.stop();
     setState(() => _draft = '');
     ref.read(_provider.notifier).send(body);
+  }
+
+  /// KAN-581: sends every queued image, in order, one message each (the
+  /// thread draws one image per message); the draft is the first one's caption.
+  void _sendTray() {
+    final images = _tray;
+    final caption = _draft.trim();
+    _typing?.stop();
+    setState(() {
+      _tray = const [];
+      _draft = '';
+    });
+    final controller = ref.read(_provider.notifier);
+    for (var i = 0; i < images.length; i++) {
+      controller.sendImage(images[i], caption: i == 0 ? caption : '');
+    }
+  }
+
+  /// KAN-581: the Share drawer, then the chosen picker.
+  Future<void> _openShare() async {
+    _typing?.stop();
+    final choice = await showChatShareSheet(context);
+    if (!mounted || choice == null) return;
+    if (choice == ChatShareChoice.gif) {
+      _openGifPicker();
+      return;
+    }
+    final room = MessagingImagePolicy.maxPerTray - _tray.length;
+    if (room <= 0) return;
+    final outcome = await ref.read(chatImagePickerProvider)(
+      switch (choice) {
+        ChatShareChoice.camera => ChatImageSource.camera,
+        ChatShareChoice.file => ChatImageSource.file,
+        _ => ChatImageSource.gallery,
+      },
+      remaining: room,
+    );
+    if (!mounted) return;
+    if (outcome.images.isNotEmpty) {
+      setState(() => _tray = [..._tray, ...outcome.images]);
+    }
+    final problem = outcome.problem;
+    if (problem != null) {
+      DabblerToasts.show(
+        DabblerToastSpec(
+          message: chatPickProblemText(AppLocalizations.of(context), problem),
+          tone: DabblerToastTone.error,
+        ),
+      );
+    }
+  }
+
+  /// The image inside a thread row, or null for a text row (KAN-581).
+  Widget? _imageOf(
+    AppLocalizations l10n,
+    ChatItem item,
+    Map<String, String>? headers,
+    bool headersReady,
+  ) {
+    final key = item.clientKey;
+    final pending = item.pending;
+    if (pending != null) {
+      return ChatPendingImage(
+        image: pending.image,
+        progress: pending.progress,
+        failed: item.state == OutgoingState.failed,
+        onCancel: key == null
+            ? null
+            : () => ref.read(_provider.notifier).cancelImage(key),
+        onRetry: key == null ? null : () => _retry(key),
+      );
+    }
+    final attachments = item.message?.attachments ?? const [];
+    if (attachments.isEmpty) return null;
+    final url = ref
+        .read(chatImageRepositoryProvider)
+        .attachmentUrl(attachments.first.id);
+    // Until the bearer is known the frame stays a placeholder: an image
+    // request made without it would fail and Flutter would not retry it.
+    return ChatRemoteImage(
+      url: headersReady ? url : '',
+      headers: headers,
+      semanticLabel: l10n.messaging_image_open,
+      onOpen: headersReady
+          ? () => showChatImageViewer(
+              context,
+              url: url,
+              headers: headers,
+              caption: item.body,
+            )
+          : null,
+    );
   }
 
   void _retry(String clientKey) =>
@@ -154,6 +361,31 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     });
     final async = ref.watch(_provider);
     final view = async.valueOrNull;
+    _conversationId = view?.conversation?.id ?? '';
+    // KAN-580: a thread opened on cached state fires no listener change.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _ackIncoming(view);
+      _refreshReceipts(view);
+    });
+    // KAN-579: who is typing here; a message from a typer ends their "typing".
+    final typers = _conversationId.isEmpty
+        ? const <String>[]
+        : ref.watch(typingPresenceProvider(_conversationId));
+    ref.listen<AsyncValue<GameChatViewState>>(_provider, (prev, next) {
+      final id = _conversationId;
+      if (id.isEmpty) return;
+      _ackIncoming(next.valueOrNull);
+      _refreshReceipts(next.valueOrNull);
+      final before = prev?.valueOrNull?.items.length ?? 0;
+      final items = next.valueOrNull?.items ?? const <ChatItem>[];
+      for (final item in items.skip(before)) {
+        final sender = item.message?.senderUserId;
+        if (sender != null) {
+          ref.read(typingPresenceProvider(id).notifier).clearFor(sender);
+        }
+      }
+    });
     // T6 (KAN-518): unavailable and removed replace the whole screen, thread,
     // composer and title included; nothing about the conversation shows.
     if (view?.status == GameChatStatus.unavailable) {
@@ -198,12 +430,16 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
               ),
             ),
           );
-          composer = _composer(l10n, view);
+          composer = view.fromCache
+              ? _offlineComposer(l10n)
+              : _composer(l10n, view);
         case GameChatStatus.ready:
         case GameChatStatus.readOnly:
           body = ChatStickToLatest(child: _thread(context, l10n, view));
           if (view.status == GameChatStatus.ready) {
-            composer = _composer(l10n, view);
+            composer = view.fromCache
+                ? _offlineComposer(l10n)
+                : _composer(l10n, view);
           } else if (view.dm?.readOnly != null) {
             composer = dmReadOnlyNotice(l10n, view.dm!.readOnly!);
           } else if (view.isClosedByGame) {
@@ -238,6 +474,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
           dm: dm,
           onBack: () => context.canPop() ? context.pop() : null,
           onOverflow: () => _openDmOptions(view!),
+          typing: typers.isNotEmpty,
           onOpenProfile: dm.counterpartUserId == null
               ? null
               : () => context.push(
@@ -276,21 +513,52 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     GameChatViewState view,
   ) {
     final locale = Localizations.localeOf(context).toLanguageTag();
+    final conversationId = view.conversation?.id ?? '';
+    final receipts = conversationId.isEmpty
+        ? const <int, ReceiptCounts>{}
+        : ref.watch(receiptCountsProvider(conversationId));
+    final ids = view.items
+        .map((i) => i.message?.id)
+        .whereType<String>()
+        .toSet();
+    _baselineIds ??= ids;
+    final imageHeaders = ref.watch(chatImageHeadersProvider);
     final items = gameChatThreadItems(
       items: view.items,
+      imageOf: (item) => _imageOf(
+        l10n,
+        item,
+        imageHeaders.valueOrNull,
+        imageHeaders.hasValue,
+      ),
       l10n: l10n,
       locale: locale,
       now: ref.watch(messagingClockProvider)(),
       gameEndAt: widget.gameEndAt,
       onRetry: _retry,
       includeSystem: !_isDm,
+      isDm: _isDm,
+      receipts: receipts,
+      freshIds: ids.difference(_baselineIds!),
     );
+    // KAN-579: the "is typing" row is the thread's last message; a real
+    // message takes its place.
+    final typingItem = typingThreadItem(
+      context,
+      ref,
+      l10n,
+      conversationId: _conversationId,
+      isDm: _isDm,
+    );
+    if (typingItem != null) items.add(typingItem);
     return DabblerMessageThread(
       key: GameChatScreen.threadKey,
       context: _isDm
           ? DabblerMessageContext.direct
           : DabblerMessageContext.group,
       items: items,
+      lang: Localizations.localeOf(context).languageCode == 'ar' ? 'ar' : 'en',
+      onReceipts: (m) => _openReceipts(view, m),
       onMessagePress: (m) => _openOptions(view, m),
       header: view.hasOlder
           ? DabblerOlderMessagesPager(
@@ -422,7 +690,41 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     ),
   );
 
-  Widget _composer(AppLocalizations l10n, GameChatViewState view) =>
+  /// Losing focus (blur) ends "typing" (KAN-579); the Focus node is only an
+  /// observer of the composer's own field.
+  /// Shown in place of the composer while the thread is the device copy
+  /// (KAN-607): sending offline is refused with the existing offline line.
+  Widget _offlineComposer(AppLocalizations l10n) => DabblerConnectionNotice(
+    key: GameChatScreen.offlineKey,
+    text: l10n.messaging_chat_offline,
+  );
+
+  Widget _composer(AppLocalizations l10n, GameChatViewState view) => Focus(
+    canRequestFocus: false,
+    skipTraversal: true,
+    onFocusChange: (focused) {
+      if (!focused) _typing?.stop();
+    },
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        if (_tray.isNotEmpty)
+          ChatAttachmentTray(
+            images: _tray,
+            onRemove: (i) => setState(
+              () => _tray = [
+                for (var k = 0; k < _tray.length; k++)
+                  if (k != i) _tray[k],
+              ],
+            ),
+            onSend: _sendTray,
+          ),
+        _composerField(l10n, view),
+      ],
+    ),
+  );
+
+  Widget _composerField(AppLocalizations l10n, GameChatViewState view) =>
       DabblerChatComposer(
         key: GameChatScreen.composerKey,
         value: _draft,
@@ -431,7 +733,27 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
         state: view.isSending
             ? DabblerChatComposerState.sending
             : DabblerChatComposerState.normal,
-        onChange: (v) => setState(() => _draft = v),
+        onChange: (v) {
+          setState(() => _draft = v);
+          _typing?.draftChanged(v);
+        },
         onSend: _send,
+        // KAN-581: the attach control opens the Share drawer (photo library,
+        // camera, image file, GIF search; KAN-582 keeps the GIPHY picker). The
+        // composer exists only while the chat is writable, so membership,
+        // block and closed-chat rules gate this exactly as they gate text.
+        onAttach: _openShare,
+        attachLabel: l10n.messaging_share_title,
       );
+
+  void _openGifPicker() {
+    _typing?.stop();
+    ref.read(chatGifPickerProvider)(
+      context,
+      onSelected: (url) {
+        if (!mounted) return;
+        ref.read(_provider.notifier).send(url);
+      },
+    );
+  }
 }

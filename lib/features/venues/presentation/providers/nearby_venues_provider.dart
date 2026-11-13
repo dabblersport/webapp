@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/venues/data/datasources/nearby_venues_datasource.dart';
@@ -75,22 +76,38 @@ typedef NearbyVenuesParams = ({
 /// final venuesAsync = ref.watch(nearbyVenuesProvider(params));
 /// ```
 final nearbyVenuesProvider = FutureProvider.autoDispose
-    .family<List<NearbyVenueModel>, NearbyVenuesParams>((ref, params) async {
-      final result = await ref
-          .read(nearbyVenuesRepositoryProvider)
-          .getNearbyVenues(
-            lat: params.lat,
-            lng: params.lng,
-            radiusMeters: params.radiusMeters,
-            sportId: params.sportId,
-            sortOrder: params.sortOrder,
-            indoor: params.indoor,
-            maxPrice: params.maxPrice,
-            minRating: params.minRating,
+    .family<List<NearbyVenueModel>, NearbyVenuesParams>((ref, params) {
+      // KAN-605: stale-while-revalidate; the first page for this filter set
+      // is kept on the device per account.
+      return swrFetch<List<NearbyVenueModel>>(
+        ref,
+        key:
+            'venues.list.${params.lat.toStringAsFixed(3)}'
+            '.${params.lng.toStringAsFixed(3)}.${params.radiusMeters}'
+            '.${params.sportId}.${params.sortOrder.name}.${params.indoor}'
+            '.${params.maxPrice}.${params.minRating}',
+        fetch: () async {
+          final result = await ref
+              .read(nearbyVenuesRepositoryProvider)
+              .getNearbyVenues(
+                lat: params.lat,
+                lng: params.lng,
+                radiusMeters: params.radiusMeters,
+                sportId: params.sportId,
+                sortOrder: params.sortOrder,
+                indoor: params.indoor,
+                maxPrice: params.maxPrice,
+                minRating: params.minRating,
+              );
+          return result.fold(
+            (failure) => throw Exception(failure.message),
+            (venues) => venues,
           );
-
-      return result.fold(
-        (failure) => throw Exception(failure.message),
-        (venues) => venues,
+        },
+        encode: (venues) => [for (final v in venues) v.toJson()],
+        decode: (json) => [
+          for (final j in (json as List))
+            NearbyVenueModel.fromJson(Map<String, dynamic>.from(j as Map)),
+        ],
       );
     });
