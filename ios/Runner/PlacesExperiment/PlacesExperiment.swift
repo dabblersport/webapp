@@ -1,3 +1,4 @@
+import CoreLocation
 import Flutter
 import GooglePlacesSwift
 import SwiftUI
