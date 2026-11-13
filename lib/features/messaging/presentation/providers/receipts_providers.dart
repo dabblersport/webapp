@@ -37,6 +37,10 @@ final receiptAckerProvider = Provider<ReceiptAcker>(
 /// receipts have no push channel.
 const int receiptsRefreshSeconds = 20;
 
+/// The shortest gap between two reads of the same seqs (seconds, KAN-929);
+/// below [receiptsRefreshSeconds] so the poll always gets through.
+const int receiptsMinRepeatSeconds = 5;
+
 /// The delivered/seen counts of the caller's own messages in one open
 /// conversation, keyed by seq (KAN-580). Empty until the Worker answers; an
 /// old Worker, a fake backend or any failure leaves it empty and every
@@ -49,9 +53,8 @@ class ReceiptCountsNotifier extends StateNotifier<Map<int, ReceiptCounts>> {
   }) : _now = now ?? DateTime.now,
        super(const <int, ReceiptCounts>{});
 
-  /// The same seqs are not re-read sooner than this (KAN-929); shorter than
-  /// [receiptsRefreshSeconds] so the poll always gets through.
-  static const Duration minRepeat = Duration(seconds: 5);
+  /// The same seqs are not re-read sooner than this (KAN-929).
+  static const Duration minRepeat = Duration(seconds: receiptsMinRepeatSeconds);
 
   final ReceiptsTransport _transport;
   final String _conversationId;
