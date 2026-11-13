@@ -409,7 +409,7 @@ BEGIN
  AND (p.persona_type IN ('player','organiser') OR (p.persona_type='contributor' AND (exists(select 1 from public.player x where x.profile_id=p.id) OR exists(select 1 from public.organiser x where x.profile_id=p.id))))
  ORDER BY md5(p.id::text||v_day::text) LIMIT 1;
  IF v_host.id IS NULL THEN RAISE EXCEPTION 'no_eligible_seed_host_in_city'; END IF;
-
+ 
  IF v_auto THEN
    SELECT v.id,vs.id,v.geo_location_id,gl.area_id,v.name_en,vs.indoor,coalesce(v.access_type,'unknown')
    INTO v_venue,v_space,v_geo,v_area,v_loc,v_indoor,v_entry_cost
