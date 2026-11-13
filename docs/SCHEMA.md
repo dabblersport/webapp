@@ -447,8 +447,8 @@ and it is not called anywhere in `lib/`, so it is live, reachable, and dead to t
 the same time. A column-level `REVOKE` on `profiles.user_id` does not touch this: a definer
 function reads with its own privileges, not the caller's grants. Several other
 anon-executable definer functions (`rpc_search_users`, `rpc_get_friends`,
-`rpc_get_friend_suggestions`, `rpc_friend_requests_inbox`/`_outbox`, `admin_whois_profile`)
-also return `user_id` and were not individually audited for an auth gate here — this
+`rpc_get_friend_suggestions`, `rpc_friend_requests_inbox`/`_outbox`, `admin_whois_profile`; all but
+`admin_whois_profile` dropped by KAN-941) also return `user_id` and were not individually audited for an auth gate here — this
 overlaps the open "SECURITY DEFINER RPC census" (61 of 303 definer functions with no visible
 auth check). Needs its own ticket; per the KAN-87/SEC-17 precedent this does not change
 KAN-106's scope.
@@ -818,14 +818,6 @@ rpc_create_sport_profile(p_profile_id uuid, p_sport_id uuid, p_sport_key text, p
 rpc_create_squad(p_actor_profile_id uuid, p_sport text, p_name text, p_bio text, p_logo_url text)
 rpc_feed_ranked(p_scope text, p_author_user_id uuid, p_sport text, p_lat double precision, p_lng double precision, p_radius_km numeric, p_since timestamp with time zone, p_limit integer)
 rpc_freeze_user(p_user_id uuid, p_reason text, p_until timestamp with time zone)
-rpc_friend_remove(p_peer_profile_id uuid)
-rpc_friend_request_accept(p_peer_profile_id uuid)
-rpc_friend_request_reject(p_peer_profile_id uuid)
-rpc_friend_request_send(p_peer_profile_id uuid)
-rpc_friend_unfriend(p_peer uuid)
-rpc_get_friend_suggestions(p_user_id uuid, p_limit integer)
-rpc_get_friends(p_user_id uuid)
-rpc_get_friendship_status(p_peer_profile_id uuid)
 rpc_hide_user(p_peer uuid, p_hide boolean)
 rpc_hide_user(target_user uuid)
 rpc_invite_user(p_game_id uuid, p_to_user_id uuid)
@@ -981,13 +973,23 @@ Also near-duplicates by name: `rpc_admin_revoke_venue` and
 `rpc_recreate_suggestions`
 **Meetups:** `rpc_create_meetup`, `rpc_meetup_rsvp`, `rpc_meetup_cancel`,
 `rpc_meetup_attendees`, `rpc_meetup_card`, `rpc_meetup_mint_link`, `rpc_meetup_my`,
-`rpc_meetup_visible`, `rpc_meetup_invite_user`, `rpc_meetup_set_attendee`, `rpc_meetup_unrsvp`
+`rpc_meetup_invite_user`, `rpc_meetup_set_attendee`, `rpc_meetup_unrsvp`
 **Social:** `rpc_create_post`, `rpc_delete_post`, `rpc_add_comment`, `rpc_toggle_like`,
 `rpc_repost_post`, `rpc_hide_post`, `rpc_report_post`, `rpc_feed_ranked`,
-`rpc_trending_posts`, `rpc_search_posts`, `rpc_toggle_post_vibe`, `rpc_set_post_primary_vibe`
-**Friends:** `rpc_friend_request_send/accept/reject`, `rpc_friend_remove`, `rpc_friend_unfriend`,
-`rpc_friend_requests_inbox/outbox`, `rpc_get_friends`, `rpc_get_friend_suggestions`,
-`rpc_get_friendship_status`
+`rpc_toggle_post_vibe`, `rpc_set_post_primary_vibe`
+**Friends:** none. There is no friendship relation; "friends" is a mutual follow on `profile_follows`
+(`are_synced`, KAN-931). Blocking is `rpc_block_user(p_peer)` / `rpc_unblock_user(p_peer)` on `user_blocks`.
+**Dropped (KAN-931, KAN-941).** KAN-931: `rpc_search_entities`, `rpc_meetup_visible` (no caller; raised on
+every call). KAN-941 (`20261113231811_kan941_post_friend_functions`): `rpc_search_posts`, `rpc_trending_posts`
+(read the absent `v_post_discovery`), `rpc_search_users`, `v_activity_inbox()`, `rpc_friend_request_send`,
+`rpc_friend_request_accept`, `rpc_friend_request_reject`, `rpc_friend_remove`, `rpc_friend_unfriend`,
+`rpc_get_friends()`, `rpc_get_friendship_status`, `rpc_get_friend_suggestions`, `rpc_friend_requests_inbox`,
+`rpc_friend_requests_outbox` (read the absent `public.friendships`; no reachable caller). KAN-941 re-authored:
+`rpc_block_user(p_peer)` no longer touches `friendships` (inserts `user_blocks`, removes `profile_follows` both
+ways); `can_view_post(p_viewer uuid, p_post posts)` decides `circle` by delegating to
+`can_view_post(p_post_id, p_user_id, p_profile_id)`, the `posts_select_policy` function (`post_circles`
+membership: private circle member, followers-circle follower of the owner, or public circle), so the two
+overloads cannot disagree; a mutual follower outside the circle sees the post through neither.
 **Squads & challenges:** `rpc_squad_create`, `rpc_create_squad`, `rpc_squad_add_member`,
 `rpc_squad_invite`, `rpc_squad_request_join`, `rpc_squad_respond_invite`,
 `rpc_squad_set_captain`, `rpc_squad_remove_member`, `rpc_challenge_create`,
@@ -1012,7 +1014,7 @@ dropped by `KAN-141`)*
 **Bookings:** `rpc_booking_hold_for_game`, `rpc_booking_hold_for_meetup`, `rpc_booking_cancel`
 **Ratings:** `rpc_rate_game`, `rpc_rate_user`, `rpc_rate_venue`
 **Drafts:** `rpc_draft_create/update/archive`, `rpc_draft_publish_game/meetup/challenge`
-**Search:** `rpc_search_entities`, `rpc_search_users`, `rpc_unified_search_sectioned`,
+**Search:** `rpc_unified_search_sectioned`,
 `rpc_autocomplete_entities`, `rpc_autocomplete_people`
 **Notifications:** `rpc_mark_all_read`, `rpc_notification_clicked`,
 `rpc_broadcast_inapp_notification`
