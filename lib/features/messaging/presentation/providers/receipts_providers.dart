@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/features/messaging/data/messaging_http_client.dart';
@@ -41,12 +42,23 @@ const int receiptsRefreshSeconds = 20;
 /// old Worker, a fake backend or any failure leaves it empty and every
 /// message at Sent. It never writes anything.
 class ReceiptCountsNotifier extends StateNotifier<Map<int, ReceiptCounts>> {
-  ReceiptCountsNotifier(this._transport, this._conversationId)
-    : super(const <int, ReceiptCounts>{});
+  ReceiptCountsNotifier(
+    this._transport,
+    this._conversationId, {
+    DateTime Function()? now,
+  }) : _now = now ?? DateTime.now,
+       super(const <int, ReceiptCounts>{});
+
+  /// The same seqs are not re-read sooner than this (KAN-929); shorter than
+  /// [receiptsRefreshSeconds] so the poll always gets through.
+  static const Duration minRepeat = Duration(seconds: 5);
 
   final ReceiptsTransport _transport;
   final String _conversationId;
+  final DateTime Function() _now;
   bool _busy = false;
+  List<int>? _lastWanted;
+  DateTime? _lastAt;
 
   /// Re-reads the counts for [seqs] (the caller's own message seqs, any
   /// order). Seqs every recipient has already seen are final and skipped.
@@ -57,11 +69,27 @@ class ReceiptCountsNotifier extends StateNotifier<Map<int, ReceiptCounts>> {
         .toList();
     if (open.isEmpty) return;
     final wanted = open.length > 100 ? open.sublist(open.length - 100) : open;
+    final at = _now();
+    if (_lastAt != null &&
+        listEquals(wanted, _lastWanted) &&
+        at.difference(_lastAt!) < minRepeat) {
+      return;
+    }
+    _lastWanted = wanted;
+    _lastAt = at;
     _busy = true;
     try {
       final fresh = await _transport.summaries(_conversationId, wanted);
       if (!mounted || fresh.isEmpty) return;
-      state = <int, ReceiptCounts>{...state, ...fresh};
+      // An unchanged answer leaves the state alone, so nothing rebuilds.
+      final changed = fresh.entries.any((e) {
+        final old = state[e.key];
+        return old == null ||
+            old.seen != e.value.seen ||
+            old.delivered != e.value.delivered ||
+            old.total != e.value.total;
+      });
+      if (changed) state = <int, ReceiptCounts>{...state, ...fresh};
     } finally {
       _busy = false;
     }

@@ -109,6 +109,7 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
   /// KAN-580: refreshes the delivered/seen counts of the caller's own
   /// messages while the thread is open. Receipts have no push channel.
   Timer? _receiptsPoll;
+  bool _openedReceipts = false;
 
   /// Ids on screen when the thread first loaded; later incoming ones fade in.
   Set<String>? _baselineIds;
@@ -362,12 +363,17 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
     final async = ref.watch(_provider);
     final view = async.valueOrNull;
     _conversationId = view?.conversation?.id ?? '';
-    // KAN-580: a thread opened on cached state fires no listener change.
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      _ackIncoming(view);
-      _refreshReceipts(view);
-    });
+    // KAN-580: a thread opened on cached state fires no listener change, so
+    // the first loaded build acks and reads receipts once. Once, not per
+    // build (KAN-929): this build watches the counts, so refreshing here looped.
+    if (!_openedReceipts && _conversationId.isNotEmpty) {
+      _openedReceipts = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _ackIncoming(view);
+        _refreshReceipts(view);
+      });
+    }
     // KAN-579: who is typing here; a message from a typer ends their "typing".
     final typers = _conversationId.isEmpty
         ? const <String>[]
