@@ -1,4 +1,6 @@
 -- KAN-780 (KAN-719 Z03, Epic KAN-708): the pre-application dependency re-scan gate, proven on a local DB.
+-- KAN-862: probes re-pointed at the regenerated Z01 slate (manifest 254f6202893607899592380ee724a79b: games.search_tsv
+-- and 21 meetups columns; no other games column is slated, so the probes read meetups).
 --
 -- LOCAL OR DISPOSABLE DATABASES ONLY. Never run this against a hosted Supabase project (the guard refuses).
 -- The gate itself (kan719_z03_prestop_gate.sql) is read-only and production-safe; this TEST creates probe objects,
@@ -7,7 +9,7 @@
 --   G1  baseline: the gate passes inside BEGIN READ ONLY (it writes nothing), 0 NEW; also passes with the D05
 --       compatibility views applied (kan718_meetups_compat is KNOWN, not new)
 --   G2  one NEW dependency of each kind makes it STOP and name exactly that object: a view, a SQL function, a
---       plpgsql trigger on games, a policy on another table, an index, a check constraint, extended statistics
+--       plpgsql trigger on meetups, a policy on another table, an index, a check constraint, extended statistics
 --   G3  a new object that reads only RETAINED columns (id, event_id, vibe_key) does not stop it (no false stop)
 --   G4  composition: gate then a destructive statement in one block; on STOP the DROP never runs and the column
 --       is still there
@@ -72,14 +74,14 @@ DO $g2$
 DECLARE r record; e text; n int := 0;
 BEGIN
   FOR r IN SELECT * FROM (VALUES
-      ('view:k780_probe_view',          $s$CREATE VIEW public.k780_probe_view AS SELECT id, title FROM public.games$s$),
-      ('function:k780_probe_fn',        $s$CREATE FUNCTION public.k780_probe_fn() RETURNS timestamptz LANGUAGE sql AS 'SELECT max(start_at) FROM public.meetups'$s$),
+      ('view:k780_probe_view',          $s$CREATE VIEW public.k780_probe_view AS SELECT id, title FROM public.meetups$s$),
+      ('function:k780_probe_fn',        $s$CREATE FUNCTION public.k780_probe_fn() RETURNS timestamptz LANGUAGE sql AS 'SELECT max(m.start_at) FROM public.meetups m'$s$),
       ('trigger:k780_probe_trg',        $s$CREATE FUNCTION public.k780_probe_trgfn() RETURNS trigger LANGUAGE plpgsql AS 'BEGIN IF NEW.capacity < 0 THEN RAISE EXCEPTION ''x''; END IF; RETURN NEW; END';
-                                           CREATE TRIGGER k780_probe_trg BEFORE UPDATE ON public.games FOR EACH ROW EXECUTE FUNCTION public.k780_probe_trgfn()$s$),
+                                           CREATE TRIGGER k780_probe_trg BEFORE UPDATE ON public.meetups FOR EACH ROW EXECUTE FUNCTION public.k780_probe_trgfn()$s$),
       ('policy:k780_probe_pol',         $s$CREATE POLICY k780_probe_pol ON public.meetup_attendees FOR SELECT USING (EXISTS (SELECT 1 FROM public.meetups m WHERE m.id = meetup_attendees.meetup_id AND m.start_at > now()))$s$),
-      ('index:k780_probe_idx',          $s$CREATE INDEX k780_probe_idx ON public.games (start_at)$s$),
+      ('index:k780_probe_idx',          $s$CREATE INDEX k780_probe_idx ON public.meetups (start_at)$s$),
       ('constraint:k780_probe_chk',     $s$ALTER TABLE public.meetups ADD CONSTRAINT k780_probe_chk CHECK (title IS NOT NULL OR title IS NULL) NOT VALID$s$),
-      ('statistics:k780_probe_stx',     $s$CREATE STATISTICS k780_probe_stx ON sport_id, area_id FROM public.games$s$)
+      ('statistics:k780_probe_stx',     $s$CREATE STATISTICS k780_probe_stx ON sport_id, area_id FROM public.meetups$s$)
     ) v(want, ddl) LOOP
     BEGIN
       EXECUTE r.ddl;
@@ -106,16 +108,16 @@ BEGIN
   RAISE NOTICE 'KAN-780 G3 PASS: a view on games/meetups (id, event_id) and an index on meetups (vibe_key) do not stop the gate';
 
   -- G4 composition: the gate is the first statement of the destructive transaction
-  CREATE VIEW public.k780_probe_late AS SELECT id, cancelled_reason FROM public.games;
+  CREATE VIEW public.k780_probe_late AS SELECT id, end_at FROM public.meetups;
   BEGIN
     EXECUTE (SELECT sql FROM k780_gate);
-    ALTER TABLE public.games DROP COLUMN cancelled_reason CASCADE;   -- would silently take the view with it
+    ALTER TABLE public.meetups DROP COLUMN end_at CASCADE;   -- would silently take the view with it
     RAISE EXCEPTION 'KAN-780 G4 FAIL: the destructive statement ran after a STOP-worthy dependency';
   EXCEPTION WHEN raise_exception THEN
     GET STACKED DIAGNOSTICS e = MESSAGE_TEXT;
     IF e NOT LIKE 'KAN-780 STOP:%view:k780_probe_late%' THEN RAISE; END IF;
   END;
-  IF NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid = 'public.games'::regclass AND attname = 'cancelled_reason' AND NOT attisdropped)
+  IF NOT EXISTS (SELECT 1 FROM pg_attribute WHERE attrelid = 'public.meetups'::regclass AND attname = 'end_at' AND NOT attisdropped)
      OR to_regclass('public.k780_probe_late') IS NULL THEN
     RAISE EXCEPTION 'KAN-780 G4 FAIL: column or dependent view gone';
   END IF;

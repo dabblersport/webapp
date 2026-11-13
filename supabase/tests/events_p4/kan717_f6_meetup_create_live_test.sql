@@ -39,8 +39,9 @@ BEGIN
 END $t$;
 
 CREATE TEMP TABLE k717f6_m ON COMMIT DROP AS
-SELECT m.id, m.event_id, m.creator_profile_id, m.host_actor_id
-  FROM public.meetups m WHERE m.id = (SELECT v::uuid FROM pg_temp.k717f6_out WHERE k = 'mid');
+SELECT m.id, m.event_id, e.creator_profile_id, m.host_actor_id   -- KAN-862 Z01: creator_profile_id lives on events only
+  FROM public.meetups m JOIN public.events e ON e.id = m.event_id AND e.event_type = 'meetup'
+ WHERE m.id = (SELECT v::uuid FROM pg_temp.k717f6_out WHERE k = 'mid');
 
 INSERT INTO pg_temp.k717f6_tap
 SELECT 1, (SELECT v FROM k717f6_out WHERE k='err') IS NULL, 'rpc_create_meetup returns without error',
