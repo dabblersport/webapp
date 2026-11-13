@@ -1,3 +1,6 @@
+-- SUPERSEDED 2026-11-13 by KAN-718 (20261113052438_kan718_writers_series.sql): the S7 md5s below are the KAN-917 body;
+-- live is now the KAN-718 body. Point-in-time proof of its own migration; the current proof is
+-- kan718_writers_equality_live_test.sql.
 -- KAN-917 (KAN-714 chain stage W, KAN-866 follow-up): proof for
 -- supabase/migrations/20261111121900_kan714_w_rpc_edit_game_series_occurrence_kan712_inner.sql.
 -- public.rpc_edit_game_series_occurrence_kan712_inner must read none of the 22 games columns KAN-866 removes, and must

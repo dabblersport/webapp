@@ -1,3 +1,5 @@
+-- SUPERSEDED 2026-11-13 by KAN-718 (20261113052351_kan718_writers_update.sql): the inner this file pins is now the
+-- KAN-718 body. Point-in-time proof of its own migration; the current proof is kan718_writers_equality_live_test.sql.
 -- KAN-912 (KAN-714 chain stage W, KAN-866 follow-up): proof for
 -- supabase/migrations/20261111121400_kan714_w_rpc_update_game.sql.
 -- public.rpc_update_game_kan712_inner (17 args) must read none of the 22 games columns KAN-866 removes, and must

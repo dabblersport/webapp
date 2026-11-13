@@ -1,3 +1,6 @@
+-- SUPERSEDED 2026-11-13 by KAN-718 (20261113052438_kan718_writers_series.sql): the inner this file pins was rewritten to
+-- sync events itself, so the pre-image twin rebuilt from the live functiondef is no longer the KAN-917 pre-image. This
+-- file is the point-in-time proof of its own migration; the current proof is kan718_writers_equality_live_test.sql.
 -- KAN-917 live proof for supabase/migrations/20261111121900_kan714_w_rpc_edit_game_series_occurrence_kan712_inner.sql
 -- (public.rpc_edit_game_series_occurrence_kan712_inner, 6 arguments). Runs on the hosted project as postgres inside
 -- BEGIN ... ROLLBACK: every call's writes are undone in a subtransaction and the final ROLLBACK drops the fixture and

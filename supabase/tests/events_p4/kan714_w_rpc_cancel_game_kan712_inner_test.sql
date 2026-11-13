@@ -1,3 +1,6 @@
+-- SUPERSEDED 2026-11-13 by KAN-718 (20261113052351_kan718_writers_update.sql): the T3 post-image md5 below is the
+-- KAN-913 body; live is now the KAN-718 body. Point-in-time proof of its own migration; the current proof is
+-- kan718_writers_equality_live_test.sql.
 -- KAN-913: proof for supabase/migrations/20261111121500_kan714_w_rpc_cancel_game_kan712_inner.sql.
 --
 -- LOCAL THROWAWAY DATABASES ONLY. The guard refuses anything that looks like Supabase, a non-local server address and
