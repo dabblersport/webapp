@@ -160,7 +160,8 @@ BEGIN
     'SELECT to_jsonb(set_config(''k718.gid'', public.rpc_create_game_legacy_v1(''player'', ''2502490a-0339-436c-8b5e-5ac1514606c9'', '
     '''9208e6be-811a-4c76-9149-8dc736983dcc'', ''K718 v1'', ''05c42917-8f73-46f4-9ddc-293e92c9f755'', '
     '''2027-01-14 18:00+04'', ''2027-01-14 19:30+04'')::text, true))', c_ret_ids, false);
-  -- challenge spawn
+  -- challenge spawn (KAN-717 F3: 'spawn' must succeed as 'private'/'invite'; challenges carry no location,
+  -- so 'spawn_nospace' must raise P0001 challenge_location_required)
   PERFORM pg_temp.k718_run(p_phase, 'spawn', c_host, 'authenticated', NULL,
     'SELECT to_jsonb(set_config(''k718.gid'', public.rpc_challenge_spawn_game(''00000718-0000-4000-8000-000000000002'', '
     '''2027-01-15 18:00+04'', ''e561f01a-1cb7-447e-9355-5aa97e1fcef2'')::text, true))', c_ret_ids, false);
@@ -252,7 +253,8 @@ BEGIN
                           WHERE (x ->> 'drift')::boolean OR (x ->> 'orphan')::boolean),
              'off_bad', (SELECT count(*) FROM jsonb_array_elements(COALESCE(f.res -> 'rows', '[]')) x
                           WHERE (x ->> 'drift')::boolean OR (x ->> 'orphan')::boolean),
-             'nrows', jsonb_array_length(COALESCE(o.res -> 'rows', '[]'))) AS d
+             'nrows', jsonb_array_length(COALESCE(o.res -> 'rows', '[]')),
+             'vis', o.res #>> '{rows,0,g,listing_visibility}', 'evis', o.res #>> '{rows,0,e,listing_visibility}') AS d
       FROM k718_res o JOIN k718_res f ON f.scen = o.scen AND f.phase = 'off'
      WHERE o.phase = 'on') s;
   RAISE EXCEPTION USING errcode = 'KX718', message = v::text;
