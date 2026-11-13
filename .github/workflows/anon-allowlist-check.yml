@@ -75,6 +75,10 @@ jobs:
         run: bash scripts/ci/check_function_default_acl.sh
 
       - name: Self-test the function default-privilege gate (real disposable Postgres)
+        # Its own database: default privileges and functions are per database, so the
+        # KAN-175 self-test above must not leak into this one's fixture.
         env:
-          KAN194_TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/kan175
-        run: bash scripts/ci/check_function_default_acl_test.sh
+          KAN194_TEST_DB_URL: postgresql://postgres:postgres@localhost:5432/kan194
+        run: |
+          psql postgresql://postgres:postgres@localhost:5432/kan175 -v ON_ERROR_STOP=1 -c 'CREATE DATABASE kan194'
+          bash scripts/ci/check_function_default_acl_test.sh

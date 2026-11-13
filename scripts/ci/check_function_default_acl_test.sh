@@ -104,10 +104,17 @@ probe_effective_privilege() {
 # would test a different (and less realistic) starting condition.
 echo "Seeding the pre-KAN-189 production shape..."
 psql_t -q <<'SQL'
-CREATE ROLE anon NOLOGIN;
-CREATE ROLE authenticated NOLOGIN;
-CREATE ROLE service_role NOLOGIN;
-CREATE ROLE supabase_admin NOLOGIN;
+-- Roles are cluster-wide: in CI the KAN-175 self-test has already created them in the same server.
+DO $$
+DECLARE r text;
+BEGIN
+  FOREACH r IN ARRAY ARRAY['anon', 'authenticated', 'service_role', 'supabase_admin'] LOOP
+    IF NOT EXISTS (SELECT 1 FROM pg_roles WHERE rolname = r) THEN
+      EXECUTE format('CREATE ROLE %I NOLOGIN', r);
+    END IF;
+  END LOOP;
+END
+$$;
 ALTER DEFAULT PRIVILEGES FOR ROLE postgres IN SCHEMA public
   GRANT EXECUTE ON FUNCTIONS TO anon, authenticated, service_role;
 SQL
