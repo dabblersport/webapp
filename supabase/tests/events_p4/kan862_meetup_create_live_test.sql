@@ -4,11 +4,173 @@
 -- Runs on the hosted project as postgres, entirely inside BEGIN ... ROLLBACK.
 -- RED on the pre-image (legacy_v2 prosrc 88ed8d98...): probe 8 (its INSERT INTO public.meetups lists
 -- creator_profile_id, title, start_at, ... and RETURNING joining_rule, cost_cover).
+-- Probe 13 (CEO decision on the discrepancy note, 2026-11-13): a create at a venue with a non-free space keeps the
+-- pre-71b5deda outcome. Reference: pg_temp.k862_old_v2, a verbatim twin of the pre-71b5deda legacy_v2 body
+-- (prosrc md5 88ed8d98d1da30de03ffd99747a4fab8, from 20261113150933_kan717_f6_meetup_host_actor.sql), run through
+-- the live meetups trigger chain (trg_meetups_sync_joining_rule is disabled; kan713_meetups_joining decides).
 BEGIN;
 SET LOCAL client_min_messages = warning;
 
 CREATE TEMP TABLE k862_tap (n int PRIMARY KEY, ok boolean NOT NULL, label text NOT NULL, detail text) ON COMMIT DROP;
 CREATE TEMP TABLE k862_out (k text PRIMARY KEY, v text) ON COMMIT DROP;
+
+-- reference: the pre-71b5deda legacy_v2 body, verbatim, as a session-local twin
+CREATE OR REPLACE FUNCTION pg_temp.k862_old_v2(p_actor_type text, p_sport_id uuid, p_sport_variant_id uuid, p_title text, p_description text DEFAULT NULL::text, p_venue_id uuid DEFAULT NULL::uuid, p_location_name text DEFAULT NULL::text, p_geo_location_id uuid DEFAULT NULL::uuid, p_area_id uuid DEFAULT NULL::uuid, p_start_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_end_at timestamp with time zone DEFAULT NULL::timestamp with time zone, p_capacity integer DEFAULT NULL::integer, p_listing_visibility text DEFAULT 'public'::text, p_rsvp_policy text DEFAULT 'open'::text, p_members_only boolean DEFAULT false, p_min_skill integer DEFAULT NULL::integer, p_max_skill integer DEFAULT NULL::integer, p_vibe_key text DEFAULT NULL::text, p_meta jsonb DEFAULT NULL::jsonb, p_is_indoor boolean DEFAULT NULL::boolean)
+ RETURNS uuid
+ LANGUAGE plpgsql
+ SECURITY DEFINER
+ SET search_path TO 'public', 'pg_temp'
+AS $function$
+DECLARE
+  pid               uuid;
+  uid               uuid;
+  mid               uuid;
+  v_sport           record;
+  v_variant         record;
+  v_required        integer;
+  v_final_capacity  integer;
+  v_joining_rule    text;
+  v_cost_cover      text;
+BEGIN
+  pid := public.choose_actor(p_actor_type);
+
+  -- KAN-439 (CEO ruling 2026-10-06): player and organiser personas may create; socialiser and
+  -- host may not.
+  IF NOT EXISTS (
+    SELECT 1 FROM public.profiles pr
+    WHERE pr.id = pid AND pr.user_id = public.effective_actor_uid() AND pr.is_active = true
+  ) THEN
+    RAISE EXCEPTION USING errcode='P0001', message='profile_not_owned';
+  END IF;
+  IF NOT public.can_create_meetup(pid) THEN
+    RAISE EXCEPTION USING errcode='P0001', message='persona_not_allowed';
+  END IF;
+
+  IF COALESCE(p_listing_visibility, 'public') <> 'public' THEN
+    RAISE EXCEPTION USING errcode='P0001', message='visibility_not_supported';
+  END IF;
+
+  IF p_meta IS NOT NULL AND (
+       COALESCE(p_meta->>'joining_rule', 'free') <> 'free'
+    OR COALESCE(p_meta->>'cost_cover',   'free') <> 'free'
+  ) THEN
+    RAISE EXCEPTION USING errcode='P0001', message='free_meetups_only';
+  END IF;
+
+  IF p_location_name IS NULL OR trim(p_location_name) = '' THEN
+    RAISE EXCEPTION USING errcode='P0001', message='location_name_required';
+  END IF;
+
+  -- CEO 2026-10-08: with no venue the host must say Indoor or Outdoor.
+  IF p_venue_id IS NULL AND p_is_indoor IS NULL THEN
+    RAISE EXCEPTION USING errcode='P0001', message='setting_required';
+  END IF;
+
+  IF p_title IS NULL OR trim(p_title) = '' THEN
+    RAISE EXCEPTION USING errcode='P0001', message='title_required';
+  END IF;
+
+  IF p_start_at IS NOT NULL AND p_end_at IS NOT NULL
+     AND p_end_at <= p_start_at THEN
+    RAISE EXCEPTION USING errcode='P0001', message='invalid_time_range';
+  END IF;
+
+  SELECT * INTO v_sport
+    FROM public.sports
+   WHERE id = p_sport_id AND is_active = true;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING errcode='P0001', message='invalid_sport';
+  END IF;
+
+  SELECT * INTO v_variant
+    FROM public.sport_variants
+   WHERE id = p_sport_variant_id
+     AND sport_id = p_sport_id
+     AND is_active = true;
+
+  IF NOT FOUND THEN
+    RAISE EXCEPTION USING errcode='P0001', message='invalid_sport_variant';
+  END IF;
+
+  v_required := v_variant.required_players;
+
+  IF p_capacity IS NOT NULL THEN
+    IF p_capacity < v_required THEN
+      RAISE EXCEPTION USING errcode='P0001', message='capacity_below_required_players';
+    END IF;
+    v_final_capacity := p_capacity;
+  ELSE
+    v_final_capacity := NULL;
+  END IF;
+
+  SELECT user_id INTO uid FROM public.profiles WHERE id = pid;
+  IF uid IS NULL THEN
+    RAISE EXCEPTION USING errcode='P0001', message='creator_profile_not_found';
+  END IF;
+
+  INSERT INTO public.meetups (
+    creator_profile_id,
+    creator_user_id,
+    host_actor_id,  -- KAN-717 F6: NOT NULL, no default; the host is the acting creator profile
+    sport_id,
+    title,
+    description,
+    venue_id,
+    location_name,
+    geo_location_id,
+    area_id,
+    start_at,
+    end_at,
+    capacity,
+    listing_visibility,
+    rsvp_policy,
+    members_only,
+    min_skill,
+    max_skill,
+    vibe_key,
+    meta,
+    is_indoor
+  )
+  VALUES (
+    pid,
+    uid,
+    pid,
+    p_sport_id,
+    p_title,
+    p_description,
+    p_venue_id,
+    p_location_name,
+    p_geo_location_id,
+    p_area_id,
+    p_start_at,
+    p_end_at,
+    v_final_capacity,
+    'public',
+    p_rsvp_policy,
+    p_members_only,
+    p_min_skill,
+    p_max_skill,
+    p_vibe_key,
+    COALESCE(p_meta, '{}'),
+    CASE WHEN p_venue_id IS NULL THEN p_is_indoor ELSE NULL END
+  )
+  RETURNING id, joining_rule, cost_cover INTO mid, v_joining_rule, v_cost_cover;
+
+  IF v_joining_rule <> 'free' OR v_cost_cover <> 'free' THEN
+    RAISE EXCEPTION USING errcode='P0001', message='free_meetups_only';
+  END IF;
+
+  -- The host is the first 'going' RSVP (meetup_rsvps is the source of truth).
+  INSERT INTO public.meetup_rsvps (meetup_id, user_id, profile_id, status)
+  VALUES (mid, uid, pid, 'going')
+  ON CONFLICT (meetup_id, user_id) DO UPDATE
+    SET status = 'going', profile_id = EXCLUDED.profile_id, updated_at = now();
+
+  RETURN mid;
+END;
+$function$;
+DO $g$ BEGIN EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated', 'pg_temp.k862_old_v2'::regproc::oid::regprocedure); END $g$;
 
 DO $t$
 DECLARE v_mid uuid; v_mid2 uuid; v_err text; v_err2 text; v_err3 text;
@@ -66,6 +228,51 @@ BEGIN
   PERFORM set_config('request.jwt.claim.sub', '', true);
   INSERT INTO pg_temp.k862_out VALUES ('mid', v_mid::text), ('mid2', v_mid2::text), ('err', v_err), ('err2', v_err2), ('err3', v_err3);
 END $t$;
+
+-- probe 13: venue 9211fe48 with space 1b0dacf7 (joining_rule 'paid'), via the old twin and via rpc_create_meetup
+DO $t13$
+DECLARE m uuid; m_old uuid; m_new uuid; r_old text; r_new text;
+BEGIN
+  PERFORM set_config('request.jwt.claims', json_build_object('sub', 'a3ba3271-3556-4b4e-b15d-bc0851f8a64b', 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.jwt.claim.sub', 'a3ba3271-3556-4b4e-b15d-bc0851f8a64b', true);
+  SET LOCAL ROLE authenticated;
+  BEGIN
+    m := pg_temp.k862_old_v2(
+      p_actor_type => 'player', p_sport_id => '91554c52-47b4-40e2-bf45-5f3b1e67f64a'::uuid,
+      p_sport_variant_id => '6cde6a6d-7785-43e3-883d-be369ef47aa5'::uuid,
+      p_title => 'KAN862 paid-space old', p_venue_id => '9211fe48-11dc-4ca3-a227-a9398709e40e'::uuid,
+      p_location_name => 'KAN862 venue', p_start_at => timestamptz '2026-11-29 06:00 Asia/Dubai',
+      p_meta => '{"venue_space_id":"1b0dacf7-f646-4296-ac48-41b948cbdde3"}'::jsonb);
+    m_old := m;
+  EXCEPTION WHEN OTHERS THEN
+    r_old := 'ERR ' || SQLSTATE || ' ' || SQLERRM;
+  END;
+  BEGIN
+    m := public.rpc_create_meetup(
+      p_actor_type => 'player', p_sport_id => '91554c52-47b4-40e2-bf45-5f3b1e67f64a'::uuid,
+      p_sport_variant_id => '6cde6a6d-7785-43e3-883d-be369ef47aa5'::uuid,
+      p_title => 'KAN862 paid-space new', p_venue_id => '9211fe48-11dc-4ca3-a227-a9398709e40e'::uuid,
+      p_location_name => 'KAN862 venue', p_start_at => timestamptz '2026-11-30 06:00 Asia/Dubai',
+      p_meta => '{"venue_space_id":"1b0dacf7-f646-4296-ac48-41b948cbdde3"}'::jsonb);
+    m_new := m;
+  EXCEPTION WHEN OTHERS THEN
+    r_new := 'ERR ' || SQLSTATE || ' ' || SQLERRM;
+  END;
+  RESET ROLE;
+  PERFORM set_config('request.jwt.claims', '', true);
+  PERFORM set_config('request.jwt.claim.sub', '', true);
+  -- read as postgres: the events parent, and the meetups row agrees with it
+  IF m_old IS NOT NULL THEN
+    SELECT 'ok ' || e.joining_rule || '/' || e.cost_cover || ' meetups ' || m2.joining_rule || '/' || m2.cost_cover INTO r_old
+      FROM public.events e JOIN public.meetups m2 ON m2.event_id = e.id WHERE e.id = m_old;
+  END IF;
+  IF m_new IS NOT NULL THEN
+    SELECT 'ok ' || e.joining_rule || '/' || e.cost_cover || ' meetups ' || m2.joining_rule || '/' || m2.cost_cover INTO r_new
+      FROM public.events e JOIN public.meetups m2 ON m2.event_id = e.id WHERE e.id = m_new;
+  END IF;
+  INSERT INTO pg_temp.k862_out VALUES ('old13', r_old), ('new13', r_new),
+    ('twin_md5', (SELECT md5(p.prosrc) FROM pg_proc p WHERE p.oid = 'pg_temp.k862_old_v2'::regproc));
+END $t13$;
 
 CREATE TEMP TABLE k862_m ON COMMIT DROP AS
 SELECT m.id, m.event_id, m.host_actor_id, e.creator_profile_id, to_jsonb(m) AS mj, to_jsonb(e) AS ej
@@ -134,7 +341,14 @@ SELECT 11, (SELECT v FROM k862_out WHERE k='err2') LIKE '23503 kan713_space_not_
        'unknown meta.venue_space_id still raises 23503 kan713_space_not_found', (SELECT v FROM k862_out WHERE k='err2')
 UNION ALL
 SELECT 12, (SELECT v FROM k862_out WHERE k='err3') LIKE '23502 %"start_at"%"events"%',
-       'missing start_at still raises 23502 on events.start_at', (SELECT v FROM k862_out WHERE k='err3');
+       'missing start_at still raises 23502 on events.start_at', (SELECT v FROM k862_out WHERE k='err3')
+UNION ALL
+-- 13: venue with a non-free space: same outcome as the pre-71b5deda body (twin md5 pinned)
+SELECT 13, (SELECT v FROM k862_out WHERE k='twin_md5') = '88ed8d98d1da30de03ffd99747a4fab8'
+          AND (SELECT v FROM k862_out WHERE k='new13') = (SELECT v FROM k862_out WHERE k='old13'),
+       'venue with a non-free space: joining_rule/cost_cover as the pre-71b5deda body',
+       'old=' || coalesce((SELECT v FROM k862_out WHERE k='old13'), 'null') || ' new=' || coalesce((SELECT v FROM k862_out WHERE k='new13'), 'null')
+       || ' twin=' || coalesce((SELECT v FROM k862_out WHERE k='twin_md5'), 'null');
 
 SELECT string_agg(CASE WHEN ok THEN 'ok ' ELSE 'not ok ' END || n || ' - ' || label
                   || CASE WHEN detail IS NOT NULL THEN ' [' || detail || ']' ELSE '' END, E'\n' ORDER BY n)
