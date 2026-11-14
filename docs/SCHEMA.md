@@ -1428,3 +1428,36 @@ exist), `organiser_benefits`, `profile_views`, `venue_opening_hours` (renamed to
 possible or needed on a table that doesn't exist; this migration cannot regress them further.
 Flagging for `master-analyst`/`cto` — this is a much bigger dead-code surface than this
 ticket's scope, not something to silently fold into a grants migration.
+
+## 13. `games` AND `events` — the shared columns live on `events` (KAN-866, 2026-11-14)
+
+Since migration `20261114123000_kan866_drop_games_shared_columns.sql`, `public.games` holds only the columns no other event
+type shares. Every game has exactly one `public.events` parent (`event_type = 'game'`, `events.id = games.event_id = games.id`),
+and the shared facts are read and written there.
+
+**`public.games` (14 columns):** `id`, `game_type`, `venue_space_id`, `allow_spectators`, `rules`, `squad_id`,
+`sport_specific_data`, `allows_waitlist`, `sport_variant_id`, `bench_slots`, `price_aed`, `series_id`, `event_id`,
+`event_changed_at`.
+
+**Moved to `public.events` (dropped from `games`, 22):** `creator_profile_id`, `creator_user_id`, `title`, `start_at`,
+`end_at`, `capacity`, `listing_visibility`, `join_policy`, `is_cancelled`, `cancelled_at`, `cancelled_reason`, `sport_id`,
+`area_id`, `geo_location_id`, `venue_id`, `min_skill`, `max_skill` (smallint on events), `joining_rule`, `cost_cover`,
+`request_id`, `created_at`, `updated_at`.
+
+* **Writers** (KAN-947) insert or update `events` first and touch `games` only for its own columns. The location and
+  joining facts come from `kan947_game_derive(events, venue_space_id, sport_variant_id, old events, old space)`.
+* **Readers** (KAN-948) join `games g JOIN events e ON e.id = g.event_id AND e.event_type = 'game'`. The views
+  `v_game_card`, `v_my_games`, `kan714_games_read` and `kan718_games_compat` expose the old column names from `events`.
+* **Side effects of a game** fire from `events` triggers with `WHEN (NEW.event_type = 'game')`: the activity row
+  (`tr_kan947_events_game_activity_sync`), the cancel notification (`trg_kan947_events_game_updated_notify`) and the
+  chat system line (`msg_kan947_events_game_cancelled`).
+* **Uniqueness that moved:**
+  * request_id: `events_type_creator_request_id_key`;
+  * series occurrence: `kan718_series_occurrence_guard`, a trigger on `events.start_at` and `games.series_id`.
+* **Realtime:** `games` is published with `(id, event_changed_at)`. `trg_kan949_events_nudge_subtype` bumps
+  `games.event_changed_at` whenever a listing field changes on the parent.
+* **Rollback data:** `public._kan866_games_backup` holds the 22 values per game as they stood at the drop. RLS is on,
+  there is no policy, and only postgres can read it. The restore script is
+  `supabase/schema/rollback/kan866_ROLLBACK_restore_games_shared_columns.sql`.
+* **Mobile builds older than 181** read these columns from `games` directly and break. The CEO accepted that on
+  2026-11-14 (Jira KAN-866 16314).
