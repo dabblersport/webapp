@@ -377,35 +377,6 @@ class MockGamesRepository extends _i1.Mock implements _i8.GamesRepository {
           as _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>>);
 
   @override
-  _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>> getNearbyGames(
-    double? latitude,
-    double? longitude,
-    double? radiusKm, {
-    Map<String, dynamic>? filters,
-    int? page = 1,
-    int? limit = 20,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(
-              #getNearbyGames,
-              [latitude, longitude, radiusKm],
-              {#filters: filters, #page: page, #limit: limit},
-            ),
-            returnValue:
-                _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>>.value(
-                  _i11.dummyValue<_i9.Either<_i6.Failure, List<_i10.Game>>>(
-                    this,
-                    Invocation.method(
-                      #getNearbyGames,
-                      [latitude, longitude, radiusKm],
-                      {#filters: filters, #page: page, #limit: limit},
-                    ),
-                  ),
-                ),
-          )
-          as _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>>);
-
-  @override
   _i4.Future<_i9.Either<_i6.Failure, List<_i10.Game>>> getGamesBySport(
     String? sportType, {
     Map<String, dynamic>? filters,
@@ -2197,49 +2168,6 @@ class MockVenuesRepository extends _i1.Mock implements _i15.VenuesRepository {
                 ),
           )
           as _i4.Future<_i9.Either<_i6.Failure, List<_i16.Venue>>>);
-
-  @override
-  _i4.Future<_i9.Either<_i6.Failure, List<Map<String, dynamic>>>>
-  getVenueBookingHistory(
-    String? venueId, {
-    DateTime? startDate,
-    DateTime? endDate,
-    int? page = 1,
-    int? limit = 20,
-  }) =>
-      (super.noSuchMethod(
-            Invocation.method(
-              #getVenueBookingHistory,
-              [venueId],
-              {
-                #startDate: startDate,
-                #endDate: endDate,
-                #page: page,
-                #limit: limit,
-              },
-            ),
-            returnValue:
-                _i4.Future<
-                  _i9.Either<_i6.Failure, List<Map<String, dynamic>>>
-                >.value(
-                  _i11.dummyValue<
-                    _i9.Either<_i6.Failure, List<Map<String, dynamic>>>
-                  >(
-                    this,
-                    Invocation.method(
-                      #getVenueBookingHistory,
-                      [venueId],
-                      {
-                        #startDate: startDate,
-                        #endDate: endDate,
-                        #page: page,
-                        #limit: limit,
-                      },
-                    ),
-                  ),
-                ),
-          )
-          as _i4.Future<_i9.Either<_i6.Failure, List<Map<String, dynamic>>>>);
 
   @override
   _i4.Future<_i9.Either<_i6.Failure, Map<String, dynamic>>>

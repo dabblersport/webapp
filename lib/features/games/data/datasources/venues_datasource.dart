@@ -772,42 +772,6 @@ class SupabaseVenuesDataSource implements VenuesRemoteDataSource {
     }
   }
 
-  // Additional convenience methods
-  @override
-  Future<List<Map<String, dynamic>>> getVenueBookingHistory(
-    String venueId, {
-    String? startDate,
-    String? endDate,
-    int page = 1,
-    int limit = 20,
-  }) async {
-    try {
-      var query = _supabaseClient
-          .from(SupabaseConfig.bookingsTable)
-          .select('*, game:games(title, sport)')
-          .eq('venue_id', venueId);
-
-      if (startDate != null) {
-        query = query.gte('booking_date', startDate);
-      }
-      if (endDate != null) {
-        query = query.lte('booking_date', endDate);
-      }
-
-      final response = await query
-          .order('booking_date', ascending: false)
-          .range((page - 1) * limit, page * limit - 1);
-
-      return response;
-    } on PostgrestException catch (e) {
-      throw VenueServerException('Database error: ${e.message}');
-    } catch (e) {
-      throw VenueServerException(
-        'Failed to get venue booking history: ${e.toString()}',
-      );
-    }
-  }
-
   @override
   Future<Map<String, dynamic>> getVenueUtilizationStats(
     String venueId, {

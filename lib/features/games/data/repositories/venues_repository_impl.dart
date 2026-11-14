@@ -779,49 +779,6 @@ class VenuesRepositoryImpl implements VenuesRepository {
   }
 
   @override
-  Future<Either<Failure, List<Map<String, dynamic>>>> getVenueBookingHistory(
-    String venueId, {
-    DateTime? startDate,
-    DateTime? endDate,
-    int page = 1,
-    int limit = 20,
-  }) async {
-    try {
-      final cacheKey =
-          'history_${venueId}_${startDate?.toIso8601String() ?? 'any'}_${endDate?.toIso8601String() ?? 'any'}_${page}_$limit';
-
-      // Check cache first
-      if (_isMetadataCacheValid(cacheKey)) {
-        final cached = _metadataCache[cacheKey]!;
-        return Right(List<Map<String, dynamic>>.from(cached));
-      }
-
-      // Fetch from remote
-      final history = await remoteDataSource.getVenueBookingHistory(
-        venueId,
-        startDate: startDate?.toIso8601String(),
-        endDate: endDate?.toIso8601String(),
-        page: page,
-        limit: limit,
-      );
-
-      // Update cache
-      _metadataCache[cacheKey] = history;
-      _cacheTimestamps[cacheKey] = DateTime.now();
-
-      return Right(history);
-    } on VenueServerException catch (e) {
-      return Left(VenueServerFailure(e.message));
-    } on VenueNotFoundException catch (e) {
-      return Left(VenueNotFoundFailure(e.message));
-    } catch (e) {
-      return Left(
-        UnknownFailure('Failed to get venue booking history: ${e.toString()}'),
-      );
-    }
-  }
-
-  @override
   Future<Either<Failure, Map<String, dynamic>>> getVenueUtilizationStats(
     String venueId, {
     DateTime? startDate,

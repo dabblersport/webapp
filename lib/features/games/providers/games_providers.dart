@@ -3,7 +3,6 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../presentation/controllers/games_controller.dart';
 import '../presentation/controllers/venues_controller.dart';
 import '../presentation/controllers/my_games_controller.dart';
-import '../presentation/controllers/bookings_controller.dart';
 import 'package:dabbler/core/providers/geo_providers.dart';
 import '../domain/usecases/find_games_usecase.dart';
 import '../domain/usecases/join_game_usecase.dart';
@@ -16,14 +15,10 @@ import 'package:dabbler/core/offline/cached_read.dart';
 import 'package:dabbler/core/offline/game_codec.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/data/models/games/venue.dart';
-import '../domain/repositories/bookings_repository.dart';
 import '../data/repositories/games_repository_impl.dart';
 import '../data/repositories/venues_repository_impl.dart';
-import '../data/repositories/bookings_repository_impl.dart';
 import '../data/datasources/supabase_games_datasource.dart';
 import '../data/datasources/venues_datasource.dart';
-import '../data/datasources/bookings_datasource.dart';
-import '../data/datasources/bookings_remote_data_source.dart';
 import '../services/game_completion_rewards_handler.dart';
 import 'package:dabbler/services/sport_profile_service.dart';
 
@@ -57,11 +52,6 @@ final venuesDataSourceProvider = Provider<SupabaseVenuesDataSource>((ref) {
   return SupabaseVenuesDataSource(ref.watch(supabaseClientProvider));
 });
 
-/// Provides the bookings remote data source
-final bookingsDataSourceProvider = Provider<BookingsDataSource>((ref) {
-  return SupabaseBookingsDataSource(ref.watch(supabaseClientProvider));
-});
-
 // =============================================================================
 // REPOSITORY PROVIDERS
 // =============================================================================
@@ -82,14 +72,6 @@ final featuresGamesRepositoryProvider = Provider((ref) {
 final venuesRepositoryProvider = Provider((ref) {
   return VenuesRepositoryImpl(
     remoteDataSource: ref.watch(venuesDataSourceProvider),
-  );
-});
-
-/// Provides the bookings repository
-final bookingsRepositoryProvider = Provider<BookingsRepository>((ref) {
-  return BookingsRepositoryImpl(
-    remoteDataSource:
-        ref.watch(bookingsDataSourceProvider) as BookingsRemoteDataSource,
   );
 });
 
@@ -169,15 +151,6 @@ final myGamesControllerProvider =
         userId: userId,
         completionHandler: ref.watch(gameCompletionRewardsHandlerProvider),
       );
-    });
-
-/// Bookings controller for user's venue bookings
-final bookingsControllerProvider =
-    StateNotifierProvider.family<BookingsController, BookingsState, String>((
-      ref,
-      userId,
-    ) {
-      return BookingsController(ref.watch(bookingsRepositoryProvider));
     });
 
 // =============================================================================

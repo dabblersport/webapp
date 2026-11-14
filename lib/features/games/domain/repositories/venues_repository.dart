@@ -189,15 +189,6 @@ abstract class VenuesRepository {
     int limit = 20,
   });
 
-  /// Gets venue booking history
-  Future<Either<Failure, List<Map<String, dynamic>>>> getVenueBookingHistory(
-    String venueId, {
-    DateTime? startDate,
-    DateTime? endDate,
-    int page = 1,
-    int limit = 20,
-  });
-
   /// Gets venue utilization statistics
   Future<Either<Failure, Map<String, dynamic>>> getVenueUtilizationStats(
     String venueId, {

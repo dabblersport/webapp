@@ -148,15 +148,6 @@ abstract class VenuesRemoteDataSource {
     int limit = 20,
   });
 
-  /// Gets venue booking history
-  Future<List<Map<String, dynamic>>> getVenueBookingHistory(
-    String venueId, {
-    String? startDate,
-    String? endDate,
-    int page = 1,
-    int limit = 20,
-  });
-
   /// Gets venue utilization statistics
   Future<Map<String, dynamic>> getVenueUtilizationStats(
     String venueId, {
