@@ -139,6 +139,9 @@ class SupabaseConfig {
   /// `id == game.id`.
   static const String eventsTable = 'events';
   static const String friendEdgesTable = 'friend_edges';
+  /// KAN-950: Realtime nudge per game listing change; `games` itself never
+  /// delivers Realtime (RLS, no policy).
+  static const String gameListingNudgesTable = 'game_listing_nudges';
   static const String gameRatingAggregateTable = 'game_rating_aggregate';
   static const String gamesTable = 'games';
   static const String geoLocationsTable = 'geo_locations';

@@ -55,9 +55,9 @@ void main() {
     sub.close();
   });
 
-  test('the games listing listens to the games table', () {
+  test('the games listing listens to the game listing nudges table', () {
     container.listen(listingChangeFeedProvider(args('games')), (_, _) {});
-    expect(opened, ['games']);
+    expect(opened, ['game_listing_nudges']);
   });
 
   test('a reconnect refetches once', () async {

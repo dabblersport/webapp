@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -214,7 +215,8 @@ final listingRealtimeSourceProvider = Provider<ListingRealtimeSource>((ref) {
 });
 
 /// KAN-755: feeds [ListingChangeSignal] from Realtime for a listing ('games'
-/// or 'meetups'). A change message is only a nudge: it carries no payload into
+/// or 'meetups'). KAN-950: games listens to `game_listing_nudges` (INSERT on
+/// the first nudge, UPDATE after; the source takes all events). A change message is only a nudge: it carries no payload into
 /// the UI, the listing re-runs its own RLS-bound query. A re-subscribe after
 /// the socket dropped counts as a reconnect and converges the same way. The
 /// subscription is closed (and the signal disposed) when the watching screen
@@ -223,7 +225,9 @@ final listingChangeFeedProvider = Provider.autoDispose
     .family<void, ListingChangeSignalArgs>((ref, args) {
       final signal = ref.watch(listingChangeSignalProvider(args));
       final close = ref.read(listingRealtimeSourceProvider)(
-        args.listing == 'meetups' ? 'meetups' : 'games',
+        args.listing == 'meetups'
+            ? 'meetups'
+            : SupabaseConfig.gameListingNudgesTable,
         signal.changed,
         signal.reconnected,
       );

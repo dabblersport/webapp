@@ -93,6 +93,30 @@ advisor guess, per `T-020`.
 `.from(gamesTable)` queries against it. Every one returns nothing. The live game path
 avoids this by reading the `v_game_card` view and calling RPCs instead.
 
+**KAN-950 (2026-11-14): `games` still has no policy, on purpose; the listing nudge has its own
+table.** Realtime applies the subscriber's SELECT RLS, so the KAN-755 games listing nudge never
+reached a client. A games SELECT policy was rejected because several invoker gates treat "the
+caller sees no games row" as their deny signal: `trgfn_joinreq_block_frozen_guard`, the roster,
+waitlist and invite guards, `trgfn_posts_set_geo`, `_user_hosted_game`, `game_is_joinable` and
+`_recent_activity_score`. A policy would change the path each of them takes. A direct client insert
+into `game_join_requests` would still fail, at `kan803_game_host_uid` (postgres and service_role
+only; PEER 16342), but the gates would no longer fail where they were designed to. It would also expose
+`squad_id`, `sport_specific_data` and `event_id`, which `v_game_card` does not return.
+`public.game_listing_nudges` (game_id pk, changed_at) works this way:
+- RLS is on, with one SELECT policy for `authenticated`: `_can_view_game(game_id)`, the
+  `v_game_card` predicate.
+- Grants: SELECT to `authenticated` only. `anon` has nothing (it gets 42501), and no client role
+  can write.
+- It is upserted by the SECURITY DEFINER triggers `trg_kan950_games_listing_nudge_ins` and
+  `trg_kan950_games_listing_nudge_upd` on games: on insert, and when `event_changed_at` moves
+  (KAN-949).
+- It is published in `supabase_realtime`.
+- No FK, and rows are never deleted, because Realtime does not apply RLS to DELETE.
+
+Migration `20261114124928`, live test
+`supabase/tests/events_p4/kan950_game_listing_nudges_live_test.sql`. Any new gate that needs
+"can this caller see the game" should call `_can_view_game` rather than rely on games RLS.
+
 **Independent client-side corroboration that the definer funnel is deliberate** *(added
 2026-08-28, found by `cto`)*. The zero-policy tables read as drift until you find that the
 app was written to route around them on purpose. `game_composer_screen.dart:205-207` says so
