@@ -2330,6 +2330,7 @@
   "messaging_chat_loading": "Loading messages",
   "messaging_chat_empty_title": "No messages yet",
   "messaging_chat_empty_body": "Say hello to the players in this game.",
+  "messaging_meetup_chat_empty": "Say hello to the people in this meetup.",
   "messaging_chat_composer_hint": "Write a message",
   "messaging_chat_send": "Send",
   "messaging_chat_retry": "Retry",

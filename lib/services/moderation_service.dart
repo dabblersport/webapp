@@ -1,5 +1,6 @@
 import 'package:dabbler/core/utils/logger.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/utils/instant.dart';
 import 'package:riverpod/riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -261,7 +262,7 @@ class CooldownResult {
     return CooldownResult(
       allowed: json['allowed'] as bool,
       remaining: json['remaining'] as int,
-      resetAt: DateTime.parse(json['reset_at'] as String),
+      resetAt: parseInstantLocal(json['reset_at'])!,
     );
   }
 
@@ -269,7 +270,7 @@ class CooldownResult {
     return {
       'allowed': allowed,
       'remaining': remaining,
-      'reset_at': resetAt.toIso8601String(),
+      'reset_at': toWireInstant(resetAt),
     };
   }
 }

@@ -454,7 +454,9 @@ class _GameChatScreenState extends ConsumerState<GameChatScreen>
                 key: GameChatScreen.emptyKey,
                 icon: 'messages-2',
                 title: l10n.messaging_chat_empty_title,
-                text: l10n.messaging_chat_empty_body,
+                text: widget.meetupId != null
+                    ? l10n.messaging_meetup_chat_empty
+                    : l10n.messaging_chat_empty_body,
                 size: DabblerEmptyStateSize.page,
               ),
             ),

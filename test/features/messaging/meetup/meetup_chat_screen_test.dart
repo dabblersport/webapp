@@ -11,9 +11,14 @@ import '../support/fake_backend.dart';
 
 /// KAN-928: the meetup chat screen opens the meetup's conversation and is
 /// titled with the meetup's title; without one it keeps the generic title.
-Future<void> _open(WidgetTester tester, GameChatScreen screen) async {
+Future<void> _open(
+  WidgetTester tester,
+  GameChatScreen screen, {
+  int messageCount = 2,
+}) async {
   final repo = FakeMessagingRepository(clock: () => DateTime(2026, 3, 3, 9))
-    ..seedMeetupConversation('mt1', messageCount: 2);
+    ..seedMeetupConversation('mt1', messageCount: messageCount)
+    ..seedGameConversation('g1');
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
@@ -54,6 +59,30 @@ void main() {
     await _open(tester, const GameChatScreen.meetup(meetupId: 'mt1'));
     final l = AppLocalizations.of(tester.element(find.byType(GameChatScreen)));
     expect(find.text(l.messaging_chat_title), findsOneWidget);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('empty meetup chat: meetup wording, not game wording', (
+    tester,
+  ) async {
+    await _open(
+      tester,
+      const GameChatScreen.meetup(meetupId: 'mt1'),
+      messageCount: 0,
+    );
+    final l = AppLocalizations.of(tester.element(find.byType(GameChatScreen)));
+    expect(find.byKey(GameChatScreen.emptyKey), findsOneWidget);
+    expect(find.text(l.messaging_meetup_chat_empty), findsOneWidget);
+    expect(find.text(l.messaging_chat_empty_body), findsNothing);
+    await tester.pumpWidget(const SizedBox());
+  });
+
+  testWidgets('empty game chat: keeps the game wording', (tester) async {
+    await _open(tester, const GameChatScreen(gameId: 'g1'), messageCount: 0);
+    final l = AppLocalizations.of(tester.element(find.byType(GameChatScreen)));
+    expect(find.byKey(GameChatScreen.emptyKey), findsOneWidget);
+    expect(find.text(l.messaging_chat_empty_body), findsOneWidget);
+    expect(find.text(l.messaging_meetup_chat_empty), findsNothing);
     await tester.pumpWidget(const SizedBox());
   });
 }

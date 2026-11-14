@@ -114,7 +114,7 @@ class GameComposerError {
       DateFormat(
         'MMM d, HH:mm',
         locale,
-      ).format(resetAt ?? DateTime.fromMillisecondsSinceEpoch(0)),
+      ).format((resetAt ?? DateTime.fromMillisecondsSinceEpoch(0)).toLocal()),
     ),
     GameComposerErrorCode.sportUnavailable => l.game_error_sport_unavailable,
     GameComposerErrorCode.invalidFormat => l.game_error_invalid_format,

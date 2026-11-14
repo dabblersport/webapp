@@ -11675,6 +11675,12 @@ abstract class AppLocalizations {
   /// **'Say hello to the players in this game.'**
   String get messaging_chat_empty_body;
 
+  /// No description provided for @messaging_meetup_chat_empty.
+  ///
+  /// In en, this message translates to:
+  /// **'Say hello to the people in this meetup.'**
+  String get messaging_meetup_chat_empty;
+
   /// No description provided for @messaging_chat_composer_hint.
   ///
   /// In en, this message translates to:

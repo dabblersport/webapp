@@ -6560,6 +6560,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'ألقِ التحية على اللاعبين في هذه المباراة.';
 
   @override
+  String get messaging_meetup_chat_empty =>
+      'ألقِ التحية على المشاركين في هذا اللقاء.';
+
+  @override
   String get messaging_chat_composer_hint => 'اكتب رسالة';
 
   @override

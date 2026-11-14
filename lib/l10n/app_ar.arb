@@ -2351,6 +2351,7 @@
   "messaging_chat_loading": "جارٍ تحميل الرسائل",
   "messaging_chat_empty_title": "لا توجد رسائل بعد",
   "messaging_chat_empty_body": "ألقِ التحية على اللاعبين في هذه المباراة.",
+  "messaging_meetup_chat_empty": "ألقِ التحية على المشاركين في هذا اللقاء.",
   "messaging_chat_composer_hint": "اكتب رسالة",
   "messaging_chat_send": "إرسال",
   "messaging_chat_retry": "أعد المحاولة",

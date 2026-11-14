@@ -6504,6 +6504,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Say hello to the players in this game.';
 
   @override
+  String get messaging_meetup_chat_empty =>
+      'Say hello to the people in this meetup.';
+
+  @override
   String get messaging_chat_composer_hint => 'Write a message';
 
   @override
