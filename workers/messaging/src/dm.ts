@@ -23,6 +23,10 @@ function databaseRefusal(message: string): Response | null {
       return reasonError("invalid_request");
     case "blocked":
       return reasonError("blocked"); // either direction; the database does not say which
+    case "messaging_off":
+    case "not_in_pilot":
+      // KAN-945: msg_start_dm follows the server messaging mode (KAN-944). Both are the "unavailable" answer.
+      return reasonError("not_in_pilot");
     case "age_restricted":
       // No existing reason names an age rule; not_in_pilot is the "unavailable" screen and tells nothing about age.
       return reasonError("not_in_pilot");

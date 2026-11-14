@@ -126,6 +126,9 @@ describe("start a DM (POST /v1/dm)", () => {
     ["not_found", "not_found", 404, "not_found"],
     ["rate_limited", "rate_limited", 429, "dm_cap_reached"],
     ["invalid_request", "invalid_request", 400, "invalid_request"],
+    // KAN-945: the server messaging mode refusals of msg_start_dm (KAN-944) are the unavailable answer, not a 502.
+    ["messaging_off", "messaging_off", 403, "not_in_pilot"],
+    ["not_in_pilot", "not_in_pilot", 403, "not_in_pilot"],
   ];
   for (const [name, message, status, reason] of refusals) {
     it(`the database's ${name} is passed on as ${status} ${reason}`, async () => {
