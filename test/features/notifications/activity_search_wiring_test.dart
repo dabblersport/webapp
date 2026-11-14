@@ -91,6 +91,19 @@ class _FakeActivity extends StateNotifier<ActivityLogState>
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+// The list groups rows under a local-day header ("Today · …" vs "Yesterday ·
+// …"). A fixture of "now minus minutes" lands on yesterday just after local
+// midnight, and the longer header overflows the 357 px test row in the Ahem
+// test font. Anchor to local midnight so every row is always today.
+DateTime _earlyToday(int offsetSeconds) {
+  final DateTime now = DateTime.now();
+  return DateTime(
+    now.year,
+    now.month,
+    now.day,
+  ).add(Duration(seconds: offsetSeconds));
+}
+
 ActivityFeedEvent _event(String id, String type, String title) =>
     ActivityFeedEvent(
       id: id,
@@ -98,7 +111,7 @@ ActivityFeedEvent _event(String id, String type, String title) =>
       subjectId: '$id-s',
       verb: 'joined',
       timeBucket: 'past',
-      happenedAt: DateTime.now().subtract(Duration(minutes: 10 + id.length)),
+      happenedAt: _earlyToday(id.length),
       priority: 1,
       payload: {'title': title},
     );

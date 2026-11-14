@@ -16,13 +16,22 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+// The list groups rows under a local-day header ("Today · …" vs "Yesterday ·
+// …"). A fixture of "now minus an hour" lands on yesterday between local
+// midnight and 01:00, and the longer header overflows the 357 px test row in
+// the Ahem test font. Anchor to local midnight so the row is always today.
+DateTime _earlyToday() {
+  final DateTime now = DateTime.now();
+  return DateTime(now.year, now.month, now.day).add(const Duration(seconds: 1));
+}
+
 ActivityFeedEvent _event(String id) => ActivityFeedEvent(
   id: id,
   subjectType: 'game',
   subjectId: 'g-$id',
   verb: 'joined',
   timeBucket: 'past',
-  happenedAt: DateTime.now().subtract(const Duration(hours: 1)),
+  happenedAt: _earlyToday(),
   priority: 0,
   payload: const <String, dynamic>{'title': 'Padel at Zamalek'},
 );
