@@ -262,7 +262,7 @@ packages:
     description:
       path: "."
       ref: staging
-      resolved-ref: "0008d302ad31bd3d9f1e79289ce3145a5c738731"
+      resolved-ref: d03ca4bbdd3877b286477a5fb4e4e8f367502a81
       url: "https://github.com/dabblersport/dabbler-design-system.git"
     source: git
     version: "0.1.1+1"
