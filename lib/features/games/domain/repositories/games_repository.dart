@@ -63,16 +63,6 @@ abstract class GamesRepository {
     int limit = 20,
   });
 
-  /// Gets games near a specific location
-  Future<Either<Failure, List<Game>>> getNearbyGames(
-    double latitude,
-    double longitude,
-    double radiusKm, {
-    Map<String, dynamic>? filters,
-    int page = 1,
-    int limit = 20,
-  });
-
   /// Gets games by sport type
   Future<Either<Failure, List<Game>>> getGamesBySport(
     String sportType, {

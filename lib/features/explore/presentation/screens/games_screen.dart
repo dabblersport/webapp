@@ -20,7 +20,7 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/providers.dart' hide nearbyGamesProvider;
+import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';

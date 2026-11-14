@@ -651,38 +651,6 @@ class SupabaseGamesDataSource implements GamesRemoteDataSource {
     }
   }
 
-  @override
-  Future<List<GameModel>> getNearbyGames(
-    double latitude,
-    double longitude,
-    double radiusKm, {
-    Map<String, dynamic>? filters,
-    int page = 1,
-    int limit = 20,
-  }) async {
-    try {
-      // Use RPC function for location-based queries
-      final response = await _supabaseClient.rpc(
-        'get_nearby_games',
-        params: {
-          'lat': latitude,
-          'lng': longitude,
-          'radius_km': radiusKm,
-          'page_offset': (page - 1) * limit,
-          'page_limit': limit,
-        },
-      );
-
-      return response
-          .map<GameModel>((json) => GameModel.fromJson(json))
-          .toList();
-    } on PostgrestException catch (e) {
-      throw GameServerException('Database error: ${e.message}');
-    } catch (e) {
-      throw GameServerException('Failed to get nearby games: ${e.toString()}');
-    }
-  }
-
   // Simplified implementations for remaining methods
   /// Authorised cancel path (KAN-712 inventory S8); not yet in SupabaseConfig.
   static const String _rpcCancelGameFn = 'rpc_cancel_game';

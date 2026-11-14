@@ -59,20 +59,6 @@ enum NearbyFilter { games, venues, players, posts }
 // Data providers — one per entity type
 // ---------------------------------------------------------------------------
 
-final nearbyGamesProvider = FutureProvider.autoDispose
-    .family<List<NearbyGame>, NearbyParams>((ref, params) async {
-      final repo = ref.watch(nearbyRepositoryProvider);
-      final result = await repo.getNearbyGames(
-        lat: params.lat,
-        lng: params.lng,
-        radius: params.radius,
-      );
-      return result.fold(
-        (failure) => throw Exception(failure.message),
-        (data) => data,
-      );
-    });
-
 final nearbyVenuesProvider = FutureProvider.autoDispose
     .family<List<NearbyVenue>, NearbyParams>((ref, params) async {
       final repo = ref.watch(nearbyRepositoryProvider);

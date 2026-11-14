@@ -8,30 +8,6 @@ class NearbyRepositoryImpl extends BaseRepository implements NearbyRepository {
   const NearbyRepositoryImpl(super.svc);
 
   // ---------------------------------------------------------------------------
-  // Games
-  // ---------------------------------------------------------------------------
-
-  @override
-  Future<Result<List<NearbyGame>, Failure>> getNearbyGames({
-    required double lat,
-    required double lng,
-    int radius = 5000,
-  }) {
-    return guard<List<NearbyGame>>(() async {
-      final rows =
-          await svc.client.rpc(
-                'get_nearby_games',
-                params: {'p_lat': lat, 'p_lng': lng, 'p_radius': radius},
-              )
-              as List<dynamic>;
-      return rows
-          .cast<Map<String, dynamic>>()
-          .map(NearbyGame.fromJson)
-          .toList();
-    });
-  }
-
-  // ---------------------------------------------------------------------------
   // Venues
   // ---------------------------------------------------------------------------
 

@@ -326,42 +326,6 @@ class GamesRepositoryImpl implements GamesRepository {
   }
 
   @override
-  Future<Either<Failure, List<Game>>> getNearbyGames(
-    double latitude,
-    double longitude,
-    double radiusKm, {
-    Map<String, dynamic>? filters,
-    int page = 1,
-    int limit = 20,
-  }) async {
-    try {
-      final games = await remoteDataSource.getNearbyGames(
-        latitude,
-        longitude,
-        radiusKm,
-        filters: filters,
-        page: page,
-        limit: limit,
-      );
-
-      // Cache individual games
-      for (final game in games) {
-        _gamesCache[game.id] = game;
-      }
-
-      return Right(games.cast<Game>());
-    } on ServerException catch (e) {
-      return Left(ServerFailure(e.message));
-    } on NetworkException catch (e) {
-      return Left(NetworkFailure(message: e.message));
-    } catch (e) {
-      return Left(
-        UnknownFailure('Failed to get nearby games: ${e.toString()}'),
-      );
-    }
-  }
-
-  @override
   Future<Either<Failure, List<Game>>> getGamesBySport(
     String sportType, {
     Map<String, dynamic>? filters,

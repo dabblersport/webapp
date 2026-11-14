@@ -93,16 +93,6 @@ abstract class GamesRemoteDataSource {
     int limit = 20,
   });
 
-  /// Gets games near a specific location
-  Future<List<GameModel>> getNearbyGames(
-    double latitude,
-    double longitude,
-    double radiusKm, {
-    Map<String, dynamic>? filters,
-    int page = 1,
-    int limit = 20,
-  });
-
   /// Gets games by sport type
   Future<List<GameModel>> getGamesBySport(
     String sportType, {
