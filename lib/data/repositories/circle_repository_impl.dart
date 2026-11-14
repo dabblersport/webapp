@@ -38,7 +38,10 @@ class CircleRepositoryImpl implements CircleRepository {
   }) async {
     try {
       final dynamic q = limit != null && offset != null
-          ? _db.from(SupabaseConfig.vCircleTable).select().range(offset, offset + limit - 1)
+          ? _db
+                .from(SupabaseConfig.vCircleTable)
+                .select()
+                .range(offset, offset + limit - 1)
           : _db.from(SupabaseConfig.vCircleTable).select();
       final rows = await q;
       return Ok(rows.cast<Map<String, dynamic>>());
@@ -84,37 +87,15 @@ class CircleRepositoryImpl implements CircleRepository {
 
       // Note: .or() is not available on stream builder in newer Supabase versions
       // We'll stream all friend_edges changes for now (RLS will filter to user's edges)
-      final edgesStream = _db.from(SupabaseConfig.friendEdgesTable).stream(primaryKey: ['id']);
+      final edgesStream = _db
+          .from(SupabaseConfig.friendEdgesTable)
+          .stream(primaryKey: ['id']);
 
       await for (final _ in edgesStream) {
         yield await circleFeed(limit: limit, offset: offset);
       }
     } catch (e) {
       yield Err(svc.mapPostgrestError(e));
-    }
-  }
-
-  @override
-  Future<Result<List<Map<String, dynamic>>, Failure>>
-  friendRequestsInbox() async {
-    try {
-      final rows = await _db.rpc(SupabaseConfig.rpcFriendRequestsInboxFn);
-      if (rows is List) return Ok(rows.cast<Map<String, dynamic>>());
-      return Err(ServerFailure(message: 'Unexpected inbox shape'));
-    } catch (e) {
-      return Err(svc.mapPostgrestError(e));
-    }
-  }
-
-  @override
-  Future<Result<List<Map<String, dynamic>>, Failure>>
-  friendRequestsOutbox() async {
-    try {
-      final rows = await _db.rpc(SupabaseConfig.rpcFriendRequestsOutboxFn);
-      if (rows is List) return Ok(rows.cast<Map<String, dynamic>>());
-      return Err(ServerFailure(message: 'Unexpected outbox shape'));
-    } catch (e) {
-      return Err(svc.mapPostgrestError(e));
     }
   }
 
@@ -144,7 +125,10 @@ class CircleRepositoryImpl implements CircleRepository {
     String squadId,
   ) async {
     try {
-      final rows = await _db.from(SupabaseConfig.vSquadDetailTable).select().eq('id', squadId);
+      final rows = await _db
+          .from(SupabaseConfig.vSquadDetailTable)
+          .select()
+          .eq('id', squadId);
       return Ok(rows.cast<Map<String, dynamic>>());
     } catch (e) {
       return Err(svc.mapPostgrestError(e));

@@ -12,7 +12,6 @@ import 'package:dabbler/features/profile/domain/services/persona_service.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
 import 'package:dabbler/features/social/providers.dart' as squads_p;
-import 'package:dabbler/features/social/providers/community_providers.dart';
 import 'package:dabbler/features/social/circles_providers.dart';
 import 'package:dabbler/features/rewards/providers/check_in_providers.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
@@ -68,16 +67,8 @@ void resetUserScopedProviders(Ref ref) {
   ref.invalidate(squads_p.mySquadsStreamProvider);
   ref.invalidate(squads_p.mySquadInvitesProvider);
 
-  // --- Friends / community ---
-  ref.invalidate(friendshipsProvider);
-  ref.invalidate(friendEdgesProvider);
-  ref.invalidate(incomingFriendRequestsProvider);
-  ref.invalidate(outgoingFriendRequestsProvider);
-
   // --- Circles ---
   ref.invalidate(circleListProvider);
-  ref.invalidate(friendInboxProvider);
-  ref.invalidate(friendOutboxProvider);
 
   // --- Check-in / rewards ---
   ref.invalidate(checkInStatusDetailProvider);

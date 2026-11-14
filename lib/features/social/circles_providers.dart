@@ -44,22 +44,6 @@ final circleFeedStreamProvider = StreamProvider.autoDispose
       return repo.circleFeedStream(limit: args.limit, offset: args.offset);
     });
 
-final friendInboxProvider =
-    FutureProvider.autoDispose<Result<List<Map<String, dynamic>>, Failure>>((
-      ref,
-    ) {
-      final repo = ref.watch(circleRepositoryProvider);
-      return repo.friendRequestsInbox();
-    });
-
-final friendOutboxProvider =
-    FutureProvider.autoDispose<Result<List<Map<String, dynamic>>, Failure>>((
-      ref,
-    ) {
-      final repo = ref.watch(circleRepositoryProvider);
-      return repo.friendRequestsOutbox();
-    });
-
 final squadCardsProvider = FutureProvider.autoDispose
     .family<Result<List<Map<String, dynamic>>, Failure>, SquadCardsArgs>((
       ref,

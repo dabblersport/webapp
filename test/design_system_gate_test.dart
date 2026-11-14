@@ -300,16 +300,6 @@ const List<GateAllow> allowList = [
     'Domain duration literal',
   ], _domainDurationReason),
   GateAllow(
-    'lib/features/social/presentation/controllers/friend_requests_controller.dart',
-    ['Domain duration literal'],
-    _domainDurationReason,
-  ),
-  GateAllow(
-    'lib/features/social/presentation/controllers/friends_controller.dart',
-    ['Domain duration literal'],
-    _domainDurationReason,
-  ),
-  GateAllow(
     'lib/features/social/presentation/screens/post_composer_screen.dart',
     ['Domain duration literal'],
     _domainDurationReason,

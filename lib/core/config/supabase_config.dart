@@ -139,7 +139,6 @@ class SupabaseConfig {
   /// `id == game.id`.
   static const String eventsTable = 'events';
   static const String friendEdgesTable = 'friend_edges';
-  static const String friendshipsTable = 'friendships';
   static const String gameRatingAggregateTable = 'game_rating_aggregate';
   static const String gamesTable = 'games';
   static const String geoLocationsTable = 'geo_locations';
@@ -213,9 +212,6 @@ class SupabaseConfig {
   static const String canCurrentUserRsvpMeetupFn =
       'can_current_user_rsvp_meetup';
   static const String rpcCircleListFn = 'rpc_circle_list';
-  static const String rpcFriendRequestsInboxFn = 'rpc_friend_requests_inbox';
-  static const String rpcFriendRequestsOutboxFn = 'rpc_friend_requests_outbox';
-  static const String rpcFriendUnfriendFn = 'rpc_friend_unfriend';
   static const String rpcUnblockUserFn = 'rpc_unblock_user';
 
   // ---- P4-1 (batch 2): additional table constants ----

@@ -29,10 +29,6 @@ abstract class CircleRepository {
     int offset,
   });
 
-  /// Inbox/Outbox friend requests via RPCs (unknown exact row structure).
-  Future<Result<List<Map<String, dynamic>>, Failure>> friendRequestsInbox();
-  Future<Result<List<Map<String, dynamic>>, Failure>> friendRequestsOutbox();
-
   /// Optional helper reads (unknown view columns).
   Future<Result<List<Map<String, dynamic>>, Failure>> squadCards({
     String? squadId,
