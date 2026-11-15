@@ -1485,3 +1485,32 @@ and the shared facts are read and written there.
   `supabase/schema/rollback/kan866_ROLLBACK_restore_games_shared_columns.sql`.
 * **Mobile builds older than 181** read these columns from `games` directly and break. The CEO accepted that on
   2026-11-14 (Jira KAN-866 16314).
+
+---
+
+## 14. Profile discoverability — visible by default (KAN-958, 2026-11-16)
+
+CEO decision 2026-11-16: profiles are discoverable unless the owner opts out. Migration
+`20261115214329_kan958_profiles_visible_by_default`.
+
+* **The rule** lives in `public.is_profile_publicly_visible(p_profile_id uuid)`: the profile is
+  active, `NOT is_benched(user_id)`, and `user_status.hide_in_search IS NOT TRUE`. **No `user_status`
+  row means visible.** Only `hide_in_search = true` hides. Before KAN-958 a missing row meant hidden
+  (`coalesce(hide_in_search, true) = false`), which hid every profile.
+* **Blocks are not in the helper.** Each caller applies them; `active_stream` filters
+  `NOT is_blocked(viewer, p.user_id)` on `player_joined`.
+* **SECURITY DEFINER, owner postgres, `search_path = public, pg_temp`, EXECUTE for `authenticated` and
+  `service_role` only.** `user_status` RLS is select-own, so an invoker helper could not see another
+  user's opt-out and would report them visible. Do not change it back to invoker.
+* **`user_status.hide_in_search` defaults to `false`** (was `true`), so a row created without the
+  column (`rpc_get_my_status`) does not opt the user out.
+* **Callers:** `active_stream` only (as of 2026-11-16). People search (`rpc_profile_search`,
+  `rpc_autocomplete_people`, `rpc_unified_search_sectioned`, `rpc_username_suggest`) does not read
+  `hide_in_search` or this helper.
+* **The opt-out is a bench setting and ends with the bench.** The only writer of `hide_in_search = true`
+  is `rpc_toggle_bench` (the bench form's "Hide me in search", default on). `rpc_end_bench` sets
+  `hide_in_search = false` along with `is_benched = false` (migration
+  `20261115215007_kan958_end_bench_clears_hide_in_search`, which also cleared the 2 unbenched rows that
+  still had `hide_in_search = true`).
+* **`is_benched(uuid)` is a known dead helper:** it reads `user_benches` / `benches`, neither of which
+  exists, so it always returns false. The real benched state is `user_status.is_benched`. Left as is.
