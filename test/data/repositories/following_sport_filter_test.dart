@@ -3,36 +3,13 @@ import 'dart:io';
 import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// KAN-593 — Following (profiles.interests uuid[]) filters DISCOVERY feeds by
-// posts.sport_id uuid. Untagged posts always pass; empty/NULL Following = no
-// filter; search, profile, sport overview and direct links are untouched.
+// KAN-955 (CEO 2026-11-16, supersedes the KAN-593 discovery filter): followed
+// sports (profiles.interests uuid[]) match posts.sport_id uuid on the
+// Following tab ONLY. For you, Nearby, Active, News, search, profile, sport
+// overview and direct links carry no followed-sports filter.
 
 const football = '11111111-1111-1111-1111-111111111111';
-const tennis = '22222222-2222-2222-2222-222222222222';
 const padel = '33333333-3333-3333-3333-333333333333';
-
-Map<String, dynamic> row(String id, String? sportId) => {
-  'id': id,
-  'sport_id': sportId,
-};
-
-final rows = [
-  row('football-post', football),
-  row('tennis-post', tennis),
-  row('padel-post', padel),
-  row('untagged-post', null),
-  row('blank-tag-post', ''),
-];
-
-List<String> ids(List<Map<String, dynamic>> r) =>
-    r.map((e) => e['id'] as String).toList();
-
-List<Map<String, dynamic>> discovery(Object? interests) =>
-    filterByFollowedSports(
-      rows,
-      parseFollowedSportIds(interests),
-      (r) => r['sport_id'] as String?,
-    );
 
 String _src(String path) => File(path).readAsStringSync();
 
@@ -45,95 +22,54 @@ String _method(String src, String name) {
 }
 
 void main() {
-  group('TC1 viewer follows Football only', () {
-    test('feed keeps Football + untagged, drops Tennis and Padel', () {
-      expect(ids(discovery([football])), [
-        'football-post',
-        'untagged-post',
-        'blank-tag-post',
-      ]);
-    });
-
-    test('works on typed items (For you path keys on Post.sportId)', () {
-      final posts = [
-        (id: 'f', sportId: football),
-        (id: 't', sportId: tennis),
-        (id: 'u', sportId: null),
-      ];
-      final out = filterByFollowedSports<({String id, String? sportId})>(
-        posts,
-        parseFollowedSportIds([football]),
-        (p) => p.sportId,
-      );
-      expect(out.map((p) => p.id), ['f', 'u']);
-      expect(
-        _src('lib/features/social/providers/feed_notifier.dart'),
-        contains('(Post p) => p.sportId'),
-      );
-    });
-
-    test('query-level filter expression keeps untagged and followed', () {
-      expect(
-        followedSportsOrFilter(parseFollowedSportIds([football])),
-        'sport_id.is.null,sport_id.in.($football)',
-      );
-    });
-  });
-
-  test('follows several sports: Football + Padel', () {
-    expect(ids(discovery([football, padel])), [
-      'football-post',
-      'padel-post',
-      'untagged-post',
-      'blank-tag-post',
-    ]);
-    expect(
-      followedSportsOrFilter(parseFollowedSportIds([padel, football])),
-      'sport_id.is.null,sport_id.in.($football,$padel)',
-    );
-  });
-
-  test('UUID case is normalised on both sides', () {
-    expect(ids(discovery([football.toUpperCase()])), contains('football-post'));
-    expect(passesFollowingFilter(tennis.toUpperCase(), {tennis}), isTrue);
-  });
-
-  group('TC4 empty / NULL Following = unfiltered, no crash', () {
-    for (final entry in <String, Object?>{
-      'NULL': null,
-      'empty list': <String>[],
-      'only blanks': ['', '  '],
-      'not a list': 'garbage',
-    }.entries) {
-      test(entry.key, () {
-        expect(parseFollowedSportIds(entry.value), isNull);
-        expect(ids(discovery(entry.value)), ids(rows));
-        expect(
-          followedSportsOrFilter(parseFollowedSportIds(entry.value)),
-          isNull,
-        );
+  group('parseFollowedSportIds', () {
+    test('normalises case and whitespace', () {
+      expect(parseFollowedSportIds([' ${football.toUpperCase()} ', padel]), {
+        football,
+        padel,
       });
-    }
-  });
-
-  group('wiring: discovery feeds filtered, others untouched', () {
-    final repo = _src('lib/data/repositories/post_repository_impl.dart');
-    final notifier = _src('lib/features/social/providers/feed_notifier.dart');
-
-    test('discovery feeds load Following', () {
-      for (final m in ['getHomeFeed', 'getRpcFeed', 'getNearbyFeed']) {
-        expect(
-          _method(repo, m),
-          contains('loadViewerFollowedSportIds'),
-          reason: m,
-        );
-      }
-      // 'For you' (get_home_feed RPC) filters after getPostsByIds.
-      expect(RegExp('filterByFollowedSports').allMatches(notifier).length, 2);
     });
 
-    test('TC2 search / profile / sport overview / direct link unfiltered', () {
+    group('empty / NULL interests = no sport match, no crash', () {
+      for (final entry in <String, Object?>{
+        'NULL': null,
+        'empty list': <String>[],
+        'only blanks': ['', '  '],
+        'not a list': 'garbage',
+      }.entries) {
+        test(entry.key, () {
+          expect(parseFollowedSportIds(entry.value), isNull);
+          expect(
+            followingFeedOrFilter(const [], parseFollowedSportIds(entry.value)),
+            isNull,
+          );
+          expect(
+            followingFeedOrFilter(const [
+              'p1',
+            ], parseFollowedSportIds(entry.value)),
+            'author_profile_id.in.(p1)',
+            reason: 'followed people still show',
+          );
+        });
+      }
+    });
+  });
+
+  group('wiring: only the Following feed reads followed sports', () {
+    final repo = _src('lib/data/repositories/post_repository_impl.dart');
+
+    test('getFollowingFeed loads followed sports and matches with or=', () {
+      final body = _method(repo, 'getFollowingFeed');
+      expect(body, contains('loadViewerFollowedSportIds'));
+      expect(body, contains('followingFeedOrFilter'));
+      expect(body, contains('.or(match)'));
+    });
+
+    test('every other feed and read path is unfiltered', () {
       for (final m in [
+        'getHomeFeed',
+        'getRpcFeed',
+        'getNearbyFeed',
         'getPostsByIds', // direct link + realtime refresh
         '_fetchPostsByIds',
         'getPost', // post-by-id
@@ -142,7 +78,6 @@ void main() {
         'getCommentedPostsBySport',
         'getReactedPostsBySport',
         'getHashtagFeed', // search/hashtag
-        'getFollowingFeed',
         'getCircleFeed',
         'getSquadFeed',
         'getNewsFeed',
@@ -150,11 +85,16 @@ void main() {
       ]) {
         final body = _method(repo, m);
         expect(body, isNot(contains('loadViewerFollowedSportIds')), reason: m);
-        expect(body, isNot(contains('filterByFollowedSports')), reason: m);
+        expect(body, isNot(contains('followingFeedOrFilter')), reason: m);
       }
-      final getPost = _method(repo, 'getPost');
-      expect(getPost, isNot(contains('Followed')));
-      // Search lives outside the post repository entirely.
+      for (final path in [
+        'lib/features/social/providers/feed_notifier.dart', // For you
+        'lib/features/social/data/nearby_candidate_source.dart', // Nearby
+        'lib/features/social/providers/active_feed_notifier.dart', // Active
+        'lib/features/news/providers/news_providers.dart', // News
+      ]) {
+        expect(_src(path), isNot(contains('following_sport_filter')));
+      }
       expect(
         Directory('lib/features')
             .listSync(recursive: true)
@@ -163,14 +103,6 @@ void main() {
             .any((f) => f.readAsStringSync().contains('FollowedSport')),
         isFalse,
       );
-    });
-
-    test('refreshPost (already-shown post) is not filtered', () {
-      final refresh = notifier.substring(
-        notifier.indexOf('Future<void> refreshPost('),
-      );
-      final end = refresh.indexOf('\n  }\n');
-      expect(refresh.substring(0, end), isNot(contains('Followed')));
     });
   });
 

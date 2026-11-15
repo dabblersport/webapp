@@ -180,7 +180,6 @@ void main() {
         final s = _client((_) => []);
         await NearbyCandidateSource(
           s.client,
-          personaType: null,
         ).fetch(city: 'Doha', asOf: DateTime.utc(2026, 10, 25));
         final q = s.requests.single.queryParameters;
         expect(q['visibility'], 'eq.public');
@@ -216,7 +215,6 @@ void main() {
       });
       final got = await NearbyCandidateSource(
         s.client,
-        personaType: null,
       ).fetch(city: 'Dubai', asOf: DateTime.utc(2026, 10, 25, 12));
       expect([for (final g in got) g.id], ['pub']);
     });
@@ -224,7 +222,7 @@ void main() {
     test('Dubai also owns legacy rows with no posting City; other Cities '
         'match exactly, with pattern characters escaped', () async {
       final s = _client((_) => []);
-      final src = NearbyCandidateSource(s.client, personaType: null);
+      final src = NearbyCandidateSource(s.client);
       await src.fetch(city: 'Dubai', asOf: DateTime.utc(2026, 10, 25));
       expect(
         s.requests.last.queryParameters['or'],
@@ -241,7 +239,6 @@ void main() {
       final s = _client((_) => []);
       final got = await NearbyCandidateSource(
         s.client,
-        personaType: null,
       ).fetch(city: null, asOf: DateTime.utc(2026, 10, 25));
       expect(got, isEmpty);
       expect(s.requests, isEmpty);

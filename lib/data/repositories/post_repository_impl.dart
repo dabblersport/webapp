@@ -374,17 +374,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int limit = 20,
     int offset = 0,
   }) => guard(() async {
-    // KAN-593: discovery feed — Following filter in the query.
-    final followOr = followedSportsOrFilter(
-      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
-    );
-    var homeQuery = _db
+    // KAN-955: discovery feed — all recent posts, no followed-sports filter.
+    final rows = await _db
         .from(SupabaseConfig.postsTable)
         .select()
         .eq('is_deleted', false)
-        .eq('is_hidden_admin', false);
-    if (followOr != null) homeQuery = homeQuery.or(followOr);
-    final rows = await homeQuery
+        .eq('is_hidden_admin', false)
         .order('created_at', ascending: false)
         .order('id', ascending: false)
         .range(offset, offset + limit - 1);
@@ -403,14 +398,10 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       'get_feed',
       params: {'p_limit': limit, 'p_offset': offset},
     );
-    // KAN-593: discovery feed — Following filter client-side (RPC rows).
-    final rows = filterByFollowedSports(
-      (response as List<dynamic>)
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .toList(),
-      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
-      (r) => r['sport_id'] as String?,
-    );
+    // KAN-955: discovery feed — no followed-sports filter.
+    final rows = (response as List<dynamic>)
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .toList();
     final enriched = await _enrichRows(rows);
     final hydrated = await _attachOriginalPosts(enriched);
     final themed = await _attachPostThemes(hydrated);
@@ -429,11 +420,16 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final userId = _db.auth.currentUser?.id;
     if (userId == null) return const <Post>[];
 
-    // Resolve the caller's profile ID.
+    // KAN-955: the caller's ACTIVE persona profile, the same one whose
+    // interests give the followed sports. No other persona's follows count.
+    final persona = activePersonaType;
+    if (persona == null || persona.isEmpty) return const <Post>[];
     final profileRows = await _db
         .from(SupabaseConfig.usersTable)
         .select('id')
         .eq('user_id', userId)
+        .eq('is_active', true)
+        .eq('persona_type', persona)
         .limit(1);
     if (profileRows.isEmpty) return const <Post>[];
     final myProfileId = profileRows.first['id'] as String;
@@ -448,13 +444,20 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .map((r) => r['following_profile_id'] as String)
         .toList();
 
-    if (followedIds.isEmpty) return const <Post>[];
+    // KAN-955: followed people OR followed sports (the active persona's
+    // `profiles.interests`), in one server-side query so pages stay correct
+    // and a post matching both appears once.
+    final match = followingFeedOrFilter(
+      followedIds,
+      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
+    );
+    if (match == null) return const <Post>[];
 
-    // Posts from followed users — manual posts and reposts only.
+    // Manual posts and reposts only.
     final rows = await _db
         .from(SupabaseConfig.postsTable)
         .select()
-        .inFilter('author_profile_id', followedIds)
+        .or(match)
         .inFilter('origin_type', ['manual', 'repost'])
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)
@@ -475,11 +478,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     int limit = 20,
     int offset = 0,
   }) => guard(() async {
+    // KAN-955: discovery feed — no followed-sports filter.
     List<Map<String, dynamic>> rows;
-    // KAN-593: discovery feed — Following filter in the query.
-    final followOr = followedSportsOrFilter(
-      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
-    );
 
     if (lat != null && lng != null) {
       // Fetch posts with geo coordinates — client-side haversine sort.
@@ -490,7 +490,7 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
       final lngMin = lng - deltaDeg;
       final lngMax = lng + deltaDeg;
 
-      var geoQuery = _db
+      final geoQuery = _db
           .from(SupabaseConfig.postsTable)
           .select()
           .gte('geo_lat', latMin)
@@ -501,7 +501,6 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           .neq('origin_type', 'system')
           .eq('is_deleted', false)
           .eq('is_hidden_admin', false);
-      if (followOr != null) geoQuery = geoQuery.or(followOr);
       rows = await geoQuery
           .order('created_at', ascending: false)
           .limit(limit * 3); // over-fetch for client sort + page slice
@@ -544,13 +543,12 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
               .replaceAll('_', '\\_'),
         );
       }
-      if (followOr != null) cityQuery = cityQuery.or(followOr);
       rows = await cityQuery
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);
     } else {
       // Fallback: most recent posts with any location tag.
-      var recentQuery = _db
+      final recentQuery = _db
           .from(SupabaseConfig.postsTable)
           .select()
           .not('location_name', 'is', null)
@@ -558,7 +556,6 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
           .neq('origin_type', 'system')
           .eq('is_deleted', false)
           .eq('is_hidden_admin', false);
-      if (followOr != null) recentQuery = recentQuery.or(followOr);
       rows = await recentQuery
           .order('created_at', ascending: false)
           .range(offset, offset + limit - 1);

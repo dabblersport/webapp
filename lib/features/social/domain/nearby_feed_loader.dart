@@ -43,6 +43,18 @@ class NearbyFeedLoader {
     required NearbyScope scope,
     required int limit,
     required int offset,
+  }) async => (await loadRankedPage(
+    scope: scope,
+    limit: limit,
+    offset: offset,
+  )).map((p) => p.posts);
+
+  /// KAN-955: [loadPage] plus [rawCount], the number of ranked ids the page
+  /// asked for. Some may be unfetchable, so `hasMore` is judged on rawCount.
+  Future<Result<({List<Post> posts, int rawCount}), Failure>> loadRankedPage({
+    required NearbyScope scope,
+    required int limit,
+    required int offset,
   }) async {
     if (offset == 0 || _asOf == null) {
       final now = _clock();
@@ -56,7 +68,9 @@ class NearbyFeedLoader {
     // The City is the boundary and nothing is cut: with `as_of` fixed, the full
     // set is read once per session and every page continues after the cursor.
     final city = scope.city?.trim();
-    if (city == null || city.isEmpty) return const Ok(<Post>[]);
+    if (city == null || city.isEmpty) {
+      return const Ok((posts: <Post>[], rawCount: 0));
+    }
     if (_candidates == null || _candidateCity != city) {
       try {
         _candidates = await _fetchCandidates(city: city, asOf: asOf);
@@ -74,12 +88,12 @@ class NearbyFeedLoader {
       config: config,
     );
     final page = afterNearbyCursor(ranked, _cursor).take(limit).toList();
-    if (page.isEmpty) return const Ok(<Post>[]);
+    if (page.isEmpty) return const Ok((posts: <Post>[], rawCount: 0));
 
     final result = await _postsByIds([for (final r in page) r.candidate.id]);
     return result.fold((err) => Err(err), (posts) {
       _cursor = page.last.cursor;
-      return Ok(posts);
+      return Ok((posts: posts, rawCount: page.length));
     });
   }
 }

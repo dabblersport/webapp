@@ -11,10 +11,7 @@ import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/social/post.dart';
-import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
-    show activePersonaProvider;
 import 'post_providers.dart';
 
 // =============================================================================
@@ -118,6 +115,8 @@ final class FeedData extends FeedState {
 // FEED NOTIFIER
 // =============================================================================
 
+typedef _Page = ({List<FeedItem> items, DateTime? cursor, int rawCount});
+
 /// Manages the home feed using the `get_home_feed` RPC with cursor pagination.
 ///
 /// On instantiation it:
@@ -126,15 +125,10 @@ final class FeedData extends FeedState {
 class FeedNotifier extends StateNotifier<FeedState> {
   /// [cache] / [accountId] (KAN-605): the first page is shown from the
   /// on-device cache at once, then [load] refreshes it in the background.
-  FeedNotifier(
-    this._repo,
-    this._db, {
-    this.activePersonaType,
-    OfflineCache? cache,
-    String? accountId,
-  }) : _cache = cache,
-       _accountId = accountId,
-       super(const FeedLoading()) {
+  FeedNotifier(this._repo, this._db, {OfflineCache? cache, String? accountId})
+    : _cache = cache,
+      _accountId = accountId,
+      super(const FeedLoading()) {
     _subscribeRealtime();
     _hydrate();
     load();
@@ -192,12 +186,12 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   final PostRepository _repo;
   final SupabaseClient _db;
-
-  /// KAN-593: active persona whose Following filters 'For you'.
-  final String? activePersonaType;
   RealtimeChannel? _channel;
 
   static const int _pageSize = 20;
+  // KAN-955: first page fills to about a screenful, at most 4 extra pages.
+  static const int _firstPageFill = 10;
+  static const int _firstPageWalkCap = 4;
   bool _channelReady = false;
 
   /// Bumped by every [load]; a next page that lands after a reload started
@@ -281,18 +275,8 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final result = await _repo.getPostsByIds([postId]);
     if (!mounted) return;
 
-    // KAN-593: a realtime insert into 'For you' obeys the Following filter.
-    final followed = await loadViewerFollowedSportIds(
-      _db,
-      personaType: activePersonaType,
-    );
-    if (!mounted) return;
-    result.fold((_) => null, (fetched) {
-      final posts = filterByFollowedSports(
-        fetched,
-        followed,
-        (Post p) => p.sportId,
-      );
+    // KAN-955: 'For you' shows every recent post; no followed-sports filter.
+    result.fold((_) => null, (posts) {
       if (posts.isEmpty) return;
       final data = state;
       if (data is! FeedData) return;
@@ -357,10 +341,12 @@ class FeedNotifier extends StateNotifier<FeedState> {
     try {
       final page = await _fetchPage(cursor: null).timeout(kRequestTimeout);
       if (!mounted || generation != _generation) return false;
+      final first = await _fillFirstPage(page, generation);
+      if (!mounted || generation != _generation) return false;
       final data = FeedData(
-        items: page.items,
-        hasMore: page.rawCount >= _pageSize,
-        cursor: page.cursor,
+        items: first.items,
+        hasMore: first.hasMore,
+        cursor: first.cursor,
         hasNewPosts: false,
       );
       state = data;
@@ -437,6 +423,34 @@ class FeedNotifier extends StateNotifier<FeedState> {
     }
   }
 
+  /// KAN-955: a full raw page can merge down to too few items to scroll, so
+  /// [loadMore] would never fire. Walk the cursor as [loadMore] does; a failed
+  /// extra page keeps what was read and the next scroll resumes.
+  Future<({List<FeedItem> items, DateTime? cursor, bool hasMore})>
+  _fillFirstPage(_Page page, int generation) async {
+    final items = [...page.items];
+    var cursor = page.cursor;
+    var hasMore = page.rawCount >= _pageSize;
+    for (
+      var walk = 0;
+      walk < _firstPageWalkCap && hasMore && items.length < _firstPageFill;
+      walk++
+    ) {
+      final _Page next;
+      try {
+        next = await _fetchPage(cursor: cursor).timeout(kRequestTimeout);
+      } catch (_) {
+        break;
+      }
+      if (!mounted || generation != _generation) break;
+      final seen = _itemIds(items);
+      items.addAll(next.items.where((i) => !seen.contains(_itemId(i))));
+      cursor = next.cursor;
+      hasMore = next.rawCount >= _pageSize;
+    }
+    return (items: items, cursor: cursor, hasMore: hasMore);
+  }
+
   void clearNewPostsBadge() {
     final data = state;
     if (data is FeedData && data.hasNewPosts) {
@@ -450,9 +464,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
   /// merging drops unsupported activity types or unfetchable posts. Pagination
   /// (`hasMore`) must be judged on rawCount — a full raw page can merge down to
   /// fewer visible items without meaning the feed is exhausted.
-  Future<({List<FeedItem> items, DateTime? cursor, int rawCount})> _fetchPage({
-    required DateTime? cursor,
-  }) async {
+  Future<_Page> _fetchPage({required DateTime? cursor}) async {
     final response = await _db.rpc(
       SupabaseConfig.getHomeFeedFn,
       params: {
@@ -495,18 +507,9 @@ class FeedNotifier extends StateNotifier<FeedState> {
     final postsById = <String, FeedPostItem>{};
     if (postIds.isNotEmpty) {
       final result = await _repo.getPostsByIds(postIds);
-      // KAN-593: 'For you' is a discovery feed — apply the Following filter
-      // here, not in getPostsByIds (which also serves direct links).
-      final followed = await loadViewerFollowedSportIds(
-        _db,
-        personaType: activePersonaType,
-      );
+      // KAN-955: 'For you' is unfiltered — every recent post shows.
       result.fold((_) => null, (posts) {
-        for (final p in filterByFollowedSports(
-          posts,
-          followed,
-          (Post p) => p.sportId,
-        )) {
+        for (final p in posts) {
           postsById[p.id] = FeedPostItem(p);
         }
       });
@@ -597,12 +600,9 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((
 ) {
   final repo = ref.watch(postRepositoryProvider);
   final db = Supabase.instance.client;
-  // KAN-593: rebuilt (and so reloaded) when the active persona switches.
-  final persona = ref.watch(activePersonaProvider)?.name;
   return FeedNotifier(
     repo,
     db,
-    activePersonaType: persona,
     cache: ref.watch(offlineCacheProvider),
     accountId: ref.watch(cacheAccountIdProvider),
   );

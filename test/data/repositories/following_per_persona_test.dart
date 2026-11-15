@@ -10,8 +10,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// KAN-593 fix 1 — Following is PER PROFILE (per persona). The filter uses the
-// ACTIVE persona's profiles.interests, never the oldest profile's.
+// KAN-593 fix 1 — followed sports are PER PROFILE (per persona). KAN-955: the
+// Following feed matches on the ACTIVE persona's profiles.interests, never the
+// oldest profile's. No interests means no sport match.
 
 const football = '11111111-1111-1111-1111-111111111111';
 const tennis = '22222222-2222-2222-2222-222222222222';
@@ -43,17 +44,15 @@ ActiveProfileInterestsFetch fakeFetch(
       .toList();
 };
 
-final posts = [
-  {'id': 'football-post', 'sport_id': football},
-  {'id': 'tennis-post', 'sport_id': tennis},
-  {'id': 'untagged-post', 'sport_id': null},
+/// Posts the Following feed would match on sport for [followed] (KAN-955).
+List<String> feedFor(Set<String>? followed) => [
+  for (final p in const [
+    ('football-post', football),
+    ('tennis-post', tennis),
+    ('untagged-post', null),
+  ])
+    if (p.$2 != null && (followed?.contains(p.$2) ?? false)) p.$1,
 ];
-
-List<String> feedFor(Set<String>? followed) => filterByFollowedSports(
-  posts,
-  followed,
-  (r) => r['sport_id'],
-).map((r) => r['id'] as String).toList();
 
 void main() {
   group('loader resolves the ACTIVE persona', () {
@@ -64,7 +63,7 @@ void main() {
         personaType: 'player',
         fetch: fakeFetch(profiles(), q),
       );
-      expect(feedFor(f), ['football-post', 'untagged-post']);
+      expect(feedFor(f), ['football-post']);
       expect(q, ['player']);
     });
 
@@ -75,11 +74,11 @@ void main() {
         personaType: 'organiser',
         fetch: fakeFetch(profiles(), q),
       );
-      expect(feedFor(f), ['tennis-post', 'untagged-post']);
+      expect(feedFor(f), ['tennis-post']);
       expect(q, ['organiser']);
     });
 
-    test('active persona unresolved -> unfiltered, no lookup', () async {
+    test('active persona unresolved -> no sport match, no lookup', () async {
       final q = <String>[];
       final f = await loadFollowedSportIdsFor(
         userId: 'u1',
@@ -87,11 +86,11 @@ void main() {
         fetch: fakeFetch(profiles(), q),
       );
       expect(f, isNull);
-      expect(feedFor(f), hasLength(3));
+      expect(feedFor(f), isEmpty);
       expect(q, isEmpty, reason: 'never falls back to the oldest profile');
     });
 
-    test('no signed-in user -> unfiltered', () async {
+    test('no signed-in user -> no sport match', () async {
       final f = await loadFollowedSportIdsFor(
         userId: null,
         personaType: 'player',
@@ -102,18 +101,18 @@ void main() {
 
     for (final empty in <Object?>[null, const <String>[]]) {
       test('active persona interests $empty while other has some -> '
-          'unfiltered', () async {
+          'no sport match', () async {
         final f = await loadFollowedSportIdsFor(
           userId: 'u1',
           personaType: 'player',
           fetch: fakeFetch(profiles(aInterests: empty), []),
         );
         expect(f, isNull);
-        expect(feedFor(f), hasLength(3));
+        expect(feedFor(f), isEmpty);
       });
     }
 
-    test('lookup error -> unfiltered, never an empty feed', () async {
+    test('lookup error -> no sport match, never a crash', () async {
       final f = await loadFollowedSportIdsFor(
         userId: 'u1',
         personaType: 'player',
@@ -163,7 +162,7 @@ void main() {
       );
     });
 
-    test('repo, For you notifier and Nearby pass the active persona', () {
+    test('only the Following feed reads the active persona sports', () {
       final repo = File(
         'lib/data/repositories/post_repository_impl.dart',
       ).readAsStringSync();
@@ -171,18 +170,13 @@ void main() {
         RegExp(
           r'loadViewerFollowedSportIds\(\s*_db,\s*personaType: activePersonaType',
         ).allMatches(repo).length,
-        3,
+        1,
+        reason: 'getFollowingFeed only (KAN-955)',
       );
       final notifier = File(
         'lib/features/social/providers/feed_notifier.dart',
       ).readAsStringSync();
-      expect(
-        RegExp(
-          r'loadViewerFollowedSportIds\(\s*_db,\s*personaType: activePersonaType',
-        ).allMatches(notifier).length,
-        2,
-      );
-      expect(notifier, contains('ref.watch(activePersonaProvider)'));
+      expect(notifier, isNot(contains('loadViewerFollowedSportIds')));
       final tab = File(
         'lib/features/social/providers/tab_feed_notifier.dart',
       ).readAsStringSync();

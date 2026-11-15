@@ -1,7 +1,6 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:dabbler/features/social/domain/nearby_ranking.dart';
 import 'package:dabbler/features/social/domain/posted_from.dart';
 
@@ -11,12 +10,11 @@ import 'package:dabbler/features/social/domain/posted_from.dart';
 /// range pages because PostgREST truncates one response. Coordinates
 /// are NOT required: a post without them stays a candidate and ranks by
 /// recency. A legacy post (`posted_from_city` NULL) belongs to Dubai.
-/// Same Following filter as the other discovery feeds (KAN-593).
+/// No followed-sports filter: only the Following tab uses one (KAN-955).
 class NearbyCandidateSource {
-  NearbyCandidateSource(this._db, {required this.personaType});
+  NearbyCandidateSource(this._db);
 
   final SupabaseClient _db;
-  final String? personaType;
 
   /// Rows per round trip. Below PostgREST's default response limit (1000), so a
   /// full page always means "maybe more" and a short page means "done".
@@ -30,10 +28,6 @@ class NearbyCandidateSource {
     // Never an unscoped query: without a City there is nothing to rank.
     if (cityName == null || cityName.isEmpty) return const [];
 
-    final followOr = followedSportsOrFilter(
-      await loadViewerFollowedSportIds(_db, personaType: personaType),
-    );
-
     var q = _db
         .from(SupabaseConfig.postsTable)
         .select('id, created_at, geo_lat, geo_lng')
@@ -45,7 +39,6 @@ class NearbyCandidateSource {
         // squad or link post never enters the candidate set (RLS stays on top).
         .eq('visibility', 'public')
         .lte('created_at', asOf.toUtc().toIso8601String());
-    if (followOr != null) q = q.or(followOr);
     // Same match as the City-only feed (KAN-588): case-insensitive, with the
     // pattern characters escaped.
     q = cityName.toLowerCase() == kLegacyPostedFromCity.toLowerCase()

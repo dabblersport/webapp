@@ -15,8 +15,6 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart'
     show supabaseServiceProvider;
-import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
-    show activePersonaProvider;
 import 'package:dabbler/features/social/data/nearby_candidate_source.dart';
 import 'package:dabbler/features/social/domain/nearby_feed_loader.dart';
 import 'package:dabbler/features/social/domain/nearby_ranking.dart';
@@ -101,8 +99,19 @@ final class TabFeedData extends TabFeedState {
 // GENERIC TAB FEED NOTIFIER
 // =============================================================================
 
-typedef _FeedFetcher =
+typedef TabFeedFetcher =
     Future<Result<List<Post>, Failure>> Function({
+      required int limit,
+      required int offset,
+    });
+
+/// KAN-955: one page and its raw size — the number of rows or ranked ids the
+/// page asked for, before unfetchable ones dropped out. `hasMore` is judged
+/// on [rawCount], never on how many posts came back.
+typedef TabFeedPage = ({List<Post> posts, int rawCount});
+
+typedef TabPageFetcher =
+    Future<Result<TabFeedPage, Failure>> Function({
       required int limit,
       required int offset,
     });
@@ -117,6 +126,24 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
   /// the first page is read from the on-device cache at once, and every
   /// successful first-page load is written back.
   TabFeedNotifier(
+    TabFeedFetcher fetcher, {
+    bool autoLoad = true,
+    OfflineCache? cache,
+    String? accountId,
+    String? cacheKey,
+  }) : this.ranked(
+         ({required limit, required offset}) async => (await fetcher(
+           limit: limit,
+           offset: offset,
+         )).map((posts) => (posts: posts, rawCount: posts.length)),
+         autoLoad: autoLoad,
+         cache: cache,
+         accountId: accountId,
+         cacheKey: cacheKey,
+       );
+
+  /// KAN-955: for a feed whose pages can lose rows client-side (Nearby).
+  TabFeedNotifier.ranked(
     this._fetcher, {
     bool autoLoad = true,
     OfflineCache? cache,
@@ -130,7 +157,7 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
     if (autoLoad) ensureLoaded();
   }
 
-  final _FeedFetcher _fetcher;
+  final TabPageFetcher _fetcher;
   final OfflineCache? _cache;
   final String? _accountId;
   final String? _cacheKey;
@@ -160,6 +187,9 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
   }
 
   static const int _pageSize = 20;
+  // KAN-955: first page fills to about a screenful, at most 4 extra pages.
+  static const int _firstPageFill = 10;
+  static const int _firstPageWalkCap = 4;
   int _activePage = 0;
 
   /// Bumped by every [load]; a next page that lands after a reload started
@@ -184,37 +214,60 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
     if (state.posts.isEmpty) state = const TabFeedLoading();
 
     final started = DateTime.now();
-    final result = await _fetcher(limit: _pageSize, offset: 0).timeout(
-      kRequestTimeout,
-      onTimeout: () => Err<List<Post>, Failure>(const TimeoutFailure()),
-    );
+    final result = await _page(0);
     if (!mounted || generation != _generation) return false;
 
-    return result.fold(
-      (err) {
-        final current = state;
-        if (current is TabFeedData && current.posts.isNotEmpty) {
-          state = current.copyWith(loadingMore: false);
-        } else {
-          state = TabFeedFailure(err.message);
-        }
-        return false;
-      },
-      (posts) {
-        _activePage = 0;
-        _networkLoaded = true;
-        state = TabFeedData(posts: posts, hasMore: posts.length >= _pageSize);
-        if (_cacheOn) {
-          _cache!.write(_accountId!, _cacheKey!, [
-            for (final p in posts) p.toJson(),
-          ], requestStartedAt: started);
-        }
-        return true;
-      },
-    );
+    if (result case Err(error: final err)) {
+      final current = state;
+      if (current is TabFeedData && current.posts.isNotEmpty) {
+        state = current.copyWith(loadingMore: false);
+      } else {
+        state = TabFeedFailure(err.message);
+      }
+      return false;
+    }
+    final first = (result as Ok<TabFeedPage, Failure>).value;
+
+    // KAN-955: a full raw page can lose rows (unfetchable ids) and leave a
+    // list too short to scroll, so [loadMore] would never fire. Keep reading
+    // pages until about a screenful is there, the feed ends, or the cap.
+    final posts = [...first.posts];
+    var page = 0;
+    var hasMore = first.rawCount >= _pageSize;
+    for (
+      var walk = 0;
+      walk < _firstPageWalkCap && hasMore && posts.length < _firstPageFill;
+      walk++
+    ) {
+      final next = await _page(page + 1);
+      if (!mounted || generation != _generation) return false;
+      if (next is! Ok<TabFeedPage, Failure>) break; // the next scroll resumes
+      page++;
+      final seen = posts.map((p) => p.id).toSet();
+      posts.addAll(next.value.posts.where((p) => !seen.contains(p.id)));
+      hasMore = next.value.rawCount >= _pageSize;
+    }
+
+    _activePage = page;
+    _networkLoaded = true;
+    state = TabFeedData(posts: posts, hasMore: hasMore);
+    if (_cacheOn) {
+      _cache!.write(_accountId!, _cacheKey!, [
+        for (final p in posts) p.toJson(),
+      ], requestStartedAt: started);
+    }
+    return true;
   }
 
-  /// Appends the next page.
+  Future<Result<TabFeedPage, Failure>> _page(int index) =>
+      _fetcher(limit: _pageSize, offset: index * _pageSize).timeout(
+        kRequestTimeout,
+        onTimeout: () => Err<TabFeedPage, Failure>(const TimeoutFailure()),
+      );
+
+  /// Appends the next page. A raw page can merge down to nothing new while
+  /// more exist (KAN-955); keep walking until something new arrives, the
+  /// feed ends, or the cap is hit.
   Future<void> loadMore() async {
     final data = state;
     if (data is! TabFeedData || data.loadingMore || !data.hasMore || !mounted) {
@@ -223,38 +276,42 @@ class TabFeedNotifier extends StateNotifier<TabFeedState> {
 
     final generation = _generation;
     state = data.copyWith(loadingMore: true, loadMoreFailed: false);
-    final nextPage = _activePage + 1;
 
-    final result = await _fetcher(
-      limit: _pageSize,
-      offset: nextPage * _pageSize,
-    );
-    if (!mounted || generation != _generation) return;
+    for (var attempt = 0; attempt < 5; attempt++) {
+      final nextPage = _activePage + 1;
+      final result = await _fetcher(
+        limit: _pageSize,
+        offset: nextPage * _pageSize,
+      );
+      if (!mounted || generation != _generation) return;
 
+      final current = state;
+      if (current is! TabFeedData) return;
+
+      // KAN-606: a failed next page keeps the posts and ends the list in a
+      // retry row; [loadMore] is the retry.
+      if (result is! Ok<TabFeedPage, Failure>) {
+        state = current.copyWith(loadingMore: false, loadMoreFailed: true);
+        return;
+      }
+      _activePage = nextPage;
+      final rawHasMore = result.value.rawCount >= _pageSize;
+      final existingIds = current.posts.map((p) => p.id).toSet();
+      final deduped = result.value.posts
+          .where((p) => !existingIds.contains(p.id))
+          .toList();
+      if (deduped.isEmpty && rawHasMore) continue;
+      state = current.copyWith(
+        posts: [...current.posts, ...deduped],
+        loadingMore: false,
+        hasMore: rawHasMore,
+      );
+      return;
+    }
+
+    // Cap reached: stop the spinner, keep hasMore so a later scroll resumes.
     final current = state;
-    if (current is! TabFeedData) return;
-
-    // KAN-606: a failed next page keeps the posts and ends the list in a
-    // retry row; [loadMore] is the retry.
-    result.fold(
-      (_) => state = current.copyWith(loadingMore: false, loadMoreFailed: true),
-      (newPosts) {
-        if (newPosts.isEmpty) {
-          state = current.copyWith(hasMore: false, loadingMore: false);
-          return;
-        }
-        _activePage = nextPage;
-        final existingIds = current.posts.map((p) => p.id).toSet();
-        final deduped = newPosts
-            .where((p) => !existingIds.contains(p.id))
-            .toList();
-        state = current.copyWith(
-          posts: [...current.posts, ...deduped],
-          loadingMore: false,
-          hasMore: newPosts.length >= _pageSize && deduped.isNotEmpty,
-        );
-      },
-    );
+    if (current is TabFeedData) state = current.copyWith(loadingMore: false);
   }
 }
 
@@ -286,7 +343,6 @@ final followingFeedProvider =
 final nearbyCandidateFetchProvider = Provider<NearbyCandidateFetch>((ref) {
   final source = NearbyCandidateSource(
     ref.watch(supabaseServiceProvider).client,
-    personaType: ref.watch(activePersonaProvider)?.name,
   );
   return source.fetch;
 });
@@ -349,14 +405,14 @@ TabFeedNotifier _buildNearbyNotifier(
   OfflineCache? cache,
   String? accountId,
 }) {
-  return TabFeedNotifier(
+  return TabFeedNotifier.ranked(
     ({required limit, required offset}) async {
       // The selected City is the boundary. With none (no app location, GPS
       // only, or denied) there is no query: the home header opens the manual
       // 'Set location' drawer, and the OS permission is never asked here.
       final scope = appScope ?? const NearbyScope();
 
-      return loader.loadPage(scope: scope, limit: limit, offset: offset);
+      return loader.loadRankedPage(scope: scope, limit: limit, offset: offset);
       // With app-level coordinates the initial fetch can't trigger a GPS
       // permission prompt, so load eagerly — this also covers notifier
       // recreation after a location change while the Nearby tab is visible.
