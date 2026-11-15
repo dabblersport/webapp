@@ -224,6 +224,18 @@ abstract class AppLocalizations {
   /// **'Share moments, dabs, and kick-ins with your community.'**
   String get feed_empty_no_posts_hint;
 
+  /// KAN-955 Home Following tab empty state title; Following matches followed people and followed sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing from who and what you follow yet'**
+  String get feed_following_empty_title;
+
+  /// KAN-955 Home Following tab empty state hint.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow players or sports to see their posts here.'**
+  String get feed_following_empty_hint;
+
   /// No description provided for @feed_could_not_load.
   ///
   /// In en, this message translates to:
@@ -235,6 +247,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get feed_retry;
+
+  /// KAN-956 Subtle centred row at the end of a Home feed list once there are no more pages.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get feed_all_caught_up;
 
   /// No description provided for @news_empty_title.
   ///

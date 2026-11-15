@@ -8,6 +8,7 @@ import 'package:dabbler/features/location/presentation/set_location_when_denied.
 import 'package:dabbler/data/models/feed/feed_item.dart';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/rendering.dart' show RenderSliver;
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 
@@ -21,6 +22,7 @@ import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_feed_scroll.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
@@ -64,22 +66,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   int _activeIndex = 0;
   static const List<FeedTab> _tabs = FeedTab.values;
 
-  // One scroll controller per tab for independent pagination.
-  late final List<ScrollController> _scrollControllers;
+  // KAN-956: the one feed scroll area (`feed-scroll`) holds the upcoming
+  // strip, the tab rail and the active tab's list, so one controller drives
+  // load-more for whichever tab is showing and the header's fold.
+  final ScrollController _scrollController = ScrollController();
+
+  /// Whether the header is unfolded; driven by the feed's scroll direction.
+  final ValueNotifier<bool> _headerShown = ValueNotifier<bool>(true);
+
+  /// Finds the tab rail's sliver, whose scroll offset tab switches return to.
+  final GlobalKey _railKey = GlobalKey();
 
   FeedTab get _activeTab => _tabs[_activeIndex];
 
   @override
   void initState() {
     super.initState();
-    _scrollControllers = List.generate(_tabs.length, (_) => ScrollController());
-
-    // Attach pagination listeners to each scroll controller.
-    for (var i = 0; i < _tabs.length; i++) {
-      final tab = _tabs[i];
-      final sc = _scrollControllers[i];
-      sc.addListener(() => _onScroll(tab, sc));
-    }
+    _scrollController.addListener(_onFeedScroll);
 
     _loadUserProfile();
     _checkNotificationPermission();
@@ -101,9 +104,8 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   @override
   void dispose() {
-    for (final sc in _scrollControllers) {
-      sc.dispose();
-    }
+    _scrollController.dispose();
+    _headerShown.dispose();
     AppRouter.routeObserver.unsubscribe(this);
     super.dispose();
   }
@@ -253,6 +255,32 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     }
   }
 
+  void _onFeedScroll() {
+    _onScroll(_activeTab, _scrollController);
+    final shown = homeHeaderShownFor(_scrollController.position);
+    if (shown != null) _headerShown.value = shown;
+  }
+
+  /// A tab on the rail was tapped. The rail scrolls with the feed, so it is on
+  /// screen: the new tab's list starts right under it (the rail stays where
+  /// the finger left it, or comes to the top if it was partly scrolled off),
+  /// and the header shows.
+  void _onTabSelected(String id) {
+    final index = _tabs.indexWhere((t) => t.name == id);
+    if (index < 0 || index == _activeIndex) return;
+    final rail = _railKey.currentContext?.findRenderObject();
+    final railTop = rail is RenderSliver
+        ? rail.constraints.precedingScrollExtent
+        : null;
+    _onTabChanged(index);
+    _headerShown.value = true;
+    if (railTop != null &&
+        _scrollController.hasClients &&
+        _scrollController.offset > railTop) {
+      _scrollController.jumpTo(railTop);
+    }
+  }
+
   void _onScroll(FeedTab tab, ScrollController sc) {
     if (!sc.hasClients) return;
     if (sc.position.extentAfter > 500) return;
@@ -355,17 +383,23 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     final l = AppLocalizations.of(context);
     final forYouState = ref.watch(feedNotifierProvider);
 
+    // KAN-956 (`Home Feed.dc.html`): the status bar and the header stay above
+    // one scroll area; the header folds away on a scroll down and comes back
+    // on a scroll up or at the top. The bottom bar floats over the feed from
+    // the shell (MainNavigationScreen).
     return DabblerPage(
-      topBar: _buildHeader(),
+      topBar: ValueListenableBuilder<bool>(
+        valueListenable: _headerShown,
+        builder: (_, shown, header) =>
+            HomeCollapsingHeader(shown: shown, child: header!),
+        child: _buildHeader(),
+      ),
       body: Column(
         children: [
-          // KAN-610: sits under the header, above reminders and tabs, in
-          // normal flow; collapses to nothing when online.
+          // KAN-610: sits under the header, in normal flow; collapses to
+          // nothing when online.
           const ConnectionBanner(),
-          // KAN-706: on-bench strip with Manage; nothing when not benched.
-          const BenchHomeStrip(),
-          const HomeUpcoming(),
-          if (forYouState.hasNewPosts && _activeIndex == 0)
+          if (forYouState.hasNewPosts && _activeTab == FeedTab.forYou)
             Center(
               child: DabblerButton(
                 label: 'New posts',
@@ -373,7 +407,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                 size: DabblerButtonSize.small,
                 onPressed: () {
                   ref.read(feedNotifierProvider.notifier).clearNewPostsBadge();
-                  _scrollControllers[0].animateTo(
+                  _scrollController.animateTo(
                     0,
                     duration: DabblerMotion.durationOf(
                       context,
@@ -385,58 +419,39 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               ),
             ),
           Expanded(
-            // The rows carry no gutter of their own; the tab rail keeps its
-            // hairline edge to edge and starts its tabs at the gutter.
-            child: DabblerTabPager(
-              variant: DabblerTabsVariant.feed,
-              scrollable: true,
-              tabsPadding: DabblerInsets.feedScreen,
-              onChanged: _onTabChanged,
-              items: <DabblerTabItem>[
-                for (final tab in _tabs)
-                  DabblerTabItem(id: tab.name, label: tab.label(l)),
-              ],
-              pages: <Widget>[
-                _ForYouTabBody(
-                  state: forYouState,
-                  scrollController: _scrollControllers[0],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(feedNotifierProvider.notifier).load(),
-                  onLoadMore: () =>
-                      ref.read(feedNotifierProvider.notifier).loadMore(),
-                  onClearBadge: () => ref
-                      .read(feedNotifierProvider.notifier)
-                      .clearNewPostsBadge(),
-                ),
-                _FollowingFeedTabBody(
-                  scrollController: _scrollControllers[1],
-                  onRefresh: _handleRefresh,
-                  onRetry: () {
-                    ref.read(followingFeedProvider.notifier).load();
-                    ref.read(followingActivitiesProvider.notifier).load();
-                  },
-                ),
-                _NearbyFeedTabBody(
-                  state: ref.watch(nearbyFeedProvider),
-                  scrollController: _scrollControllers[2],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
-                  onLoadMore: () =>
-                      ref.read(nearbyFeedProvider.notifier).loadMore(),
-                ),
-                _ActiveFeedTabBody(
-                  state: ref.watch(activeFeedProvider),
-                  scrollController: _scrollControllers[3],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(activeFeedProvider.notifier).load(),
-                ),
-                _NewsFeedTabBody(
-                  state: ref.watch(newsTabFeedProvider),
-                  scrollController: _scrollControllers[4],
-                  onRefresh: _handleRefresh,
-                  onRetry: () => ref.read(newsTabFeedProvider.notifier).load(),
-                ),
-              ].map(_gutter).toList(),
+            child: DabblerRefresh(
+              onRefresh: _handleRefresh,
+              child: CustomScrollView(
+                controller: _scrollController,
+                physics: const AlwaysScrollableScrollPhysics(),
+                slivers: <Widget>[
+                  // KAN-706: on-bench strip with Manage; nothing when not
+                  // benched.
+                  const SliverToBoxAdapter(child: BenchHomeStrip()),
+                  const SliverToBoxAdapter(child: HomeUpcoming()),
+                  // Not sticky: the rail scrolls away with the feed. It keeps
+                  // its hairline edge to edge and starts its tabs at the
+                  // gutter.
+                  SliverToBoxAdapter(
+                    key: _railKey,
+                    child: DabblerTabs(
+                      variant: DabblerTabsVariant.feed,
+                      scrollable: true,
+                      padding: DabblerInsets.feedScreen,
+                      value: _activeTab.name,
+                      onChanged: _onTabSelected,
+                      items: <DabblerTabItem>[
+                        for (final tab in _tabs)
+                          DabblerTabItem(id: tab.name, label: tab.label(l)),
+                      ],
+                    ),
+                  ),
+                  SliverPadding(
+                    padding: _listPadding,
+                    sliver: _buildActiveList(forYouState),
+                  ),
+                ],
+              ),
             ),
           ),
         ],
@@ -444,10 +459,45 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
     );
   }
 
-  /// The feed pages carry the Home gutter; the tab rail above keeps its hairline
-  /// edge to edge.
-  static Widget _gutter(Widget page) =>
-      Padding(padding: DabblerInsets.feedScreen, child: page);
+  /// The rows carry the Home gutter and end clear of the floating bar.
+  static final EdgeInsets _listPadding = DabblerInsets.feedScreen.copyWith(
+    bottom: DabblerInsets.feedBottom.bottom,
+  );
+
+  /// The showing tab's list, as a sliver of the one feed scroll area.
+  Widget _buildActiveList(FeedState forYouState) {
+    switch (_activeTab) {
+      case FeedTab.forYou:
+        return _ForYouTabBody(
+          state: forYouState,
+          onRetry: () => ref.read(feedNotifierProvider.notifier).load(),
+          onLoadMore: () => ref.read(feedNotifierProvider.notifier).loadMore(),
+        );
+      case FeedTab.following:
+        return _FollowingFeedTabBody(
+          onRetry: () {
+            ref.read(followingFeedProvider.notifier).load();
+            ref.read(followingActivitiesProvider.notifier).load();
+          },
+        );
+      case FeedTab.nearby:
+        return _NearbyFeedTabBody(
+          state: ref.watch(nearbyFeedProvider),
+          onRetry: () => ref.read(nearbyFeedProvider.notifier).load(),
+          onLoadMore: () => ref.read(nearbyFeedProvider.notifier).loadMore(),
+        );
+      case FeedTab.active:
+        return _ActiveFeedTabBody(
+          state: ref.watch(activeFeedProvider),
+          onRetry: () => ref.read(activeFeedProvider.notifier).load(),
+        );
+      case FeedTab.news:
+        return _NewsFeedTabBody(
+          state: ref.watch(newsTabFeedProvider),
+          onRetry: () => ref.read(newsTabFeedProvider.notifier).load(),
+        );
+    }
+  }
 } // end _HomeScreenState
 
 // ────────────────────────────────────────────────────────────────────────────
@@ -456,21 +506,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 class _ForYouTabBody extends ConsumerWidget {
   const _ForYouTabBody({
     required this.state,
-    required this.scrollController,
-    required this.onRefresh,
     required this.onRetry,
     required this.onLoadMore,
-    required this.onClearBadge,
   });
 
   final FeedState state;
-  final ScrollController scrollController;
-  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
 
   /// Retries the next page after a failed one (KAN-606).
   final VoidCallback onLoadMore;
-  final VoidCallback onClearBadge;
 
   Future<void> _confirmUnsubscribe(BuildContext context, WidgetRef ref) async {
     final confirmed = await showAppSheet<bool>(
@@ -523,40 +567,31 @@ class _ForYouTabBody extends ConsumerWidget {
         feedItems.length +
         (state.isLoadingMore || state.loadMoreFailed ? 1 : 0);
 
-    return DabblerRefresh(
-      onRefresh: onRefresh,
-      child: ListView.separated(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.feedBottom,
-        itemCount: itemCount,
-        separatorBuilder: (_, index) => const DabblerDivider(),
-        itemBuilder: (_, index) {
-          if (index == feedItems.length) {
-            if (state.loadMoreFailed) {
-              return _LoadMoreFailedRow(onRetry: onLoadMore);
-            }
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
-              child: Center(child: DabblerSpinner()),
-            );
+    return SliverList.separated(
+      itemCount: itemCount,
+      separatorBuilder: (_, index) => const DabblerDivider(),
+      itemBuilder: (_, index) {
+        if (index == feedItems.length) {
+          if (state.loadMoreFailed) {
+            return _LoadMoreFailedRow(onRetry: onLoadMore);
           }
-          final item = feedItems[index];
-          if (item is FeedPostItem) {
-            return HomePostRow.resolve(
-              item.post,
-              metrics: DabblerFeedMetrics.drawn,
-            );
-          }
-          if (item is FeedNewsItem) {
-            return HomeNewsCard(
-              item: item,
-              onDismiss: () => _confirmUnsubscribe(context, ref),
-            );
-          }
-          return const SizedBox.shrink();
-        },
-      ),
+          return const _LoadingMoreRow();
+        }
+        final item = feedItems[index];
+        if (item is FeedPostItem) {
+          return HomePostRow.resolve(
+            item.post,
+            metrics: DabblerFeedMetrics.drawn,
+          );
+        }
+        if (item is FeedNewsItem) {
+          return HomeNewsCard(
+            item: item,
+            onDismiss: () => _confirmUnsubscribe(context, ref),
+          );
+        }
+        return const SizedBox.shrink();
+      },
     );
   }
 }
@@ -620,14 +655,8 @@ class _NewsUnsubscribeSheet extends StatelessWidget {
 }
 
 class _FollowingFeedTabBody extends ConsumerWidget {
-  const _FollowingFeedTabBody({
-    required this.scrollController,
-    required this.onRefresh,
-    required this.onRetry,
-  });
+  const _FollowingFeedTabBody({required this.onRetry});
 
-  final ScrollController scrollController;
-  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
 
   @override
@@ -650,10 +679,11 @@ class _FollowingFeedTabBody extends ConsumerWidget {
       if (postState.error != null) {
         return _ErrorView(message: postState.error!, onRetry: onRetry);
       }
-      return const _EmptyView(
+      final l = AppLocalizations.of(context);
+      return _EmptyView(
         iconName: 'document-text',
-        message: 'No posts from people you follow yet.',
-        hint: 'Follow more people to see their posts here.',
+        message: l.feed_following_empty_title,
+        hint: l.feed_following_empty_hint,
       );
     }
 
@@ -661,39 +691,30 @@ class _FollowingFeedTabBody extends ConsumerWidget {
     final loadMoreFailed = postState.loadMoreFailed;
     final itemCount = merged.length + (isLoadingMore || loadMoreFailed ? 1 : 0);
 
-    return DabblerRefresh(
-      onRefresh: onRefresh,
-      child: ListView.separated(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.feedBottom,
-        itemCount: itemCount,
-        separatorBuilder: (_, __) => const DabblerDivider(),
-        itemBuilder: (_, index) {
-          if (index == merged.length) {
-            if (loadMoreFailed) {
-              return _LoadMoreFailedRow(
-                onRetry: () =>
-                    ref.read(followingFeedProvider.notifier).loadMore(),
-              );
-            }
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
-              child: Center(child: DabblerSpinner()),
+    return SliverList.separated(
+      itemCount: itemCount,
+      separatorBuilder: (_, __) => const DabblerDivider(),
+      itemBuilder: (_, index) {
+        if (index == merged.length) {
+          if (loadMoreFailed) {
+            return _LoadMoreFailedRow(
+              onRetry: () =>
+                  ref.read(followingFeedProvider.notifier).loadMore(),
             );
           }
-          final entry = merged[index];
-          return switch (entry) {
-            _ActivityEntry(:final activity) => HomeActivityRow(
-              activity: activity,
-            ),
-            _PostEntry(:final post) => HomePostRow.resolve(
-              post,
-              metrics: DabblerFeedMetrics.drawn,
-            ),
-          };
-        },
-      ),
+          return const _LoadingMoreRow();
+        }
+        final entry = merged[index];
+        return switch (entry) {
+          _ActivityEntry(:final activity) => HomeActivityRow(
+            activity: activity,
+          ),
+          _PostEntry(:final post) => HomePostRow.resolve(
+            post,
+            metrics: DabblerFeedMetrics.drawn,
+          ),
+        };
+      },
     );
   }
 }
@@ -723,16 +744,9 @@ final class _ActivityEntry extends _MergedEntry {
 // Active feed tab — event-type-routed cards
 // ────────────────────────────────────────────────────────────────────────────
 class _ActiveFeedTabBody extends StatelessWidget {
-  const _ActiveFeedTabBody({
-    required this.state,
-    required this.scrollController,
-    required this.onRefresh,
-    required this.onRetry,
-  });
+  const _ActiveFeedTabBody({required this.state, required this.onRetry});
 
   final ActiveFeedState state;
-  final ScrollController scrollController;
-  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
 
   @override
@@ -754,31 +768,28 @@ class _ActiveFeedTabBody extends StatelessWidget {
     }
 
     final events = state.events;
-    final itemCount = events.length + (state.isLoadingMore ? 1 : 0);
+    final itemCount =
+        events.length +
+        (state.isLoadingMore ||
+                _caughtUp(state.hasMore, state.isLoadingMore, events)
+            ? 1
+            : 0);
 
-    return DabblerRefresh(
-      onRefresh: onRefresh,
-      child: ListView.separated(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.feedBottom,
-        itemCount: itemCount,
-        separatorBuilder: (_, index) {
-          if (index < events.length && events[index] is PostCreatedEvent) {
-            return const DabblerDivider();
-          }
-          return const SizedBox.shrink();
-        },
-        itemBuilder: (_, index) {
-          if (index == events.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
-              child: Center(child: DabblerSpinner()),
-            );
-          }
-          return ActiveEventCard(event: events[index]);
-        },
-      ),
+    return SliverList.separated(
+      itemCount: itemCount,
+      separatorBuilder: (_, index) {
+        if (index < events.length && events[index] is PostCreatedEvent) {
+          return const DabblerDivider();
+        }
+        return const SizedBox.shrink();
+      },
+      itemBuilder: (_, index) {
+        if (index == events.length) {
+          if (!state.isLoadingMore) return const _CaughtUpRow();
+          return const _LoadingMoreRow();
+        }
+        return ActiveEventCard(event: events[index]);
+      },
     );
   }
 }
@@ -789,15 +800,11 @@ class _ActiveFeedTabBody extends StatelessWidget {
 class _NearbyFeedTabBody extends ConsumerWidget {
   const _NearbyFeedTabBody({
     required this.state,
-    required this.scrollController,
-    required this.onRefresh,
     required this.onRetry,
     required this.onLoadMore,
   });
 
   final TabFeedState state;
-  final ScrollController scrollController;
-  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
 
   /// Retries the next page after a failed one (KAN-606).
@@ -830,31 +837,22 @@ class _NearbyFeedTabBody extends ConsumerWidget {
     final itemCount =
         posts.length + (state.isLoadingMore || state.loadMoreFailed ? 1 : 0);
 
-    return DabblerRefresh(
-      onRefresh: onRefresh,
-      child: ListView.separated(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.feedBottom,
-        itemCount: itemCount,
-        separatorBuilder: (_, __) => const DabblerDivider(),
-        itemBuilder: (_, index) {
-          if (index == posts.length) {
-            if (state.loadMoreFailed) {
-              return _LoadMoreFailedRow(onRetry: onLoadMore);
-            }
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
-              child: Center(child: DabblerSpinner()),
-            );
+    return SliverList.separated(
+      itemCount: itemCount,
+      separatorBuilder: (_, __) => const DabblerDivider(),
+      itemBuilder: (_, index) {
+        if (index == posts.length) {
+          if (state.loadMoreFailed) {
+            return _LoadMoreFailedRow(onRetry: onLoadMore);
           }
-          return HomePostRow.resolve(
-            posts[index],
-            showNearbyChipInHeader: true,
-            metrics: DabblerFeedMetrics.drawn,
-          );
-        },
-      ),
+          return const _LoadingMoreRow();
+        }
+        return HomePostRow.resolve(
+          posts[index],
+          showNearbyChipInHeader: true,
+          metrics: DabblerFeedMetrics.drawn,
+        );
+      },
     );
   }
 }
@@ -875,10 +873,13 @@ class _EmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space10),
-        child: DabblerEmptyState(icon: iconName, title: message, text: hint),
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(DabblerSpacing.space10),
+          child: DabblerEmptyState(icon: iconName, title: message, text: hint),
+        ),
       ),
     );
   }
@@ -892,15 +893,18 @@ class _ChooseCityView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space10),
-        child: DabblerEmptyState(
-          icon: 'location',
-          title: l.listing_choose_city_title,
-          action: DabblerButton(
-            label: l.listing_select_city,
-            onPressed: () => showCityRequiredSheet(context),
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(DabblerSpacing.space10),
+          child: DabblerEmptyState(
+            icon: 'location',
+            title: l.listing_choose_city_title,
+            action: DabblerButton(
+              label: l.listing_select_city,
+              onPressed: () => showCityRequiredSheet(context),
+            ),
           ),
         ),
       ),
@@ -940,15 +944,18 @@ class _ErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(DabblerSpacing.space8),
-        child: DabblerEmptyState(
-          title: message,
-          action: DabblerButton(
-            label: AppLocalizations.of(context).feed_retry,
-            tone: DabblerButtonTone.secondary,
-            onPressed: onRetry,
+    return SliverFillRemaining(
+      hasScrollBody: false,
+      child: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(DabblerSpacing.space8),
+          child: DabblerEmptyState(
+            title: message,
+            action: DabblerButton(
+              label: AppLocalizations.of(context).feed_retry,
+              tone: DabblerButtonTone.secondary,
+              onPressed: onRetry,
+            ),
           ),
         ),
       ),
@@ -990,12 +997,49 @@ class _FeedSkeletonList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListView.separated(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
+    return SliverList.separated(
       itemCount: 6,
       separatorBuilder: (_, __) => const DabblerDivider(),
       itemBuilder: (_, __) => const _PostCardSkeleton(),
+    );
+  }
+}
+
+/// KAN-956: whether the Active list ends in "You're all caught up" — it has
+/// rows and no page is left to load. The frame draws the row on the Active
+/// tab only (`Home Feed.dc.html:434`, inside `isActive` / `actLoaded`); the
+/// other tabs end at their last row, 120 above the frame end.
+bool _caughtUp(bool hasMore, bool isLoadingMore, List<Object?> rows) =>
+    !hasMore && !isLoadingMore && rows.isNotEmpty;
+
+/// KAN-956: the end of a list with nothing left to load (`Home Feed.dc.html`,
+/// `padding:12px 0;text-align:center;font-size:12px;color:var(--subtle)`).
+class _CaughtUpRow extends StatelessWidget {
+  const _CaughtUpRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space4),
+      child: DabblerText(
+        AppLocalizations.of(context).feed_all_caught_up,
+        textAlign: TextAlign.center,
+        style: DabblerType.caption1,
+        tone: DabblerTextTone.tertiary,
+      ),
+    );
+  }
+}
+
+/// The spinner row at the end of a list while its next page loads.
+class _LoadingMoreRow extends StatelessWidget {
+  const _LoadingMoreRow();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
+      child: Center(child: DabblerSpinner()),
     );
   }
 }
@@ -1004,16 +1048,9 @@ class _FeedSkeletonList extends StatelessWidget {
 // News feed tab — renders NewsCard widgets from published_news
 // ────────────────────────────────────────────────────────────────────────────
 class _NewsFeedTabBody extends ConsumerWidget {
-  const _NewsFeedTabBody({
-    required this.state,
-    required this.scrollController,
-    required this.onRefresh,
-    required this.onRetry,
-  });
+  const _NewsFeedTabBody({required this.state, required this.onRetry});
 
   final NewsTabState state;
-  final ScrollController scrollController;
-  final Future<void> Function() onRefresh;
   final VoidCallback onRetry;
 
   @override
@@ -1042,42 +1079,31 @@ class _NewsFeedTabBody extends ConsumerWidget {
     final headerCount = isUnsubscribed ? 2 : 1;
     final itemCount = filtered.length + (state.isLoadingMore ? 1 : 0);
 
-    return DabblerRefresh(
-      onRefresh: onRefresh,
-      child: ListView.builder(
-        controller: scrollController,
-        physics: const AlwaysScrollableScrollPhysics(),
-        padding: DabblerInsets.feedBottom,
-        itemCount: itemCount + headerCount,
-        itemBuilder: (_, index) {
-          if (index == 0) return _NewsFilterChips(state: state);
-          if (isUnsubscribed && index == 1) {
-            return _NewsResubscribeBanner(
-              onResubscribe: () async {
-                await ref.read(resubscribeNewsProvider)();
-                if (context.mounted) {
-                  DabblerToastProvider.of(context).show(
-                    DabblerToastSpec(
-                      message: AppLocalizations.of(
-                        context,
-                      ).news_resubscribed_snack,
-                      duration: DabblerMotion.toastLong,
-                    ),
-                  );
-                }
-              },
-            );
-          }
-          final i = index - headerCount;
-          if (i == filtered.length) {
-            return const Padding(
-              padding: EdgeInsets.symmetric(vertical: DabblerSpacing.space5),
-              child: Center(child: DabblerSpinner()),
-            );
-          }
-          return HomeNewsCard(item: filtered[i]);
-        },
-      ),
+    return SliverList.builder(
+      itemCount: itemCount + headerCount,
+      itemBuilder: (_, index) {
+        if (index == 0) return _NewsFilterChips(state: state);
+        if (isUnsubscribed && index == 1) {
+          return _NewsResubscribeBanner(
+            onResubscribe: () async {
+              await ref.read(resubscribeNewsProvider)();
+              if (context.mounted) {
+                DabblerToastProvider.of(context).show(
+                  DabblerToastSpec(
+                    message: AppLocalizations.of(
+                      context,
+                    ).news_resubscribed_snack,
+                    duration: DabblerMotion.toastLong,
+                  ),
+                );
+              }
+            },
+          );
+        }
+        final i = index - headerCount;
+        if (i == filtered.length) return const _LoadingMoreRow();
+        return HomeNewsCard(item: filtered[i]);
+      },
     );
   }
 }

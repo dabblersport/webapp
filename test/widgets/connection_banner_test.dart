@@ -238,8 +238,14 @@ void main() {
       'lib/features/home/presentation/screens/home_screen.dart',
     ).readAsStringSync();
     final int banner = src.indexOf('const ConnectionBanner()');
+    // KAN-956: the reminders and the tab rail now live in the one feed
+    // scroll area under the banner.
+    final int upcoming = src.indexOf('HomeUpcoming()');
+    final int rail = src.indexOf('DabblerTabs(');
     expect(banner, isNonNegative);
-    expect(banner, lessThan(src.indexOf('const HomeUpcoming()')));
-    expect(banner, lessThan(src.indexOf('DabblerTabPager(')));
+    expect(upcoming, isNonNegative);
+    expect(rail, isNonNegative);
+    expect(banner, lessThan(upcoming));
+    expect(banner, lessThan(rail));
   });
 }

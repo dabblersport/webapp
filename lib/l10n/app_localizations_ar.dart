@@ -73,10 +73,20 @@ class AppLocalizationsAr extends AppLocalizations {
   String get feed_empty_no_posts_hint => 'شارك لحظاتك ومبارياتك مع مجتمعك.';
 
   @override
+  String get feed_following_empty_title => 'لا يوجد شيء ممن وما تتابعه بعد';
+
+  @override
+  String get feed_following_empty_hint =>
+      'تابع لاعبين أو رياضات لترى منشوراتهم هنا.';
+
+  @override
   String get feed_could_not_load => 'تعذّر تحميل الخلاصة';
 
   @override
   String get feed_retry => 'أعد المحاولة';
+
+  @override
+  String get feed_all_caught_up => 'وصلت لآخر المنشورات';
 
   @override
   String get news_empty_title => 'لا توجد أخبار حاليًا.';

@@ -74,10 +74,21 @@ class AppLocalizationsEn extends AppLocalizations {
       'Share moments, dabs, and kick-ins with your community.';
 
   @override
+  String get feed_following_empty_title =>
+      'Nothing from who and what you follow yet';
+
+  @override
+  String get feed_following_empty_hint =>
+      'Follow players or sports to see their posts here.';
+
+  @override
   String get feed_could_not_load => 'Could not load feed';
 
   @override
   String get feed_retry => 'Retry';
+
+  @override
+  String get feed_all_caught_up => 'You\'re all caught up';
 
   @override
   String get news_empty_title => 'No news right now.';
