@@ -8598,4 +8598,104 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get game_share_link_failed =>
       'Could not create the invite link. Try again.';
+
+  @override
+  String get act_filter_all => 'All';
+
+  @override
+  String get act_filter_games => 'Games';
+
+  @override
+  String get act_filter_meetups => 'Meetups';
+
+  @override
+  String get act_filter_venues => 'Venues';
+
+  @override
+  String get act_filter_players => 'Players';
+
+  @override
+  String get act_city_all => 'All cities';
+
+  @override
+  String get act_city_sheet_title => 'Filter by city';
+
+  @override
+  String get act_city_sheet_note =>
+      'Show activity from one city, or from all of them.';
+
+  @override
+  String get act_city_sheet_loading_failed => 'Couldn\'t load cities.';
+
+  @override
+  String get act_reset_filters => 'Reset filters';
+
+  @override
+  String act_summary(String filters) {
+    return 'Showing $filters';
+  }
+
+  @override
+  String get act_type_game_created => 'New game';
+
+  @override
+  String get act_type_game_started => 'Game started';
+
+  @override
+  String get act_type_game_ended => 'Game ended';
+
+  @override
+  String get act_type_meetup_created => 'New meetup';
+
+  @override
+  String get act_type_meetup_started => 'Meetup started';
+
+  @override
+  String get act_type_meetup_completed => 'Meetup ended';
+
+  @override
+  String get act_type_venue_added => 'New venue';
+
+  @override
+  String get act_type_player_joined => 'New player';
+
+  @override
+  String get act_actor_host => 'Hosting';
+
+  @override
+  String get act_actor_joined => 'Joined Dabbler';
+
+  @override
+  String get act_live => 'Live';
+
+  @override
+  String get act_group_today => 'Today';
+
+  @override
+  String get act_group_yesterday => 'Yesterday';
+
+  @override
+  String get act_empty_title => 'No activity yet';
+
+  @override
+  String get act_empty_text =>
+      'Games, meetups and new venues show up here as they happen.';
+
+  @override
+  String get act_empty_refresh => 'Refresh';
+
+  @override
+  String get act_empty_filtered_title => 'No activity for these filters';
+
+  @override
+  String get act_empty_filtered_text => 'Try another city or activity type.';
+
+  @override
+  String get act_error_title => 'Couldn\'t load activity';
+
+  @override
+  String get act_error_text => 'Check your connection and try again.';
+
+  @override
+  String get act_error_retry => 'Try again';
 }

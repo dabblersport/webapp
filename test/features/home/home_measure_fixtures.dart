@@ -18,6 +18,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'home_measure_data.dart';
 import 'home_test_harness.dart';
+import 'active_fixtures.dart';
 
 /// A post as the frame's `RECENT` array draws it.
 Post framePost(
@@ -154,14 +155,11 @@ Future<void> pumpFrameHome(
     followingState: TabFeedData(posts: posts, hasMore: false),
     nearbyState: TabFeedData(posts: posts, hasMore: false),
     activeState: ActiveFeedData(
-      events: <ActiveEvent>[
-        GameCreatedEvent(
-          id: 'g1',
-          createdAt: DateTime.now().subtract(const Duration(minutes: 12)),
-          gameId: 'g1',
-          gameTitle: d.gameTitle,
-          sport: 'Padel',
-          venueName: d.venue,
+      events: <ActiveItem>[
+        activeGame(
+          title: d.gameTitle,
+          detail: d.venue,
+          sports: const <String>['Padel'],
         ),
       ],
       hasMore: false,

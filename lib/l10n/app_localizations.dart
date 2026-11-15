@@ -15148,6 +15148,198 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not create the invite link. Try again.'**
   String get game_share_link_failed;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'All'**
+  String get act_filter_all;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get act_filter_games;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get act_filter_meetups;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Venues'**
+  String get act_filter_venues;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get act_filter_players;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'All cities'**
+  String get act_city_all;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Filter by city'**
+  String get act_city_sheet_title;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Show activity from one city, or from all of them.'**
+  String get act_city_sheet_note;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load cities.'**
+  String get act_city_sheet_loading_failed;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Reset filters'**
+  String get act_reset_filters;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Showing {filters}'**
+  String act_summary(String filters);
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'New game'**
+  String get act_type_game_created;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Game started'**
+  String get act_type_game_started;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Game ended'**
+  String get act_type_game_ended;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'New meetup'**
+  String get act_type_meetup_created;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup started'**
+  String get act_type_meetup_started;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup ended'**
+  String get act_type_meetup_completed;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'New venue'**
+  String get act_type_venue_added;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'New player'**
+  String get act_type_player_joined;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Hosting'**
+  String get act_actor_host;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Joined Dabbler'**
+  String get act_actor_joined;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Live'**
+  String get act_live;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Today'**
+  String get act_group_today;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Yesterday'**
+  String get act_group_yesterday;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'No activity yet'**
+  String get act_empty_title;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Games, meetups and new venues show up here as they happen.'**
+  String get act_empty_text;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get act_empty_refresh;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'No activity for these filters'**
+  String get act_empty_filtered_title;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Try another city or activity type.'**
+  String get act_empty_filtered_text;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load activity'**
+  String get act_error_title;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get act_error_text;
+
+  /// KAN-957 Home Active tab (Home Feed.dc.html).
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get act_error_retry;
 }
 
 class _AppLocalizationsDelegate

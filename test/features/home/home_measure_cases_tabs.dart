@@ -6,6 +6,8 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
+import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
+
 import 'home_measure_cases.dart';
 import 'home_measure_data.dart';
 import 'home_measure_support.dart';
@@ -182,22 +184,20 @@ void addNewsRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   );
 }
 
-/// The system-kind activity card of the Active tab (section 7b), measured
-/// from the card's own top-left; the design's data (distance, a count, a Live
-/// badge, group headings) has no counterpart in the app.
+/// KAN-957: the Active activity card (`Home Feed.dc.html:370-432`),
+/// measured from the card's own top-left: the card, the 16 bold type glyph
+/// (12 padding inside a 1px outline) and the 45 date tile (x and size; its y
+/// follows the actor row, whose line heights differ per script).
 void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
-  const String s = 'Active tab (system-kind card)';
-  final Finder row0 = find.byType(DabblerActivityRow).first;
-  final Finder card = find
-      .descendant(of: row0, matching: find.byType(DabblerFeedTappable))
-      .first;
-  final Rect cardApp = tester.getRect(card);
-  Finder inRow(Finder f) => find.descendant(of: row0, matching: f);
+  const String s = 'Active tab (activity card)';
+  final Finder card0 = find.byType(ActiveEventCard).first;
+  final Rect cardApp = tester.getRect(card0);
+  Finder inCard(Finder f) => find.descendant(of: card0, matching: f);
   Rect rel(Rect r) => r.shift(-cardApp.topLeft);
   row(
     t,
     s,
-    'card (x and width; radius 24)',
+    'card (x and width; radius 18)',
     ltr: rc(18, 0, 357, 0),
     rtl: rc(18, 0, 357, 0),
     app: () => Rect.fromLTWH(cardApp.left, 0, cardApp.width, 0),
@@ -205,32 +205,23 @@ void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   row(
     t,
     s,
-    'system tile 42x42',
-    ltr: rc(13, 13, 42, 42),
-    rtl: rc(302, 13, 42, 42),
-    app: () => rel(_r(tester, inRow(find.byType(DabblerActivitySystemTile)))),
+    'type glyph 16x16',
+    ltr: rc(13, 14, 16, 16),
+    rtl: rc(328, 14, 16, 16),
+    app: () => rel(_r(tester, inCard(find.byType(DabblerIcon)))),
   );
   row(
     t,
     s,
-    'text column start',
-    ltr: rc(67, 13, 0, 20),
-    rtl: rc(290, 13, 0, 23),
-    basis: Basis.line,
-    app: () => rel(_r(tester, inRow(find.textContaining('is open')))),
-  );
-  row(
-    t,
-    s,
-    'action pill (start edge, height 35)',
-    ltr: rc(67, 0, 0, 35),
-    rtl: rc(290, 0, 0, 35),
-    basis: Basis.box,
-    app: () {
-      final Rect r = rel(
-        _r(tester, inRow(find.byType(DabblerExpandedHitArea))),
-      );
-      return Rect.fromLTWH(rtl ? r.right : r.left, 0, 0, r.height);
-    },
+    'date tile 45x45 (9 inside the listing row)',
+    ltr: rc(22, 0, 45, 45),
+    rtl: rc(290, 0, 45, 45),
+    basis: Basis.inset,
+    app: () => rel(
+      _r(
+        tester,
+        inCard(find.byKey(const ValueKey<String>('active-date-tile'))),
+      ),
+    ),
   );
 }

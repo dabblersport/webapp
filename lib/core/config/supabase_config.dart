@@ -24,6 +24,10 @@ class SupabaseConfig {
   static const String searchMatchesFunction = 'search_matches';
   static const String toggleFavoriteRpc = 'toggle_favorite';
 
+  /// KAN-595 / KAN-957: the Home Active stream, filtered by event type and
+  /// city on the server, paged by (event_at, event_type, entity_id).
+  static const String activeStreamRpc = 'active_stream';
+
   /// Per game, how many people the viewer follows are in it (count only).
   static const String gamesFollowingJoinedRpc = 'rpc_games_following_joined';
 

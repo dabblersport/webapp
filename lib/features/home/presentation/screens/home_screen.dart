@@ -21,7 +21,8 @@ import 'package:dabbler/features/social/providers/feed_notifier.dart';
 import 'package:dabbler/features/social/providers/tab_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/home/presentation/models/feed_tab.dart';
-import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
+import 'package:dabbler/features/home/presentation/widgets/active_feed_list.dart';
+import 'package:dabbler/features/home/presentation/widgets/active_filter_panel.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_feed_scroll.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
@@ -446,6 +447,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                       ],
                     ),
                   ),
+                  // KAN-957: the Active filter panel scrolls with the feed,
+                  // between the rail and the list.
+                  if (_activeTab == FeedTab.active)
+                    const SliverToBoxAdapter(child: ActiveFilterPanel()),
                   SliverPadding(
                     padding: _listPadding,
                     sliver: _buildActiveList(forYouState),
@@ -487,7 +492,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
           onLoadMore: () => ref.read(nearbyFeedProvider.notifier).loadMore(),
         );
       case FeedTab.active:
-        return _ActiveFeedTabBody(
+        return ActiveFeedSliver(
           state: ref.watch(activeFeedProvider),
           onRetry: () => ref.read(activeFeedProvider.notifier).load(),
         );
@@ -743,57 +748,6 @@ final class _ActivityEntry extends _MergedEntry {
 // ────────────────────────────────────────────────────────────────────────────
 // Active feed tab — event-type-routed cards
 // ────────────────────────────────────────────────────────────────────────────
-class _ActiveFeedTabBody extends StatelessWidget {
-  const _ActiveFeedTabBody({required this.state, required this.onRetry});
-
-  final ActiveFeedState state;
-  final VoidCallback onRetry;
-
-  @override
-  Widget build(BuildContext context) {
-    if (state.isLoading && state.events.isEmpty) {
-      return const _FeedSkeletonList();
-    }
-
-    if (state.error != null && state.events.isEmpty) {
-      return _ErrorView(message: state.error!, onRetry: onRetry);
-    }
-
-    if (state.events.isEmpty) {
-      return const _EmptyView(
-        iconName: 'document-text',
-        message: 'Nothing active right now.',
-        hint: 'Check back when games or events kick off near you.',
-      );
-    }
-
-    final events = state.events;
-    final itemCount =
-        events.length +
-        (state.isLoadingMore ||
-                _caughtUp(state.hasMore, state.isLoadingMore, events)
-            ? 1
-            : 0);
-
-    return SliverList.separated(
-      itemCount: itemCount,
-      separatorBuilder: (_, index) {
-        if (index < events.length && events[index] is PostCreatedEvent) {
-          return const DabblerDivider();
-        }
-        return const SizedBox.shrink();
-      },
-      itemBuilder: (_, index) {
-        if (index == events.length) {
-          if (!state.isLoadingMore) return const _CaughtUpRow();
-          return const _LoadingMoreRow();
-        }
-        return ActiveEventCard(event: events[index]);
-      },
-    );
-  }
-}
-
 // ────────────────────────────────────────────────────────────────────────────
 // Nearby feed tab — original post cards with "Near you" chip
 // ────────────────────────────────────────────────────────────────────────────
@@ -1001,32 +955,6 @@ class _FeedSkeletonList extends StatelessWidget {
       itemCount: 6,
       separatorBuilder: (_, __) => const DabblerDivider(),
       itemBuilder: (_, __) => const _PostCardSkeleton(),
-    );
-  }
-}
-
-/// KAN-956: whether the Active list ends in "You're all caught up" — it has
-/// rows and no page is left to load. The frame draws the row on the Active
-/// tab only (`Home Feed.dc.html:434`, inside `isActive` / `actLoaded`); the
-/// other tabs end at their last row, 120 above the frame end.
-bool _caughtUp(bool hasMore, bool isLoadingMore, List<Object?> rows) =>
-    !hasMore && !isLoadingMore && rows.isNotEmpty;
-
-/// KAN-956: the end of a list with nothing left to load (`Home Feed.dc.html`,
-/// `padding:12px 0;text-align:center;font-size:12px;color:var(--subtle)`).
-class _CaughtUpRow extends StatelessWidget {
-  const _CaughtUpRow();
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: DabblerSpacing.space4),
-      child: DabblerText(
-        AppLocalizations.of(context).feed_all_caught_up,
-        textAlign: TextAlign.center,
-        style: DabblerType.caption1,
-        tone: DabblerTextTone.tertiary,
-      ),
     );
   }
 }

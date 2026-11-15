@@ -8674,4 +8674,104 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get game_share_link_failed =>
       'تعذّر إنشاء رابط الدعوة. حاول مرة أخرى.';
+
+  @override
+  String get act_filter_all => 'الكل';
+
+  @override
+  String get act_filter_games => 'مباريات';
+
+  @override
+  String get act_filter_meetups => 'لقاءات';
+
+  @override
+  String get act_filter_venues => 'ملاعب';
+
+  @override
+  String get act_filter_players => 'لاعبون';
+
+  @override
+  String get act_city_all => 'كل المدن';
+
+  @override
+  String get act_city_sheet_title => 'تصفية حسب المدينة';
+
+  @override
+  String get act_city_sheet_note =>
+      'اعرض النشاط في مدينة واحدة أو في كل المدن.';
+
+  @override
+  String get act_city_sheet_loading_failed => 'تعذّر تحميل المدن.';
+
+  @override
+  String get act_reset_filters => 'إعادة ضبط الفلاتر';
+
+  @override
+  String act_summary(String filters) {
+    return 'المعروض: $filters';
+  }
+
+  @override
+  String get act_type_game_created => 'مباراة جديدة';
+
+  @override
+  String get act_type_game_started => 'بدأت المباراة';
+
+  @override
+  String get act_type_game_ended => 'انتهت المباراة';
+
+  @override
+  String get act_type_meetup_created => 'لقاء جديد';
+
+  @override
+  String get act_type_meetup_started => 'بدأ اللقاء';
+
+  @override
+  String get act_type_meetup_completed => 'انتهى اللقاء';
+
+  @override
+  String get act_type_venue_added => 'ملعب جديد';
+
+  @override
+  String get act_type_player_joined => 'لاعب جديد';
+
+  @override
+  String get act_actor_host => 'المنظّم';
+
+  @override
+  String get act_actor_joined => 'انضم إلى دابلر';
+
+  @override
+  String get act_live => 'مباشر';
+
+  @override
+  String get act_group_today => 'اليوم';
+
+  @override
+  String get act_group_yesterday => 'أمس';
+
+  @override
+  String get act_empty_title => 'لا يوجد نشاط بعد';
+
+  @override
+  String get act_empty_text =>
+      'تظهر هنا المباريات واللقاءات والملاعب الجديدة فور حدوثها.';
+
+  @override
+  String get act_empty_refresh => 'تحديث';
+
+  @override
+  String get act_empty_filtered_title => 'لا يوجد نشاط لهذه الفلاتر';
+
+  @override
+  String get act_empty_filtered_text => 'جرّب مدينة أخرى أو نوع نشاط آخر.';
+
+  @override
+  String get act_error_title => 'تعذّر تحميل النشاط';
+
+  @override
+  String get act_error_text => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get act_error_retry => 'حاول مرة أخرى';
 }

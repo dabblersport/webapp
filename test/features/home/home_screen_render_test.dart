@@ -17,6 +17,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'home_test_harness.dart';
 import '../../support/render_mode.dart';
+import 'active_fixtures.dart';
 
 /// Renders the Home screen to PNG with the real bundled faces (Glory, Gloock,
 /// Meral Sans, Wingx, Iconsax) so it can be compared against the design.
@@ -108,31 +109,10 @@ final FeedData _feed = FeedData(
   hasMore: false,
 );
 
-final List<ActiveEvent> _events = <ActiveEvent>[
-  GameCreatedEvent(
-    id: 'g1',
-    createdAt: DateTime.now().subtract(const Duration(minutes: 12)),
-    gameId: 'g1',
-    gameTitle: 'Sunday 5-a-side',
-    sport: 'Football',
-    venueName: 'Al Wasl Sports Club',
-  ),
-  PlayerJoinedEvent(
-    id: 'p1',
-    createdAt: DateTime.now().subtract(const Duration(minutes: 40)),
-    gameId: 'g2',
-    gameTitle: 'Padel doubles — evening',
-    sport: 'Padel',
-    venueName: 'JLT Padel',
-    joinCount: 4,
-  ),
-  NewUserEvent(
-    id: 'u1',
-    createdAt: DateTime.now().subtract(const Duration(hours: 2)),
-    profileId: 'u1',
-    displayName: 'Moataz Mustapha',
-    sport: 'Tennis',
-  ),
+final List<ActiveItem> _events = <ActiveItem>[
+  activeGame(live: true),
+  activeVenue(),
+  activePlayer(),
 ];
 
 final List<Game> _upcoming = <Game>[

@@ -278,13 +278,15 @@ void main() {
 
   group('Active (ActiveFeedNotifier)', () {
     test('the cached events render and a failed refresh keeps them', () async {
-      await cache.write('A', 'feed.active', [
+      await cache.write('A', 'feed.active.stream', [
         {
-          'id': 'g1',
-          'created_at': '2026-10-20T10:00:00.000Z',
+          'event_type': 'game_created',
+          'event_at': '2026-10-20T10:00:00.000Z',
+          'entity_kind': 'game',
+          'entity_id': 'g1',
           'title': 'Five-a-side',
-          'sport_name_en': 'Football',
-          'venue_name': 'Pitch 1',
+          'detail': 'Pitch 1',
+          'sport_names_en': ['Football'],
         },
       ]);
       final n = ActiveFeedNotifier(
@@ -303,7 +305,7 @@ void main() {
       await n.ensureLoaded();
       final s = n.state;
       expect(s, isA<ActiveFeedData>());
-      expect((s as ActiveFeedData).events.single.id, 'g1');
+      expect((s as ActiveFeedData).events.single.entityId, 'g1');
     });
   });
 }

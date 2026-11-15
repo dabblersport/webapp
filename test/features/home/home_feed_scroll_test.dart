@@ -16,6 +16,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 import 'home_measure_fixtures.dart';
 import 'home_test_harness.dart';
+import 'active_fixtures.dart';
 
 FeedData _feed({bool hasMore = false}) => FeedData(
   items: <FeedItem>[
@@ -100,17 +101,7 @@ void main() {
   group("You're all caught up", () {
     ActiveFeedData active({required bool hasMore, bool empty = false}) =>
         ActiveFeedData(
-          events: <ActiveEvent>[
-            if (!empty)
-              GameCreatedEvent(
-                id: 'g1',
-                createdAt: DateTime(2026, 11, 16),
-                gameId: 'g1',
-                gameTitle: 'Sunday 5-a-side',
-                sport: 'Football',
-                venueName: 'Al Wasl Sports Club',
-              ),
-          ],
+          events: <ActiveItem>[if (!empty) activeGame()],
           hasMore: hasMore,
         );
 
