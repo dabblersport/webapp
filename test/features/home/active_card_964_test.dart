@@ -18,21 +18,17 @@ Finder _card(String id) => find.byKey(ValueKey<String>(id));
 Finder _in(String id, Finder f) => find.descendant(of: _card(id), matching: f);
 
 Color? _fill(WidgetTester tester, String id) => tester
-    .widget<DabblerSurface>(
-      find
-          .descendant(of: _card(id), matching: find.byType(DabblerSurface))
-          .first,
-    )
-    .fill;
+    .widget<DabblerActivityCard>(_in(id, find.byType(DabblerActivityCard)))
+    .tone
+    .surface;
+
+String _mark(WidgetTester tester, String id) => tester
+    .widget<DabblerActivityCard>(_in(id, find.byType(DabblerActivityCard)))
+    .mark;
 
 String _action(WidgetTester tester, String id) => tester
-    .widget<DabblerText>(
-      find.descendant(
-        of: _in(id, find.byKey(const ValueKey<String>('active-card-action'))),
-        matching: find.byType(DabblerText),
-      ),
-    )
-    .data!;
+    .widget<DabblerActivityAction>(_in(id, find.byType(DabblerActivityAction)))
+    .label;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -76,35 +72,35 @@ void main() {
           hasMore: false,
         ),
       );
-      final colors = DabblerColors.of(
-        tester.element(find.byType(ActiveEventCard).first),
-      );
 
       // Live: "Happening now" beside the green dot, the success tone and
       // "Join in".
       const live = 'game_started:live';
       expect(_in(live, find.text(l.act_kicker_live)), findsOneWidget);
       expect(
-        _in(live, find.byKey(const ValueKey<String>('active-live-dot'))),
+        _in(live, find.byKey(const ValueKey<String>('activity-live-dot'))),
         findsOneWidget,
       );
-      expect(_fill(tester, live), colors.success.surface);
+      expect(_fill(tester, live), DabblerActivityTones.sport.surface);
+      expect(_mark(tester, live), 'flash');
       expect(_action(tester, live), l.act_cta_join_in);
 
       // Upcoming: "New game", no dot, the brand tint, "Join game".
       const next = 'game_created:next';
       expect(_in(next, find.text(l.act_kicker_game_created)), findsOneWidget);
       expect(
-        _in(next, find.byKey(const ValueKey<String>('active-live-dot'))),
+        _in(next, find.byKey(const ValueKey<String>('activity-live-dot'))),
         findsNothing,
       );
-      expect(_fill(tester, next), DabblerSurface.brandTintBleedFill(colors));
+      expect(_fill(tester, next), DabblerActivityTones.main.surface);
+      expect(_mark(tester, next), 'calendar-add');
       expect(_action(tester, next), l.act_cta_join_game);
 
       // Finished: "Final whistle", the muted sunken ground and "See results".
       const done = 'game_ended:done';
       expect(_in(done, find.text(l.act_kicker_game_ended)), findsOneWidget);
-      expect(_fill(tester, done), colors.surfaceSunken);
+      expect(_fill(tester, done), DabblerActivityTones.ended.surface);
+      expect(_mark(tester, done), 'cup');
       expect(_action(tester, done), l.act_cta_see_results);
 
       // Three different grounds.
@@ -156,7 +152,7 @@ void main() {
       );
       expect(_action(tester, 'meetup_started:m1'), l.act_cta_see_recap);
       expect(
-        find.byKey(const ValueKey<String>('active-live-dot')),
+        find.byKey(const ValueKey<String>('activity-live-dot')),
         findsNothing,
       );
     }, variant: desktopOnly);
@@ -213,13 +209,13 @@ void main() {
       );
       const id = 'game_created:g1';
       final start = DateTime(2026, 11, 20, 19);
-      expect(_in(id, find.text(l.time_minutes_ago(12))), findsOneWidget);
+      expect(_in(id, find.text(l.act_time_minutes(12))), findsOneWidget);
       final tile = _in(id, find.byKey(const ValueKey('active-date-tile')));
       expect(tile, findsOneWidget);
       expect(
         find.descendant(
           of: tile,
-          matching: find.text(DateFormat.MMM(l.localeName).format(start)),
+          matching: find.text(ActiveEventCard.monthLabel(start)),
         ),
         findsOneWidget,
       );
@@ -252,7 +248,7 @@ void main() {
       expect(_in(id, find.text(ar ? 'كرة القدم' : 'Football')), findsOneWidget);
       // The kicker pill opens the card at its 18 inset, in reading order.
       final card = tester.getRect(_card(id));
-      final pill = tester.getRect(_in(id, find.byType(ActiveKickerPill)));
+      final pill = tester.getRect(_in(id, find.byType(DabblerActivityKicker)));
       if (ar) {
         expect(card.right - pill.right, moreOrLessEquals(18, epsilon: 0.5));
       } else {

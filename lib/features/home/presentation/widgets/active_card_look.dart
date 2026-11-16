@@ -63,36 +63,26 @@ enum ActiveLook {
     meetupFinished => l.act_cta_see_recap,
   };
 
-  /// The card's pastel ground and its ink (`ACT_TONE`).
+  /// The card's pastel ground and its ink (`ACT_TONE`), the package's
+  /// [DabblerActivityTones] (KAN-965), one per look:
   ///
-  /// The design draws six decorative tile tones; the package carries two of
-  /// them (`--tile-info`, `--tile-accent`). Until `--tile-main`,
-  /// `--tile-sport`, `--tile-active` and `--tile-bright` land in
-  /// `dabbler_design_system`, the nearest package tone stands in, each
-  /// brightness-aware so the dark theme keeps its contrast:
-  ///
-  /// | look | design | here |
+  /// | look | design | tone |
   /// |---|---|---|
-  /// | player | `--tile-social` | `tileInfoTone` (the design's `ACT_TILE`) |
-  /// | venue | `--tile-bright` | `warning.tint` |
-  /// | upcoming game | `--tile-main` | brand 14% over the card, brand ink |
-  /// | live | `--tile-sport` | `success.tint` |
-  /// | finished game | `--surface-sunken` / `--ink-soft` | the same |
-  /// | upcoming meetup | `--tile-active` | `tileAccentTone` |
-  /// | finished meetup | `--tile-accent` | `tileAccentTone` |
-  DabblerToneColor tone(DabblerColors colors) => switch (this) {
-    playerJoined => colors.tileInfoTone,
-    venueAdded => colors.warning.tint,
-    gameUpcoming => DabblerToneColor(
-      surface: DabblerSurface.brandTintBleedFill(colors),
-      ink: colors.brandPrimary,
-    ),
-    gameLive || meetupLive => colors.success.tint,
-    gameFinished => DabblerToneColor(
-      surface: colors.surfaceSunken,
-      ink: colors.textSecondary,
-    ),
-    meetupUpcoming || meetupFinished => colors.tileAccentTone,
+  /// | player | `--tile-social` | `social` |
+  /// | venue | `--tile-bright` | `bright` |
+  /// | upcoming game | `--tile-main` | `main` |
+  /// | live game or meetup | `--tile-sport` | `sport` |
+  /// | finished game | `--surface-sunken` / `--ink-soft` | `ended` |
+  /// | upcoming meetup | `--tile-active` | `active` |
+  /// | finished meetup | `--tile-accent` | `accent` |
+  DabblerToneColor get tone => switch (this) {
+    playerJoined => DabblerActivityTones.social,
+    venueAdded => DabblerActivityTones.bright,
+    gameUpcoming => DabblerActivityTones.main,
+    gameLive || meetupLive => DabblerActivityTones.sport,
+    gameFinished => DabblerActivityTones.ended,
+    meetupUpcoming => DabblerActivityTones.active,
+    meetupFinished => DabblerActivityTones.accent,
   };
 }
 

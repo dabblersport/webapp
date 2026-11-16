@@ -187,14 +187,16 @@ void addNewsRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   );
 }
 
-/// KAN-957 / KAN-964: the Active card (`ActivityCard.dc.html`), measured
-/// from the card's own top-left: the card, the kicker's 12 bold family glyph
-/// (18 card padding, 8 pill start padding) and the date tile (x and size; its
-/// y follows the headline, whose line heights differ per script).
+/// KAN-957 / KAN-964 / KAN-965: the Active card (`ActivityCard.dc.html`),
+/// measured from the card's own top-left against the design's numbers, with
+/// no exception: the card, the 120 mark (`inset-inline-end:-18px; top:-12px`),
+/// the kicker's 12 bold family glyph (18 card padding + 8 pill start, 18 + 4
+/// pill top + 0.5 centring in the 13 line) and the 56x62 date tile (18 in,
+/// below the 21 kicker row and the 12 gap).
 void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   const String s = 'Active tab (activity card)';
   final Finder card0 = find.byType(ActiveEventCard).first;
-  final Rect cardApp = tester.getRect(card0);
+  final Rect cardApp = tester.getRect(find.byType(DabblerActivityCard).first);
   Finder inCard(Finder f) => find.descendant(of: card0, matching: f);
   Rect rel(Rect r) => r.shift(-cardApp.topLeft);
   row(
@@ -205,10 +207,18 @@ void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
     rtl: rc(18, 0, 357, 0),
     app: () => Rect.fromLTWH(cardApp.left, 0, cardApp.width, 0),
   );
-  const MeasureException pillBlock = MeasureException(
-    'The kicker pill pads 4 above and below; the spacing scale has 3 '
-    '(space1), so the pill is 2 shorter and its glyph sits 1 higher.',
-    dy: -1,
+  row(
+    t,
+    s,
+    'mark 120x120 (end -18, top -12)',
+    ltr: rc(255, -12, 120, 120),
+    rtl: rc(-18, -12, 120, 120),
+    app: () => rel(
+      _r(
+        tester,
+        inCard(find.byKey(const ValueKey<String>('activity-card-mark'))),
+      ),
+    ),
   );
   row(
     t,
@@ -216,32 +226,24 @@ void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
     'kicker family glyph 12x12',
     ltr: rc(26, 22.5, 12, 12),
     rtl: rc(319, 22.5, 12, 12),
-    exLtr: pillBlock,
-    exRtl: pillBlock,
     app: () => rel(
       _r(
         tester,
         inCard(
           find.descendant(
-            of: find.byType(ActiveKickerPill),
+            of: find.byType(DabblerActivityKicker),
             matching: find.byType(DabblerIcon),
           ),
         ),
       ),
     ),
   );
-  const String tileWhy =
-      'The design\'s 56x62 date tile has no size in the package; it is the '
-      '48 tileLg square until one lands.';
   row(
     t,
     s,
     'date tile 56x62 (18 inside the card)',
-    ltr: rc(18, 0, 56, 62),
-    rtl: rc(283, 0, 56, 62),
-    basis: Basis.inset,
-    exLtr: const MeasureException(tileWhy, dw: -8, dh: -14),
-    exRtl: const MeasureException(tileWhy, dx: 8, dw: -8, dh: -14),
+    ltr: rc(18, 51, 56, 62),
+    rtl: rc(283, 51, 56, 62),
     app: () => rel(
       _r(
         tester,

@@ -8859,4 +8859,9 @@ class AppLocalizationsEn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String act_time_minutes(int count) {
+    return '$count min ago';
+  }
 }

@@ -3401,5 +3401,7 @@
   "act_stat_went": "{count} went",
   "@act_stat_went": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Attendees of a finished meetup.", "placeholders": {"count": {"type": "int"}}},
   "act_venue_spaces": "{count, plural, =1{1 court} other{{count} courts}}",
-  "@act_venue_spaces": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Active spaces of a new venue, in its sub line.", "placeholders": {"count": {"type": "int"}}}
+  "@act_venue_spaces": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Active spaces of a new venue, in its sub line.", "placeholders": {"count": {"type": "int"}}},
+  "act_time_minutes": "{count} min ago",
+  "@act_time_minutes": {"description": "KAN-965 Home Active card time under an hour (ActivityCard e.time, \"3 min ago\"; AR \"قبل 3 د\").", "placeholders": {"count": {"type": "int"}}}
 }

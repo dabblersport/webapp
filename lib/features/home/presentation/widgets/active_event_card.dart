@@ -17,29 +17,32 @@ export 'active_card_look.dart';
 export 'active_card_parts.dart';
 export 'active_card_stat.dart';
 
-/// The card's 18 padding (`ActivityCard.dc.html`, `padding:18px`, no border).
-const double activeCardInset = DabblerSpacing.space6;
-
-/// KAN-957 / KAN-964: one Active card, the design's `ActivityCard`
-/// (`project/ActivityCard.dc.html`): a pastel card in its look's tone with a
-/// large watermark glyph, a kicker pill (the family glyph, or the green dot
-/// while live) and the time, the body (a player's welcome, a game's or
-/// meetup's date tile and title, a venue's name), and a footer of the host,
-/// the sport tags and the action pill.
+/// KAN-957 / KAN-964 / KAN-965: one Active card, the design's
+/// `ActivityCard` (`project/ActivityCard.dc.html`) drawn with the package's
+/// [DabblerActivityCard]: the look's tone with its large mark glyph, a
+/// kicker pill (the family glyph, or the pulsing live dot) and the time, the
+/// body (a player's welcome, a game's or meetup's date tile and title, a
+/// venue's name), the stat block, and the footer of the host, the sport chips
+/// and the action pill.
 class ActiveEventCard extends ConsumerWidget {
   const ActiveEventCard({super.key, required this.event});
 
   final ActiveItem event;
 
-  /// `just now`, `12m ago`, `3h ago`, `2d ago`, then `Nov 3`.
+  /// The design's `e.time` (`ACT_EVENTS`): under an hour `3 min ago`,
+  /// otherwise the clock time (`8:30 AM`); the day is the group header's.
+  /// Under a minute: `just now`.
   static String timeLabel(AppLocalizations l, DateTime at, DateTime now) {
     final diff = now.difference(at);
     if (diff.inMinutes < 1) return l.time_just_now;
-    if (diff.inMinutes < 60) return l.time_minutes_ago(diff.inMinutes);
-    if (diff.inHours < 24) return l.time_hours_ago(diff.inHours);
-    if (diff.inDays < 7) return l.time_days_ago(diff.inDays);
-    return DateFormat.MMMd(l.localeName).format(at);
+    if (diff.inMinutes < 60) return l.act_time_minutes(diff.inMinutes);
+    return DateFormat.jm(l.localeName).format(at);
   }
+
+  /// The date tile's month (`a.month`): `OCT`, the short English month in
+  /// capitals, in the Arabic frame too (its translation table skips `month`).
+  static String monthLabel(DateTime at) =>
+      DateFormat.MMM('en').format(at).toUpperCase();
 
   String? _route() => switch (event.entityKind) {
     'game' => RoutePaths.gameDetail(event.entityId),
@@ -69,10 +72,9 @@ class ActiveEventCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
-    final colors = DabblerColors.of(context);
     final now = ref.watch(homeNowProvider)();
     final look = ActiveLook.of(event, now);
-    final tone = look.tone(colors);
+    final tone = look.tone;
     final route = _route();
     final sports = event.sportsFor(l.localeName);
     final name = event.actorName?.trim() ?? '';
@@ -103,59 +105,50 @@ class ActiveEventCard extends ConsumerWidget {
       ].join(' · ');
     }
 
-    final body = switch (event.entityKind) {
-      'profile' => _PlayerBody(event: event, headline: headline, sub: sub),
-      'venue' => _VenueBody(headline: headline, sub: sub),
-      _ => _EventBody(event: event, tone: tone, headline: headline, sub: sub),
-    };
+    final stat = ActiveCardStat.of(l, event, look);
 
-    final stat = ActiveCardStat.of(l, event, look, tone.ink);
-
-    final card = DabblerSurface.sunken(
-      radius: DabblerRadius.xl,
-      fill: tone.surface,
-      // The design's 120 watermark glyph (`look.mark`, 14% of the tone ink,
-      // overhanging the top end corner) needs a layered surface the package
-      // does not have yet; app widgets may not stack (design_system_gate).
-      child: Padding(
-        padding: const EdgeInsetsDirectional.all(activeCardInset),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+    final card = DabblerActivityCard(
+      tone: tone,
+      mark: look.mark,
+      children: <Widget>[
+        Row(
           children: <Widget>[
-            Row(
-              children: <Widget>[
-                Flexible(
-                  child: ActiveKickerPill(
-                    look: look,
-                    label: look.kicker(l),
-                    ink: tone.ink,
-                  ),
-                ),
-                const DabblerGap.h(DabblerSpacing.space2),
-                DabblerText(
-                  timeLabel(l, event.eventAt, now),
-                  style: DabblerType.caption1,
-                  tone: DabblerTextTone.secondary,
-                  maxLines: 1,
-                ),
-              ],
+            Flexible(
+              child: DabblerActivityKicker(
+                label: look.kicker(l),
+                ink: tone.ink,
+                icon: look.familyIcon,
+                live: look.isLive,
+              ),
             ),
-            const DabblerGap.v(DabblerSpacing.space4),
-            body,
-            if (stat != null) ...<Widget>[
-              const DabblerGap.v(DabblerSpacing.space4),
-              stat,
-            ],
-            const DabblerGap.v(DabblerSpacing.space4),
-            ActiveCardFooter(
-              event: event,
-              sports: sports,
-              action: look.action(l),
-              ink: tone.ink,
+            const DabblerGap.h(DabblerSpacing.space2),
+            DabblerText(
+              timeLabel(l, event.eventAt, now),
+              style: DabblerType.caption1,
+              tone: DabblerTextTone.secondary,
+              maxLines: 1,
+              softWrap: false,
             ),
           ],
         ),
-      ),
+        switch (event.entityKind) {
+          'profile' => _PlayerBody(event: event, headline: headline, sub: sub),
+          'venue' => _VenueBody(headline: headline, sub: sub),
+          _ => _EventBody(
+            event: event,
+            tone: tone,
+            headline: headline,
+            sub: sub,
+          ),
+        },
+        ?stat,
+        ActiveCardFooter(
+          event: event,
+          sports: sports,
+          action: look.action(l),
+          ink: tone.ink,
+        ),
+      ],
     );
 
     return Semantics(
@@ -176,40 +169,43 @@ class ActiveEventCard extends ConsumerWidget {
   }
 }
 
-class _Headline extends StatelessWidget {
-  const _Headline(this.text, {this.style = DabblerType.title2});
+/// The headline (`--font-display`, `--ink`, no clamp) over the 13/18
+/// `--ink-soft` sub, `gap:3px`. The event's sub is one line with an ellipsis.
+class _Titles extends StatelessWidget {
+  const _Titles({
+    required this.headline,
+    required this.sub,
+    this.style = DabblerType.title2,
+    this.oneLineSub = false,
+  });
 
-  final String text;
+  final String headline;
+  final String sub;
   final DabblerTypeStyle style;
+  final bool oneLineSub;
 
   @override
-  Widget build(BuildContext context) => DabblerText(
-    text,
-    style: style,
-    maxLines: 2,
-    overflow: TextOverflow.ellipsis,
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: <Widget>[
+      DabblerText(headline, style: style),
+      if (sub.isNotEmpty) ...<Widget>[
+        const DabblerGap.v(DabblerSpacing.space1),
+        DabblerText(
+          sub,
+          style: DabblerType.footnote,
+          tone: DabblerTextTone.secondary,
+          maxLines: oneLineSub ? 1 : null,
+          softWrap: !oneLineSub,
+          overflow: oneLineSub ? TextOverflow.ellipsis : null,
+        ),
+      ],
+    ],
   );
 }
 
-class _Sub extends StatelessWidget {
-  const _Sub(this.text, {this.oneLine = false});
-
-  final String text;
-  final bool oneLine;
-
-  @override
-  Widget build(BuildContext context) => DabblerText(
-    text,
-    style: DabblerType.footnote,
-    tone: DabblerTextTone.secondary,
-    maxLines: oneLine ? 1 : 2,
-    softWrap: !oneLine,
-    overflow: TextOverflow.ellipsis,
-  );
-}
-
-/// A new player: the 64 avatar ringed in the card surface, "Say welcome to
-/// …" and what they play.
+/// A new player (`gap:12px`): the 64 avatar ringed 3 in the card surface,
+/// "Say welcome to …" and what they play.
 class _PlayerBody extends StatelessWidget {
   const _PlayerBody({
     required this.event,
@@ -221,6 +217,9 @@ class _PlayerBody extends StatelessWidget {
   final String headline;
   final String sub;
 
+  /// `outline:3px solid var(--surface-card)`.
+  static const double ring = DabblerSpacing.space1;
+
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
@@ -231,27 +230,19 @@ class _PlayerBody extends StatelessWidget {
           imageUrl: event.actorAvatarUrl,
           size: DabblerAvatarSize.lg,
           ringColor: colors.surfaceCard,
+          ringWidth: ring,
         ),
         const DabblerGap.h(DabblerSpacing.space4),
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _Headline(headline),
-              if (sub.isNotEmpty) ...<Widget>[
-                const DabblerGap.v(DabblerSpacing.space1),
-                _Sub(sub),
-              ],
-            ],
-          ),
+          child: _Titles(headline: headline, sub: sub),
         ),
       ],
     );
   }
 }
 
-/// A game or meetup: the date tile (month in the look's ink, the day in
-/// display type) and the title over "place · time · by host".
+/// A game or meetup (`gap:12px`): the 56x62 date tile and the title over
+/// "place · time · by host".
 class _EventBody extends StatelessWidget {
   const _EventBody({
     required this.event,
@@ -268,58 +259,28 @@ class _EventBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final colors = DabblerColors.of(context);
     final start = event.startAt;
     return Row(
       children: <Widget>[
         if (start != null) ...<Widget>[
-          DabblerSurface.sunken(
+          DabblerActivityDateTile(
             key: const ValueKey<String>('active-date-tile'),
-            width: DabblerSizing.tileLg,
-            height: DabblerSizing.tileLg,
-            center: true,
-            radius: DabblerRadius.lg,
-            fill: colors.surfaceCard,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: <Widget>[
-                ActiveInked(
-                  color: tone.ink,
-                  child: DabblerText(
-                    DateFormat.MMM(l.localeName).format(start),
-                    style: DabblerType.caption2,
-                    tone: DabblerTextTone.inherit,
-                    maxLines: 1,
-                  ),
-                ),
-                DabblerText(
-                  DateFormat.d(l.localeName).format(start),
-                  style: DabblerType.title1,
-                  maxLines: 1,
-                ),
-              ],
-            ),
+            month: ActiveEventCard.monthLabel(start),
+            day: DateFormat.d(l.localeName).format(start),
+            ink: tone.ink,
           ),
           const DabblerGap.h(DabblerSpacing.space4),
         ],
         Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: <Widget>[
-              _Headline(headline),
-              if (sub.isNotEmpty) ...<Widget>[
-                const DabblerGap.v(DabblerSpacing.space1),
-                _Sub(sub, oneLine: true),
-              ],
-            ],
-          ),
+          child: _Titles(headline: headline, sub: sub, oneLineSub: true),
         ),
       ],
     );
   }
 }
 
-/// A new venue: its name in the larger display type, clear of the watermark.
+/// A new venue: its name at 26/32 display, `padding-inline-end:48px` clear
+/// of the mark.
 class _VenueBody extends StatelessWidget {
   const _VenueBody({required this.headline, required this.sub});
 
@@ -329,15 +290,10 @@ class _VenueBody extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Padding(
     padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space11),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        _Headline(headline, style: DabblerType.displaySection),
-        if (sub.isNotEmpty) ...<Widget>[
-          const DabblerGap.v(DabblerSpacing.space1),
-          _Sub(sub),
-        ],
-      ],
+    child: _Titles(
+      headline: headline,
+      sub: sub,
+      style: DabblerType.displaySection,
     ),
   );
 }

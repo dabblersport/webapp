@@ -3002,5 +3002,6 @@
   "act_stat_played": "{count, plural, =1{لعب لاعب واحد} =2{لعب لاعبان} few{لعب {count} لاعبين} many{لعب {count} لاعبًا} other{لعب {count} لاعب}}",
   "act_stat_going": "{count, plural, =1{مشارك واحد} =2{مشاركان} few{{count} مشاركين} many{{count} مشاركًا} other{{count} مشارك}}",
   "act_stat_went": "{count, plural, =1{حضر شخص واحد} =2{حضر شخصان} few{حضر {count} أشخاص} many{حضر {count} شخصًا} other{حضر {count} شخص}}",
-  "act_venue_spaces": "{count, plural, =1{ملعب واحد} =2{ملعبان} few{{count} ملاعب} many{{count} ملعبًا} other{{count} ملعب}}"
+  "act_venue_spaces": "{count, plural, =1{ملعب واحد} =2{ملعبان} few{{count} ملاعب} many{{count} ملعبًا} other{{count} ملعب}}",
+  "act_time_minutes": "قبل {count} د"
 }

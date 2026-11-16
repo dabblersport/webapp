@@ -8975,4 +8975,9 @@ class AppLocalizationsAr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String act_time_minutes(int count) {
+    return 'قبل $count د';
+  }
 }

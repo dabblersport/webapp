@@ -15556,6 +15556,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 court} other{{count} courts}}'**
   String act_venue_spaces(int count);
+
+  /// KAN-965 Home Active card time under an hour (ActivityCard e.time, "3 min ago"; AR "قبل 3 د").
+  ///
+  /// In en, this message translates to:
+  /// **'{count} min ago'**
+  String act_time_minutes(int count);
 }
 
 class _AppLocalizationsDelegate

@@ -18,22 +18,15 @@ Finder _in(String id, Finder f) => find.descendant(of: _card(id), matching: f);
 Finder _stat(String id) =>
     _in(id, find.byKey(const ValueKey<String>('active-card-stat')));
 
-Finder _bar(String id) =>
-    _in(id, find.byKey(const ValueKey<String>('active-card-bar')));
+Finder _bar(String id) => _in(id, find.byType(DabblerActivityBar));
 
 String _w(String s) => DabblerType.toWesternDigits(s);
 
-String _statText(WidgetTester tester, String id) => tester
-    .widget<DabblerText>(
-      find.descendant(of: _stat(id), matching: find.byType(DabblerText)),
-    )
-    .data!;
+String _statText(WidgetTester tester, String id) =>
+    _w(tester.widget<DabblerActivityStat>(_stat(id)).text);
 
-String _statIcon(WidgetTester tester, String id) => tester
-    .widget<DabblerIcon>(
-      find.descendant(of: _stat(id), matching: find.byType(DabblerIcon)),
-    )
-    .name;
+String _statIcon(WidgetTester tester, String id) =>
+    tester.widget<DabblerActivityStat>(_stat(id)).icon;
 
 DateTime _ago(Duration d) => activeNow.subtract(d);
 
@@ -102,16 +95,17 @@ void main() {
         _w('${l.act_stat_players_of(6, 14)} · ${l.act_stat_spots_left(8)}'),
       );
       expect(_statIcon(tester, a), 'people');
-      final bar = tester.widget<DabblerProgressBar>(_bar(a));
-      expect(bar.value, closeTo(6 / 14, 1e-9));
-      expect(bar.tone, DabblerProgressBarTone.brand);
+      final bar = tester.widget<DabblerActivityBar>(_bar(a));
+      expect(bar.fraction, closeTo(6 / 14, 1e-9));
+      // The bar in the card's tone: its surface track, its ink fill.
+      expect(bar.tone, DabblerActivityTones.main);
 
       const b = 'game_created:b';
       expect(
         _statText(tester, b),
         _w('${l.act_stat_players_of(14, 14)} · ${l.act_stat_full}'),
       );
-      expect(tester.widget<DabblerProgressBar>(_bar(b)).value, 1);
+      expect(tester.widget<DabblerActivityBar>(_bar(b)).fraction, 1);
       expect(tester.takeException(), isNull);
     }, variant: desktopOnly);
 
@@ -143,8 +137,8 @@ void main() {
         ),
       );
       expect(
-        tester.widget<DabblerProgressBar>(_bar('game_started:live')).tone,
-        DabblerProgressBarTone.success,
+        tester.widget<DabblerActivityBar>(_bar('game_started:live')).tone,
+        DabblerActivityTones.sport,
       );
       expect(
         _statText(tester, 'game_started:live'),
