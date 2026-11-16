@@ -15,7 +15,17 @@ enum ActiveLook {
   gameFinished('game', 'cup'),
   meetupUpcoming('people', 'people'),
   meetupLive('people', 'flash'),
-  meetupFinished('people', 'medal-star');
+  meetupFinished('people', 'medal-star'),
+
+  // KAN-967 (`ACT_TYPES` / `ACT_LOOK`; family glyph from `ACT_FAMILY_ICON`).
+  trendingSport('trend-up', 'trend-up'),
+  trendingHashtag('trend-up', 'hashtag'),
+  playerWeek('profile-add', 'medal-star'),
+  playerMonth('profile-add', 'crown'),
+  venueWeek('building-4', 'award'),
+  venueMonth('building-4', 'crown'),
+  venueRating('building-4', 'star'),
+  venueDay('building-4', 'magic-star');
 
   const ActiveLook(this.familyIcon, this.mark);
 
@@ -27,6 +37,8 @@ enum ActiveLook {
 
   /// The look for [event] at [now].
   static ActiveLook of(ActiveItem event, DateTime now) {
+    final honour = _byType[event.eventType];
+    if (honour != null) return honour;
     final phase = event.phaseAt(now);
     final meetup = event.entityKind == 'meetup';
     return switch (phase) {
@@ -36,6 +48,39 @@ enum ActiveLook {
       null => event.isVenue ? venueAdded : playerJoined,
     };
   }
+
+  static const Map<String, ActiveLook> _byType = <String, ActiveLook>{
+    'trending_sport': trendingSport,
+    'trending_hashtag': trendingHashtag,
+    'player_week': playerWeek,
+    'player_month': playerMonth,
+    'venue_week': venueWeek,
+    'venue_month': venueMonth,
+    'venue_rating': venueRating,
+    'venue_day': venueDay,
+  };
+
+  /// The trending strip / box (`ACT_TYPES[t].slim`).
+  bool get isSlim => this == trendingSport || this == trendingHashtag;
+
+  /// The player spotlight (`isAward`).
+  bool get isAward => this == playerWeek || this == playerMonth;
+
+  /// The photo-led venue (`isFeature`).
+  bool get isFeature =>
+      this == venueWeek || this == venueMonth || this == venueDay;
+
+  /// A week or month honour, with its period badge.
+  bool get isPeriod =>
+      this == playerWeek ||
+      this == venueWeek ||
+      this == playerMonth ||
+      this == venueMonth;
+
+  bool get isMonth => this == playerMonth || this == venueMonth;
+
+  /// The strip's and box's glyph (`slimIcon`).
+  String get slimIcon => this == trendingHashtag ? 'hashtag' : 'trend-up';
 
   bool get isLive => this == gameLive || this == meetupLive;
 
@@ -50,6 +95,14 @@ enum ActiveLook {
     gameLive || meetupLive => l.act_kicker_live,
     gameFinished => l.act_kicker_game_ended,
     meetupFinished => l.act_kicker_meetup_completed,
+    trendingSport => l.act_kicker_trending_sport,
+    trendingHashtag => l.act_kicker_trending_hashtag,
+    playerWeek => l.act_kicker_player_week,
+    playerMonth => l.act_kicker_player_month,
+    venueWeek => l.act_kicker_venue_week,
+    venueMonth => l.act_kicker_venue_month,
+    venueRating => l.act_kicker_venue_rating,
+    venueDay => l.act_kicker_venue_day,
   };
 
   /// The pill action at the end of the card (`ACT_ACTION`).
@@ -61,6 +114,12 @@ enum ActiveLook {
     gameLive || meetupLive => l.act_cta_join_in,
     gameFinished => l.act_cta_see_results,
     meetupFinished => l.act_cta_see_recap,
+    trendingSport => l.act_cta_see_games,
+    trendingHashtag => l.act_cta_see_posts,
+    playerWeek || playerMonth => l.act_cta_view_profile,
+    venueWeek || venueMonth => l.act_cta_book_court,
+    venueRating => l.act_cta_read_reviews,
+    venueDay => l.act_cta_book_now,
   };
 
   /// The card's pastel ground and its ink (`ACT_TONE`), the package's
@@ -75,6 +134,13 @@ enum ActiveLook {
   /// | finished game | `--surface-sunken` / `--ink-soft` | `ended` |
   /// | upcoming meetup | `--tile-active` | `active` |
   /// | finished meetup | `--tile-accent` | `accent` |
+  /// | trending sport | `--tile-info` | `info` |
+  /// | trending hashtag | `--tile-main` | `main` |
+  /// | player of the week | `--tile-active` | `active` |
+  /// | venue of the week | `--tile-sport` | `sport` |
+  /// | player / venue of the month | amber 30% over white, `--bright-s-600` | `gold` |
+  /// | new venue rating | `--tile-social` | `social` |
+  /// | venue of the day | `--tile-bright` | `bright` |
   DabblerToneColor get tone => switch (this) {
     playerJoined => DabblerActivityTones.social,
     venueAdded => DabblerActivityTones.bright,
@@ -83,6 +149,13 @@ enum ActiveLook {
     gameFinished => DabblerActivityTones.ended,
     meetupUpcoming => DabblerActivityTones.active,
     meetupFinished => DabblerActivityTones.accent,
+    trendingSport => DabblerActivityTones.info,
+    trendingHashtag => DabblerActivityTones.main,
+    playerWeek => DabblerActivityTones.active,
+    venueWeek => DabblerActivityTones.sport,
+    playerMonth || venueMonth => DabblerActivityTones.gold,
+    venueRating => DabblerActivityTones.social,
+    venueDay => DabblerActivityTones.bright,
   };
 }
 
@@ -94,6 +167,8 @@ List<ActiveItem> latestActivePerEntity(List<ActiveItem> events) {
   final seen = <String>{};
   return <ActiveItem>[
     for (final e in events)
-      if (seen.add('${e.entityKind}:${e.entityId}')) e,
+      // KAN-967: only a game's or meetup's lifecycle rows collapse; an honour
+      // (a player of the week and of the month) is its own card.
+      if (seen.add(e.isEvent ? '${e.entityKind}:${e.entityId}' : e.id)) e,
   ];
 }

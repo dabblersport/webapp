@@ -315,6 +315,15 @@ void main() {
         ActiveLook.meetupUpcoming: ('people', 'people'),
         ActiveLook.meetupLive: ('people', 'flash'),
         ActiveLook.meetupFinished: ('people', 'medal-star'),
+        // KAN-967.
+        ActiveLook.trendingSport: ('trend-up', 'trend-up'),
+        ActiveLook.trendingHashtag: ('trend-up', 'hashtag'),
+        ActiveLook.playerWeek: ('profile-add', 'medal-star'),
+        ActiveLook.playerMonth: ('profile-add', 'crown'),
+        ActiveLook.venueWeek: ('building-4', 'award'),
+        ActiveLook.venueMonth: ('building-4', 'crown'),
+        ActiveLook.venueRating: ('building-4', 'star'),
+        ActiveLook.venueDay: ('building-4', 'magic-star'),
       },
     );
   });

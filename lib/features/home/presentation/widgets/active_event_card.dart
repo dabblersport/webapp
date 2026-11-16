@@ -9,10 +9,12 @@ import 'package:dabbler/features/social/providers/active_item.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
+import 'active_card_honours.dart';
 import 'active_card_look.dart';
 import 'active_card_parts.dart';
 import 'active_card_stat.dart';
 
+export 'active_card_honours.dart';
 export 'active_card_look.dart';
 export 'active_card_parts.dart';
 export 'active_card_stat.dart';
@@ -44,7 +46,14 @@ class ActiveEventCard extends ConsumerWidget {
   static String monthLabel(DateTime at) =>
       DateFormat.MMM('en').format(at).toUpperCase();
 
-  String? _route() => switch (event.entityKind) {
+  String? _route() => routeFor(event);
+
+  /// Where a card opens: the game, meetup, venue or profile; KAN-967 the
+  /// sport's overview (trending sport) or the hashtag's feed (`detail` is
+  /// the hashtag's slug).
+  static String? routeFor(ActiveItem event) => switch (event.entityKind) {
+    'sport' => RoutePaths.sportOverviewFor(event.entityId),
+    'hashtag' => '${RoutePaths.hashtagFeed}/${event.detail ?? event.entityId}',
     'game' => RoutePaths.gameDetail(event.entityId),
     'meetup' => RoutePaths.meetupDetail(event.entityId),
     'venue' => RoutePaths.venueDetail(event.entityId),
@@ -54,6 +63,29 @@ class ActiveEventCard extends ConsumerWidget {
     'profile' => profileRoute(event.actorProfileId ?? event.entityId),
     _ => null,
   };
+
+  /// The press-scaled, tappable card with its 12 bottom gap.
+  static Widget tappable(
+    BuildContext context, {
+    required String? route,
+    required String label,
+    required Widget child,
+    bool gap = true,
+  }) => Semantics(
+    link: route != null,
+    container: true,
+    label: label,
+    child: GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: route == null ? null : () => context.push(route),
+      child: Padding(
+        padding: gap
+            ? const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4)
+            : EdgeInsetsDirectional.zero,
+        child: DabblerPressScale.gesture(enabled: route != null, child: child),
+      ),
+    ),
+  );
 
   /// The visited-profile route for a profile id.
   static String profileRoute(String profileId) =>
@@ -76,6 +108,38 @@ class ActiveEventCard extends ConsumerWidget {
     final look = ActiveLook.of(event, now);
     final tone = look.tone;
     final route = _route();
+
+    // KAN-967: the trending strip, and the award, feature and review cards.
+    if (look.isSlim) {
+      return tappable(
+        context,
+        route: route,
+        label: '${look.kicker(l)}: ${ActiveHonours.value(l, event)}',
+        child: ActiveTrendCard(event: event),
+      );
+    }
+    if (look.isAward || look.isFeature || look == ActiveLook.venueRating) {
+      final headline = look.isAward
+          ? (event.actorName ?? '')
+          : (event.title ?? '');
+      return tappable(
+        context,
+        route: route,
+        label: '${look.kicker(l)}: $headline',
+        child: DabblerActivityCard(
+          tone: tone,
+          mark: look.mark,
+          children: ActiveHonours.fullRows(
+            l: l,
+            event: event,
+            look: look,
+            time:
+                ActiveHonours.time(l, event, look) ??
+                timeLabel(l, event.eventAt, now),
+          ),
+        ),
+      );
+    }
     final sports = event.sportsFor(l.localeName);
     final name = event.actorName?.trim() ?? '';
 
@@ -151,20 +215,11 @@ class ActiveEventCard extends ConsumerWidget {
       ],
     );
 
-    return Semantics(
-      link: route != null,
-      container: true,
+    return tappable(
+      context,
+      route: route,
       label: '${look.kicker(l)}: $headline',
-      child: GestureDetector(
-        behavior: HitTestBehavior.opaque,
-        onTap: route == null ? null : () => context.push(route),
-        child: Padding(
-          padding: const EdgeInsetsDirectional.only(
-            bottom: DabblerSpacing.space4,
-          ),
-          child: DabblerPressScale.gesture(enabled: route != null, child: card),
-        ),
-      ),
+      child: card,
     );
   }
 }

@@ -16,12 +16,14 @@ String activeTypeLabel(AppLocalizations l, ActiveType? type) => switch (type) {
   ActiveType.meetups => l.act_filter_meetups,
   ActiveType.venues => l.act_filter_venues,
   ActiveType.players => l.act_filter_players,
+  ActiveType.trending => l.act_filter_trending,
 };
 
-/// KAN-962: the type chips in the design's order (`actTypes`): All, Players,
-/// Venues, Games, Meetups.
+/// KAN-962 / KAN-967: the type chips in the design's order (`actTypes`):
+/// All, Trending, Players, Venues, Games, Meetups.
 const List<ActiveType?> activeTypeChipOrder = <ActiveType?>[
   null,
+  ActiveType.trending,
   ActiveType.players,
   ActiveType.venues,
   ActiveType.games,

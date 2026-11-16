@@ -24,6 +24,17 @@ class ActiveItem {
     this.participantCount,
     this.capacity,
     this.spaceCount,
+    this.metricKind,
+    this.metricValue,
+    this.periodStart,
+    this.stats = const <ActiveStat>[],
+    this.rating,
+    this.ratingCount,
+    this.photoUrl,
+    this.quote,
+    this.ratedGameAt,
+    this.reasons = const <ActiveReason>[],
+    this.distanceKm,
   });
 
   /// `player_joined`, `venue_added`, `game_created|started|ended`,
@@ -60,6 +71,41 @@ class ActiveItem {
 
   /// A new venue's active spaces (courts, pitches).
   final int? spaceCount;
+
+  // --- KAN-967 card types (trending, awards, featured venues, ratings) ---
+
+  /// The trending figure's kind: `games_growth_pct`, `players_growth_pct`,
+  /// `posts_today` or `posts_yesterday`.
+  final String? metricKind;
+  final num? metricValue;
+
+  /// The first day of the award's week or month.
+  final DateTime? periodStart;
+
+  /// The award's or featured venue's three figures, in order.
+  final List<ActiveStat> stats;
+
+  /// The venue's average rating (0-5) and how many ratings it has; on a
+  /// `venue_rating` row, [rating] is that rating's stars.
+  final double? rating;
+  final int? ratingCount;
+
+  /// The featured venue's first photo.
+  final String? photoUrl;
+
+  /// A `venue_rating` row's comment, and when the rater played there.
+  final String? quote;
+  final DateTime? ratedGameAt;
+
+  /// Why `venue_day` is recommended.
+  final List<ActiveReason> reasons;
+
+  /// The viewer's distance to the venue (`venue_day`), when known.
+  final double? distanceKm;
+
+  /// One of the KAN-967 trending strips.
+  bool get isSlim =>
+      eventType == 'trending_sport' || eventType == 'trending_hashtag';
 
   /// Unique in the stream: one row per (event_type, entity_id).
   String get id => '$eventType:$entityId';
@@ -129,6 +175,15 @@ class ActiveItem {
 
   static int? _int(dynamic raw) => raw is num ? raw.toInt() : null;
 
+  static double? _double(dynamic raw) => raw is num ? raw.toDouble() : null;
+
+  static List<Map<String, dynamic>> _maps(dynamic raw) => raw is List
+      ? <Map<String, dynamic>>[
+          for (final m in raw)
+            if (m is Map) Map<String, dynamic>.from(m),
+        ]
+      : const <Map<String, dynamic>>[];
+
   static List<String> _strings(dynamic raw) => raw is List
       ? <String>[
           for (final s in raw)
@@ -166,6 +221,29 @@ class ActiveItem {
       participantCount: _int(r['participant_count']),
       capacity: _int(r['capacity']),
       spaceCount: _int(r['space_count']),
+      metricKind: s('metric_kind'),
+      metricValue: r['metric_value'] is num ? r['metric_value'] as num : null,
+      periodStart: _date(r['period_start']),
+      stats: <ActiveStat>[
+        for (final m in _maps(r['stats']))
+          if (m['key'] is String && m['value'] is num)
+            (key: m['key'] as String, value: m['value'] as num),
+      ],
+      rating: _double(r['rating']),
+      ratingCount: _int(r['rating_count']),
+      photoUrl: s('photo_url'),
+      quote: s('quote'),
+      ratedGameAt: _date(r['rated_game_at']),
+      reasons: <ActiveReason>[
+        for (final m in _maps(r['reasons']))
+          if (m['kind'] is String)
+            (
+              kind: m['kind'] as String,
+              value: m['value'] is num ? m['value'] as num : null,
+              text: m['text'] is String ? m['text'] as String : null,
+            ),
+      ],
+      distanceKm: _double(r['distance_km']),
     );
   }
 
@@ -189,8 +267,34 @@ class ActiveItem {
     'participant_count': participantCount,
     'capacity': capacity,
     'space_count': spaceCount,
+    'metric_kind': metricKind,
+    'metric_value': metricValue,
+    'period_start': periodStart?.toUtc().toIso8601String(),
+    'stats': <Map<String, dynamic>>[
+      for (final st in stats)
+        <String, dynamic>{'key': st.key, 'value': st.value},
+    ],
+    'rating': rating,
+    'rating_count': ratingCount,
+    'photo_url': photoUrl,
+    'quote': quote,
+    'rated_game_at': ratedGameAt?.toUtc().toIso8601String(),
+    'reasons': <Map<String, dynamic>>[
+      for (final r in reasons)
+        <String, dynamic>{'kind': r.kind, 'value': r.value, 'text': r.text},
+    ],
+    'distance_km': distanceKm,
   };
 }
+
+/// KAN-967: one figure of an award or a featured venue: `games`,
+/// `mvp_votes`, `wins`, `bookings` or `rating`.
+typedef ActiveStat = ({String key, num value});
+
+/// KAN-967: why a venue is recommended today: `free_from` ([text] the local
+/// `HH:mm` the courts are free from), `distance_km` ([value]) or `price_aed`
+/// ([value], per court and hour).
+typedef ActiveReason = ({String kind, num? value, String? text});
 
 /// KAN-964: a game's or meetup's state on the Active card.
 enum ActivePhase { upcoming, live, finished }
@@ -204,8 +308,21 @@ enum ActiveType {
     'meetup_started',
     'meetup_completed',
   ]),
-  venues('building-4', <String>['venue_added']),
-  players('profile-add', <String>['player_joined']);
+  venues('building-4', <String>[
+    'venue_added',
+    'venue_week',
+    'venue_month',
+    'venue_rating',
+    'venue_day',
+  ]),
+  players('profile-add', <String>[
+    'player_joined',
+    'player_week',
+    'player_month',
+  ]),
+
+  /// KAN-967: trending sports and hashtags.
+  trending('trend-up', <String>['trending_sport', 'trending_hashtag']);
 
   const ActiveType(this.icon, this.eventTypes);
 

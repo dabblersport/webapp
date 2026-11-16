@@ -16,6 +16,7 @@ class ActiveCardFooter extends StatelessWidget {
     required this.sports,
     required this.action,
     required this.ink,
+    this.showHost = true,
   });
 
   final ActiveItem event;
@@ -25,10 +26,13 @@ class ActiveCardFooter extends StatelessWidget {
   final String action;
   final Color ink;
 
+  /// The host avatar (games and meetups); the KAN-967 types draw none.
+  final bool showHost;
+
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    final host = event.entityKind != 'profile' && event.hasActor;
+    final host = showHost && event.entityKind != 'profile' && event.hasActor;
     return Row(
       children: <Widget>[
         if (host) ...<Widget>[

@@ -15562,6 +15562,210 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count} min ago'**
   String act_time_minutes(int count);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Type chip: trending sports and hashtags.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending'**
+  String get act_filter_trending;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending sport'**
+  String get act_kicker_trending_sport;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Trending hashtag'**
+  String get act_kicker_trending_hashtag;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Player of the week'**
+  String get act_kicker_player_week;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Player of the month'**
+  String get act_kicker_player_month;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue of the week'**
+  String get act_kicker_venue_week;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue of the month'**
+  String get act_kicker_venue_month;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'New venue rating'**
+  String get act_kicker_venue_rating;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Kicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Recommended · venue of the day'**
+  String get act_kicker_venue_day;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Action, trending sport.
+  ///
+  /// In en, this message translates to:
+  /// **'See games'**
+  String get act_cta_see_games;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Action, trending hashtag.
+  ///
+  /// In en, this message translates to:
+  /// **'See posts'**
+  String get act_cta_see_posts;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Action, player of the week or month.
+  ///
+  /// In en, this message translates to:
+  /// **'View profile'**
+  String get act_cta_view_profile;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Action, venue of the week or month.
+  ///
+  /// In en, this message translates to:
+  /// **'Book a court'**
+  String get act_cta_book_court;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Action, new venue rating.
+  ///
+  /// In en, this message translates to:
+  /// **'Read reviews'**
+  String get act_cta_read_reviews;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Action, venue of the day.
+  ///
+  /// In en, this message translates to:
+  /// **'Book now'**
+  String get act_cta_book_now;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Time of a trending card.
+  ///
+  /// In en, this message translates to:
+  /// **'Now'**
+  String get act_time_now;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). The award week (ISO week number), as the badge and the time.
+  ///
+  /// In en, this message translates to:
+  /// **'Week {week}'**
+  String act_week(int week);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Trending sport figure.
+  ///
+  /// In en, this message translates to:
+  /// **'+{pct}% games this week'**
+  String act_metric_games_growth(int pct);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Trending sport figure.
+  ///
+  /// In en, this message translates to:
+  /// **'+{pct}% players'**
+  String act_metric_players_growth(int pct);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Trending hashtag figure.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post today} other{{count} posts today}}'**
+  String act_metric_posts_today(int count);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Trending hashtag figure.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 post yesterday} other{{count} posts yesterday}}'**
+  String act_metric_posts_yesterday(int count);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label. The design leaves it untranslated in AR; this is the AR word for games.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get act_stat_label_games;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
+  ///
+  /// In en, this message translates to:
+  /// **'MVP votes'**
+  String get act_stat_label_mvp_votes;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
+  ///
+  /// In en, this message translates to:
+  /// **'Wins'**
+  String get act_stat_label_wins;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings'**
+  String get act_stat_label_bookings;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
+  ///
+  /// In en, this message translates to:
+  /// **'Rating'**
+  String get act_stat_label_rating;
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Photo rating pill; rating has one decimal.
+  ///
+  /// In en, this message translates to:
+  /// **'{rating} · {count} reviews'**
+  String act_rating_reviews(String rating, int count);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Accessible name of the review stars.
+  ///
+  /// In en, this message translates to:
+  /// **'Rated {rating} out of 5'**
+  String act_rating_label(String rating);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Rated venue detail, after the area.
+  ///
+  /// In en, this message translates to:
+  /// **'{rating} from {count} ratings'**
+  String act_rating_from(String rating, int count);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Under the rater; day is the weekday name.
+  ///
+  /// In en, this message translates to:
+  /// **'Played here on {day}'**
+  String act_played_here(String day);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Venue of the day detail, after the area.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km from you'**
+  String act_km_from_you(String km);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'Courts free from {time}'**
+  String act_reason_free_from(String time);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Reason chip. The design leaves it untranslated in AR.
+  ///
+  /// In en, this message translates to:
+  /// **'{km} km away'**
+  String act_reason_km(String km);
+
+  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Reason chip.
+  ///
+  /// In en, this message translates to:
+  /// **'AED {price} per court'**
+  String act_reason_price(String price);
 }
 
 class _AppLocalizationsDelegate

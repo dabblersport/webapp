@@ -8980,4 +8980,150 @@ class AppLocalizationsAr extends AppLocalizations {
   String act_time_minutes(int count) {
     return 'قبل $count د';
   }
+
+  @override
+  String get act_filter_trending => 'رائج';
+
+  @override
+  String get act_kicker_trending_sport => 'رياضة رائجة';
+
+  @override
+  String get act_kicker_trending_hashtag => 'هاشتاج رائج';
+
+  @override
+  String get act_kicker_player_week => 'لاعب الأسبوع';
+
+  @override
+  String get act_kicker_player_month => 'لاعب الشهر';
+
+  @override
+  String get act_kicker_venue_week => 'ملعب الأسبوع';
+
+  @override
+  String get act_kicker_venue_month => 'ملعب الشهر';
+
+  @override
+  String get act_kicker_venue_rating => 'تقييم جديد لملعب';
+
+  @override
+  String get act_kicker_venue_day => 'مقترح لك · ملعب اليوم';
+
+  @override
+  String get act_cta_see_games => 'عرض المباريات';
+
+  @override
+  String get act_cta_see_posts => 'عرض المنشورات';
+
+  @override
+  String get act_cta_view_profile => 'عرض الملف';
+
+  @override
+  String get act_cta_book_court => 'احجز ملعب';
+
+  @override
+  String get act_cta_read_reviews => 'اقرأ التقييمات';
+
+  @override
+  String get act_cta_book_now => 'احجز الآن';
+
+  @override
+  String get act_time_now => 'الآن';
+
+  @override
+  String act_week(int week) {
+    return 'الأسبوع $week';
+  }
+
+  @override
+  String act_metric_games_growth(int pct) {
+    return '+$pct% مباريات هذا الأسبوع';
+  }
+
+  @override
+  String act_metric_players_growth(int pct) {
+    return '+$pct% لاعبين';
+  }
+
+  @override
+  String act_metric_posts_today(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منشور اليوم',
+      many: '$count منشورًا اليوم',
+      few: '$count منشورات اليوم',
+      two: 'منشوران اليوم',
+      one: 'منشور واحد اليوم',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_metric_posts_yesterday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count منشور أمس',
+      many: '$count منشورًا أمس',
+      few: '$count منشورات أمس',
+      two: 'منشوران أمس',
+      one: 'منشور واحد أمس',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get act_stat_label_games => 'مباريات';
+
+  @override
+  String get act_stat_label_mvp_votes => 'أصوات الأفضل';
+
+  @override
+  String get act_stat_label_wins => 'انتصارات';
+
+  @override
+  String get act_stat_label_bookings => 'حجوزات';
+
+  @override
+  String get act_stat_label_rating => 'التقييم';
+
+  @override
+  String act_rating_reviews(String rating, int count) {
+    return '$rating · $count تقييم';
+  }
+
+  @override
+  String act_rating_label(String rating) {
+    return 'التقييم $rating من 5';
+  }
+
+  @override
+  String act_rating_from(String rating, int count) {
+    return '$rating من $count تقييم';
+  }
+
+  @override
+  String act_played_here(String day) {
+    return 'لعب هنا يوم $day';
+  }
+
+  @override
+  String act_km_from_you(String km) {
+    return '$km كم منك';
+  }
+
+  @override
+  String act_reason_free_from(String time) {
+    return 'ملاعب متاحة من $time';
+  }
+
+  @override
+  String act_reason_km(String km) {
+    return 'على بعد $km كم';
+  }
+
+  @override
+  String act_reason_price(String price) {
+    return '$price درهم للملعب';
+  }
 }

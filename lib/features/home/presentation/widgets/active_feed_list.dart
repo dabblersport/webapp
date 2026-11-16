@@ -43,6 +43,59 @@ List<ActiveGroup> groupActiveByDay(
   return groups;
 }
 
+/// One day's cards: each item's card, except that two trending items in a
+/// row become one [ActiveTrendPair] (`pairSlims`, KAN-967: greedy from the
+/// top, within the day).
+List<Widget> activeCardsOf(List<ActiveItem> items) {
+  final out = <Widget>[];
+  for (var i = 0; i < items.length; i++) {
+    final x = items[i];
+    final y = i + 1 < items.length ? items[i + 1] : null;
+    if (x.isSlim && y != null && y.isSlim) {
+      out.add(
+        ActiveTrendPair(
+          key: ValueKey('pair:${x.id}:${y.id}'),
+          start: x,
+          end: y,
+        ),
+      );
+      i++;
+    } else {
+      out.add(ActiveEventCard(key: ValueKey(x.id), event: x));
+    }
+  }
+  return out;
+}
+
+/// KAN-967: two trending items side by side, each its own link.
+class ActiveTrendPair extends StatelessWidget {
+  const ActiveTrendPair({super.key, required this.start, required this.end});
+
+  final ActiveItem start;
+  final ActiveItem end;
+
+  Widget _box(BuildContext context, ActiveItem e) {
+    final l = AppLocalizations.of(context);
+    final look = ActiveLook.of(e, DateTime.now());
+    return ActiveEventCard.tappable(
+      context,
+      route: ActiveEventCard.routeFor(e),
+      label: '${look.kicker(l)}: ${ActiveHonours.value(l, e)}',
+      gap: false,
+      child: ActiveTrendCard(key: ValueKey(e.id), event: e, box: true),
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(bottom: DabblerSpacing.space4),
+    child: DabblerActivityPair(
+      start: _box(context, start),
+      end: _box(context, end),
+    ),
+  );
+}
+
 /// KAN-957: the Active tab's list as a sliver (`Home Feed.dc.html:360-460`):
 /// date groups of cards ending in "You're all caught up", or the loading
 /// skeleton, the empty state (worded for the filters when one is on) or the
@@ -111,7 +164,7 @@ class ActiveFeedSliver extends ConsumerWidget {
     final rows = <Widget>[
       for (final g in groups) ...<Widget>[
         ActiveGroupHeader(label: g.label),
-        for (final e in g.items) ActiveEventCard(key: ValueKey(e.id), event: e),
+        ...activeCardsOf(g.items),
       ],
       if (state.isLoadingMore)
         const Padding(

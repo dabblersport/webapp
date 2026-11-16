@@ -8864,4 +8864,144 @@ class AppLocalizationsEn extends AppLocalizations {
   String act_time_minutes(int count) {
     return '$count min ago';
   }
+
+  @override
+  String get act_filter_trending => 'Trending';
+
+  @override
+  String get act_kicker_trending_sport => 'Trending sport';
+
+  @override
+  String get act_kicker_trending_hashtag => 'Trending hashtag';
+
+  @override
+  String get act_kicker_player_week => 'Player of the week';
+
+  @override
+  String get act_kicker_player_month => 'Player of the month';
+
+  @override
+  String get act_kicker_venue_week => 'Venue of the week';
+
+  @override
+  String get act_kicker_venue_month => 'Venue of the month';
+
+  @override
+  String get act_kicker_venue_rating => 'New venue rating';
+
+  @override
+  String get act_kicker_venue_day => 'Recommended · venue of the day';
+
+  @override
+  String get act_cta_see_games => 'See games';
+
+  @override
+  String get act_cta_see_posts => 'See posts';
+
+  @override
+  String get act_cta_view_profile => 'View profile';
+
+  @override
+  String get act_cta_book_court => 'Book a court';
+
+  @override
+  String get act_cta_read_reviews => 'Read reviews';
+
+  @override
+  String get act_cta_book_now => 'Book now';
+
+  @override
+  String get act_time_now => 'Now';
+
+  @override
+  String act_week(int week) {
+    return 'Week $week';
+  }
+
+  @override
+  String act_metric_games_growth(int pct) {
+    return '+$pct% games this week';
+  }
+
+  @override
+  String act_metric_players_growth(int pct) {
+    return '+$pct% players';
+  }
+
+  @override
+  String act_metric_posts_today(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts today',
+      one: '1 post today',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_metric_posts_yesterday(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count posts yesterday',
+      one: '1 post yesterday',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get act_stat_label_games => 'Games';
+
+  @override
+  String get act_stat_label_mvp_votes => 'MVP votes';
+
+  @override
+  String get act_stat_label_wins => 'Wins';
+
+  @override
+  String get act_stat_label_bookings => 'Bookings';
+
+  @override
+  String get act_stat_label_rating => 'Rating';
+
+  @override
+  String act_rating_reviews(String rating, int count) {
+    return '$rating · $count reviews';
+  }
+
+  @override
+  String act_rating_label(String rating) {
+    return 'Rated $rating out of 5';
+  }
+
+  @override
+  String act_rating_from(String rating, int count) {
+    return '$rating from $count ratings';
+  }
+
+  @override
+  String act_played_here(String day) {
+    return 'Played here on $day';
+  }
+
+  @override
+  String act_km_from_you(String km) {
+    return '$km km from you';
+  }
+
+  @override
+  String act_reason_free_from(String time) {
+    return 'Courts free from $time';
+  }
+
+  @override
+  String act_reason_km(String km) {
+    return '$km km away';
+  }
+
+  @override
+  String act_reason_price(String price) {
+    return 'AED $price per court';
+  }
 }

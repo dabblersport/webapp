@@ -68,3 +68,99 @@ ActiveItem activePlayer({String id = 'u1', DateTime? at}) => ActiveItem(
   actorName: 'Moataz Mustapha',
   sportsEn: const <String>['Tennis'],
 );
+
+/// KAN-967: a trending sport or hashtag row (the design's samples).
+ActiveItem activeTrend({
+  String id = 't1',
+  bool hashtag = false,
+  DateTime? at,
+  String? title,
+  String metricKind = 'games_growth_pct',
+  num metricValue = 38,
+  List<String> sports = const <String>['Padel'],
+  List<String> sportsAr = const <String>['بادل'],
+}) => ActiveItem(
+  eventType: hashtag ? 'trending_hashtag' : 'trending_sport',
+  eventAt: at ?? DateTime.now().subtract(const Duration(minutes: 10)),
+  entityKind: hashtag ? 'hashtag' : 'sport',
+  entityId: id,
+  city: 'Dubai',
+  title: title ?? (hashtag ? '#dabblernight' : 'Padel'),
+  detail: hashtag ? 'dabblernight' : null,
+  sportsEn: sports,
+  sportsAr: sportsAr,
+  metricKind: metricKind,
+  metricValue: metricValue,
+);
+
+/// KAN-967: a player of the week or month.
+ActiveItem activeAward({
+  String id = 'p1',
+  bool month = false,
+  DateTime? at,
+  DateTime? period,
+}) => ActiveItem(
+  eventType: month ? 'player_month' : 'player_week',
+  eventAt: at ?? DateTime.now().subtract(const Duration(hours: 2)),
+  entityKind: 'profile',
+  entityId: id,
+  actorProfileId: id,
+  city: 'Dubai',
+  actorName: 'Khalid Al Mansouri',
+  sportsEn: const <String>['Football'],
+  sportsAr: const <String>['كرة القدم'],
+  periodStart: period ?? (month ? DateTime(2026, 10) : DateTime(2026, 11, 16)),
+  stats: month
+      ? const <ActiveStat>[
+          (key: 'games', value: 22),
+          (key: 'wins', value: 18),
+          (key: 'rating', value: 5),
+        ]
+      : const <ActiveStat>[
+          (key: 'games', value: 6),
+          (key: 'mvp_votes', value: 4),
+          (key: 'rating', value: 4.9),
+        ],
+);
+
+/// KAN-967: a venue of the week, month or day, or a new venue rating.
+ActiveItem activeVenueHonour({
+  String id = 'v9',
+  String type = 'venue_week',
+  DateTime? at,
+}) => ActiveItem(
+  eventType: type,
+  eventAt: at ?? DateTime.now().subtract(const Duration(hours: 3)),
+  entityKind: 'venue',
+  entityId: id,
+  city: 'Dubai',
+  title: type == 'venue_rating'
+      ? 'Al Quoz Pitches'
+      : 'Nad Al Sheba Sports Complex',
+  detail: type == 'venue_rating' ? 'Al Quoz' : 'Nad Al Sheba',
+  actorName: type == 'venue_rating' ? 'Aisha Khan' : null,
+  sportsEn: const <String>['Football', 'Padel'],
+  spaceCount: 4,
+  rating: type == 'venue_rating' ? 5 : 4.8,
+  ratingCount: type == 'venue_rating' ? 186 : 204,
+  quote: type == 'venue_rating' ? 'Best lit pitch in Al Quoz.' : null,
+  ratedGameAt: type == 'venue_rating' ? DateTime(2026, 11, 10, 20) : null,
+  periodStart: type == 'venue_month'
+      ? DateTime(2026, 10)
+      : (type == 'venue_week' ? DateTime(2026, 11, 16) : null),
+  stats: type == 'venue_week' || type == 'venue_month'
+      ? const <ActiveStat>[
+          (key: 'bookings', value: 128),
+          (key: 'games', value: 41),
+          (key: 'rating', value: 4.8),
+        ]
+      : const <ActiveStat>[],
+  reasons: type == 'venue_day'
+      ? const <ActiveReason>[
+          (kind: 'free_from', value: null, text: '19:00'),
+          (kind: 'distance_km', value: 2.1, text: null),
+          (kind: 'price_aed', value: 120, text: null),
+        ]
+      : const <ActiveReason>[],
+  distanceKm: type == 'venue_day' ? 2.1 : null,
+);
