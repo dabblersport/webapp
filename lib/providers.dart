@@ -24,6 +24,7 @@ export 'features/social/providers/post_providers.dart';
 export 'features/social/providers/post_composer_providers.dart';
 export 'features/social/providers/tab_feed_notifier.dart';
 export 'features/social/providers/active_feed_notifier.dart';
+export 'features/social/providers/feed_impressions.dart';
 export 'features/social/providers/public_activity_providers.dart';
 // KAN-962: Home tab tags and the feed scopes they derive.
 export 'features/home/presentation/widgets/home_tab_tags.dart'

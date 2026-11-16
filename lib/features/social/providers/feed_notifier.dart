@@ -14,7 +14,10 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
 import 'package:dabbler/features/home/presentation/providers/home_feed_scopes.dart'
     show forYouSportIdsProvider;
+import 'home_feed_cursor.dart';
 import 'post_providers.dart';
+
+export 'home_feed_cursor.dart';
 
 // =============================================================================
 // FEED STATE
@@ -86,8 +89,8 @@ final class FeedData extends FeedState {
   @override
   final bool hasNewPosts;
 
-  /// Cursor for next page — `created_at` of last fetched row from the RPC.
-  final DateTime? cursor;
+  /// Cursor for next page — the last fetched row's keyset (KAN-966).
+  final HomeFeedCursor? cursor;
 
   @override
   final bool loadMoreFailed;
@@ -106,7 +109,7 @@ final class FeedData extends FeedState {
       loadingMore: loadingMore ?? this.loadingMore,
       hasNewPosts: hasNewPosts ?? this.hasNewPosts,
       loadMoreFailed: loadMoreFailed ?? this.loadMoreFailed,
-      cursor: cursor == _sentinel ? this.cursor : cursor as DateTime?,
+      cursor: cursor == _sentinel ? this.cursor : cursor as HomeFeedCursor?,
     );
   }
 
@@ -117,7 +120,7 @@ final class FeedData extends FeedState {
 // FEED NOTIFIER
 // =============================================================================
 
-typedef _Page = ({List<FeedItem> items, DateTime? cursor, int rawCount});
+typedef _Page = ({List<FeedItem> items, HomeFeedCursor? cursor, int rawCount});
 
 /// Manages the home feed using the `get_home_feed` RPC with cursor pagination.
 ///
@@ -162,23 +165,26 @@ class FeedNotifier extends StateNotifier<FeedState> {
     }
     try {
       final map = hit.payload as Map;
-      final items = <FeedItem>[
+      final items = <FeedItem?>[
         for (final e in (map['items'] as List))
           switch ((e as Map)['k']) {
             'n' => FeedNewsItem.fromJson(
+              Map<String, dynamic>.from(e['v'] as Map),
+            ),
+            // KAN-966: an Active card; a shape that no longer parses drops.
+            'a' => FeedActiveItem.fromHomeFeedRow(
               Map<String, dynamic>.from(e['v'] as Map),
             ),
             _ => FeedPostItem(
               Post.fromJson(Map<String, dynamic>.from(e['v'] as Map)),
             ),
           },
-      ];
+      ].nonNulls.toList();
       if (items.isEmpty) return;
-      final cursorRaw = map['cursor'] as String?;
       state = FeedData(
         items: items,
         hasMore: map['hasMore'] as bool? ?? true,
-        cursor: cursorRaw == null ? null : DateTime.tryParse(cursorRaw),
+        cursor: HomeFeedCursor.fromCache(map['cursor']),
       );
     } catch (_) {
       // A cached shape that no longer parses is the same as no cache.
@@ -193,10 +199,12 @@ class FeedNotifier extends StateNotifier<FeedState> {
           if (i is FeedPostItem)
             {'k': 'p', 'v': i.post.toJson()}
           else if (i is FeedNewsItem)
-            {'k': 'n', 'v': i.toCacheJson()},
+            {'k': 'n', 'v': i.toCacheJson()}
+          else if (i is FeedActiveItem)
+            {'k': 'a', 'v': i.toCacheJson()},
       ],
       'hasMore': data.hasMore,
-      'cursor': data.cursor?.toUtc().toIso8601String(),
+      'cursor': data.cursor?.toJson(),
     }, requestStartedAt: started);
   }
 
@@ -459,7 +467,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
   /// KAN-955: a full raw page can merge down to too few items to scroll, so
   /// [loadMore] would never fire. Walk the cursor as [loadMore] does; a failed
   /// extra page keeps what was read and the next scroll resumes.
-  Future<({List<FeedItem> items, DateTime? cursor, bool hasMore})>
+  Future<({List<FeedItem> items, HomeFeedCursor? cursor, bool hasMore})>
   _fillFirstPage(_Page page, int generation) async {
     final items = [...page.items];
     var cursor = page.cursor;
@@ -497,7 +505,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
   /// merging drops unsupported activity types or unfetchable posts. Pagination
   /// (`hasMore`) must be judged on rawCount — a full raw page can merge down to
   /// fewer visible items without meaning the feed is exhausted.
-  Future<_Page> _fetchPage({required DateTime? cursor}) async {
+  Future<_Page> _fetchPage({required HomeFeedCursor? cursor}) async {
     final sports = _sportIds();
     // KAN-962: My sports with no followed sport has no rows; no call.
     if (sports != null && sports.isEmpty) {
@@ -507,7 +515,9 @@ class FeedNotifier extends StateNotifier<FeedState> {
       SupabaseConfig.getHomeFeedFn,
       params: {
         'p_limit': _pageSize,
-        'p_cursor': cursor?.toUtc().toIso8601String(),
+        // KAN-966: the 3-part keyset (feed_at, cursor_id, item_kind).
+        ...?cursor?.params,
+        if (cursor == null) 'p_cursor': null,
         // KAN-962: only sent with My sports; absent = every sport.
         if (sports != null) 'p_sport_ids': sports,
       },
@@ -521,11 +531,8 @@ class FeedNotifier extends StateNotifier<FeedState> {
       return (items: const <FeedItem>[], cursor: cursor, rawCount: 0);
     }
 
-    // Advance cursor from the last row.
-    final lastCreatedAt = rows.last['created_at'];
-    final newCursor = lastCreatedAt != null
-        ? DateTime.tryParse(lastCreatedAt.toString())
-        : null;
+    // Advance cursor from the last row (a post or a card, KAN-966).
+    final newCursor = HomeFeedCursor.fromRow(rows.last);
 
     // Partition activity IDs by type.
     final postIds = <String>[];
@@ -533,7 +540,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
     for (final row in rows) {
       final activityId = row['activity_id'] as String?;
-      if (activityId == null) continue;
+      if (activityId == null || row['item_kind'] == 'active') continue;
       switch (row['activity_type'] as String?) {
         case 'post':
         case 'repost':
@@ -575,9 +582,15 @@ class FeedNotifier extends StateNotifier<FeedState> {
       } catch (_) {}
     }
 
-    // Merge in RPC order; skip unsupported activity types.
+    // Merge in RPC order (the server ranks and spaces the cards; KAN-966 never
+    // re-sorts); skip unsupported activity types.
     final result = <FeedItem>[];
     for (final row in rows) {
+      if (row['item_kind'] == 'active') {
+        final card = FeedActiveItem.fromHomeFeedRow(row);
+        if (card != null) result.add(card);
+        continue;
+      }
       final activityId = row['activity_id'] as String?;
       if (activityId == null) continue;
       switch (row['activity_type'] as String?) {
@@ -615,6 +628,7 @@ class FeedNotifier extends StateNotifier<FeedState> {
   static String? _itemId(FeedItem item) {
     if (item is FeedPostItem) return item.post.id;
     if (item is FeedNewsItem) return item.newsId;
+    if (item is FeedActiveItem) return 'active:${item.item.id}';
     return null;
   }
 

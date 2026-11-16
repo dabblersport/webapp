@@ -283,6 +283,12 @@ class SupabaseConfig {
   static const String deleteMyAccountFn = 'delete_my_account';
   static const String getDataSourceMetricsFn = 'get_data_source_metrics';
   static const String getHomeFeedFn = 'get_home_feed';
+  // KAN-966: records the For you Active cards the viewer has seen
+  // (`p_items` = [{entity_type, entity_id, feed_at}], at most 200; returns the count
+  // newly recorded) in `home_feed_impressions`.
+  static const String markFeedImpressionsFn = 'rpc_mark_feed_impressions';
+  static const String homeFeedImpressionsTable = 'home_feed_impressions';
+  static const int markFeedImpressionsMaxItems = 200;
   // KAN-103: SECURITY DEFINER wrappers over auth.audit_log_entries /
   // auth.identities, scoped to auth.uid() — see
   // 20260901170000_kan103_login_history_and_linked_identities_wrappers.sql

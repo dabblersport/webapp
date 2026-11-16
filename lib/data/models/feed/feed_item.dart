@@ -1,12 +1,15 @@
 import 'dart:convert';
 
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/providers/active_item.dart';
 
 /// Union type for items that appear in the `feed_posts` Supabase VIEW.
 ///
 /// Branch on `news_id` presence:
 ///   news_id != null  →  FeedNewsItem
 ///   news_id == null  →  FeedPostItem (social post)
+///
+/// KAN-966: For you also carries [FeedActiveItem] cards from `get_home_feed`.
 sealed class FeedItem {
   const FeedItem();
 
@@ -32,6 +35,57 @@ final class FeedPostItem extends FeedItem {
 
   factory FeedPostItem.fromFeedPostsRow(Map<String, dynamic> json) =>
       FeedPostItem(Post.fromJson(json));
+}
+
+// ---------------------------------------------------------------------------
+// Active card variant (KAN-966)
+// ---------------------------------------------------------------------------
+
+/// KAN-966: a ranked Active card that `get_home_feed` places between the For
+/// you posts (`item_kind = 'active'`). The card fields are the Active tab's
+/// `active_stream` columns, parsed by [ActiveItem.fromRow]; [feedAt] and
+/// [cursorId] are the row's keyset (its anchor post's time and id).
+final class FeedActiveItem extends FeedItem {
+  const FeedActiveItem(
+    this.item, {
+    required this.feedAt,
+    required this.cursorId,
+    this.score,
+  });
+
+  final ActiveItem item;
+  final DateTime feedAt;
+  final String cursorId;
+  final double? score;
+
+  /// Null for a row that is not a card or lacks its card or keyset fields.
+  static FeedActiveItem? fromHomeFeedRow(Map<String, dynamic> row) {
+    if (row['item_kind'] != 'active') return null;
+    final item = ActiveItem.fromRow(row);
+    final at = DateTime.tryParse(
+      (row['feed_at'] ?? row['created_at'] ?? '').toString(),
+    );
+    final cursorId = row['cursor_id']?.toString();
+    if (item == null || at == null || cursorId == null || cursorId.isEmpty) {
+      return null;
+    }
+    final score = row['score'];
+    return FeedActiveItem(
+      item,
+      feedAt: at,
+      cursorId: cursorId,
+      score: score is num ? score.toDouble() : double.tryParse('$score'),
+    );
+  }
+
+  /// The row back in the RPC's shape (the on-device cache).
+  Map<String, dynamic> toCacheJson() => <String, dynamic>{
+    ...item.toRow(),
+    'item_kind': 'active',
+    'feed_at': feedAt.toUtc().toIso8601String(),
+    'cursor_id': cursorId,
+    'score': score,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -115,7 +169,10 @@ final class FeedNewsItem extends FeedItem {
 
     final newsId = json['news_id'];
     if (newsId is! String || newsId.isEmpty) {
-      throw FormatException('FeedNewsItem requires a non-empty news_id', newsId);
+      throw FormatException(
+        'FeedNewsItem requires a non-empty news_id',
+        newsId,
+      );
     }
 
     return FeedNewsItem(

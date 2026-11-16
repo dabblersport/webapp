@@ -25,6 +25,7 @@ import 'package:dabbler/features/home/presentation/widgets/active_feed_list.dart
 import 'package:dabbler/features/home/presentation/widgets/active_filter_panel.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_feed_scroll.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_for_you_card.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_tab_filters.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_tab_tags.dart';
@@ -614,16 +615,23 @@ class _ForYouTabBody extends ConsumerWidget {
       );
     }
 
-    final feedItems = state.items
-        .where((item) => item is! FeedNewsItem || showNews)
-        .toList();
+    // KAN-966: the server's order, with Active cards between posts; a card
+    // never sits next to a card, and has no divider above or below it.
+    final feedItems = spaceForYouCards(
+      state.items.where((item) => item is! FeedNewsItem || showNews).toList(),
+    );
     final itemCount =
         feedItems.length +
         (state.isLoadingMore || state.loadMoreFailed ? 1 : 0);
 
     return SliverList.separated(
       itemCount: itemCount,
-      separatorBuilder: (_, index) => const DabblerDivider(),
+      separatorBuilder: (_, index) =>
+          feedItems[index] is FeedActiveItem ||
+              (index + 1 < feedItems.length &&
+                  feedItems[index + 1] is FeedActiveItem)
+          ? const SizedBox.shrink()
+          : const DabblerDivider(),
       itemBuilder: (_, index) {
         if (index == feedItems.length) {
           if (state.loadMoreFailed) {
@@ -632,6 +640,12 @@ class _ForYouTabBody extends ConsumerWidget {
           return const _LoadingMoreRow();
         }
         final item = feedItems[index];
+        if (item is FeedActiveItem) {
+          return HomeForYouCard(
+            key: ValueKey<String>('for-you-card-${item.item.id}'),
+            card: item,
+          );
+        }
         if (item is FeedPostItem) {
           return HomePostRow.resolve(
             item.post,
