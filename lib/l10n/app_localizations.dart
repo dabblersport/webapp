@@ -15508,6 +15508,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **', '**
   String get act_list_comma;
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Joined players over capacity, an upcoming or live game.
+  ///
+  /// In en, this message translates to:
+  /// **'{capacity, plural, =1{{count}/{capacity} player} other{{count}/{capacity} players}}'**
+  String act_stat_players_of(int count, int capacity);
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Free places, after act_stat_players_of and a middle dot.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 spot left} other{{count} spots left}}'**
+  String act_stat_spots_left(int count);
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). After act_stat_players_of when no place is left.
+  ///
+  /// In en, this message translates to:
+  /// **'Full'**
+  String get act_stat_full;
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Joined players of a game with open capacity.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 player} other{{count} players}}'**
+  String act_stat_players(int count);
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Players of a finished game.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} played'**
+  String act_stat_played(int count);
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). RSVPs going, an upcoming or live meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} going'**
+  String act_stat_going(int count);
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Attendees of a finished meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} went'**
+  String act_stat_went(int count);
+
+  /// KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Active spaces of a new venue, in its sub line.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 court} other{{count} courts}}'**
+  String act_venue_spaces(int count);
 }
 
 class _AppLocalizationsDelegate

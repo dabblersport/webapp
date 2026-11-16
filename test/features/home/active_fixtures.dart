@@ -17,6 +17,8 @@ ActiveItem activeGame({
   List<String> sports = const <String>['Football'],
   List<String> sportsAr = const <String>['كرة القدم'],
   String? city = 'Dubai',
+  int? count,
+  int? capacity,
 }) => ActiveItem(
   eventType: type,
   eventAt: at ?? DateTime.now().subtract(const Duration(minutes: 12)),
@@ -32,6 +34,8 @@ ActiveItem activeGame({
   isLive: live,
   sportsEn: sports,
   sportsAr: sportsAr,
+  participantCount: count,
+  capacity: capacity,
 );
 
 ActiveItem activeVenue({
@@ -40,6 +44,7 @@ ActiveItem activeVenue({
   String title = 'JLT Padel Club',
   String? detail = 'Jumeirah Lake Towers',
   String? city = 'Dubai',
+  int? spaces,
 }) => ActiveItem(
   eventType: 'venue_added',
   eventAt: at ?? DateTime.now().subtract(const Duration(hours: 1)),
@@ -48,6 +53,7 @@ ActiveItem activeVenue({
   city: city,
   title: title,
   detail: detail,
+  spaceCount: spaces,
   sportsEn: const <String>['Padel'],
 );
 

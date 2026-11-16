@@ -10,8 +10,12 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 import 'active_card_look.dart';
+import 'active_card_parts.dart';
+import 'active_card_stat.dart';
 
 export 'active_card_look.dart';
+export 'active_card_parts.dart';
+export 'active_card_stat.dart';
 
 /// The card's 18 padding (`ActivityCard.dc.html`, `padding:18px`, no border).
 const double activeCardInset = DabblerSpacing.space6;
@@ -83,7 +87,12 @@ class ActiveEventCard extends ConsumerWidget {
       ].join(' · ');
     } else if (event.isVenue) {
       headline = event.title ?? '';
-      sub = <String>[?event.detail, ?event.city].join(' · ');
+      final spaces = event.spaceCount;
+      sub = <String>[
+        ?event.detail,
+        if (spaces != null) l.act_venue_spaces(spaces),
+        ?event.city,
+      ].join(' · ');
     } else {
       headline = event.title ?? '';
       final start = event.startAt;
@@ -99,6 +108,8 @@ class ActiveEventCard extends ConsumerWidget {
       'venue' => _VenueBody(headline: headline, sub: sub),
       _ => _EventBody(event: event, tone: tone, headline: headline, sub: sub),
     };
+
+    final stat = ActiveCardStat.of(l, event, look, tone.ink);
 
     final card = DabblerSurface.sunken(
       radius: DabblerRadius.xl,
@@ -131,8 +142,12 @@ class ActiveEventCard extends ConsumerWidget {
             ),
             const DabblerGap.v(DabblerSpacing.space4),
             body,
+            if (stat != null) ...<Widget>[
+              const DabblerGap.v(DabblerSpacing.space4),
+              stat,
+            ],
             const DabblerGap.v(DabblerSpacing.space4),
-            _Footer(
+            ActiveCardFooter(
               event: event,
               sports: sports,
               action: look.action(l),
@@ -155,97 +170,6 @@ class ActiveEventCard extends ConsumerWidget {
             bottom: DabblerSpacing.space4,
           ),
           child: DabblerPressScale.gesture(enabled: route != null, child: card),
-        ),
-      ),
-    );
-  }
-}
-
-/// Text in an ink the type tones do not name (a look's tone ink).
-class _Inked extends StatelessWidget {
-  const _Inked({required this.color, required this.child});
-
-  final Color color;
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) => DefaultTextStyle(
-    style: DefaultTextStyle.of(context).style.copyWith(color: color),
-    child: child,
-  );
-}
-
-/// The kicker pill: on the card surface, the family glyph and the kicker in
-/// the look's ink, or while live the green dot and the kicker in the success
-/// ink (`ActivityCard.dc.html`, 11/13, `padding:4px 10px 4px 8px`).
-class ActiveKickerPill extends StatelessWidget {
-  const ActiveKickerPill({
-    super.key,
-    required this.look,
-    required this.label,
-    required this.ink,
-  });
-
-  final ActiveLook look;
-  final String label;
-  final Color ink;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return Align(
-      alignment: AlignmentDirectional.centerStart,
-      child: DabblerSurface.sunken(
-        radius: DabblerRadius.pill,
-        fill: colors.surfaceCard,
-        padding: const EdgeInsetsDirectional.fromSTEB(
-          DabblerHomeFrame.postBadgePaddingInline,
-          DabblerSpacing.space1,
-          DabblerSpacing.space3,
-          DabblerSpacing.space1,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: <Widget>[
-            if (look.isLive) ...<Widget>[
-              DabblerSurface.sunken(
-                key: const ValueKey<String>('active-live-dot'),
-                width: DabblerSpacing.space2,
-                height: DabblerSpacing.space2,
-                radius: DabblerRadius.pill,
-                fill: colors.success.base,
-              ),
-              const DabblerGap.h(DabblerSpacing.space2),
-            ] else ...<Widget>[
-              DabblerIcon(
-                look.familyIcon,
-                size: DabblerSpacing.space4,
-                weight: DabblerIconWeight.bold,
-                color: ink,
-              ),
-              const SizedBox(width: DabblerHomeFrame.postMetaGap),
-            ],
-            Flexible(
-              child: look.isLive
-                  ? DabblerText(
-                      label,
-                      style: DabblerType.caption2,
-                      tone: DabblerTextTone.success,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    )
-                  : _Inked(
-                      color: ink,
-                      child: DabblerText(
-                        label,
-                        style: DabblerType.caption2,
-                        tone: DabblerTextTone.inherit,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-            ),
-          ],
         ),
       ),
     );
@@ -359,7 +283,7 @@ class _EventBody extends StatelessWidget {
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                _Inked(
+                ActiveInked(
                   color: tone.ink,
                   child: DabblerText(
                     DateFormat.MMM(l.localeName).format(start),
@@ -416,81 +340,4 @@ class _VenueBody extends StatelessWidget {
       ],
     ),
   );
-}
-
-/// The host's 28 avatar (games, meetups), the sport tags and the action pill
-/// in the look's ink.
-class _Footer extends StatelessWidget {
-  const _Footer({
-    required this.event,
-    required this.sports,
-    required this.action,
-    required this.ink,
-  });
-
-  final ActiveItem event;
-  final List<String> sports;
-  final String action;
-  final Color ink;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    final host = event.entityKind != 'profile' && event.hasActor;
-    return Row(
-      children: <Widget>[
-        if (host) ...<Widget>[
-          DabblerAvatar(
-            seed: event.actorName,
-            imageUrl: event.actorAvatarUrl,
-            size: DabblerAvatarSize.xs,
-            ringColor: colors.surfaceCard,
-          ),
-          const DabblerGap.h(DabblerSpacing.space3),
-        ],
-        Expanded(
-          child: Wrap(
-            spacing: DabblerSpacing.space2,
-            runSpacing: DabblerSpacing.space2,
-            children: <Widget>[
-              for (final s in sports)
-                DabblerSurface.sunken(
-                  radius: DabblerRadius.pill,
-                  fill: colors.surfaceCard,
-                  padding: const EdgeInsetsDirectional.symmetric(
-                    horizontal: DabblerSpacing.space3,
-                    vertical: DabblerSpacing.space1,
-                  ),
-                  child: DabblerText(
-                    s,
-                    style: DabblerType.caption2,
-                    tone: DabblerTextTone.secondary,
-                    maxLines: 1,
-                  ),
-                ),
-            ],
-          ),
-        ),
-        const DabblerGap.h(DabblerSpacing.space3),
-        DabblerSurface.sunken(
-          key: const ValueKey<String>('active-card-action'),
-          radius: DabblerRadius.pill,
-          fill: ink,
-          padding: const EdgeInsetsDirectional.symmetric(
-            horizontal: DabblerSpacing.space6,
-            vertical: DabblerSpacing.space3,
-          ),
-          child: _Inked(
-            color: colors.surfaceCard,
-            child: DabblerText(
-              action,
-              style: DabblerType.small,
-              tone: DabblerTextTone.inherit,
-              maxLines: 1,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
 }

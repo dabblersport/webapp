@@ -2994,5 +2994,13 @@
   "act_plays": "يلعب {sports}",
   "act_by": "من {name}",
   "act_list_and": " و",
-  "act_list_comma": "، "
+  "act_list_comma": "، ",
+  "act_stat_players_of": "{capacity, plural, =1{{count}/{capacity} لاعب} =2{{count}/{capacity} لاعبَين} few{{count}/{capacity} لاعبين} many{{count}/{capacity} لاعبًا} other{{count}/{capacity} لاعب}}",
+  "act_stat_spots_left": "{count, plural, =1{متبقٍ مكان واحد} =2{متبقٍ مكانان} few{متبقٍ {count} أماكن} many{متبقٍ {count} مكانًا} other{متبقٍ {count} مكان}}",
+  "act_stat_full": "مكتمل",
+  "act_stat_players": "{count, plural, =0{لا لاعبين} =1{لاعب واحد} =2{لاعبان} few{{count} لاعبين} many{{count} لاعبًا} other{{count} لاعب}}",
+  "act_stat_played": "{count, plural, =1{لعب لاعب واحد} =2{لعب لاعبان} few{لعب {count} لاعبين} many{لعب {count} لاعبًا} other{لعب {count} لاعب}}",
+  "act_stat_going": "{count, plural, =1{مشارك واحد} =2{مشاركان} few{{count} مشاركين} many{{count} مشاركًا} other{{count} مشارك}}",
+  "act_stat_went": "{count, plural, =1{حضر شخص واحد} =2{حضر شخصان} few{حضر {count} أشخاص} many{حضر {count} شخصًا} other{حضر {count} شخص}}",
+  "act_venue_spaces": "{count, plural, =1{ملعب واحد} =2{ملعبان} few{{count} ملاعب} many{{count} ملعبًا} other{{count} ملعب}}"
 }

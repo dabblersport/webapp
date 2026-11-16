@@ -8797,4 +8797,66 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get act_list_comma => ', ';
+
+  @override
+  String act_stat_players_of(int count, int capacity) {
+    String _temp0 = intl.Intl.pluralLogic(
+      capacity,
+      locale: localeName,
+      other: '$count/$capacity players',
+      one: '$count/$capacity player',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_stat_spots_left(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count spots left',
+      one: '1 spot left',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get act_stat_full => 'Full';
+
+  @override
+  String act_stat_players(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count players',
+      one: '1 player',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_stat_played(int count) {
+    return '$count played';
+  }
+
+  @override
+  String act_stat_going(int count) {
+    return '$count going';
+  }
+
+  @override
+  String act_stat_went(int count) {
+    return '$count went';
+  }
+
+  @override
+  String act_venue_spaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count courts',
+      one: '1 court',
+    );
+    return '$_temp0';
+  }
 }

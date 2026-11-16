@@ -21,6 +21,9 @@ class ActiveItem {
     this.isLive = false,
     this.sportsEn = const <String>[],
     this.sportsAr = const <String>[],
+    this.participantCount,
+    this.capacity,
+    this.spaceCount,
   });
 
   /// `player_joined`, `venue_added`, `game_created|started|ended`,
@@ -46,6 +49,17 @@ class ActiveItem {
   final bool isLive;
   final List<String> sportsEn;
   final List<String> sportsAr;
+
+  /// KAN-964 (`active_stream` 08bfa568): a game's active players (the host
+  /// included on hosted and casual games) or a meetup's RSVPs marked going,
+  /// read now (also on ended rows). Null for players and venues.
+  final int? participantCount;
+
+  /// The event's capacity; null when open or not an event.
+  final int? capacity;
+
+  /// A new venue's active spaces (courts, pitches).
+  final int? spaceCount;
 
   /// Unique in the stream: one row per (event_type, entity_id).
   String get id => '$eventType:$entityId';
@@ -96,6 +110,8 @@ class ActiveItem {
   static DateTime? _date(dynamic raw) =>
       raw is String ? DateTime.tryParse(raw)?.toLocal() : null;
 
+  static int? _int(dynamic raw) => raw is num ? raw.toInt() : null;
+
   static List<String> _strings(dynamic raw) => raw is List
       ? <String>[
           for (final s in raw)
@@ -130,6 +146,9 @@ class ActiveItem {
       isLive: r['is_live'] == true,
       sportsEn: _strings(r['sport_names_en']),
       sportsAr: _strings(r['sport_names_ar']),
+      participantCount: _int(r['participant_count']),
+      capacity: _int(r['capacity']),
+      spaceCount: _int(r['space_count']),
     );
   }
 
@@ -150,6 +169,9 @@ class ActiveItem {
     'is_live': isLive,
     'sport_names_en': sportsEn,
     'sport_names_ar': sportsAr,
+    'participant_count': participantCount,
+    'capacity': capacity,
+    'space_count': spaceCount,
   };
 }
 

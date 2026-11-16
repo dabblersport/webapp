@@ -8873,4 +8873,106 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get act_list_comma => '، ';
+
+  @override
+  String act_stat_players_of(int count, int capacity) {
+    String _temp0 = intl.Intl.pluralLogic(
+      capacity,
+      locale: localeName,
+      other: '$count/$capacity لاعب',
+      many: '$count/$capacity لاعبًا',
+      few: '$count/$capacity لاعبين',
+      two: '$count/$capacity لاعبَين',
+      one: '$count/$capacity لاعب',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_stat_spots_left(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'متبقٍ $count مكان',
+      many: 'متبقٍ $count مكانًا',
+      few: 'متبقٍ $count أماكن',
+      two: 'متبقٍ مكانان',
+      one: 'متبقٍ مكان واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get act_stat_full => 'مكتمل';
+
+  @override
+  String act_stat_players(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count لاعب',
+      many: '$count لاعبًا',
+      few: '$count لاعبين',
+      two: 'لاعبان',
+      one: 'لاعب واحد',
+      zero: 'لا لاعبين',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_stat_played(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لعب $count لاعب',
+      many: 'لعب $count لاعبًا',
+      few: 'لعب $count لاعبين',
+      two: 'لعب لاعبان',
+      one: 'لعب لاعب واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_stat_going(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مشارك',
+      many: '$count مشاركًا',
+      few: '$count مشاركين',
+      two: 'مشاركان',
+      one: 'مشارك واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_stat_went(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'حضر $count شخص',
+      many: 'حضر $count شخصًا',
+      few: 'حضر $count أشخاص',
+      two: 'حضر شخصان',
+      one: 'حضر شخص واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String act_venue_spaces(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count ملعب',
+      many: '$count ملعبًا',
+      few: '$count ملاعب',
+      two: 'ملعبان',
+      one: 'ملعب واحد',
+    );
+    return '$_temp0';
+  }
 }

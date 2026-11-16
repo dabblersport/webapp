@@ -3385,5 +3385,21 @@
   "act_list_and": " and ",
   "@act_list_and": {"description": "KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Joins the last two sports in act_plays (keep the spaces)."},
   "act_list_comma": ", ",
-  "@act_list_comma": {"description": "KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Joins the earlier sports in act_plays (keep the space)."}
+  "@act_list_comma": {"description": "KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Joins the earlier sports in act_plays (keep the space)."},
+  "act_stat_players_of": "{capacity, plural, =1{{count}/{capacity} player} other{{count}/{capacity} players}}",
+  "@act_stat_players_of": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Joined players over capacity, an upcoming or live game.", "placeholders": {"count": {"type": "int"}, "capacity": {"type": "int"}}},
+  "act_stat_spots_left": "{count, plural, =1{1 spot left} other{{count} spots left}}",
+  "@act_stat_spots_left": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Free places, after act_stat_players_of and a middle dot.", "placeholders": {"count": {"type": "int"}}},
+  "act_stat_full": "Full",
+  "@act_stat_full": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). After act_stat_players_of when no place is left."},
+  "act_stat_players": "{count, plural, =1{1 player} other{{count} players}}",
+  "@act_stat_players": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Joined players of a game with open capacity.", "placeholders": {"count": {"type": "int"}}},
+  "act_stat_played": "{count} played",
+  "@act_stat_played": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Players of a finished game.", "placeholders": {"count": {"type": "int"}}},
+  "act_stat_going": "{count} going",
+  "@act_stat_going": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). RSVPs going, an upcoming or live meetup.", "placeholders": {"count": {"type": "int"}}},
+  "act_stat_went": "{count} went",
+  "@act_stat_went": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Attendees of a finished meetup.", "placeholders": {"count": {"type": "int"}}},
+  "act_venue_spaces": "{count, plural, =1{1 court} other{{count} courts}}",
+  "@act_venue_spaces": {"description": "KAN-964 Home Active card stat line (ActivityCard.dc.html, actCard statText). Active spaces of a new venue, in its sub line.", "placeholders": {"count": {"type": "int"}}}
 }
