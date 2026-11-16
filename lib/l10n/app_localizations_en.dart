@@ -3923,6 +3923,44 @@ class AppLocalizationsEn extends AppLocalizations {
   String get home_post_block => 'Block user';
 
   @override
+  String home_post_age_seconds(int n) {
+    return '${n}s';
+  }
+
+  @override
+  String home_post_age_minutes(int n) {
+    return '${n}m';
+  }
+
+  @override
+  String home_post_age_hours(int n) {
+    return '${n}h';
+  }
+
+  @override
+  String home_post_age_days(int n) {
+    return '${n}d';
+  }
+
+  @override
+  String get home_post_action_like => 'Like';
+
+  @override
+  String get home_post_action_vibe => 'Vibe';
+
+  @override
+  String get home_post_action_reply => 'Reply';
+
+  @override
+  String get home_post_action_share => 'Share';
+
+  @override
+  String get home_post_action_more => 'More options';
+
+  @override
+  String get home_post_pending_review => 'Pending review';
+
+  @override
   String get home_vibe_title => 'What\'s the vibe?';
 
   @override
@@ -8621,8 +8659,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get act_city_sheet_title => 'Filter by city';
 
   @override
-  String get act_city_sheet_note =>
-      'Show activity from one city, or from all of them.';
+  String get act_city_sheet_note => 'Pick a city to narrow the stream.';
 
   @override
   String get act_city_sheet_loading_failed => 'Couldn\'t load cities.';
@@ -8701,4 +8738,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get home_sport_all => 'All sports';
+
+  @override
+  String get act_city_sheet_note_gps =>
+      'Only changes this stream. Your location stays the same.';
+
+  @override
+  String get home_tag_my_sports => 'My sports';
+
+  @override
+  String get home_tag_city => 'My city';
+
+  @override
+  String get home_tag_country => 'My country';
+
+  @override
+  String get home_tag_anywhere => 'Anywhere';
+
+  @override
+  String get home_tag_news_following => 'Following';
+
+  @override
+  String get home_tag_news_all => 'All news';
+
+  @override
+  String get home_no_followed_sports => 'You don\'t follow any sports yet';
+
+  @override
+  String get home_no_followed_sports_hint =>
+      'Add sports to your profile to see their posts and news here.';
 }

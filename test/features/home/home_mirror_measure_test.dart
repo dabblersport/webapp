@@ -161,7 +161,9 @@ void main() {
       tester,
     ) async {
       await pump(tester);
-      await tester.tap(find.bySemanticsLabel('More options').first);
+      await tester.tap(
+        find.bySemanticsLabel(RegExp('^(More options|خيارات أخرى)\$')).first,
+      );
       await settleHome(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
       final MeasureTable table = MeasureTable(rtl: rtl);
@@ -184,6 +186,9 @@ void main() {
     testWidgets('Home mirrors the frame: News tab - $dir', (tester) async {
       await pump(tester);
       final AppLocalizations l = lookupAppLocalizations(locale);
+      await tester.tap(find.text(l.tab_news).first);
+      await settleHome(tester);
+      // KAN-962: the frame draws the tag row open; a re-tap opens it.
       await tester.tap(find.text(l.tab_news).first);
       await settleHome(tester);
       final MeasureTable table = MeasureTable(rtl: rtl);

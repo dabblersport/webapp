@@ -62,6 +62,9 @@ void main() {
       tester,
     ) async {
       final l = await openActiveTab(tester, state: _data, locale: locale);
+      // KAN-962: Games is fourth now (All, Players, Venues, Games, Meetups).
+      await tester.ensureVisible(_key('active-type-games'));
+      await tester.pump();
       await tester.tap(_key('active-type-games'));
       await tester.pump();
       expect(activeFilterOf(tester).type, ActiveType.games);

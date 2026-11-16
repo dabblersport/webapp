@@ -19,7 +19,7 @@ import 'package:dabbler/features/social/domain/posted_from.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-import 'home_feed_parts.dart';
+import 'home_post_display.dart';
 import 'home_reaction_sheet.dart';
 
 /// Home's post row — the design's feed row, built from design-system parts.
@@ -161,11 +161,14 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               final count = entry.value as int;
               final matched = vibes.where((v) => v.key == vibeKey).firstOrNull;
               final mine = matched != null && myReactions.contains(matched.id);
+              final ar = Localizations.localeOf(context).languageCode == 'ar';
               final label = matched == null
                   ? vibeKey
-                  : (matched.labelEn.isNotEmpty
-                        ? matched.labelEn
-                        : matched.key);
+                  : (ar && matched.labelAr.isNotEmpty
+                        ? matched.labelAr
+                        : (matched.labelEn.isNotEmpty
+                              ? matched.labelEn
+                              : matched.key));
               return DabblerChip(
                 label: '$label $count',
                 selected: mine,
@@ -243,8 +246,8 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     final labels = <Widget>[
       if (originLabel != null) DabblerBadge(label: originLabel),
       if (post.requiresModeration)
-        const DabblerBadge(
-          label: 'Pending review',
+        DabblerBadge(
+          label: l10n.home_post_pending_review,
           tone: DabblerBadgeTone.warning,
         ),
       if (expiry != null)
@@ -516,9 +519,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               : null,
           reactions: _reactionSummary(post, myReactions),
           showActions: widget.showActions,
-          time: homeRelativeTime(post.createdAt),
+          time: homePostAge(context, post.createdAt),
           place: place,
-          segments: _segments(post),
+          segments: homePostSegments(post),
           sportLabel: sportLabel,
           onSportTap: sportLabel == null
               ? null
@@ -532,9 +535,10 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           placeTagLeading: placeTag == null
               ? null
               : DabblerIcon('location', size: DabblerSizing.iconXs),
-          sportLeading: sportKey == null
+          // The design's sport emoji (`p.sportEmoji`) before the label.
+          sportLeading: sportLabel == null
               ? null
-              : DabblerSportIcon.fromKey(sportKey, size: DabblerSizing.iconXs),
+              : homeSportEmoji(sportKey ?? post.sport),
           likes: _localLikeCount,
           replies: post.commentCount,
           liked: hasLiked,
@@ -552,20 +556,17 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               context.push('${RoutePaths.socialPostDetail}/${post.id}'),
           onMore: () =>
               _showMoreMenu(isAuthor: isAuthor, authorName: authorLabel),
+          likeLabel: l10n.home_post_action_like,
+          vibeLabel: l10n.home_post_action_vibe,
+          commentLabel: l10n.home_post_action_reply,
+          shareLabel: l10n.home_post_action_share,
+          moreLabel: l10n.home_post_action_more,
         ),
         if (post.commentCount > 0)
           HomeThreadPreview(postId: post.id, isEmbedded: widget.isEmbedded),
       ],
     );
   }
-
-  /// The body as runs: the text, then the post's hashtags as links.
-  List<DabblerPostSegment> _segments(Post post) => <DabblerPostSegment>[
-    if (post.body != null && post.body!.trim().isNotEmpty)
-      DabblerPostSegment(post.body!),
-    for (final tag in post.tags.skip(1))
-      DabblerPostSegment(' #$tag', link: true),
-  ];
 }
 
 /// Opens the shared report form.
@@ -627,7 +628,7 @@ class HomeRepostRow extends ConsumerWidget {
                   : l10n.post_card_persona_player,
             ),
       repostedLabel:
-          '${l10n.post_card_kind_repost} · ${homeRelativeTime(post.createdAt)}',
+          '${l10n.post_card_kind_repost} · ${homePostAge(context, post.createdAt)}',
       quote: post.body,
       original: original != null
           ? HomePostRow(post: original, isEmbedded: true)
@@ -698,7 +699,7 @@ class HomeThreadPreview extends ConsumerWidget {
                         ),
                         const SizedBox(width: DabblerSpacing.space2),
                         DabblerText(
-                          homeRelativeTime(comment.createdAt),
+                          homePostAge(context, comment.createdAt),
                           style: DabblerType.caption1,
                           tone: DabblerTextTone.secondary,
                         ),

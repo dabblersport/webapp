@@ -80,6 +80,8 @@ ProviderContainer _container(_Posts repo) {
       nearbyCandidateFetchProvider.overrideWithValue(({
         required city,
         required asOf,
+        area,
+        countryCode,
       }) async {
         _candidateCalls++;
         return const [];

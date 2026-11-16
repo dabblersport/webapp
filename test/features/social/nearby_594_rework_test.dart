@@ -66,6 +66,8 @@ ProviderContainer _container(
       nearbyCandidateFetchProvider.overrideWithValue(({
         required city,
         required asOf,
+        area,
+        countryCode,
       }) async {
         citiesAsked.add(city ?? '');
         final ids = city == 'Doha' ? _doha : _dubai;

@@ -7001,6 +7001,66 @@ abstract class AppLocalizations {
   /// **'Block user'**
   String get home_post_block;
 
+  /// No description provided for @home_post_age_seconds.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}s'**
+  String home_post_age_seconds(int n);
+
+  /// No description provided for @home_post_age_minutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}m'**
+  String home_post_age_minutes(int n);
+
+  /// No description provided for @home_post_age_hours.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}h'**
+  String home_post_age_hours(int n);
+
+  /// No description provided for @home_post_age_days.
+  ///
+  /// In en, this message translates to:
+  /// **'{n}d'**
+  String home_post_age_days(int n);
+
+  /// No description provided for @home_post_action_like.
+  ///
+  /// In en, this message translates to:
+  /// **'Like'**
+  String get home_post_action_like;
+
+  /// No description provided for @home_post_action_vibe.
+  ///
+  /// In en, this message translates to:
+  /// **'Vibe'**
+  String get home_post_action_vibe;
+
+  /// No description provided for @home_post_action_reply.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get home_post_action_reply;
+
+  /// No description provided for @home_post_action_share.
+  ///
+  /// In en, this message translates to:
+  /// **'Share'**
+  String get home_post_action_share;
+
+  /// No description provided for @home_post_action_more.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get home_post_action_more;
+
+  /// No description provided for @home_post_pending_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending review'**
+  String get home_post_pending_review;
+
   /// No description provided for @home_vibe_title.
   ///
   /// In en, this message translates to:
@@ -15194,7 +15254,7 @@ abstract class AppLocalizations {
   /// KAN-957 Home Active tab (Home Feed.dc.html).
   ///
   /// In en, this message translates to:
-  /// **'Show activity from one city, or from all of them.'**
+  /// **'Pick a city to narrow the stream.'**
   String get act_city_sheet_note;
 
   /// KAN-957 Home Active tab (Home Feed.dc.html).
@@ -15346,6 +15406,60 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'All sports'**
   String get home_sport_all;
+
+  /// KAN-962 Active city sheet note while location access is allowed (actCityNote).
+  ///
+  /// In en, this message translates to:
+  /// **'Only changes this stream. Your location stays the same.'**
+  String get act_city_sheet_note_gps;
+
+  /// KAN-962 Home Feed.dc.html tab filters. For you: only the viewer's followed sports.
+  ///
+  /// In en, this message translates to:
+  /// **'My sports'**
+  String get home_tag_my_sports;
+
+  /// KAN-962 Home Feed.dc.html tab filters. Nearby: fallback label of the city scope when no city is set.
+  ///
+  /// In en, this message translates to:
+  /// **'My city'**
+  String get home_tag_city;
+
+  /// KAN-962 Home Feed.dc.html tab filters. Nearby: fallback label of the country scope when the city has no country.
+  ///
+  /// In en, this message translates to:
+  /// **'My country'**
+  String get home_tag_country;
+
+  /// KAN-962 Home Feed.dc.html tab filters. Nearby: no area scope.
+  ///
+  /// In en, this message translates to:
+  /// **'Anywhere'**
+  String get home_tag_anywhere;
+
+  /// KAN-962 Home Feed.dc.html tab filters. News: news in the viewer's followed sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get home_tag_news_following;
+
+  /// KAN-962 Home Feed.dc.html tab filters. News: every news item.
+  ///
+  /// In en, this message translates to:
+  /// **'All news'**
+  String get home_tag_news_all;
+
+  /// KAN-962 empty state of For you "My sports" and News "Following" when the profile follows no sport.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t follow any sports yet'**
+  String get home_no_followed_sports;
+
+  /// KAN-962 hint under home_no_followed_sports.
+  ///
+  /// In en, this message translates to:
+  /// **'Add sports to your profile to see their posts and news here.'**
+  String get home_no_followed_sports_hint;
 }
 
 class _AppLocalizationsDelegate

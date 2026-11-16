@@ -113,7 +113,9 @@ void main() {
 
     testWidgets('renders the post options sheet - $dir', (tester) async {
       await pump(tester);
-      await tester.tap(find.bySemanticsLabel('More options').first);
+      await tester.tap(
+        find.bySemanticsLabel(RegExp('^(More options|خيارات أخرى)\$')).first,
+      );
       await settleHome(tester);
       await _shoot(tester, 'app-$dir-post-options');
     }, variant: desktop);

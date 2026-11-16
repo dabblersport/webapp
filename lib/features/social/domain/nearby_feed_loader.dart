@@ -1,14 +1,19 @@
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/social/domain/nearby_area.dart';
 import 'package:dabbler/features/social/domain/nearby_ranking.dart';
 import 'package:dabbler/features/social/domain/nearby_ranking_config.dart';
 
 /// Every post of the City created at or before [asOf], coordinates or not.
+/// KAN-962: [area] widens it (null is the City), [countryCode] names the
+/// country for [NearbyArea.country].
 typedef NearbyCandidateFetch =
     Future<List<NearbyCandidate>> Function({
       required String? city,
       required DateTime asOf,
+      NearbyArea? area,
+      String? countryCode,
     });
 
 typedef NearbyPostsByIds =
@@ -36,7 +41,7 @@ class NearbyFeedLoader {
   DateTime? _asOf;
   NearbyOrigin? _origin;
   NearbyCursor? _cursor;
-  String? _candidateCity;
+  String? _candidateKey;
   List<NearbyCandidate>? _candidates;
 
   Future<Result<List<Post>, Failure>> loadPage({
@@ -71,10 +76,16 @@ class NearbyFeedLoader {
     if (city == null || city.isEmpty) {
       return const Ok((posts: <Post>[], rawCount: 0));
     }
-    if (_candidates == null || _candidateCity != city) {
+    final key = '${scope.area.name}|$city|${scope.countryCode}';
+    if (_candidates == null || _candidateKey != key) {
       try {
-        _candidates = await _fetchCandidates(city: city, asOf: asOf);
-        _candidateCity = city;
+        _candidates = await _fetchCandidates(
+          city: city,
+          asOf: asOf,
+          area: scope.area,
+          countryCode: scope.countryCode,
+        );
+        _candidateKey = key;
       } catch (e) {
         return Err(Failure.from(e));
       }

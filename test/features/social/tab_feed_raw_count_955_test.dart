@@ -27,7 +27,7 @@ List<String> _ids(TabFeedNotifier n) => [for (final p in n.state.posts) p.id];
   final calls = <int>[];
   final loader = NearbyFeedLoader(
     clock: () => now,
-    fetchCandidates: ({required city, required asOf}) async => [
+    fetchCandidates: ({required city, required asOf, area, countryCode}) async => [
       for (var i = 0; i < total; i++)
         NearbyCandidate(
           id: 'n$i',
@@ -90,7 +90,7 @@ void main() {
       final now = DateTime.utc(2026, 11, 16, 12);
       final loader = NearbyFeedLoader(
         clock: () => now,
-        fetchCandidates: ({required city, required asOf}) async => [
+        fetchCandidates: ({required city, required asOf, area, countryCode}) async => [
           for (var i = 0; i < 60; i++)
             NearbyCandidate(
               id: 'n$i',

@@ -17,6 +17,18 @@ const String kExTabPillGapReason =
 const String kExTabPillGapRtlReason =
     'DS Arabic type rule (label 0.9 smaller, narrower advance) plus DS gap DabblerTabs: the label-to-badge gap is space2 (6) against the frame\'s 4 (KAN-959 filter pill), so a tab with a pill is 2 wider';
 
+/// newstag (KAN-962)
+const String kExNewsTagReason =
+    'design logic (KAN-962): the News row is NEWS_TAGS, so its first chip is "Following" with its bold people glyph; the static frame draws a plain first chip, so the app\'s is wider';
+
+/// tabpill_selected (KAN-962)
+const String kExTabPillSelectedOnlyReason =
+    'design logic (KAN-962): the filter pill shows on the selected tab only (hasFilter = on && TAGS[label]); the static frame also draws one on Active, so Active is the pill narrower and News starts that much earlier';
+
+/// tabpill_selected_rtl (KAN-962)
+const String kExTabPillSelectedOnlyRtlReason =
+    'DS Arabic type rule plus design logic (KAN-962): the filter pill shows on the selected tab only (hasFilter = on && TAGS[label]); the static frame also draws one on Active, so Active is the pill narrower and News shifts by it';
+
 /// arstring
 const String kExArabicStringReason =
     'copy: the Arabic frame draws the untranslated Latin label Done on the city sheet while the app shows its l10n home_location_done; no frame Arabic exists to adopt (see arabic-diffs.md)';
@@ -40,10 +52,6 @@ const String kExCityListReason =
 /// citysearch
 const String kExCitySearchReason =
     'DS gap DabblerTextField(search): the search field is 45 high with a 24 glyph and a 16 label; the frame\'s is 42 with a 16 glyph and 15/20 (radius 24, padding 15, gap 9)';
-
-/// emoji
-const String kExEmojiReason =
-    'sport pill: the frame\'s pill is as tall as its emoji line (15/23 in Arabic = 35); the app draws a 12 glyph in a 32 pill (emoji are banned, ruling in force)';
 
 /// hairline
 const String kExSheetHairlineReason =
@@ -296,16 +304,16 @@ kMeasureExceptions = <String, MeasureException>{
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab Active': MeasureException(
-    kExTabPillGapRtlReason,
-    dx: 3.07,
+    kExTabPillSelectedOnlyRtlReason,
+    dx: 31.07,
     dy: 0.0,
-    dw: 0.36,
+    dw: -27.64,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab News': MeasureException(
-    kExTabPillGapRtlReason,
-    dx: 4.47,
+    kExTabPillSelectedOnlyRtlReason,
+    dx: 32.47,
     dy: 0.0,
     dw: -1.4,
     dh: 0.0,
@@ -317,14 +325,6 @@ kMeasureExceptions = <String, MeasureException>{
     dy: 0.0,
     dw: 1.0,
     dh: 0.0,
-    tol: 0.06,
-  ),
-  'RTL|Post row|post row': MeasureException(
-    kExEmojiReason,
-    dx: 0.0,
-    dy: 0.0,
-    dw: 0.0,
-    dh: -3.0,
     tol: 0.06,
   ),
   'RTL|Post row|author name': MeasureException(
@@ -345,9 +345,9 @@ kMeasureExceptions = <String, MeasureException>{
   ),
   'RTL|Post row|type badge': MeasureException(
     kExArabicRuleReason,
-    dx: 4.3,
+    dx: 7.1,
     dy: 0.0,
-    dw: 1.46,
+    dw: -1.35,
     dh: 0.0,
     tol: 0.06,
   ),
@@ -355,7 +355,7 @@ kMeasureExceptions = <String, MeasureException>{
     kExArabicRuleReason,
     dx: 5.75,
     dy: 0.0,
-    dw: 1.46,
+    dw: -1.35,
     dh: 0.0,
     tol: 0.06,
   ),
@@ -363,13 +363,13 @@ kMeasureExceptions = <String, MeasureException>{
     kExArabicRuleReason,
     dx: 0.0,
     dy: 0.0,
-    dw: -10.93,
+    dw: -1.77,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Post row|meta pin': MeasureException(
     kExArabicRuleReason,
-    dx: 6.93,
+    dx: -2.23,
     dy: 0.0,
     dw: 0.0,
     dh: 0.0,
@@ -377,48 +377,40 @@ kMeasureExceptions = <String, MeasureException>{
   ),
   'RTL|Post row|meta place': MeasureException(
     kExArabicRuleReason,
-    dx: 10.92,
+    dx: 1.76,
     dy: 0.0,
     dw: -2.37,
     dh: 0.0,
     tol: 0.06,
   ),
-  'RTL|Post row|heart glyph': MeasureException(
-    kExEmojiReason,
-    dx: 0.0,
-    dy: -3.0,
-    dw: 0.0,
-    dh: 0.0,
-    tol: 0.06,
-  ),
   'RTL|Post row|like count': MeasureException(
-    kExEmojiReason,
+    kExArabicRuleReason,
     dx: 0.0,
-    dy: -3.0,
+    dy: 0.0,
     dw: -0.79,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Post row|vibe glyph': MeasureException(
-    kExEmojiReason,
+    kExArabicRuleReason,
     dx: 0.79,
-    dy: -3.0,
+    dy: 0.0,
     dw: 0.0,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Post row|comment glyph': MeasureException(
-    kExEmojiReason,
+    kExArabicRuleReason,
     dx: 0.79,
-    dy: -3.0,
+    dy: 0.0,
     dw: 0.0,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Post row|share glyph': MeasureException(
-    kExEmojiReason,
+    kExArabicRuleReason,
     dx: 1.3,
-    dy: -3.0,
+    dy: 0.0,
     dw: 0.0,
     dh: 0.0,
     tol: 0.06,
@@ -426,7 +418,7 @@ kMeasureExceptions = <String, MeasureException>{
   'RTL|Post row|more glyph': MeasureException(
     kExMoreRtlReason,
     dx: -107.8,
-    dy: -3.0,
+    dy: 0.0,
     dw: -0.0,
     dh: 0.0,
     tol: 0.06,
@@ -440,18 +432,18 @@ kMeasureExceptions = <String, MeasureException>{
     tol: 0.06,
   ),
   'LTR|News tab|sub-chip (first), height and padding': MeasureException(
-    kExSortReason,
+    '$kExSortReason; and $kExNewsTagReason',
     dx: 0.0,
     dy: -1.0,
-    dw: 0.0,
+    dw: 17.56,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|News tab|sub-chip (first), height and padding': MeasureException(
-    '$kExSortReason; and $kExArabicRuleReason',
-    dx: 1.36,
+    '$kExSortReason; and $kExArabicRuleReason; and $kExNewsTagReason',
+    dx: -6.9,
     dy: -1.0,
-    dw: -1.36,
+    dw: 6.9,
     dh: 0.0,
     tol: 0.06,
   ),
@@ -522,14 +514,14 @@ kMeasureExceptions = <String, MeasureException>{
     tol: 0.06,
   ),
   'LTR|Tabs (y 290)|tab Active': MeasureException(
-    kExTabPillGapReason,
-    dx: 2.0,
-    dw: 2.0,
+    kExTabPillSelectedOnlyReason,
+    dx: 1.98,
+    dw: -26.01,
     tol: 0.06,
   ),
   'LTR|Tabs (y 290)|tab News': MeasureException(
-    kExTabPillGapReason,
-    dx: 4.0,
+    kExTabPillSelectedOnlyReason,
+    dx: -24.03,
     dw: 0.0,
     tol: 0.06,
   ),

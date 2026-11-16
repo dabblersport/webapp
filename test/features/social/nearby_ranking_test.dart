@@ -241,7 +241,7 @@ void main() {
       List<NearbyCandidate> Function() candidates,
       DateTime Function() clock,
     ) => NearbyFeedLoader(
-      fetchCandidates: ({required city, required asOf}) async =>
+      fetchCandidates: ({required city, required asOf, area, countryCode}) async =>
           candidates().where((c) => !c.createdAt.isAfter(asOf)).toList(),
       postsByIds: (ids) async =>
           Ok<List<Post>, Failure>([for (final id in ids) post(id)]),
@@ -301,7 +301,7 @@ void main() {
     test('no City: nothing is queried and the page is empty', () async {
       var fetches = 0;
       final l = NearbyFeedLoader(
-        fetchCandidates: ({required city, required asOf}) async {
+        fetchCandidates: ({required city, required asOf, area, countryCode}) async {
           fetches++;
           return const [];
         },
@@ -388,7 +388,7 @@ void main() {
           _post('p$i', ageHours: 2.0 + i, distanceMeters: 1000),
       ];
       final l = NearbyFeedLoader(
-        fetchCandidates: ({required city, required asOf}) async => all,
+        fetchCandidates: ({required city, required asOf, area, countryCode}) async => all,
         postsByIds: (ids) async {
           if (fail1 && ids.first == 'p2') {
             return const Err(NetworkFailure());

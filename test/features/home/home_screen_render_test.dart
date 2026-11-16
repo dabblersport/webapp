@@ -272,7 +272,9 @@ void main() {
         upcoming: _upcoming,
         inShell: true,
       );
-      await tester.tap(find.bySemanticsLabel('More options').first);
+      await tester.tap(
+        find.bySemanticsLabel(RegExp('^(More options|خيارات أخرى)\$')).first,
+      );
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

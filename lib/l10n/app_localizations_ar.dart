@@ -1899,7 +1899,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get post_card_kind_moment => 'لحظة';
 
   @override
-  String get post_card_kind_dab => 'Dab';
+  String get post_card_kind_dab => 'داب';
 
   @override
   String get post_card_kind_kick_in => 'Kick-in';
@@ -3932,6 +3932,44 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get home_post_block => 'حظر المستخدم';
+
+  @override
+  String home_post_age_seconds(int n) {
+    return '$n ث';
+  }
+
+  @override
+  String home_post_age_minutes(int n) {
+    return '$n د';
+  }
+
+  @override
+  String home_post_age_hours(int n) {
+    return '$n س';
+  }
+
+  @override
+  String home_post_age_days(int n) {
+    return '$n ي';
+  }
+
+  @override
+  String get home_post_action_like => 'إعجاب';
+
+  @override
+  String get home_post_action_vibe => 'الأجواء';
+
+  @override
+  String get home_post_action_reply => 'رد';
+
+  @override
+  String get home_post_action_share => 'مشاركة';
+
+  @override
+  String get home_post_action_more => 'خيارات أخرى';
+
+  @override
+  String get home_post_pending_review => 'قيد المراجعة';
 
   @override
   String get home_vibe_title => 'ما الأجواء؟';
@@ -8697,8 +8735,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get act_city_sheet_title => 'تصفية حسب المدينة';
 
   @override
-  String get act_city_sheet_note =>
-      'اعرض النشاط في مدينة واحدة أو في كل المدن.';
+  String get act_city_sheet_note => 'اختر مدينة لتضييق البث.';
 
   @override
   String get act_city_sheet_loading_failed => 'تعذّر تحميل المدن.';
@@ -8777,4 +8814,33 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get home_sport_all => 'كل الرياضات';
+
+  @override
+  String get act_city_sheet_note_gps =>
+      'يغيّر هذا البث فقط. موقعك يبقى كما هو.';
+
+  @override
+  String get home_tag_my_sports => 'رياضاتي';
+
+  @override
+  String get home_tag_city => 'مدينتي';
+
+  @override
+  String get home_tag_country => 'بلدي';
+
+  @override
+  String get home_tag_anywhere => 'أي مكان';
+
+  @override
+  String get home_tag_news_following => 'أتابعها';
+
+  @override
+  String get home_tag_news_all => 'كل الأخبار';
+
+  @override
+  String get home_no_followed_sports => 'لا تتابع أي رياضة بعد';
+
+  @override
+  String get home_no_followed_sports_hint =>
+      'أضف رياضات إلى ملفك لترى منشوراتها وأخبارها هنا.';
 }

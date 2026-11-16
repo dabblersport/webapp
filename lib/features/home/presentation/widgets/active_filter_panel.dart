@@ -4,6 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
+import 'package:dabbler/features/social/providers/tab_feed_notifier.dart'
+    show locationPermissionProvider;
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 
@@ -15,6 +17,16 @@ String activeTypeLabel(AppLocalizations l, ActiveType? type) => switch (type) {
   ActiveType.venues => l.act_filter_venues,
   ActiveType.players => l.act_filter_players,
 };
+
+/// KAN-962: the type chips in the design's order (`actTypes`): All, Players,
+/// Venues, Games, Meetups.
+const List<ActiveType?> activeTypeChipOrder = <ActiveType?>[
+  null,
+  ActiveType.players,
+  ActiveType.venues,
+  ActiveType.games,
+  ActiveType.meetups,
+];
 
 /// The one-line summary of the active filters, or null when none is on.
 String? activeFilterSummary(AppLocalizations l, ActiveFilter f) {
@@ -75,10 +87,7 @@ class ActiveFilterPanel extends ConsumerWidget {
                   height: DabblerHomeFrame.listRowGlyph,
                   child: DabblerDivider.vertical(strong: true),
                 ),
-                for (final ActiveType? t in <ActiveType?>[
-                  null,
-                  ...ActiveType.values,
-                ]) ...<Widget>[
+                for (final ActiveType? t in activeTypeChipOrder) ...<Widget>[
                   const DabblerGap.h(DabblerSpacing.space2),
                   DabblerChip(
                     key: ValueKey<String>('active-type-${t?.name ?? 'all'}'),
@@ -200,8 +209,13 @@ class ActiveCitySheet extends ConsumerWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: <Widget>[
+        // KAN-962 (`actCityNote`): with location access the city only
+        // narrows this stream; without it, the city is the way to narrow.
         DabblerText(
-          l.act_city_sheet_note,
+          ref.watch(locationPermissionProvider).valueOrNull ?? false
+              ? l.act_city_sheet_note_gps
+              : l.act_city_sheet_note,
+          key: const ValueKey<String>('active-city-note'),
           style: DabblerType.caption1,
           tone: DabblerTextTone.tertiary,
         ),

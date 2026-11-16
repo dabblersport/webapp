@@ -27,6 +27,8 @@ import 'package:dabbler/features/home/presentation/widgets/home_feed_scroll.dart
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_tab_filters.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_tab_tags.dart';
+import 'package:dabbler/features/home/presentation/providers/home_feed_scopes.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
 import 'package:dabbler/widgets/connection_banner.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
@@ -41,10 +43,8 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
-import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:dabbler/features/social/providers/public_activity_providers.dart';
 import 'package:dabbler/data/models/social/public_activity.dart';
-import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
@@ -461,13 +461,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                           DabblerTabItem(
                             id: tab.name,
                             label: tab.label(l),
-                            badge: feedTabHasFilters(tab)
+                            // KAN-962: the pill shows on the selected tab
+                            // only (`hasFilter = on && TAGS[label]`).
+                            badge: tab == _activeTab && feedTabHasFilters(tab)
                                 ? HomeTabFilterPill(
                                     key: ValueKey<String>(
                                       'home-tab-filter-${tab.name}',
                                     ),
                                     count: watchFeedTabFilterCount(ref, tab),
-                                    open: _filtersOpen && tab == _activeTab,
                                   )
                                 : null,
                           ),
@@ -477,8 +478,15 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   // KAN-957 / KAN-959: the showing tab's filter row, only
                   // while open, scrolls with the feed between the rail and
                   // the list.
-                  if (_filtersOpen && _activeTab == FeedTab.forYou)
-                    const SliverToBoxAdapter(child: ForYouSportRail()),
+                  if (_filtersOpen && homeTabTags(_activeTab).isNotEmpty)
+                    SliverToBoxAdapter(
+                      child: HomeTabTagRail(
+                        key: ValueKey<String>(
+                          'home-tag-row-${_activeTab.name}',
+                        ),
+                        tab: _activeTab,
+                      ),
+                    ),
                   if (_filtersOpen && _activeTab == FeedTab.active)
                     const SliverToBoxAdapter(child: ActiveFilterPanel()),
                   SliverPadding(
@@ -577,12 +585,23 @@ class _ForYouTabBody extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final showNews = ref.watch(newsEnabledProvider);
+    final l = AppLocalizations.of(context);
+
+    // KAN-962: "My sports" with no followed sport has nothing to ask for.
+    final mySports = ref.watch(forYouSportIdsProvider);
+    if (mySports != null && mySports.isEmpty) {
+      return _EmptyView(
+        key: const ValueKey<String>('for-you-no-sports'),
+        iconName: 'medal-star',
+        message: l.home_no_followed_sports,
+        hint: l.home_no_followed_sports_hint,
+      );
+    }
 
     if (state.isLoading && state.items.isEmpty) {
       return const _FeedSkeletonList();
     }
 
-    final l = AppLocalizations.of(context);
     if (state.error != null && state.items.isEmpty) {
       return _ErrorView(message: l.feed_could_not_load, onRetry: onRetry);
     }
@@ -846,6 +865,7 @@ class _NearbyFeedTabBody extends ConsumerWidget {
 // ────────────────────────────────────────────────────────────────────────────
 class _EmptyView extends StatelessWidget {
   const _EmptyView({
+    super.key,
     required this.iconName,
     required this.message,
     required this.hint,
@@ -1023,6 +1043,16 @@ class _NewsFeedTabBody extends ConsumerWidget {
 
     final l = AppLocalizations.of(context);
     if (state.items.isEmpty) {
+      // KAN-962: "Following" with no followed sport says so.
+      final following = ref.watch(newsSportIdsProvider);
+      if (following != null && following.isEmpty) {
+        return _EmptyView(
+          key: const ValueKey<String>('news-no-sports'),
+          iconName: 'medal-star',
+          message: l.home_no_followed_sports,
+          hint: l.home_no_followed_sports_hint,
+        );
+      }
       return _EmptyView(
         iconName: 'document-text',
         message: l.news_empty_title,
@@ -1032,16 +1062,15 @@ class _NewsFeedTabBody extends ConsumerWidget {
 
     final filtered = state.filteredItems;
     final isUnsubscribed = !ref.watch(newsEnabledProvider);
-    // index 0 = filter chips, index 1 = resubscribe banner (when unsubscribed),
-    // remaining = news items
-    final headerCount = isUnsubscribed ? 2 : 1;
+    // KAN-962: the tag row above the list replaced the in-list filter chips.
+    // index 0 = resubscribe banner (when unsubscribed), remaining = news items
+    final headerCount = isUnsubscribed ? 1 : 0;
     final itemCount = filtered.length + (state.isLoadingMore ? 1 : 0);
 
     return SliverList.builder(
       itemCount: itemCount + headerCount,
       itemBuilder: (_, index) {
-        if (index == 0) return _NewsFilterChips(state: state);
-        if (isUnsubscribed && index == 1) {
+        if (isUnsubscribed && index == 0) {
           return _NewsResubscribeBanner(
             onResubscribe: () async {
               await ref.read(resubscribeNewsProvider)();
@@ -1086,119 +1115,6 @@ class _NewsResubscribeBanner extends StatelessWidget {
         action: DabblerBannerAction(
           label: l.news_resubscribe_action,
           onPressed: onResubscribe,
-        ),
-      ),
-    );
-  }
-}
-
-// Filter chips: one chip per user interest sport + region chips.
-// Chips come from profile.interests, not from what's in the news list.
-class _NewsFilterChips extends ConsumerWidget {
-  const _NewsFilterChips({required this.state});
-
-  final NewsTabState state;
-
-  @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final notifier = ref.read(newsTabFeedProvider.notifier);
-
-    final interestIds =
-        ref.watch(currentUserProfileProvider)?.interests ?? const [];
-    final allSports = ref.watch(sportsProvider).valueOrNull ?? [];
-
-    // Sports the user cares about, in interest order
-    final interestSports = interestIds
-        .map((id) => allSports.where((s) => s.id == id).firstOrNull)
-        .whereType<Sport>()
-        .toList();
-
-    // Distinct regions from loaded news
-    final regions = state.items.expand((e) => e.regions).toSet().toList()
-      ..sort();
-
-    if (interestSports.isEmpty && regions.isEmpty) {
-      return const SizedBox.shrink();
-    }
-
-    Widget chip(
-      String label,
-      bool selected,
-      VoidCallback onTap, {
-      Widget? leading,
-    }) => Padding(
-      padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-      child: DabblerChip(
-        metrics: DabblerFeedMetrics.drawn,
-        label: label,
-        selected: selected,
-        onTap: onTap,
-        leadingIcon: leading,
-      ),
-    );
-
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      // The frame's rail row: `padding:12px 18px` (the 18 is the page's).
-      padding: const EdgeInsetsDirectional.symmetric(
-        vertical: DabblerSpacing.space4,
-      ),
-      // The chips lay out at the frame's 34; each keeps a 45 target, and the
-      // band lets that reach above and below the row.
-      child: DabblerExpandedHitArea(
-        minimum: const Size(0, DabblerSizing.touchTargetMin),
-        child: Row(
-          children: [
-            // ── All chip ────────────────────────────────────────────────
-            if (interestSports.isNotEmpty)
-              chip(
-                'All',
-                state.selectedSportId == null,
-                () => notifier.setFilterSport(null),
-              ),
-
-            // ── One chip per interest sport ──────────────────────────────
-            ...interestSports.map((sport) {
-              final selected = state.selectedSportId == sport.id;
-              final key = sport.sportKey;
-              return chip(
-                sport.localizedName(context),
-                selected,
-                () => notifier.setFilterSport(selected ? null : sport.id),
-                leading: key == null
-                    ? null
-                    : DabblerSportIcon.fromKey(
-                        key,
-                        size: DabblerHomeFrame.subChipGlyph,
-                      ),
-              );
-            }),
-
-            // ── Divider before region chips ──────────────────────────────
-            if (interestSports.isNotEmpty && regions.isNotEmpty)
-              const Padding(
-                padding: EdgeInsetsDirectional.only(end: DabblerSpacing.space2),
-                child: SizedBox(
-                  height: DabblerSpacing.space8,
-                  child: DabblerDivider.vertical(),
-                ),
-              ),
-
-            // ── Region chips ─────────────────────────────────────────────
-            ...regions.map((region) {
-              final selected = state.selectedRegion == region;
-              return chip(
-                region,
-                selected,
-                () => notifier.setFilterRegion(selected ? null : region),
-                leading: const DabblerIcon(
-                  'location',
-                  size: DabblerHomeFrame.subChipGlyph,
-                  weight: DabblerIconWeight.bold,
-                ),
-              );
-            }),
-          ],
         ),
       ),
     );

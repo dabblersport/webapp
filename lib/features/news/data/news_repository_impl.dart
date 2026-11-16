@@ -13,10 +13,12 @@ class NewsRepositoryImpl extends BaseRepository implements NewsRepository {
   Future<Result<List<FeedNewsItem>, Failure>> fetchNewsTab({
     int limit = 20,
     int offset = 0,
+    List<String>? sportIds,
   }) => guard(() async {
-    final rows = await svc.client
-        .from(SupabaseConfig.publishedNewsTable)
-        .select()
+    var q = svc.client.from(SupabaseConfig.publishedNewsTable).select();
+    // KAN-962: "Following" is the viewer's followed sports.
+    if (sportIds != null) q = q.inFilter('sport_id', sportIds);
+    final rows = await q
         .order('is_pinned', ascending: false)
         .order('priority_score', ascending: false)
         .order('created_at', ascending: false)

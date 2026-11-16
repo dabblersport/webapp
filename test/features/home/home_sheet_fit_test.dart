@@ -464,7 +464,9 @@ void main() {
 
     testWidgets('post options sheet - $dir', (tester) async {
       await pump(tester);
-      await tester.tap(find.bySemanticsLabel('More options').first);
+      await tester.tap(
+        find.bySemanticsLabel(RegExp('^(More options|خيارات أخرى)\$')).first,
+      );
       await _settle(tester);
       _measureDsSheet(
         tester,

@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:dabbler/features/social/domain/nearby_area.dart';
 import 'package:dabbler/features/social/domain/nearby_ranking_config.dart';
 
 /// KAN-594: Nearby feed ranking. Pure: no I/O, the clock is [asOf].
@@ -38,9 +39,16 @@ class NearbyScope {
     this.lng,
     this.lastKnown = false,
     this.fixedAt,
+    this.area = NearbyArea.city,
+    this.countryCode,
   });
 
   final String? city;
+
+  /// KAN-962: how far past [city] the feed reaches, and the country it
+  /// widens to for [NearbyArea.country].
+  final NearbyArea area;
+  final String? countryCode;
   final double? lat;
   final double? lng;
 
@@ -55,10 +63,13 @@ class NearbyScope {
       other.lat == lat &&
       other.lng == lng &&
       other.lastKnown == lastKnown &&
-      other.fixedAt == fixedAt;
+      other.fixedAt == fixedAt &&
+      other.area == area &&
+      other.countryCode == countryCode;
 
   @override
-  int get hashCode => Object.hash(city, lat, lng, lastKnown, fixedAt);
+  int get hashCode =>
+      Object.hash(city, lat, lng, lastKnown, fixedAt, area, countryCode);
 }
 
 /// The origin to rank from, or null for City-only (newest first). A

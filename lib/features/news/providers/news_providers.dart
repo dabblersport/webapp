@@ -1,9 +1,12 @@
+import 'package:flutter/foundation.dart' show listEquals;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
+import 'package:dabbler/features/home/presentation/providers/home_feed_scopes.dart'
+    show newsSportIdsProvider;
 import 'package:dabbler/features/news/data/news_repository.dart';
 import 'package:dabbler/features/news/data/news_repository_impl.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -29,8 +32,6 @@ class NewsTabState {
     this.hasMore = true,
     this.loaded = false,
     this.error,
-    this.selectedSportId,
-    this.selectedRegion,
   });
 
   final List<FeedNewsItem> items;
@@ -39,19 +40,11 @@ class NewsTabState {
   final bool hasMore;
   final bool loaded;
   final String? error;
-  final String? selectedSportId;
-  final String? selectedRegion;
 
-  List<FeedNewsItem> get filteredItems {
-    final result = items.where((item) {
-      final sportMatch =
-          selectedSportId == null || item.sportId == selectedSportId;
-      final regionMatch =
-          selectedRegion == null || item.regions.contains(selectedRegion);
-      return sportMatch && regionMatch;
-    }).toList()..sort((a, b) => b.createdAt.compareTo(a.createdAt));
-    return result;
-  }
+  /// The items newest first. KAN-962: the tab's tags filter on the server, so
+  /// nothing is filtered here.
+  List<FeedNewsItem> get filteredItems =>
+      [...items]..sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
   NewsTabState copyWith({
     List<FeedNewsItem>? items,
@@ -60,8 +53,6 @@ class NewsTabState {
     bool? hasMore,
     bool? loaded,
     Object? error = _sentinel,
-    Object? selectedSportId = _sentinel,
-    Object? selectedRegion = _sentinel,
   }) => NewsTabState(
     items: items ?? this.items,
     isLoading: isLoading ?? this.isLoading,
@@ -69,12 +60,6 @@ class NewsTabState {
     hasMore: hasMore ?? this.hasMore,
     loaded: loaded ?? this.loaded,
     error: error == _sentinel ? this.error : error as String?,
-    selectedSportId: selectedSportId == _sentinel
-        ? this.selectedSportId
-        : selectedSportId as String?,
-    selectedRegion: selectedRegion == _sentinel
-        ? this.selectedRegion
-        : selectedRegion as String?,
   );
 
   static const Object _sentinel = Object();
@@ -85,10 +70,21 @@ class NewsTabState {
 // ---------------------------------------------------------------------------
 
 class NewsTabNotifier extends StateNotifier<NewsTabState> {
-  NewsTabNotifier(this._repo) : super(const NewsTabState());
+  /// [sportIds] (KAN-962): the News tag, read on every page; null is "All
+  /// news", a list is "Following" (empty: follows none, no call, no rows).
+  NewsTabNotifier(this._repo, {List<String>? Function()? sportIds})
+    : _sportIds = sportIds ?? (() => null),
+      super(const NewsTabState());
 
   final NewsRepository _repo;
+  final List<String>? Function() _sportIds;
   static const int _pageSize = 20;
+
+  /// Bumped by every [load]; a page from an older generation is dropped.
+  int _generation = 0;
+
+  /// Whether the tab has loaded or is loading (a tag change then reloads it).
+  bool get started => state.loaded || state.isLoading;
 
   Future<void> ensureLoaded() async {
     if (state.loaded || state.isLoading) return;
@@ -96,8 +92,25 @@ class NewsTabNotifier extends StateNotifier<NewsTabState> {
   }
 
   Future<void> load() async {
+    final generation = ++_generation;
     state = state.copyWith(isLoading: true, error: null);
-    final result = await _repo.fetchNewsTab(limit: _pageSize, offset: 0);
+    final sports = _sportIds();
+    if (sports != null && sports.isEmpty) {
+      state = state.copyWith(
+        isLoading: false,
+        items: const <FeedNewsItem>[],
+        hasMore: false,
+        loaded: true,
+        error: null,
+      );
+      return;
+    }
+    final result = await _repo.fetchNewsTab(
+      limit: _pageSize,
+      offset: 0,
+      sportIds: sports,
+    );
+    if (!mounted || generation != _generation) return;
     result.fold(
       (err) => state = state.copyWith(isLoading: false, error: err.message),
       (items) => state = state.copyWith(
@@ -110,25 +123,26 @@ class NewsTabNotifier extends StateNotifier<NewsTabState> {
     );
   }
 
-  void setFilterSport(String? sportId) {
-    state = state.copyWith(selectedSportId: sportId);
-  }
-
-  void setFilterRegion(String? region) {
-    state = state.copyWith(selectedRegion: region);
-  }
-
-  void clearFilters() {
-    state = state.copyWith(selectedSportId: null, selectedRegion: null);
+  /// KAN-962: the tag changed. The rows on screen belong to the old tag, so
+  /// the tab goes back to loading and reloads from the first page.
+  Future<void> refilter() {
+    if (!mounted) return Future<void>.value();
+    state = const NewsTabState(isLoading: true);
+    return load();
   }
 
   Future<void> loadMore() async {
     if (state.isLoadingMore || !state.hasMore) return;
+    final sports = _sportIds();
+    if (sports != null && sports.isEmpty) return;
+    final generation = _generation;
     state = state.copyWith(isLoadingMore: true);
     final result = await _repo.fetchNewsTab(
       limit: _pageSize,
       offset: state.items.length,
+      sportIds: sports,
     );
+    if (!mounted || generation != _generation) return;
     result.fold(
       (err) => state = state.copyWith(isLoadingMore: false, error: err.message),
       (newItems) => state = state.copyWith(
@@ -145,10 +159,22 @@ class NewsTabNotifier extends StateNotifier<NewsTabState> {
 // ---------------------------------------------------------------------------
 
 /// Paginated news tab feed. Not autoDispose — caches across tab switches.
+/// KAN-962: reads the News tag ([newsSportIdsProvider]) on every page and,
+/// once the tab has loaded, reloads when it changes.
 final newsTabFeedProvider =
     StateNotifierProvider<NewsTabNotifier, NewsTabState>((ref) {
       final repo = ref.watch(newsRepositoryProvider);
-      return NewsTabNotifier(repo);
+      final notifier = NewsTabNotifier(
+        repo,
+        sportIds: () => ref.read(newsSportIdsProvider),
+      );
+      ref.listen<List<String>?>(newsSportIdsProvider, (prev, next) {
+        final same = prev == null
+            ? next == null
+            : next != null && listEquals(prev, next);
+        if (!same && notifier.started) notifier.refilter();
+      });
+      return notifier;
     });
 
 // ---------------------------------------------------------------------------

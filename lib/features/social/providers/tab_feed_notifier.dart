@@ -18,6 +18,8 @@ import 'package:dabbler/core/data/supabase_remote_data_source.dart'
 import 'package:dabbler/features/social/data/nearby_candidate_source.dart';
 import 'package:dabbler/features/social/domain/nearby_feed_loader.dart';
 import 'package:dabbler/features/social/domain/nearby_ranking.dart';
+import 'package:dabbler/features/home/presentation/providers/home_feed_scopes.dart'
+    show nearbyAreaProvider, NearbyArea;
 
 import 'post_providers.dart';
 
@@ -371,7 +373,10 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
       }),
     );
     // KAN-588: the selected City is the boundary; none means no query.
-    final city = ref.watch(listingCityProvider)?.name;
+    // KAN-962: the tab's tags widen it to the country or anywhere.
+    final listing = ref.watch(listingCityProvider);
+    final city = listing?.name;
+    final area = ref.watch(nearbyAreaProvider);
     final scope = city == null
         ? null
         : NearbyScope(
@@ -380,6 +385,8 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
             lng: point?.lng,
             lastKnown: point?.lastKnown ?? false,
             fixedAt: point?.fixedAt,
+            area: area,
+            countryCode: listing?.countryCode,
           );
     return _buildNearbyNotifier(
       NearbyFeedLoader(
@@ -393,11 +400,15 @@ final nearbyFeedProvider = StateNotifierProvider<TabFeedNotifier, TabFeedState>(
   },
 );
 
-/// The on-device cache key of the Nearby first page for [city] (KAN-588).
+/// The on-device cache key of the Nearby first page for [city] (KAN-588),
+/// and, past the City, for its [area] (KAN-962).
 @visibleForTesting
-String nearbyCacheKey(String? city) => city == null || city.trim().isEmpty
-    ? 'feed.nearby'
-    : 'feed.nearby.${city.trim()}';
+String nearbyCacheKey(String? city, [NearbyArea area = NearbyArea.city]) {
+  final base = city == null || city.trim().isEmpty
+      ? 'feed.nearby'
+      : 'feed.nearby.${city.trim()}';
+  return area == NearbyArea.city ? base : '$base.${area.name}';
+}
 
 TabFeedNotifier _buildNearbyNotifier(
   NearbyFeedLoader loader,
@@ -422,7 +433,7 @@ TabFeedNotifier _buildNearbyNotifier(
     accountId: accountId,
     // Per city (KAN-588), so a change of city never shows the previous city's
     // cached posts while the new city loads.
-    cacheKey: nearbyCacheKey(appScope?.city),
+    cacheKey: nearbyCacheKey(appScope?.city, appScope?.area ?? NearbyArea.city),
   );
 }
 

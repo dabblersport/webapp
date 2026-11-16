@@ -388,7 +388,7 @@ void addPostRows(
     ltr: rc(84, 365, 11.45, 14),
     rtl: rc(285.67, 369, 23.33, 18),
     basis: Basis.text,
-    app: () => _r(tester, inPost(find.text('2h'))),
+    app: () => _r(tester, inPost(find.text(l.home_post_age_hours(2)))),
   );
   row(
     t,
