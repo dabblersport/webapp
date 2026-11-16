@@ -35,12 +35,14 @@ Future<AppLocalizations> openActiveTab(
   Locale locale = const Locale('en'),
   List<String> cities = const <String>['Abu Dhabi', 'Dubai'],
   bool openFilters = true,
+  Brightness? brightness,
 }) async {
   final pumped = await pumpHome(
     tester,
     feedState: const FeedData(items: <FeedItem>[], hasMore: false),
     activeState: state,
     locale: locale,
+    brightness: brightness,
     overrides: <Override>[
       homeNowProvider.overrideWithValue(() => activeNow),
       activeCitiesProvider.overrideWith((ref) async => cities),

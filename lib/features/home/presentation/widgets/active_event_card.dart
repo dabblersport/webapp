@@ -106,7 +106,7 @@ class ActiveEventCard extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final now = ref.watch(homeNowProvider)();
     final look = ActiveLook.of(event, now);
-    final tone = look.tone;
+    final tone = look.tone(DabblerColors.of(context));
     final route = _route();
 
     // KAN-967: the trending strip, and the award, feature and review cards.
@@ -133,6 +133,7 @@ class ActiveEventCard extends ConsumerWidget {
             l: l,
             event: event,
             look: look,
+            tone: tone,
             time:
                 ActiveHonours.time(l, event, look) ??
                 timeLabel(l, event.eventAt, now),
@@ -169,7 +170,7 @@ class ActiveEventCard extends ConsumerWidget {
       ].join(' · ');
     }
 
-    final stat = ActiveCardStat.of(l, event, look);
+    final stat = ActiveCardStat.of(l, event, look, tone);
 
     final card = DabblerActivityCard(
       tone: tone,

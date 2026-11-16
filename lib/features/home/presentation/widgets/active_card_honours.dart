@@ -122,9 +122,9 @@ abstract final class ActiveHonours {
     required AppLocalizations l,
     required ActiveItem event,
     required ActiveLook look,
+    required DabblerToneColor tone,
     required String time,
   }) {
-    final tone = look.tone;
     final badge = period(l, event, look);
     final name = event.actorName?.trim() ?? '';
     final rating = event.rating;
@@ -255,19 +255,20 @@ class ActiveTrendCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final look = ActiveLook.of(event, DateTime.now());
+    final tone = look.tone(DabblerColors.of(context));
     final kicker = look.kicker(l);
     final value = ActiveHonours.value(l, event);
     final metric = ActiveHonours.metric(l, event);
     return box
         ? DabblerActivityTrendBox(
-            tone: look.tone,
+            tone: tone,
             icon: look.slimIcon,
             kicker: kicker,
             value: value,
             metric: metric,
           )
         : DabblerActivitySlim(
-            tone: look.tone,
+            tone: tone,
             icon: look.slimIcon,
             kicker: kicker,
             value: value,

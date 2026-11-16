@@ -23,7 +23,12 @@ import 'active_card_look.dart';
 /// row is a player or a venue).
 abstract final class ActiveCardStat {
   /// The stat block for [event] in [look], or null.
-  static Widget? of(AppLocalizations l, ActiveItem event, ActiveLook look) {
+  static Widget? of(
+    AppLocalizations l,
+    ActiveItem event,
+    ActiveLook look,
+    DabblerToneColor tone,
+  ) {
     final count = event.participantCount;
     if (count == null || !event.isEvent) return null;
     final meetup = event.entityKind == 'meetup';
@@ -50,7 +55,7 @@ abstract final class ActiveCardStat {
       key: const ValueKey<String>('active-card-stat'),
       icon: look.isFinished ? 'tick-circle' : 'people',
       text: text,
-      tone: look.tone,
+      tone: tone,
       fraction: fraction,
     );
   }

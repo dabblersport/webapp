@@ -61,6 +61,11 @@ String homeVibeLabel(BuildContext context, Vibe? vibe, String key) {
 /// [DabblerFeedPill] (the sport pill) tinted with the vibe's colour, the
 /// viewer's own in its filled state and the rest outlined. Tapping one calls
 /// [onToggle] with its vibe; a key the vibe list does not know is inert.
+///
+/// KAN-972 (CEO 2026-11-16): in dark mode the pill takes the vibe's
+/// `dark_bg_hex` / `dark_border_hex`; and the chips are one row that scrolls
+/// sideways when it is wider than the post, from the text's start edge (the
+/// right in Arabic).
 class HomeVibeChips extends StatelessWidget {
   const HomeVibeChips({
     super.key,
@@ -81,28 +86,42 @@ class HomeVibeChips extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Wrap(
-      spacing: DabblerSpacing.space2,
-      runSpacing: DabblerSpacing.space2,
-      children: <Widget>[
-        for (final MapEntry<String, int> e in counts.entries)
-          Builder(
-            builder: (context) {
-              final Vibe? vibe = vibes.where((v) => v.key == e.key).firstOrNull;
-              // KAN-963: the sport pill, with the vibe's emoji and colour from
-              // `public.vibes` (a bad or missing colour draws it neutral).
-              return DabblerFeedPill(
-                key: ValueKey<String>('home-vibe-chip-${e.key}'),
-                label: '${homeVibeLabel(context, vibe, e.key)} ${e.value}',
-                emoji: (vibe?.emoji ?? '').trim().isEmpty ? null : vibe!.emoji,
-                tint: DabblerHueTone.parseHex(vibe?.colorHex),
-                selected: mine.contains(e.key),
-                metrics: metrics,
-                onTap: vibe == null ? null : () => onToggle(vibe),
-              );
-            },
-          ),
-      ],
+    final List<MapEntry<String, int>> entries = counts.entries.toList();
+    return SingleChildScrollView(
+      key: const ValueKey<String>('home-vibe-rail'),
+      scrollDirection: Axis.horizontal,
+      // The pill's 45 hit area reaches past the row; the clip is on paint.
+      clipBehavior: Clip.hardEdge,
+      child: Row(
+        children: <Widget>[
+          for (var i = 0; i < entries.length; i++) ...<Widget>[
+            if (i > 0) const DabblerGap.h(DabblerSpacing.space2),
+            Builder(
+              builder: (context) {
+                final MapEntry<String, int> e = entries[i];
+                final Vibe? vibe = vibes
+                    .where((v) => v.key == e.key)
+                    .firstOrNull;
+                // KAN-963: the sport pill, with the vibe's emoji and colour from
+                // `public.vibes` (a bad or missing colour draws it neutral).
+                return DabblerFeedPill(
+                  key: ValueKey<String>('home-vibe-chip-${e.key}'),
+                  label: '${homeVibeLabel(context, vibe, e.key)} ${e.value}',
+                  emoji: (vibe?.emoji ?? '').trim().isEmpty
+                      ? null
+                      : vibe!.emoji,
+                  tint: DabblerHueTone.parseHex(vibe?.colorHex),
+                  darkTint: DabblerHueTone.parseHex(vibe?.darkBgHex),
+                  darkEdge: DabblerHueTone.parseHex(vibe?.darkBorderHex),
+                  selected: mine.contains(e.key),
+                  metrics: metrics,
+                  onTap: vibe == null ? null : () => onToggle(vibe),
+                );
+              },
+            ),
+          ],
+        ],
+      ),
     );
   }
 }

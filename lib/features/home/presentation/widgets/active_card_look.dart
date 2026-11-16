@@ -141,22 +141,26 @@ enum ActiveLook {
   /// | player / venue of the month | amber 30% over white, `--bright-s-600` | `gold` |
   /// | new venue rating | `--tile-social` | `social` |
   /// | venue of the day | `--tile-bright` | `bright` |
-  DabblerToneColor get tone => switch (this) {
-    playerJoined => DabblerActivityTones.social,
-    venueAdded => DabblerActivityTones.bright,
-    gameUpcoming => DabblerActivityTones.main,
-    gameLive || meetupLive => DabblerActivityTones.sport,
-    gameFinished => DabblerActivityTones.ended,
-    meetupUpcoming => DabblerActivityTones.active,
-    meetupFinished => DabblerActivityTones.accent,
-    trendingSport => DabblerActivityTones.info,
-    trendingHashtag => DabblerActivityTones.main,
-    playerWeek => DabblerActivityTones.active,
-    venueWeek => DabblerActivityTones.sport,
-    playerMonth || venueMonth => DabblerActivityTones.gold,
-    venueRating => DabblerActivityTones.social,
-    venueDay => DabblerActivityTones.bright,
+  DabblerActivityTone get activityTone => switch (this) {
+    playerJoined => DabblerActivityTone.social,
+    venueAdded => DabblerActivityTone.bright,
+    gameUpcoming => DabblerActivityTone.main,
+    gameLive || meetupLive => DabblerActivityTone.sport,
+    gameFinished => DabblerActivityTone.ended,
+    meetupUpcoming => DabblerActivityTone.active,
+    meetupFinished => DabblerActivityTone.accent,
+    trendingSport => DabblerActivityTone.info,
+    trendingHashtag => DabblerActivityTone.main,
+    playerWeek => DabblerActivityTone.active,
+    venueWeek => DabblerActivityTone.sport,
+    playerMonth || venueMonth => DabblerActivityTone.gold,
+    venueRating => DabblerActivityTone.social,
+    venueDay => DabblerActivityTone.bright,
   };
+
+  /// KAN-972: the tone pair for the ambient theme (light: the design's pair;
+  /// dark: the package's dark pair in the same hue family).
+  DabblerToneColor tone(DabblerColors colors) => activityTone.of(colors);
 }
 
 /// One card per game, meetup, venue or player: [events] (newest first) with

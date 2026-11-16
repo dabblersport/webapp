@@ -96,7 +96,9 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     if (vibeIds.isNotEmpty) {
       final vibeRows = await _db
           .from(SupabaseConfig.vibesTable)
-          .select('id, key, label_en, label_ar, emoji, color_hex')
+          .select(
+            'id, key, label_en, label_ar, emoji, color_hex, dark_bg_hex, dark_border_hex',
+          )
           .inFilter('id', vibeIds.toList());
       for (final v in vibeRows) {
         vibesMap[v['id'] as String] = v;
@@ -1103,14 +1105,16 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
   }
 
   @override
-  Future<Result<List<Map<String, dynamic>>, Failure>> listVibes() =>
-      guard(() async {
-        final rows = await _db
-            .from(SupabaseConfig.vibesTable)
-            .select('id, key, label_en, label_ar, emoji, color_hex')
-            .order('label_en');
-        return rows.cast<Map<String, dynamic>>();
-      });
+  Future<Result<List<Map<String, dynamic>>, Failure>>
+  listVibes() => guard(() async {
+    final rows = await _db
+        .from(SupabaseConfig.vibesTable)
+        .select(
+          'id, key, label_en, label_ar, emoji, color_hex, dark_bg_hex, dark_border_hex',
+        )
+        .order('label_en');
+    return rows.cast<Map<String, dynamic>>();
+  });
 
   // ── Full Post Creation ─────────────────────────────────────────────
 
