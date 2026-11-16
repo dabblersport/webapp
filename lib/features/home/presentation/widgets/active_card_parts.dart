@@ -1,11 +1,14 @@
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
+import 'package:dabbler/features/home/presentation/widgets/home_post_display.dart';
 import 'package:dabbler/features/social/providers/active_item.dart';
 
 /// The card's footer (`ActivityCard.dc.html`, `gap:9px`): the host's 28
 /// avatar ringed 2 in the card surface (games and meetups with a host), the
-/// sport chips (`gap:6px`, wrapping) and the action pill in the look's ink.
+/// sport chips (`gap:6px`, wrapping), each led by the sport's emoji as on the
+/// home post's sport tag (CEO 2026-11-16, KAN-965), and the action pill in the
+/// look's ink.
 class ActiveCardFooter extends StatelessWidget {
   const ActiveCardFooter({
     super.key,
@@ -16,7 +19,9 @@ class ActiveCardFooter extends StatelessWidget {
   });
 
   final ActiveItem event;
-  final List<String> sports;
+
+  /// The localised tags, each with the English name that keys its emoji.
+  final List<({String label, String en})> sports;
   final String action;
   final Color ink;
 
@@ -41,7 +46,11 @@ class ActiveCardFooter extends StatelessWidget {
             runSpacing: DabblerSpacing.space2,
             crossAxisAlignment: WrapCrossAlignment.center,
             children: <Widget>[
-              for (final s in sports) DabblerActivityChip(label: s),
+              for (final s in sports)
+                DabblerActivityChip(
+                  label: s.label,
+                  emoji: homeSportEmoji(s.en),
+                ),
             ],
           ),
         ),

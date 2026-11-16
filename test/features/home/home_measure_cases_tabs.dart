@@ -192,7 +192,7 @@ void addNewsRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
 /// no exception: the card, the 120 mark (`inset-inline-end:-18px; top:-12px`),
 /// the kicker's 12 bold family glyph (18 card padding + 8 pill start, 18 + 4
 /// pill top + 0.5 centring in the 13 line) and the 56x62 date tile (18 in,
-/// below the 21 kicker row and the 12 gap).
+/// below the 21 kicker row and the 12 gap), and the title3 event headline.
 void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   const String s = 'Active tab (activity card)';
   final Finder card0 = find.byType(ActiveEventCard).first;
@@ -250,5 +250,18 @@ void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
         inCard(find.byKey(const ValueKey<String>('active-date-tile'))),
       ),
     ),
+  );
+  // CEO 2026-11-16 (KAN-965): the headline is title3, 20/25 (the design
+  // draws 22/28). Beside the tile (18 + 56 + 12 = 86), its 20/25 line over
+  // the 3 gap and the 18 sub, centred on the 62 tile: 51 + (62 - 46) / 2.
+  row(
+    t,
+    s,
+    'event headline line 20/25 (title3)',
+    ltr: rc(86, 59, 253, 25),
+    rtl: rc(18, 59, 253, 25),
+    basis: Basis.line,
+    token: 'DabblerType.title3',
+    app: () => rel(_r(tester, inCard(find.text(FrameData.of(rtl).gameTitle)))),
   );
 }

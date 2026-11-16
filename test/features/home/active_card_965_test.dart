@@ -1,8 +1,10 @@
 // KAN-965: every Active card variant against ActivityCard.dc.html and the
 // Home Feed ACT_TONE / ACT_LOOK / ACT_ACTION / ACT_FAMILY_ICON tables, in EN
 // and AR: the tone, the 120 mark, the kicker (glyph or live dot), the action,
-// the date tile month, the time rule and the player ring.
+// the date tile month, the time rule, the player ring, the title3 headline
+// and the sport chips' emoji (CEO 2026-11-16).
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_post_display.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -246,8 +248,69 @@ void main() {
           expect(avatar.size, DabblerAvatarSize.lg);
           expect(avatar.ringWidth, 3);
         }
+        // CEO 2026-11-16: the headline is title3 (20/25) for games, meetups
+        // and players; a venue keeps displaySection (26/32).
+        final headlineStyle = row.isVenue
+            ? DabblerType.displaySection
+            : DabblerType.title3;
+        final headlines = tester
+            .widgetList<DabblerText>(_in(v.id, find.byType(DabblerText)))
+            .where((t) => t.style.role == DabblerTypeRole.display)
+            .toList();
+        expect(headlines, hasLength(1));
+        expect(headlines.single.style, headlineStyle);
+        expect(headlines.single.maxLines, isNull);
+        // Each sport chip leads with the home post's sport emoji.
+        final chips = tester
+            .widgetList<DabblerActivityChip>(
+              _in(v.id, find.byType(DabblerActivityChip)),
+            )
+            .toList();
+        final tags = row.sportTagsFor(l.localeName);
+        expect(chips, hasLength(tags.length));
+        for (var i = 0; i < chips.length; i++) {
+          expect(chips[i].label, tags[i].label);
+          expect(chips[i].emoji, homeSportEmoji(tags[i].en));
+        }
         expect(tester.takeException(), isNull);
       }, variant: desktopOnly);
     }
+
+    testWidgets('chip emoji: the sport\'s, 🏅 for an unknown one — $dir', (
+      tester,
+    ) async {
+      await openActiveTab(
+        tester,
+        locale: locale,
+        state: ActiveFeedData(
+          events: <ActiveItem>[
+            activeGame(
+              at: activeNow,
+              sports: const <String>['Football', 'Curling'],
+              sportsAr: const <String>['كرة القدم', ''],
+            ),
+          ],
+          hasMore: false,
+        ),
+      );
+      final chips = tester
+          .widgetList<DabblerActivityChip>(find.byType(DabblerActivityChip))
+          .map((c) => (c.label, c.emoji))
+          .toList();
+      expect(chips, <(String, String?)>[
+        (locale.languageCode == 'ar' ? 'كرة القدم' : 'Football', '⚽️'),
+        ('Curling', '🏅'),
+      ]);
+      // Drawn before the label, in reading order.
+      final emoji = tester.getRect(
+        find.byKey(const ValueKey<String>('activity-chip-emoji')).first,
+      );
+      final label = tester.getRect(find.text(chips.first.$1).last);
+      if (locale.languageCode == 'ar') {
+        expect(emoji.left, greaterThan(label.right - 0.5));
+      } else {
+        expect(emoji.right, lessThan(label.left + 0.5));
+      }
+    }, variant: desktopOnly);
   }
 }

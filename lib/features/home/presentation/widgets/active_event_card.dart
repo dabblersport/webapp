@@ -144,7 +144,7 @@ class ActiveEventCard extends ConsumerWidget {
         ?stat,
         ActiveCardFooter(
           event: event,
-          sports: sports,
+          sports: event.sportTagsFor(l.localeName),
           action: look.action(l),
           ink: tone.ink,
         ),
@@ -171,11 +171,15 @@ class ActiveEventCard extends ConsumerWidget {
 
 /// The headline (`--font-display`, `--ink`, no clamp) over the 13/18
 /// `--ink-soft` sub, `gap:3px`. The event's sub is one line with an ellipsis.
+///
+/// The headline is [DabblerType.title3] (20/25) for games, meetups and new
+/// players by the CEO's order of 2026-11-16 (KAN-965; the design draws
+/// 22/28). A venue keeps [DabblerType.displaySection] (26/32).
 class _Titles extends StatelessWidget {
   const _Titles({
     required this.headline,
     required this.sub,
-    this.style = DabblerType.title2,
+    this.style = DabblerType.title3,
     this.oneLineSub = false,
   });
 

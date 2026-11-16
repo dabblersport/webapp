@@ -96,6 +96,23 @@ class ActiveItem {
     return ActivePhase.upcoming;
   }
 
+  /// KAN-965: each sport tag for [languageCode] (falling back to English per
+  /// tag) with its English name, which keys the sport's emoji.
+  List<({String label, String en})> sportTagsFor(String languageCode) =>
+      <({String label, String en})>[
+        for (var i = 0; i < sportsEn.length; i++)
+          if (sportsEn[i].isNotEmpty)
+            (
+              label:
+                  languageCode == 'ar' &&
+                      i < sportsAr.length &&
+                      sportsAr[i].isNotEmpty
+                  ? sportsAr[i]
+                  : sportsEn[i],
+              en: sportsEn[i],
+            ),
+      ];
+
   /// The sport tags for [languageCode], falling back to English per tag.
   List<String> sportsFor(String languageCode) {
     if (languageCode != 'ar' || sportsAr.isEmpty) return sportsEn;
