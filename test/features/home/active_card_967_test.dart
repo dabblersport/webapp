@@ -35,11 +35,25 @@ void main() {
     expect(back.distanceKm, 2.1);
     expect(back.rating, 4.8);
     final award = ActiveItem.fromRow(activeAward().toRow())!;
+    // CEO 2026-11-16: players show Games / Rating / Hosted.
     expect(award.stats.map((s) => s.key), <String>[
       'games',
-      'mvp_votes',
       'rating',
+      'hosted',
     ]);
+    // The live columns: no reasons or distance (venue of the day is later),
+    // venue_rating_avg on a rating row.
+    final live =
+        Map<String, dynamic>.from(
+            activeVenueHonour(type: 'venue_rating').toRow(),
+          )
+          ..remove('reasons')
+          ..remove('distance_km');
+    final parsed = ActiveItem.fromRow(live)!;
+    expect(parsed.reasons, isEmpty);
+    expect(parsed.distanceKm, isNull);
+    expect(parsed.venueRatingAvg, 4.8);
+    expect(parsed.rating, 5);
     expect(award.periodStart, DateTime(2026, 11, 16));
     expect(ActiveHonours.isoWeek(DateTime(2026, 11, 16)), 47);
     expect(activeTypeChipOrder[1], ActiveType.trending);
@@ -177,8 +191,8 @@ void main() {
       );
       expect(stats.items, <(String, String)>[
         ('6', l.act_stat_label_games),
-        ('4', l.act_stat_label_mvp_votes),
         ('4.9', l.act_stat_label_rating),
+        ('2', l.act_stat_label_hosted),
       ]);
       expect(
         tester
@@ -366,7 +380,9 @@ void main() {
         _in(id, find.byType(DabblerActivityVenueRow)),
       );
       expect(row.title, 'Al Quoz Pitches');
-      expect(row.detail, 'Al Quoz · ${l.act_rating_from('5.0', 186)}');
+      // The venue's average (4.8) in the venue row; the rater's 5 stars
+      // by the rater's name.
+      expect(row.detail, 'Al Quoz · ${l.act_rating_from('4.8', 186)}');
       // The time is the clock (two hours ago), the action Read reviews.
       expect(
         _in(

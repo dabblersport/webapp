@@ -113,13 +113,13 @@ ActiveItem activeAward({
   stats: month
       ? const <ActiveStat>[
           (key: 'games', value: 22),
-          (key: 'wins', value: 18),
           (key: 'rating', value: 5),
+          (key: 'hosted', value: 7),
         ]
       : const <ActiveStat>[
           (key: 'games', value: 6),
-          (key: 'mvp_votes', value: 4),
           (key: 'rating', value: 4.9),
+          (key: 'hosted', value: 2),
         ],
 );
 
@@ -143,6 +143,7 @@ ActiveItem activeVenueHonour({
   spaceCount: 4,
   rating: type == 'venue_rating' ? 5 : 4.8,
   ratingCount: type == 'venue_rating' ? 186 : 204,
+  venueRatingAvg: type == 'venue_rating' ? 4.8 : null,
   quote: type == 'venue_rating' ? 'Best lit pitch in Al Quoz.' : null,
   ratedGameAt: type == 'venue_rating' ? DateTime(2026, 11, 10, 20) : null,
   periodStart: type == 'venue_month'

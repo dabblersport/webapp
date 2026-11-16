@@ -30,6 +30,7 @@ class ActiveItem {
     this.stats = const <ActiveStat>[],
     this.rating,
     this.ratingCount,
+    this.venueRatingAvg,
     this.photoUrl,
     this.quote,
     this.ratedGameAt,
@@ -86,9 +87,13 @@ class ActiveItem {
   final List<ActiveStat> stats;
 
   /// The venue's average rating (0-5) and how many ratings it has; on a
-  /// `venue_rating` row, [rating] is that rating's stars.
+  /// `venue_rating` row, [rating] is that rating's stars and the venue's
+  /// average is [venueRatingAvg] (over [ratingCount] ratings).
   final double? rating;
   final int? ratingCount;
+
+  /// KAN-967 (CEO 2026-11-16): a `venue_rating` row's venue average.
+  final double? venueRatingAvg;
 
   /// The featured venue's first photo.
   final String? photoUrl;
@@ -97,7 +102,9 @@ class ActiveItem {
   final String? quote;
   final DateTime? ratedGameAt;
 
-  /// Why `venue_day` is recommended.
+  /// Why `venue_day` is recommended. The server does not emit `venue_day`
+  /// yet (a paid placement later, CEO 2026-11-16) and sends no `reasons` or
+  /// `distance_km` column; both read as empty.
   final List<ActiveReason> reasons;
 
   /// The viewer's distance to the venue (`venue_day`), when known.
@@ -231,6 +238,7 @@ class ActiveItem {
       ],
       rating: _double(r['rating']),
       ratingCount: _int(r['rating_count']),
+      venueRatingAvg: _double(r['venue_rating_avg']),
       photoUrl: s('photo_url'),
       quote: s('quote'),
       ratedGameAt: _date(r['rated_game_at']),
@@ -276,6 +284,7 @@ class ActiveItem {
     ],
     'rating': rating,
     'rating_count': ratingCount,
+    'venue_rating_avg': venueRatingAvg,
     'photo_url': photoUrl,
     'quote': quote,
     'rated_game_at': ratedGameAt?.toUtc().toIso8601String(),
@@ -288,7 +297,7 @@ class ActiveItem {
 }
 
 /// KAN-967: one figure of an award or a featured venue: `games`,
-/// `mvp_votes`, `wins`, `bookings` or `rating`.
+/// `games`, `rating`, `hosted` (players, CEO 2026-11-16), `bookings`.
 typedef ActiveStat = ({String key, num value});
 
 /// KAN-967: why a venue is recommended today: `free_from` ([text] the local

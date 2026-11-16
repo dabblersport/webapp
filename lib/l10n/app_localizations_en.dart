@@ -8954,13 +8954,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get act_stat_label_games => 'Games';
 
   @override
-  String get act_stat_label_mvp_votes => 'MVP votes';
-
-  @override
-  String get act_stat_label_wins => 'Wins';
-
-  @override
   String get act_stat_label_bookings => 'Bookings';
+
+  @override
+  String get act_stat_label_hosted => 'Hosted';
 
   @override
   String get act_stat_label_rating => 'Rating';

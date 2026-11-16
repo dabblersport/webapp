@@ -70,8 +70,7 @@ abstract final class ActiveHonours {
 
   static String _statLabel(AppLocalizations l, String key) => switch (key) {
     'games' => l.act_stat_label_games,
-    'mvp_votes' => l.act_stat_label_mvp_votes,
-    'wins' => l.act_stat_label_wins,
+    'hosted' => l.act_stat_label_hosted,
     'bookings' => l.act_stat_label_bookings,
     'rating' => l.act_stat_label_rating,
     _ => key,
@@ -84,16 +83,15 @@ abstract final class ActiveHonours {
   static String venueSub(AppLocalizations l, ActiveItem e, ActiveLook look) {
     final spaces = e.spaceCount;
     final km = e.distanceKm;
-    final rating = e.rating;
+    final avg = e.venueRatingAvg;
     final count = e.ratingCount;
     return <String>[
       ?e.detail,
       if (look == ActiveLook.venueDay && km != null)
         l.act_km_from_you(_km(km))
-      else if (look == ActiveLook.venueRating &&
-          rating != null &&
-          count != null)
-        l.act_rating_from(oneDecimal(rating), count)
+      // The venue's average; the rater's own stars sit by the rater's name.
+      else if (look == ActiveLook.venueRating && avg != null && count != null)
+        l.act_rating_from(oneDecimal(avg), count)
       else if (look != ActiveLook.venueRating && spaces != null)
         l.act_venue_spaces(spaces),
     ].join(' · ');

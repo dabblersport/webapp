@@ -9076,13 +9076,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get act_stat_label_games => 'مباريات';
 
   @override
-  String get act_stat_label_mvp_votes => 'أصوات الأفضل';
-
-  @override
-  String get act_stat_label_wins => 'انتصارات';
-
-  @override
   String get act_stat_label_bookings => 'حجوزات';
+
+  @override
+  String get act_stat_label_hosted => 'استضافات';
 
   @override
   String get act_stat_label_rating => 'التقييم';

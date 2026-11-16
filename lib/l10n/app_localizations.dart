@@ -15698,20 +15698,14 @@ abstract class AppLocalizations {
   /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
   ///
   /// In en, this message translates to:
-  /// **'MVP votes'**
-  String get act_stat_label_mvp_votes;
-
-  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
-  ///
-  /// In en, this message translates to:
-  /// **'Wins'**
-  String get act_stat_label_wins;
-
-  /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
-  ///
-  /// In en, this message translates to:
   /// **'Bookings'**
   String get act_stat_label_bookings;
+
+  /// KAN-967 Home Active card stat strip label (CEO 2026-11-16: players show Games / Rating / Hosted). Games the player hosted.
+  ///
+  /// In en, this message translates to:
+  /// **'Hosted'**
+  String get act_stat_label_hosted;
 
   /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
   ///
