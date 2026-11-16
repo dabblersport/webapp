@@ -8749,39 +8749,6 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get act_type_game_created => 'مباراة جديدة';
-
-  @override
-  String get act_type_game_started => 'بدأت المباراة';
-
-  @override
-  String get act_type_game_ended => 'انتهت المباراة';
-
-  @override
-  String get act_type_meetup_created => 'لقاء جديد';
-
-  @override
-  String get act_type_meetup_started => 'بدأ اللقاء';
-
-  @override
-  String get act_type_meetup_completed => 'انتهى اللقاء';
-
-  @override
-  String get act_type_venue_added => 'ملعب جديد';
-
-  @override
-  String get act_type_player_joined => 'لاعب جديد';
-
-  @override
-  String get act_actor_host => 'المنظّم';
-
-  @override
-  String get act_actor_joined => 'انضم إلى دابلر';
-
-  @override
-  String get act_live => 'مباشر';
-
-  @override
   String get act_group_today => 'اليوم';
 
   @override
@@ -8843,4 +8810,67 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get home_no_followed_sports_hint =>
       'أضف رياضات إلى ملفك لترى منشوراتها وأخبارها هنا.';
+
+  @override
+  String get act_kicker_player_joined => 'لاعب جديد';
+
+  @override
+  String get act_kicker_venue_added => 'جديد على دابلر';
+
+  @override
+  String get act_kicker_game_created => 'مباراة جديدة';
+
+  @override
+  String get act_kicker_meetup_created => 'لقاء جديد';
+
+  @override
+  String get act_kicker_live => 'يحدث الآن';
+
+  @override
+  String get act_kicker_game_ended => 'صافرة النهاية';
+
+  @override
+  String get act_kicker_meetup_completed => 'انتهى اللقاء';
+
+  @override
+  String get act_cta_follow => 'متابعة';
+
+  @override
+  String get act_cta_view_venue => 'عرض الملعب';
+
+  @override
+  String get act_cta_join_game => 'انضم للمباراة';
+
+  @override
+  String get act_cta_join_meetup => 'انضم للقاء';
+
+  @override
+  String get act_cta_join_in => 'انضم الآن';
+
+  @override
+  String get act_cta_see_results => 'النتائج';
+
+  @override
+  String get act_cta_see_recap => 'الملخص';
+
+  @override
+  String act_welcome(String name) {
+    return 'رحّب بـ $name';
+  }
+
+  @override
+  String act_plays(String sports) {
+    return 'يلعب $sports';
+  }
+
+  @override
+  String act_by(String name) {
+    return 'من $name';
+  }
+
+  @override
+  String get act_list_and => ' و';
+
+  @override
+  String get act_list_comma => '، ';
 }

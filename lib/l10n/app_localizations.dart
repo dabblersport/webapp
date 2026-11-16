@@ -15278,72 +15278,6 @@ abstract class AppLocalizations {
   /// KAN-957 Home Active tab (Home Feed.dc.html).
   ///
   /// In en, this message translates to:
-  /// **'New game'**
-  String get act_type_game_created;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Game started'**
-  String get act_type_game_started;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Game ended'**
-  String get act_type_game_ended;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'New meetup'**
-  String get act_type_meetup_created;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Meetup started'**
-  String get act_type_meetup_started;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Meetup ended'**
-  String get act_type_meetup_completed;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'New venue'**
-  String get act_type_venue_added;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'New player'**
-  String get act_type_player_joined;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Hosting'**
-  String get act_actor_host;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Joined Dabbler'**
-  String get act_actor_joined;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
-  /// **'Live'**
-  String get act_live;
-
-  /// KAN-957 Home Active tab (Home Feed.dc.html).
-  ///
-  /// In en, this message translates to:
   /// **'Today'**
   String get act_group_today;
 
@@ -15460,6 +15394,120 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Add sports to your profile to see their posts and news here.'**
   String get home_no_followed_sports_hint;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of a new-player card.
+  ///
+  /// In en, this message translates to:
+  /// **'New player'**
+  String get act_kicker_player_joined;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of a new-venue card.
+  ///
+  /// In en, this message translates to:
+  /// **'New on Dabbler'**
+  String get act_kicker_venue_added;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of an upcoming game card.
+  ///
+  /// In en, this message translates to:
+  /// **'New game'**
+  String get act_kicker_game_created;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of an upcoming meetup card.
+  ///
+  /// In en, this message translates to:
+  /// **'New meetup'**
+  String get act_kicker_meetup_created;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of a game or meetup that is live now, beside the green dot.
+  ///
+  /// In en, this message translates to:
+  /// **'Happening now'**
+  String get act_kicker_live;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of a finished game card.
+  ///
+  /// In en, this message translates to:
+  /// **'Final whistle'**
+  String get act_kicker_game_ended;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Kicker of a finished meetup card.
+  ///
+  /// In en, this message translates to:
+  /// **'That\'s a wrap'**
+  String get act_kicker_meetup_completed;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, new player.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get act_cta_follow;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, new venue.
+  ///
+  /// In en, this message translates to:
+  /// **'View venue'**
+  String get act_cta_view_venue;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, upcoming game.
+  ///
+  /// In en, this message translates to:
+  /// **'Join game'**
+  String get act_cta_join_game;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, upcoming meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join meetup'**
+  String get act_cta_join_meetup;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, live game or meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'Join in'**
+  String get act_cta_join_in;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, finished game.
+  ///
+  /// In en, this message translates to:
+  /// **'See results'**
+  String get act_cta_see_results;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Card action, finished meetup.
+  ///
+  /// In en, this message translates to:
+  /// **'See recap'**
+  String get act_cta_see_recap;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Headline of a new-player card; name is the first name.
+  ///
+  /// In en, this message translates to:
+  /// **'Say welcome to {name}'**
+  String act_welcome(String name);
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Sub-line of a new-player card; sports is a joined list.
+  ///
+  /// In en, this message translates to:
+  /// **'Plays {sports}'**
+  String act_plays(String sports);
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). The host at the end of a game or meetup sub-line; name is the first name.
+  ///
+  /// In en, this message translates to:
+  /// **'by {name}'**
+  String act_by(String name);
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Joins the last two sports in act_plays (keep the spaces).
+  ///
+  /// In en, this message translates to:
+  /// **' and '**
+  String get act_list_and;
+
+  /// KAN-964 Home Active card (Home Feed.dc.html ActivityCard). Joins the earlier sports in act_plays (keep the space).
+  ///
+  /// In en, this message translates to:
+  /// **', '**
+  String get act_list_comma;
 }
 
 class _AppLocalizationsDelegate

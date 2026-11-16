@@ -56,6 +56,32 @@ class ActiveItem {
   /// A listing row: anything but a player, with a title.
   bool get hasListing => entityKind != 'profile' && (title ?? '').isNotEmpty;
 
+  /// A game or meetup row.
+  bool get isEvent => entityKind == 'game' || entityKind == 'meetup';
+
+  /// KAN-964: where the game or meetup stands at [now], whatever event the
+  /// row records (a `game_created` row of a game that has since ended is
+  /// finished). Null for a player or a venue. The schedule decides; the
+  /// server's [isLive] (true at fetch time, possibly stale in the cache)
+  /// counts only while the event has not passed its end.
+  ActivePhase? phaseAt(DateTime now) {
+    if (!isEvent) return null;
+    final end = endAt ?? startAt;
+    if (end != null && !now.isBefore(end)) return ActivePhase.finished;
+    final start = startAt;
+    if (isLive || (start != null && !now.isBefore(start))) {
+      return ActivePhase.live;
+    }
+    if (start == null && eventType.endsWith('_started')) {
+      return ActivePhase.live;
+    }
+    if (start == null &&
+        (eventType.endsWith('_ended') || eventType.endsWith('_completed'))) {
+      return ActivePhase.finished;
+    }
+    return ActivePhase.upcoming;
+  }
+
   /// The sport tags for [languageCode], falling back to English per tag.
   List<String> sportsFor(String languageCode) {
     if (languageCode != 'ar' || sportsAr.isEmpty) return sportsEn;
@@ -126,6 +152,9 @@ class ActiveItem {
     'sport_names_ar': sportsAr,
   };
 }
+
+/// KAN-964: a game's or meetup's state on the Active card.
+enum ActivePhase { upcoming, live, finished }
 
 /// The Active tab's type chips (`Home Feed.dc.html:293`), each a set of
 /// `active_stream` event types. "All" is no type (null).

@@ -9,32 +9,23 @@ import 'package:dabbler/features/social/providers/active_item.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-/// The card's 12 padding inside its 1px outline (CSS border-box): the
-/// surface's padding is measured from its outer edge.
-const double activeCardInset =
-    DabblerSpacing.space4 + DabblerSizing.borderDefault;
-const double _cardInset = activeCardInset;
+import 'active_card_look.dart';
 
-/// KAN-957: one Active activity card (`Home Feed.dc.html:370-432`): a type
-/// row with the Live badge and the time, an actor row, a listing row with a
-/// date or venue tile, and the sport tags with the city.
+export 'active_card_look.dart';
+
+/// The card's 18 padding (`ActivityCard.dc.html`, `padding:18px`, no border).
+const double activeCardInset = DabblerSpacing.space6;
+
+/// KAN-957 / KAN-964: one Active card, the design's `ActivityCard`
+/// (`project/ActivityCard.dc.html`): a pastel card in its look's tone with a
+/// large watermark glyph, a kicker pill (the family glyph, or the green dot
+/// while live) and the time, the body (a player's welcome, a game's or
+/// meetup's date tile and title, a venue's name), and a footer of the host,
+/// the sport tags and the action pill.
 class ActiveEventCard extends ConsumerWidget {
   const ActiveEventCard({super.key, required this.event});
 
   final ActiveItem event;
-
-  /// The card's type label for [eventType].
-  static String typeLabel(AppLocalizations l, String eventType) =>
-      switch (eventType) {
-        'game_created' => l.act_type_game_created,
-        'game_started' => l.act_type_game_started,
-        'game_ended' => l.act_type_game_ended,
-        'meetup_created' => l.act_type_meetup_created,
-        'meetup_started' => l.act_type_meetup_started,
-        'meetup_completed' => l.act_type_meetup_completed,
-        'venue_added' => l.act_type_venue_added,
-        _ => l.act_type_player_joined,
-      };
 
   /// `just now`, `12m ago`, `3h ago`, `2d ago`, then `Nov 3`.
   static String timeLabel(AppLocalizations l, DateTime at, DateTime now) {
@@ -61,87 +52,107 @@ class ActiveEventCard extends ConsumerWidget {
   static String profileRoute(String profileId) =>
       '${RoutePaths.userProfile}/$profileId?profileId=$profileId';
 
+  static String _first(String name) => name.trim().split(' ').first;
+
+  /// "Football", "Football and Padel", "Cricket, Football and Padel".
+  static String _list(AppLocalizations l, List<String> items) {
+    if (items.length < 2) return items.join();
+    return items.sublist(0, items.length - 1).join(l.act_list_comma) +
+        l.act_list_and +
+        items.last;
+  }
+
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l = AppLocalizations.of(context);
     final colors = DabblerColors.of(context);
     final now = ref.watch(homeNowProvider)();
+    final look = ActiveLook.of(event, now);
+    final tone = look.tone(colors);
     final route = _route();
     final sports = event.sportsFor(l.localeName);
-    final type = ActiveType.ofEvent(event.eventType) ?? ActiveType.players;
+    final name = event.actorName?.trim() ?? '';
 
-    final card = DabblerSurface.card(
+    final String headline;
+    final String sub;
+    if (event.entityKind == 'profile') {
+      headline = l.act_welcome(_first(name.isEmpty ? event.title ?? '' : name));
+      sub = <String>[
+        if (sports.isNotEmpty) l.act_plays(_list(l, sports)),
+        ?event.city,
+      ].join(' · ');
+    } else if (event.isVenue) {
+      headline = event.title ?? '';
+      sub = <String>[?event.detail, ?event.city].join(' · ');
+    } else {
+      headline = event.title ?? '';
+      final start = event.startAt;
+      sub = <String>[
+        ?event.detail,
+        if (start != null) DateFormat.jm(l.localeName).format(start),
+        if (name.isNotEmpty) l.act_by(_first(name)),
+      ].join(' · ');
+    }
+
+    final body = switch (event.entityKind) {
+      'profile' => _PlayerBody(event: event, headline: headline, sub: sub),
+      'venue' => _VenueBody(headline: headline, sub: sub),
+      _ => _EventBody(event: event, tone: tone, headline: headline, sub: sub),
+    };
+
+    final card = DabblerSurface.sunken(
       radius: DabblerRadius.xl,
-      fill: colors.surfaceCard,
-      borderColor: colors.borderDefault,
-      borderWidth: DabblerSizing.borderDefault,
-      padding: const EdgeInsetsDirectional.all(_cardInset),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: <Widget>[
-          Row(
-            children: <Widget>[
-              DabblerIcon(
-                type.icon,
-                size: DabblerHomeFrame.searchFieldGlyph,
-                weight: DabblerIconWeight.bold,
-                color: colors.brandPrimary,
-              ),
-              const DabblerGap.h(DabblerSpacing.space2),
-              // The label gives way before the badge and the time.
-              Expanded(
-                child: Row(
-                  children: <Widget>[
-                    Flexible(
-                      child: DabblerText(
-                        typeLabel(l, event.eventType),
-                        style: DabblerType.footnote,
-                        tone: DabblerTextTone.secondary,
-                        maxLines: 1,
-                        softWrap: false,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    if (event.isLive) ...<Widget>[
-                      const DabblerGap.h(DabblerSpacing.space2),
-                      ActiveLiveBadge(label: l.act_live),
-                    ],
-                  ],
+      fill: tone.surface,
+      // The design's 120 watermark glyph (`look.mark`, 14% of the tone ink,
+      // overhanging the top end corner) needs a layered surface the package
+      // does not have yet; app widgets may not stack (design_system_gate).
+      child: Padding(
+        padding: const EdgeInsetsDirectional.all(activeCardInset),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: <Widget>[
+            Row(
+              children: <Widget>[
+                Flexible(
+                  child: ActiveKickerPill(
+                    look: look,
+                    label: look.kicker(l),
+                    ink: tone.ink,
+                  ),
                 ),
-              ),
-              const DabblerGap.h(DabblerSpacing.space2),
-              DabblerText(
-                timeLabel(l, event.eventAt, now),
-                style: DabblerType.caption1,
-                tone: DabblerTextTone.tertiary,
-                maxLines: 1,
-              ),
-            ],
-          ),
-          if (event.hasActor) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space3),
-            _ActorRow(event: event),
+                const DabblerGap.h(DabblerSpacing.space2),
+                DabblerText(
+                  timeLabel(l, event.eventAt, now),
+                  style: DabblerType.caption1,
+                  tone: DabblerTextTone.secondary,
+                  maxLines: 1,
+                ),
+              ],
+            ),
+            const DabblerGap.v(DabblerSpacing.space4),
+            body,
+            const DabblerGap.v(DabblerSpacing.space4),
+            _Footer(
+              event: event,
+              sports: sports,
+              action: look.action(l),
+              ink: tone.ink,
+            ),
           ],
-          if (event.hasListing) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space3),
-            _ListingRow(event: event),
-          ],
-          if (sports.isNotEmpty || event.city != null) ...<Widget>[
-            const DabblerGap.v(DabblerSpacing.space3),
-            _Footer(sports: sports, city: event.city),
-          ],
-        ],
+        ),
       ),
     );
 
     return Semantics(
       link: route != null,
+      container: true,
+      label: '${look.kicker(l)}: $headline',
       child: GestureDetector(
         behavior: HitTestBehavior.opaque,
         onTap: route == null ? null : () => context.push(route),
         child: Padding(
           padding: const EdgeInsetsDirectional.only(
-            bottom: DabblerSpacing.space3,
+            bottom: DabblerSpacing.space4,
           ),
           child: DabblerPressScale.gesture(enabled: route != null, child: card),
         ),
@@ -150,82 +161,163 @@ class ActiveEventCard extends ConsumerWidget {
   }
 }
 
-/// The green "Live" pill (`Home Feed.dc.html:383-385`).
-class ActiveLiveBadge extends StatelessWidget {
-  const ActiveLiveBadge({super.key, required this.label});
+/// Text in an ink the type tones do not name (a look's tone ink).
+class _Inked extends StatelessWidget {
+  const _Inked({required this.color, required this.child});
 
+  final Color color;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => DefaultTextStyle(
+    style: DefaultTextStyle.of(context).style.copyWith(color: color),
+    child: child,
+  );
+}
+
+/// The kicker pill: on the card surface, the family glyph and the kicker in
+/// the look's ink, or while live the green dot and the kicker in the success
+/// ink (`ActivityCard.dc.html`, 11/13, `padding:4px 10px 4px 8px`).
+class ActiveKickerPill extends StatelessWidget {
+  const ActiveKickerPill({
+    super.key,
+    required this.look,
+    required this.label,
+    required this.ink,
+  });
+
+  final ActiveLook look;
   final String label;
+  final Color ink;
 
   @override
   Widget build(BuildContext context) {
     final colors = DabblerColors.of(context);
-    return DabblerSurface.sunken(
-      radius: DabblerRadius.pill,
-      fill: colors.success.surface,
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space2,
-        DabblerHomeFrame.postBadgePaddingBlock,
-        DabblerHomeFrame.postBadgePaddingInline,
-        DabblerHomeFrame.postBadgePaddingBlock,
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: <Widget>[
-          DabblerSurface.sunken(
-            width: DabblerSpacing.space2,
-            height: DabblerSpacing.space2,
-            radius: DabblerRadius.pill,
-            fill: colors.success.base,
-          ),
-          const SizedBox(width: DabblerHomeFrame.activityGap),
-          DabblerText(
-            label,
-            style: DabblerType.caption2,
-            tone: DabblerTextTone.success,
-            maxLines: 1,
-          ),
-        ],
+    return Align(
+      alignment: AlignmentDirectional.centerStart,
+      child: DabblerSurface.sunken(
+        radius: DabblerRadius.pill,
+        fill: colors.surfaceCard,
+        padding: const EdgeInsetsDirectional.fromSTEB(
+          DabblerHomeFrame.postBadgePaddingInline,
+          DabblerSpacing.space1,
+          DabblerSpacing.space3,
+          DabblerSpacing.space1,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: <Widget>[
+            if (look.isLive) ...<Widget>[
+              DabblerSurface.sunken(
+                key: const ValueKey<String>('active-live-dot'),
+                width: DabblerSpacing.space2,
+                height: DabblerSpacing.space2,
+                radius: DabblerRadius.pill,
+                fill: colors.success.base,
+              ),
+              const DabblerGap.h(DabblerSpacing.space2),
+            ] else ...<Widget>[
+              DabblerIcon(
+                look.familyIcon,
+                size: DabblerSpacing.space4,
+                weight: DabblerIconWeight.bold,
+                color: ink,
+              ),
+              const SizedBox(width: DabblerHomeFrame.postMetaGap),
+            ],
+            Flexible(
+              child: look.isLive
+                  ? DabblerText(
+                      label,
+                      style: DabblerType.caption2,
+                      tone: DabblerTextTone.success,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    )
+                  : _Inked(
+                      color: ink,
+                      child: DabblerText(
+                        label,
+                        style: DabblerType.caption2,
+                        tone: DabblerTextTone.inherit,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ),
+            ),
+          ],
+        ),
       ),
     );
   }
 }
 
-class _ActorRow extends StatelessWidget {
-  const _ActorRow({required this.event});
+class _Headline extends StatelessWidget {
+  const _Headline(this.text, {this.style = DabblerType.title2});
+
+  final String text;
+  final DabblerTypeStyle style;
+
+  @override
+  Widget build(BuildContext context) => DabblerText(
+    text,
+    style: style,
+    maxLines: 2,
+    overflow: TextOverflow.ellipsis,
+  );
+}
+
+class _Sub extends StatelessWidget {
+  const _Sub(this.text, {this.oneLine = false});
+
+  final String text;
+  final bool oneLine;
+
+  @override
+  Widget build(BuildContext context) => DabblerText(
+    text,
+    style: DabblerType.footnote,
+    tone: DabblerTextTone.secondary,
+    maxLines: oneLine ? 1 : 2,
+    softWrap: !oneLine,
+    overflow: TextOverflow.ellipsis,
+  );
+}
+
+/// A new player: the 64 avatar ringed in the card surface, "Say welcome to
+/// …" and what they play.
+class _PlayerBody extends StatelessWidget {
+  const _PlayerBody({
+    required this.event,
+    required this.headline,
+    required this.sub,
+  });
 
   final ActiveItem event;
+  final String headline;
+  final String sub;
 
   @override
   Widget build(BuildContext context) {
-    final l = AppLocalizations.of(context);
-    final name = event.actorName!;
+    final colors = DabblerColors.of(context);
     return Row(
       children: <Widget>[
         DabblerAvatar(
-          seed: name,
+          seed: event.actorName ?? event.title,
           imageUrl: event.actorAvatarUrl,
-          size: DabblerAvatarSize.sm,
+          size: DabblerAvatarSize.lg,
+          ringColor: colors.surfaceCard,
         ),
-        const DabblerGap.h(DabblerSpacing.space3),
+        const DabblerGap.h(DabblerSpacing.space4),
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
-              DabblerText(
-                name,
-                style: DabblerType.subheadline,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              DabblerText(
-                event.entityKind == 'profile'
-                    ? l.act_actor_joined
-                    : l.act_actor_host,
-                style: DabblerType.caption1,
-                tone: DabblerTextTone.tertiary,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
+              _Headline(headline),
+              if (sub.isNotEmpty) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space1),
+                _Sub(sub),
+              ],
             ],
           ),
         ),
@@ -234,139 +326,170 @@ class _ActorRow extends StatelessWidget {
   }
 }
 
-class _ListingRow extends StatelessWidget {
-  const _ListingRow({required this.event});
+/// A game or meetup: the date tile (month in the look's ink, the day in
+/// display type) and the title over "place · time · by host".
+class _EventBody extends StatelessWidget {
+  const _EventBody({
+    required this.event,
+    required this.tone,
+    required this.headline,
+    required this.sub,
+  });
 
   final ActiveItem event;
+  final DabblerToneColor tone;
+  final String headline;
+  final String sub;
 
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final colors = DabblerColors.of(context);
     final start = event.startAt;
-    final Widget? tile = event.isVenue
-        ? _Tile(
-            child: DabblerIcon(
-              'building-4',
-              size: DabblerHomeFrame.listRowGlyph,
-              color: colors.brandPrimary,
-            ),
-          )
-        : start != null
-        ? _Tile(
+    return Row(
+      children: <Widget>[
+        if (start != null) ...<Widget>[
+          DabblerSurface.sunken(
             key: const ValueKey<String>('active-date-tile'),
+            width: DabblerSizing.tileLg,
+            height: DabblerSizing.tileLg,
+            center: true,
+            radius: DabblerRadius.lg,
+            fill: colors.surfaceCard,
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: <Widget>[
-                DabblerText(
-                  DateFormat.MMM(l.localeName).format(start),
-                  style: DabblerType.caption2,
-                  tone: DabblerTextTone.secondary,
-                  maxLines: 1,
+                _Inked(
+                  color: tone.ink,
+                  child: DabblerText(
+                    DateFormat.MMM(l.localeName).format(start),
+                    style: DabblerType.caption2,
+                    tone: DabblerTextTone.inherit,
+                    maxLines: 1,
+                  ),
                 ),
                 DabblerText(
                   DateFormat.d(l.localeName).format(start),
-                  style: DabblerType.subheadline,
+                  style: DabblerType.title1,
                   maxLines: 1,
                 ),
-              ],
-            ),
-          )
-        : null;
-    return DabblerSurface.sunken(
-      radius: DabblerRadius.lg,
-      fill: colors.surfaceSunken,
-      padding: const EdgeInsetsDirectional.all(DabblerSpacing.space3),
-      child: Row(
-        children: <Widget>[
-          if (tile != null) ...<Widget>[
-            tile,
-            const DabblerGap.h(DabblerSpacing.space4),
-          ],
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                DabblerText(
-                  event.title!,
-                  style: DabblerType.subheadline,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                if (event.detail != null)
-                  DabblerText(
-                    event.detail!,
-                    style: DabblerType.caption1,
-                    tone: DabblerTextTone.tertiary,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                  ),
               ],
             ),
           ),
+          const DabblerGap.h(DabblerSpacing.space4),
         ],
-      ),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: <Widget>[
+              _Headline(headline),
+              if (sub.isNotEmpty) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space1),
+                _Sub(sub, oneLine: true),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
 
-/// The 45 square date or venue tile.
-class _Tile extends StatelessWidget {
-  const _Tile({super.key, required this.child});
+/// A new venue: its name in the larger display type, clear of the watermark.
+class _VenueBody extends StatelessWidget {
+  const _VenueBody({required this.headline, required this.sub});
 
-  final Widget child;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return DabblerSurface.card(
-      width: DabblerSizing.tileMd,
-      height: DabblerSizing.tileMd,
-      center: true,
-      radius: DabblerRadius.md,
-      fill: colors.surfaceCard,
-      borderColor: colors.borderDefault,
-      borderWidth: DabblerSizing.borderDefault,
-      child: child,
-    );
-  }
-}
-
-class _Footer extends StatelessWidget {
-  const _Footer({required this.sports, required this.city});
-
-  final List<String> sports;
-  final String? city;
+  final String headline;
+  final String sub;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.center,
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsetsDirectional.only(end: DabblerSpacing.space11),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: <Widget>[
+        _Headline(headline, style: DabblerType.displaySection),
+        if (sub.isNotEmpty) ...<Widget>[
+          const DabblerGap.v(DabblerSpacing.space1),
+          _Sub(sub),
+        ],
+      ],
+    ),
+  );
+}
+
+/// The host's 28 avatar (games, meetups), the sport tags and the action pill
+/// in the look's ink.
+class _Footer extends StatelessWidget {
+  const _Footer({
+    required this.event,
+    required this.sports,
+    required this.action,
+    required this.ink,
+  });
+
+  final ActiveItem event;
+  final List<String> sports;
+  final String action;
+  final Color ink;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = DabblerColors.of(context);
+    final host = event.entityKind != 'profile' && event.hasActor;
+    return Row(
+      children: <Widget>[
+        if (host) ...<Widget>[
+          DabblerAvatar(
+            seed: event.actorName,
+            imageUrl: event.actorAvatarUrl,
+            size: DabblerAvatarSize.xs,
+            ringColor: colors.surfaceCard,
+          ),
+          const DabblerGap.h(DabblerSpacing.space3),
+        ],
         Expanded(
           child: Wrap(
             spacing: DabblerSpacing.space2,
             runSpacing: DabblerSpacing.space2,
             children: <Widget>[
-              for (final s in sports) DabblerListingTag.outlined(label: s),
+              for (final s in sports)
+                DabblerSurface.sunken(
+                  radius: DabblerRadius.pill,
+                  fill: colors.surfaceCard,
+                  padding: const EdgeInsetsDirectional.symmetric(
+                    horizontal: DabblerSpacing.space3,
+                    vertical: DabblerSpacing.space1,
+                  ),
+                  child: DabblerText(
+                    s,
+                    style: DabblerType.caption2,
+                    tone: DabblerTextTone.secondary,
+                    maxLines: 1,
+                  ),
+                ),
             ],
           ),
         ),
-        if (city != null) ...<Widget>[
-          DabblerIcon(
-            'location',
-            size: DabblerHomeFrame.locationGlyph,
-            color: colors.textTertiary,
+        const DabblerGap.h(DabblerSpacing.space3),
+        DabblerSurface.sunken(
+          key: const ValueKey<String>('active-card-action'),
+          radius: DabblerRadius.pill,
+          fill: ink,
+          padding: const EdgeInsetsDirectional.symmetric(
+            horizontal: DabblerSpacing.space6,
+            vertical: DabblerSpacing.space3,
           ),
-          const SizedBox(width: DabblerHomeFrame.locationGap),
-          DabblerText(
-            city!,
-            style: DabblerType.caption1,
-            tone: DabblerTextTone.tertiary,
-            maxLines: 1,
+          child: _Inked(
+            color: colors.surfaceCard,
+            child: DabblerText(
+              action,
+              style: DabblerType.small,
+              tone: DabblerTextTone.inherit,
+              maxLines: 1,
+            ),
           ),
-        ],
+        ),
       ],
     );
   }

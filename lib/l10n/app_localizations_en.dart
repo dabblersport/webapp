@@ -8673,39 +8673,6 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
-  String get act_type_game_created => 'New game';
-
-  @override
-  String get act_type_game_started => 'Game started';
-
-  @override
-  String get act_type_game_ended => 'Game ended';
-
-  @override
-  String get act_type_meetup_created => 'New meetup';
-
-  @override
-  String get act_type_meetup_started => 'Meetup started';
-
-  @override
-  String get act_type_meetup_completed => 'Meetup ended';
-
-  @override
-  String get act_type_venue_added => 'New venue';
-
-  @override
-  String get act_type_player_joined => 'New player';
-
-  @override
-  String get act_actor_host => 'Hosting';
-
-  @override
-  String get act_actor_joined => 'Joined Dabbler';
-
-  @override
-  String get act_live => 'Live';
-
-  @override
   String get act_group_today => 'Today';
 
   @override
@@ -8767,4 +8734,67 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get home_no_followed_sports_hint =>
       'Add sports to your profile to see their posts and news here.';
+
+  @override
+  String get act_kicker_player_joined => 'New player';
+
+  @override
+  String get act_kicker_venue_added => 'New on Dabbler';
+
+  @override
+  String get act_kicker_game_created => 'New game';
+
+  @override
+  String get act_kicker_meetup_created => 'New meetup';
+
+  @override
+  String get act_kicker_live => 'Happening now';
+
+  @override
+  String get act_kicker_game_ended => 'Final whistle';
+
+  @override
+  String get act_kicker_meetup_completed => 'That\'s a wrap';
+
+  @override
+  String get act_cta_follow => 'Follow';
+
+  @override
+  String get act_cta_view_venue => 'View venue';
+
+  @override
+  String get act_cta_join_game => 'Join game';
+
+  @override
+  String get act_cta_join_meetup => 'Join meetup';
+
+  @override
+  String get act_cta_join_in => 'Join in';
+
+  @override
+  String get act_cta_see_results => 'See results';
+
+  @override
+  String get act_cta_see_recap => 'See recap';
+
+  @override
+  String act_welcome(String name) {
+    return 'Say welcome to $name';
+  }
+
+  @override
+  String act_plays(String sports) {
+    return 'Plays $sports';
+  }
+
+  @override
+  String act_by(String name) {
+    return 'by $name';
+  }
+
+  @override
+  String get act_list_and => ' and ';
+
+  @override
+  String get act_list_comma => ', ';
 }

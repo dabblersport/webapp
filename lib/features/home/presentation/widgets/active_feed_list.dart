@@ -102,8 +102,9 @@ class ActiveFeedSliver extends ConsumerWidget {
       );
     }
 
+    // KAN-964: one card per game, meetup, venue or player, in its state now.
     final groups = groupActiveByDay(
-      state.events,
+      latestActivePerEntity(state.events),
       l,
       ref.watch(homeNowProvider)(),
     );
@@ -194,7 +195,9 @@ class ActiveSkeletonList extends StatelessWidget {
         fill: colors.surfaceCard,
         borderColor: colors.borderDefault,
         borderWidth: DabblerSizing.borderDefault,
-        padding: const EdgeInsetsDirectional.all(activeCardInset),
+        padding: const EdgeInsetsDirectional.all(
+          DabblerSpacing.space4 + DabblerSizing.borderDefault,
+        ),
         child: const Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[

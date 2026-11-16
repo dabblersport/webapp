@@ -187,10 +187,10 @@ void addNewsRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   );
 }
 
-/// KAN-957: the Active activity card (`Home Feed.dc.html:370-432`),
-/// measured from the card's own top-left: the card, the 16 bold type glyph
-/// (12 padding inside a 1px outline) and the 45 date tile (x and size; its y
-/// follows the actor row, whose line heights differ per script).
+/// KAN-957 / KAN-964: the Active card (`ActivityCard.dc.html`), measured
+/// from the card's own top-left: the card, the kicker's 12 bold family glyph
+/// (18 card padding, 8 pill start padding) and the date tile (x and size; its
+/// y follows the headline, whose line heights differ per script).
 void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
   const String s = 'Active tab (activity card)';
   final Finder card0 = find.byType(ActiveEventCard).first;
@@ -205,21 +205,43 @@ void addActiveRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
     rtl: rc(18, 0, 357, 0),
     app: () => Rect.fromLTWH(cardApp.left, 0, cardApp.width, 0),
   );
-  row(
-    t,
-    s,
-    'type glyph 16x16',
-    ltr: rc(13, 14, 16, 16),
-    rtl: rc(328, 14, 16, 16),
-    app: () => rel(_r(tester, inCard(find.byType(DabblerIcon)))),
+  const MeasureException pillBlock = MeasureException(
+    'The kicker pill pads 4 above and below; the spacing scale has 3 '
+    '(space1), so the pill is 2 shorter and its glyph sits 1 higher.',
+    dy: -1,
   );
   row(
     t,
     s,
-    'date tile 45x45 (9 inside the listing row)',
-    ltr: rc(22, 0, 45, 45),
-    rtl: rc(290, 0, 45, 45),
+    'kicker family glyph 12x12',
+    ltr: rc(26, 22.5, 12, 12),
+    rtl: rc(319, 22.5, 12, 12),
+    exLtr: pillBlock,
+    exRtl: pillBlock,
+    app: () => rel(
+      _r(
+        tester,
+        inCard(
+          find.descendant(
+            of: find.byType(ActiveKickerPill),
+            matching: find.byType(DabblerIcon),
+          ),
+        ),
+      ),
+    ),
+  );
+  const String tileWhy =
+      'The design\'s 56x62 date tile has no size in the package; it is the '
+      '48 tileLg square until one lands.';
+  row(
+    t,
+    s,
+    'date tile 56x62 (18 inside the card)',
+    ltr: rc(18, 0, 56, 62),
+    rtl: rc(283, 0, 56, 62),
     basis: Basis.inset,
+    exLtr: const MeasureException(tileWhy, dw: -8, dh: -14),
+    exRtl: const MeasureException(tileWhy, dx: 8, dw: -8, dh: -14),
     app: () => rel(
       _r(
         tester,

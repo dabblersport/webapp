@@ -1,6 +1,6 @@
-// KAN-957: the Active list — date groups, the card variants (actor, listing
-// with a date tile, venue tile, Live badge, sports and city) and the loading,
-// empty and error states, in EN and AR.
+// KAN-957: the Active list — date groups, tappable cards and the loading,
+// empty and error states, in EN and AR. The card itself (KAN-964) is
+// covered by active_card_964_test.dart.
 import 'package:dabbler/features/home/presentation/widgets/active_event_card.dart';
 import 'package:dabbler/features/home/presentation/widgets/active_feed_list.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
@@ -15,15 +15,12 @@ import 'home_test_harness.dart';
 
 Finder _card(String id) => find.byKey(ValueKey<String>(id));
 
-Finder _in(String id, Finder f) => find.descendant(of: _card(id), matching: f);
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(initHomeTestSupabase);
 
   for (final locale in activeLocales) {
     final dir = locale.languageCode == 'ar' ? 'rtl' : 'ltr';
-    final ar = locale.languageCode == 'ar';
 
     testWidgets('groups by day: Today, Yesterday, then the date — $dir', (
       tester,
@@ -48,15 +45,18 @@ void main() {
           hasMore: false,
         ),
       );
-      final headers = tester
-          .widgetList<ActiveGroupHeader>(find.byType(ActiveGroupHeader))
-          .map((h) => h.label)
-          .toList();
-      expect(headers, <String>[
-        l.act_group_today,
-        l.act_group_yesterday,
-        DateFormat.MMMEd(l.localeName).format(older),
-      ]);
+      // The headers seen on the way down (KAN-964 cards are taller, so the
+      // last group is built only once scrolled to).
+      final headers = <String>[];
+      void collect() {
+        for (final h in tester.widgetList<ActiveGroupHeader>(
+          find.byType(ActiveGroupHeader),
+        )) {
+          if (!headers.contains(h.label)) headers.add(h.label);
+        }
+      }
+
+      collect();
       // A header sits above its own items.
       final y = tester.getTopLeft(find.text(l.act_group_yesterday)).dy;
       expect(tester.getTopLeft(_card('venue_added:b')).dy, lessThan(y));
@@ -67,122 +67,17 @@ void main() {
         find.byType(CustomScrollView).first,
         const Offset(0, -200),
       );
+      collect();
+      expect(headers, <String>[
+        l.act_group_today,
+        l.act_group_yesterday,
+        DateFormat.MMMEd(l.localeName).format(older),
+      ]);
       expect(find.byType(ActiveCaughtUpRow), findsOneWidget);
       expect(
         tester.getTopLeft(find.byType(ActiveCaughtUpRow)).dy,
         greaterThan(tester.getTopLeft(_card('player_joined:d')).dy),
       );
-    }, variant: desktopOnly);
-
-    testWidgets('game card: type, Live, time, actor, date tile, tags — $dir', (
-      tester,
-    ) async {
-      final l = await openActiveTab(
-        tester,
-        locale: locale,
-        state: ActiveFeedData(
-          events: <ActiveItem>[
-            activeGame(
-              type: 'game_started',
-              at: activeNow.subtract(const Duration(minutes: 12)),
-              live: true,
-            ),
-          ],
-          hasMore: false,
-        ),
-      );
-      const id = 'game_started:g1';
-      expect(_in(id, find.text(l.act_type_game_started)), findsOneWidget);
-      expect(_in(id, find.byType(ActiveLiveBadge)), findsOneWidget);
-      expect(_in(id, find.text(l.act_live)), findsOneWidget);
-      expect(_in(id, find.text(l.time_minutes_ago(12))), findsOneWidget);
-      expect(_in(id, find.byType(DabblerAvatar)), findsOneWidget);
-      expect(_in(id, find.text('Omar Hassan')), findsOneWidget);
-      expect(_in(id, find.text(l.act_actor_host)), findsOneWidget);
-      final tile = _in(id, find.byKey(const ValueKey('active-date-tile')));
-      expect(tile, findsOneWidget);
-      expect(tester.getSize(tile), const Size(45, 45));
-      final start = DateTime(2026, 11, 20, 19);
-      expect(
-        find.descendant(
-          of: tile,
-          matching: find.text(DateFormat.MMM(l.localeName).format(start)),
-        ),
-        findsOneWidget,
-      );
-      expect(
-        find.descendant(
-          of: tile,
-          // DabblerText always draws Western digits.
-          matching: find.text(
-            DabblerType.toWesternDigits(
-              DateFormat.d(l.localeName).format(start),
-            ),
-          ),
-        ),
-        findsOneWidget,
-      );
-      expect(_in(id, find.text('Sunday 5-a-side')), findsOneWidget);
-      expect(_in(id, find.text('Al Wasl Sports Club')), findsOneWidget);
-      expect(_in(id, find.text(ar ? 'كرة القدم' : 'Football')), findsOneWidget);
-      expect(_in(id, find.text('Dubai')), findsOneWidget);
-      // The type glyph leads the card in reading order.
-      final card = tester.getRect(_card(id));
-      final glyph = tester.getRect(_in(id, find.byType(DabblerIcon)).first);
-      if (ar) {
-        expect(card.right - glyph.right, moreOrLessEquals(13, epsilon: 0.5));
-      } else {
-        expect(glyph.left - card.left, moreOrLessEquals(13, epsilon: 0.5));
-      }
-    }, variant: desktopOnly);
-
-    testWidgets('venue card: building tile, no actor, no Live — $dir', (
-      tester,
-    ) async {
-      final l = await openActiveTab(
-        tester,
-        locale: locale,
-        state: ActiveFeedData(
-          events: <ActiveItem>[activeVenue(at: activeNow)],
-          hasMore: false,
-        ),
-      );
-      const id = 'venue_added:v1';
-      expect(_in(id, find.text(l.act_type_venue_added)), findsOneWidget);
-      final icons = tester
-          .widgetList<DabblerIcon>(_in(id, find.byType(DabblerIcon)))
-          .map((i) => i.name);
-      expect(icons, contains('building-4'));
-      expect(
-        _in(id, find.byKey(const ValueKey('active-date-tile'))),
-        findsNothing,
-      );
-      expect(_in(id, find.byType(DabblerAvatar)), findsNothing);
-      expect(_in(id, find.byType(ActiveLiveBadge)), findsNothing);
-      expect(_in(id, find.text('JLT Padel Club')), findsOneWidget);
-      expect(_in(id, find.text('Jumeirah Lake Towers')), findsOneWidget);
-    }, variant: desktopOnly);
-
-    testWidgets('player card: actor row only, no listing — $dir', (
-      tester,
-    ) async {
-      final l = await openActiveTab(
-        tester,
-        locale: locale,
-        state: ActiveFeedData(
-          events: <ActiveItem>[activePlayer(at: activeNow)],
-          hasMore: false,
-        ),
-      );
-      const id = 'player_joined:u1';
-      expect(_in(id, find.text(l.act_type_player_joined)), findsOneWidget);
-      expect(_in(id, find.byType(DabblerAvatar)), findsOneWidget);
-      expect(_in(id, find.text(l.act_actor_joined)), findsOneWidget);
-      expect(
-        _in(id, find.byKey(const ValueKey('active-date-tile'))),
-        findsNothing,
-      );
-      expect(_in(id, find.text('Abu Dhabi')), findsOneWidget);
     }, variant: desktopOnly);
 
     testWidgets('every card variant is tappable, players included — $dir', (
