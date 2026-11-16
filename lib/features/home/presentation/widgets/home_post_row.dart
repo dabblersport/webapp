@@ -515,7 +515,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
               ? null
               : DabblerIcon('location', size: DabblerSizing.iconXs),
           // The design's sport emoji (`p.sportEmoji`) before the label.
-          sportLeading: sportLabel == null
+          sportEmoji: sportLabel == null
               ? null
               : homeSportEmoji(sportKey ?? post.sport),
           likes: _localLikeCount,

@@ -25,18 +25,24 @@ const Vibe _inspired = Vibe(
   key: 'inspired',
   labelEn: 'Inspired',
   labelAr: 'ملهم',
+  emoji: '✨',
+  colorHex: '#F59E0B',
 );
 const Vibe _calm = Vibe(
   id: 'v-calm',
   key: 'calm',
   labelEn: 'Calm',
   labelAr: 'هادئ',
+  emoji: '🌊',
+  colorHex: '#3B82F6',
 );
 const Vibe _hyped = Vibe(
   id: 'v-hyp',
   key: 'hyped',
   labelEn: 'Hyped',
   labelAr: 'متحمس',
+  emoji: '🔥',
+  colorHex: 'not-a-colour',
 );
 const List<Vibe> _vibes = <Vibe>[_inspired, _calm, _hyped];
 
@@ -133,8 +139,21 @@ Future<_FakeActions> _pump(
   return actions;
 }
 
-DabblerChip _chip(WidgetTester tester, String key) =>
-    tester.widget<DabblerChip>(find.byKey(ValueKey('home-vibe-chip-$key')));
+DabblerFeedPill _chip(WidgetTester tester, String key) =>
+    tester.widget<DabblerFeedPill>(find.byKey(ValueKey('home-vibe-chip-$key')));
+
+BoxDecoration _deco(WidgetTester tester, String key) =>
+    tester
+            .widget<DecoratedBox>(
+              find
+                  .descendant(
+                    of: find.byKey(ValueKey('home-vibe-chip-$key')),
+                    matching: find.byType(DecoratedBox),
+                  )
+                  .first,
+            )
+            .decoration
+        as BoxDecoration;
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -251,6 +270,52 @@ void main() {
       expect(find.text('$inspired 4'), findsOneWidget, reason: 'bumped');
       expect(find.textContaining(hyped), findsNothing, reason: 'one vibe each');
       expect(actions.calls, <String>['react:v-hyp', 'react:v-insp']);
+    });
+
+    testWidgets('$lang: each chip is the sport pill, with emoji and colour', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _post(const {'inspired': 3, 'calm': 1, 'hyped': 2}),
+        Locale(lang),
+        myReactions: const {'v-calm'},
+      );
+      // The sport pill's own metrics: drawn, the same widget as the sport tag.
+      for (final k in <String>['inspired', 'calm', 'hyped']) {
+        expect(_chip(tester, k).metrics, DabblerFeedMetrics.drawn);
+        final h = tester.getSize(find.byKey(ValueKey('home-vibe-chip-$k')));
+        expect(h.height >= DabblerHomeFrame.sportPillHeight, isTrue);
+      }
+      expect(find.text('✨'), findsOneWidget, reason: 'vibes.emoji');
+      expect(find.text('🌊'), findsOneWidget);
+      // Tint from color_hex: outlined in the vibe's tone, mine filled.
+      final insp = DabblerHueTone.fromHex('#F59E0B')!;
+      final calmTone = DabblerHueTone.fromHex('#3B82F6')!;
+      expect(
+        _chip(tester, 'inspired').tint,
+        DabblerHueTone.parseHex('#F59E0B'),
+      );
+      expect(_deco(tester, 'inspired').color, insp.surface);
+      expect(_deco(tester, 'calm').color, calmTone.solid, reason: 'mine');
+      expect(_chip(tester, 'calm').selected, isTrue);
+      // A bad color_hex falls back to the neutral pill.
+      expect(_chip(tester, 'hyped').tint, isNull);
+      expect(_deco(tester, 'hyped').color, isNull);
+    });
+
+    testWidgets('$lang: chips are as tall as the sport tag', (tester) async {
+      await _pump(
+        tester,
+        _post(const {'inspired': 3}).copyWith(sport: 'Cricket'),
+        Locale(lang),
+      );
+      final pills = find.byType(DabblerFeedPill);
+      expect(pills, findsNWidgets(2), reason: 'sport tag + one vibe chip');
+      expect(
+        tester.getSize(pills.at(0)).height,
+        tester.getSize(pills.at(1)).height,
+      );
     });
   }
 }

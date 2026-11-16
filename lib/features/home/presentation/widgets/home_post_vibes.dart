@@ -57,8 +57,9 @@ String homeVibeLabel(BuildContext context, Vibe? vibe, String key) {
   return vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key;
 }
 
-/// The chips: one per vibe with a count, "Inspired 3", the viewer's own in
-/// the selected (brand) state and the rest outlined. Tapping one calls
+/// The chips: one per vibe with a count, "Inspired 3", each a
+/// [DabblerFeedPill] (the sport pill) tinted with the vibe's colour, the
+/// viewer's own in its filled state and the rest outlined. Tapping one calls
 /// [onToggle] with its vibe; a key the vibe list does not know is inert.
 class HomeVibeChips extends StatelessWidget {
   const HomeVibeChips({
@@ -88,14 +89,15 @@ class HomeVibeChips extends StatelessWidget {
           Builder(
             builder: (context) {
               final Vibe? vibe = vibes.where((v) => v.key == e.key).firstOrNull;
-              return DabblerChip(
+              // KAN-963: the sport pill, with the vibe's emoji and colour from
+              // `public.vibes` (a bad or missing colour draws it neutral).
+              return DabblerFeedPill(
                 key: ValueKey<String>('home-vibe-chip-${e.key}'),
                 label: '${homeVibeLabel(context, vibe, e.key)} ${e.value}',
+                emoji: (vibe?.emoji ?? '').trim().isEmpty ? null : vibe!.emoji,
+                tint: DabblerHueTone.parseHex(vibe?.colorHex),
                 selected: mine.contains(e.key),
-                dense: true,
-                labelWeight: DabblerType.regular,
                 metrics: metrics,
-                compactHitArea: true,
                 onTap: vibe == null ? null : () => onToggle(vibe),
               );
             },

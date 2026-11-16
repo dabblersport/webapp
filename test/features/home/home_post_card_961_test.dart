@@ -203,7 +203,10 @@ void main() {
       );
       expect(_row(tester).vibeTagLabel, isNull, reason: 'KAN-642 stays off');
       expect(_row(tester).reactions, isNotNull, reason: 'KAN-963 chips');
-      expect(find.byType(DabblerChip), findsOneWidget);
+      expect(
+        find.byKey(const ValueKey('home-vibe-chip-motivated')),
+        findsOneWidget,
+      );
     });
 
     testWidgets('$lang: the vibe action is muted and linear at rest', (

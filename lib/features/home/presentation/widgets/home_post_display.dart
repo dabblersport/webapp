@@ -45,14 +45,9 @@ List<DabblerPostSegment> homePostSegments(Post post) {
 /// '🏅'`).
 const String homeSportEmojiFallback = '🏅';
 
-/// The sport pill's leading emoji (`p.sportEmoji`, 15/20 beside the 12/16
-/// label). Decorative: the label carries the name.
-Widget homeSportEmoji(String? keyOrName) => ExcludeSemantics(
-  child: DabblerText(
-    composerSportEmoji(keyOrName) ?? homeSportEmojiFallback,
-    style: DabblerType.subheadline,
-  ),
-);
+/// The sport pill's emoji (`p.sportEmoji`), drawn by the pill at 15/20.
+String homeSportEmoji(String? keyOrName) =>
+    composerSportEmoji(keyOrName) ?? homeSportEmojiFallback;
 
 /// The post's age in the design's short form: `2h` in English, `2 س` in
 /// Arabic. Older than a week is the localised month and day.
