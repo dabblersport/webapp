@@ -289,7 +289,8 @@ void main() {
       }
       expect(find.text('✨'), findsOneWidget, reason: 'vibes.emoji');
       expect(find.text('🌊'), findsOneWidget);
-      // Tint from color_hex: outlined in the vibe's tone, mine filled.
+      // Tint from color_hex, pastels only: outlined in the vibe's pale tone;
+      // mine a deeper pastel with the hue's deep border, never a solid fill.
       final insp = DabblerHueTone.fromHex('#F59E0B')!;
       final calmTone = DabblerHueTone.fromHex('#3B82F6')!;
       expect(
@@ -297,7 +298,11 @@ void main() {
         DabblerHueTone.parseHex('#F59E0B'),
       );
       expect(_deco(tester, 'inspired').color, insp.surface);
-      expect(_deco(tester, 'calm').color, calmTone.solid, reason: 'mine');
+      final mine = _deco(tester, 'calm');
+      expect(mine.color, calmTone.edge, reason: 'mine: deeper pastel');
+      expect(mine.color, isNot(calmTone.solid));
+      expect(mine.color!.computeLuminance() > 0.5, isTrue, reason: 'pastel');
+      expect((mine.border! as Border).top.color, calmTone.deep);
       expect(_chip(tester, 'calm').selected, isTrue);
       // A bad color_hex falls back to the neutral pill.
       expect(_chip(tester, 'hyped').tint, isNull);
