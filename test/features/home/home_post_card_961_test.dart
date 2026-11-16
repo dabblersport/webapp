@@ -4,6 +4,7 @@
 // type pill in the viewer's language, and the action names localised.
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
+import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_display.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -25,6 +26,8 @@ Post _post({
   String? sport = 'Cricket',
   List<String> tags = const <String>['dabblersport', 'nets'],
   bool moderation = false,
+  List<Vibe> vibes = const <Vibe>[],
+  Map<String, dynamic> reactionBreakdown = const <String, dynamic>{},
 }) => Post(
   id: 'p1',
   authorProfileId: 'prof1',
@@ -39,13 +42,20 @@ Post _post({
   sport: sport,
   tags: tags,
   requiresModeration: moderation,
+  vibes: vibes,
+  reactionBreakdown: reactionBreakdown,
   likeCount: 12,
   commentCount: 0,
   createdAt: DateTime.now().subtract(const Duration(hours: 2, minutes: 5)),
   updatedAt: DateTime.now(),
 );
 
-Future<void> _pump(WidgetTester tester, Post post, Locale locale) async {
+Future<void> _pump(
+  WidgetTester tester,
+  Post post,
+  Locale locale, {
+  Set<String> myReactions = const <String>{},
+}) async {
   tester.view.physicalSize = const Size(393, 852);
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
@@ -67,7 +77,7 @@ Future<void> _pump(WidgetTester tester, Post post, Locale locale) async {
       overrides: [
         hasLikedProvider.overrideWith((ref, id) async => false),
         hasRepostedProvider.overrideWith((ref, id) async => false),
-        myReactionsProvider.overrideWith((ref, id) async => <String>{}),
+        myReactionsProvider.overrideWith((ref, id) async => myReactions),
         myProfileIdProvider.overrideWith((ref) async => 'someone-else'),
         sportsProvider.overrideWith((ref) async => []),
         vibesProvider.overrideWith((ref) async => []),
@@ -88,6 +98,18 @@ Future<void> _pump(WidgetTester tester, Post post, Locale locale) async {
   await tester.pump();
   await tester.pump(const Duration(milliseconds: 50));
 }
+
+const Vibe _motivated = Vibe(
+  id: 'v1',
+  key: 'motivated',
+  labelEn: 'Motivated',
+  labelAr: 'متحمس',
+);
+
+/// The actions row's vibe glyph (`add-square`).
+DabblerIcon _vibeGlyph(WidgetTester tester) => tester.widget<DabblerIcon>(
+  find.byWidgetPredicate((w) => w is DabblerIcon && w.name == 'add-square'),
+);
 
 DabblerPostRow _row(WidgetTester tester) =>
     tester.widget<DabblerPostRow>(find.byType(DabblerPostRow));
@@ -164,6 +186,53 @@ void main() {
         find.text(lang == 'ar' ? 'قيد المراجعة' : 'Pending review'),
         findsOneWidget,
       );
+    });
+
+    testWidgets('$lang: no vibe pill and no vibe-count chips (the design)', (
+      tester,
+    ) async {
+      await _pump(
+        tester,
+        _post(
+          vibes: const <Vibe>[_motivated],
+          reactionBreakdown: const <String, dynamic>{
+            'breakdown': <String, dynamic>{'motivated': 4},
+          },
+        ),
+        Locale(lang),
+      );
+      final row = _row(tester);
+      expect(row.vibeTagLabel, isNull);
+      expect(row.reactions, isNull);
+      expect(find.text(lang == 'ar' ? 'متحمس' : 'Motivated'), findsNothing);
+      expect(find.textContaining('4'), findsNothing);
+      expect(find.byType(DabblerChip), findsNothing);
+    });
+
+    testWidgets('$lang: the vibe action is muted and linear at rest', (
+      tester,
+    ) async {
+      await _pump(tester, _post(), Locale(lang));
+      final glyph = _vibeGlyph(tester);
+      final colors = DabblerColors.of(
+        tester.element(find.byType(DabblerPostRow)),
+      );
+      expect(_row(tester).vibed, isFalse);
+      expect(glyph.weight, DabblerIconWeight.linear);
+      expect(glyph.color, colors.textSecondary);
+    });
+
+    testWidgets('$lang: the vibe action is brand and bold once vibed', (
+      tester,
+    ) async {
+      await _pump(tester, _post(), Locale(lang), myReactions: const {'v1'});
+      final glyph = _vibeGlyph(tester);
+      final colors = DabblerColors.of(
+        tester.element(find.byType(DabblerPostRow)),
+      );
+      expect(_row(tester).vibed, isTrue);
+      expect(glyph.weight, DabblerIconWeight.bold);
+      expect(glyph.color, colors.brandPrimary);
     });
   }
 }

@@ -119,75 +119,6 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     }
   }
 
-  // ── Reactions ───────────────────────────────────────────────────────
-
-  List<MapEntry<dynamic, dynamic>> _reactionBreakdownEntries(Post post) {
-    final rawBreakdown = post.reactionBreakdown['breakdown'];
-    if (rawBreakdown is Map) {
-      return rawBreakdown.entries
-          .where((e) => e.value is int && (e.value as int) > 0)
-          .toList();
-    }
-    return [];
-  }
-
-  /// The reaction-breakdown chips: tapping one toggles that vibe, as before.
-  /// KAN-642: the vibe the author posted with, in the viewer's language; the
-  /// first pill of the post row's pill row (the same pill as sport and venue).
-  /// Null when the post has no vibe.
-  String? _postVibeLabel(Post post) {
-    final vibe = post.vibes.firstOrNull;
-    if (vibe == null) return null;
-    final ar = Localizations.localeOf(context).languageCode == 'ar';
-    return ar && vibe.labelAr.isNotEmpty
-        ? vibe.labelAr
-        : (vibe.labelEn.isNotEmpty ? vibe.labelEn : vibe.key);
-  }
-
-  Widget? _reactionSummary(Post post, Set<String> myReactions) {
-    final entries = widget.showActions
-        ? _reactionBreakdownEntries(post)
-        : const <MapEntry<dynamic, dynamic>>[];
-    if (entries.isEmpty) return null;
-    final vibes = ref.watch(vibesProvider).valueOrNull ?? const [];
-    return Wrap(
-      spacing: DabblerSpacing.space2,
-      runSpacing: DabblerSpacing.space1,
-      children: [
-        for (final entry in entries.take(5))
-          Builder(
-            builder: (context) {
-              final vibeKey = entry.key.toString();
-              final count = entry.value as int;
-              final matched = vibes.where((v) => v.key == vibeKey).firstOrNull;
-              final mine = matched != null && myReactions.contains(matched.id);
-              final ar = Localizations.localeOf(context).languageCode == 'ar';
-              final label = matched == null
-                  ? vibeKey
-                  : (ar && matched.labelAr.isNotEmpty
-                        ? matched.labelAr
-                        : (matched.labelEn.isNotEmpty
-                              ? matched.labelEn
-                              : matched.key));
-              return DabblerChip(
-                label: '$label $count',
-                selected: mine,
-                onTap: () {
-                  if (matched == null) return;
-                  final actions = ref.read(postActionsProvider.notifier);
-                  if (mine) {
-                    actions.removeReaction(post.id, matched.id);
-                  } else {
-                    actions.reactToPost(post.id, matched.id);
-                  }
-                },
-              );
-            },
-          ),
-      ],
-    );
-  }
-
   // ── Badges (type / kind, origin, moderation, expiry) ────────────────
 
   String? _postTypeLabel(PostType type, AppLocalizations l10n) {
@@ -517,7 +448,6 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   }
                 }
               : null,
-          reactions: _reactionSummary(post, myReactions),
           showActions: widget.showActions,
           time: homePostAge(context, post.createdAt),
           place: place,
@@ -530,7 +460,6 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
                   post,
                   currentSportId: widget.currentSportId,
                 ),
-          vibeTagLabel: _postVibeLabel(post),
           placeTagLabel: placeTag,
           placeTagLeading: placeTag == null
               ? null

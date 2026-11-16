@@ -1,5 +1,6 @@
-// KAN-642: a post with a vibe shows it on its feed card (EN and AR); a post
-// without one draws no vibe slot.
+// KAN-642 is superseded by KAN-961 (CEO 2026-11-16): as in Home Feed.dc.html
+// the feed card draws no vibe pill, in EN or AR, whether or not the post has
+// a vibe. The only vibe UI on the card is the actions row's add-square glyph.
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/vibe.dart';
@@ -88,16 +89,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
   setUpAll(initHomeTestSupabase);
 
-  testWidgets('[en] a post with a vibe renders the vibe pill', (tester) async {
+  testWidgets('[en] a post with a vibe draws no vibe pill', (tester) async {
     await _pump(tester, _post(vibes: const [_motivated]), const Locale('en'));
-    expect(find.text('Motivated'), findsOneWidget);
-    expect(_row(tester).vibeTagLabel, 'Motivated');
+    expect(find.text('Motivated'), findsNothing);
+    expect(_row(tester).vibeTagLabel, isNull);
   });
 
-  testWidgets('[ar] the vibe pill reads in Arabic', (tester) async {
+  testWidgets('[ar] a post with a vibe draws no vibe pill', (tester) async {
     await _pump(tester, _post(vibes: const [_motivated]), const Locale('ar'));
-    expect(find.text('متحمس'), findsOneWidget);
-    expect(_row(tester).vibeTagLabel, 'متحمس');
+    expect(find.text('متحمس'), findsNothing);
+    expect(_row(tester).vibeTagLabel, isNull);
   });
 
   testWidgets('a post without a vibe renders no vibe pill', (tester) async {
