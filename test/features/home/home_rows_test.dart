@@ -259,7 +259,7 @@ void main() {
     expect(visited.last, contains('${RoutePaths.userProfile}/user1'));
   });
 
-  testWidgets('restored: repost action, kind badge; no reaction summary', (
+  testWidgets('restored: repost action, kind badge, reaction summary', (
     tester,
   ) async {
     await _pump(
@@ -276,11 +276,7 @@ void main() {
     expect(find.bySemanticsLabel('Share'), findsOneWidget);
     expect(find.text('2'), findsNothing, reason: 'the frame shows no count');
     expect(find.text('Dab'), findsOneWidget, reason: 'post type pill');
-    expect(
-      find.text('hyped 4'),
-      findsNothing,
-      reason: 'KAN-961: the design draws no reaction chips on the card',
-    );
+    expect(find.text('hyped 4'), findsOneWidget, reason: 'KAN-963 vibe chip');
   });
 
   testWidgets('the frame draws no view count on a post row', (tester) async {

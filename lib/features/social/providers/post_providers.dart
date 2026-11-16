@@ -684,20 +684,26 @@ class PostActionsNotifier extends StateNotifier<AsyncValue<void>> {
   }
 
   /// Add a reaction (vibe) to a post.
-  Future<void> reactToPost(String postId, String vibeId) async {
-    await _repo.reactToPost(postId, vibeId);
+  /// Returns whether the server accepted it (KAN-963: the card rolls its
+  /// optimistic chip back on false).
+  Future<bool> reactToPost(String postId, String vibeId) async {
+    final result = await _repo.reactToPost(postId, vibeId);
     _ref.invalidate(myReactionsProvider(postId));
     _ref.invalidate(postDetailProvider(postId));
     _ref.invalidate(homeFeedProvider);
     await _ref.read(feedNotifierProvider.notifier).broadcastPostUpdate(postId);
+    return result.isSuccess;
   }
 
   /// Remove a specific reaction (vibe) from a post.
-  Future<void> removeReaction(String postId, String vibeId) async {
-    await _repo.removeReaction(postId, vibeId);
+  /// Returns whether the server accepted it (KAN-963: the card rolls its
+  /// optimistic chip back on false).
+  Future<bool> removeReaction(String postId, String vibeId) async {
+    final result = await _repo.removeReaction(postId, vibeId);
     _ref.invalidate(myReactionsProvider(postId));
     _ref.invalidate(postDetailProvider(postId));
     _ref.invalidate(homeFeedProvider);
     await _ref.read(feedNotifierProvider.notifier).broadcastPostUpdate(postId);
+    return result.isSuccess;
   }
 }

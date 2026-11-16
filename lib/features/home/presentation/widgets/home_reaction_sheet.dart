@@ -11,18 +11,24 @@ import 'package:dabbler/l10n/app_localizations.dart';
 ///
 /// Same behaviour as the shared `ReactionPickerSheet`: tapping a vibe adds the
 /// reaction, or removes it when [myReactions] already holds it, and the sheet
-/// closes after a single tap.
+/// closes after a single tap. With [onPick] the caller makes the change
+/// instead (KAN-963: the post card counts it on its chips at once).
 Future<void> showHomeReactionSheet(
   BuildContext context, {
   required String postId,
   required Set<String> myReactions,
   String? title,
+  ValueChanged<Vibe>? onPick,
 }) {
   return showAppSheet<void>(
     context: context,
     title: title ?? AppLocalizations.of(context).home_vibe_title,
     detent: DabblerSheetDetent.content,
-    builder: (_) => HomeReactionSheet(postId: postId, myReactions: myReactions),
+    builder: (_) => HomeReactionSheet(
+      postId: postId,
+      myReactions: myReactions,
+      onPick: onPick,
+    ),
   );
 }
 
@@ -32,9 +38,13 @@ class HomeReactionSheet extends ConsumerWidget {
     super.key,
     required this.postId,
     required this.myReactions,
+    this.onPick,
   });
 
   final String postId;
+
+  /// Called with the tapped vibe in place of adding or removing it here.
+  final ValueChanged<Vibe>? onPick;
 
   /// Vibe IDs the current user has already reacted with.
   final Set<String> myReactions;
@@ -59,7 +69,7 @@ class HomeReactionSheet extends ConsumerWidget {
           children: [
             for (final vibe in vibes)
               DabblerChip(
-                label: _label(vibe),
+                label: _label(context, vibe),
                 vibe: DabblerVibe.fromKey(vibe.key.replaceAll('_', '-')),
                 selected: myReactions.contains(vibe.id),
                 onTap: () =>
@@ -77,13 +87,20 @@ class HomeReactionSheet extends ConsumerWidget {
     );
   }
 
-  static String _label(Vibe vibe) {
+  static String _label(BuildContext context, Vibe vibe) {
+    final ar = Localizations.localeOf(context).languageCode == 'ar';
+    if (ar && vibe.labelAr.isNotEmpty) return vibe.labelAr;
     return vibe.labelEn.isNotEmpty
         ? vibe.labelEn
         : vibe.key[0].toUpperCase() + vibe.key.substring(1);
   }
 
   void _toggle(BuildContext context, WidgetRef ref, Vibe vibe, bool selected) {
+    if (onPick != null) {
+      Navigator.of(context).pop();
+      onPick!(vibe);
+      return;
+    }
     final actions = ref.read(postActionsProvider.notifier);
     if (selected) {
       actions.removeReaction(postId, vibe.id);

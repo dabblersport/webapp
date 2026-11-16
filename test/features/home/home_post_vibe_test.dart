@@ -1,6 +1,7 @@
 // KAN-642 is superseded by KAN-961 (CEO 2026-11-16): as in Home Feed.dc.html
 // the feed card draws no vibe pill, in EN or AR, whether or not the post has
-// a vibe. The only vibe UI on the card is the actions row's add-square glyph.
+// a vibe. The vibes people added are the KAN-963 chips
+// (home_post_vibe_chips_963_test.dart).
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/data/models/social/vibe.dart';

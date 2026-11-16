@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
+import 'package:dabbler/data/models/social/vibe.dart';
 import 'package:dabbler/features/moderation/presentation/widgets/report_dialog.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/block_providers.dart';
@@ -20,6 +21,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
 import 'home_post_display.dart';
+import 'home_post_vibes.dart';
 import 'home_reaction_sheet.dart';
 
 /// Home's post row — the design's feed row, built from design-system parts.
@@ -90,6 +92,11 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
   late int _localLikeCount;
   bool? _optimisticLiked;
 
+  /// KAN-963: the vibe tally and the viewer's vibe after a tap, until the
+  /// server's copy of the post replaces them. Null reads the server's.
+  Map<String, int>? _vibeCounts;
+  Set<String>? _myVibeKeys;
+
   @override
   void initState() {
     super.initState();
@@ -101,6 +108,37 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
     super.didUpdateWidget(old);
     if (old.post.likeCount != widget.post.likeCount) {
       _localLikeCount = widget.post.likeCount;
+    }
+    if (!identical(old.post, widget.post)) {
+      _vibeCounts = null;
+      _myVibeKeys = null;
+    }
+  }
+
+  // ── Vibes (KAN-963) ─────────────────────────────────────────────────
+
+  /// Joins or leaves [vibe] at once, then asks the server; a refusal puts the
+  /// chips back as they were. The refreshed post then replaces the tally.
+  Future<void> _toggleVibe(
+    Vibe vibe,
+    Map<String, int> counts,
+    Set<String> mine,
+  ) async {
+    final leaving = mine.contains(vibe.key);
+    final next = homeVibeToggle(counts, mine, vibe.key);
+    setState(() {
+      _vibeCounts = next.counts;
+      _myVibeKeys = next.mine;
+    });
+    final actions = ref.read(postActionsProvider.notifier);
+    final ok = leaving
+        ? await actions.removeReaction(post.id, vibe.id)
+        : await actions.reactToPost(post.id, vibe.id);
+    if (!ok && mounted) {
+      setState(() {
+        _vibeCounts = counts;
+        _myVibeKeys = mine;
+      });
     }
   }
 
@@ -385,6 +423,18 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
         ref.watch(hasRepostedProvider(post.id)).valueOrNull ?? false;
     final myReactions =
         ref.watch(myReactionsProvider(post.id)).valueOrNull ?? <String>{};
+    final vibes = ref.watch(vibesProvider).valueOrNull ?? const <Vibe>[];
+    final vibeCounts = _vibeCounts ?? homeVibeCounts(post.reactionBreakdown);
+    final myVibeKeys =
+        _myVibeKeys ??
+        {
+          for (final v in vibes)
+            if (myReactions.contains(v.id)) v.key,
+        };
+    final myVibeIds = {
+      for (final v in vibes)
+        if (myVibeKeys.contains(v.key)) v.id,
+    };
     final myProfileId = ref.watch(myProfileIdProvider).valueOrNull;
     final isAuthor = myProfileId != null && post.authorProfileId == myProfileId;
 
@@ -471,7 +521,9 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           likes: _localLikeCount,
           replies: post.commentCount,
           liked: hasLiked,
-          vibed: myReactions.isNotEmpty,
+          vibed: _myVibeKeys == null
+              ? myReactions.isNotEmpty
+              : myVibeKeys.isNotEmpty,
           divider: !widget.isEmbedded,
           onTap: () =>
               context.push('${RoutePaths.socialPostDetail}/${post.id}'),
@@ -479,8 +531,19 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           onVibe: () => showHomeReactionSheet(
             context,
             postId: post.id,
-            myReactions: myReactions,
+            myReactions: _myVibeKeys == null ? myReactions : myVibeIds,
+            onPick: (v) => _toggleVibe(v, vibeCounts, myVibeKeys),
           ),
+          // KAN-963: one chip per vibe people added, under the post.
+          reactions: !widget.showActions || vibeCounts.isEmpty
+              ? null
+              : HomeVibeChips(
+                  counts: vibeCounts,
+                  mine: myVibeKeys,
+                  vibes: vibes,
+                  metrics: widget.metrics,
+                  onToggle: (v) => _toggleVibe(v, vibeCounts, myVibeKeys),
+                ),
           onComment: () =>
               context.push('${RoutePaths.socialPostDetail}/${post.id}'),
           onMore: () =>

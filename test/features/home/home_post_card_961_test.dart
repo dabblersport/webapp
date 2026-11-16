@@ -188,7 +188,7 @@ void main() {
       );
     });
 
-    testWidgets('$lang: no vibe pill and no vibe-count chips (the design)', (
+    testWidgets('$lang: no posting-vibe pill; the breakdown is a chip', (
       tester,
     ) async {
       await _pump(
@@ -201,12 +201,9 @@ void main() {
         ),
         Locale(lang),
       );
-      final row = _row(tester);
-      expect(row.vibeTagLabel, isNull);
-      expect(row.reactions, isNull);
-      expect(find.text(lang == 'ar' ? 'متحمس' : 'Motivated'), findsNothing);
-      expect(find.textContaining('4'), findsNothing);
-      expect(find.byType(DabblerChip), findsNothing);
+      expect(_row(tester).vibeTagLabel, isNull, reason: 'KAN-642 stays off');
+      expect(_row(tester).reactions, isNotNull, reason: 'KAN-963 chips');
+      expect(find.byType(DabblerChip), findsOneWidget);
     });
 
     testWidgets('$lang: the vibe action is muted and linear at rest', (
