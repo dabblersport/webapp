@@ -21,19 +21,22 @@ void addTabItemRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
     of: find.byType(DabblerTabs),
     matching: find.byType(DabblerExpandedHitArea),
   );
+  // KAN-959 (`homefeed2`, line 262): For you and Active carry the filter
+  // pill after the label — a 4 gap and a 22 pill (12 glyph + 5/5 padding) —
+  // so both are 26 wider and every tab after them moves 26.
   final List<Rect> ltr = <Rect>[
-    rc(18, 290, 42.53, 33),
-    rc(81.53, 290, 53.63, 33),
-    rc(156.16, 290, 41.94, 33),
-    rc(219.09, 290, 35.09, 33),
-    rc(275.19, 290, 31.83, 33),
+    rc(18, 290, 68.53, 33),
+    rc(107.53, 290, 53.63, 33),
+    rc(182.16, 290, 41.94, 33),
+    rc(245.09, 290, 61.09, 33),
+    rc(327.19, 290, 31.83, 33),
   ];
   final List<Rect> rtlR = <Rect>[
-    rc(358.39, 290, 16.61, 36),
-    rc(297.28, 290, 40.11, 36),
-    rc(243.06, 290, 33.22, 36),
-    rc(194.84, 290, 27.22, 36),
-    rc(150.67, 290, 23.17, 36),
+    rc(332.39, 290, 42.61, 36),
+    rc(271.28, 290, 40.11, 36),
+    rc(217.06, 290, 33.22, 36),
+    rc(142.84, 290, 53.22, 36),
+    rc(98.67, 290, 23.17, 36),
   ];
   const List<String> names = <String>[
     'For you',
@@ -56,8 +59,8 @@ void addTabItemRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
     t,
     s,
     'active underline (3px, brand)',
-    ltr: rc(18, 320, 42.53, 3),
-    rtl: rc(358.39, 323, 16.61, 3),
+    ltr: rc(18, 320, 68.53, 3),
+    rtl: rc(332.39, 323, 42.61, 3),
     app: () => _r(
       tester,
       find.descendant(

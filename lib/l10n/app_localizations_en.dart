@@ -75,11 +75,11 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get feed_following_empty_title =>
-      'Nothing from who and what you follow yet';
+      'No posts from people you follow yet';
 
   @override
   String get feed_following_empty_hint =>
-      'Follow players or sports to see their posts here.';
+      'Follow players to see their posts here.';
 
   @override
   String get feed_could_not_load => 'Could not load feed';
@@ -8698,4 +8698,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get act_error_retry => 'Try again';
+
+  @override
+  String get home_sport_all => 'All sports';
 }

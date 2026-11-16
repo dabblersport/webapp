@@ -1,15 +1,11 @@
 import 'dart:io';
 
-import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-// KAN-955 (CEO 2026-11-16, supersedes the KAN-593 discovery filter): followed
-// sports (profiles.interests uuid[]) match posts.sport_id uuid on the
-// Following tab ONLY. For you, Nearby, Active, News, search, profile, sport
+// KAN-960 (CEO 2026-11-16, reverts the KAN-955 followed-sports match): no
+// feed reads followed sports (`profiles.interests`) any more. Following is
+// followed people only; For you, Nearby, Active, News, search, profile, sport
 // overview and direct links carry no followed-sports filter.
-
-const football = '11111111-1111-1111-1111-111111111111';
-const padel = '33333333-3333-3333-3333-333333333333';
 
 String _src(String path) => File(path).readAsStringSync();
 
@@ -22,47 +18,24 @@ String _method(String src, String name) {
 }
 
 void main() {
-  group('parseFollowedSportIds', () {
-    test('normalises case and whitespace', () {
-      expect(parseFollowedSportIds([' ${football.toUpperCase()} ', padel]), {
-        football,
-        padel,
-      });
-    });
-
-    group('empty / NULL interests = no sport match, no crash', () {
-      for (final entry in <String, Object?>{
-        'NULL': null,
-        'empty list': <String>[],
-        'only blanks': ['', '  '],
-        'not a list': 'garbage',
-      }.entries) {
-        test(entry.key, () {
-          expect(parseFollowedSportIds(entry.value), isNull);
-          expect(
-            followingFeedOrFilter(const [], parseFollowedSportIds(entry.value)),
-            isNull,
-          );
-          expect(
-            followingFeedOrFilter(const [
-              'p1',
-            ], parseFollowedSportIds(entry.value)),
-            'author_profile_id.in.(p1)',
-            reason: 'followed people still show',
-          );
-        });
-      }
-    });
-  });
-
-  group('wiring: only the Following feed reads followed sports', () {
+  group('wiring: no feed reads followed sports', () {
     final repo = _src('lib/data/repositories/post_repository_impl.dart');
 
-    test('getFollowingFeed loads followed sports and matches with or=', () {
+    test('the followed-sports helper is gone', () {
+      expect(
+        File('lib/data/repositories/following_sport_filter.dart').existsSync(),
+        isFalse,
+      );
+      expect(repo, isNot(contains('following_sport_filter')));
+      expect(repo, isNot(contains('FollowedSport')));
+    });
+
+    test('getFollowingFeed matches followed authors only', () {
       final body = _method(repo, 'getFollowingFeed');
-      expect(body, contains('loadViewerFollowedSportIds'));
-      expect(body, contains('followingFeedOrFilter'));
-      expect(body, contains('.or(match)'));
+      expect(body, contains(".inFilter('author_profile_id', followedIds)"));
+      expect(body, isNot(contains('.or(')));
+      expect(body, isNot(contains('interests')));
+      expect(body, isNot(contains('sport_id')));
     });
 
     test('every other feed and read path is unfiltered', () {
@@ -74,18 +47,13 @@ void main() {
         '_fetchPostsByIds',
         'getPost', // post-by-id
         'getUserPosts', // profile posts
-        'getUserPostsBySport', // profile sport overview
-        'getCommentedPostsBySport',
-        'getReactedPostsBySport',
         'getHashtagFeed', // search/hashtag
         'getCircleFeed',
         'getSquadFeed',
         'getNewsFeed',
         'getAreaFeed',
       ]) {
-        final body = _method(repo, m);
-        expect(body, isNot(contains('loadViewerFollowedSportIds')), reason: m);
-        expect(body, isNot(contains('followingFeedOrFilter')), reason: m);
+        expect(_method(repo, m), isNot(contains('interests')), reason: m);
       }
       for (final path in [
         'lib/features/social/providers/feed_notifier.dart', // For you
@@ -93,16 +61,8 @@ void main() {
         'lib/features/social/providers/active_feed_notifier.dart', // Active
         'lib/features/news/providers/news_providers.dart', // News
       ]) {
-        expect(_src(path), isNot(contains('following_sport_filter')));
+        expect(_src(path), isNot(contains('interests')), reason: path);
       }
-      expect(
-        Directory('lib/features')
-            .listSync(recursive: true)
-            .whereType<File>()
-            .where((f) => f.path.contains('search') && f.path.endsWith('.dart'))
-            .any((f) => f.readAsStringSync().contains('FollowedSport')),
-        isFalse,
-      );
     });
   });
 

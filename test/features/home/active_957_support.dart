@@ -27,12 +27,14 @@ List<String> _lastPushed = <String>[];
 /// catch-all route records them).
 List<String> get activePushed => _lastPushed;
 
-/// Pumps Home and taps the Active tab. [cities] answers the city sheet.
+/// Pumps Home and taps the Active tab; KAN-959: [openFilters] taps it again
+/// to open its filter row. [cities] answers the city sheet.
 Future<AppLocalizations> openActiveTab(
   WidgetTester tester, {
   required ActiveFeedState state,
   Locale locale = const Locale('en'),
   List<String> cities = const <String>['Abu Dhabi', 'Dubai'],
+  bool openFilters = true,
 }) async {
   final pumped = await pumpHome(
     tester,
@@ -47,6 +49,7 @@ Future<AppLocalizations> openActiveTab(
   _lastPushed = pumped.pushed;
   final l = lookupAppLocalizations(locale);
   await tapFeedTab(tester, FeedTab.active.label(l));
+  if (openFilters) await tapFeedTab(tester, FeedTab.active.label(l));
   return l;
 }
 

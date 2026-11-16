@@ -1,7 +1,6 @@
 import 'package:dabbler/core/data/supabase_error_mapper.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/data/models/social/post.dart';
-import 'package:dabbler/data/repositories/following_sport_filter.dart';
 import 'package:dabbler/data/repositories/post_repository_impl.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
@@ -9,9 +8,9 @@ import 'package:http/http.dart' as http;
 import '../../features/home/home_measure_fixtures.dart' show framePost;
 import '../../helpers/supabase_test_client.dart';
 
-// KAN-955 (CEO 2026-11-16): Following shows posts whose author is a followed
-// profile OR whose sport is one of the active persona's followed sports
-// (`profiles.interests`), in one server-side query.
+// KAN-960 (CEO 2026-11-16, reverts the followed-sports match of KAN-955):
+// Following shows posts whose author is a profile the ACTIVE persona follows,
+// in every sport. A followed sport never pulls in a non-followed author.
 
 const padel = '33333333-3333-3333-3333-333333333333';
 const football = '11111111-1111-1111-1111-111111111111';
@@ -35,21 +34,21 @@ final _table = [
   _row('untagged-by-stranger'),
 ];
 
-/// Evaluates the `or=(col.in.(a,b),col.in.(c))` the client sends, the way
-/// PostgREST does: a row is returned once if ANY clause matches.
-bool _matchesOr(Map<String, dynamic> row, String? or) {
-  if (or == null) return true;
-  final clauses = RegExp(
-    r'(\w+)\.in\.\(([^)]*)\)',
-  ).allMatches(or.substring(1, or.length - 1));
-  return clauses.any(
-    (m) => m.group(2)!.split(',').contains(row[m.group(1)!] as String?),
-  );
+/// Evaluates the `author_profile_id=in.(a,b)` filter the client sends.
+bool _matchesAuthor(Map<String, dynamic> row, String? filter) {
+  if (filter == null) return true;
+  final m = RegExp(r'^in\.\(([^)]*)\)$').firstMatch(filter)!;
+  return m
+      .group(1)!
+      .replaceAll('"', '')
+      .split(',')
+      .contains(row['author_profile_id']);
 }
 
 /// One user with two active personas. `player` holds [follows] and
 /// [interests]; `organiser` holds [organiserFollows] and [organiserInterests].
-/// Each persona's profile id is `me-<persona>`.
+/// Each persona's profile id is `me-<persona>`. The interests (followed
+/// sports) must never be read by the Following feed.
 class _Server {
   _Server({this.follows = const [], this.interests, this.organiserInterests});
 
@@ -59,6 +58,7 @@ class _Server {
   final List<String>? organiserInterests;
   final postQueries = <Map<String, String>>[];
   final profileQueries = <Map<String, String>>[];
+  var interestsRead = false;
 
   Future<http.Response> handle(http.Request r) async {
     final q = r.url.queryParameters;
@@ -81,6 +81,7 @@ class _Server {
       ], request: r);
     }
     if (path.endsWith('/profiles') && q['select'] == 'interests') {
+      interestsRead = true;
       return jsonListResponse([
         {'interests': persona == 'organiser' ? organiserInterests : interests},
       ], request: r);
@@ -89,7 +90,7 @@ class _Server {
       postQueries.add(q);
       return jsonListResponse([
         for (final row in _table)
-          if (_matchesOr(row, q['or'])) row,
+          if (_matchesAuthor(row, q['author_profile_id'])) row,
       ], request: r);
     }
     return jsonListResponse(const [], request: r);
@@ -111,58 +112,17 @@ Future<List<String>> _following(_Server s, {String? persona = 'player'}) async {
 }
 
 void main() {
-  group('followingFeedOrFilter', () {
-    test('people and sports: one or= with both sets, sorted', () {
-      expect(
-        followingFeedOrFilter(['p2', 'p1', 'p2'], {padel, football}),
-        'author_profile_id.in.(p1,p2),sport_id.in.($football,$padel)',
-      );
-    });
-
-    test('only one set present: just that set', () {
-      expect(followingFeedOrFilter(['p1'], null), 'author_profile_id.in.(p1)');
-      expect(followingFeedOrFilter(['p1'], {}), 'author_profile_id.in.(p1)');
-      expect(followingFeedOrFilter([], {padel}), 'sport_id.in.($padel)');
-    });
-
-    test('neither: null (empty state, no query)', () {
-      expect(followingFeedOrFilter([], null), isNull);
-      expect(followingFeedOrFilter([], {}), isNull);
-    });
-  });
-
   group('getFollowingFeed', () {
-    test('sport only: posts in followed sports from anyone', () async {
-      final s = _Server(interests: [padel]);
-      expect(await _following(s), ['padel-by-stranger', 'padel-by-friend']);
-      expect(s.postQueries.single['or'], '(sport_id.in.($padel))');
-    });
-
-    test('person only: every post by followed people', () async {
+    test('person only: every post by followed people, any sport', () async {
       final s = _Server(follows: ['friend']);
       expect(await _following(s), [
         'tennis-by-friend',
         'padel-by-friend',
         'untagged-by-friend',
       ]);
-      expect(s.postQueries.single['or'], '(author_profile_id.in.(friend))');
-    });
-
-    test('both: union of the two, a post matching both appears once', () async {
-      final s = _Server(follows: ['friend'], interests: [padel, football]);
-      final ids = await _following(s);
-      expect(ids, [
-        'padel-by-stranger',
-        'tennis-by-friend',
-        'padel-by-friend',
-        'untagged-by-friend',
-      ]);
-      expect(ids.toSet().length, ids.length, reason: 'no duplicates');
       final q = s.postQueries.single;
-      expect(
-        q['or'],
-        '(author_profile_id.in.(friend),sport_id.in.($football,$padel))',
-      );
+      expect(q['author_profile_id'], 'in.("friend")');
+      expect(q.containsKey('or'), isFalse);
       // The existing filters, order and server-side pagination stay.
       expect(q['origin_type'], 'in.("manual","repost")');
       expect(q['is_deleted'], 'eq.false');
@@ -172,19 +132,40 @@ void main() {
       expect(q['limit'], '20');
     });
 
-    test('no one and no sport followed: empty, posts never queried', () async {
-      for (final interests in <List<String>?>[null, const []]) {
-        final s = _Server(interests: interests);
-        expect(await _following(s), isEmpty);
-        expect(s.postQueries, isEmpty);
-      }
+    test('a followed sport by a non-followed author does NOT appear', () async {
+      final s = _Server(follows: ['friend'], interests: [padel, football]);
+      final ids = await _following(s);
+      expect(ids, [
+        'tennis-by-friend',
+        'padel-by-friend',
+        'untagged-by-friend',
+      ]);
+      expect(ids, isNot(contains('padel-by-stranger')));
+      expect(s.postQueries.single['author_profile_id'], 'in.("friend")');
+      expect(s.interestsRead, isFalse, reason: 'followed sports never read');
     });
 
-    test('only the ACTIVE persona\'s follows and sports count', () async {
+    test(
+      'followed sports but no one followed: empty, posts never queried',
+      () async {
+        for (final interests in <List<String>?>[
+          null,
+          const [],
+          const [padel],
+        ]) {
+          final s = _Server(interests: interests);
+          expect(await _following(s), isEmpty);
+          expect(s.postQueries, isEmpty);
+          expect(s.interestsRead, isFalse);
+        }
+      },
+    );
+
+    test('only the ACTIVE persona\'s follows count', () async {
       _Server two() =>
           _Server(follows: ['friend'], organiserInterests: [padel]);
 
-      // Active = player: follows 'friend', no sport.
+      // Active = player: follows 'friend'.
       final asPlayer = two();
       expect(await _following(asPlayer), [
         'tennis-by-friend',
@@ -193,22 +174,17 @@ void main() {
       ]);
       expect(asPlayer.profileQueries.single['persona_type'], 'eq.player');
       expect(asPlayer.profileQueries.single['is_active'], 'eq.true');
-      expect(
-        asPlayer.postQueries.single['or'],
-        '(author_profile_id.in.(friend))',
-      );
+      expect(asPlayer.postQueries.single['author_profile_id'], 'in.("friend")');
 
-      // Active = organiser: follows padel and 'organiser-friend' (no posts);
-      // the player's 'friend' no longer counts.
+      // Active = organiser: follows 'organiser-friend' (no posts) and padel
+      // as a sport. The player's 'friend' no longer counts and padel posts
+      // by people not followed do not appear.
       final asOrganiser = two();
-      expect(await _following(asOrganiser, persona: 'organiser'), [
-        'padel-by-stranger',
-        'padel-by-friend',
-      ]);
+      expect(await _following(asOrganiser, persona: 'organiser'), isEmpty);
       expect(asOrganiser.profileQueries.single['persona_type'], 'eq.organiser');
       expect(
-        asOrganiser.postQueries.single['or'],
-        '(author_profile_id.in.(organiser-friend),sport_id.in.($padel))',
+        asOrganiser.postQueries.single['author_profile_id'],
+        'in.("organiser-friend")',
       );
     });
 

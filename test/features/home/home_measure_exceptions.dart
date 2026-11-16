@@ -9,6 +9,14 @@ import 'home_measure_support.dart';
 const String kExArabicRuleReason =
     'DS Arabic type rule: Arabic text is set at the Latin size minus 0.9 px (cxo ruling); the frame sets the same size, so the advance is narrower';
 
+/// tabpill
+const String kExTabPillGapReason =
+    'DS gap DabblerTabs: the label-to-badge gap is space2 (6); the frame\'s filter pill (KAN-959) sits 4 after the label, so a tab with a pill is 2 wider';
+
+/// tabpill_rtl
+const String kExTabPillGapRtlReason =
+    'DS Arabic type rule (label 0.9 smaller, narrower advance) plus DS gap DabblerTabs: the label-to-badge gap is space2 (6) against the frame\'s 4 (KAN-959 filter pill), so a tab with a pill is 2 wider';
+
 /// arstring
 const String kExArabicStringReason =
     'copy: the Arabic frame draws the untranslated Latin label Done on the city sheet while the app shows its l10n home_location_done; no frame Arabic exists to adopt (see arabic-diffs.md)';
@@ -264,50 +272,50 @@ kMeasureExceptions = <String, MeasureException>{
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab For you': MeasureException(
-    kExArabicRuleReason,
-    dx: 1.0,
+    kExTabPillGapRtlReason,
+    dx: -1.0,
     dy: 0.0,
-    dw: -1.0,
+    dw: 1.0,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab Following': MeasureException(
-    kExArabicRuleReason,
-    dx: 3.42,
+    kExTabPillGapRtlReason,
+    dx: 1.42,
     dy: 0.0,
     dw: -2.42,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab Nearby': MeasureException(
-    kExArabicRuleReason,
-    dx: 5.42,
+    kExTabPillGapRtlReason,
+    dx: 3.42,
     dy: 0.0,
     dw: -2.0,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab Active': MeasureException(
-    kExArabicRuleReason,
-    dx: 7.07,
+    kExTabPillGapRtlReason,
+    dx: 3.07,
     dy: 0.0,
-    dw: -1.64,
+    dw: 0.36,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|tab News': MeasureException(
-    kExArabicRuleReason,
-    dx: 8.47,
+    kExTabPillGapRtlReason,
+    dx: 4.47,
     dy: 0.0,
     dw: -1.4,
     dh: 0.0,
     tol: 0.06,
   ),
   'RTL|Tabs (y 290)|active underline (3px, brand)': MeasureException(
-    kExArabicRuleReason,
-    dx: 1.0,
+    kExTabPillGapRtlReason,
+    dx: -1.0,
     dy: 0.0,
-    dw: -1.0,
+    dw: 1.0,
     dh: 0.0,
     tol: 0.06,
   ),
@@ -493,6 +501,42 @@ kMeasureExceptions = <String, MeasureException>{
     dy: 0.0,
     dw: 0.0,
     dh: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Tabs (y 290)|tab For you': MeasureException(
+    kExTabPillGapReason,
+    dx: 0.0,
+    dw: 2.0,
+    tol: 0.06,
+  ),
+  'LTR|Tabs (y 290)|tab Following': MeasureException(
+    kExTabPillGapReason,
+    dx: 2.0,
+    dw: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Tabs (y 290)|tab Nearby': MeasureException(
+    kExTabPillGapReason,
+    dx: 2.0,
+    dw: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Tabs (y 290)|tab Active': MeasureException(
+    kExTabPillGapReason,
+    dx: 2.0,
+    dw: 2.0,
+    tol: 0.06,
+  ),
+  'LTR|Tabs (y 290)|tab News': MeasureException(
+    kExTabPillGapReason,
+    dx: 4.0,
+    dw: 0.0,
+    tol: 0.06,
+  ),
+  'LTR|Tabs (y 290)|active underline (3px, brand)': MeasureException(
+    kExTabPillGapReason,
+    dx: 0.0,
+    dw: 2.0,
     tol: 0.06,
   ),
 };

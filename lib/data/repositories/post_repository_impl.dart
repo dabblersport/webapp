@@ -11,7 +11,6 @@ import '../models/social/comment.dart';
 import '../models/social/post.dart';
 import '../models/social/post_create_request.dart';
 import 'base_repository.dart';
-import 'following_sport_filter.dart';
 import 'post_repository.dart';
 
 /// The city a post written before posting cities were recorded belongs to
@@ -420,8 +419,8 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
     final userId = _db.auth.currentUser?.id;
     if (userId == null) return const <Post>[];
 
-    // KAN-955: the caller's ACTIVE persona profile, the same one whose
-    // interests give the followed sports. No other persona's follows count.
+    // KAN-955: the caller's ACTIVE persona profile. No other persona's
+    // follows count.
     final persona = activePersonaType;
     if (persona == null || persona.isEmpty) return const <Post>[];
     final profileRows = await _db
@@ -440,24 +439,21 @@ class PostRepositoryImpl extends BaseRepository implements PostRepository {
         .select('following_profile_id')
         .eq('follower_profile_id', myProfileId);
 
-    final followedIds = followRows
-        .map((r) => r['following_profile_id'] as String)
-        .toList();
-
-    // KAN-955: followed people OR followed sports (the active persona's
-    // `profiles.interests`), in one server-side query so pages stay correct
-    // and a post matching both appears once.
-    final match = followingFeedOrFilter(
-      followedIds,
-      await loadViewerFollowedSportIds(_db, personaType: activePersonaType),
-    );
-    if (match == null) return const <Post>[];
+    // KAN-960 (CEO 2026-11-16): followed people only, in every sport. A
+    // followed sport no longer pulls in posts by people not followed.
+    final followedIds =
+        followRows
+            .map((r) => r['following_profile_id'] as String)
+            .toSet()
+            .toList()
+          ..sort();
+    if (followedIds.isEmpty) return const <Post>[];
 
     // Manual posts and reposts only.
     final rows = await _db
         .from(SupabaseConfig.postsTable)
         .select()
-        .or(match)
+        .inFilter('author_profile_id', followedIds)
         .inFilter('origin_type', ['manual', 'repost'])
         .eq('is_deleted', false)
         .eq('is_hidden_admin', false)

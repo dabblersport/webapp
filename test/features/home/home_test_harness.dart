@@ -5,6 +5,7 @@ import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/games/game.dart';
+import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/screens/home_screen.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
@@ -176,6 +177,7 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
   NewsTabState newsState = const NewsTabState(isLoading: true),
   String? locationName,
   double topInset = 0,
+  List<Sport> sports = const <Sport>[],
   List<Override> overrides = const <Override>[],
 }) async {
   tester.view.physicalSize = const Size(393, 852);
@@ -249,7 +251,7 @@ Future<({FakeFeed feed, List<String> pushed})> pumpHome(
         hasRepostedProvider.overrideWith((ref, id) async => false),
         myReactionsProvider.overrideWith((ref, id) async => <String>{}),
         myProfileIdProvider.overrideWith((ref) async => 'someone-else'),
-        sportsProvider.overrideWith((ref) async => []),
+        sportsProvider.overrideWith((ref) async => sports),
         vibesProvider.overrideWith((ref) async => []),
         latestCommentProvider.overrideWith((ref, id) async => null),
         localeProvider.overrideWith((ref) => _FixedLocale(locale)),

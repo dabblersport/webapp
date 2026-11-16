@@ -21,9 +21,9 @@
   "tab_news": "News",
   "feed_empty_no_posts": "No posts yet",
   "feed_empty_no_posts_hint": "Share moments, dabs, and kick-ins with your community.",
-  "feed_following_empty_title": "Nothing from who and what you follow yet",
-  "@feed_following_empty_title": {"description": "KAN-955 Home Following tab empty state title; Following matches followed people and followed sports."},
-  "feed_following_empty_hint": "Follow players or sports to see their posts here.",
+  "feed_following_empty_title": "No posts from people you follow yet",
+  "@feed_following_empty_title": {"description": "KAN-960 Home Following tab empty state title; Following shows posts from followed people only."},
+  "feed_following_empty_hint": "Follow players to see their posts here.",
   "@feed_following_empty_hint": {"description": "KAN-955 Home Following tab empty state hint."},
   "feed_could_not_load": "Could not load feed",
   "feed_retry": "Retry",
@@ -3335,5 +3335,7 @@
   "act_error_text": "Check your connection and try again.",
   "@act_error_text": {"description": "KAN-957 Home Active tab (Home Feed.dc.html)."},
   "act_error_retry": "Try again",
-  "@act_error_retry": {"description": "KAN-957 Home Active tab (Home Feed.dc.html)."}
+  "@act_error_retry": {"description": "KAN-957 Home Active tab (Home Feed.dc.html)."},
+  "home_sport_all": "All sports",
+  "@home_sport_all": {"description": "KAN-959 Home For you sport filter: the first chip, which clears the sport."}
 }

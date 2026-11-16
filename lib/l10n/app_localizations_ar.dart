@@ -73,11 +73,11 @@ class AppLocalizationsAr extends AppLocalizations {
   String get feed_empty_no_posts_hint => 'شارك لحظاتك ومبارياتك مع مجتمعك.';
 
   @override
-  String get feed_following_empty_title => 'لا يوجد شيء ممن وما تتابعه بعد';
+  String get feed_following_empty_title =>
+      'لا توجد منشورات من الأشخاص الذين تتابعهم بعد';
 
   @override
-  String get feed_following_empty_hint =>
-      'تابع لاعبين أو رياضات لترى منشوراتهم هنا.';
+  String get feed_following_empty_hint => 'تابع لاعبين لترى منشوراتهم هنا.';
 
   @override
   String get feed_could_not_load => 'تعذّر تحميل الخلاصة';
@@ -8774,4 +8774,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get act_error_retry => 'حاول مرة أخرى';
+
+  @override
+  String get home_sport_all => 'كل الرياضات';
 }

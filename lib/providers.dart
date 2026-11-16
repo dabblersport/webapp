@@ -24,6 +24,7 @@ export 'features/social/providers/post_providers.dart';
 export 'features/social/providers/post_composer_providers.dart';
 export 'features/social/providers/tab_feed_notifier.dart';
 export 'features/social/providers/active_feed_notifier.dart';
+export 'features/social/providers/for_you_sport_filter.dart';
 export 'features/social/providers/public_activity_providers.dart';
 // KAN-852: Home bell → Activity log (merged personal log).
 export 'features/activities/presentation/providers/activity_providers.dart'

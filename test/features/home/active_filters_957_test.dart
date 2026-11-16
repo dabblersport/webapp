@@ -145,6 +145,9 @@ void main() {
       await tapFeedTab(tester, FeedTab.forYou.label(l));
       expect(find.byType(ActiveFilterPanel), findsNothing);
       await tapFeedTab(tester, FeedTab.active.label(l));
+      // KAN-959: the row starts closed after a switch; a re-tap opens it.
+      expect(find.byType(ActiveFilterPanel), findsNothing);
+      await tapFeedTab(tester, FeedTab.active.label(l));
       expect(activeFilterOf(tester).type, ActiveType.meetups);
       expect(_chip(tester, 'active-type-meetups').selected, isTrue);
       expect(_chip(tester, 'active-city-chip').label, 'Dubai');

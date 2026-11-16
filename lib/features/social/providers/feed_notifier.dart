@@ -12,6 +12,7 @@ import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/data/models/feed/feed_item.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/repositories/post_repository.dart';
+import 'for_you_sport_filter.dart';
 import 'post_providers.dart';
 
 // =============================================================================
@@ -125,10 +126,18 @@ typedef _Page = ({List<FeedItem> items, DateTime? cursor, int rawCount});
 class FeedNotifier extends StateNotifier<FeedState> {
   /// [cache] / [accountId] (KAN-605): the first page is shown from the
   /// on-device cache at once, then [load] refreshes it in the background.
-  FeedNotifier(this._repo, this._db, {OfflineCache? cache, String? accountId})
-    : _cache = cache,
-      _accountId = accountId,
-      super(const FeedLoading()) {
+  /// [sportId] (KAN-959): the For you sport filter, read on every page; null
+  /// is "All sports". Only the unfiltered feed is cached.
+  FeedNotifier(
+    this._repo,
+    this._db, {
+    OfflineCache? cache,
+    String? accountId,
+    String? Function()? sportId,
+  }) : _cache = cache,
+       _accountId = accountId,
+       _sportId = sportId ?? (() => null),
+       super(const FeedLoading()) {
     _subscribeRealtime();
     _hydrate();
     load();
@@ -136,14 +145,19 @@ class FeedNotifier extends StateNotifier<FeedState> {
 
   final OfflineCache? _cache;
   final String? _accountId;
+  final String? Function() _sportId;
   static const String _cacheKey = 'feed.foryou';
 
-  bool get _cacheOn => _cache != null && _accountId != null;
+  bool get _cacheOn =>
+      _cache != null && _accountId != null && _sportId() == null;
 
   Future<void> _hydrate() async {
     if (!_cacheOn) return;
     final hit = await _cache!.read(_accountId!, _cacheKey);
-    if (hit == null || !mounted || state is FeedData) return;
+    // KAN-959: a sport chosen meanwhile makes the unfiltered cache stale.
+    if (hit == null || !mounted || state is FeedData || _sportId() != null) {
+      return;
+    }
     try {
       final map = hit.payload as Map;
       final items = <FeedItem>[
@@ -276,8 +290,17 @@ class FeedNotifier extends StateNotifier<FeedState> {
     if (!mounted) return;
 
     // KAN-955: 'For you' shows every recent post; no followed-sports filter.
+    // KAN-959: while a sport is chosen, only that sport's new posts arrive
+    // (a repost by its original's sport, as get_home_feed's p_sport_id).
     result.fold((_) => null, (posts) {
       if (posts.isEmpty) return;
+      final sport = _sportId();
+      final p = posts.first;
+      if (sport != null &&
+          p.sportId != sport &&
+          p.originalPost?.sportId != sport) {
+        return;
+      }
       final data = state;
       if (data is! FeedData) return;
       state = data.copyWith(
@@ -363,6 +386,14 @@ class FeedNotifier extends StateNotifier<FeedState> {
       }
       return false;
     }
+  }
+
+  /// KAN-959: the sport filter changed. The rows on screen belong to the old
+  /// filter, so the feed goes back to loading and reloads from page 1.
+  Future<bool> refilter() {
+    if (!mounted) return Future<bool>.value(false);
+    state = const FeedLoading();
+    return load();
   }
 
   Future<void> loadMore() async {
@@ -470,6 +501,8 @@ class FeedNotifier extends StateNotifier<FeedState> {
       params: {
         'p_limit': _pageSize,
         'p_cursor': cursor?.toUtc().toIso8601String(),
+        // KAN-959: only sent when a sport is chosen; absent = every sport.
+        if (_sportId() case final String sport) 'p_sport_id': sport,
       },
     );
 
@@ -600,10 +633,15 @@ final feedNotifierProvider = StateNotifierProvider<FeedNotifier, FeedState>((
 ) {
   final repo = ref.watch(postRepositoryProvider);
   final db = Supabase.instance.client;
-  return FeedNotifier(
+  final notifier = FeedNotifier(
     repo,
     db,
     cache: ref.watch(offlineCacheProvider),
     accountId: ref.watch(cacheAccountIdProvider),
+    sportId: () => ref.read(forYouSportProvider),
   );
+  ref.listen<String?>(forYouSportProvider, (prev, next) {
+    if (prev != next) notifier.refilter();
+  });
+  return notifier;
 });

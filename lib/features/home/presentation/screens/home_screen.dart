@@ -26,6 +26,7 @@ import 'package:dabbler/features/home/presentation/widgets/active_filter_panel.d
 import 'package:dabbler/features/home/presentation/widgets/home_feed_scroll.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_row.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_tab_filters.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
 import 'package:dabbler/widgets/connection_banner.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
@@ -79,6 +80,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   final GlobalKey _railKey = GlobalKey();
 
   FeedTab get _activeTab => _tabs[_activeIndex];
+
+  /// KAN-959: whether the showing tab's filter row is open. Closed by
+  /// default; a re-tap on the selected tab toggles it, a switch closes it.
+  bool _filtersOpen = false;
 
   @override
   void initState() {
@@ -234,7 +239,10 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
 
   /// A tab became visible — remember it and lazily load it the first time.
   void _onTabChanged(int index) {
-    setState(() => _activeIndex = index);
+    setState(() {
+      _activeIndex = index;
+      _filtersOpen = false;
+    });
     final tab = _activeTab;
     // Lazily load each tab the first time it is shown.
     switch (tab) {
@@ -268,7 +276,14 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   /// and the header shows.
   void _onTabSelected(String id) {
     final index = _tabs.indexWhere((t) => t.name == id);
-    if (index < 0 || index == _activeIndex) return;
+    if (index < 0) return;
+    if (index == _activeIndex) {
+      // KAN-959: the selected tab again — open or close its filter row.
+      if (feedTabHasFilters(_activeTab)) {
+        setState(() => _filtersOpen = !_filtersOpen);
+      }
+      return;
+    }
     final rail = _railKey.currentContext?.findRenderObject();
     final railTop = rail is RenderSliver
         ? rail.constraints.precedingScrollExtent
@@ -443,13 +458,28 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                       onChanged: _onTabSelected,
                       items: <DabblerTabItem>[
                         for (final tab in _tabs)
-                          DabblerTabItem(id: tab.name, label: tab.label(l)),
+                          DabblerTabItem(
+                            id: tab.name,
+                            label: tab.label(l),
+                            badge: feedTabHasFilters(tab)
+                                ? HomeTabFilterPill(
+                                    key: ValueKey<String>(
+                                      'home-tab-filter-${tab.name}',
+                                    ),
+                                    count: watchFeedTabFilterCount(ref, tab),
+                                    open: _filtersOpen && tab == _activeTab,
+                                  )
+                                : null,
+                          ),
                       ],
                     ),
                   ),
-                  // KAN-957: the Active filter panel scrolls with the feed,
-                  // between the rail and the list.
-                  if (_activeTab == FeedTab.active)
+                  // KAN-957 / KAN-959: the showing tab's filter row, only
+                  // while open, scrolls with the feed between the rail and
+                  // the list.
+                  if (_filtersOpen && _activeTab == FeedTab.forYou)
+                    const SliverToBoxAdapter(child: ForYouSportRail()),
+                  if (_filtersOpen && _activeTab == FeedTab.active)
                     const SliverToBoxAdapter(child: ActiveFilterPanel()),
                   SliverPadding(
                     padding: _listPadding,

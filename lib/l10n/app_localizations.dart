@@ -224,16 +224,16 @@ abstract class AppLocalizations {
   /// **'Share moments, dabs, and kick-ins with your community.'**
   String get feed_empty_no_posts_hint;
 
-  /// KAN-955 Home Following tab empty state title; Following matches followed people and followed sports.
+  /// KAN-960 Home Following tab empty state title; Following shows posts from followed people only.
   ///
   /// In en, this message translates to:
-  /// **'Nothing from who and what you follow yet'**
+  /// **'No posts from people you follow yet'**
   String get feed_following_empty_title;
 
   /// KAN-955 Home Following tab empty state hint.
   ///
   /// In en, this message translates to:
-  /// **'Follow players or sports to see their posts here.'**
+  /// **'Follow players to see their posts here.'**
   String get feed_following_empty_hint;
 
   /// No description provided for @feed_could_not_load.
@@ -15340,6 +15340,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Try again'**
   String get act_error_retry;
+
+  /// KAN-959 Home For you sport filter: the first chip, which clears the sport.
+  ///
+  /// In en, this message translates to:
+  /// **'All sports'**
+  String get home_sport_all;
 }
 
 class _AppLocalizationsDelegate

@@ -171,19 +171,19 @@ void main() {
     }, variant: desktop);
   });
 
-  // KAN-955: Following matches followed people and followed sports, and its
-  // empty state says so in both languages.
+  // KAN-960: Following shows followed people only, and its empty state says
+  // so in both languages.
   for (final (Locale locale, String title, String hint)
       in const <(Locale, String, String)>[
         (
           Locale('en'),
-          'Nothing from who and what you follow yet',
-          'Follow players or sports to see their posts here.',
+          'No posts from people you follow yet',
+          'Follow players to see their posts here.',
         ),
         (
           Locale('ar'),
-          'لا يوجد شيء ممن وما تتابعه بعد',
-          'تابع لاعبين أو رياضات لترى منشوراتهم هنا.',
+          'لا توجد منشورات من الأشخاص الذين تتابعهم بعد',
+          'تابع لاعبين لترى منشوراتهم هنا.',
         ),
       ]) {
     testWidgets('Following empty state — ${locale.languageCode}', (
