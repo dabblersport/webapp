@@ -1985,7 +1985,7 @@ out that device only, no Face ID).
 
 ## 20. Reminders: `notification_jobs`, the 24h / 09:00 / 2h / 30m ladder (KAN-983, 2026-11-17)
 
-Migration `20261117102448_kan983_reminders` (applied 2026-11-17).
+Migrations `20261117102448_kan983_reminders` and `20261117103719_kan983b_answer_attendance_eligibility` (PEER fix; applied 2026-11-17).
 Probes: `supabase/tests/notifications_v2/kan983_reminders_probes.sql`. Rollback:
 `supabase/schema/rollback/kan983_ROLLBACK_reminders.sql`. Replaces `schedule_game_reminders_for_user`, which is
 dropped (it had no callers and wrote to a table that did not exist).
@@ -2017,7 +2017,7 @@ dropped (it had no callers and wrote to a table that did not exist).
   EN and AR and calls `notify_v2`. Reminders break quiet hours (`breaks_quiet`; delivery is KAN-979). Every worker and
   planner function takes `p_now` (default `now()`) so probes can walk the clock; all are `service_role` only.
 * **The 09:00 card's answer.** `rpc_answer_meetup_attendance(p_meetup_id uuid, p_answer text) → text` (authenticated;
-  definer on the caller's own row). `'going'`: Interested becomes Going if the meetup is upcoming, not cancelled and
+  definer on the caller's own row). `'going'`: refused like `rpc_meetup_rsvp` via `can_current_user_rsvp_meetup` (frozen `not_allowed`; not visible or blocked either way with the host `not_visible`; `cancelled`; `started`); otherwise Interested becomes Going if the meetup
   has a slot (else stays `'interested'`); later rungs stay. `'not_going'`: `rpc_meetup_rsvp(..., 'cancel')` →
   `'cancelled'`; pending jobs are deleted. Errors: 42501 no user, 22023 bad answer, P0001 `not_attending`,
   `not_found`, `cancelled`, `started`. The notification's `args.actions` is `["going","not_going"]`.
@@ -2027,7 +2027,10 @@ dropped (it had no callers and wrote to a table that did not exist).
 ## 21. Membership notices: removal with reason, waitlist promotion, invites (KAN-982, 2026-11-17)
 
 Migrations `20261117101222_kan982_membership_notices.sql` and `20261117102454_kan982b_removal_reason_optional.sql`.
-Live test `supabase/tests/notifications_v2/kan982_membership_probes.sql` (29 checks, rolled back).
+Live test `supabase/tests/notifications_v2/kan982_membership_probes.sql` (33 checks, rolled back). Follow-up
+`20261117162054_kan982c_untitled_event_titles.sql`: `kan982_notify` adds `title_en` / `title_ar` from
+`kan981_event_title(event_id, lang)` (title, else "<Sport> game" / "مباراة <رياضة>", else "Your game" / "مباراتك") to
+every game and meetup notice, so an untitled game (24 live on 2026-11-17) never renders "You were removed from".
 
 * **Every membership notice is sent through `notify_v2`** via `kan982_notify` (definer, service_role only), which
   swallows a notice failure as a WARNING so a notice never rolls back the membership change. Dedupe keys are stable
