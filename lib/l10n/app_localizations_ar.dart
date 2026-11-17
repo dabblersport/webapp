@@ -2505,6 +2505,45 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_action_see_circle => 'عرض الدائرة';
 
   @override
+  String get notif_action_accept => 'قبول';
+
+  @override
+  String get notif_action_approve => 'موافقة';
+
+  @override
+  String get notif_action_reject => 'رفض';
+
+  @override
+  String get notif_action_going => 'سأحضر';
+
+  @override
+  String get notif_action_not_going => 'لن أحضر';
+
+  @override
+  String get notif_action_check_in => 'تسجيل الحضور';
+
+  @override
+  String get notif_action_request_review => 'اطلب مراجعة';
+
+  @override
+  String get notif_action_keep_decision => 'أبقِ على قراري';
+
+  @override
+  String get notif_action_confirm_end => 'تأكيد الانتهاء';
+
+  @override
+  String get notif_action_enter_score => 'أدخل النتيجة';
+
+  @override
+  String get notif_action_rate => 'قيّم';
+
+  @override
+  String get notif_action_this_was_me => 'هذا أنا';
+
+  @override
+  String get notif_action_not_me => 'لست أنا';
+
+  @override
   String get notif_load_older => 'تحميل الأقدم';
 
   @override
@@ -9123,4 +9162,715 @@ class AppLocalizationsAr extends AppLocalizations {
   String act_reason_price(String price) {
     return '$price درهم للملعب';
   }
+
+  @override
+  String get notif_t_arena_payment_required => 'مطلوب الدفع لحجزك';
+
+  @override
+  String get notif_b_arena_payment_required => 'أكمل الدفع للاحتفاظ بحجزك.';
+
+  @override
+  String get notif_t_auth_welcome => 'أهلًا بك في دابلر';
+
+  @override
+  String get notif_b_auth_welcome =>
+      'أكمل ملفك الشخصي لتجد مباريات بالقرب منك.';
+
+  @override
+  String notif_t_friend_accepted(String actor) {
+    return '$actor تابعك أيضًا';
+  }
+
+  @override
+  String get notif_b_friend_accepted => 'اضغط لعرض ملفه الشخصي.';
+
+  @override
+  String notif_t_friend_requested(String actor) {
+    return '$actor يريد التواصل معك';
+  }
+
+  @override
+  String get notif_b_friend_requested => 'اضغط لعرض ملفه الشخصي.';
+
+  @override
+  String notif_t_game_invited(String actor) {
+    return '$actor دعاك إلى مباراة';
+  }
+
+  @override
+  String get notif_b_game_invited => 'اضغط لعرض المباراة والرد.';
+
+  @override
+  String get notif_t_game_join_accepted => 'تم قبول طلب انضمامك';
+
+  @override
+  String get notif_b_game_join_accepted =>
+      'أنت مشارك الآن. اطّلع على تفاصيل المباراة.';
+
+  @override
+  String notif_t_game_join_request(String actor) {
+    return '$actor يريد الانضمام إلى مباراتك';
+  }
+
+  @override
+  String get notif_b_game_join_request => 'راجع الطلب.';
+
+  @override
+  String notif_t_game_player_joined(String actor) {
+    return '$actor انضم إلى مباراتك';
+  }
+
+  @override
+  String get notif_b_game_player_joined => 'اطّلع على قائمة اللاعبين.';
+
+  @override
+  String get rem_t_game_reminder => 'مباراتك تبدأ قريبًا';
+
+  @override
+  String get rem_b_game_reminder => 'استعد وتحقق من الوقت والمكان.';
+
+  @override
+  String get notif_t_game_removed => 'تمت إزالتك من مباراة';
+
+  @override
+  String get notif_b_game_removed => 'اضغط لعرض التفاصيل.';
+
+  @override
+  String get notif_t_game_updated => 'تم تحديث مباراة انضممت إليها';
+
+  @override
+  String get notif_b_game_updated => 'اضغط لمعرفة ما تغيّر.';
+
+  @override
+  String get notif_t_game_waitlist_promoted =>
+      'انتقلت من قائمة الانتظار إلى المباراة';
+
+  @override
+  String get notif_b_game_waitlist_promoted => 'لديك مكان في المباراة الآن.';
+
+  @override
+  String get notif_t_meetup_cancelled => 'تم إلغاء لقاء سجّلت فيه';
+
+  @override
+  String get notif_b_meetup_cancelled => 'اضغط لعرض التفاصيل.';
+
+  @override
+  String notif_t_meetup_invited(String actor) {
+    return '$actor دعاك إلى لقاء';
+  }
+
+  @override
+  String get notif_b_meetup_invited => 'اضغط لعرض اللقاء والرد.';
+
+  @override
+  String notif_t_meetup_player_joined(String actor) {
+    return '$actor انضم إلى لقائك';
+  }
+
+  @override
+  String get notif_b_meetup_player_joined => 'اطّلع على قائمة الحضور.';
+
+  @override
+  String get notif_t_meetup_request_approved =>
+      'تمت الموافقة على طلب انضمامك إلى اللقاء';
+
+  @override
+  String get notif_b_meetup_request_approved =>
+      'أنت مشارك الآن. اطّلع على تفاصيل اللقاء.';
+
+  @override
+  String get notif_t_meetup_request_declined => 'تم رفض طلب انضمامك إلى اللقاء';
+
+  @override
+  String get notif_b_meetup_request_declined => 'ابحث عن لقاء آخر بالقرب منك.';
+
+  @override
+  String notif_t_meetup_request_received(String actor) {
+    return '$actor طلب الانضمام إلى لقائك';
+  }
+
+  @override
+  String get notif_b_meetup_request_received => 'راجع الطلب.';
+
+  @override
+  String notif_t_meetup_rsvp_received(String actor) {
+    return '$actor سيحضر لقاءك';
+  }
+
+  @override
+  String get notif_b_meetup_rsvp_received => 'اطّلع على قائمة الحضور.';
+
+  @override
+  String notif_t_message_received(String actor) {
+    return 'رسالة جديدة من $actor';
+  }
+
+  @override
+  String get notif_b_message_received => 'افتح المحادثة لقراءتها.';
+
+  @override
+  String get notif_t_moderation_report_submitted => 'بلاغ جديد عن محتوى';
+
+  @override
+  String get notif_b_moderation_report_submitted => 'راجعه في قائمة الإشراف.';
+
+  @override
+  String get notif_t_moderation_user_blocked => 'تم تسجيل حظر مستخدم';
+
+  @override
+  String get notif_b_moderation_user_blocked => 'قام مستخدم بحظر مستخدم آخر.';
+
+  @override
+  String get notif_t_reward_badge_awarded => 'حصلت على شارة جديدة!';
+
+  @override
+  String get notif_b_reward_badge_awarded => 'شاهدها في صفحة المكافآت.';
+
+  @override
+  String notif_t_social_circle_joined(String actor) {
+    return '$actor انضم إلى دائرتك';
+  }
+
+  @override
+  String get notif_b_social_circle_joined => 'رحّب به.';
+
+  @override
+  String notif_t_social_comment_liked(String actor) {
+    return '$actor أعجبه تعليقك';
+  }
+
+  @override
+  String get notif_b_social_comment_liked => 'اضغط لعرض التعليق.';
+
+  @override
+  String notif_t_social_followed(String actor) {
+    return '$actor بدأ متابعتك';
+  }
+
+  @override
+  String get notif_b_social_followed => 'اضغط لعرض ملفه الشخصي.';
+
+  @override
+  String notif_t_social_friend_accepted(String actor) {
+    return '$actor تابعك أيضًا';
+  }
+
+  @override
+  String get notif_b_social_friend_accepted => 'اضغط لعرض ملفه الشخصي.';
+
+  @override
+  String notif_t_social_friend_request(String actor) {
+    return '$actor يريد التواصل معك';
+  }
+
+  @override
+  String get notif_b_social_friend_request => 'اضغط لعرض ملفه الشخصي.';
+
+  @override
+  String notif_t_social_mentioned_in_comment(String actor) {
+    return '$actor أشار إليك في تعليق';
+  }
+
+  @override
+  String get notif_b_social_mentioned_in_comment => 'اضغط لعرض التعليق.';
+
+  @override
+  String notif_t_social_mentioned_in_post(String actor) {
+    return '$actor أشار إليك في منشور';
+  }
+
+  @override
+  String get notif_b_social_mentioned_in_post => 'اضغط لعرض المنشور.';
+
+  @override
+  String notif_t_social_post_commented(String actor) {
+    return '$actor علّق على منشورك';
+  }
+
+  @override
+  String get notif_b_social_post_commented => 'اضغط لقراءة التعليق.';
+
+  @override
+  String notif_t_social_post_liked(String actor) {
+    return '$actor أعجبه منشورك';
+  }
+
+  @override
+  String get notif_b_social_post_liked => 'اضغط لعرض المنشور.';
+
+  @override
+  String notif_t_social_post_reacted(String actor) {
+    return '$actor تفاعل مع منشورك';
+  }
+
+  @override
+  String get notif_b_social_post_reacted => 'اضغط لعرض المنشور.';
+
+  @override
+  String notif_t_squad_invited(String actor) {
+    return '$actor دعاك إلى فريق';
+  }
+
+  @override
+  String get notif_b_squad_invited => 'اضغط لعرض الفريق والرد.';
+
+  @override
+  String get notif_t_system_announcement => 'إعلان من دابلر';
+
+  @override
+  String get notif_b_system_announcement => 'اضغط لقراءته.';
+
+  @override
+  String notif_t_game_join_declined(String title) {
+    return 'تم رفض طلب انضمامك إلى $title';
+  }
+
+  @override
+  String get notif_b_game_join_declined => 'ابحث عن مباراة أخرى بالقرب منك.';
+
+  @override
+  String notif_t_game_invite_accepted(String actor, String title) {
+    return '$actor قبل دعوتك إلى $title';
+  }
+
+  @override
+  String get notif_b_game_invite_accepted => 'اطّلع على قائمة اللاعبين.';
+
+  @override
+  String notif_t_game_invite_declined(String actor, String title) {
+    return '$actor رفض دعوتك إلى $title';
+  }
+
+  @override
+  String get notif_b_game_invite_declined => 'يمكنك دعوة شخص آخر.';
+
+  @override
+  String notif_t_game_invite_withdrawn(String title) {
+    return 'تم سحب دعوتك إلى $title';
+  }
+
+  @override
+  String get notif_b_game_invite_withdrawn => 'سحب المنظّم الدعوة.';
+
+  @override
+  String notif_t_game_invite_expired(String title) {
+    return 'انتهت صلاحية دعوتك إلى $title';
+  }
+
+  @override
+  String get notif_b_game_invite_expired => 'لم تعد الدعوة صالحة.';
+
+  @override
+  String notif_t_game_player_left(String actor, String title) {
+    return '$actor غادر $title';
+  }
+
+  @override
+  String get notif_b_game_player_left => 'أصبح هناك مكان شاغر في مباراتك.';
+
+  @override
+  String notif_t_game_full(String title) {
+    return 'اكتمل العدد في $title';
+  }
+
+  @override
+  String get notif_b_game_full => 'تم شغل جميع الأماكن في مباراتك.';
+
+  @override
+  String notif_t_game_waitlist_joined(String title) {
+    return 'أنت في قائمة الانتظار لـ $title';
+  }
+
+  @override
+  String get notif_b_game_waitlist_joined => 'سنخبرك إذا توفر مكان.';
+
+  @override
+  String notif_t_game_waitlist_position_changed(String title) {
+    return 'تقدّمت في قائمة الانتظار لـ $title';
+  }
+
+  @override
+  String notif_b_game_waitlist_position_changed(String position) {
+    return 'ترتيبك الآن $position.';
+  }
+
+  @override
+  String notif_t_meetup_removed(String title) {
+    return 'تمت إزالتك من $title';
+  }
+
+  @override
+  String notif_b_meetup_removed(String organiser, String reason) {
+    return 'أزالك $organiser: $reason';
+  }
+
+  @override
+  String notif_t_meetup_player_left(String actor, String title) {
+    return '$actor غادر $title';
+  }
+
+  @override
+  String get notif_b_meetup_player_left => 'أصبح هناك مكان شاغر في لقائك.';
+
+  @override
+  String notif_t_meetup_rsvp_interested(String actor, String title) {
+    return '$actor مهتم بـ $title';
+  }
+
+  @override
+  String get notif_b_meetup_rsvp_interested => 'اطّلع على المهتمين.';
+
+  @override
+  String notif_t_game_cancelled(String title) {
+    return 'تم إلغاء $title';
+  }
+
+  @override
+  String get notif_b_game_cancelled => 'ألغى المنظّم هذه المباراة.';
+
+  @override
+  String notif_t_game_time_changed(String title) {
+    return 'تغيّر موعد $title';
+  }
+
+  @override
+  String notif_b_game_time_changed(String oldValue, String newValue) {
+    return 'كان $oldValue، والآن $newValue.';
+  }
+
+  @override
+  String notif_t_game_venue_changed(String title) {
+    return 'تغيّر مكان $title';
+  }
+
+  @override
+  String notif_b_game_venue_changed(String oldValue, String newValue) {
+    return 'كان $oldValue، والآن $newValue.';
+  }
+
+  @override
+  String notif_t_game_details_changed(String title) {
+    return 'تم تحديث $title';
+  }
+
+  @override
+  String notif_b_game_details_changed(
+    String field,
+    String oldValue,
+    String newValue,
+  ) {
+    return 'تغيّر $field من $oldValue إلى $newValue.';
+  }
+
+  @override
+  String notif_t_game_occurrence_cancelled(String title, String when) {
+    return 'تم إلغاء $title يوم $when';
+  }
+
+  @override
+  String get notif_b_game_occurrence_cancelled =>
+      'أُلغي هذا الموعد فقط، وتستمر السلسلة.';
+
+  @override
+  String notif_t_game_series_changed(String title) {
+    return 'تم تحديث سلسلة $title';
+  }
+
+  @override
+  String get notif_b_game_series_changed =>
+      'اضغط لمعرفة ما تغيّر في المواعيد القادمة.';
+
+  @override
+  String notif_t_meetup_time_changed(String title) {
+    return 'تغيّر موعد $title';
+  }
+
+  @override
+  String notif_b_meetup_time_changed(String oldValue, String newValue) {
+    return 'كان $oldValue، والآن $newValue.';
+  }
+
+  @override
+  String notif_t_meetup_venue_changed(String title) {
+    return 'تغيّر مكان $title';
+  }
+
+  @override
+  String notif_b_meetup_venue_changed(String oldValue, String newValue) {
+    return 'كان $oldValue، والآن $newValue.';
+  }
+
+  @override
+  String notif_t_meetup_details_changed(String title) {
+    return 'تم تحديث $title';
+  }
+
+  @override
+  String notif_b_meetup_details_changed(
+    String field,
+    String oldValue,
+    String newValue,
+  ) {
+    return 'تغيّر $field من $oldValue إلى $newValue.';
+  }
+
+  @override
+  String notif_t_meetup_occurrence_cancelled(String title, String when) {
+    return 'تم إلغاء $title يوم $when';
+  }
+
+  @override
+  String get notif_b_meetup_occurrence_cancelled =>
+      'أُلغي هذا الموعد فقط، وتستمر السلسلة.';
+
+  @override
+  String notif_t_meetup_series_changed(String title) {
+    return 'تم تحديث سلسلة $title';
+  }
+
+  @override
+  String get notif_b_meetup_series_changed =>
+      'اضغط لمعرفة ما تغيّر في المواعيد القادمة.';
+
+  @override
+  String rem_t_meetup_reminder(String title, String when) {
+    return '$title يبدأ $when';
+  }
+
+  @override
+  String get rem_b_meetup_reminder => 'اضغط لعرض التفاصيل والاستعداد.';
+
+  @override
+  String rem_t_meetup_confirm_attendance(String title, String time) {
+    return '$title اليوم الساعة $time';
+  }
+
+  @override
+  String get rem_b_meetup_confirm_attendance => 'هل ستحضر؟';
+
+  @override
+  String att_t_activity_checkin_open(String title) {
+    return 'تسجيل الحضور متاح لـ $title';
+  }
+
+  @override
+  String att_b_activity_checkin_open(String closeTime) {
+    return 'سجّل حضورك قبل $closeTime.';
+  }
+
+  @override
+  String att_t_activity_checkin_closing(String title) {
+    return 'تسجيل الحضور لـ $title يُغلق قريبًا';
+  }
+
+  @override
+  String get att_b_activity_checkin_closing => 'سجّل حضورك الآن ليتم احتسابك.';
+
+  @override
+  String att_t_activity_checked_in(String title) {
+    return 'سجّلت حضورك في $title';
+  }
+
+  @override
+  String get att_b_activity_checked_in => 'نتمنى لك وقتًا ممتعًا.';
+
+  @override
+  String att_t_activity_attendance_corrected(String title) {
+    return 'تم تعديل حضورك في $title';
+  }
+
+  @override
+  String att_b_activity_attendance_corrected(String organiser, String status) {
+    return 'غيّره $organiser إلى $status.';
+  }
+
+  @override
+  String att_t_activity_no_show_pending(String title) {
+    return 'تم تسجيلك كغائب في $title';
+  }
+
+  @override
+  String get att_b_activity_no_show_pending =>
+      'يتم التأكيد خلال 48 ساعة ما لم تطلب مراجعة.';
+
+  @override
+  String att_t_activity_review_requested(String actor, String title) {
+    return '$actor طلب مراجعة حضوره في $title';
+  }
+
+  @override
+  String get att_b_activity_review_requested =>
+      'اقبل التصحيح أو أبقِ على قرارك.';
+
+  @override
+  String att_t_activity_review_accepted(String title) {
+    return 'تم تصحيح حضورك في $title';
+  }
+
+  @override
+  String get att_b_activity_review_accepted => 'قبل المنظّم طلب المراجعة.';
+
+  @override
+  String att_t_activity_review_kept(String title) {
+    return 'تم تثبيت غيابك في $title';
+  }
+
+  @override
+  String get att_b_activity_review_kept => 'أبقى المنظّم على القرار الأصلي.';
+
+  @override
+  String att_t_activity_no_show_confirmed(String title) {
+    return 'تم تأكيد غيابك في $title';
+  }
+
+  @override
+  String get att_b_activity_no_show_confirmed => 'يُحتسب الآن في نسبة حضورك.';
+
+  @override
+  String att_t_activity_showup_rate_updated(String rate) {
+    return 'نسبة حضورك الآن $rate%';
+  }
+
+  @override
+  String att_b_activity_showup_rate_updated(String count) {
+    return 'بناءً على $count من المباريات واللقاءات المؤكدة.';
+  }
+
+  @override
+  String res_t_activity_confirm_end(String title) {
+    return 'هل انتهى $title؟';
+  }
+
+  @override
+  String get res_b_activity_confirm_end =>
+      'أكّد الانتهاء ليتمكن اللاعبون من إدخال النتيجة.';
+
+  @override
+  String res_t_activity_confirm_end_reminder(String title) {
+    return 'تذكير: أكّد انتهاء $title';
+  }
+
+  @override
+  String get res_b_activity_confirm_end_reminder =>
+      'وإلا سيُغلق على أنه «انتهى الوقت المحدد».';
+
+  @override
+  String res_t_activity_auto_closed(String title) {
+    return 'تم إغلاق $title';
+  }
+
+  @override
+  String get res_b_activity_auto_closed => 'انتهى الوقت المحدد.';
+
+  @override
+  String res_t_activity_ended(String title) {
+    return 'انتهى $title';
+  }
+
+  @override
+  String get res_b_activity_ended => 'شكرًا لمشاركتك.';
+
+  @override
+  String res_t_activity_post_activity(String title) {
+    return 'كيف كان $title؟';
+  }
+
+  @override
+  String get res_b_activity_post_activity =>
+      'أدخل النتيجة وقيّم اللاعبين. يُغلق خلال 48 ساعة.';
+
+  @override
+  String res_t_activity_result_ready(String title) {
+    return 'وافق على نتيجة $title';
+  }
+
+  @override
+  String res_b_activity_result_ready(String score) {
+    return 'أغلب اللاعبين قالوا $score. وافق أو ارفض خلال 24 ساعة.';
+  }
+
+  @override
+  String res_t_activity_result_enter_final(String title) {
+    return 'أدخل النتيجة النهائية لـ $title';
+  }
+
+  @override
+  String get res_b_activity_result_enter_final =>
+      'لم يتفق اللاعبون على نتيجة. لديك 24 ساعة.';
+
+  @override
+  String res_t_activity_result_confirmed(String title, String score) {
+    return 'النتيجة النهائية لـ $title: $score';
+  }
+
+  @override
+  String get res_b_activity_result_confirmed => 'اضغط لعرض النتيجة.';
+
+  @override
+  String res_t_activity_result_corrected(String title, String score) {
+    return 'حدّد المنظّم النتيجة النهائية لـ $title: $score';
+  }
+
+  @override
+  String get res_b_activity_result_corrected => 'اضغط لعرض النتيجة.';
+
+  @override
+  String res_t_activity_result_closed(String title) {
+    return 'أُغلق $title بدون نتيجة';
+  }
+
+  @override
+  String get res_b_activity_result_closed =>
+      'لم يتم إدخال نتيجة نهائية في الوقت المحدد.';
+
+  @override
+  String res_t_activity_rating_reminder(String title) {
+    return 'قيّم $title قبل الإغلاق';
+  }
+
+  @override
+  String get res_b_activity_rating_reminder =>
+      'تقييماتك تساعد الجميع. تُغلق الفترة قريبًا.';
+
+  @override
+  String res_t_activity_summary(String title) {
+    return 'ملخصك لـ $title جاهز';
+  }
+
+  @override
+  String get res_b_activity_summary => 'اطّلع على نتيجتك وتقييماتك.';
+
+  @override
+  String get sec_t_security_new_signin => 'تسجيل دخول جديد إلى حسابك في دابلر';
+
+  @override
+  String get sec_b_security_new_signin => 'هل كان هذا أنت؟ اضغط للمراجعة.';
+
+  @override
+  String get sec_t_security_password_changed => 'تم تغيير كلمة المرور';
+
+  @override
+  String get sec_b_security_password_changed => 'لم تكن أنت؟ أمّن حسابك الآن.';
+
+  @override
+  String get sec_t_security_email_changed => 'تم تغيير بريدك الإلكتروني';
+
+  @override
+  String get sec_b_security_email_changed => 'لم تكن أنت؟ أمّن حسابك الآن.';
+
+  @override
+  String notif_t_social_comment_replied(String actor) {
+    return '$actor ردّ على تعليقك';
+  }
+
+  @override
+  String get notif_b_social_comment_replied => 'اضغط لقراءة الرد.';
+
+  @override
+  String notif_t_social_post_reposted(String actor) {
+    return '$actor أعاد نشر منشورك';
+  }
+
+  @override
+  String get notif_b_social_post_reposted => 'اضغط لعرض المنشور.';
 }

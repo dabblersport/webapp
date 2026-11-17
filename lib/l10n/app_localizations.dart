@@ -4547,6 +4547,84 @@ abstract class AppLocalizations {
   /// **'See circle'**
   String get notif_action_see_circle;
 
+  /// KAN-978 row action: accept (an attendance review).
+  ///
+  /// In en, this message translates to:
+  /// **'Accept'**
+  String get notif_action_accept;
+
+  /// No description provided for @notif_action_approve.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get notif_action_approve;
+
+  /// No description provided for @notif_action_reject.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get notif_action_reject;
+
+  /// No description provided for @notif_action_going.
+  ///
+  /// In en, this message translates to:
+  /// **'Going'**
+  String get notif_action_going;
+
+  /// No description provided for @notif_action_not_going.
+  ///
+  /// In en, this message translates to:
+  /// **'Not going'**
+  String get notif_action_not_going;
+
+  /// No description provided for @notif_action_check_in.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in'**
+  String get notif_action_check_in;
+
+  /// No description provided for @notif_action_request_review.
+  ///
+  /// In en, this message translates to:
+  /// **'Ask for a review'**
+  String get notif_action_request_review;
+
+  /// No description provided for @notif_action_keep_decision.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my decision'**
+  String get notif_action_keep_decision;
+
+  /// No description provided for @notif_action_confirm_end.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm end'**
+  String get notif_action_confirm_end;
+
+  /// No description provided for @notif_action_enter_score.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter score'**
+  String get notif_action_enter_score;
+
+  /// No description provided for @notif_action_rate.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate'**
+  String get notif_action_rate;
+
+  /// No description provided for @notif_action_this_was_me.
+  ///
+  /// In en, this message translates to:
+  /// **'This was me'**
+  String get notif_action_this_was_me;
+
+  /// No description provided for @notif_action_not_me.
+  ///
+  /// In en, this message translates to:
+  /// **'Not me'**
+  String get notif_action_not_me;
+
   /// No description provided for @notif_load_older.
   ///
   /// In en, this message translates to:
@@ -15760,6 +15838,1058 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'AED {price} per court'**
   String act_reason_price(String price);
+
+  /// KAN-978: server template arena.payment_required (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Payment required for your booking'**
+  String get notif_t_arena_payment_required;
+
+  /// KAN-978: server template arena.payment_required (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the payment to keep your booking.'**
+  String get notif_b_arena_payment_required;
+
+  /// KAN-978: server template auth.welcome (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Welcome to Dabbler'**
+  String get notif_t_auth_welcome;
+
+  /// KAN-978: server template auth.welcome (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Set up your profile to find games near you.'**
+  String get notif_b_auth_welcome;
+
+  /// KAN-978: server template friend.accepted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} followed you back'**
+  String notif_t_friend_accepted(String actor);
+
+  /// KAN-978: server template friend.accepted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see their profile.'**
+  String get notif_b_friend_accepted;
+
+  /// KAN-978: server template friend.requested (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} wants to connect'**
+  String notif_t_friend_requested(String actor);
+
+  /// KAN-978: server template friend.requested (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see their profile.'**
+  String get notif_b_friend_requested;
+
+  /// KAN-978: server template game.invited (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} invited you to a game'**
+  String notif_t_game_invited(String actor);
+
+  /// KAN-978: server template game.invited (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the game and reply.'**
+  String get notif_b_game_invited;
+
+  /// KAN-978: server template game.join_accepted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your request to join was accepted'**
+  String get notif_t_game_join_accepted;
+
+  /// KAN-978: server template game.join_accepted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re in. See the game details.'**
+  String get notif_b_game_join_accepted;
+
+  /// KAN-978: server template game.join_request (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} wants to join your game'**
+  String notif_t_game_join_request(String actor);
+
+  /// KAN-978: server template game.join_request (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Review the request.'**
+  String get notif_b_game_join_request;
+
+  /// KAN-978: server template game.player_joined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} joined your game'**
+  String notif_t_game_player_joined(String actor);
+
+  /// KAN-978: server template game.player_joined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See who\'s playing.'**
+  String get notif_b_game_player_joined;
+
+  /// KAN-978: server template game.reminder (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your game starts soon'**
+  String get rem_t_game_reminder;
+
+  /// KAN-978: server template game.reminder (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Get ready and check the time and venue.'**
+  String get rem_b_game_reminder;
+
+  /// KAN-978: server template game.removed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from a game'**
+  String get notif_t_game_removed;
+
+  /// KAN-978: server template game.removed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the details.'**
+  String get notif_b_game_removed;
+
+  /// KAN-978: server template game.updated (title).
+  ///
+  /// In en, this message translates to:
+  /// **'A game you joined was updated'**
+  String get notif_t_game_updated;
+
+  /// KAN-978: server template game.updated (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see what changed.'**
+  String get notif_b_game_updated;
+
+  /// KAN-978: server template game.waitlist_promoted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ve been promoted from the waitlist'**
+  String get notif_t_game_waitlist_promoted;
+
+  /// KAN-978: server template game.waitlist_promoted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'You have a place in the game now.'**
+  String get notif_b_game_waitlist_promoted;
+
+  /// KAN-978: server template meetup.cancelled (title).
+  ///
+  /// In en, this message translates to:
+  /// **'A meet-up you signed up for was cancelled'**
+  String get notif_t_meetup_cancelled;
+
+  /// KAN-978: server template meetup.cancelled (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the details.'**
+  String get notif_b_meetup_cancelled;
+
+  /// KAN-978: server template meetup.invited (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} invited you to a meet-up'**
+  String notif_t_meetup_invited(String actor);
+
+  /// KAN-978: server template meetup.invited (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the meet-up and reply.'**
+  String get notif_b_meetup_invited;
+
+  /// KAN-978: server template meetup.player_joined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} joined your meet-up'**
+  String notif_t_meetup_player_joined(String actor);
+
+  /// KAN-978: server template meetup.player_joined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See who\'s coming.'**
+  String get notif_b_meetup_player_joined;
+
+  /// KAN-978: server template meetup.request_approved (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your request to join a meet-up was approved'**
+  String get notif_t_meetup_request_approved;
+
+  /// KAN-978: server template meetup.request_approved (body).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re in. See the meet-up details.'**
+  String get notif_b_meetup_request_approved;
+
+  /// KAN-978: server template meetup.request_declined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your request to join a meet-up was declined'**
+  String get notif_t_meetup_request_declined;
+
+  /// KAN-978: server template meetup.request_declined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Find another meet-up near you.'**
+  String get notif_b_meetup_request_declined;
+
+  /// KAN-978: server template meetup.request_received (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} asked to join your meet-up'**
+  String notif_t_meetup_request_received(String actor);
+
+  /// KAN-978: server template meetup.request_received (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Review the request.'**
+  String get notif_b_meetup_request_received;
+
+  /// KAN-978: server template meetup.rsvp_received (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} is going to your meet-up'**
+  String notif_t_meetup_rsvp_received(String actor);
+
+  /// KAN-978: server template meetup.rsvp_received (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See who\'s coming.'**
+  String get notif_b_meetup_rsvp_received;
+
+  /// KAN-978: server template message.received (title).
+  ///
+  /// In en, this message translates to:
+  /// **'New message from {actor}'**
+  String notif_t_message_received(String actor);
+
+  /// KAN-978: server template message.received (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Open the chat to read it.'**
+  String get notif_b_message_received;
+
+  /// KAN-978: server template moderation.report_submitted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'New content report'**
+  String get notif_t_moderation_report_submitted;
+
+  /// KAN-978: server template moderation.report_submitted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Review it in the moderation queue.'**
+  String get notif_b_moderation_report_submitted;
+
+  /// KAN-978: server template moderation.user_blocked (title).
+  ///
+  /// In en, this message translates to:
+  /// **'User block recorded'**
+  String get notif_t_moderation_user_blocked;
+
+  /// KAN-978: server template moderation.user_blocked (body).
+  ///
+  /// In en, this message translates to:
+  /// **'A user blocked another user.'**
+  String get notif_b_moderation_user_blocked;
+
+  /// KAN-978: server template reward.badge_awarded (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You earned a new badge!'**
+  String get notif_t_reward_badge_awarded;
+
+  /// KAN-978: server template reward.badge_awarded (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See it on your rewards page.'**
+  String get notif_b_reward_badge_awarded;
+
+  /// KAN-978: server template social.circle_joined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} joined your circle'**
+  String notif_t_social_circle_joined(String actor);
+
+  /// KAN-978: server template social.circle_joined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Say hello.'**
+  String get notif_b_social_circle_joined;
+
+  /// KAN-978: server template social.comment_liked (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} liked your comment'**
+  String notif_t_social_comment_liked(String actor);
+
+  /// KAN-978: server template social.comment_liked (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the comment.'**
+  String get notif_b_social_comment_liked;
+
+  /// KAN-978: server template social.followed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} started following you'**
+  String notif_t_social_followed(String actor);
+
+  /// KAN-978: server template social.followed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see their profile.'**
+  String get notif_b_social_followed;
+
+  /// KAN-978: server template social.friend_accepted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} followed you back'**
+  String notif_t_social_friend_accepted(String actor);
+
+  /// KAN-978: server template social.friend_accepted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see their profile.'**
+  String get notif_b_social_friend_accepted;
+
+  /// KAN-978: server template social.friend_request (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} wants to connect'**
+  String notif_t_social_friend_request(String actor);
+
+  /// KAN-978: server template social.friend_request (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see their profile.'**
+  String get notif_b_social_friend_request;
+
+  /// KAN-978: server template social.mentioned_in_comment (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} mentioned you in a comment'**
+  String notif_t_social_mentioned_in_comment(String actor);
+
+  /// KAN-978: server template social.mentioned_in_comment (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the comment.'**
+  String get notif_b_social_mentioned_in_comment;
+
+  /// KAN-978: server template social.mentioned_in_post (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} mentioned you in a post'**
+  String notif_t_social_mentioned_in_post(String actor);
+
+  /// KAN-978: server template social.mentioned_in_post (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the post.'**
+  String get notif_b_social_mentioned_in_post;
+
+  /// KAN-978: server template social.post_commented (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} commented on your post'**
+  String notif_t_social_post_commented(String actor);
+
+  /// KAN-978: server template social.post_commented (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to read the comment.'**
+  String get notif_b_social_post_commented;
+
+  /// KAN-978: server template social.post_liked (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} liked your post'**
+  String notif_t_social_post_liked(String actor);
+
+  /// KAN-978: server template social.post_liked (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the post.'**
+  String get notif_b_social_post_liked;
+
+  /// KAN-978: server template social.post_reacted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} reacted to your post'**
+  String notif_t_social_post_reacted(String actor);
+
+  /// KAN-978: server template social.post_reacted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the post.'**
+  String get notif_b_social_post_reacted;
+
+  /// KAN-978: server template squad.invited (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} invited you to a squad'**
+  String notif_t_squad_invited(String actor);
+
+  /// KAN-978: server template squad.invited (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the squad and reply.'**
+  String get notif_b_squad_invited;
+
+  /// KAN-978: server template system.announcement (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Announcement from Dabbler'**
+  String get notif_t_system_announcement;
+
+  /// KAN-978: server template system.announcement (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to read it.'**
+  String get notif_b_system_announcement;
+
+  /// KAN-978: server template game.join_declined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your request to join {title} was declined'**
+  String notif_t_game_join_declined(String title);
+
+  /// KAN-978: server template game.join_declined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Find another game near you.'**
+  String get notif_b_game_join_declined;
+
+  /// KAN-978: server template game.invite_accepted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} accepted your invite to {title}'**
+  String notif_t_game_invite_accepted(String actor, String title);
+
+  /// KAN-978: server template game.invite_accepted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See who\'s playing.'**
+  String get notif_b_game_invite_accepted;
+
+  /// KAN-978: server template game.invite_declined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} declined your invite to {title}'**
+  String notif_t_game_invite_declined(String actor, String title);
+
+  /// KAN-978: server template game.invite_declined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'You can invite someone else.'**
+  String get notif_b_game_invite_declined;
+
+  /// KAN-978: server template game.invite_withdrawn (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your invite to {title} was withdrawn'**
+  String notif_t_game_invite_withdrawn(String title);
+
+  /// KAN-978: server template game.invite_withdrawn (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser withdrew the invite.'**
+  String get notif_b_game_invite_withdrawn;
+
+  /// KAN-978: server template game.invite_expired (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your invite to {title} expired'**
+  String notif_t_game_invite_expired(String title);
+
+  /// KAN-978: server template game.invite_expired (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The invite is no longer valid.'**
+  String get notif_b_game_invite_expired;
+
+  /// KAN-978: server template game.player_left (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} left {title}'**
+  String notif_t_game_player_left(String actor, String title);
+
+  /// KAN-978: server template game.player_left (body).
+  ///
+  /// In en, this message translates to:
+  /// **'A place is open in your game.'**
+  String get notif_b_game_player_left;
+
+  /// KAN-978: server template game.full (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} is full'**
+  String notif_t_game_full(String title);
+
+  /// KAN-978: server template game.full (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Every place in your game is taken.'**
+  String get notif_b_game_full;
+
+  /// KAN-978: server template game.waitlist_joined (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re on the waitlist for {title}'**
+  String notif_t_game_waitlist_joined(String title);
+
+  /// KAN-978: server template game.waitlist_joined (body).
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll tell you if a place opens.'**
+  String get notif_b_game_waitlist_joined;
+
+  /// KAN-978: server template game.waitlist_position_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You moved up the waitlist for {title}'**
+  String notif_t_game_waitlist_position_changed(String title);
+
+  /// KAN-978: server template game.waitlist_position_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re now number {position}.'**
+  String notif_b_game_waitlist_position_changed(String position);
+
+  /// KAN-978: server template meetup.removed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You were removed from {title}'**
+  String notif_t_meetup_removed(String title);
+
+  /// KAN-978: server template meetup.removed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'{organiser} removed you: {reason}'**
+  String notif_b_meetup_removed(String organiser, String reason);
+
+  /// KAN-978: server template meetup.player_left (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} left {title}'**
+  String notif_t_meetup_player_left(String actor, String title);
+
+  /// KAN-978: server template meetup.player_left (body).
+  ///
+  /// In en, this message translates to:
+  /// **'A place is open in your meet-up.'**
+  String get notif_b_meetup_player_left;
+
+  /// KAN-978: server template meetup.rsvp_interested (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} is interested in {title}'**
+  String notif_t_meetup_rsvp_interested(String actor, String title);
+
+  /// KAN-978: server template meetup.rsvp_interested (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See who\'s interested.'**
+  String get notif_b_meetup_rsvp_interested;
+
+  /// KAN-978: server template game.cancelled (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} was cancelled'**
+  String notif_t_game_cancelled(String title);
+
+  /// KAN-978: server template game.cancelled (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser cancelled this game.'**
+  String get notif_b_game_cancelled;
+
+  /// KAN-978: server template game.time_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} has a new time'**
+  String notif_t_game_time_changed(String title);
+
+  /// KAN-978: server template game.time_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Was {oldValue}, now {newValue}.'**
+  String notif_b_game_time_changed(String oldValue, String newValue);
+
+  /// KAN-978: server template game.venue_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} has a new venue'**
+  String notif_t_game_venue_changed(String title);
+
+  /// KAN-978: server template game.venue_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Was {oldValue}, now {newValue}.'**
+  String notif_b_game_venue_changed(String oldValue, String newValue);
+
+  /// KAN-978: server template game.details_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} was updated'**
+  String notif_t_game_details_changed(String title);
+
+  /// KAN-978: server template game.details_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'{field} changed from {oldValue} to {newValue}.'**
+  String notif_b_game_details_changed(
+    String field,
+    String oldValue,
+    String newValue,
+  );
+
+  /// KAN-978: server template game.occurrence_cancelled (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} on {when} was cancelled'**
+  String notif_t_game_occurrence_cancelled(String title, String when);
+
+  /// KAN-978: server template game.occurrence_cancelled (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Only this date is cancelled. The series continues.'**
+  String get notif_b_game_occurrence_cancelled;
+
+  /// KAN-978: server template game.series_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'The {title} series was updated'**
+  String notif_t_game_series_changed(String title);
+
+  /// KAN-978: server template game.series_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see what changed in the upcoming dates.'**
+  String get notif_b_game_series_changed;
+
+  /// KAN-978: server template meetup.time_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} has a new time'**
+  String notif_t_meetup_time_changed(String title);
+
+  /// KAN-978: server template meetup.time_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Was {oldValue}, now {newValue}.'**
+  String notif_b_meetup_time_changed(String oldValue, String newValue);
+
+  /// KAN-978: server template meetup.venue_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} has a new venue'**
+  String notif_t_meetup_venue_changed(String title);
+
+  /// KAN-978: server template meetup.venue_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Was {oldValue}, now {newValue}.'**
+  String notif_b_meetup_venue_changed(String oldValue, String newValue);
+
+  /// KAN-978: server template meetup.details_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} was updated'**
+  String notif_t_meetup_details_changed(String title);
+
+  /// KAN-978: server template meetup.details_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'{field} changed from {oldValue} to {newValue}.'**
+  String notif_b_meetup_details_changed(
+    String field,
+    String oldValue,
+    String newValue,
+  );
+
+  /// KAN-978: server template meetup.occurrence_cancelled (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} on {when} was cancelled'**
+  String notif_t_meetup_occurrence_cancelled(String title, String when);
+
+  /// KAN-978: server template meetup.occurrence_cancelled (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Only this date is cancelled. The series continues.'**
+  String get notif_b_meetup_occurrence_cancelled;
+
+  /// KAN-978: server template meetup.series_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'The {title} series was updated'**
+  String notif_t_meetup_series_changed(String title);
+
+  /// KAN-978: server template meetup.series_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see what changed in the upcoming dates.'**
+  String get notif_b_meetup_series_changed;
+
+  /// KAN-978: server template meetup.reminder (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} starts {when}'**
+  String rem_t_meetup_reminder(String title, String when);
+
+  /// KAN-978: server template meetup.reminder (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the details and get ready.'**
+  String get rem_b_meetup_reminder;
+
+  /// KAN-978: server template meetup.confirm_attendance (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} is today at {time}'**
+  String rem_t_meetup_confirm_attendance(String title, String time);
+
+  /// KAN-978: server template meetup.confirm_attendance (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Are you going?'**
+  String get rem_b_meetup_confirm_attendance;
+
+  /// KAN-978: server template activity.checkin_open (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in is open for {title}'**
+  String att_t_activity_checkin_open(String title);
+
+  /// KAN-978: server template activity.checkin_open (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Check in before {closeTime}.'**
+  String att_b_activity_checkin_open(String closeTime);
+
+  /// KAN-978: server template activity.checkin_closing (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in for {title} closes soon'**
+  String att_t_activity_checkin_closing(String title);
+
+  /// KAN-978: server template activity.checkin_closing (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Check in now so you\'re counted.'**
+  String get att_b_activity_checkin_closing;
+
+  /// KAN-978: server template activity.checked_in (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You checked in to {title}'**
+  String att_t_activity_checked_in(String title);
+
+  /// KAN-978: server template activity.checked_in (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Have a great game.'**
+  String get att_b_activity_checked_in;
+
+  /// KAN-978: server template activity.attendance_corrected (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your attendance for {title} was updated'**
+  String att_t_activity_attendance_corrected(String title);
+
+  /// KAN-978: server template activity.attendance_corrected (body).
+  ///
+  /// In en, this message translates to:
+  /// **'{organiser} changed it to {status}.'**
+  String att_b_activity_attendance_corrected(String organiser, String status);
+
+  /// KAN-978: server template activity.no_show_pending (title).
+  ///
+  /// In en, this message translates to:
+  /// **'You were marked as not attended at {title}'**
+  String att_t_activity_no_show_pending(String title);
+
+  /// KAN-978: server template activity.no_show_pending (body).
+  ///
+  /// In en, this message translates to:
+  /// **'This confirms in 48h unless you ask for a review.'**
+  String get att_b_activity_no_show_pending;
+
+  /// KAN-978: server template activity.review_requested (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} asked to review their attendance at {title}'**
+  String att_t_activity_review_requested(String actor, String title);
+
+  /// KAN-978: server template activity.review_requested (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Accept the correction or keep your decision.'**
+  String get att_b_activity_review_requested;
+
+  /// KAN-978: server template activity.review_accepted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your attendance at {title} was corrected'**
+  String att_t_activity_review_accepted(String title);
+
+  /// KAN-978: server template activity.review_accepted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser accepted your review request.'**
+  String get att_b_activity_review_accepted;
+
+  /// KAN-978: server template activity.review_kept (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your no-show at {title} stands'**
+  String att_t_activity_review_kept(String title);
+
+  /// KAN-978: server template activity.review_kept (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser kept the original decision.'**
+  String get att_b_activity_review_kept;
+
+  /// KAN-978: server template activity.no_show_confirmed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your no-show at {title} is confirmed'**
+  String att_t_activity_no_show_confirmed(String title);
+
+  /// KAN-978: server template activity.no_show_confirmed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'It now counts toward your show-up rate.'**
+  String get att_b_activity_no_show_confirmed;
+
+  /// KAN-978: server template activity.showup_rate_updated (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your show-up rate is now {rate}%'**
+  String att_t_activity_showup_rate_updated(String rate);
+
+  /// KAN-978: server template activity.showup_rate_updated (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Based on {count} confirmed games and meet-ups.'**
+  String att_b_activity_showup_rate_updated(String count);
+
+  /// KAN-978: server template activity.confirm_end (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Did {title} end?'**
+  String res_t_activity_confirm_end(String title);
+
+  /// KAN-978: server template activity.confirm_end (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the end so players can submit results.'**
+  String get res_b_activity_confirm_end;
+
+  /// KAN-978: server template activity.confirm_end_reminder (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Reminder: confirm {title} has ended'**
+  String res_t_activity_confirm_end_reminder(String title);
+
+  /// KAN-978: server template activity.confirm_end_reminder (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Otherwise it closes as \"scheduled time ended\".'**
+  String get res_b_activity_confirm_end_reminder;
+
+  /// KAN-978: server template activity.auto_closed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} closed'**
+  String res_t_activity_auto_closed(String title);
+
+  /// KAN-978: server template activity.auto_closed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The scheduled time ended.'**
+  String get res_b_activity_auto_closed;
+
+  /// KAN-978: server template activity.ended (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} has ended'**
+  String res_t_activity_ended(String title);
+
+  /// KAN-978: server template activity.ended (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks for playing.'**
+  String get res_b_activity_ended;
+
+  /// KAN-978: server template activity.post_activity (title).
+  ///
+  /// In en, this message translates to:
+  /// **'How did {title} go?'**
+  String res_t_activity_post_activity(String title);
+
+  /// KAN-978: server template activity.post_activity (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the score and rate the players. Closes in 48h.'**
+  String get res_b_activity_post_activity;
+
+  /// KAN-978: server template activity.result_ready (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Approve the result for {title}'**
+  String res_t_activity_result_ready(String title);
+
+  /// KAN-978: server template activity.result_ready (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Most players said {score}. Approve or reject within 24h.'**
+  String res_b_activity_result_ready(String score);
+
+  /// KAN-978: server template activity.result_enter_final (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the final score for {title}'**
+  String res_t_activity_result_enter_final(String title);
+
+  /// KAN-978: server template activity.result_enter_final (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Players didn\'t agree on a score. You have 24h.'**
+  String get res_b_activity_result_enter_final;
+
+  /// KAN-978: server template activity.result_confirmed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Final result for {title}: {score}'**
+  String res_t_activity_result_confirmed(String title, String score);
+
+  /// KAN-978: server template activity.result_confirmed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the result.'**
+  String get res_b_activity_result_confirmed;
+
+  /// KAN-978: server template activity.result_corrected (title).
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser set the final result for {title}: {score}'**
+  String res_t_activity_result_corrected(String title, String score);
+
+  /// KAN-978: server template activity.result_corrected (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the result.'**
+  String get res_b_activity_result_corrected;
+
+  /// KAN-978: server template activity.result_closed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{title} closed with no result'**
+  String res_t_activity_result_closed(String title);
+
+  /// KAN-978: server template activity.result_closed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'No final score was entered in time.'**
+  String get res_b_activity_result_closed;
+
+  /// KAN-978: server template activity.rating_reminder (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Rate {title} before it closes'**
+  String res_t_activity_rating_reminder(String title);
+
+  /// KAN-978: server template activity.rating_reminder (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Your ratings help everyone. The window closes soon.'**
+  String get res_b_activity_rating_reminder;
+
+  /// KAN-978: server template activity.summary (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your summary for {title} is ready'**
+  String res_t_activity_summary(String title);
+
+  /// KAN-978: server template activity.summary (body).
+  ///
+  /// In en, this message translates to:
+  /// **'See your result and ratings.'**
+  String get res_b_activity_summary;
+
+  /// KAN-978: server template security.new_signin (title).
+  ///
+  /// In en, this message translates to:
+  /// **'New sign-in to your Dabbler account'**
+  String get sec_t_security_new_signin;
+
+  /// KAN-978: server template security.new_signin (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Was this you? Tap to review.'**
+  String get sec_b_security_new_signin;
+
+  /// KAN-978: server template security.password_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your password was changed'**
+  String get sec_t_security_password_changed;
+
+  /// KAN-978: server template security.password_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Wasn\'t you? Secure your account now.'**
+  String get sec_b_security_password_changed;
+
+  /// KAN-978: server template security.email_changed (title).
+  ///
+  /// In en, this message translates to:
+  /// **'Your email address was changed'**
+  String get sec_t_security_email_changed;
+
+  /// KAN-978: server template security.email_changed (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Wasn\'t you? Secure your account now.'**
+  String get sec_b_security_email_changed;
+
+  /// KAN-978: server template social.comment_replied (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} replied to your comment'**
+  String notif_t_social_comment_replied(String actor);
+
+  /// KAN-978: server template social.comment_replied (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to read the reply.'**
+  String get notif_b_social_comment_replied;
+
+  /// KAN-978: server template social.post_reposted (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} reposted your post'**
+  String notif_t_social_post_reposted(String actor);
+
+  /// KAN-978: server template social.post_reposted (body).
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to see the post.'**
+  String get notif_b_social_post_reposted;
 }
 
 class _AppLocalizationsDelegate

@@ -1,40 +1,24 @@
+import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-/// Meetup notification kinds addressed to the host: they open Manage.
-const Set<String> meetupHostKinds = {
-  'meetup.rsvp_received',
-  'meetup.request_received',
-};
+/// KAN-978: the meetup kinds and their routes come from the kind registry
+/// ([NotificationKinds]); this file keeps the entry points the screen and the
+/// push service call.
 
-/// Meetup notification kinds addressed to a guest: they open the details.
-const Set<String> meetupGuestKinds = {
-  'meetup.invited',
-  'meetup.player_joined',
-  'meetup.request_approved',
-  'meetup.request_declined',
-  'meetup.cancelled',
-};
-
-/// True when [kindKey] is one of the seven meetup notification kinds.
+/// True when [kindKey] is a meetup notification kind.
 bool isMeetupNotificationKind(String kindKey) =>
-    meetupHostKinds.contains(kindKey) || meetupGuestKinds.contains(kindKey);
+    NotificationKinds.isMeetupKind(kindKey);
 
 /// The route a meetup notification opens, or null.
 ///
 /// Returns null when [enabled] (FeatureFlags.enableMeetups) is false, when
-/// [kindKey] is not a meetup kind, or when [meetupId] is missing. The DB only
-/// sends host kinds to the host, so a host kind routes to Manage.
+/// [kindKey] is not a meetup kind, or when [meetupId] is missing. Host kinds
+/// route to Manage, guest kinds to the details.
 String? meetupNotificationRoute({
   required String kindKey,
   required String? meetupId,
   required bool enabled,
-}) {
-  if (!enabled || !isMeetupNotificationKind(kindKey)) return null;
-  if (meetupId == null || meetupId.isEmpty) return null;
-  return meetupHostKinds.contains(kindKey)
-      ? RoutePaths.meetupManage(meetupId)
-      : RoutePaths.meetupDetail(meetupId);
-}
+}) => NotificationKinds.meetupRoute(kindKey, meetupId, enabled: enabled);
 
 /// Push-tap fallback, used only when `action_route` is empty.
 ///

@@ -10,10 +10,17 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
+import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/features/profile/presentation/widgets/settings_inner_top_bar.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/notifications/presentation/controllers/notification_settings_controller.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
+
+typedef _G = NotificationSettingsGroup;
+
+/// KAN-978: a toggle's kinds come from the kind registry.
+List<String> _kinds(Set<NotificationSettingsGroup> groups) =>
+    NotificationKinds.kindsIn(groups);
 
 /// A row in the screen that maps a human label to one or more
 /// `notification_kinds.key`s. The toggle is ON when none of [kinds] are muted.
@@ -43,25 +50,25 @@ class NotificationSettingsScreen extends ConsumerWidget {
       l.notif_settings_kind_game_invites,
       l.notif_settings_kind_game_invites_sub,
       'game',
-      const ['game.invited', 'game.join_request', 'game.join_accepted'],
+      _kinds({_G.gameInvites}),
     ),
     _KindToggle(
       l.notif_settings_kind_game_reminders,
       l.notif_settings_kind_game_reminders_sub,
       'alarm',
-      const ['game.reminder'],
+      _kinds({_G.gameReminders}),
     ),
     _KindToggle(
       l.notif_settings_kind_game_updates,
       l.notif_settings_kind_game_updates_sub,
       'refresh-circle',
-      const ['game.updated', 'game.waitlist_promoted', 'game.player_joined'],
+      _kinds({_G.gameUpdates, _G.waitlist}),
     ),
     _KindToggle(
       l.notif_settings_kind_booking,
       l.notif_settings_kind_booking_sub,
       'card',
-      const ['arena.payment_required'],
+      _kinds({_G.booking}),
     ),
   ];
 
@@ -70,29 +77,25 @@ class NotificationSettingsScreen extends ConsumerWidget {
       l.notif_settings_kind_likes,
       l.notif_settings_kind_likes_sub,
       'heart',
-      const [
-        'social.post_liked',
-        'social.post_reacted',
-        'social.comment_liked',
-      ],
+      _kinds({_G.likes}),
     ),
     _KindToggle(
       l.notif_settings_kind_comments,
       l.notif_settings_kind_comments_sub,
       'message-text',
-      const ['social.post_commented'],
+      _kinds({_G.comments}),
     ),
     _KindToggle(
       l.notif_settings_kind_mentions,
       l.notif_settings_kind_mentions_sub,
       'tag-user',
-      const ['social.mentioned_in_post', 'social.mentioned_in_comment'],
+      _kinds({_G.mentions}),
     ),
     _KindToggle(
       l.notif_settings_kind_followers,
       l.notif_settings_kind_followers_sub,
       'user-add',
-      const ['social.followed'],
+      _kinds({_G.followers}),
     ),
   ];
 
@@ -104,50 +107,50 @@ class NotificationSettingsScreen extends ConsumerWidget {
       l.notif_settings_kind_friends,
       l.notif_settings_kind_friends_sub,
       'profile-add',
-      const ['friend.requested', 'friend.accepted'],
+      _kinds({_G.friends}),
     ),
     _KindToggle(
       l.notif_settings_kind_squads,
       l.notif_settings_kind_squads_sub,
       'shield-tick',
-      const ['squad.invited'],
+      _kinds({_G.squads}),
     ),
     _KindToggle(
       l.notif_settings_kind_meetups,
       l.notif_settings_kind_meetups_sub,
       'people',
-      const ['meetup.invited', 'meetup.player_joined'],
+      _kinds({_G.meetups}),
     ),
     if (meetups) ...[
       _KindToggle(
         l.notif_settings_kind_meetup_rsvps,
         l.notif_settings_kind_meetup_rsvps_sub,
         'people',
-        const ['meetup.rsvp_received'],
+        _kinds({_G.meetupRsvps}),
       ),
       _KindToggle(
         l.notif_settings_kind_meetup_requests,
         l.notif_settings_kind_meetup_requests_sub,
         'profile-add',
-        const ['meetup.request_received'],
+        _kinds({_G.meetupRequests}),
       ),
       _KindToggle(
         l.notif_settings_kind_meetup_approved,
         l.notif_settings_kind_meetup_approved_sub,
         'refresh-circle',
-        const ['meetup.request_approved'],
+        _kinds({_G.meetupApproved}),
       ),
       _KindToggle(
         l.notif_settings_kind_meetup_declined,
         l.notif_settings_kind_meetup_declined_sub,
         'refresh-circle',
-        const ['meetup.request_declined'],
+        _kinds({_G.meetupDeclined}),
       ),
       _KindToggle(
         l.notif_settings_kind_meetup_cancelled,
         l.notif_settings_kind_meetup_cancelled_sub,
         'alarm',
-        const ['meetup.cancelled'],
+        _kinds({_G.meetupCancelled}),
       ),
     ],
   ];

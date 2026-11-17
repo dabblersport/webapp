@@ -4,6 +4,7 @@
 // The full screen stays at /settings/notifications.
 
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
+import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -34,30 +35,26 @@ void showNotifPrefsSheet(BuildContext context) {
 }
 
 class _Pref {
-  const _Pref(this.icon, this.kinds);
+  const _Pref(this.icon, this.groups);
   final String icon;
-  final List<String> kinds;
+  final Set<NotificationSettingsGroup> groups;
+
+  /// KAN-978: the group's kinds come from the kind registry.
+  List<String> get kinds => NotificationKinds.kindsIn(groups);
 }
 
-/// The groups the design lists, each mapped to the `notification_kinds` keys
-/// the existing settings screen already toggles together.
+/// The groups the design lists, each the settings groups the existing
+/// settings screen already toggles together.
 const _prefs = <String, _Pref>{
-  'invites': _Pref('game', [
-    'game.invited',
-    'game.join_request',
-    'game.join_accepted',
-  ]),
-  'waitlist': _Pref('notification-bing', ['game.waitlist_promoted']),
-  'payments': _Pref('wallet', ['arena.payment_required']),
-  'social': _Pref('people', [
-    'social.post_liked',
-    'social.post_reacted',
-    'social.comment_liked',
-    'social.post_commented',
-    'social.mentioned_in_post',
-    'social.mentioned_in_comment',
-    'social.followed',
-  ]),
+  'invites': _Pref('game', {NotificationSettingsGroup.gameInvites}),
+  'waitlist': _Pref('notification-bing', {NotificationSettingsGroup.waitlist}),
+  'payments': _Pref('wallet', {NotificationSettingsGroup.booking}),
+  'social': _Pref('people', {
+    NotificationSettingsGroup.likes,
+    NotificationSettingsGroup.comments,
+    NotificationSettingsGroup.mentions,
+    NotificationSettingsGroup.followers,
+  }),
 };
 
 class NotifPrefsSheetBody extends ConsumerWidget {

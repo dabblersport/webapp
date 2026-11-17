@@ -10,6 +10,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/features/notifications/utils/notification_localizer.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show isFollowingProvider, profileIdByUserIdProvider, myProfileIdProvider;
@@ -92,10 +93,11 @@ class NotificationRow extends ConsumerWidget {
     WidgetRef ref,
     AppNotification n,
   ) {
-    final label = _actionLabelFor(context, n.kindKey);
-    if (label == null) return null;
+    // KAN-978: the kind's CTA comes from the registry.
+    final cta = NotificationKinds.ctaOf(n.kindKey);
+    if (cta == null) return null;
 
-    if (n.kindKey.startsWith('social.followed')) {
+    if (cta.action == NotificationActionId.followBack) {
       final actorId = _actorUserId(n.payload);
       if (actorId != null) {
         final visible = ref.watch(_followBackVisibleProvider(actorId));
@@ -103,9 +105,7 @@ class NotificationRow extends ConsumerWidget {
       }
     }
 
-    final isPrimary =
-        n.kindKey.contains('invited') || n.kindKey.contains('reminder');
-    return (label: label, filled: isPrimary);
+    return (label: cta.label(AppLocalizations.of(context)), filled: cta.filled);
   }
 
   String? _actorUserId(Map<String, dynamic>? ctx) {
@@ -122,18 +122,6 @@ class NotificationRow extends ConsumerWidget {
     return null;
   }
 
-  String? _actionLabelFor(BuildContext context, String kindKey) {
-    final l10n = AppLocalizations.of(context);
-    if (kindKey.startsWith('friend.requested'))
-      return l10n.notif_action_respond;
-    if (kindKey.startsWith('social.followed'))
-      return l10n.notif_action_follow_back;
-    if (kindKey.startsWith('game.invited')) return l10n.notif_action_view;
-    if (kindKey.startsWith('social.circle_joined'))
-      return l10n.notif_action_see_circle;
-    return null;
-  }
-
   String? _actorFromPayload(Map<String, dynamic>? p) {
     if (p == null) return null;
     for (final k in const ['actor_username', 'actor_name', 'actor_user_name']) {
@@ -144,37 +132,10 @@ class NotificationRow extends ConsumerWidget {
   }
 }
 
+/// KAN-978: the kind's icon and tone come from the registry.
 NotifVisual _visualForKind(String kindKey) {
-  if (kindKey.startsWith('social.post_liked') ||
-      kindKey.startsWith('social.comment_liked')) {
-    return const NotifVisual('heart', DabblerIconTileTone.accent);
-  }
-  if (kindKey.startsWith('social.post_commented') ||
-      kindKey.startsWith('social.mentioned')) {
-    return const NotifVisual('message', DabblerIconTileTone.info);
-  }
-  if (kindKey.startsWith('social.followed') || kindKey.startsWith('friend')) {
-    return const NotifVisual('user-add', DabblerIconTileTone.brand);
-  }
-  if (kindKey.startsWith('social.circle_joined')) {
-    return const NotifVisual('people', DabblerIconTileTone.brand);
-  }
-  if (kindKey.startsWith('booking') || kindKey.startsWith('arena')) {
-    return const NotifVisual('ticket', DabblerIconTileTone.info);
-  }
-  if (kindKey.startsWith('game')) {
-    return const NotifVisual('game', DabblerIconTileTone.amber);
-  }
-  if (kindKey.startsWith('achievement') || kindKey.startsWith('reward')) {
-    return const NotifVisual('cup', DabblerIconTileTone.amber);
-  }
-  if (kindKey.startsWith('loyalty')) {
-    return const NotifVisual('coin', DabblerIconTileTone.amber);
-  }
-  if (kindKey.startsWith('system')) {
-    return const NotifVisual('warning-2', DabblerIconTileTone.accent);
-  }
-  return const NotifVisual('notification', DabblerIconTileTone.brand);
+  final (icon, tone) = NotificationKinds.visualOf(kindKey);
+  return NotifVisual(icon, tone);
 }
 
 String _formatTime(BuildContext context, DateTime dateTime) {

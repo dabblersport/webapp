@@ -8,8 +8,7 @@ import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
-import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/features/notifications/meetup_notification_routes.dart';
+import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import '../providers/notification_center_badge_providers.dart';
@@ -235,44 +234,33 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   List<ChipData> _notifChips(dynamic state) {
     final notifs = (state.notifications as List<AppNotification>);
     final l10n = AppLocalizations.of(context);
-    int countOf(bool Function(AppNotification) test) =>
-        notifs.where((n) => !n.isRead && test(n)).length;
+    // KAN-978: a kind's chip comes from the registry.
+    int countOf(String chip) => notifs
+        .where(
+          (n) =>
+              !n.isRead && NotificationKinds.currentChipOf(n.kindKey) == chip,
+        )
+        .length;
     return [
       ChipData('all', l10n.notif_chip_all, 'message', count: state.unreadCount),
-      ChipData(
-        'games',
-        l10n.notif_chip_games,
-        'game',
-        count: countOf((n) => n.kindKey.startsWith('game')),
-      ),
+      ChipData('games', l10n.notif_chip_games, 'game', count: countOf('games')),
       ChipData(
         'bookings',
         l10n.notif_chip_bookings,
         'calendar',
-        count: countOf(
-          (n) =>
-              n.kindKey.startsWith('booking') || n.kindKey.startsWith('arena'),
-        ),
+        count: countOf('bookings'),
       ),
       ChipData(
         'social',
         l10n.notif_chip_social,
         'people',
-        count: countOf(
-          (n) =>
-              n.kindKey.startsWith('social') || n.kindKey.startsWith('friend'),
-        ),
+        count: countOf('social'),
       ),
       ChipData(
         'achieve',
         l10n.notif_chip_achievements,
         'cup',
-        count: countOf(
-          (n) =>
-              n.kindKey.startsWith('achievement') ||
-              n.kindKey.startsWith('reward') ||
-              n.kindKey.startsWith('loyalty'),
-        ),
+        count: countOf('achieve'),
       ),
     ];
   }
@@ -354,24 +342,12 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
 
   List<AppNotification> _filterNotifications(List<AppNotification> items) {
     if (_selectedFilter == 'all') return items;
-    return items.where((n) {
-      switch (_selectedFilter) {
-        case 'games':
-          return n.kindKey.startsWith('game');
-        case 'bookings':
-          return n.kindKey.startsWith('booking') ||
-              n.kindKey.startsWith('arena');
-        case 'social':
-          return n.kindKey.startsWith('social') ||
-              n.kindKey.startsWith('friend');
-        case 'achieve':
-          return n.kindKey.startsWith('achievement') ||
-              n.kindKey.startsWith('reward') ||
-              n.kindKey.startsWith('loyalty');
-        default:
-          return true;
-      }
-    }).toList();
+    // KAN-978: a kind's chip comes from the registry.
+    return items
+        .where(
+          (n) => NotificationKinds.currentChipOf(n.kindKey) == _selectedFilter,
+        )
+        .toList();
   }
 
   String _bucketLabel(DateTime dt) {
@@ -416,96 +392,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       final embedded = ctx['action_route'];
       if (embedded is String && embedded.trim().isNotEmpty) return embedded;
     }
-    return _routeFromKindKey(n.kindKey, ctx);
-  }
-
-  String? _routeFromKindKey(String kindKey, Map<String, dynamic>? ctx) {
-    switch (kindKey) {
-      case 'social.post_liked':
-      case 'social.post_commented':
-      case 'social.mentioned_in_post':
-        final id = _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'post_id');
-        if (id != null) return '${RoutePaths.socialPostDetail}/$id';
-        return null;
-      case 'social.comment_liked':
-      case 'social.mentioned_in_comment':
-        final postId = _ctxString(ctx, 'post_id');
-        if (postId != null) return '${RoutePaths.socialPostDetail}/$postId';
-        final entityId = _ctxString(ctx, 'entity_id');
-        if (entityId != null) return '${RoutePaths.socialPostDetail}/$entityId';
-        return null;
-      case 'social.followed':
-      case 'social.circle_joined':
-        final actorId =
-            _ctxString(ctx, 'actor_user_id') ??
-            _ctxFirstInList(ctx, 'follower_user_ids') ??
-            _ctxFirstInList(ctx, 'actor_user_ids');
-        if (actorId != null) return '${RoutePaths.userProfile}/$actorId';
-        return null;
-      case 'friend.requested':
-        return RoutePaths.socialFriends;
-      case 'friend.accepted':
-        final actorId = _ctxString(ctx, 'actor_user_id');
-        if (actorId != null) return '${RoutePaths.userProfile}/$actorId';
-        return RoutePaths.socialFriends;
-      case 'game.invited':
-      case 'game.updated':
-      case 'game.join_request':
-      case 'game.waitlist_promoted':
-      case 'game.reminder':
-      case 'game.player_joined':
-      case 'game.join_accepted':
-      case 'game.removed':
-        // Game detail lives at /sports/games/:id — RoutePaths.games ('/games')
-        // has no route registered. Join requests land on the requests card.
-        final id = _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'game_id');
-        if (id != null) {
-          final base = RoutePaths.gameDetail(id);
-          return kindKey == 'game.join_request' ? '$base?focus=requests' : base;
-        }
-        return RoutePaths.gamesTab;
-      case 'arena.payment_required':
-        final id = _ctxString(ctx, 'entity_id');
-        if (id != null) return RoutePaths.gameDetail(id);
-        return null;
-      case 'reward.badge_awarded':
-        return RoutePaths.profile;
-      case 'meetup.invited':
-      case 'meetup.player_joined':
-      case 'meetup.rsvp_received':
-      case 'meetup.request_received':
-      case 'meetup.request_approved':
-      case 'meetup.request_declined':
-      case 'meetup.cancelled':
-        return meetupNotificationRoute(
-          kindKey: kindKey,
-          meetupId:
-              _ctxString(ctx, 'entity_id') ?? _ctxString(ctx, 'meetup_id'),
-          enabled: FeatureFlags.enableMeetups,
-        );
-      default:
-        return null;
-    }
-  }
-
-  String? _ctxString(Map<String, dynamic>? ctx, String key) {
-    if (ctx == null) return null;
-    final v = ctx[key];
-    if (v == null) return null;
-    final s = v is String ? v : v.toString();
-    return s.trim().isNotEmpty ? s : null;
-  }
-
-  String? _ctxFirstInList(Map<String, dynamic>? ctx, String key) {
-    if (ctx == null) return null;
-    final v = ctx[key];
-    if (v is List && v.isNotEmpty) {
-      final first = v.first;
-      if (first == null) return null;
-      final s = first is String ? first : first.toString();
-      return s.trim().isNotEmpty ? s : null;
-    }
-    return null;
+    return NotificationKinds.route(n.kindKey, ctx);
   }
 
   void _handleActivityTap(ActivityFeedEvent activity) {

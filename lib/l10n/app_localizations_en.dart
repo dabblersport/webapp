@@ -2515,6 +2515,45 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notif_action_see_circle => 'See circle';
 
   @override
+  String get notif_action_accept => 'Accept';
+
+  @override
+  String get notif_action_approve => 'Approve';
+
+  @override
+  String get notif_action_reject => 'Reject';
+
+  @override
+  String get notif_action_going => 'Going';
+
+  @override
+  String get notif_action_not_going => 'Not going';
+
+  @override
+  String get notif_action_check_in => 'Check in';
+
+  @override
+  String get notif_action_request_review => 'Ask for a review';
+
+  @override
+  String get notif_action_keep_decision => 'Keep my decision';
+
+  @override
+  String get notif_action_confirm_end => 'Confirm end';
+
+  @override
+  String get notif_action_enter_score => 'Enter score';
+
+  @override
+  String get notif_action_rate => 'Rate';
+
+  @override
+  String get notif_action_this_was_me => 'This was me';
+
+  @override
+  String get notif_action_not_me => 'Not me';
+
+  @override
   String get notif_load_older => 'Load older';
 
   @override
@@ -9001,4 +9040,729 @@ class AppLocalizationsEn extends AppLocalizations {
   String act_reason_price(String price) {
     return 'AED $price per court';
   }
+
+  @override
+  String get notif_t_arena_payment_required =>
+      'Payment required for your booking';
+
+  @override
+  String get notif_b_arena_payment_required =>
+      'Complete the payment to keep your booking.';
+
+  @override
+  String get notif_t_auth_welcome => 'Welcome to Dabbler';
+
+  @override
+  String get notif_b_auth_welcome =>
+      'Set up your profile to find games near you.';
+
+  @override
+  String notif_t_friend_accepted(String actor) {
+    return '$actor followed you back';
+  }
+
+  @override
+  String get notif_b_friend_accepted => 'Tap to see their profile.';
+
+  @override
+  String notif_t_friend_requested(String actor) {
+    return '$actor wants to connect';
+  }
+
+  @override
+  String get notif_b_friend_requested => 'Tap to see their profile.';
+
+  @override
+  String notif_t_game_invited(String actor) {
+    return '$actor invited you to a game';
+  }
+
+  @override
+  String get notif_b_game_invited => 'Tap to see the game and reply.';
+
+  @override
+  String get notif_t_game_join_accepted => 'Your request to join was accepted';
+
+  @override
+  String get notif_b_game_join_accepted => 'You\'re in. See the game details.';
+
+  @override
+  String notif_t_game_join_request(String actor) {
+    return '$actor wants to join your game';
+  }
+
+  @override
+  String get notif_b_game_join_request => 'Review the request.';
+
+  @override
+  String notif_t_game_player_joined(String actor) {
+    return '$actor joined your game';
+  }
+
+  @override
+  String get notif_b_game_player_joined => 'See who\'s playing.';
+
+  @override
+  String get rem_t_game_reminder => 'Your game starts soon';
+
+  @override
+  String get rem_b_game_reminder => 'Get ready and check the time and venue.';
+
+  @override
+  String get notif_t_game_removed => 'You were removed from a game';
+
+  @override
+  String get notif_b_game_removed => 'Tap to see the details.';
+
+  @override
+  String get notif_t_game_updated => 'A game you joined was updated';
+
+  @override
+  String get notif_b_game_updated => 'Tap to see what changed.';
+
+  @override
+  String get notif_t_game_waitlist_promoted =>
+      'You\'ve been promoted from the waitlist';
+
+  @override
+  String get notif_b_game_waitlist_promoted =>
+      'You have a place in the game now.';
+
+  @override
+  String get notif_t_meetup_cancelled =>
+      'A meet-up you signed up for was cancelled';
+
+  @override
+  String get notif_b_meetup_cancelled => 'Tap to see the details.';
+
+  @override
+  String notif_t_meetup_invited(String actor) {
+    return '$actor invited you to a meet-up';
+  }
+
+  @override
+  String get notif_b_meetup_invited => 'Tap to see the meet-up and reply.';
+
+  @override
+  String notif_t_meetup_player_joined(String actor) {
+    return '$actor joined your meet-up';
+  }
+
+  @override
+  String get notif_b_meetup_player_joined => 'See who\'s coming.';
+
+  @override
+  String get notif_t_meetup_request_approved =>
+      'Your request to join a meet-up was approved';
+
+  @override
+  String get notif_b_meetup_request_approved =>
+      'You\'re in. See the meet-up details.';
+
+  @override
+  String get notif_t_meetup_request_declined =>
+      'Your request to join a meet-up was declined';
+
+  @override
+  String get notif_b_meetup_request_declined =>
+      'Find another meet-up near you.';
+
+  @override
+  String notif_t_meetup_request_received(String actor) {
+    return '$actor asked to join your meet-up';
+  }
+
+  @override
+  String get notif_b_meetup_request_received => 'Review the request.';
+
+  @override
+  String notif_t_meetup_rsvp_received(String actor) {
+    return '$actor is going to your meet-up';
+  }
+
+  @override
+  String get notif_b_meetup_rsvp_received => 'See who\'s coming.';
+
+  @override
+  String notif_t_message_received(String actor) {
+    return 'New message from $actor';
+  }
+
+  @override
+  String get notif_b_message_received => 'Open the chat to read it.';
+
+  @override
+  String get notif_t_moderation_report_submitted => 'New content report';
+
+  @override
+  String get notif_b_moderation_report_submitted =>
+      'Review it in the moderation queue.';
+
+  @override
+  String get notif_t_moderation_user_blocked => 'User block recorded';
+
+  @override
+  String get notif_b_moderation_user_blocked => 'A user blocked another user.';
+
+  @override
+  String get notif_t_reward_badge_awarded => 'You earned a new badge!';
+
+  @override
+  String get notif_b_reward_badge_awarded => 'See it on your rewards page.';
+
+  @override
+  String notif_t_social_circle_joined(String actor) {
+    return '$actor joined your circle';
+  }
+
+  @override
+  String get notif_b_social_circle_joined => 'Say hello.';
+
+  @override
+  String notif_t_social_comment_liked(String actor) {
+    return '$actor liked your comment';
+  }
+
+  @override
+  String get notif_b_social_comment_liked => 'Tap to see the comment.';
+
+  @override
+  String notif_t_social_followed(String actor) {
+    return '$actor started following you';
+  }
+
+  @override
+  String get notif_b_social_followed => 'Tap to see their profile.';
+
+  @override
+  String notif_t_social_friend_accepted(String actor) {
+    return '$actor followed you back';
+  }
+
+  @override
+  String get notif_b_social_friend_accepted => 'Tap to see their profile.';
+
+  @override
+  String notif_t_social_friend_request(String actor) {
+    return '$actor wants to connect';
+  }
+
+  @override
+  String get notif_b_social_friend_request => 'Tap to see their profile.';
+
+  @override
+  String notif_t_social_mentioned_in_comment(String actor) {
+    return '$actor mentioned you in a comment';
+  }
+
+  @override
+  String get notif_b_social_mentioned_in_comment => 'Tap to see the comment.';
+
+  @override
+  String notif_t_social_mentioned_in_post(String actor) {
+    return '$actor mentioned you in a post';
+  }
+
+  @override
+  String get notif_b_social_mentioned_in_post => 'Tap to see the post.';
+
+  @override
+  String notif_t_social_post_commented(String actor) {
+    return '$actor commented on your post';
+  }
+
+  @override
+  String get notif_b_social_post_commented => 'Tap to read the comment.';
+
+  @override
+  String notif_t_social_post_liked(String actor) {
+    return '$actor liked your post';
+  }
+
+  @override
+  String get notif_b_social_post_liked => 'Tap to see the post.';
+
+  @override
+  String notif_t_social_post_reacted(String actor) {
+    return '$actor reacted to your post';
+  }
+
+  @override
+  String get notif_b_social_post_reacted => 'Tap to see the post.';
+
+  @override
+  String notif_t_squad_invited(String actor) {
+    return '$actor invited you to a squad';
+  }
+
+  @override
+  String get notif_b_squad_invited => 'Tap to see the squad and reply.';
+
+  @override
+  String get notif_t_system_announcement => 'Announcement from Dabbler';
+
+  @override
+  String get notif_b_system_announcement => 'Tap to read it.';
+
+  @override
+  String notif_t_game_join_declined(String title) {
+    return 'Your request to join $title was declined';
+  }
+
+  @override
+  String get notif_b_game_join_declined => 'Find another game near you.';
+
+  @override
+  String notif_t_game_invite_accepted(String actor, String title) {
+    return '$actor accepted your invite to $title';
+  }
+
+  @override
+  String get notif_b_game_invite_accepted => 'See who\'s playing.';
+
+  @override
+  String notif_t_game_invite_declined(String actor, String title) {
+    return '$actor declined your invite to $title';
+  }
+
+  @override
+  String get notif_b_game_invite_declined => 'You can invite someone else.';
+
+  @override
+  String notif_t_game_invite_withdrawn(String title) {
+    return 'Your invite to $title was withdrawn';
+  }
+
+  @override
+  String get notif_b_game_invite_withdrawn =>
+      'The organiser withdrew the invite.';
+
+  @override
+  String notif_t_game_invite_expired(String title) {
+    return 'Your invite to $title expired';
+  }
+
+  @override
+  String get notif_b_game_invite_expired => 'The invite is no longer valid.';
+
+  @override
+  String notif_t_game_player_left(String actor, String title) {
+    return '$actor left $title';
+  }
+
+  @override
+  String get notif_b_game_player_left => 'A place is open in your game.';
+
+  @override
+  String notif_t_game_full(String title) {
+    return '$title is full';
+  }
+
+  @override
+  String get notif_b_game_full => 'Every place in your game is taken.';
+
+  @override
+  String notif_t_game_waitlist_joined(String title) {
+    return 'You\'re on the waitlist for $title';
+  }
+
+  @override
+  String get notif_b_game_waitlist_joined =>
+      'We\'ll tell you if a place opens.';
+
+  @override
+  String notif_t_game_waitlist_position_changed(String title) {
+    return 'You moved up the waitlist for $title';
+  }
+
+  @override
+  String notif_b_game_waitlist_position_changed(String position) {
+    return 'You\'re now number $position.';
+  }
+
+  @override
+  String notif_t_meetup_removed(String title) {
+    return 'You were removed from $title';
+  }
+
+  @override
+  String notif_b_meetup_removed(String organiser, String reason) {
+    return '$organiser removed you: $reason';
+  }
+
+  @override
+  String notif_t_meetup_player_left(String actor, String title) {
+    return '$actor left $title';
+  }
+
+  @override
+  String get notif_b_meetup_player_left => 'A place is open in your meet-up.';
+
+  @override
+  String notif_t_meetup_rsvp_interested(String actor, String title) {
+    return '$actor is interested in $title';
+  }
+
+  @override
+  String get notif_b_meetup_rsvp_interested => 'See who\'s interested.';
+
+  @override
+  String notif_t_game_cancelled(String title) {
+    return '$title was cancelled';
+  }
+
+  @override
+  String get notif_b_game_cancelled => 'The organiser cancelled this game.';
+
+  @override
+  String notif_t_game_time_changed(String title) {
+    return '$title has a new time';
+  }
+
+  @override
+  String notif_b_game_time_changed(String oldValue, String newValue) {
+    return 'Was $oldValue, now $newValue.';
+  }
+
+  @override
+  String notif_t_game_venue_changed(String title) {
+    return '$title has a new venue';
+  }
+
+  @override
+  String notif_b_game_venue_changed(String oldValue, String newValue) {
+    return 'Was $oldValue, now $newValue.';
+  }
+
+  @override
+  String notif_t_game_details_changed(String title) {
+    return '$title was updated';
+  }
+
+  @override
+  String notif_b_game_details_changed(
+    String field,
+    String oldValue,
+    String newValue,
+  ) {
+    return '$field changed from $oldValue to $newValue.';
+  }
+
+  @override
+  String notif_t_game_occurrence_cancelled(String title, String when) {
+    return '$title on $when was cancelled';
+  }
+
+  @override
+  String get notif_b_game_occurrence_cancelled =>
+      'Only this date is cancelled. The series continues.';
+
+  @override
+  String notif_t_game_series_changed(String title) {
+    return 'The $title series was updated';
+  }
+
+  @override
+  String get notif_b_game_series_changed =>
+      'Tap to see what changed in the upcoming dates.';
+
+  @override
+  String notif_t_meetup_time_changed(String title) {
+    return '$title has a new time';
+  }
+
+  @override
+  String notif_b_meetup_time_changed(String oldValue, String newValue) {
+    return 'Was $oldValue, now $newValue.';
+  }
+
+  @override
+  String notif_t_meetup_venue_changed(String title) {
+    return '$title has a new venue';
+  }
+
+  @override
+  String notif_b_meetup_venue_changed(String oldValue, String newValue) {
+    return 'Was $oldValue, now $newValue.';
+  }
+
+  @override
+  String notif_t_meetup_details_changed(String title) {
+    return '$title was updated';
+  }
+
+  @override
+  String notif_b_meetup_details_changed(
+    String field,
+    String oldValue,
+    String newValue,
+  ) {
+    return '$field changed from $oldValue to $newValue.';
+  }
+
+  @override
+  String notif_t_meetup_occurrence_cancelled(String title, String when) {
+    return '$title on $when was cancelled';
+  }
+
+  @override
+  String get notif_b_meetup_occurrence_cancelled =>
+      'Only this date is cancelled. The series continues.';
+
+  @override
+  String notif_t_meetup_series_changed(String title) {
+    return 'The $title series was updated';
+  }
+
+  @override
+  String get notif_b_meetup_series_changed =>
+      'Tap to see what changed in the upcoming dates.';
+
+  @override
+  String rem_t_meetup_reminder(String title, String when) {
+    return '$title starts $when';
+  }
+
+  @override
+  String get rem_b_meetup_reminder => 'Tap to see the details and get ready.';
+
+  @override
+  String rem_t_meetup_confirm_attendance(String title, String time) {
+    return '$title is today at $time';
+  }
+
+  @override
+  String get rem_b_meetup_confirm_attendance => 'Are you going?';
+
+  @override
+  String att_t_activity_checkin_open(String title) {
+    return 'Check-in is open for $title';
+  }
+
+  @override
+  String att_b_activity_checkin_open(String closeTime) {
+    return 'Check in before $closeTime.';
+  }
+
+  @override
+  String att_t_activity_checkin_closing(String title) {
+    return 'Check-in for $title closes soon';
+  }
+
+  @override
+  String get att_b_activity_checkin_closing =>
+      'Check in now so you\'re counted.';
+
+  @override
+  String att_t_activity_checked_in(String title) {
+    return 'You checked in to $title';
+  }
+
+  @override
+  String get att_b_activity_checked_in => 'Have a great game.';
+
+  @override
+  String att_t_activity_attendance_corrected(String title) {
+    return 'Your attendance for $title was updated';
+  }
+
+  @override
+  String att_b_activity_attendance_corrected(String organiser, String status) {
+    return '$organiser changed it to $status.';
+  }
+
+  @override
+  String att_t_activity_no_show_pending(String title) {
+    return 'You were marked as not attended at $title';
+  }
+
+  @override
+  String get att_b_activity_no_show_pending =>
+      'This confirms in 48h unless you ask for a review.';
+
+  @override
+  String att_t_activity_review_requested(String actor, String title) {
+    return '$actor asked to review their attendance at $title';
+  }
+
+  @override
+  String get att_b_activity_review_requested =>
+      'Accept the correction or keep your decision.';
+
+  @override
+  String att_t_activity_review_accepted(String title) {
+    return 'Your attendance at $title was corrected';
+  }
+
+  @override
+  String get att_b_activity_review_accepted =>
+      'The organiser accepted your review request.';
+
+  @override
+  String att_t_activity_review_kept(String title) {
+    return 'Your no-show at $title stands';
+  }
+
+  @override
+  String get att_b_activity_review_kept =>
+      'The organiser kept the original decision.';
+
+  @override
+  String att_t_activity_no_show_confirmed(String title) {
+    return 'Your no-show at $title is confirmed';
+  }
+
+  @override
+  String get att_b_activity_no_show_confirmed =>
+      'It now counts toward your show-up rate.';
+
+  @override
+  String att_t_activity_showup_rate_updated(String rate) {
+    return 'Your show-up rate is now $rate%';
+  }
+
+  @override
+  String att_b_activity_showup_rate_updated(String count) {
+    return 'Based on $count confirmed games and meet-ups.';
+  }
+
+  @override
+  String res_t_activity_confirm_end(String title) {
+    return 'Did $title end?';
+  }
+
+  @override
+  String get res_b_activity_confirm_end =>
+      'Confirm the end so players can submit results.';
+
+  @override
+  String res_t_activity_confirm_end_reminder(String title) {
+    return 'Reminder: confirm $title has ended';
+  }
+
+  @override
+  String get res_b_activity_confirm_end_reminder =>
+      'Otherwise it closes as \"scheduled time ended\".';
+
+  @override
+  String res_t_activity_auto_closed(String title) {
+    return '$title closed';
+  }
+
+  @override
+  String get res_b_activity_auto_closed => 'The scheduled time ended.';
+
+  @override
+  String res_t_activity_ended(String title) {
+    return '$title has ended';
+  }
+
+  @override
+  String get res_b_activity_ended => 'Thanks for playing.';
+
+  @override
+  String res_t_activity_post_activity(String title) {
+    return 'How did $title go?';
+  }
+
+  @override
+  String get res_b_activity_post_activity =>
+      'Enter the score and rate the players. Closes in 48h.';
+
+  @override
+  String res_t_activity_result_ready(String title) {
+    return 'Approve the result for $title';
+  }
+
+  @override
+  String res_b_activity_result_ready(String score) {
+    return 'Most players said $score. Approve or reject within 24h.';
+  }
+
+  @override
+  String res_t_activity_result_enter_final(String title) {
+    return 'Enter the final score for $title';
+  }
+
+  @override
+  String get res_b_activity_result_enter_final =>
+      'Players didn\'t agree on a score. You have 24h.';
+
+  @override
+  String res_t_activity_result_confirmed(String title, String score) {
+    return 'Final result for $title: $score';
+  }
+
+  @override
+  String get res_b_activity_result_confirmed => 'Tap to see the result.';
+
+  @override
+  String res_t_activity_result_corrected(String title, String score) {
+    return 'The organiser set the final result for $title: $score';
+  }
+
+  @override
+  String get res_b_activity_result_corrected => 'Tap to see the result.';
+
+  @override
+  String res_t_activity_result_closed(String title) {
+    return '$title closed with no result';
+  }
+
+  @override
+  String get res_b_activity_result_closed =>
+      'No final score was entered in time.';
+
+  @override
+  String res_t_activity_rating_reminder(String title) {
+    return 'Rate $title before it closes';
+  }
+
+  @override
+  String get res_b_activity_rating_reminder =>
+      'Your ratings help everyone. The window closes soon.';
+
+  @override
+  String res_t_activity_summary(String title) {
+    return 'Your summary for $title is ready';
+  }
+
+  @override
+  String get res_b_activity_summary => 'See your result and ratings.';
+
+  @override
+  String get sec_t_security_new_signin => 'New sign-in to your Dabbler account';
+
+  @override
+  String get sec_b_security_new_signin => 'Was this you? Tap to review.';
+
+  @override
+  String get sec_t_security_password_changed => 'Your password was changed';
+
+  @override
+  String get sec_b_security_password_changed =>
+      'Wasn\'t you? Secure your account now.';
+
+  @override
+  String get sec_t_security_email_changed => 'Your email address was changed';
+
+  @override
+  String get sec_b_security_email_changed =>
+      'Wasn\'t you? Secure your account now.';
+
+  @override
+  String notif_t_social_comment_replied(String actor) {
+    return '$actor replied to your comment';
+  }
+
+  @override
+  String get notif_b_social_comment_replied => 'Tap to read the reply.';
+
+  @override
+  String notif_t_social_post_reposted(String actor) {
+    return '$actor reposted your post';
+  }
+
+  @override
+  String get notif_b_social_post_reposted => 'Tap to see the post.';
 }
