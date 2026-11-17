@@ -13,6 +13,9 @@
 -- 20261116160213): a card marked with the real RPC keeps its row and is pushed down one by a newer post.
 -- Run 2026-11-16 by backend-1 after 20261116160213: v_neg=false -> PASS 13/13 (T13 rows 15->15->15->16);
 -- v_neg=true -> FAIL 13 (T13 rows 15->2->2->2, the PEER-reported jump).
+-- T14 is the KAN-966c probe (migration 20261116165447): no profiles.city but a saved location gets cards.
+-- Run 2026-11-16 by backend-1 after 20261116165447: v_neg=false -> PASS 14/14 (T14 3 cards, same-area delta +5.00);
+-- v_neg=true -> FAIL 14 (T14 0 cards with an Ajman location).
 CREATE OR REPLACE FUNCTION pg_temp.k966_old(p_limit integer DEFAULT 50, p_cursor timestamp with time zone DEFAULT NULL::timestamp with time zone, p_sport_id uuid DEFAULT NULL::uuid, p_sport_ids uuid[] DEFAULT NULL::uuid[])
  RETURNS TABLE(activity_id uuid, activity_type text, parent_activity_id uuid, actor_profile_id uuid, created_at timestamp with time zone, seen_at timestamp with time zone, source text)
  LANGUAGE plpgsql
@@ -115,6 +118,7 @@ DECLARE
   v_err      text;
   v_s_id     uuid; v_s_kind text; v_s_fa timestamptz; v_s_n int;
   v_s_r0     bigint; v_s_r1 bigint; v_s_r2 bigint; v_s_r3 bigint;
+  v_loc_area uuid; v_loc_ent uuid;
   v_k        int := 0;
 BEGIN
   CREATE TEMP TABLE _k966 ON COMMIT DROP AS
@@ -305,6 +309,42 @@ BEGIN
   v_info := v_info || format('T7 outside=%s cairo=%s marina=%s; ', v_bad,
     (SELECT count(*) FROM _k966 WHERE lbl = 'cairo' AND item_kind = 'active'), (SELECT count(*) FROM _k966 WHERE lbl = 'marina' AND item_kind = 'active'));
   v_tap := v_tap || format('%s %s - area filter (same city or area only)', CASE WHEN v_ok THEN 'ok' ELSE 'not ok' END, v_k);
+  IF NOT v_ok THEN v_fail := v_fail + 1; END IF;
+
+  -- T14 (KAN-966c, migration 20261116165447_kan966c): a viewer with no profiles.city but a saved location gets cards.
+  -- profiles.city is cleared and a primary 'current' profile_locations row is added in the area of the first upcoming
+  -- Dubai game. Expected: cards appear, all in Dubai, the same baseline cards; the card in that area scores exactly
+  -- +5 over the baseline (same area 15 instead of same city 10), every other card scores the same.
+  -- NEG: the saved location is in an Ajman area instead (no candidate there), so no Dubai card may appear.
+  SELECT e.area_id, g.id INTO v_loc_area, v_loc_ent
+    FROM public.games g JOIN public.events e ON e.id = g.event_id JOIN public.areas a ON a.id = e.area_id
+   WHERE a.city = 'Dubai' AND NOT e.is_cancelled AND COALESCE(e.end_at, e.start_at) > now()
+     AND g.id IN (SELECT entity_id FROM _k966 WHERE lbl = 'all' AND item_kind = 'active')
+   ORDER BY e.start_at, g.id LIMIT 1;
+  IF v_neg THEN
+    SELECT a.id INTO v_loc_area FROM public.areas a WHERE a.city = 'Ajman' ORDER BY a.name LIMIT 1;
+  END IF;
+  UPDATE public.profiles SET city = NULL WHERE id = v_pid;
+  INSERT INTO public.profile_locations (profile_id, lat, lng, label, is_primary, area_id)
+  SELECT v_pid, a.center_lat, a.center_lng, 'current', true, a.id FROM public.areas a WHERE a.id = v_loc_area;
+  EXECUTE 'SET LOCAL ROLE authenticated';
+  INSERT INTO _k966 SELECT 'loc', row_number() OVER (), s.* FROM public.get_home_feed(500) s;
+  EXECUTE 'RESET ROLE';
+  UPDATE public.profiles SET city = 'Dubai' WHERE id = v_pid;
+  v_k := v_k + 1;
+  v_ok := v_loc_area IS NOT NULL
+      AND EXISTS (SELECT 1 FROM _k966 WHERE lbl = 'loc' AND item_kind = 'active')
+      AND NOT EXISTS (SELECT 1 FROM _k966 WHERE lbl = 'loc' AND item_kind = 'active' AND city <> 'Dubai')
+      AND NOT EXISTS ((SELECT entity_id FROM _k966 WHERE lbl = 'loc' AND item_kind = 'active')
+                      EXCEPT (SELECT entity_id FROM _k966 WHERE lbl = 'all' AND item_kind = 'active'))
+      AND (SELECT l.score - b.score FROM _k966 l JOIN _k966 b ON b.entity_id = l.entity_id AND b.lbl = 'all' AND b.item_kind = 'active'
+            WHERE l.lbl = 'loc' AND l.item_kind = 'active' AND l.entity_id = v_loc_ent) = 5
+      AND NOT EXISTS (SELECT 1 FROM _k966 l JOIN _k966 b ON b.entity_id = l.entity_id AND b.lbl = 'all' AND b.item_kind = 'active'
+                       WHERE l.lbl = 'loc' AND l.item_kind = 'active' AND l.entity_id <> v_loc_ent AND l.score <> b.score);
+  v_info := v_info || format('T14 loc_cards=%s same_area_delta=%s; ', (SELECT count(*) FROM _k966 WHERE lbl = 'loc' AND item_kind = 'active'),
+    (SELECT l.score - b.score FROM _k966 l JOIN _k966 b ON b.entity_id = l.entity_id AND b.lbl = 'all' AND b.item_kind = 'active'
+      WHERE l.lbl = 'loc' AND l.item_kind = 'active' AND l.entity_id = v_loc_ent));
+  v_tap := v_tap || format('%s %s - no profiles.city but a saved location: cards from that city, same-area scored', CASE WHEN v_ok THEN 'ok' ELSE 'not ok' END, v_k);
   IF NOT v_ok THEN v_fail := v_fail + 1; END IF;
 
   -- T9: no game_create / meetup_create row repeats an event shown as a card, while the pre-image had such rows.
