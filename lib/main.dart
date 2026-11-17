@@ -11,6 +11,7 @@ import 'package:dabbler/core/config/environment.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/widgets/bootstrap_error_app.dart';
+import 'package:dabbler/core/feedback/notification_popup_presenter.dart';
 import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler/core/services/analytics/analytics_service.dart';
 import 'package:dabbler/core/services/theme_service.dart';
@@ -23,6 +24,7 @@ import 'package:dabbler/services/notifications/push_notification_service.dart'
     as push_facade;
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
     as push_mobile;
+import 'package:dabbler/services/notifications/push_app_wiring.dart';
 import 'package:dabbler/features/notifications/data/notification_settings_timezone.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -227,6 +229,13 @@ Future<Widget> _bootstrap() async {
     if (!kIsWeb) {
       push_mobile.PushNotificationService.instance.onNotificationTap =
           _pushNotificationRoute;
+      // KAN-992: the open chat, the app-icon badge, notification actions and
+      // the target-state sheet for a push whose target is gone.
+      wirePushToApp(
+        container: container,
+        router: appRouter,
+        openRoute: _pushNotificationRoute,
+      );
       // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
       unawaited(push_mobile.PushNotificationService.instance.init());
     } else {
@@ -285,6 +294,12 @@ Future<Widget> _bootstrap() async {
   }
 }
 
+/// The location on top of the router's stack (a pushed route included).
+String _routerLocation() {
+  final config = appRouter.routerDelegate.currentConfiguration;
+  return config.isEmpty ? '/' : config.last.matchedLocation;
+}
+
 class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
@@ -337,7 +352,15 @@ class MyApp extends ConsumerWidget {
                     color: DabblerColors.of(context).bgPrimary,
                     // Shell-aware: on the main shell a toast is presented by
                     // the Action Area; elsewhere it is the standard toast.
-                    child: ShellAwareToastProvider(child: child),
+                    child: ShellAwareToastProvider(
+                      // KAN-993: the in-app pop-up for a notification that
+                      // arrives while the app is open.
+                      child: NotificationPopupPresenter(
+                        currentLocation: _routerLocation,
+                        openRoute: (String route) => appRouter.push(route),
+                        child: child,
+                      ),
+                    ),
                   ),
                 ),
               ),

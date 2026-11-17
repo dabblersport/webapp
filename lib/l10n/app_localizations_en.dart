@@ -10254,4 +10254,20 @@ class AppLocalizationsEn extends AppLocalizations {
   String notif_meta_players(int count, int capacity) {
     return '$count/$capacity players';
   }
+
+  @override
+  String get notif_action_reply => 'Reply';
+
+  @override
+  String get notif_push_cancel_place_title => 'Give up your place?';
+
+  @override
+  String get notif_push_cancel_place_hint =>
+      'No penalty. The next player on the waitlist gets it.';
+
+  @override
+  String get notif_push_cancel_place_confirm => 'Give up my place';
+
+  @override
+  String get notif_push_keep_place => 'Keep my place';
 }

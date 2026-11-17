@@ -4045,5 +4045,15 @@
   "notif_meta_mutual": "{count, plural, =1{1 mutual follower} other{{count} mutual followers}}",
   "@notif_meta_mutual": {"description": "KAN-988 notification row (NotificationRow.dc.html). Meta: mutual followers.", "placeholders": {"count": {"type": "int"}}},
   "notif_meta_players": "{count}/{capacity} players",
-  "@notif_meta_players": {"description": "KAN-988 notification row (NotificationRow.dc.html). Meta: roster.", "placeholders": {"count": {"type": "int"}, "capacity": {"type": "int"}}}
+  "@notif_meta_players": {"description": "KAN-988 notification row (NotificationRow.dc.html). Meta: roster.", "placeholders": {"count": {"type": "int"}, "capacity": {"type": "int"}}},
+  "notif_action_reply": "Reply",
+  "@notif_action_reply": {"description": "KAN-992 push on device."},
+  "notif_push_cancel_place_title": "Give up your place?",
+  "@notif_push_cancel_place_title": {"description": "KAN-992 push on device."},
+  "notif_push_cancel_place_hint": "No penalty. The next player on the waitlist gets it.",
+  "@notif_push_cancel_place_hint": {"description": "KAN-992 push on device."},
+  "notif_push_cancel_place_confirm": "Give up my place",
+  "@notif_push_cancel_place_confirm": {"description": "KAN-992 push on device."},
+  "notif_push_keep_place": "Keep my place",
+  "@notif_push_keep_place": {"description": "KAN-992 push on device."}
 }

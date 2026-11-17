@@ -393,4 +393,13 @@ class SupabaseConfig {
 
   /// KAN-990: the viewer's personal Activity log.
   static const String rpcGetActivityFeed = 'rpc_get_activity_feed';
+
+  /// KAN-983: the 09:00 "confirm your attendance" answer (`going` /
+  /// `not_going`), also the push's Going / Not going actions (KAN-992).
+  static const String rpcAnswerMeetupAttendance =
+      'rpc_answer_meetup_attendance';
+
+  /// KAN-982: gives up a waitlist-promoted place with no penalty; the push's
+  /// Cancel my place action (KAN-992).
+  static const String rpcCancelWaitlistPlace = 'rpc_cancel_waitlist_place';
 }

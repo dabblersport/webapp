@@ -17706,6 +17706,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count}/{capacity} players'**
   String notif_meta_players(int count, int capacity);
+
+  /// KAN-992 push on device.
+  ///
+  /// In en, this message translates to:
+  /// **'Reply'**
+  String get notif_action_reply;
+
+  /// KAN-992 push on device.
+  ///
+  /// In en, this message translates to:
+  /// **'Give up your place?'**
+  String get notif_push_cancel_place_title;
+
+  /// KAN-992 push on device.
+  ///
+  /// In en, this message translates to:
+  /// **'No penalty. The next player on the waitlist gets it.'**
+  String get notif_push_cancel_place_hint;
+
+  /// KAN-992 push on device.
+  ///
+  /// In en, this message translates to:
+  /// **'Give up my place'**
+  String get notif_push_cancel_place_confirm;
+
+  /// KAN-992 push on device.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep my place'**
+  String get notif_push_keep_place;
 }
 
 class _AppLocalizationsDelegate

@@ -33,7 +33,9 @@ self.addEventListener('notificationclick', (event) => {
   const fcmMsg = event.notification && event.notification.data
     ? event.notification.data.FCM_MSG
     : null;
-  const route = (fcmMsg && fcmMsg.data && fcmMsg.data.action_route) || '/';
+  // KAN-992: a push without its own route opens the Notification Center,
+  // where the row and its target state are shown.
+  const route = (fcmMsg && fcmMsg.data && fcmMsg.data.action_route) || '/notifications';
   const url = self.location.origin + (route.startsWith('/') ? route : '/' + route);
 
   event.waitUntil(

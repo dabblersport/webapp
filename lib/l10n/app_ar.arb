@@ -3360,5 +3360,10 @@
   "notif_ex_your_post": "منشورك",
   "notif_ex_your_comment": "تعليقك",
   "notif_meta_mutual": "{count, plural, =1{متابع مشترك واحد} =2{متابعان مشتركان} few{{count} متابعين مشتركين} many{{count} متابعًا مشتركًا} other{{count} متابع مشترك}}",
-  "notif_meta_players": "{count}/{capacity} لاعبين"
+  "notif_meta_players": "{count}/{capacity} لاعبين",
+  "notif_action_reply": "رد",
+  "notif_push_cancel_place_title": "هل تتخلى عن مكانك؟",
+  "notif_push_cancel_place_hint": "بدون أي غرامة. يحصل عليه اللاعب التالي في قائمة الانتظار.",
+  "notif_push_cancel_place_confirm": "تخلَّ عن مكاني",
+  "notif_push_keep_place": "احتفظ بمكاني"
 }

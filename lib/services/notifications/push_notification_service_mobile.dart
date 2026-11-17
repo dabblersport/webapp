@@ -1,17 +1,20 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
-import 'package:dabbler/features/notifications/meetup_notification_routes.dart';
+import 'package:dabbler/features/notifications/presentation/widgets/notif_target_states.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
-import 'dart:convert';
 
 import 'package:dabbler/core/config/notification_preference.dart';
 
+import 'push_contract.dart';
+import 'push_local_display.dart';
+import 'push_presence.dart';
 import 'push_token_registrar.dart';
 
 /// The native notification permission, behind a seam so a test can prove when
@@ -71,6 +74,14 @@ class PushNotificationService {
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
+  /// KAN-992: Android channels and foreground display.
+  late final PushLocalDisplay _display = PushLocalDisplay(
+    _localNotificationsPlugin,
+  );
+
+  /// The app's language, for the action titles.
+  Locale _locale = const Locale('en');
+
   bool _initialized = false;
   bool _activated = false;
   StreamSubscription<String>? _tokenRefreshSub;
@@ -80,6 +91,10 @@ class PushNotificationService {
   /// Receives the action_route string from the notification data payload.
   /// Set this from your app's navigation layer (e.g. main.dart or router).
   void Function(String route)? onNotificationTap;
+
+  /// KAN-992: a tapped push whose target cannot open (deleted, cancelled,
+  /// expired, no access, already handled): the app shows W1-F3's sheet.
+  void Function(NotifTargetState state)? onTargetUnavailable;
 
   static const String _notificationPromptPreferenceKey =
       'notification_prompt_preference';
@@ -184,20 +199,10 @@ class PushNotificationService {
         onDidReceiveNotificationResponse: _onLocalNotificationTap,
       );
 
-      // Create the channel up front so background FCM messages (routed here via
-      // the default_notification_channel_id manifest meta-data) land in it with
-      // max importance instead of falling back to FCM's own low-priority channel.
-      const channel = AndroidNotificationChannel(
-        'default_channel',
-        'General',
-        description: 'General notifications',
-        importance: Importance.max,
-      );
-      await _localNotificationsPlugin
-          .resolvePlatformSpecificImplementation<
-            AndroidFlutterLocalNotificationsPlugin
-          >()
-          ?.createNotificationChannel(channel);
+      // KAN-992: every channel KAN-979 sends to, created up front so a
+      // background FCM push (system-drawn) lands in its own channel;
+      // dabbler_default is the manifest's fallback.
+      await _display.createChannels();
     } else {
       // iOS/macOS: DO NOT initialize flutter_local_notifications here — it
       // takes over the UNUserNotificationCenter delegate and swallows the
@@ -211,83 +216,91 @@ class PushNotificationService {
             badge: true,
             sound: true,
           );
+      // KAN-992: the AppDelegate registers the categories, forwards their
+      // actions and leaves out the alert for the chat open on screen.
+      await PushPresence.instance.wireNative();
+      _sendActionTitles();
     }
+  }
+
+  void _sendActionTitles() {
+    final l = lookupAppLocalizations(_locale);
+    PushPresence.instance.setActionTitles({
+      for (final a in PushActionId.values) a.wire: pushActionLabel(a, l),
+    });
   }
 
   /// Called when user taps a local notification (foreground-displayed).
   void _onLocalNotificationTap(NotificationResponse response) {
-    final raw = response.payload;
-    if (raw == null || raw.isEmpty) return;
-    try {
-      final data = jsonDecode(raw) as Map<String, dynamic>;
-      var route = data['action_route'] as String?;
-      if (route == null || route.isEmpty) {
-        route = meetupPushRoute(data, enabled: FeatureFlags.enableMeetups);
-      }
-      if (route != null && route.isNotEmpty) {
-        onNotificationTap?.call(route);
-      }
-    } catch (e) {
-      debugPrint('Failed to parse local notification payload: $e');
+    final data = PushLocalDisplay.handleResponse(response);
+    if (data != null && data.isNotEmpty) routeTap(data);
+  }
+
+  /// A tapped push: W1-F3's sheet when its target cannot open, else its
+  /// route (KAN-992).
+  @visibleForTesting
+  void routeTap(Map<String, dynamic> data) {
+    final target = pushTarget(
+      data,
+      now: DateTime.now(),
+      meetupsEnabled: FeatureFlags.enableMeetups,
+    );
+    if (target.showsSheet) {
+      onTargetUnavailable?.call(target.state);
+    } else if (target.opens) {
+      onNotificationTap?.call(target.route!);
+    } else {
+      debugPrint('Push tap: no route for ${data['kind_key']}');
     }
   }
 
   Future<void> _configureForegroundHandling() async {
-    FirebaseMessaging.onMessage.listen((RemoteMessage message) async {
-      // iOS/macOS present foreground notifications natively (see
-      // setForegroundNotificationPresentationOptions) — showing a local
-      // notification too would duplicate the banner.
-      if (defaultTargetPlatform != TargetPlatform.android) return;
-
-      final notification = message.notification;
-      if (notification == null) return;
-
-      // Pass data payload so local-notification tap can route correctly
-      final payload = message.data.isNotEmpty ? jsonEncode(message.data) : null;
-
-      await _showLocalNotification(
-        notification.hashCode,
-        notification.title,
-        notification.body,
-        payload: payload,
-      );
-    });
+    FirebaseMessaging.onMessage.listen(onForegroundMessage);
   }
 
-  Future<void> _showLocalNotification(
-    int id,
-    String? title,
-    String? body, {
-    String? payload,
-  }) async {
-    const androidDetails = AndroidNotificationDetails(
-      'default_channel',
-      'General',
-      channelDescription: 'General notifications',
-      importance: Importance.max,
-      priority: Priority.high,
+  /// KAN-992: a foreground push — badge, open-chat rule, its channel and
+  /// actions (iOS presents natively); W1-F7 hears each with its de-dup key.
+  @visibleForTesting
+  Future<void> onForegroundMessage(RemoteMessage message) async {
+    final data = Map<String, dynamic>.from(message.data);
+    final notification = message.notification;
+    final badge = pushBadge(
+      data,
+      appleBadge: notification?.apple?.badge,
+      androidCount: notification?.android?.count,
     );
+    if (badge != null) PushPresence.instance.setBadge(badge);
 
-    // Explicit presentation options — without these iOS may not show a
-    // banner for notifications displayed while the app is in the foreground.
-    const darwinDetails = DarwinNotificationDetails(
-      presentAlert: true,
-      presentBanner: true,
-      presentSound: true,
+    final presence = PushPresence.instance;
+    final suppressed = suppressForegroundAlert(
+      data,
+      openChat: presence.openChat,
+      inAppBannerShows: presence.inAppBannerShows,
     );
-
-    const details = NotificationDetails(
-      android: androidDetails,
-      iOS: darwinDetails,
-      macOS: darwinDetails,
+    final drawsHere =
+        defaultTargetPlatform == TargetPlatform.android && notification != null;
+    presence.reportForeground(
+      ForegroundPush(
+        // KAN-993: title and body, for a push that beats its Realtime row.
+        <String, dynamic>{
+          ...data,
+          if (notification?.title != null && data['title'] == null)
+            'title': notification!.title,
+          if (notification?.body != null && data['body'] == null)
+            'body': notification!.body,
+        },
+        dedupeKey: pushDedupeKey(data),
+        alerted: !suppressed && (drawsHere || notification != null),
+      ),
     );
-
-    await _localNotificationsPlugin.show(
-      id,
-      title,
-      body,
-      details,
-      payload: payload,
+    if (suppressed || !drawsHere) return;
+    await _display.show(
+      data: data,
+      title: notification.title,
+      body: notification.body,
+      channelId: notification.android?.channelId,
+      tag: notification.android?.tag ?? message.collapseKey,
+      l10n: lookupAppLocalizations(_locale),
     );
   }
 
@@ -327,23 +340,9 @@ class PushNotificationService {
     FirebaseMessaging.onMessageOpenedApp.listen(_handleRemoteMessageTap);
   }
 
-  /// Extract action_route from the remote message data and invoke the tap callback.
-  void _handleRemoteMessageTap(RemoteMessage message) {
-    debugPrint('Push tap received — data: ${message.data}');
-    var route = message.data['action_route'] as String?;
-    debugPrint('Push tap action_route: $route');
-    if (route == null || route.isEmpty) {
-      route = meetupPushRoute(
-        message.data,
-        enabled: FeatureFlags.enableMeetups,
-      );
-    }
-    if (route != null && route.isNotEmpty) {
-      onNotificationTap?.call(route);
-    } else {
-      debugPrint('Push tap: no action_route in data payload');
-    }
-  }
+  /// A system-drawn push was tapped (cold start or background).
+  void _handleRemoteMessageTap(RemoteMessage message) =>
+      routeTap(Map<String, dynamic>.from(message.data));
 
   String get _platform =>
       pushPlatformName(isWeb: false, platform: defaultTargetPlatform);
@@ -381,6 +380,10 @@ class PushNotificationService {
 
   /// The app locale changed (or was first read): send it with the token.
   Future<void> updateLocale(Locale locale) async {
+    _locale = locale;
+    if (_initialized && defaultTargetPlatform == TargetPlatform.iOS) {
+      _sendActionTitles();
+    }
     if (registrar.setLocale(locale)) await _resync();
   }
 
