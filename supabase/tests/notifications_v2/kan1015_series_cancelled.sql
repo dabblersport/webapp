@@ -180,3 +180,90 @@ BEGIN
     format('en="%s" ar="%s"', s, s_ar));
 END $b$;
 SELECT * FROM pg_temp.kan1015_t4;
+
+-- KAN-1015b (PEER 16466): a series batch is a whole-series cancel only when the series is over (status 'ended', or no
+-- future non-cancelled occurrence remains). Three occurrences: O1 (day 4, PA), O2 (day 11, empty), O3 (day 18, PC;
+-- a borrowed game moved into the series, its creator set to the series creator). Each scenario rolled back.
+--   T5   one statement cancels O2 and O3 while O1 goes on (what a shortened edit-future does) -> series_changed to
+--        O3's players, NO series_cancelled. (Players on O3 make the classification visible; the real RPC never
+--        cancels a date with players, see T6.)
+--   T5c  control: one statement cancels O1, O2 and O3 (series still 'active', nothing future left) -> series_cancelled.
+--   T6   the real rpc_edit_game_series_future with an earlier ends_on: the empty later dates are cancelled, O1 is kept,
+--        and no series_cancelled is written.
+-- Run 2026-11-17 (backend-3). Before 20261117165950: T5 FALSE (series_changed=0, series_cancelled=1: PC was told the
+-- whole series was cancelled while O1 goes on), T5c true, T6 true (2 empty dates cancelled, nothing sent). After: T5
+-- true (series_changed=1, series_cancelled=0), T5c true (series_cancelled=2), T6 true; T1/T1b/N1/T2/T3 above re-run
+-- and still pass (T1 3 for 3 via rpc_cancel_game_series, status 'ended').
+CREATE TEMP TABLE IF NOT EXISTS kan1015b_results (probe text, pass boolean, detail text); TRUNCATE kan1015b_results;
+DO $b$
+DECLARE
+  r text[] := '{}';
+  sid uuid; screator uuid; o1 uuid; o2 uuid; o3 uuid; pa uuid; pc uuid; pa_p uuid; pc_p uuid;
+  n_ch int; n_ca int; j jsonb; scen text; t0 timestamptz := now() + interval '2 minutes';
+BEGIN
+  SELECT gm.series_id INTO sid FROM public.games gm WHERE gm.series_id IS NOT NULL GROUP BY gm.series_id HAVING count(*) >= 2 ORDER BY gm.series_id LIMIT 1;
+  SELECT gs.creator_user_id INTO screator FROM public.game_series gs WHERE gs.id = sid;
+  SELECT (array_agg(gm.event_id ORDER BY gm.event_id))[1], (array_agg(gm.event_id ORDER BY gm.event_id))[2] INTO o1, o2 FROM public.games gm WHERE gm.series_id = sid;
+  SELECT e.id INTO o3 FROM public.events e JOIN public.games gm ON gm.event_id = e.id
+   WHERE e.event_type = 'game' AND gm.series_id IS NULL AND gm.venue_space_id IS NULL
+     AND NOT EXISTS (SELECT 1 FROM public.game_roster gr WHERE gr.game_id = e.id AND gr.user_id <> e.creator_user_id)
+   ORDER BY e.id LIMIT 1;
+  SELECT (array_agg(user_id ORDER BY user_id))[1], (array_agg(id ORDER BY user_id))[1], (array_agg(user_id ORDER BY user_id))[2], (array_agg(id ORDER BY user_id))[2]
+    INTO pa, pa_p, pc, pc_p FROM (SELECT DISTINCT ON (p.user_id) p.user_id, p.id FROM public.profiles p
+     WHERE p.is_active AND p.persona_type = 'player' AND p.user_id <> screator
+       AND NOT EXISTS (SELECT 1 FROM public.game_roster gr WHERE gr.user_id = p.user_id AND gr.game_id IN (o1, o2, o3))
+       AND NOT EXISTS (SELECT 1 FROM public.user_blocks b WHERE p.user_id IN (b.blocker_user_id, b.blocked_user_id))
+     ORDER BY p.user_id LIMIT 2) c;
+  IF o3 IS NULL OR pc IS NULL THEN RAISE EXCEPTION 'kan1015b test: fixture missing'; END IF;
+
+  FOREACH scen IN ARRAY ARRAY['T5', 'T5c', 'T6'] LOOP
+    BEGIN
+      UPDATE public.game_series SET status = 'active', ends_on = NULL WHERE id = sid;
+      UPDATE public.events SET creator_user_id = screator WHERE id = o3;
+      UPDATE public.games SET series_id = sid WHERE event_id = o3;
+      DELETE FROM public.game_roster WHERE game_id = o3;   -- the borrowed game's own host row would count as a player
+      UPDATE public.events SET is_cancelled = false, cancelled_at = NULL, cancelled_reason = NULL,
+             start_at = date_trunc('day', now()) + CASE id WHEN o1 THEN interval '4 days 18 hours' WHEN o2 THEN interval '11 days 18 hours' ELSE interval '18 days 18 hours' END,
+             end_at   = date_trunc('day', now()) + CASE id WHEN o1 THEN interval '4 days 19 hours' WHEN o2 THEN interval '11 days 19 hours' ELSE interval '18 days 19 hours' END
+       WHERE id IN (o1, o2, o3);
+      INSERT INTO public.game_roster (game_id, profile_id, user_id, role, status) VALUES (o1, pa_p, pa, 'player', 'active');
+      IF scen <> 'T6' THEN
+        INSERT INTO public.game_roster (game_id, profile_id, user_id, role, status) VALUES (o3, pc_p, pc, 'player', 'active');
+      END IF;
+      UPDATE public.notification_settings SET muted_kinds = '{}' WHERE user_id IN (pa, pc);
+      UPDATE public.event_changes x SET consumed_by = x.consumed_by || '{"w1_b3": "setup"}'::jsonb WHERE NOT (x.consumed_by ? 'w1_b3');
+      PERFORM set_config('request.jwt.claims', json_build_object('sub', screator, 'role', 'authenticated')::text, true);
+
+      IF scen = 'T5' THEN
+        UPDATE public.events SET is_cancelled = true WHERE id IN (o2, o3);
+      ELSIF scen = 'T5c' THEN
+        UPDATE public.events SET is_cancelled = true WHERE id IN (o1, o2, o3);
+      ELSE
+        j := public.rpc_edit_game_series_future(sid, p_ends_on => (date_trunc('day', now()) + interval '6 days')::date);
+      END IF;
+      PERFORM public.kan981_consume_event_changes(t0);
+      SELECT count(*) FILTER (WHERE kind_key = 'game.series_changed'), count(*) FILTER (WHERE kind_key = 'game.series_cancelled')
+        INTO n_ch, n_ca FROM public.notifications WHERE dedupe_key LIKE 'w1_b3:series%' || sid || ':%';
+
+      IF scen = 'T5' THEN
+        r := r || ARRAY['T5 shortened series (later dates cancelled, O1 goes on) -> series_changed, not series_cancelled',
+          (n_ca = 0 AND n_ch >= 1 AND EXISTS (SELECT 1 FROM public.notifications WHERE kind_key = 'game.series_changed'
+                                                AND to_user_id = pc AND dedupe_key LIKE 'w1_b3:series:' || sid || ':%'))::text,
+          format('series_changed=%s series_cancelled=%s', n_ch, n_ca)];
+      ELSIF scen = 'T5c' THEN
+        r := r || ARRAY['T5c control: every future date cancelled -> series_cancelled',
+          (n_ca = (SELECT count(DISTINCT u) FROM unnest(ARRAY[o1, o2, o3]) e(id), LATERAL public.kan981_recipients(e.id) u)
+           AND n_ca >= 2 AND n_ch = 0)::text, format('series_cancelled=%s series_changed=%s', n_ca, n_ch)];
+      ELSE
+        r := r || ARRAY['T6 real rpc_edit_game_series_future with an earlier end -> no series_cancelled, O1 kept',
+          (n_ca = 0 AND NOT (SELECT is_cancelled FROM public.events WHERE id = o1)
+           AND (SELECT is_cancelled FROM public.events WHERE id = o3))::text,
+          format('%s series_cancelled=%s series_changed=%s', j, n_ca, n_ch)];
+      END IF;
+      RAISE EXCEPTION 'kan1015_rollback';
+    EXCEPTION WHEN raise_exception THEN IF SQLERRM <> 'kan1015_rollback' THEN RAISE; END IF;
+    END;
+  END LOOP;
+  FOR i IN 1 .. array_length(r, 1) / 3 LOOP INSERT INTO pg_temp.kan1015b_results VALUES (r[3*i-2], r[3*i-1]::boolean, r[3*i]); END LOOP;
+END $b$;
+SELECT * FROM pg_temp.kan1015b_results ORDER BY probe;
