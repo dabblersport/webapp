@@ -47,12 +47,16 @@ class NotificationsRepositoryImpl implements NotificationsRepository {
   @override
   Future<Result<int, Failure>> getUnreadCount() {
     return Result.guard(() async {
-      final response = await _client
+      // KAN-987: a HEAD count query (`Prefer: count=exact`) — the server's
+      // number, not the loaded pages. RLS scopes it to the recipient; the
+      // explicit to_user_id filter keeps it exact on another session's cache.
+      final userId = _client.auth.currentUser?.id;
+      var query = _client
           .from(_table)
-          .select('id')
+          .count(CountOption.exact)
           .eq('is_read', false);
-
-      return (response as List).length;
+      if (userId != null) query = query.eq('to_user_id', userId);
+      return await query;
     }, Failure.from);
   }
 

@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
@@ -55,7 +57,10 @@ void main() {
       final cursor = DateTime.utc(2026, 8, 20, 10);
       await repo.getPage(cursor: cursor);
 
-      expect(capturedUri.queryParameters['created_at'], 'lt.2026-08-20T10:00:00.000Z');
+      expect(
+        capturedUri.queryParameters['created_at'],
+        'lt.2026-08-20T10:00:00.000Z',
+      );
     });
 
     test('a server error is mapped to a Failure instead of throwing', () async {
@@ -76,21 +81,32 @@ void main() {
   });
 
   group('NotificationsRepositoryImpl.getUnreadCount', () {
-    test('returns the row count for is_read = false', () async {
+    test('KAN-987: a HEAD count query for is_read = false, the server '
+        'number from Content-Range (no rows downloaded)', () async {
+      late http.Request captured;
       final client = buildTestSupabaseClient((request) async {
-        expect(request.url.queryParameters['is_read'], 'eq.false');
-        return jsonListResponse([
-          {'id': 'a'},
-          {'id': 'b'},
-          {'id': 'c'},
-        ], request: request);
+        captured = request;
+        return http.Response(
+          '',
+          200,
+          headers: {'content-range': '*/37'},
+          request: request,
+        );
       });
+      await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
 
       final repo = NotificationsRepositoryImpl(client);
       final result = await repo.getUnreadCount();
 
       expect(result.isSuccess, isTrue);
-      expect(result.requireValue, 3);
+      expect(result.requireValue, 37);
+      expect(captured.method, 'HEAD');
+      expect(
+        captured.headers['Prefer'] ?? captured.headers['prefer'],
+        contains('count=exact'),
+      );
+      expect(captured.url.queryParameters['is_read'], 'eq.false');
+      expect(captured.url.queryParameters['to_user_id'], 'eq.u1');
     });
   });
 
@@ -109,25 +125,36 @@ void main() {
       expect(captured.method, 'PATCH');
       expect(captured.url.queryParameters['id'], 'eq.n1');
       expect(captured.body, contains('"is_read":true'));
+      // KAN-974b: authenticated may update only these four columns.
+      expect((jsonDecode(captured.body) as Map).keys.toSet(), {
+        'is_read',
+        'read_at',
+      });
     });
   });
 
   group('NotificationsRepositoryImpl.markClicked', () {
-    test('calls the increment-interaction RPC with the notification id', () async {
-      late http.Request captured;
-      final client = buildTestSupabaseClient((request) async {
-        captured = request;
-        return emptyOkResponse(status: 200, request: request);
-      });
+    test(
+      'calls the increment-interaction RPC with the notification id',
+      () async {
+        late http.Request captured;
+        final client = buildTestSupabaseClient((request) async {
+          captured = request;
+          return emptyOkResponse(status: 200, request: request);
+        });
 
-      final repo = NotificationsRepositoryImpl(client);
-      final result = await repo.markClicked('n1');
+        final repo = NotificationsRepositoryImpl(client);
+        final result = await repo.markClicked('n1');
 
-      expect(result.isSuccess, isTrue);
-      expect(captured.method, 'POST');
-      expect(captured.url.path, contains('/rpc/increment_notification_interaction'));
-      expect(captured.body, contains('"p_id":"n1"'));
-    });
+        expect(result.isSuccess, isTrue);
+        expect(captured.method, 'POST');
+        expect(
+          captured.url.path,
+          contains('/rpc/increment_notification_interaction'),
+        );
+        expect(captured.body, contains('"p_id":"n1"'));
+      },
+    );
   });
 
   group('NotificationsRepositoryImpl.markAllRead', () {
@@ -143,21 +170,28 @@ void main() {
       expect(result.requireError.message, contains('not authenticated'));
     });
 
-    test('PATCHes is_read=true scoped to the current user when signed in', () async {
-      late http.Request captured;
-      final client = buildTestSupabaseClient((request) async {
-        captured = request;
-        return emptyOkResponse(request: request);
-      });
-      await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
+    test(
+      'PATCHes is_read=true scoped to the current user when signed in',
+      () async {
+        late http.Request captured;
+        final client = buildTestSupabaseClient((request) async {
+          captured = request;
+          return emptyOkResponse(request: request);
+        });
+        await client.auth.setInitialSession(fakeSessionJson(userId: 'u1'));
 
-      final repo = NotificationsRepositoryImpl(client);
-      final result = await repo.markAllRead();
+        final repo = NotificationsRepositoryImpl(client);
+        final result = await repo.markAllRead();
 
-      expect(result.isSuccess, isTrue);
-      expect(captured.method, 'PATCH');
-      expect(captured.url.queryParameters['to_user_id'], 'eq.u1');
-      expect(captured.url.queryParameters['is_read'], 'eq.false');
-    });
+        expect(result.isSuccess, isTrue);
+        expect(captured.method, 'PATCH');
+        expect(captured.url.queryParameters['to_user_id'], 'eq.u1');
+        expect(captured.url.queryParameters['is_read'], 'eq.false');
+        expect((jsonDecode(captured.body) as Map).keys.toSet(), {
+          'is_read',
+          'read_at',
+        }, reason: 'KAN-974b column grant');
+      },
+    );
   });
 }

@@ -22,6 +22,9 @@ class NotificationsState {
   final bool isLoading;
   final bool hasMore;
   final String? error;
+
+  /// KAN-987: the server's unread count (a HEAD count query), not the loaded
+  /// pages; kept current by Realtime and the read mutations.
   final int unreadCount;
 
   /// [createdAt] of the last item — used as keyset cursor for the next page.
@@ -53,34 +56,40 @@ class NotificationsState {
 // ════════════════════════════════════════════════════════════════════════════
 
 /// Manages the notification list, keyset pagination, optimistic mutations,
-/// and realtime prepend via [NotificationRealtimeService].
+/// and realtime inserts and in-place updates via [NotificationRealtimeService].
+///
+/// [enabled] false (the signed-in user is not [userId]: signed out or another
+/// account) is an empty controller: no load, no count, no subscription.
 class NotificationsController extends StateNotifier<NotificationsState>
     with WidgetsBindingObserver {
   NotificationsController({
     required NotificationsRepository repository,
     required NotificationRealtimeService realtimeService,
     required String userId,
+    bool enabled = true,
   }) : _repository = repository,
        _realtimeService = realtimeService,
        _userId = userId,
-       super(const NotificationsState()) {
-    _init();
+       _enabled = enabled,
+       super(const NotificationsState(hasMore: false)) {
+    if (_enabled) _init();
   }
 
   final NotificationsRepository _repository;
   final NotificationRealtimeService _realtimeService;
   final String _userId;
+  final bool _enabled;
 
   static const _pageSize = 20;
+
+  /// Bumped by every count request; an older answer is dropped.
+  int _countRequest = 0;
 
   // ── Lifecycle ────────────────────────────────────────────────────────
 
   void _init() {
     loadNotifications();
-    _realtimeService.subscribe(
-      userId: _userId,
-      onNewNotification: _onRealtimeInsert,
-    );
+    _subscribe();
     // Watch app lifecycle so we can re-subscribe when returning from
     // background (iOS kills websocket connections when suspended).
     WidgetsBinding.instance.addObserver(this);
@@ -95,30 +104,62 @@ class NotificationsController extends StateNotifier<NotificationsState>
       // Re-subscribe realtime (no-op if already connected for same user,
       // but forces reconnect if the channel was dropped while suspended).
       _realtimeService.unsubscribe();
-      _realtimeService.subscribe(
-        userId: _userId,
-        onNewNotification: _onRealtimeInsert,
-      );
+      _subscribe();
       // Fetch latest notifications to catch anything missed while suspended.
       refresh();
     }
   }
 
+  void _subscribe() => _realtimeService.subscribe(
+    userId: _userId,
+    onNewNotification: _onRealtimeInsert,
+    onUpdatedNotification: _onRealtimeUpdate,
+  );
+
   @override
   void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _realtimeService.unsubscribe();
+    if (_enabled) {
+      WidgetsBinding.instance.removeObserver(this);
+      _realtimeService.unsubscribe();
+    }
     super.dispose();
+  }
+
+  // ── Unread count (server) ────────────────────────────────────────────
+
+  /// Re-reads the unread count from the server; a failure keeps the last one.
+  Future<void> refreshUnreadCount() async {
+    if (!_enabled) return;
+    final request = ++_countRequest;
+    final result = await _repository.getUnreadCount();
+    if (!mounted || request != _countRequest) return;
+    result.fold(
+      (failure) =>
+          debugPrint('[Notifications] COUNT ERROR: ${failure.message}'),
+      (count) => state = state.copyWith(unreadCount: count, error: state.error),
+    );
+  }
+
+  /// Sets the count now (optimistic); a pending server answer is dropped.
+  void _setCount(int count) {
+    _countRequest++;
+    state = state.copyWith(
+      unreadCount: count < 0 ? 0 : count,
+      error: state.error,
+    );
   }
 
   // ── Load / Paginate ──────────────────────────────────────────────────
 
   /// Initial load or pull-to-refresh (pass `refresh: true`).
   Future<void> loadNotifications({bool refresh = false}) async {
-    if (state.isLoading) return;
+    if (!_enabled || state.isLoading) return;
 
     if (refresh) {
-      state = const NotificationsState(isLoading: true);
+      state = NotificationsState(
+        isLoading: true,
+        unreadCount: state.unreadCount,
+      );
     } else {
       state = state.copyWith(isLoading: true, error: null);
     }
@@ -143,11 +184,11 @@ class NotificationsController extends StateNotifier<NotificationsState>
           notifications: merged,
           isLoading: false,
           hasMore: page.length >= _pageSize,
-          unreadCount: merged.where((n) => !n.isRead).length,
           error: null,
         );
       },
     );
+    await refreshUnreadCount();
   }
 
   /// Append next page (infinite scroll).
@@ -174,22 +215,22 @@ class NotificationsController extends StateNotifier<NotificationsState>
       isRead: true,
       readAt: DateTime.now().toUtc(),
     );
-    state = state.copyWith(
-      notifications: updated,
-      unreadCount: updated.where((n) => !n.isRead).length,
-    );
+    state = state.copyWith(notifications: updated);
+    _setCount(state.unreadCount - 1);
 
-    // Server
+    // Server (writes is_read and read_at only: the columns authenticated may
+    // update since KAN-974b).
     final result = await _repository.markAsRead(id);
+    if (!mounted) return;
     if (result.isFailure) {
       // Rollback
       final rollback = List<AppNotification>.from(state.notifications);
-      rollback[idx] = original;
-      state = state.copyWith(
-        notifications: rollback,
-        unreadCount: rollback.where((n) => !n.isRead).length,
-      );
+      final at = rollback.indexWhere((n) => n.id == id);
+      if (at != -1) rollback[at] = original;
+      state = state.copyWith(notifications: rollback);
+      _setCount(state.unreadCount + 1);
     }
+    await refreshUnreadCount();
   }
 
   /// Record a click / interaction — optimistic then server.
@@ -223,15 +264,18 @@ class NotificationsController extends StateNotifier<NotificationsState>
               : n.copyWith(isRead: true, readAt: DateTime.now().toUtc()),
         )
         .toList();
-    state = state.copyWith(notifications: updated, unreadCount: 0);
+    final before = state.unreadCount;
+    state = state.copyWith(notifications: updated);
+    _setCount(0);
 
+    // Writes is_read and read_at only (KAN-974b column grant).
     final result = await _repository.markAllRead();
+    if (!mounted) return;
     if (result.isFailure) {
-      state = state.copyWith(
-        notifications: originals,
-        unreadCount: originals.where((n) => !n.isRead).length,
-      );
+      state = state.copyWith(notifications: originals);
+      _setCount(before);
     }
+    await refreshUnreadCount();
   }
 
   // ── Filtering helpers ────────────────────────────────────────────────
@@ -247,13 +291,57 @@ class NotificationsController extends StateNotifier<NotificationsState>
   // ── Realtime callback ───────────────────────────────────────────────
 
   void _onRealtimeInsert(AppNotification notification) {
-    // Guard against duplicates.
-    if (state.notifications.any((n) => n.id == notification.id)) return;
-
-    final updated = [notification, ...state.notifications];
+    if (!mounted) return;
+    // The same row twice (a resubscribe, an insert after a refresh) is one.
+    if (state.notifications.any((n) => n.id == notification.id)) {
+      _onRealtimeUpdate(notification);
+      return;
+    }
     state = state.copyWith(
-      notifications: updated,
-      unreadCount: updated.where((n) => !n.isRead).length,
+      notifications: _placed(state.notifications, notification),
     );
+    if (!notification.isRead) _setCount(state.unreadCount + 1);
+    refreshUnreadCount();
+  }
+
+  /// KAN-987: a row changed in place (G-01): a grouped row with a new actor
+  /// (it can turn unread again and move to the top), or a read made on
+  /// another device. The row is replaced and re-placed by its time; a row
+  /// not loaded yet is added when it now falls inside the loaded range.
+  void _onRealtimeUpdate(AppNotification notification) {
+    if (!mounted) return;
+    final current = state.notifications;
+    final idx = current.indexWhere((n) => n.id == notification.id);
+    final previous = idx == -1 ? null : current[idx];
+    final rest = [
+      for (final n in current)
+        if (n.id != notification.id) n,
+    ];
+    final oldest = current.isEmpty ? null : current.last.createdAt;
+    final inRange =
+        previous != null ||
+        oldest == null ||
+        !notification.createdAt.isBefore(oldest);
+    if (inRange) {
+      state = state.copyWith(notifications: _placed(rest, notification));
+    }
+    final wasUnread = previous == null ? null : !previous.isRead;
+    if (wasUnread != null && wasUnread != !notification.isRead) {
+      _setCount(state.unreadCount + (notification.isRead ? -1 : 1));
+    }
+    refreshUnreadCount();
+  }
+
+  /// [list] (newest first) with [n] at its place by `created_at`.
+  static List<AppNotification> _placed(
+    List<AppNotification> list,
+    AppNotification n,
+  ) {
+    final at = list.indexWhere((x) => x.createdAt.isBefore(n.createdAt));
+    return [
+      ...list.take(at == -1 ? list.length : at),
+      n,
+      ...list.skip(at == -1 ? list.length : at),
+    ];
   }
 }

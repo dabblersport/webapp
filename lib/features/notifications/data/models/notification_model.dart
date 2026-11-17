@@ -50,6 +50,31 @@ class AppNotification with _$AppNotification {
 
     @JsonKey(name: 'interaction_count') @Default(0) int interactionCount,
     @JsonKey(name: 'created_at') required DateTime createdAt,
+
+    // ── Envelope v2 (KAN-974). A legacy row (schema_version 1) has none of
+    // these; it renders from title / body / action_route as before. ──────
+
+    /// The `notification_kinds` key whose templates rendered the row.
+    @JsonKey(name: 'template_key') String? templateKey,
+
+    /// Template arguments; `{name}_en` / `{name}_ar` override `{name}`.
+    @JsonKey(name: 'args', fromJson: _argsFromJson)
+    @Default(<String, dynamic>{})
+    Map<String, dynamic> args,
+
+    /// The domain event that produced the row (e.g. an `event_changes` id).
+    @JsonKey(name: 'source_event_id') String? sourceEventId,
+
+    /// Idempotency key, unique per recipient.
+    @JsonKey(name: 'dedupe_key') String? dedupeKey,
+
+    /// Grouping key: a grouped row is updated in place (KAN-980).
+    @JsonKey(name: 'group_key') String? groupKey,
+
+    /// 1 = legacy row, 2 = written by notify_v2.
+    @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+    @Default(1)
+    int schemaVersion,
   }) = _AppNotification;
 
   factory AppNotification.fromJson(Map<String, dynamic> json) =>
@@ -63,4 +88,14 @@ class AppNotification with _$AppNotification {
   /// Whether this is a high-priority or urgent notification.
   bool get isHighPriority =>
       priority == NotifyPriority.high || priority == NotifyPriority.urgent;
+
+  /// Whether notify_v2 wrote the row (it carries a template and arguments).
+  bool get isV2 => schemaVersion >= 2;
 }
+
+/// `args` is a jsonb object; anything else (null, a legacy row) is empty.
+Map<String, dynamic> _argsFromJson(Object? raw) =>
+    raw is Map ? Map<String, dynamic>.from(raw) : const <String, dynamic>{};
+
+/// `schema_version` defaults to 1 (legacy) when absent or not a number.
+int _schemaVersionFromJson(Object? raw) => raw is num ? raw.toInt() : 1;

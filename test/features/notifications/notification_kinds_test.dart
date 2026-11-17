@@ -58,6 +58,7 @@ const List<String> serverKinds = <String>[
 AppNotification _n(
   String kind, {
   Map<String, dynamic>? payload,
+  Map<String, dynamic> args = const <String, dynamic>{},
   String title = 'Server title',
   bool read = false,
 }) => AppNotification(
@@ -66,6 +67,8 @@ AppNotification _n(
   kindKey: kind,
   title: title,
   payload: payload,
+  args: args,
+  schemaVersion: args.isEmpty ? 1 : 2,
   isRead: read,
   createdAt: DateTime.now().subtract(const Duration(minutes: 5)),
 );
@@ -460,21 +463,35 @@ void main() {
       expect(NotificationKinds.title(en, _n('no.such_kind')), 'Server title');
     });
 
-    test('a new kind uses its template; a missing argument keeps the server '
-        'title; a _ar argument wins in Arabic', () {
+    test('a new kind uses its template from the row args; a missing argument '
+        'keeps the server title; a _ar argument wins in Arabic', () {
       final row = _n(
         'game.full',
-        payload: {'title': 'Friday 5-a-side', 'title_ar': 'خماسي الجمعة'},
+        args: {'title': 'Friday 5-a-side', 'title_ar': 'خماسي الجمعة'},
       );
       expect(NotificationKinds.title(en, row), 'Friday 5-a-side is full');
       expect(NotificationKinds.title(ar, row), 'اكتمل العدد في خماسي الجمعة');
       expect(NotificationKinds.title(en, _n('game.full')), 'Server title');
+      // KAN-987: the template reads the row's args, not the context payload.
+      expect(
+        NotificationKinds.title(en, _n('game.full', payload: {'title': 'X'})),
+        'Server title',
+      );
+      // A v2 row of a live kind renders its template too.
+      expect(
+        NotificationKinds.title(
+          ar,
+          _n('social.post_liked', args: {'actor': 'Sara'}),
+        ),
+        ar.notif_t_social_post_liked('Sara'),
+      );
       expect(
         NotificationKinds.title(
           en,
           _n(
             'game.invite_accepted',
-            payload: {'actor_name': 'Omar', 'title': 'Padel'},
+            payload: {'actor_name': 'Omar'},
+            args: {'title': 'Padel'},
           ),
         ),
         'Omar accepted your invite to Padel',

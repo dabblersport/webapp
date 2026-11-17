@@ -155,17 +155,21 @@ abstract final class NotificationKinds {
 
   // ── Titles ─────────────────────────────────────────────────────────────
 
-  /// The title in the app's language. The live kinds keep their localized
-  /// lines (or the server's title); a new kind uses its template when every
-  /// argument is known ([args], else the row's payload), otherwise the
-  /// server's title.
+  /// The title in the app's language. A legacy row of a live kind keeps its
+  /// localized line (or the server's title); a v2 row, or a new kind, uses its
+  /// template when every argument is known (the row's `args`, KAN-987, or
+  /// [args]), otherwise the server's title.
   static String title(
     AppLocalizations l,
     AppNotification n, {
     Map<String, dynamic>? args,
   }) {
+    final rowArgs = args ?? (n.args.isEmpty ? null : n.args);
     final actor = actorName(n.payload);
-    final legacy = _legacyTitle(l, n.kindKey, actor, args ?? n.payload);
+    // Legacy rows carry no args; their lines read the context payload.
+    final legacy = n.isV2
+        ? null
+        : _legacyTitle(l, n.kindKey, actor, rowArgs ?? n.payload);
     if (legacy != null) return legacy;
     final spec = _specs[n.kindKey];
     if (spec == null) {
@@ -173,8 +177,8 @@ abstract final class NotificationKinds {
           ? l.notif_kind_achievement_earned
           : n.title;
     }
-    if (spec.active) return n.title;
-    final a = _resolver(l, args ?? n.payload, actor);
+    if (spec.active && !n.isV2) return n.title;
+    final a = _resolver(l, rowArgs, actor);
     final names = notificationTitleArgs[n.kindKey] ?? const <String>[];
     if (names.any((name) => a(name).isEmpty)) return n.title;
     return notificationTitleTemplate(l, n.kindKey, a) ?? n.title;

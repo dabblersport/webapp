@@ -46,7 +46,31 @@ mixin _$AppNotification {
   @JsonKey(name: 'interaction_count')
   int get interactionCount => throw _privateConstructorUsedError;
   @JsonKey(name: 'created_at')
-  DateTime get createdAt => throw _privateConstructorUsedError;
+  DateTime get createdAt => throw _privateConstructorUsedError; // ── Envelope v2 (KAN-974). A legacy row (schema_version 1) has none of
+  // these; it renders from title / body / action_route as before. ──────
+  /// The `notification_kinds` key whose templates rendered the row.
+  @JsonKey(name: 'template_key')
+  String? get templateKey => throw _privateConstructorUsedError;
+
+  /// Template arguments; `{name}_en` / `{name}_ar` override `{name}`.
+  @JsonKey(name: 'args', fromJson: _argsFromJson)
+  Map<String, dynamic> get args => throw _privateConstructorUsedError;
+
+  /// The domain event that produced the row (e.g. an `event_changes` id).
+  @JsonKey(name: 'source_event_id')
+  String? get sourceEventId => throw _privateConstructorUsedError;
+
+  /// Idempotency key, unique per recipient.
+  @JsonKey(name: 'dedupe_key')
+  String? get dedupeKey => throw _privateConstructorUsedError;
+
+  /// Grouping key: a grouped row is updated in place (KAN-980).
+  @JsonKey(name: 'group_key')
+  String? get groupKey => throw _privateConstructorUsedError;
+
+  /// 1 = legacy row, 2 = written by notify_v2.
+  @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+  int get schemaVersion => throw _privateConstructorUsedError;
 
   /// Serializes this AppNotification to a JSON map.
   Map<String, dynamic> toJson() => throw _privateConstructorUsedError;
@@ -80,6 +104,13 @@ abstract class $AppNotificationCopyWith<$Res> {
     @JsonKey(name: 'clicked_at') DateTime? clickedAt,
     @JsonKey(name: 'interaction_count') int interactionCount,
     @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'template_key') String? templateKey,
+    @JsonKey(name: 'args', fromJson: _argsFromJson) Map<String, dynamic> args,
+    @JsonKey(name: 'source_event_id') String? sourceEventId,
+    @JsonKey(name: 'dedupe_key') String? dedupeKey,
+    @JsonKey(name: 'group_key') String? groupKey,
+    @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+    int schemaVersion,
   });
 }
 
@@ -112,6 +143,12 @@ class _$AppNotificationCopyWithImpl<$Res, $Val extends AppNotification>
     Object? clickedAt = freezed,
     Object? interactionCount = null,
     Object? createdAt = null,
+    Object? templateKey = freezed,
+    Object? args = null,
+    Object? sourceEventId = freezed,
+    Object? dedupeKey = freezed,
+    Object? groupKey = freezed,
+    Object? schemaVersion = null,
   }) {
     return _then(
       _value.copyWith(
@@ -171,6 +208,30 @@ class _$AppNotificationCopyWithImpl<$Res, $Val extends AppNotification>
                 ? _value.createdAt
                 : createdAt // ignore: cast_nullable_to_non_nullable
                       as DateTime,
+            templateKey: freezed == templateKey
+                ? _value.templateKey
+                : templateKey // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            args: null == args
+                ? _value.args
+                : args // ignore: cast_nullable_to_non_nullable
+                      as Map<String, dynamic>,
+            sourceEventId: freezed == sourceEventId
+                ? _value.sourceEventId
+                : sourceEventId // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            dedupeKey: freezed == dedupeKey
+                ? _value.dedupeKey
+                : dedupeKey // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            groupKey: freezed == groupKey
+                ? _value.groupKey
+                : groupKey // ignore: cast_nullable_to_non_nullable
+                      as String?,
+            schemaVersion: null == schemaVersion
+                ? _value.schemaVersion
+                : schemaVersion // ignore: cast_nullable_to_non_nullable
+                      as int,
           )
           as $Val,
     );
@@ -201,6 +262,13 @@ abstract class _$$AppNotificationImplCopyWith<$Res>
     @JsonKey(name: 'clicked_at') DateTime? clickedAt,
     @JsonKey(name: 'interaction_count') int interactionCount,
     @JsonKey(name: 'created_at') DateTime createdAt,
+    @JsonKey(name: 'template_key') String? templateKey,
+    @JsonKey(name: 'args', fromJson: _argsFromJson) Map<String, dynamic> args,
+    @JsonKey(name: 'source_event_id') String? sourceEventId,
+    @JsonKey(name: 'dedupe_key') String? dedupeKey,
+    @JsonKey(name: 'group_key') String? groupKey,
+    @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+    int schemaVersion,
   });
 }
 
@@ -232,6 +300,12 @@ class __$$AppNotificationImplCopyWithImpl<$Res>
     Object? clickedAt = freezed,
     Object? interactionCount = null,
     Object? createdAt = null,
+    Object? templateKey = freezed,
+    Object? args = null,
+    Object? sourceEventId = freezed,
+    Object? dedupeKey = freezed,
+    Object? groupKey = freezed,
+    Object? schemaVersion = null,
   }) {
     return _then(
       _$AppNotificationImpl(
@@ -291,6 +365,30 @@ class __$$AppNotificationImplCopyWithImpl<$Res>
             ? _value.createdAt
             : createdAt // ignore: cast_nullable_to_non_nullable
                   as DateTime,
+        templateKey: freezed == templateKey
+            ? _value.templateKey
+            : templateKey // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        args: null == args
+            ? _value._args
+            : args // ignore: cast_nullable_to_non_nullable
+                  as Map<String, dynamic>,
+        sourceEventId: freezed == sourceEventId
+            ? _value.sourceEventId
+            : sourceEventId // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        dedupeKey: freezed == dedupeKey
+            ? _value.dedupeKey
+            : dedupeKey // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        groupKey: freezed == groupKey
+            ? _value.groupKey
+            : groupKey // ignore: cast_nullable_to_non_nullable
+                  as String?,
+        schemaVersion: null == schemaVersion
+            ? _value.schemaVersion
+            : schemaVersion // ignore: cast_nullable_to_non_nullable
+                  as int,
       ),
     );
   }
@@ -314,7 +412,16 @@ class _$AppNotificationImpl extends _AppNotification {
     @JsonKey(name: 'clicked_at') this.clickedAt,
     @JsonKey(name: 'interaction_count') this.interactionCount = 0,
     @JsonKey(name: 'created_at') required this.createdAt,
+    @JsonKey(name: 'template_key') this.templateKey,
+    @JsonKey(name: 'args', fromJson: _argsFromJson)
+    final Map<String, dynamic> args = const <String, dynamic>{},
+    @JsonKey(name: 'source_event_id') this.sourceEventId,
+    @JsonKey(name: 'dedupe_key') this.dedupeKey,
+    @JsonKey(name: 'group_key') this.groupKey,
+    @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+    this.schemaVersion = 1,
   }) : _payload = payload,
+       _args = args,
        super._();
 
   factory _$AppNotificationImpl.fromJson(Map<String, dynamic> json) =>
@@ -371,10 +478,48 @@ class _$AppNotificationImpl extends _AppNotification {
   @override
   @JsonKey(name: 'created_at')
   final DateTime createdAt;
+  // ── Envelope v2 (KAN-974). A legacy row (schema_version 1) has none of
+  // these; it renders from title / body / action_route as before. ──────
+  /// The `notification_kinds` key whose templates rendered the row.
+  @override
+  @JsonKey(name: 'template_key')
+  final String? templateKey;
+
+  /// Template arguments; `{name}_en` / `{name}_ar` override `{name}`.
+  final Map<String, dynamic> _args;
+
+  /// Template arguments; `{name}_en` / `{name}_ar` override `{name}`.
+  @override
+  @JsonKey(name: 'args', fromJson: _argsFromJson)
+  Map<String, dynamic> get args {
+    if (_args is EqualUnmodifiableMapView) return _args;
+    // ignore: implicit_dynamic_type
+    return EqualUnmodifiableMapView(_args);
+  }
+
+  /// The domain event that produced the row (e.g. an `event_changes` id).
+  @override
+  @JsonKey(name: 'source_event_id')
+  final String? sourceEventId;
+
+  /// Idempotency key, unique per recipient.
+  @override
+  @JsonKey(name: 'dedupe_key')
+  final String? dedupeKey;
+
+  /// Grouping key: a grouped row is updated in place (KAN-980).
+  @override
+  @JsonKey(name: 'group_key')
+  final String? groupKey;
+
+  /// 1 = legacy row, 2 = written by notify_v2.
+  @override
+  @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+  final int schemaVersion;
 
   @override
   String toString() {
-    return 'AppNotification(id: $id, toUserId: $toUserId, kindKey: $kindKey, title: $title, body: $body, actionRoute: $actionRoute, payload: $payload, priority: $priority, aiScore: $aiScore, isRead: $isRead, readAt: $readAt, clickedAt: $clickedAt, interactionCount: $interactionCount, createdAt: $createdAt)';
+    return 'AppNotification(id: $id, toUserId: $toUserId, kindKey: $kindKey, title: $title, body: $body, actionRoute: $actionRoute, payload: $payload, priority: $priority, aiScore: $aiScore, isRead: $isRead, readAt: $readAt, clickedAt: $clickedAt, interactionCount: $interactionCount, createdAt: $createdAt, templateKey: $templateKey, args: $args, sourceEventId: $sourceEventId, dedupeKey: $dedupeKey, groupKey: $groupKey, schemaVersion: $schemaVersion)';
   }
 
   @override
@@ -401,12 +546,23 @@ class _$AppNotificationImpl extends _AppNotification {
             (identical(other.interactionCount, interactionCount) ||
                 other.interactionCount == interactionCount) &&
             (identical(other.createdAt, createdAt) ||
-                other.createdAt == createdAt));
+                other.createdAt == createdAt) &&
+            (identical(other.templateKey, templateKey) ||
+                other.templateKey == templateKey) &&
+            const DeepCollectionEquality().equals(other._args, _args) &&
+            (identical(other.sourceEventId, sourceEventId) ||
+                other.sourceEventId == sourceEventId) &&
+            (identical(other.dedupeKey, dedupeKey) ||
+                other.dedupeKey == dedupeKey) &&
+            (identical(other.groupKey, groupKey) ||
+                other.groupKey == groupKey) &&
+            (identical(other.schemaVersion, schemaVersion) ||
+                other.schemaVersion == schemaVersion));
   }
 
   @JsonKey(includeFromJson: false, includeToJson: false)
   @override
-  int get hashCode => Object.hash(
+  int get hashCode => Object.hashAll([
     runtimeType,
     id,
     toUserId,
@@ -422,7 +578,13 @@ class _$AppNotificationImpl extends _AppNotification {
     clickedAt,
     interactionCount,
     createdAt,
-  );
+    templateKey,
+    const DeepCollectionEquality().hash(_args),
+    sourceEventId,
+    dedupeKey,
+    groupKey,
+    schemaVersion,
+  ]);
 
   /// Create a copy of AppNotification
   /// with the given fields replaced by the non-null parameter values.
@@ -457,6 +619,14 @@ abstract class _AppNotification extends AppNotification {
     @JsonKey(name: 'clicked_at') final DateTime? clickedAt,
     @JsonKey(name: 'interaction_count') final int interactionCount,
     @JsonKey(name: 'created_at') required final DateTime createdAt,
+    @JsonKey(name: 'template_key') final String? templateKey,
+    @JsonKey(name: 'args', fromJson: _argsFromJson)
+    final Map<String, dynamic> args,
+    @JsonKey(name: 'source_event_id') final String? sourceEventId,
+    @JsonKey(name: 'dedupe_key') final String? dedupeKey,
+    @JsonKey(name: 'group_key') final String? groupKey,
+    @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+    final int schemaVersion,
   }) = _$AppNotificationImpl;
   const _AppNotification._() : super._();
 
@@ -502,7 +672,37 @@ abstract class _AppNotification extends AppNotification {
   int get interactionCount;
   @override
   @JsonKey(name: 'created_at')
-  DateTime get createdAt;
+  DateTime get createdAt; // ── Envelope v2 (KAN-974). A legacy row (schema_version 1) has none of
+  // these; it renders from title / body / action_route as before. ──────
+  /// The `notification_kinds` key whose templates rendered the row.
+  @override
+  @JsonKey(name: 'template_key')
+  String? get templateKey;
+
+  /// Template arguments; `{name}_en` / `{name}_ar` override `{name}`.
+  @override
+  @JsonKey(name: 'args', fromJson: _argsFromJson)
+  Map<String, dynamic> get args;
+
+  /// The domain event that produced the row (e.g. an `event_changes` id).
+  @override
+  @JsonKey(name: 'source_event_id')
+  String? get sourceEventId;
+
+  /// Idempotency key, unique per recipient.
+  @override
+  @JsonKey(name: 'dedupe_key')
+  String? get dedupeKey;
+
+  /// Grouping key: a grouped row is updated in place (KAN-980).
+  @override
+  @JsonKey(name: 'group_key')
+  String? get groupKey;
+
+  /// 1 = legacy row, 2 = written by notify_v2.
+  @override
+  @JsonKey(name: 'schema_version', fromJson: _schemaVersionFromJson)
+  int get schemaVersion;
 
   /// Create a copy of AppNotification
   /// with the given fields replaced by the non-null parameter values.
