@@ -2197,3 +2197,17 @@ Migration `20261117171717_kan1017_game_invite_notify.sql`. Live test
   sends nothing; dedupe `game.invited:<invite id>`. The old `process_notification_event` call is gone.
 * `game.invited` titles: "{actor} invited you to {title}" / "{actor} دعاك إلى {title}".
 * No backfill: on 2026-11-17 the only invite was the QA device-test invite, left untouched.
+
+## 24. One organiser notice per event: game.full per fill episode, invite accept (KAN-1018, 2026-11-17)
+
+Migration `20261117174309_kan1018_full_once_invite_single.sql`. Live test
+`supabase/tests/notifications_v2/kan1018_full_once_invite_single_probes.sql`.
+
+* **`public.game_fill_episodes`** (`game_id` PK → games, `full_since`, `episode`, `updated_at`): server state written
+  only by `kan982_roster_after`. RLS on, no policies, no `anon`/`authenticated` grant.
+* `game.full` is sent when a join leaves the game with no slot **and no episode is open** (`full_since IS NULL`); the
+  episode number goes up and the dedupe key is `game.full:<game>:episode:<n>`. A leave closes the episode only if a
+  place is still open after the waitlist promotion step, so a leave refilled from the waitlist is the same episode.
+  Edge: a capacity edit with no roster change does not move the episode (next roster change corrects it).
+* A join that accepts a pending invite sends only `game.invite_accepted` (invite trigger); `game.player_joined` is
+  skipped for that join.
