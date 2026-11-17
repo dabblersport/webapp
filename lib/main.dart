@@ -205,6 +205,13 @@ Future<Widget> _bootstrap() async {
     // bounded by a short timeout; any uncertainty resolves to "not blocked".
     final container = ProviderContainer();
     final minBuildCheck = container.read(minBuildStatusProvider.future);
+    // KAN-977: the push registration carries the app locale; it is sent again
+    // whenever the locale changes.
+    container.listen<Locale>(localeProvider, (_, next) {
+      unawaited(
+        push_facade.PushNotificationService.instance.updateLocale(next),
+      );
+    }, fireImmediately: true);
     // Bounded (KAN-603): on a dead network the launch carries on with the
     // theme already stored on the device instead of waiting on the account.
     try {

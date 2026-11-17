@@ -1,8 +1,9 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
-import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/features/notifications/meetup_notification_routes.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -10,6 +11,8 @@ import 'dart:async';
 import 'dart:convert';
 
 import 'package:dabbler/core/config/notification_preference.dart';
+
+import 'push_token_registrar.dart';
 
 /// The native notification permission, behind a seam so a test can prove when
 /// the system prompt is (not) asked for. [request] shows the native alert;
@@ -61,6 +64,10 @@ class PushNotificationService {
   @visibleForTesting
   PushPermissionGateway permission = const _FirebasePermissionGateway();
 
+  /// Token registration through the v2 RPCs (KAN-977), replaceable in tests.
+  @visibleForTesting
+  PushTokenRegistrar registrar = PushTokenRegistrar();
+
   final FlutterLocalNotificationsPlugin _localNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
 
@@ -93,6 +100,11 @@ class PushNotificationService {
     await _step('auth listener', () async => _listenAuthState());
     await _step('initial message', _handleInitialMessage);
     await _step('opened-app listener', () async => _listenMessageOpenedApp());
+    // KAN-977: the OS permission may change in system settings meanwhile.
+    await _step(
+      'resume sync',
+      () async => AppLifecycleManager().onResume(_onResume),
+    );
     await _step('activation', () async {
       if (await _permissionGranted()) await _activate();
     });
@@ -127,8 +139,8 @@ class PushNotificationService {
   /// Re-save the FCM token whenever the user signs in. On a fresh install
   /// init() runs before authentication, so the launch-time save is skipped
   /// (no auth user) — without this listener the device would never get an
-  /// fcm_tokens row and would receive no pushes. Upsert is idempotent, so
-  /// overlapping saves are harmless.
+  /// fcm_tokens row and would receive no pushes. Registration is idempotent,
+  /// so overlapping saves are harmless.
   void _listenAuthState() {
     _authStateSub?.cancel();
     _authStateSub = Supabase.instance.client.auth.onAuthStateChange.listen((
@@ -284,7 +296,7 @@ class PushNotificationService {
       final token = await FirebaseMessaging.instance.getToken();
 
       if (token != null) {
-        await _saveTokenToSupabase(token);
+        await registerToken(token);
       }
     } catch (e) {
       debugPrint('Failed to get/save FCM token: $e');
@@ -298,7 +310,7 @@ class PushNotificationService {
       newToken,
     ) async {
       debugPrint('FCM token refreshed');
-      await _saveTokenToSupabase(newToken);
+      await registerToken(newToken);
     }, onError: (e) => debugPrint('FCM token refresh error: $e'));
   }
 
@@ -333,49 +345,57 @@ class PushNotificationService {
     }
   }
 
-  Future<void> _saveTokenToSupabase(String token) async {
+  String get _platform =>
+      pushPlatformName(isWeb: false, platform: defaultTargetPlatform);
+
+  Future<AuthorizationStatus?> _statusOrNull() async {
     try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-
-      if (userId == null) {
-        return;
-      }
-
-      await supabase.from(SupabaseConfig.fcmTokensTable).upsert({
-        'user_id': userId,
-        'token': token,
-        'platform': defaultTargetPlatform.name,
-        'updated_at': DateTime.now().toIso8601String(),
-      }, onConflict: 'user_id,platform');
-      debugPrint('FCM token saved for user $userId');
-    } catch (e) {
-      debugPrint('Failed to save FCM token to Supabase: $e');
+      return await permission.status();
+    } catch (_) {
+      return null;
     }
   }
 
-  /// Revoke this device's push registration on logout: deletes the current
-  /// user's `fcm_tokens` row for this platform (RLS requires auth.uid(),
-  /// so this MUST be called before `supabase.auth.signOut()` per T-004's
-  /// teardown order — revoke server-side, then clear local caches, then
-  /// sign out) and, best-effort, invalidates the local FCM registration so
-  /// a re-login on the same device generates a fresh token rather than
-  /// silently reusing one already deleted server-side.
-  Future<void> revokeToken() async {
-    try {
-      final supabase = Supabase.instance.client;
-      final userId = supabase.auth.currentUser?.id;
-      if (userId == null) return;
+  /// Registers [token] for this installation (KAN-977): installation id, app
+  /// version, locale and OS permission go with it. No-op when signed out.
+  @visibleForTesting
+  Future<void> registerToken(String token) async {
+    final result = await registrar.register(
+      token: token,
+      platform: _platform,
+      permission: await _statusOrNull(),
+    );
+    result.fold((f) => debugPrint('Failed to register FCM token: $f'), (_) {});
+  }
 
-      await supabase
-          .from(SupabaseConfig.fcmTokensTable)
-          .delete()
-          .eq('user_id', userId)
-          .eq('platform', defaultTargetPlatform.name);
-      debugPrint('FCM token revoked for user $userId');
-    } catch (e) {
-      debugPrint('Failed to revoke FCM token in Supabase: $e');
-    }
+  /// Sends the registration again when the permission or locale changed.
+  Future<void> _resync() async {
+    final result = await registrar.resync(
+      platform: _platform,
+      permission: await _statusOrNull(),
+    );
+    result.fold((f) => debugPrint('FCM registration sync failed: $f'), (_) {});
+  }
+
+  void _onResume() => unawaited(_resync());
+
+  /// The app locale changed (or was first read): send it with the token.
+  Future<void> updateLocale(Locale locale) async {
+    if (registrar.setLocale(locale)) await _resync();
+  }
+
+  /// Revoke this installation's push registration on logout: removes its
+  /// `fcm_tokens` row through `rpc_unregister_push_token` (it needs
+  /// auth.uid(), so this MUST be called before `supabase.auth.signOut()` per
+  /// T-004's teardown order) and, best-effort, invalidates the local FCM
+  /// registration so a re-login gets a fresh token. The installation id is
+  /// kept: it names the device, not the user.
+  Future<void> revokeToken() async {
+    final result = await registrar.unregister();
+    result.fold(
+      (f) => debugPrint('Failed to unregister FCM token: $f'),
+      (_) {},
+    );
 
     try {
       await FirebaseMessaging.instance.deleteToken();

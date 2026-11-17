@@ -1,4 +1,5 @@
 import 'package:dabbler/core/config/notification_preference.dart';
+import 'package:flutter/widgets.dart' show Locale;
 
 /// Stub implementation for web platform (no-op).
 class PushNotificationService {
@@ -40,4 +41,7 @@ class PushNotificationService {
   Future<void> revokeToken() async {
     // No-op: this platform never has a fcm_tokens row to revoke.
   }
+
+  /// Stub - no-op (nothing is registered).
+  Future<void> updateLocale(Locale locale) async {}
 }

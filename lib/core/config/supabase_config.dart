@@ -143,6 +143,7 @@ class SupabaseConfig {
   /// `id == game.id`.
   static const String eventsTable = 'events';
   static const String friendEdgesTable = 'friend_edges';
+
   /// KAN-950: Realtime nudge per game listing change; `games` itself never
   /// delivers Realtime (RLS, no policy).
   static const String gameListingNudgesTable = 'game_listing_nudges';
@@ -358,4 +359,35 @@ class SupabaseConfig {
   // an Edge Function secret; caller must be authenticated and `to` must
   // match the caller's own auth email (self-serve only, not a mailer).
   static const String sendExportEmailFn = 'send-export-email';
+
+  // ---- Notifications v2 (KAN-973) ----
+  /// KAN-977: registers or refreshes this installation's FCM token (one row
+  /// per installation in `fcm_tokens`). Returns the row id.
+  static const String rpcRegisterPushToken = 'rpc_register_push_token';
+
+  /// KAN-977: removes this installation's row; called before sign-out.
+  static const String rpcUnregisterPushToken = 'rpc_unregister_push_token';
+
+  // KAN-978 (W0-5): every other table and RPC name of the Epic, so the Wave 1
+  // tickets read one place. Existing: notificationsTable,
+  // notificationKindsTable, notificationSettingsTable (above).
+  /// KAN-974: the v2 sender (server side; listed for reference and tests).
+  static const String notifyV2Fn = 'notify_v2';
+
+  /// KAN-975: the viewer's settings, read and written through these RPCs.
+  static const String rpcGetMyNotificationSettings =
+      'rpc_get_my_notification_settings';
+  static const String rpcUpdateMyNotificationSettings =
+      'rpc_update_my_notification_settings';
+  static const String rpcSetMyNotificationTimezone =
+      'rpc_set_my_notification_timezone';
+
+  /// KAN-976: the event change outbox and the event's timezone.
+  static const String eventChangesTable = 'event_changes';
+  static const String eventTimezoneFn = 'event_timezone';
+
+  /// W1-B1 / W1-B2 / W1-B5: delivery rows, grouped rows, reminder jobs.
+  static const String notificationDeliveriesTable = 'notification_deliveries';
+  static const String notificationAggregatesTable = 'notification_aggregates';
+  static const String notificationJobsTable = 'notification_jobs';
 }

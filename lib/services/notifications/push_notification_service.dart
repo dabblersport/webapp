@@ -2,6 +2,7 @@
 // (VAPID + firebase-messaging-sw.js), mobile uses the full Firebase +
 // local-notifications implementation.
 import 'package:dabbler/core/config/notification_preference.dart';
+import 'package:flutter/widgets.dart' show Locale;
 
 import 'push_notification_service_stub.dart'
     if (dart.library.html) 'push_notification_service_web.dart'
@@ -49,12 +50,17 @@ class PushNotificationService {
   }
 
   /// Revoke this device's push registration on logout. Deletes the current
-  /// user's `fcm_tokens` row for this platform and best-effort invalidates
+  /// installation's `fcm_tokens` row (KAN-977) and best-effort invalidates
   /// the local FCM registration. Per T-004's teardown contract, callers
   /// MUST invoke this before `supabase.auth.signOut()` — the delete relies
   /// on `auth.uid()` still resolving to the signed-in user (RLS), and once
   /// signed out there is no session left to authorize it.
   Future<void> revokeToken() async {
     await impl.PushNotificationService.instance.revokeToken();
+  }
+
+  /// The app locale changed (or was first read): it is sent with the token.
+  Future<void> updateLocale(Locale locale) async {
+    await impl.PushNotificationService.instance.updateLocale(locale);
   }
 }
