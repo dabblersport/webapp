@@ -64,6 +64,7 @@ String? notificationBodyTemplate(
   'meetup.removed' => l.notif_b_meetup_removed(a('organiser'), a('reason')),
   'meetup.player_left' => l.notif_b_meetup_player_left,
   'meetup.rsvp_interested' => l.notif_b_meetup_rsvp_interested,
+  'meetup.wants_to_join_full' => l.notif_b_meetup_wants_to_join_full,
   'game.cancelled' => l.notif_b_game_cancelled,
   'game.time_changed' => l.notif_b_game_time_changed(a('old'), a('new')),
   'game.venue_changed' => l.notif_b_game_venue_changed(a('old'), a('new')),
@@ -74,6 +75,7 @@ String? notificationBodyTemplate(
   ),
   'game.occurrence_cancelled' => l.notif_b_game_occurrence_cancelled,
   'game.series_changed' => l.notif_b_game_series_changed,
+  'game.series_cancelled' => l.notif_b_game_series_cancelled,
   'meetup.time_changed' => l.notif_b_meetup_time_changed(a('old'), a('new')),
   'meetup.venue_changed' => l.notif_b_meetup_venue_changed(a('old'), a('new')),
   'meetup.details_changed' => l.notif_b_meetup_details_changed(

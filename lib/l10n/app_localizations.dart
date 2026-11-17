@@ -16775,6 +16775,18 @@ abstract class AppLocalizations {
   /// **'See who\'s interested.'**
   String get notif_b_meetup_rsvp_interested;
 
+  /// KAN-978: server template meetup.wants_to_join_full (title).
+  ///
+  /// In en, this message translates to:
+  /// **'{actor} asked to come to {title}, but it\'s full'**
+  String notif_t_meetup_wants_to_join_full(String actor, String title);
+
+  /// KAN-978: server template meetup.wants_to_join_full (body).
+  ///
+  /// In en, this message translates to:
+  /// **'They\'ll get a place if one opens.'**
+  String get notif_b_meetup_wants_to_join_full;
+
   /// KAN-978: server template game.cancelled (title).
   ///
   /// In en, this message translates to:
@@ -16850,6 +16862,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to see what changed in the upcoming dates.'**
   String get notif_b_game_series_changed;
+
+  /// KAN-978: server template game.series_cancelled (title).
+  ///
+  /// In en, this message translates to:
+  /// **'All upcoming {title} games were cancelled'**
+  String notif_t_game_series_cancelled(String title);
+
+  /// KAN-978: server template game.series_cancelled (body).
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser cancelled the whole series.'**
+  String get notif_b_game_series_cancelled;
 
   /// KAN-978: server template meetup.time_changed (title).
   ///

@@ -381,6 +381,7 @@ abstract final class NotificationKinds {
     'game.cancelled' ||
     'meetup.cancelled' ||
     'game.occurrence_cancelled' ||
+    'game.series_cancelled' ||
     'meetup.occurrence_cancelled' => true,
     _ => false,
   };

@@ -15,8 +15,8 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/render_mode.dart';
 
-/// The 87 kinds of `public.notification_kinds` after KAN-974 (35 live, 52
-/// new). A kind added on the server must be added here and to the registry.
+/// The 89 kinds of `public.notification_kinds`: 87 after KAN-974 (35 live,
+/// 52 new), plus KAN-1013 and KAN-1015's two live kinds. A kind added on the server must be added here and to the registry.
 const List<String> serverKinds = <String>[
   // live (35)
   'arena.payment_required', 'auth.welcome', 'friend.accepted',
@@ -53,6 +53,8 @@ const List<String> serverKinds = <String>[
   'activity.rating_reminder', 'activity.summary', 'security.new_signin',
   'security.password_changed', 'security.email_changed',
   'social.comment_replied', 'social.post_reposted',
+  // KAN-1013 / KAN-1015 (live)
+  'meetup.wants_to_join_full', 'game.series_cancelled',
 ];
 
 AppNotification _n(
@@ -79,11 +81,11 @@ final AppLocalizations ar = lookupAppLocalizations(const Locale('ar'));
 void main() {
   group('coverage', () {
     test('every server kind is in the registry, and nothing else', () {
-      expect(serverKinds, hasLength(87));
-      expect(serverKinds.toSet(), hasLength(87));
+      expect(serverKinds, hasLength(89));
+      expect(serverKinds.toSet(), hasLength(89));
       expect(NotificationKinds.keys.toSet(), serverKinds.toSet());
       expect(notificationServerKinds.keys.toSet(), serverKinds.toSet());
-      expect(NotificationKinds.all.where((s) => s.active), hasLength(35));
+      expect(NotificationKinds.all.where((s) => s.active), hasLength(37));
     });
 
     test('every kind has an EN and AR title and body', () {
@@ -363,7 +365,13 @@ void main() {
         NotificationSettingsGroup.gameUpdates,
         NotificationSettingsGroup.waitlist,
       }),
-      ['game.updated', 'game.waitlist_promoted', 'game.player_joined'],
+      [
+        'game.updated',
+        'game.waitlist_promoted',
+        'game.player_joined',
+        // KAN-1015: live, so the Game updates switch covers it.
+        'game.series_cancelled',
+      ],
     );
     expect(
       k({

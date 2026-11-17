@@ -80,6 +80,14 @@ notificationEpicKindTable = <NotificationKindClient>[
     _R.meetupHost,
     _G.meetupRsvps,
   ),
+  // KAN-1013: someone wants a place in the organiser's full meetup; in-app
+  // only, grouped ("See all N people"), opens the meetup, no actions.
+  NotificationKindClient(
+    'meetup.wants_to_join_full',
+    _people,
+    _R.meetupHost,
+    _G.meetupRequests,
+  ),
   // Event changes and cancel (W1-B3)
   NotificationKindClient('game.cancelled', _gameAmber, _R.game, _G.gameUpdates),
   NotificationKindClient(
@@ -108,6 +116,14 @@ notificationEpicKindTable = <NotificationKindClient>[
   ),
   NotificationKindClient(
     'game.series_changed',
+    _gameAmber,
+    _R.game,
+    _G.gameUpdates,
+  ),
+  // KAN-1015: the whole series was cancelled (breaks quiet hours, like every
+  // cancel); its target opens as "This was cancelled".
+  NotificationKindClient(
+    'game.series_cancelled',
     _gameAmber,
     _R.game,
     _G.gameUpdates,

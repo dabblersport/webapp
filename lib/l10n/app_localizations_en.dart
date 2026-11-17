@@ -9627,6 +9627,15 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notif_b_meetup_rsvp_interested => 'See who\'s interested.';
 
   @override
+  String notif_t_meetup_wants_to_join_full(String actor, String title) {
+    return '$actor asked to come to $title, but it\'s full';
+  }
+
+  @override
+  String get notif_b_meetup_wants_to_join_full =>
+      'They\'ll get a place if one opens.';
+
+  @override
   String notif_t_game_cancelled(String title) {
     return '$title was cancelled';
   }
@@ -9685,6 +9694,15 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notif_b_game_series_changed =>
       'Tap to see what changed in the upcoming dates.';
+
+  @override
+  String notif_t_game_series_cancelled(String title) {
+    return 'All upcoming $title games were cancelled';
+  }
+
+  @override
+  String get notif_b_game_series_cancelled =>
+      'The organiser cancelled the whole series.';
 
   @override
   String notif_t_meetup_time_changed(String title) {

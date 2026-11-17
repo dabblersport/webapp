@@ -9742,6 +9742,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_b_meetup_rsvp_interested => 'اطّلع على المهتمين.';
 
   @override
+  String notif_t_meetup_wants_to_join_full(String actor, String title) {
+    return 'طلب حضور $title من $actor، لكنه مكتمل';
+  }
+
+  @override
+  String get notif_b_meetup_wants_to_join_full => 'سيحصل على مكان إذا توفّر.';
+
+  @override
   String notif_t_game_cancelled(String title) {
     return 'تم إلغاء $title';
   }
@@ -9800,6 +9808,14 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get notif_b_game_series_changed =>
       'اضغط لمعرفة ما تغيّر في المواعيد القادمة.';
+
+  @override
+  String notif_t_game_series_cancelled(String title) {
+    return 'أُلغيت جميع مباريات $title القادمة';
+  }
+
+  @override
+  String get notif_b_game_series_cancelled => 'ألغى المنظّم السلسلة بالكامل.';
 
   @override
   String notif_t_meetup_time_changed(String title) {
