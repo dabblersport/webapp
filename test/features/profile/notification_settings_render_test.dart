@@ -89,9 +89,13 @@ class _FakeRepo implements NotificationSettingsRepository {
   }
 
   @override
-  Future<Result<NotificationSettings, Failure>> save(
-    NotificationSettings s,
-  ) async => Ok(s);
+  Future<Result<NotificationSettings, Failure>> update(
+    Map<String, dynamic> patch,
+  ) async => Ok(settings!);
+
+  @override
+  Future<Result<NotificationSettings, Failure>> setTimezone(String tz) async =>
+      Ok(settings!);
 }
 
 void main() {
@@ -140,8 +144,8 @@ void main() {
           expect(find.text(l10n.notif_settings_push), findsOneWidget);
         }
         if (entry.key == 'quiet-hours') {
-          expect(find.text(l10n.notif_settings_quiet_start), findsOneWidget);
-          expect(find.text(l10n.notif_settings_quiet_all), findsOneWidget);
+          expect(find.text(l10n.notif_settings_quiet_from), findsOneWidget);
+          expect(find.text(l10n.notif_settings_quiet_all), findsNothing);
         }
         await _shoot(tester, key, 'notifications-${entry.key}-$dir');
       });
@@ -169,7 +173,11 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.text(lookupAppLocalizations(locale).notif_settings_quiet_start));
+      final Finder from = find.text(
+        lookupAppLocalizations(locale).notif_settings_quiet_from,
+      );
+      await tester.ensureVisible(from);
+      await tester.tap(from);
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

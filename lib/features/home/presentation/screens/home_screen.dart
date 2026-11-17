@@ -1227,7 +1227,9 @@ class _HomeHeader extends ConsumerWidget {
             icon: 'notification-bing',
             label: AppLocalizations.of(context).notif_title_notifications,
             unread: unread > 0,
-            unreadLabel: unread > 0 ? '$unread unread' : null,
+            unreadLabel: unread > 0
+                ? AppLocalizations.of(context).notif_bell_unread(unread)
+                : null,
             onPressed: () => context.push(RoutePaths.notifications),
           ),
         ],

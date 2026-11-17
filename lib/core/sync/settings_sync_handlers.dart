@@ -5,6 +5,7 @@ import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/services/theme_service.dart';
 import 'package:dabbler/core/sync/pending_settings_store.dart';
+import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
 
 /// Setting keys of the offline queue (KAN-608).
 abstract class SettingKeys {
@@ -51,7 +52,12 @@ abstract class _RowHandler implements SettingSyncHandler {
   }
 }
 
-/// `notification_settings`: one row per account, written whole.
+/// `notification_settings` (KAN-991): written through
+/// `rpc_update_my_notification_settings` with every setting the RPC accepts
+/// (the queue holds the whole value), read back through
+/// `rpc_get_my_notification_settings`. The table is no longer written
+/// directly. The RPC stamps `updated_at` with the server time, not the edit
+/// time.
 class NotificationsSyncHandler extends _RowHandler {
   NotificationsSyncHandler(super.client);
 
@@ -60,36 +66,27 @@ class NotificationsSyncHandler extends _RowHandler {
 
   @override
   Future<void> push(String accountId, PendingSettingEdit edit) async {
-    final v = edit.value;
-    await _client().from(table).upsert({
+    final NotificationSettings value = NotificationSettings.fromJson({
+      ...edit.value,
       'user_id': accountId,
-      'tz': v['tz'],
-      'quiet_start_min': v['quiet_start_min'],
-      'quiet_end_min': v['quiet_end_min'],
-      'push_enabled': v['push_enabled'],
-      'email_enabled': v['email_enabled'],
-      'sms_enabled': v['sms_enabled'],
-      'muted_kinds': v['muted_kinds'],
-      'allow_high_priority_override': v['allow_high_priority_override'],
-      'allow_all_override': v['allow_all_override'],
-      // The edit's own time, so the later edit wins whichever device syncs
-      // first.
-      'updated_at': edit.editedAt.toUtc().toIso8601String(),
-    }, onConflict: 'user_id');
+    });
+    await _client().rpc(
+      SupabaseConfig.rpcUpdateMyNotificationSettings,
+      params: {'p_patch': notificationSettingsFullPatch(value)},
+    );
   }
 
   @override
   Future<void> adoptServer(String accountId) async {
-    final row = await _client()
-        .from(table)
-        .select()
-        .eq('user_id', accountId)
-        .maybeSingle();
-    if (row != null) {
+    final Object? raw = await _client().rpc(
+      SupabaseConfig.rpcGetMyNotificationSettings,
+    );
+    final Object? row = raw is List && raw.isNotEmpty ? raw.first : raw;
+    if (row is Map) {
       await OfflineCache.instance.write(
         accountId,
         settingsMirrorKey(SettingKeys.notifications),
-        row,
+        Map<String, dynamic>.from(row),
       );
     }
   }

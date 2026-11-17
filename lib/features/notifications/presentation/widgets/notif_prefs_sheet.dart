@@ -1,17 +1,29 @@
 // The "What reaches you" sheet behind the Notifications top bar's gear
-// (`Notifications.dc.html:190-235`): a toggle per notification group, plus the
-// quiet-hours window, fed by the existing notification-settings controller.
-// The full screen stays at /settings/notifications.
+// (`Notifications.dc.html:190-235`), fed by the notification-settings
+// controller. The full screen stays at /settings/notifications.
+//
+// KAN-991: one switch per category (Social, Messages, Games, Meetups,
+// Rewards & announcements), the same categories as the settings screen. A
+// switch turns the category's in-app and push channels on or off together
+// (Rewards & announcements is in-app only). Booking and payments are hidden
+// (F-12). The quiet-hours chip shows the device's 12/24-hour format.
 
-import 'package:dabbler/utils/transitions/app_sheet_route.dart';
-import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
+import 'dart:async';
+
+import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
+import 'package:dabbler/features/notifications/data/models/notification_settings_keys.dart';
+import 'package:dabbler/features/notifications/presentation/controllers/notification_settings_controller.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
+import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_categories_section.dart'
+    show notifCategoryLabel;
+import 'package:dabbler/features/profile/presentation/screens/settings/notification_settings_rows.dart'
+    show notifSettingsClock;
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
 /// Opens the sheet over the current route.
 void showNotifPrefsSheet(BuildContext context) {
@@ -34,28 +46,14 @@ void showNotifPrefsSheet(BuildContext context) {
   );
 }
 
-class _Pref {
-  const _Pref(this.icon, this.groups);
-  final String icon;
-  final Set<NotificationSettingsGroup> groups;
+/// The channels a category's sheet switch drives.
+List<String> _channelsOf(String category) => category == NotifCategoryKey.system
+    ? const <String>[NotifChannel.inApp]
+    : const <String>[NotifChannel.inApp, NotifChannel.push];
 
-  /// KAN-978: the group's kinds come from the kind registry.
-  List<String> get kinds => NotificationKinds.kindsIn(groups);
-}
-
-/// The groups the design lists, each the settings groups the existing
-/// settings screen already toggles together.
-const _prefs = <String, _Pref>{
-  'invites': _Pref('game', {NotificationSettingsGroup.gameInvites}),
-  'waitlist': _Pref('notification-bing', {NotificationSettingsGroup.waitlist}),
-  'payments': _Pref('wallet', {NotificationSettingsGroup.booking}),
-  'social': _Pref('people', {
-    NotificationSettingsGroup.likes,
-    NotificationSettingsGroup.comments,
-    NotificationSettingsGroup.mentions,
-    NotificationSettingsGroup.followers,
-  }),
-};
+/// On when any of the category's channels is on.
+bool notifPrefsCategoryOn(NotificationSettings s, String category) =>
+    _channelsOf(category).any((ch) => s.categoryOn(category, ch));
 
 class NotifPrefsSheetBody extends ConsumerWidget {
   const NotifPrefsSheetBody({super.key, required this.onOpenFullSettings});
@@ -64,11 +62,14 @@ class NotifPrefsSheetBody extends ConsumerWidget {
   /// there).
   final VoidCallback onOpenFullSettings;
 
-  static String _time(BuildContext context, int minutes) {
-    final locale = Localizations.localeOf(context).toString();
-    final at = DateTime(2000, 1, 1, minutes ~/ 60, minutes % 60);
-    final pattern = minutes % 60 == 0 ? 'h a' : 'h:mm a';
-    return DabblerType.toWesternDigits(DateFormat(pattern, locale).format(at));
+  Future<void> _set(
+    NotificationSettingsController controller,
+    String category,
+    bool on,
+  ) async {
+    for (final String ch in _channelsOf(category)) {
+      await controller.setCategory(category, ch, on);
+    }
   }
 
   @override
@@ -81,31 +82,22 @@ class NotifPrefsSheetBody extends ConsumerWidget {
     final controller = ref.read(
       notificationSettingsControllerProvider.notifier,
     );
-    final titles = <String, (String, String)>{
-      'invites': (l10n.notif_pref_invites_title, l10n.notif_pref_invites_sub),
-      'waitlist': (
-        l10n.notif_pref_waitlist_title,
-        l10n.notif_pref_waitlist_sub,
-      ),
-      'payments': (
-        l10n.notif_pref_payments_title,
-        l10n.notif_pref_payments_sub,
-      ),
-      'social': (l10n.notif_pref_social_title, l10n.notif_pref_social_sub),
-    };
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        for (final entry in _prefs.entries)
+        for (final String c in NotifCategoryKey.shown)
           DabblerInputRow.toggle(
+            key: ValueKey<String>('notif-pref-$c'),
             flat: true,
-            leading: DabblerIcon(entry.value.icon, size: DabblerSizing.iconMd),
-            title: titles[entry.key]!.$1,
-            subtitle: titles[entry.key]!.$2,
-            checked: !entry.value.kinds.any(settings.isKindMuted),
-            onChanged: (on) =>
-                controller.setKindsEnabled(entry.value.kinds, on),
+            leading: DabblerIcon(
+              notifCategoryLabel(l10n, c).icon,
+              size: DabblerSizing.iconMd,
+            ),
+            title: notifCategoryLabel(l10n, c).title,
+            subtitle: notifCategoryLabel(l10n, c).sub,
+            checked: notifPrefsCategoryOn(settings, c),
+            onChanged: (on) => unawaited(_set(controller, c, on)),
           ),
         DabblerInputRow(
           flat: true,
@@ -116,8 +108,8 @@ class NotifPrefsSheetBody extends ConsumerWidget {
           trailing: DabblerChip(
             label: settings.hasQuietHours
                 ? l10n.notif_quiet_hours_range(
-                    _time(context, settings.quietStartMin!),
-                    _time(context, settings.quietEndMin!),
+                    notifSettingsClock(context, settings.quietStartMin!),
+                    notifSettingsClock(context, settings.quietEndMin!),
                   )
                 : l10n.notif_quiet_hours_off,
             trailingIcon: const DabblerIcon(

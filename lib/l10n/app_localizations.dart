@@ -7571,6 +7571,360 @@ abstract class AppLocalizations {
   /// **'Could not update settings: {error}'**
   String notif_settings_update_failed(String error);
 
+  /// No description provided for @notif_settings_categories_header.
+  ///
+  /// In en, this message translates to:
+  /// **'What reaches you'**
+  String get notif_settings_categories_header;
+
+  /// No description provided for @notif_settings_channel_in_app.
+  ///
+  /// In en, this message translates to:
+  /// **'In-app'**
+  String get notif_settings_channel_in_app;
+
+  /// No description provided for @notif_settings_channel_push.
+  ///
+  /// In en, this message translates to:
+  /// **'Push'**
+  String get notif_settings_channel_push;
+
+  /// No description provided for @notif_settings_cat_social.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get notif_settings_cat_social;
+
+  /// No description provided for @notif_settings_cat_social_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'New followers, likes, comments and mentions'**
+  String get notif_settings_cat_social_sub;
+
+  /// No description provided for @notif_settings_cat_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notif_settings_cat_messages;
+
+  /// No description provided for @notif_settings_cat_messages_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Direct and group chats'**
+  String get notif_settings_cat_messages_sub;
+
+  /// No description provided for @notif_settings_cat_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get notif_settings_cat_games;
+
+  /// No description provided for @notif_settings_cat_games_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Invites, changes, waitlist and results'**
+  String get notif_settings_cat_games_sub;
+
+  /// No description provided for @notif_settings_cat_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get notif_settings_cat_meetups;
+
+  /// No description provided for @notif_settings_cat_meetups_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'RSVPs, requests and changes'**
+  String get notif_settings_cat_meetups_sub;
+
+  /// No description provided for @notif_settings_cat_system.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards & announcements'**
+  String get notif_settings_cat_system;
+
+  /// No description provided for @notif_settings_cat_system_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown in the app only'**
+  String get notif_settings_cat_system_sub;
+
+  /// No description provided for @notif_settings_cat_security.
+  ///
+  /// In en, this message translates to:
+  /// **'Security'**
+  String get notif_settings_cat_security;
+
+  /// No description provided for @notif_settings_cat_security_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-ins and account changes. Always on.'**
+  String get notif_settings_cat_security_sub;
+
+  /// No description provided for @notif_settings_always_on.
+  ///
+  /// In en, this message translates to:
+  /// **'Always on'**
+  String get notif_settings_always_on;
+
+  /// No description provided for @notif_settings_os_denied_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications are off for Dabbler'**
+  String get notif_settings_os_denied_title;
+
+  /// No description provided for @notif_settings_os_denied_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn them on in your phone\'s settings to get push notifications. In-app notifications still work.'**
+  String get notif_settings_os_denied_body;
+
+  /// No description provided for @notif_settings_open_settings.
+  ///
+  /// In en, this message translates to:
+  /// **'Open settings'**
+  String get notif_settings_open_settings;
+
+  /// No description provided for @notif_settings_preview_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Message previews'**
+  String get notif_settings_preview_header;
+
+  /// No description provided for @notif_settings_preview_full.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender name + message'**
+  String get notif_settings_preview_full;
+
+  /// No description provided for @notif_settings_preview_name.
+  ///
+  /// In en, this message translates to:
+  /// **'Sender name only'**
+  String get notif_settings_preview_name;
+
+  /// No description provided for @notif_settings_preview_sample.
+  ///
+  /// In en, this message translates to:
+  /// **'Sample push'**
+  String get notif_settings_preview_sample;
+
+  /// No description provided for @notif_settings_preview_sample_sender.
+  ///
+  /// In en, this message translates to:
+  /// **'Layla'**
+  String get notif_settings_preview_sample_sender;
+
+  /// No description provided for @notif_settings_preview_sample_message.
+  ///
+  /// In en, this message translates to:
+  /// **'Running 5 min late, save me a bib'**
+  String get notif_settings_preview_sample_message;
+
+  /// No description provided for @notif_settings_preview_sample_hidden.
+  ///
+  /// In en, this message translates to:
+  /// **'New message'**
+  String get notif_settings_preview_sample_hidden;
+
+  /// No description provided for @notif_settings_preview_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Your phone\'s lock-screen setting still applies. If it hides previews, you\'ll see “Dabbler · Notification”.'**
+  String get notif_settings_preview_note;
+
+  /// No description provided for @notif_settings_quiet_toggle_off.
+  ///
+  /// In en, this message translates to:
+  /// **'Off · notifications arrive as normal'**
+  String get notif_settings_quiet_toggle_off;
+
+  /// No description provided for @notif_settings_quiet_toggle_on.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} – {end} · pushes arrive silently'**
+  String notif_settings_quiet_toggle_on(String start, String end);
+
+  /// No description provided for @notif_settings_quiet_from.
+  ///
+  /// In en, this message translates to:
+  /// **'From'**
+  String get notif_settings_quiet_from;
+
+  /// No description provided for @notif_settings_quiet_to.
+  ///
+  /// In en, this message translates to:
+  /// **'To'**
+  String get notif_settings_quiet_to;
+
+  /// No description provided for @notif_settings_quiet_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Uses your phone\'s time zone and time format. Pushes arrive silently. These still alert you: a cancellation, a time or venue change, being removed, a waitlist promotion, reminders and security notices. Likes, comments and other social updates never break through.'**
+  String get notif_settings_quiet_note;
+
+  /// No description provided for @notif_settings_quiet_invalid.
+  ///
+  /// In en, this message translates to:
+  /// **'Start and end can\'t be the same time.'**
+  String get notif_settings_quiet_invalid;
+
+  /// No description provided for @notif_settings_quiet_save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get notif_settings_quiet_save;
+
+  /// No description provided for @notif_settings_quiet_saved.
+  ///
+  /// In en, this message translates to:
+  /// **'Quiet hours saved'**
+  String get notif_settings_quiet_saved;
+
+  /// No description provided for @notif_settings_reminders_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Reminders'**
+  String get notif_settings_reminders_header;
+
+  /// No description provided for @notif_settings_reminders_going.
+  ///
+  /// In en, this message translates to:
+  /// **'Games and meetups you\'re going to'**
+  String get notif_settings_reminders_going;
+
+  /// No description provided for @notif_settings_reminders_going_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Times use the event\'s local time.'**
+  String get notif_settings_reminders_going_sub;
+
+  /// No description provided for @notif_settings_reminders_interested.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups you\'re interested in'**
+  String get notif_settings_reminders_interested;
+
+  /// No description provided for @notif_settings_reminders_interested_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Same reminders as Going. They stop if you choose Not going.'**
+  String get notif_settings_reminders_interested_sub;
+
+  /// No description provided for @notif_settings_rung_24h.
+  ///
+  /// In en, this message translates to:
+  /// **'24 hours before'**
+  String get notif_settings_rung_24h;
+
+  /// No description provided for @notif_settings_rung_morning.
+  ///
+  /// In en, this message translates to:
+  /// **'{time} on the day'**
+  String notif_settings_rung_morning(String time);
+
+  /// No description provided for @notif_settings_rung_morning_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'Only when it is more than 2 hours before the start'**
+  String get notif_settings_rung_morning_sub;
+
+  /// No description provided for @notif_settings_rung_morning_interested_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'“Confirm your attendance”'**
+  String get notif_settings_rung_morning_interested_sub;
+
+  /// No description provided for @notif_settings_rung_2h.
+  ///
+  /// In en, this message translates to:
+  /// **'2 hours before'**
+  String get notif_settings_rung_2h;
+
+  /// No description provided for @notif_settings_rung_30m.
+  ///
+  /// In en, this message translates to:
+  /// **'30 minutes before'**
+  String get notif_settings_rung_30m;
+
+  /// No description provided for @notif_settings_muted_header.
+  ///
+  /// In en, this message translates to:
+  /// **'Muted'**
+  String get notif_settings_muted_header;
+
+  /// No description provided for @notif_settings_muted_kinds.
+  ///
+  /// In en, this message translates to:
+  /// **'Notification types'**
+  String get notif_settings_muted_kinds;
+
+  /// No description provided for @notif_settings_muted_conversations.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversations'**
+  String get notif_settings_muted_conversations;
+
+  /// No description provided for @notif_settings_muted_empty_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing muted'**
+  String get notif_settings_muted_empty_title;
+
+  /// No description provided for @notif_settings_muted_empty_body.
+  ///
+  /// In en, this message translates to:
+  /// **'What you turn off from a notification or a conversation shows up here.'**
+  String get notif_settings_muted_empty_body;
+
+  /// No description provided for @notif_settings_muted_kind_sub.
+  ///
+  /// In en, this message translates to:
+  /// **'From “Turn off notifications like this”'**
+  String get notif_settings_muted_kind_sub;
+
+  /// No description provided for @notif_settings_muted_kind_other.
+  ///
+  /// In en, this message translates to:
+  /// **'Other notifications'**
+  String get notif_settings_muted_kind_other;
+
+  /// No description provided for @notif_settings_muted_conversation_fallback.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation'**
+  String get notif_settings_muted_conversation_fallback;
+
+  /// No description provided for @notif_settings_unmute.
+  ///
+  /// In en, this message translates to:
+  /// **'Unmute'**
+  String get notif_settings_unmute;
+
+  /// No description provided for @notif_settings_unmuted.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} unmuted'**
+  String notif_settings_unmuted(String name);
+
+  /// No description provided for @notif_settings_undo.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get notif_settings_undo;
+
+  /// No description provided for @notif_settings_security_mute_refused.
+  ///
+  /// In en, this message translates to:
+  /// **'Security notices can\'t be turned off.'**
+  String get notif_settings_security_mute_refused;
+
+  /// No description provided for @notif_settings_save_rejected.
+  ///
+  /// In en, this message translates to:
+  /// **'That change wasn\'t saved. Your previous setting is back.'**
+  String get notif_settings_save_rejected;
+
   /// No description provided for @game_prefs_title.
   ///
   /// In en, this message translates to:
@@ -16908,6 +17262,450 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Tap to see the post.'**
   String get notif_b_social_post_reposted;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Refresh'**
+  String get notif_refresh;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String notif_unread_count(int count);
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Unread'**
+  String get notif_chip_unread;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Needs action'**
+  String get notif_chip_needs_action;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notif_chip_messages;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetups'**
+  String get notif_chip_meetups;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get notif_chip_system;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Earlier this week'**
+  String get notif_section_this_week;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Activity'**
+  String get notif_highlight_label;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitations, replies and game updates will show up here.'**
+  String get notif_empty_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing in {filter}'**
+  String notif_empty_filter_title(String filter);
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Try another filter or show everything.'**
+  String get notif_empty_filter_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Show all'**
+  String get notif_show_all;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Showing notifications saved at {time}. Actions are unavailable.'**
+  String notif_offline_banner(String time);
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re offline. Actions are unavailable.'**
+  String get notif_offline_banner_unsaved;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t refresh. Showing your earlier list.'**
+  String get notif_refresh_failed;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load notifications'**
+  String get notif_load_failed_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get notif_load_failed_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Try again'**
+  String get notif_try_again;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Refreshing'**
+  String get notif_refreshing;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Load earlier notifications'**
+  String get notif_load_earlier;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Loading'**
+  String get notif_loading;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re all caught up'**
+  String get notif_all_caught_up;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Back to notifications'**
+  String get notif_target_back;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'This is no longer available'**
+  String get notif_target_deleted_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'It was deleted after this notification was sent.'**
+  String get notif_target_deleted_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'This was cancelled'**
+  String get notif_target_cancelled_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser cancelled it. Pending actions no longer apply.'**
+  String get notif_target_cancelled_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'This has expired'**
+  String get notif_target_expired_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'The time to respond has passed.'**
+  String get notif_target_expired_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'You don\'t have access'**
+  String get notif_target_no_access_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'You can no longer view this. No details are shown.'**
+  String get notif_target_no_access_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Already handled'**
+  String get notif_target_resolved_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'You responded to this on another device.'**
+  String get notif_target_resolved_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t open this'**
+  String get notif_target_failed_title;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'Check your connection and try again.'**
+  String get notif_target_failed_hint;
+
+  /// KAN-989 Notification Center shell.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} unread'**
+  String notif_bell_unread(int count);
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Row action: decline an invite or a request.
+  ///
+  /// In en, this message translates to:
+  /// **'Decline'**
+  String get notif_action_decline;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Row action on a waitlist promotion.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel my place (no penalty)'**
+  String get notif_action_cancel_place;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). The ⋯ button.
+  ///
+  /// In en, this message translates to:
+  /// **'More options'**
+  String get notif_menu_more;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Row menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as read'**
+  String get notif_menu_mark_read;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Row menu.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark as unread'**
+  String get notif_menu_mark_unread;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Row menu: mutes this kind.
+  ///
+  /// In en, this message translates to:
+  /// **'Turn off notifications like this'**
+  String get notif_menu_mute_kind;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Row menu on a message.
+  ///
+  /// In en, this message translates to:
+  /// **'Mute this conversation'**
+  String get notif_menu_mute_conversation;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after muting the kind.
+  ///
+  /// In en, this message translates to:
+  /// **'You won’t get notifications like this.'**
+  String get notif_res_muted;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after muting the conversation.
+  ///
+  /// In en, this message translates to:
+  /// **'Conversation muted.'**
+  String get notif_res_conversation_muted;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result link.
+  ///
+  /// In en, this message translates to:
+  /// **'Undo'**
+  String get notif_res_undo;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result link.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get notif_res_retry;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Pending line.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get notif_pending_sending;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Pending line for a decline.
+  ///
+  /// In en, this message translates to:
+  /// **'Declining…'**
+  String get notif_pending_declining;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after a failed action.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t do that. Check your connection.'**
+  String get notif_res_failed;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result when the server says it was already done.
+  ///
+  /// In en, this message translates to:
+  /// **'Already handled on another device'**
+  String get notif_res_elsewhere;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result for an action without a backend yet.
+  ///
+  /// In en, this message translates to:
+  /// **'Not available yet'**
+  String get notif_res_unavailable;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after Follow back.
+  ///
+  /// In en, this message translates to:
+  /// **'Following {name}'**
+  String notif_res_following(String name);
+
+  /// KAN-988 notification row (NotificationRow.dc.html). A follow row when the viewer already follows back.
+  ///
+  /// In en, this message translates to:
+  /// **'You follow each other'**
+  String get notif_res_mutual;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after approving a join request.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} is in'**
+  String notif_res_approved(String name);
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after declining a request.
+  ///
+  /// In en, this message translates to:
+  /// **'Request declined'**
+  String get notif_res_request_declined;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after declining an invite.
+  ///
+  /// In en, this message translates to:
+  /// **'Invitation declined'**
+  String get notif_res_invite_declined;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after Going.
+  ///
+  /// In en, this message translates to:
+  /// **'You’re going · normal reminders continue'**
+  String get notif_res_going;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after Not going.
+  ///
+  /// In en, this message translates to:
+  /// **'Not going · reminders stopped'**
+  String get notif_res_not_going;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Result after Cancel my place.
+  ///
+  /// In en, this message translates to:
+  /// **'Place given up · no penalty. The next person gets it.'**
+  String get notif_res_place_given_up;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). The target was deleted or access was withdrawn.
+  ///
+  /// In en, this message translates to:
+  /// **'This is no longer available'**
+  String get notif_res_gone;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). The event started; the action no longer applies.
+  ///
+  /// In en, this message translates to:
+  /// **'This has started'**
+  String get notif_res_expired;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Aggregation toggle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{See 1 person} other{See all {count} people}}'**
+  String notif_people_see_all(int count);
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Aggregation toggle when open.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide people'**
+  String get notif_people_hide;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Aggregated actor; the name stays as entered.
+  ///
+  /// In en, this message translates to:
+  /// **'{name} and {count, plural, =1{1 other} other{{count} others}}'**
+  String notif_actor_and_others(String name, int count);
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Urgent pill.
+  ///
+  /// In en, this message translates to:
+  /// **'Action needed'**
+  String get notif_urgent_action;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Change label.
+  ///
+  /// In en, this message translates to:
+  /// **'Time'**
+  String get notif_change_time;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Change label.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue'**
+  String get notif_change_venue;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Change label (waitlist).
+  ///
+  /// In en, this message translates to:
+  /// **'Position'**
+  String get notif_change_position;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Excerpt label.
+  ///
+  /// In en, this message translates to:
+  /// **'Your post'**
+  String get notif_ex_your_post;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Excerpt label.
+  ///
+  /// In en, this message translates to:
+  /// **'Your comment'**
+  String get notif_ex_your_comment;
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Meta: mutual followers.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 mutual follower} other{{count} mutual followers}}'**
+  String notif_meta_mutual(int count);
+
+  /// KAN-988 notification row (NotificationRow.dc.html). Meta: roster.
+  ///
+  /// In en, this message translates to:
+  /// **'{count}/{capacity} players'**
+  String notif_meta_players(int count, int capacity);
 }
 
 class _AppLocalizationsDelegate

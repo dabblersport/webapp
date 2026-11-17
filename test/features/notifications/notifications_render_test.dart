@@ -28,6 +28,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../home/home_test_harness.dart';
+import '../../support/connectivity_overrides.dart';
 import '../../support/render_mode.dart';
 
 const String _shotsDir = '$kShotsRoot/notifications';
@@ -234,6 +235,8 @@ Future<void> _pump(
               _FakeActivity(activity ?? const ActivityLogState(loaded: true)),
         ),
         myProfileIdProvider.overrideWith((ref) async => null),
+        // KAN-989: the Center reads connectivity; no plugin in tests.
+        onlineConnectivity(),
         notificationSettingsControllerProvider.overrideWith(
           (ref) => FakeNotificationSettings(
             const NotificationSettings(
@@ -302,7 +305,7 @@ void main() {
         ),
       );
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerNotificationRow), findsWidgets);
+      expect(find.byType(DabblerNotificationCard), findsWidgets);
       expect(find.byType(DabblerChip), findsWidgets);
       expect(find.text(l10n.notif_title_notifications), findsWidgets);
       await _shoot(tester, key, 'notifications-all-$dir');
@@ -325,7 +328,10 @@ void main() {
       }
       expect(tester.takeException(), isNull);
       expect(find.text(l10n.notif_prefs_title), findsOneWidget);
-      expect(find.byType(DabblerToggle), findsNWidgets(4));
+      // KAN-991: one switch per category (Social, Messages, Games, Meetups,
+      // Rewards & announcements); no Payments row (F-12).
+      expect(find.byType(DabblerToggle), findsNWidgets(5));
+      expect(find.text(l10n.notif_pref_payments_title), findsNothing);
       await _shoot(tester, key, 'notifications-prefs-$dir');
     });
 
@@ -340,12 +346,13 @@ void main() {
           hasMore: false,
         ),
       );
+      // KAN-989: chip 1 is Unread (rows 1, 2 and 4 of the sample).
       await tester.tap(find.byType(DabblerChip).at(1));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerNotificationRow), findsNWidgets(2));
+      expect(find.byType(DabblerNotificationCard), findsNWidgets(3));
       await _shoot(tester, key, 'notifications-filtered-$dir');
     });
 
@@ -359,7 +366,14 @@ void main() {
         ),
       );
       await _pump(tester, locale, key, notifs: fake.state, fake: fake);
-      expect(find.byType(DabblerBadge), findsWidgets);
+      expect(
+        tester
+            .widgetList<DabblerNotificationCard>(
+              find.byType(DabblerNotificationCard),
+            )
+            .every((c) => c.unread),
+        isTrue,
+      );
       await tester.tap(find.bySemanticsLabel(l10n.notif_mark_all_read));
       await tester.pump();
       expect(fake.markAllCalls, 1);

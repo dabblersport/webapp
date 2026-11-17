@@ -20,7 +20,7 @@ class NotifEmptyState extends StatelessWidget {
       child: DabblerEmptyState(
         icon: 'notification-bing',
         title: l10n.notif_empty_no_notifications,
-        text: l10n.notif_empty_subtitle,
+        text: l10n.notif_empty_hint,
         size: DabblerEmptyStateSize.page,
       ),
     );

@@ -163,7 +163,7 @@ void main() {
   });
 
   for (final locale in const [Locale('en'), Locale('ar')]) {
-    for (final (count, label) in const [(0, null), (7, '7'), (150, '99+')]) {
+    for (final (count, label) in const [(0, null), (7, '7'), (150, '9+')]) {
       testWidgets('${locale.languageCode}: badge for $count', (tester) async {
         await tester.pumpWidget(
           ProviderScope(

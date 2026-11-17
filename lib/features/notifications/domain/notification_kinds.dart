@@ -375,6 +375,16 @@ abstract final class NotificationKinds {
     }
   }
 
+  /// KAN-989: whether [kindKey] tells of a cancellation (its target opens as
+  /// "This was cancelled"); old `game.updated` rows count, by their alias.
+  static bool isCancellation(String kindKey) => switch (canonical(kindKey)) {
+    'game.cancelled' ||
+    'meetup.cancelled' ||
+    'game.occurrence_cancelled' ||
+    'meetup.occurrence_cancelled' => true,
+    _ => false,
+  };
+
   /// Whether [kindKey] is a meetup kind (it opens a meetup).
   static bool isMeetupKind(String kindKey) =>
       switch (_specs[kindKey]?.routeKind) {

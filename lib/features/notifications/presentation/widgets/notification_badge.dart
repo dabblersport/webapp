@@ -9,10 +9,15 @@ import '../providers/notifications_providers.dart';
 /// Returns [SizedBox.shrink] when count is zero so it can be
 /// safely placed inside a [Stack] without affecting layout.
 ///
-/// Capped at "99+" to avoid overflow. Public constructor unchanged (KAN-420:
-/// body is a DS error-status badge; still imported by `lib/widgets/app_top_bar.dart`).
+/// KAN-989 (NC-09): unread notifications only, in three states: none at 0,
+/// the number from 1 to 9, and "9+" above. Public constructor unchanged
+/// (KAN-420: body is a DS error-status badge; still imported by
+/// `lib/widgets/app_top_bar.dart`).
 class NotificationBadge extends ConsumerWidget {
   const NotificationBadge({super.key});
+
+  /// Above this the badge reads "9+".
+  static const int cap = 9;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -20,7 +25,7 @@ class NotificationBadge extends ConsumerWidget {
 
     if (count == 0) return const SizedBox.shrink();
 
-    final label = count > 99 ? '99+' : DabblerType.toWesternDigits('$count');
+    final label = DabblerType.toWesternDigits(count > cap ? '$cap+' : '$count');
 
     return DabblerBadge(
       label: label,

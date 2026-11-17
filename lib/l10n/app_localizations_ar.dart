@@ -4262,6 +4262,206 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
+  String get notif_settings_categories_header => 'ما يصلك';
+
+  @override
+  String get notif_settings_channel_in_app => 'داخل التطبيق';
+
+  @override
+  String get notif_settings_channel_push => 'فوري';
+
+  @override
+  String get notif_settings_cat_social => 'اجتماعي';
+
+  @override
+  String get notif_settings_cat_social_sub =>
+      'المتابعون الجدد والإعجابات والتعليقات والإشارات';
+
+  @override
+  String get notif_settings_cat_messages => 'الرسائل';
+
+  @override
+  String get notif_settings_cat_messages_sub => 'المحادثات الخاصة والجماعية';
+
+  @override
+  String get notif_settings_cat_games => 'المباريات';
+
+  @override
+  String get notif_settings_cat_games_sub =>
+      'الدعوات والتغييرات وقائمة الانتظار والنتائج';
+
+  @override
+  String get notif_settings_cat_meetups => 'اللقاءات';
+
+  @override
+  String get notif_settings_cat_meetups_sub => 'الردود والطلبات والتغييرات';
+
+  @override
+  String get notif_settings_cat_system => 'المكافآت والإعلانات';
+
+  @override
+  String get notif_settings_cat_system_sub => 'تظهر داخل التطبيق فقط';
+
+  @override
+  String get notif_settings_cat_security => 'الأمان';
+
+  @override
+  String get notif_settings_cat_security_sub =>
+      'تسجيلات الدخول وتغييرات الحساب. مفعّلة دائمًا.';
+
+  @override
+  String get notif_settings_always_on => 'مفعّلة دائمًا';
+
+  @override
+  String get notif_settings_os_denied_title =>
+      'الإشعارات متوقفة لتطبيق Dabbler';
+
+  @override
+  String get notif_settings_os_denied_body =>
+      'فعّلها من إعدادات هاتفك لتصلك الإشعارات الفورية. إشعارات التطبيق تعمل كالمعتاد.';
+
+  @override
+  String get notif_settings_open_settings => 'فتح الإعدادات';
+
+  @override
+  String get notif_settings_preview_header => 'معاينة الرسائل';
+
+  @override
+  String get notif_settings_preview_full => 'اسم المرسل + الرسالة';
+
+  @override
+  String get notif_settings_preview_name => 'اسم المرسل فقط';
+
+  @override
+  String get notif_settings_preview_sample => 'مثال على الإشعار';
+
+  @override
+  String get notif_settings_preview_sample_sender => 'ليلى';
+
+  @override
+  String get notif_settings_preview_sample_message =>
+      'سأتأخر 5 دقائق، احجز لي قميصًا';
+
+  @override
+  String get notif_settings_preview_sample_hidden => 'رسالة جديدة';
+
+  @override
+  String get notif_settings_preview_note =>
+      'إعداد شاشة القفل في هاتفك يبقى ساريًا. إذا كان يخفي المعاينات فسترى «Dabbler · إشعار».';
+
+  @override
+  String get notif_settings_quiet_toggle_off =>
+      'متوقفة · تصل الإشعارات كالمعتاد';
+
+  @override
+  String notif_settings_quiet_toggle_on(String start, String end) {
+    return '$start – $end · تصل الإشعارات بصمت';
+  }
+
+  @override
+  String get notif_settings_quiet_from => 'من';
+
+  @override
+  String get notif_settings_quiet_to => 'إلى';
+
+  @override
+  String get notif_settings_quiet_note =>
+      'تعتمد على المنطقة الزمنية وصيغة الوقت في هاتفك. تصل الإشعارات بصمت. يبقى التنبيه لما يلي: الإلغاء، وتغيير الوقت أو المكان، والإزالة، والانتقال من قائمة الانتظار، والتذكيرات، وتنبيهات الأمان. الإعجابات والتعليقات والتحديثات الاجتماعية الأخرى لا تنبّهك أبدًا.';
+
+  @override
+  String get notif_settings_quiet_invalid =>
+      'لا يمكن أن يتساوى وقت البداية ووقت النهاية.';
+
+  @override
+  String get notif_settings_quiet_save => 'حفظ';
+
+  @override
+  String get notif_settings_quiet_saved => 'تم حفظ ساعات الهدوء';
+
+  @override
+  String get notif_settings_reminders_header => 'التذكيرات';
+
+  @override
+  String get notif_settings_reminders_going =>
+      'المباريات واللقاءات التي ستحضرها';
+
+  @override
+  String get notif_settings_reminders_going_sub =>
+      'الأوقات بالتوقيت المحلي للفعالية.';
+
+  @override
+  String get notif_settings_reminders_interested => 'اللقاءات التي تهتم بها';
+
+  @override
+  String get notif_settings_reminders_interested_sub =>
+      'نفس تذكيرات الحضور، وتتوقف إذا اخترت «لن أحضر».';
+
+  @override
+  String get notif_settings_rung_24h => 'قبل 24 ساعة';
+
+  @override
+  String notif_settings_rung_morning(String time) {
+    return '$time في يوم الفعالية';
+  }
+
+  @override
+  String get notif_settings_rung_morning_sub =>
+      'فقط إذا كان قبل البداية بأكثر من ساعتين';
+
+  @override
+  String get notif_settings_rung_morning_interested_sub => '«أكّد حضورك»';
+
+  @override
+  String get notif_settings_rung_2h => 'قبل ساعتين';
+
+  @override
+  String get notif_settings_rung_30m => 'قبل 30 دقيقة';
+
+  @override
+  String get notif_settings_muted_header => 'المكتوم';
+
+  @override
+  String get notif_settings_muted_kinds => 'أنواع الإشعارات';
+
+  @override
+  String get notif_settings_muted_conversations => 'المحادثات';
+
+  @override
+  String get notif_settings_muted_empty_title => 'لا يوجد شيء مكتوم';
+
+  @override
+  String get notif_settings_muted_empty_body =>
+      'ما توقفه من إشعار أو محادثة يظهر هنا.';
+
+  @override
+  String get notif_settings_muted_kind_sub => 'من «إيقاف الإشعارات المشابهة»';
+
+  @override
+  String get notif_settings_muted_kind_other => 'إشعارات أخرى';
+
+  @override
+  String get notif_settings_muted_conversation_fallback => 'محادثة';
+
+  @override
+  String get notif_settings_unmute => 'إلغاء الكتم';
+
+  @override
+  String notif_settings_unmuted(String name) {
+    return 'تم إلغاء كتم $name';
+  }
+
+  @override
+  String get notif_settings_undo => 'تراجع';
+
+  @override
+  String get notif_settings_security_mute_refused =>
+      'لا يمكن إيقاف تنبيهات الأمان.';
+
+  @override
+  String get notif_settings_save_rejected =>
+      'لم يُحفظ هذا التغيير، وعاد الإعداد السابق.';
+
+  @override
   String get game_prefs_title => 'تفضيلات المباريات';
 
   @override
@@ -9894,4 +10094,278 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notif_b_social_post_reposted => 'اضغط لعرض المنشور.';
+
+  @override
+  String get notif_refresh => 'تحديث';
+
+  @override
+  String notif_unread_count(int count) {
+    return '$count غير مقروء';
+  }
+
+  @override
+  String get notif_chip_unread => 'غير المقروء';
+
+  @override
+  String get notif_chip_needs_action => 'بحاجة إلى إجراء';
+
+  @override
+  String get notif_chip_messages => 'الرسائل';
+
+  @override
+  String get notif_chip_meetups => 'اللقاءات';
+
+  @override
+  String get notif_chip_system => 'النظام';
+
+  @override
+  String get notif_section_this_week => 'في وقت سابق هذا الأسبوع';
+
+  @override
+  String get notif_highlight_label => 'نشاط';
+
+  @override
+  String get notif_empty_hint =>
+      'ستظهر هنا الدعوات والردود وتحديثات المباريات.';
+
+  @override
+  String notif_empty_filter_title(String filter) {
+    return 'لا شيء في $filter';
+  }
+
+  @override
+  String get notif_empty_filter_hint => 'جرّب فلترًا آخر أو اعرض كل شيء.';
+
+  @override
+  String get notif_show_all => 'عرض الكل';
+
+  @override
+  String notif_offline_banner(String time) {
+    return 'أنت غير متصل. نعرض الإشعارات المحفوظة الساعة $time. الإجراءات غير متاحة.';
+  }
+
+  @override
+  String get notif_offline_banner_unsaved =>
+      'أنت غير متصل. الإجراءات غير متاحة.';
+
+  @override
+  String get notif_refresh_failed => 'تعذّر التحديث. نعرض قائمتك السابقة.';
+
+  @override
+  String get notif_load_failed_title => 'تعذّر تحميل الإشعارات';
+
+  @override
+  String get notif_load_failed_hint => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String get notif_try_again => 'حاول مرة أخرى';
+
+  @override
+  String get notif_refreshing => 'جارٍ التحديث';
+
+  @override
+  String get notif_load_earlier => 'تحميل الإشعارات الأقدم';
+
+  @override
+  String get notif_loading => 'جارٍ التحميل';
+
+  @override
+  String get notif_all_caught_up => 'لقد اطّلعت على كل شيء';
+
+  @override
+  String get notif_target_back => 'العودة إلى الإشعارات';
+
+  @override
+  String get notif_target_deleted_title => 'لم يعد هذا متاحًا';
+
+  @override
+  String get notif_target_deleted_hint => 'تم حذفه بعد إرسال هذا الإشعار.';
+
+  @override
+  String get notif_target_cancelled_title => 'تم إلغاء هذا';
+
+  @override
+  String get notif_target_cancelled_hint =>
+      'ألغاه المنظّم. لم تعد الإجراءات المعلّقة سارية.';
+
+  @override
+  String get notif_target_expired_title => 'انتهت صلاحية هذا';
+
+  @override
+  String get notif_target_expired_hint => 'انتهى وقت الرد.';
+
+  @override
+  String get notif_target_no_access_title => 'ليس لديك صلاحية الوصول';
+
+  @override
+  String get notif_target_no_access_hint =>
+      'لم يعد بإمكانك عرض هذا. لا تظهر أي تفاصيل.';
+
+  @override
+  String get notif_target_resolved_title => 'تم التعامل معه';
+
+  @override
+  String get notif_target_resolved_hint => 'لقد رددت على هذا من جهاز آخر.';
+
+  @override
+  String get notif_target_failed_title => 'تعذّر فتح هذا';
+
+  @override
+  String get notif_target_failed_hint => 'تحقق من اتصالك وحاول مرة أخرى.';
+
+  @override
+  String notif_bell_unread(int count) {
+    return '$count غير مقروءة';
+  }
+
+  @override
+  String get notif_action_decline => 'رفض';
+
+  @override
+  String get notif_action_cancel_place => 'إلغاء مكاني (بدون غرامة)';
+
+  @override
+  String get notif_menu_more => 'خيارات أخرى';
+
+  @override
+  String get notif_menu_mark_read => 'تعليم كمقروء';
+
+  @override
+  String get notif_menu_mark_unread => 'تعليم كغير مقروء';
+
+  @override
+  String get notif_menu_mute_kind => 'إيقاف الإشعارات المماثلة';
+
+  @override
+  String get notif_menu_mute_conversation => 'كتم هذه المحادثة';
+
+  @override
+  String get notif_res_muted => 'لن تصلك إشعارات مماثلة.';
+
+  @override
+  String get notif_res_conversation_muted => 'تم كتم المحادثة.';
+
+  @override
+  String get notif_res_undo => 'تراجع';
+
+  @override
+  String get notif_res_retry => 'إعادة المحاولة';
+
+  @override
+  String get notif_pending_sending => 'جارٍ الإرسال…';
+
+  @override
+  String get notif_pending_declining => 'جارٍ الرفض…';
+
+  @override
+  String get notif_res_failed => 'تعذّر ذلك. تحقّق من اتصالك.';
+
+  @override
+  String get notif_res_elsewhere => 'تمّت معالجته على جهاز آخر';
+
+  @override
+  String get notif_res_unavailable => 'غير متاح بعد';
+
+  @override
+  String notif_res_following(String name) {
+    return 'تتابع $name';
+  }
+
+  @override
+  String get notif_res_mutual => 'أنتما تتابعان بعضكما';
+
+  @override
+  String notif_res_approved(String name) {
+    return 'انضم $name';
+  }
+
+  @override
+  String get notif_res_request_declined => 'تم رفض الطلب';
+
+  @override
+  String get notif_res_invite_declined => 'تم رفض الدعوة';
+
+  @override
+  String get notif_res_going => 'ستحضر · تستمر التذكيرات';
+
+  @override
+  String get notif_res_not_going => 'لن تحضر · توقفت التذكيرات';
+
+  @override
+  String get notif_res_place_given_up =>
+      'تخلّيت عن مكانك · بدون غرامة. سيحصل عليه الشخص التالي.';
+
+  @override
+  String get notif_res_gone => 'لم يعد هذا متاحًا';
+
+  @override
+  String get notif_res_expired => 'بدأ هذا بالفعل';
+
+  @override
+  String notif_people_see_all(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'عرض $count شخص',
+      many: 'عرض $count شخصًا',
+      few: 'عرض $count أشخاص',
+      two: 'عرض الشخصين',
+      one: 'عرض شخص واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_people_hide => 'إخفاء الأشخاص';
+
+  @override
+  String notif_actor_and_others(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$name و$count آخرين',
+      many: '$name و$count آخرين',
+      few: '$name و$count آخرين',
+      two: '$name وشخصان آخران',
+      one: '$name وشخص آخر',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_urgent_action => 'مطلوب إجراء';
+
+  @override
+  String get notif_change_time => 'الموعد';
+
+  @override
+  String get notif_change_venue => 'المكان';
+
+  @override
+  String get notif_change_position => 'الترتيب';
+
+  @override
+  String get notif_ex_your_post => 'منشورك';
+
+  @override
+  String get notif_ex_your_comment => 'تعليقك';
+
+  @override
+  String notif_meta_mutual(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count متابع مشترك',
+      many: '$count متابعًا مشتركًا',
+      few: '$count متابعين مشتركين',
+      two: 'متابعان مشتركان',
+      one: 'متابع مشترك واحد',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notif_meta_players(int count, int capacity) {
+    return '$count/$capacity لاعبين';
+  }
 }

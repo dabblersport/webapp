@@ -36,9 +36,12 @@ class _Repo implements NotificationSettingsRepository {
       ? const Err(Failure(message: 'no internet'))
       : Ok(settings!);
   @override
-  Future<Result<NotificationSettings, Failure>> save(
-    NotificationSettings s,
+  Future<Result<NotificationSettings, Failure>> update(
+    Map<String, dynamic> patch,
   ) async => throw StateError('offline-first never writes through');
+  @override
+  Future<Result<NotificationSettings, Failure>> setTimezone(String tz) async =>
+      throw StateError('not used');
 }
 
 void main() {
@@ -98,13 +101,14 @@ void main() {
     test('after a restart, offline, the queued value is what shows', () async {
       final c = build(_Repo(NotificationSettings.defaults('A')));
       await pumpEventQueue(times: 20);
-      await c.setSmsEnabled(true);
+      // KAN-991: SMS is no longer a setting; the preview is.
+      await c.setPreviewSenderOnly(true);
       c.dispose();
 
       final reopened = build(_Repo(null)); // no connection, server unreachable
       addTearDown(reopened.dispose);
       await pumpEventQueue(times: 20);
-      expect(reopened.state.settings!.smsEnabled, isTrue);
+      expect(reopened.state.settings!.previewSenderOnly, isTrue);
       expect(reopened.state.error, isNull);
     });
 
@@ -124,10 +128,14 @@ void main() {
       final c = build(_Repo(NotificationSettings.defaults('A')));
       addTearDown(c.dispose);
       await pumpEventQueue(times: 20);
-      await c.setEmailEnabled(true);
+      // KAN-991: email is no longer a setting; a category switch is.
+      await c.setCategory('games', 'push', false);
       offline = false;
       await sync.syncAll(force: true);
-      expect(server.pushed.single['email_enabled'], isTrue);
+      expect(
+        (server.pushed.single['category_prefs'] as Map)['games']['push'],
+        isFalse,
+      );
       expect(sync.state, isEmpty);
     });
   });

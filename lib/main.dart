@@ -23,6 +23,7 @@ import 'package:dabbler/services/notifications/push_notification_service.dart'
     as push_facade;
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
     as push_mobile;
+import 'package:dabbler/features/notifications/data/notification_settings_timezone.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
@@ -234,6 +235,10 @@ Future<Widget> _bootstrap() async {
       // or onboarding. Taps deep-link via the service worker (URL).
       unawaited(push_facade.PushNotificationService.instance.init());
     }
+
+    // KAN-991: the notification time zone follows the device (now, on
+    // sign-in and on resume).
+    NotificationSettingsTimezoneSync.instance.start();
 
     // Log the Supabase authorization token (JWT) after initialization and sign-in
     final authService = Supabase.instance.client.auth;

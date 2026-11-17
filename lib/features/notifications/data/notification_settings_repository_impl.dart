@@ -7,70 +7,61 @@ import 'package:dabbler/core/fp/result.dart';
 import 'models/notification_settings.dart';
 import 'notification_settings_repository.dart';
 
-/// Supabase-backed implementation of [NotificationSettingsRepository].
-///
-/// Targets `public.notification_settings`. RLS restricts every row to
-/// `user_id = auth.uid()`, so all queries are implicitly scoped to the caller.
+/// Calls one Supabase RPC; replaceable in tests.
+typedef NotificationSettingsRpc =
+    Future<dynamic> Function(String fn, {Map<String, dynamic>? params});
+
+/// Supabase-backed [NotificationSettingsRepository] over the KAN-975 RPCs.
+/// They run as the caller (RLS `auth.uid() = user_id`); none touches the
+/// table directly.
 class NotificationSettingsRepositoryImpl
     implements NotificationSettingsRepository {
-  NotificationSettingsRepositoryImpl(this._client);
+  NotificationSettingsRepositoryImpl(SupabaseClient client)
+    : _rpc = ((fn, {params}) => client.rpc(fn, params: params));
 
-  final SupabaseClient _client;
+  /// A repository over a fake RPC call.
+  NotificationSettingsRepositoryImpl.withRpc(this._rpc);
 
-  static const _table = SupabaseConfig.notificationSettingsTable;
-
-  @override
-  Future<Result<NotificationSettings, Failure>> load() {
-    return Result.guard(() async {
-      final userId = _requireUserId();
-      final row = await _client
-          .from(_table)
-          .select()
-          .eq('user_id', userId)
-          .maybeSingle();
-
-      if (row == null) {
-        return NotificationSettings.defaults(userId);
-      }
-      return NotificationSettings.fromJson(row);
-    }, Failure.from);
-  }
+  final NotificationSettingsRpc _rpc;
 
   @override
-  Future<Result<NotificationSettings, Failure>> save(
-    NotificationSettings settings,
-  ) {
-    return Result.guard(() async {
-      final userId = _requireUserId();
-      final payload = <String, dynamic>{
-        'user_id': userId,
-        'tz': settings.tz,
-        'quiet_start_min': settings.quietStartMin,
-        'quiet_end_min': settings.quietEndMin,
-        'push_enabled': settings.pushEnabled,
-        'email_enabled': settings.emailEnabled,
-        'sms_enabled': settings.smsEnabled,
-        'muted_kinds': settings.mutedKinds,
-        'allow_high_priority_override': settings.allowHighPriorityOverride,
-        'allow_all_override': settings.allowAllOverride,
-        'updated_at': DateTime.now().toUtc().toIso8601String(),
-      };
+  Future<Result<NotificationSettings, Failure>> load() => Result.guard(
+    () async => _row(await _rpc(SupabaseConfig.rpcGetMyNotificationSettings)),
+    Failure.from,
+  );
 
-      final row = await _client
-          .from(_table)
-          .upsert(payload, onConflict: 'user_id')
-          .select()
-          .single();
+  @override
+  Future<Result<NotificationSettings, Failure>> update(
+    Map<String, dynamic> patch,
+  ) => Result.guard(
+    () async => _row(
+      await _rpc(
+        SupabaseConfig.rpcUpdateMyNotificationSettings,
+        params: {'p_patch': patch},
+      ),
+    ),
+    Failure.from,
+  );
 
-      return NotificationSettings.fromJson(row);
-    }, Failure.from);
-  }
+  @override
+  Future<Result<NotificationSettings, Failure>> setTimezone(String tz) =>
+      Result.guard(
+        () async => _row(
+          await _rpc(
+            SupabaseConfig.rpcSetMyNotificationTimezone,
+            params: {'p_tz': tz},
+          ),
+        ),
+        Failure.from,
+      );
 
-  String _requireUserId() {
-    final userId = _client.auth.currentUser?.id;
-    if (userId == null) {
-      throw Exception('Not authenticated');
+  /// The RPCs return one `notification_settings` row (a JSON object; a list
+  /// of one when PostgREST wraps it).
+  static NotificationSettings _row(dynamic raw) {
+    final Object? row = raw is List && raw.isNotEmpty ? raw.first : raw;
+    if (row is! Map) {
+      throw const FormatException('notification_settings: expected a row');
     }
-    return userId;
+    return NotificationSettings.fromJson(Map<String, dynamic>.from(row));
   }
 }

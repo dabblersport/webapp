@@ -3,8 +3,10 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../data/models/notification_model.dart';
+import '../controllers/notifications_controller.dart';
 import '../providers/notifications_providers.dart';
 import 'package:dabbler/core/services/auth_service.dart';
+import 'package:dabbler/core/services/connectivity_service.dart';
 import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/features/activities/presentation/providers/activity_providers.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
@@ -12,19 +14,21 @@ import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import '../providers/notification_center_badge_providers.dart';
+import '../widgets/notif_center_list.dart';
 import '../widgets/notif_chips.dart';
 import '../widgets/notif_list_states.dart';
-import '../widgets/notif_section_header.dart';
+import '../widgets/notif_target_states.dart';
 import '../widgets/activity_category_chips.dart';
 import '../widgets/activity_log_slivers.dart';
 import '../widgets/notif_prefs_sheet.dart';
 import '../widgets/notif_top_bar.dart';
-import '../widgets/notif_empty_state.dart';
-import '../widgets/notif_row.dart';
 import '../widgets/activity_summary_card.dart';
 import '../widgets/activity_search_row.dart';
 import '../widgets/activity_security_footer.dart';
 
+/// KAN-989 (W1-F3): the Notification Center shell — the Notifications and
+/// Activity log tabs, the chips, activity highlights under All, every list
+/// state and the tapped-target sheet (design A.1).
 class NotificationsScreenV2 extends ConsumerStatefulWidget {
   const NotificationsScreenV2({super.key});
 
@@ -35,8 +39,15 @@ class NotificationsScreenV2 extends ConsumerStatefulWidget {
 
 class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   final AuthService _authService = AuthService();
-  String _selectedFilter = 'all';
+
+  /// The Activity log's chip.
+  String _activityFilter = 'all';
+
+  /// The Notifications tab's chip.
+  NotificationChip _chip = NotificationChip.all;
   ViewMode _mode = ViewMode.notifications;
+  bool _refreshing = false;
+  bool _loadingMore = false;
 
   @override
   void initState() {
@@ -49,7 +60,8 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
   void _setMode(ViewMode mode) {
     setState(() {
       _mode = mode;
-      _selectedFilter = 'all';
+      _activityFilter = 'all';
+      _chip = NotificationChip.all;
     });
     // The chip row shows All again, so the list must be the full list too.
     ref.read(activityLogControllerProvider.notifier).changeCategory('all');
@@ -77,79 +89,49 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       notificationsControllerProvider(userId),
     );
     final activityState = ref.watch(activityLogControllerProvider);
+    final offline = ref.watch(connectivityProvider) == ConnectionStatus.offline;
     final isWide = MediaQuery.sizeOf(context).width >= 600;
 
-    if (isWide) {
-      return _buildWideLayout(
-        context,
-        userId,
-        notificationState,
-        activityState,
-      );
-    }
-    return _buildMobileLayout(
-      context,
+    Widget body(ViewMode? force) => _buildScrollBody(
       userId,
       notificationState,
       activityState,
+      offline: offline,
+      hideToggle: force != null,
+      forceMode: force,
     );
-  }
 
-  Widget _buildWideLayout(
-    BuildContext context,
-    String userId,
-    dynamic notificationState,
-    ActivityLogState activityState,
-  ) {
     // KAN-420: the adaptive scaffold (side rail + header) is gone with the
-    // design-system migration; the two lists keep their side-by-side panes.
+    // design-system migration; on wide screens the two lists keep their
+    // side-by-side panes.
     return DabblerPage(
-      body: Row(
-        children: [
-          Expanded(
-            child: _buildScrollBody(
-              userId,
-              notificationState,
-              activityState,
-              hideToggle: true,
-              forceMode: ViewMode.notifications,
-            ),
-          ),
-          const DabblerDivider.vertical(),
-          Expanded(
-            child: _buildScrollBody(
-              userId,
-              notificationState,
-              activityState,
-              hideToggle: true,
-              forceMode: ViewMode.activity,
-            ),
-          ),
-        ],
+      body: NotifCenterScope(
+        actionsEnabled: !offline,
+        child: isWide
+            ? Row(
+                children: [
+                  Expanded(child: body(ViewMode.notifications)),
+                  const DabblerDivider.vertical(),
+                  Expanded(child: body(ViewMode.activity)),
+                ],
+              )
+            : body(null),
       ),
-    );
-  }
-
-  Widget _buildMobileLayout(
-    BuildContext context,
-    String userId,
-    dynamic notificationState,
-    ActivityLogState activityState,
-  ) {
-    return DabblerPage(
-      body: _buildScrollBody(userId, notificationState, activityState),
     );
   }
 
   Widget _buildScrollBody(
     String userId,
-    dynamic notificationState,
+    NotificationsState notificationState,
     ActivityLogState activityState, {
+    required bool offline,
     bool hideToggle = false,
     ViewMode? forceMode,
   }) {
     final mode = forceMode ?? _mode;
     final isNotif = mode == ViewMode.notifications;
+    final l10n = AppLocalizations.of(context);
+    final chips = _notifChips(notificationState);
 
     return DabblerRefresh(
       onRefresh: () => isNotif ? _refresh(userId) : _refreshActivity(),
@@ -161,13 +143,18 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
           SliverToBoxAdapter(
             child: TopBar(
               title: isNotif
-                  ? AppLocalizations.of(context).notif_title_notifications
-                  : AppLocalizations.of(context).notif_title_activity_log,
+                  ? l10n.notif_title_notifications
+                  : l10n.notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
               onOpenSettings: () => showNotifPrefsSheet(context),
+              onRefresh: () =>
+                  isNotif ? _refreshFromHeader(userId) : _refreshActivity(),
+              refreshing: isNotif && _refreshing,
+              unreadCount: notificationState.unreadCount,
+              // NC-02: mark all read clears the dots of notifications only.
               onMarkAllRead:
-                  (isNotif && (notificationState.unreadCount as int) > 0)
+                  (isNotif && !offline && notificationState.unreadCount > 0)
                   ? () => ref
                         .read(notificationsControllerProvider(userId).notifier)
                         .markAllRead()
@@ -177,17 +164,18 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
           SliverToBoxAdapter(
             child: ChipsRow(
               chips: isNotif
-                  ? _notifChips(notificationState)
+                  ? [for (final c in chips) c.data]
                   : _activityChips(),
-              activeKey: _selectedFilter,
+              activeKey: isNotif ? _chip.name : _activityFilter,
               onChanged: (key) {
-                setState(() => _selectedFilter = key);
-                if (!isNotif) {
-                  final cat = key == 'all' ? null : key;
-                  ref
-                      .read(activityLogControllerProvider.notifier)
-                      .changeCategory(cat);
+                if (isNotif) {
+                  setState(() => _chip = NotificationChip.values.byName(key));
+                  return;
                 }
+                setState(() => _activityFilter = key);
+                ref
+                    .read(activityLogControllerProvider.notifier)
+                    .changeCategory(key == 'all' ? null : key);
               },
             ),
           ),
@@ -209,148 +197,78 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
             ),
           ],
           if (isNotif)
-            ..._buildNotificationsSlivers(userId, notificationState)
-          else
-            ..._buildActivitySlivers(activityState),
-          if (isNotif)
-            SliverToBoxAdapter(
-              child: notificationState.hasMore
-                  ? LoadMoreButton(
-                      onPressed: () => ref
-                          .read(
-                            notificationsControllerProvider(userId).notifier,
-                          )
-                          .loadMore(),
-                    )
-                  : const DabblerGap.v(DabblerSpacing.listBottomInset),
+            ...buildNotificationCenterSlivers(
+              context,
+              state: notificationState,
+              activities: _highlightSource(activityState),
+              chip: _chip,
+              chipLabel: chips.firstWhere((c) => c.chip == _chip).data.label,
+              offline: offline,
+              refreshing: _refreshing,
+              loadingMore: _loadingMore,
+              now: DateTime.now(),
+              onRetry: () => _refreshFromHeader(userId),
+              onShowAll: () => setState(() => _chip = NotificationChip.all),
+              onLoadMore: () => _loadMore(userId),
+              onTapNotification: (n) => _handleNotificationTap(userId, n),
+              onTapActivity: _handleActivityTap,
             )
-          else
+          else ...[
+            ..._buildActivitySlivers(activityState),
             const SliverToBoxAdapter(child: ActivitySecurityFooter()),
+          ],
           const DabblerGap.sliver(DabblerSpacing.floatingBarClearance),
         ],
       ),
     );
   }
 
-  List<ChipData> _notifChips(dynamic state) {
-    final notifs = (state.notifications as List<AppNotification>);
+  /// The Activity log rows highlights come from: its loaded list, when it is
+  /// not narrowed by a category or a search (F-19: one source, no second
+  /// fetch).
+  List<ActivityFeedEvent> _highlightSource(ActivityLogState s) =>
+      (s.category == 'all' && s.query.isEmpty) ? s.activities : const [];
+
+  /// The Notifications chips (W1-F3): All, Unread and Needs action with
+  /// their counts, then the kind chips. There is no Booking chip (F-12).
+  List<({NotificationChip chip, ChipData data})> _notifChips(
+    NotificationsState state,
+  ) {
     final l10n = AppLocalizations.of(context);
-    // KAN-978: a kind's chip comes from the registry.
-    int countOf(String chip) => notifs
-        .where(
-          (n) =>
-              !n.isRead && NotificationKinds.currentChipOf(n.kindKey) == chip,
-        )
-        .length;
+    final now = DateTime.now();
+    // NC-03: Needs action counts open decisions, not unread rows.
+    final open = state.notifications.where((n) => isOpenDecision(n, now));
+    ({NotificationChip chip, ChipData data}) c(
+      NotificationChip chip,
+      String label,
+      String icon, {
+      int? count,
+    }) => (chip: chip, data: ChipData(chip.name, label, icon, count: count));
     return [
-      ChipData('all', l10n.notif_chip_all, 'message', count: state.unreadCount),
-      ChipData('games', l10n.notif_chip_games, 'game', count: countOf('games')),
-      ChipData(
-        'bookings',
-        l10n.notif_chip_bookings,
-        'calendar',
-        count: countOf('bookings'),
+      c(NotificationChip.all, l10n.notif_chip_all, 'message'),
+      c(
+        NotificationChip.unread,
+        l10n.notif_chip_unread,
+        'notification',
+        count: state.unreadCount,
       ),
-      ChipData(
-        'social',
-        l10n.notif_chip_social,
-        'people',
-        count: countOf('social'),
+      c(
+        NotificationChip.needsAction,
+        l10n.notif_chip_needs_action,
+        'flash',
+        count: open.length,
       ),
-      ChipData(
-        'achieve',
-        l10n.notif_chip_achievements,
-        'cup',
-        count: countOf('achieve'),
-      ),
+      c(NotificationChip.social, l10n.notif_chip_social, 'people'),
+      c(NotificationChip.messages, l10n.notif_chip_messages, 'messages'),
+      c(NotificationChip.games, l10n.notif_chip_games, 'game'),
+      c(NotificationChip.meetups, l10n.notif_chip_meetups, 'people'),
+      c(NotificationChip.system, l10n.notif_chip_system, 'setting-2'),
     ];
   }
 
   // KAN-990: the Activity log chips live with the Activity widgets.
   List<ChipData> _activityChips() =>
       activityCategoryChips(AppLocalizations.of(context));
-
-  List<Widget> _buildNotificationsSlivers(String userId, dynamic state) {
-    if (state.isLoading && state.notifications.isEmpty) {
-      return const [SliverToBoxAdapter(child: NotifLoadingView())];
-    }
-    if (state.error != null && state.notifications.isEmpty) {
-      return [
-        SliverFillRemaining(
-          hasScrollBody: false,
-          child: ErrorView(
-            message: state.error.toString(),
-            onRetry: () => ref
-                .read(notificationsControllerProvider(userId).notifier)
-                .refresh(),
-          ),
-        ),
-      ];
-    }
-
-    final filtered = _filterNotifications(
-      state.notifications as List<AppNotification>,
-    );
-    if (filtered.isEmpty) {
-      return const [SliverToBoxAdapter(child: NotifEmptyState())];
-    }
-
-    final groups = <String, List<AppNotification>>{};
-    for (final n in filtered) {
-      final key = _bucketLabel(n.createdAt);
-      groups.putIfAbsent(key, () => []).add(n);
-    }
-
-    final widgets = <Widget>[];
-    final l10n = AppLocalizations.of(context);
-    final bucketLabels = <String, String>{
-      'today': l10n.notif_section_today,
-      'yesterday': l10n.notif_section_yesterday,
-      'earlier': l10n.notif_section_earlier,
-    };
-    for (final key in const ['today', 'yesterday', 'earlier']) {
-      final items = groups[key];
-      if (items == null || items.isEmpty) continue;
-      widgets.add(
-        SliverToBoxAdapter(
-          child: NotifSectionHeader(
-            title: bucketLabels[key]!,
-            count: items.length,
-          ),
-        ),
-      );
-      widgets.add(
-        SliverList.builder(
-          itemCount: items.length,
-          itemBuilder: (context, i) => NotificationRow(
-            notification: items[i],
-            onTap: () => _handleNotificationTap(userId, items[i]),
-          ),
-        ),
-      );
-    }
-    return widgets;
-  }
-
-  List<AppNotification> _filterNotifications(List<AppNotification> items) {
-    if (_selectedFilter == 'all') return items;
-    // KAN-978: a kind's chip comes from the registry.
-    return items
-        .where(
-          (n) => NotificationKinds.currentChipOf(n.kindKey) == _selectedFilter,
-        )
-        .toList();
-  }
-
-  String _bucketLabel(DateTime dt) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final dtDay = DateTime(dt.year, dt.month, dt.day);
-    final diffDays = today.difference(dtDay).inDays;
-    if (diffDays <= 0) return 'today';
-    if (diffDays == 1) return 'yesterday';
-    return 'earlier';
-  }
 
   List<Widget> _buildActivitySlivers(ActivityLogState state) {
     final controller = ref.read(activityLogControllerProvider.notifier);
@@ -363,6 +281,8 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     );
   }
 
+  /// A tap: the row is marked read and its target checked; a target that
+  /// opens is pushed, any other state shows its sheet (design A.1).
   Future<void> _handleNotificationTap(
     String userId,
     AppNotification notification,
@@ -372,8 +292,20 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     );
     if (!notification.isRead) controller.markAsRead(notification.id);
     controller.markClicked(notification.id);
-    final route = _resolveNotificationRoute(notification);
-    if (route != null && mounted) context.push(route);
+    final target = await ref.read(notifTargetProbeProvider)(notification);
+    if (!mounted) return;
+    if (target == NotifTargetState.available) {
+      final route = _resolveNotificationRoute(notification);
+      if (route != null) context.push(route);
+      return;
+    }
+    await showNotifTargetSheet(
+      context,
+      target,
+      onRetry: target == NotifTargetState.failed
+          ? () => _handleNotificationTap(userId, notification)
+          : null,
+    );
   }
 
   String? _resolveNotificationRoute(AppNotification n) {
@@ -400,6 +332,29 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
       case 'social':
         context.push('/profile');
         break;
+    }
+  }
+
+  Future<void> _loadMore(String userId) async {
+    if (_loadingMore) return;
+    setState(() => _loadingMore = true);
+    try {
+      await ref
+          .read(notificationsControllerProvider(userId).notifier)
+          .loadMore();
+    } finally {
+      if (mounted) setState(() => _loadingMore = false);
+    }
+  }
+
+  /// Header Refresh and the banners' Retry: the spinner shows while it runs.
+  Future<void> _refreshFromHeader(String userId) async {
+    if (_refreshing) return;
+    setState(() => _refreshing = true);
+    try {
+      await _refresh(userId);
+    } finally {
+      if (mounted) setState(() => _refreshing = false);
     }
   }
 

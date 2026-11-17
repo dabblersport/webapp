@@ -103,7 +103,13 @@ enum NotificationActionId {
   enterScore,
   rate,
   thisWasMe,
-  notMe;
+  notMe,
+
+  /// KAN-988: declining an invite or a join request.
+  decline,
+
+  /// KAN-988: giving up a place won from the waitlist (no penalty).
+  cancelPlace;
 
   String label(AppLocalizations l) => switch (this) {
     respond => l.notif_action_respond,
@@ -123,6 +129,8 @@ enum NotificationActionId {
     rate => l.notif_action_rate,
     thisWasMe => l.notif_action_this_was_me,
     notMe => l.notif_action_not_me,
+    decline => l.notif_action_decline,
+    cancelPlace => l.notif_action_cancel_place,
   };
 }
 

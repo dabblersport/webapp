@@ -4249,6 +4249,209 @@ class AppLocalizationsEn extends AppLocalizations {
   }
 
   @override
+  String get notif_settings_categories_header => 'What reaches you';
+
+  @override
+  String get notif_settings_channel_in_app => 'In-app';
+
+  @override
+  String get notif_settings_channel_push => 'Push';
+
+  @override
+  String get notif_settings_cat_social => 'Social';
+
+  @override
+  String get notif_settings_cat_social_sub =>
+      'New followers, likes, comments and mentions';
+
+  @override
+  String get notif_settings_cat_messages => 'Messages';
+
+  @override
+  String get notif_settings_cat_messages_sub => 'Direct and group chats';
+
+  @override
+  String get notif_settings_cat_games => 'Games';
+
+  @override
+  String get notif_settings_cat_games_sub =>
+      'Invites, changes, waitlist and results';
+
+  @override
+  String get notif_settings_cat_meetups => 'Meetups';
+
+  @override
+  String get notif_settings_cat_meetups_sub => 'RSVPs, requests and changes';
+
+  @override
+  String get notif_settings_cat_system => 'Rewards & announcements';
+
+  @override
+  String get notif_settings_cat_system_sub => 'Shown in the app only';
+
+  @override
+  String get notif_settings_cat_security => 'Security';
+
+  @override
+  String get notif_settings_cat_security_sub =>
+      'Sign-ins and account changes. Always on.';
+
+  @override
+  String get notif_settings_always_on => 'Always on';
+
+  @override
+  String get notif_settings_os_denied_title =>
+      'Notifications are off for Dabbler';
+
+  @override
+  String get notif_settings_os_denied_body =>
+      'Turn them on in your phone\'s settings to get push notifications. In-app notifications still work.';
+
+  @override
+  String get notif_settings_open_settings => 'Open settings';
+
+  @override
+  String get notif_settings_preview_header => 'Message previews';
+
+  @override
+  String get notif_settings_preview_full => 'Sender name + message';
+
+  @override
+  String get notif_settings_preview_name => 'Sender name only';
+
+  @override
+  String get notif_settings_preview_sample => 'Sample push';
+
+  @override
+  String get notif_settings_preview_sample_sender => 'Layla';
+
+  @override
+  String get notif_settings_preview_sample_message =>
+      'Running 5 min late, save me a bib';
+
+  @override
+  String get notif_settings_preview_sample_hidden => 'New message';
+
+  @override
+  String get notif_settings_preview_note =>
+      'Your phone\'s lock-screen setting still applies. If it hides previews, you\'ll see “Dabbler · Notification”.';
+
+  @override
+  String get notif_settings_quiet_toggle_off =>
+      'Off · notifications arrive as normal';
+
+  @override
+  String notif_settings_quiet_toggle_on(String start, String end) {
+    return '$start – $end · pushes arrive silently';
+  }
+
+  @override
+  String get notif_settings_quiet_from => 'From';
+
+  @override
+  String get notif_settings_quiet_to => 'To';
+
+  @override
+  String get notif_settings_quiet_note =>
+      'Uses your phone\'s time zone and time format. Pushes arrive silently. These still alert you: a cancellation, a time or venue change, being removed, a waitlist promotion, reminders and security notices. Likes, comments and other social updates never break through.';
+
+  @override
+  String get notif_settings_quiet_invalid =>
+      'Start and end can\'t be the same time.';
+
+  @override
+  String get notif_settings_quiet_save => 'Save';
+
+  @override
+  String get notif_settings_quiet_saved => 'Quiet hours saved';
+
+  @override
+  String get notif_settings_reminders_header => 'Reminders';
+
+  @override
+  String get notif_settings_reminders_going =>
+      'Games and meetups you\'re going to';
+
+  @override
+  String get notif_settings_reminders_going_sub =>
+      'Times use the event\'s local time.';
+
+  @override
+  String get notif_settings_reminders_interested =>
+      'Meetups you\'re interested in';
+
+  @override
+  String get notif_settings_reminders_interested_sub =>
+      'Same reminders as Going. They stop if you choose Not going.';
+
+  @override
+  String get notif_settings_rung_24h => '24 hours before';
+
+  @override
+  String notif_settings_rung_morning(String time) {
+    return '$time on the day';
+  }
+
+  @override
+  String get notif_settings_rung_morning_sub =>
+      'Only when it is more than 2 hours before the start';
+
+  @override
+  String get notif_settings_rung_morning_interested_sub =>
+      '“Confirm your attendance”';
+
+  @override
+  String get notif_settings_rung_2h => '2 hours before';
+
+  @override
+  String get notif_settings_rung_30m => '30 minutes before';
+
+  @override
+  String get notif_settings_muted_header => 'Muted';
+
+  @override
+  String get notif_settings_muted_kinds => 'Notification types';
+
+  @override
+  String get notif_settings_muted_conversations => 'Conversations';
+
+  @override
+  String get notif_settings_muted_empty_title => 'Nothing muted';
+
+  @override
+  String get notif_settings_muted_empty_body =>
+      'What you turn off from a notification or a conversation shows up here.';
+
+  @override
+  String get notif_settings_muted_kind_sub =>
+      'From “Turn off notifications like this”';
+
+  @override
+  String get notif_settings_muted_kind_other => 'Other notifications';
+
+  @override
+  String get notif_settings_muted_conversation_fallback => 'Conversation';
+
+  @override
+  String get notif_settings_unmute => 'Unmute';
+
+  @override
+  String notif_settings_unmuted(String name) {
+    return '$name unmuted';
+  }
+
+  @override
+  String get notif_settings_undo => 'Undo';
+
+  @override
+  String get notif_settings_security_mute_refused =>
+      'Security notices can\'t be turned off.';
+
+  @override
+  String get notif_settings_save_rejected =>
+      'That change wasn\'t saved. Your previous setting is back.';
+
+  @override
   String get game_prefs_title => 'Game preferences';
 
   @override
@@ -9782,4 +9985,273 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_b_social_post_reposted => 'Tap to see the post.';
+
+  @override
+  String get notif_refresh => 'Refresh';
+
+  @override
+  String notif_unread_count(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notif_chip_unread => 'Unread';
+
+  @override
+  String get notif_chip_needs_action => 'Needs action';
+
+  @override
+  String get notif_chip_messages => 'Messages';
+
+  @override
+  String get notif_chip_meetups => 'Meetups';
+
+  @override
+  String get notif_chip_system => 'System';
+
+  @override
+  String get notif_section_this_week => 'Earlier this week';
+
+  @override
+  String get notif_highlight_label => 'Activity';
+
+  @override
+  String get notif_empty_hint =>
+      'Invitations, replies and game updates will show up here.';
+
+  @override
+  String notif_empty_filter_title(String filter) {
+    return 'Nothing in $filter';
+  }
+
+  @override
+  String get notif_empty_filter_hint =>
+      'Try another filter or show everything.';
+
+  @override
+  String get notif_show_all => 'Show all';
+
+  @override
+  String notif_offline_banner(String time) {
+    return 'You\'re offline. Showing notifications saved at $time. Actions are unavailable.';
+  }
+
+  @override
+  String get notif_offline_banner_unsaved =>
+      'You\'re offline. Actions are unavailable.';
+
+  @override
+  String get notif_refresh_failed =>
+      'Couldn\'t refresh. Showing your earlier list.';
+
+  @override
+  String get notif_load_failed_title => 'Couldn\'t load notifications';
+
+  @override
+  String get notif_load_failed_hint => 'Check your connection and try again.';
+
+  @override
+  String get notif_try_again => 'Try again';
+
+  @override
+  String get notif_refreshing => 'Refreshing';
+
+  @override
+  String get notif_load_earlier => 'Load earlier notifications';
+
+  @override
+  String get notif_loading => 'Loading';
+
+  @override
+  String get notif_all_caught_up => 'You\'re all caught up';
+
+  @override
+  String get notif_target_back => 'Back to notifications';
+
+  @override
+  String get notif_target_deleted_title => 'This is no longer available';
+
+  @override
+  String get notif_target_deleted_hint =>
+      'It was deleted after this notification was sent.';
+
+  @override
+  String get notif_target_cancelled_title => 'This was cancelled';
+
+  @override
+  String get notif_target_cancelled_hint =>
+      'The organiser cancelled it. Pending actions no longer apply.';
+
+  @override
+  String get notif_target_expired_title => 'This has expired';
+
+  @override
+  String get notif_target_expired_hint => 'The time to respond has passed.';
+
+  @override
+  String get notif_target_no_access_title => 'You don\'t have access';
+
+  @override
+  String get notif_target_no_access_hint =>
+      'You can no longer view this. No details are shown.';
+
+  @override
+  String get notif_target_resolved_title => 'Already handled';
+
+  @override
+  String get notif_target_resolved_hint =>
+      'You responded to this on another device.';
+
+  @override
+  String get notif_target_failed_title => 'Couldn\'t open this';
+
+  @override
+  String get notif_target_failed_hint => 'Check your connection and try again.';
+
+  @override
+  String notif_bell_unread(int count) {
+    return '$count unread';
+  }
+
+  @override
+  String get notif_action_decline => 'Decline';
+
+  @override
+  String get notif_action_cancel_place => 'Cancel my place (no penalty)';
+
+  @override
+  String get notif_menu_more => 'More options';
+
+  @override
+  String get notif_menu_mark_read => 'Mark as read';
+
+  @override
+  String get notif_menu_mark_unread => 'Mark as unread';
+
+  @override
+  String get notif_menu_mute_kind => 'Turn off notifications like this';
+
+  @override
+  String get notif_menu_mute_conversation => 'Mute this conversation';
+
+  @override
+  String get notif_res_muted => 'You won’t get notifications like this.';
+
+  @override
+  String get notif_res_conversation_muted => 'Conversation muted.';
+
+  @override
+  String get notif_res_undo => 'Undo';
+
+  @override
+  String get notif_res_retry => 'Retry';
+
+  @override
+  String get notif_pending_sending => 'Sending…';
+
+  @override
+  String get notif_pending_declining => 'Declining…';
+
+  @override
+  String get notif_res_failed => 'Couldn’t do that. Check your connection.';
+
+  @override
+  String get notif_res_elsewhere => 'Already handled on another device';
+
+  @override
+  String get notif_res_unavailable => 'Not available yet';
+
+  @override
+  String notif_res_following(String name) {
+    return 'Following $name';
+  }
+
+  @override
+  String get notif_res_mutual => 'You follow each other';
+
+  @override
+  String notif_res_approved(String name) {
+    return '$name is in';
+  }
+
+  @override
+  String get notif_res_request_declined => 'Request declined';
+
+  @override
+  String get notif_res_invite_declined => 'Invitation declined';
+
+  @override
+  String get notif_res_going => 'You’re going · normal reminders continue';
+
+  @override
+  String get notif_res_not_going => 'Not going · reminders stopped';
+
+  @override
+  String get notif_res_place_given_up =>
+      'Place given up · no penalty. The next person gets it.';
+
+  @override
+  String get notif_res_gone => 'This is no longer available';
+
+  @override
+  String get notif_res_expired => 'This has started';
+
+  @override
+  String notif_people_see_all(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'See all $count people',
+      one: 'See 1 person',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get notif_people_hide => 'Hide people';
+
+  @override
+  String notif_actor_and_others(String name, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count others',
+      one: '1 other',
+    );
+    return '$name and $_temp0';
+  }
+
+  @override
+  String get notif_urgent_action => 'Action needed';
+
+  @override
+  String get notif_change_time => 'Time';
+
+  @override
+  String get notif_change_venue => 'Venue';
+
+  @override
+  String get notif_change_position => 'Position';
+
+  @override
+  String get notif_ex_your_post => 'Your post';
+
+  @override
+  String get notif_ex_your_comment => 'Your comment';
+
+  @override
+  String notif_meta_mutual(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count mutual followers',
+      one: '1 mutual follower',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String notif_meta_players(int count, int capacity) {
+    return '$count/$capacity players';
+  }
 }

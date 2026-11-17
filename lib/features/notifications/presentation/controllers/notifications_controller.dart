@@ -16,6 +16,7 @@ class NotificationsState {
     this.hasMore = true,
     this.error,
     this.unreadCount = 0,
+    this.loadedAt,
   });
 
   final List<AppNotification> notifications;
@@ -26,6 +27,10 @@ class NotificationsState {
   /// KAN-987: the server's unread count (a HEAD count query), not the loaded
   /// pages; kept current by Realtime and the read mutations.
   final int unreadCount;
+
+  /// KAN-989: when the list last loaded from the server (the offline banner's
+  /// "saved at"); null before the first load.
+  final DateTime? loadedAt;
 
   /// [createdAt] of the last item — used as keyset cursor for the next page.
   DateTime? get cursor =>
@@ -40,6 +45,7 @@ class NotificationsState {
     bool? hasMore,
     String? error,
     int? unreadCount,
+    DateTime? loadedAt,
   }) {
     return NotificationsState(
       notifications: notifications ?? this.notifications,
@@ -47,6 +53,7 @@ class NotificationsState {
       hasMore: hasMore ?? this.hasMore,
       error: error,
       unreadCount: unreadCount ?? this.unreadCount,
+      loadedAt: loadedAt ?? this.loadedAt,
     );
   }
 }
@@ -155,14 +162,9 @@ class NotificationsController extends StateNotifier<NotificationsState>
   Future<void> loadNotifications({bool refresh = false}) async {
     if (!_enabled || state.isLoading) return;
 
-    if (refresh) {
-      state = NotificationsState(
-        isLoading: true,
-        unreadCount: state.unreadCount,
-      );
-    } else {
-      state = state.copyWith(isLoading: true, error: null);
-    }
+    // KAN-989: a refresh keeps the list on screen while it runs, and when it
+    // fails (the Center shows "Couldn't refresh" over the earlier list).
+    state = state.copyWith(isLoading: true, error: null);
 
     debugPrint(
       '[Notifications] loading page, refresh=$refresh, cursor=${refresh ? null : state.cursor}',
@@ -185,6 +187,7 @@ class NotificationsController extends StateNotifier<NotificationsState>
           isLoading: false,
           hasMore: page.length >= _pageSize,
           error: null,
+          loadedAt: DateTime.now(),
         );
       },
     );

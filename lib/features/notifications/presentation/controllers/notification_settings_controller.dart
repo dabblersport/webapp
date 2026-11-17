@@ -5,6 +5,7 @@ import 'package:dabbler/core/sync/settings_sync.dart';
 import 'package:dabbler/core/sync/settings_sync_handlers.dart';
 
 import '../../data/models/notification_settings.dart';
+import '../../data/models/notification_settings_keys.dart';
 import '../../data/notification_settings_repository.dart';
 
 /// UI state for the notification settings screen.
@@ -41,16 +42,23 @@ class NotificationSettingsState {
   static const _sentinel = Object();
 }
 
+/// What a quiet-hours save did (KAN-991).
+enum QuietHoursSave { saved, invalid, failed }
+
+/// The error set when a security kind would be muted (the server's 22023,
+/// refused on the device first).
+const String kSecurityMuteRefused = 'security-mute-refused';
+
 /// Loads notification settings on construction and persists every mutation
-/// optimistically (updating the UI immediately, then writing through; on
-/// failure the previous value is restored and [NotificationSettingsState.error]
-/// is set).
+/// optimistically: the UI updates at once, the change is written, and on
+/// failure the previous value is restored and
+/// [NotificationSettingsState.error] is set.
 class NotificationSettingsController
     extends StateNotifier<NotificationSettingsState> {
   /// [sync] / [accountId] (KAN-608): an edit is applied on the device at
   /// once, stored in the offline queue with its edit time and sent when the
-  /// connection allows; without them an edit is written through and reverted
-  /// on failure, as before.
+  /// connection allows; without them an edit is written through as a partial
+  /// RPC patch and reverted on failure.
   NotificationSettingsController(
     this._repository, {
     SettingsSyncNotifier? sync,
@@ -69,9 +77,7 @@ class NotificationSettingsController
   final OfflineCache? _cache;
 
   bool get _offlineFirst => _sync != null && _accountId != null;
-  static final String _mirrorKey = settingsMirrorKey(
-    SettingKeys.notifications,
-  );
+  static final String _mirrorKey = settingsMirrorKey(SettingKeys.notifications);
 
   Future<void> load() async {
     state = state.copyWith(isLoading: true, error: null);
@@ -125,39 +131,83 @@ class NotificationSettingsController
     );
   }
 
+  /// The push master switch.
   Future<void> setPushEnabled(bool value) =>
-      _mutate((s) => s.copyWith(pushEnabled: value));
+      _mutate((s) => s.copyWith(pushEnabled: value), {'push_enabled': value});
 
-  Future<void> setEmailEnabled(bool value) =>
-      _mutate((s) => s.copyWith(emailEnabled: value));
+  /// One category's in-app or push switch ([NotifChannel]).
+  Future<void> setCategory(String category, String channel, bool on) =>
+      _mutate((s) => s.withCategory(category, channel, on), {
+        'category_prefs': {
+          category: {channel: on},
+        },
+      });
 
-  Future<void> setSmsEnabled(bool value) =>
-      _mutate((s) => s.copyWith(smsEnabled: value));
+  /// One reminder rung ([NotifRung]) of Going or Interested.
+  Future<void> setRung(String group, String rung, bool on) =>
+      _mutate((s) => s.withRung(group, rung, on), {
+        'reminder_rungs': {
+          group: {rung: on},
+        },
+      });
+
+  /// The message preview: sender name only, or sender name and message.
+  Future<void> setPreviewSenderOnly(bool senderOnly) {
+    final value = senderOnly
+        ? NotifPreview.senderOnly
+        : NotifPreview.senderAndMessage;
+    return _mutate((s) => s.copyWith(messagePreview: value), {
+      'message_preview': value,
+    });
+  }
+
+  /// Saves the quiet-hours editor. Off clears the window; on needs a start
+  /// different from the end (the server rejects equal ones with 22023).
+  Future<QuietHoursSave> saveQuietHours({
+    required bool enabled,
+    required int startMin,
+    required int endMin,
+  }) async {
+    if (enabled && startMin == endMin) return QuietHoursSave.invalid;
+    final ok = await _mutate(
+      (s) => enabled
+          ? s.copyWith(quietStartMin: startMin, quietEndMin: endMin)
+          : s.copyWith(quietStartMin: null, quietEndMin: null),
+      enabled
+          ? {
+              'quiet_hours_enabled': true,
+              'quiet_start_min': startMin,
+              'quiet_end_min': endMin,
+            }
+          : {'quiet_hours_enabled': false},
+    );
+    return ok ? QuietHoursSave.saved : QuietHoursSave.failed;
+  }
+
+  /// Mutes or unmutes [kindKeys]. Muting a security (unmutable) kind is
+  /// refused here, before the server would refuse it: nothing changes and
+  /// [NotificationSettingsState.error] is [kSecurityMuteRefused].
+  Future<bool> setKindsMuted(List<String> kindKeys, bool muted) async {
+    if (muted && kindKeys.any(notificationKindIsUnmutable)) {
+      state = state.copyWith(error: kSecurityMuteRefused);
+      return false;
+    }
+    return _mutate((s) => s.withKindsMuted(kindKeys, muted), null);
+  }
 
   /// Toggle a group of `notification_kinds` keys on/off. [enabled] = not muted.
-  Future<void> setKindsEnabled(List<String> kindKeys, bool enabled) =>
-      _mutate((s) => s.withKindsMuted(kindKeys, !enabled));
+  Future<bool> setKindsEnabled(List<String> kindKeys, bool enabled) =>
+      setKindsMuted(kindKeys, !enabled);
 
-  Future<void> setQuietHours(int startMin, int endMin) =>
-      _mutate((s) => s.copyWith(quietStartMin: startMin, quietEndMin: endMin));
-
-  Future<void> clearQuietHours() =>
-      _mutate((s) => s.copyWith(quietStartMin: null, quietEndMin: null));
-
-  Future<void> setAllowHighPriorityOverride(bool value) =>
-      _mutate((s) => s.copyWith(allowHighPriorityOverride: value));
-
-  /// Allow every push through quiet hours (supersedes the high-priority-only
-  /// override in the server-side push trigger).
-  Future<void> setAllowAllOverride(bool value) =>
-      _mutate((s) => s.copyWith(allowAllOverride: value));
-
-  /// Applies [change] optimistically, persists, and reverts on failure.
-  Future<void> _mutate(
+  /// Applies [change] optimistically and persists it: [patch] through the RPC
+  /// (null sends the changed `muted_kinds`), or the whole value through the
+  /// offline queue. Reverts on failure. True when the change stands.
+  Future<bool> _mutate(
     NotificationSettings Function(NotificationSettings) change,
+    Map<String, dynamic>? patch,
   ) async {
     final current = state.settings;
-    if (current == null) return;
+    if (current == null) return false;
 
     final updated = change(current);
 
@@ -169,22 +219,42 @@ class NotificationSettingsController
         _mirrorKey,
         updated.toJson(),
       );
-      await _sync!.submit(SettingKeys.notifications, updated.toJson());
-      return;
+      final outcome = await _sync!.submit(
+        SettingKeys.notifications,
+        updated.toJson(),
+      );
+      if (outcome == SubmitOutcome.dropped && mounted) {
+        // The server refused it (validation): show the previous value.
+        state = state.copyWith(
+          settings: current,
+          error: 'rejected',
+          isSaving: false,
+        );
+        return false;
+      }
+      return true;
     }
 
     // Optimistic update.
     state = state.copyWith(settings: updated, isSaving: true, error: null);
 
-    final result = await _repository.save(updated);
-    result.fold(
-      (failure) => state = state.copyWith(
-        settings: current, // revert
-        isSaving: false,
-        error: failure.message,
-      ),
-      (saved) =>
-          state = state.copyWith(settings: saved, isSaving: false, error: null),
+    final result = await _repository.update(
+      patch ?? {'muted_kinds': updated.mutedKinds},
+    );
+    if (!mounted) return result.isSuccess;
+    return result.fold(
+      (failure) {
+        state = state.copyWith(
+          settings: current, // revert
+          isSaving: false,
+          error: failure.message,
+        );
+        return false;
+      },
+      (saved) {
+        state = state.copyWith(settings: saved, isSaving: false, error: null);
+        return true;
+      },
     );
   }
 }

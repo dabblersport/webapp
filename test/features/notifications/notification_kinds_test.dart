@@ -516,7 +516,7 @@ void main() {
 
   for (final locale in const [Locale('en'), Locale('ar')]) {
     testWidgets('${locale.languageCode}: a mention row shows the localized '
-        'title, its icon and no CTA; an invite keeps its filled View', (
+        'title, its icon and no CTA; an invite shows View and Decline', (
       tester,
     ) async {
       final l = lookupAppLocalizations(locale);
@@ -550,14 +550,19 @@ void main() {
       await tester.pump();
       expect(find.text(l.notif_kind_social_mentioned_anon), findsOneWidget);
       expect(find.text(l.notif_kind_game_invited_anon), findsOneWidget);
+      // KAN-988: the row is the card library's DabblerNotificationCard; an
+      // invite shows its filled View and the inline Decline.
       final rows = tester
-          .widgetList<DabblerNotificationRow>(
-            find.byType(DabblerNotificationRow),
+          .widgetList<DabblerNotificationCard>(
+            find.byType(DabblerNotificationCard),
           )
           .toList();
       expect(rows[0].actions, isEmpty);
-      expect(rows[1].actions.single.label, l.notif_action_view);
-      expect(rows[1].actions.single.filled, isTrue);
+      expect(rows[1].actions.map((a) => a.label), [
+        l.notif_action_view,
+        l.notif_action_decline,
+      ]);
+      expect(rows[1].actions.first.primary, isTrue);
     });
   }
 }

@@ -31,7 +31,8 @@ notificationLiveKindTable = <NotificationKindClient>[
     _R.game,
     _G.gameInvites,
     needsAction: true,
-    ctas: [NotificationCta(_A.view, filled: true)],
+    // KAN-988 (GAM-01): "View invitation" opens it; Decline runs inline.
+    ctas: [NotificationCta(_A.view, filled: true), NotificationCta(_A.decline)],
   ),
   NotificationKindClient(
     'game.join_request',
@@ -39,6 +40,11 @@ notificationLiveKindTable = <NotificationKindClient>[
     _R.gameJoinRequest,
     _G.gameInvites,
     needsAction: true,
+    // KAN-988 (GAM-02): approve or decline from the row.
+    ctas: [
+      NotificationCta(_A.approve, filled: true),
+      NotificationCta(_A.decline),
+    ],
   ),
   NotificationKindClient(
     'game.join_accepted',
@@ -65,6 +71,8 @@ notificationLiveKindTable = <NotificationKindClient>[
     _gameAmber,
     _R.game,
     _G.waitlist,
+    // KAN-988 (GAM-07 / G-14): give the place up, no penalty.
+    ctas: [NotificationCta(_A.cancelPlace)],
   ),
   NotificationKindClient(
     'game.player_joined',
@@ -174,6 +182,11 @@ notificationLiveKindTable = <NotificationKindClient>[
     _R.meetupHost,
     _G.meetupRequests,
     needsAction: true,
+    // KAN-988 (MTG-03): approve or decline from the row.
+    ctas: [
+      NotificationCta(_A.approve, filled: true),
+      NotificationCta(_A.decline),
+    ],
   ),
   NotificationKindClient(
     'meetup.request_approved',

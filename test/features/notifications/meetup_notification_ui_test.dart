@@ -21,9 +21,12 @@ class _Repo implements NotificationSettingsRepository {
   Future<Result<NotificationSettings, Failure>> load() async =>
       Ok(NotificationSettings.defaults('u1'));
   @override
-  Future<Result<NotificationSettings, Failure>> save(
-    NotificationSettings s,
-  ) async => Ok(s);
+  Future<Result<NotificationSettings, Failure>> update(
+    Map<String, dynamic> patch,
+  ) async => Ok(NotificationSettings.defaults('u1'));
+  @override
+  Future<Result<NotificationSettings, Failure>> setTimezone(String tz) async =>
+      Ok(NotificationSettings.defaults('u1'));
 }
 
 Future<void> _pump(WidgetTester tester, Widget home) async {
@@ -52,32 +55,13 @@ Future<void> _pump(WidgetTester tester, Widget home) async {
 void main() {
   setUpAll(initHomeTestSupabase);
 
-  testWidgets('settings lists the five new meetup kinds with the flag on', (
-    tester,
-  ) async {
-    await _pump(tester, const NotificationSettingsScreen(meetupsEnabled: true));
+  // KAN-991: meetup kinds are switched by the Meetups category (in-app and
+  // push), not one row per kind.
+  testWidgets('settings shows the Meetups category', (tester) async {
+    await _pump(tester, const NotificationSettingsScreen());
     final l = lookupAppLocalizations(const Locale('en'));
-    for (final t in [
-      l.notif_settings_kind_meetups,
-      l.notif_settings_kind_meetup_rsvps,
-      l.notif_settings_kind_meetup_requests,
-      l.notif_settings_kind_meetup_approved,
-      l.notif_settings_kind_meetup_declined,
-      l.notif_settings_kind_meetup_cancelled,
-    ]) {
-      expect(find.text(t), findsOneWidget, reason: t);
-    }
-  });
-
-  testWidgets('settings hides the new kinds with the flag off', (tester) async {
-    await _pump(
-      tester,
-      const NotificationSettingsScreen(meetupsEnabled: false),
-    );
-    final l = lookupAppLocalizations(const Locale('en'));
-    expect(find.text(l.notif_settings_kind_meetups), findsOneWidget);
+    expect(find.text(l.notif_settings_cat_meetups), findsWidgets);
     expect(find.text(l.notif_settings_kind_meetup_rsvps), findsNothing);
-    expect(find.text(l.notif_settings_kind_meetup_cancelled), findsNothing);
   });
 
   testWidgets('the existing row renders a meetup notification', (tester) async {
