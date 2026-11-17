@@ -1610,11 +1610,20 @@ changes or is cancelled. **This is the only consumer of `event_changes` that sen
   is dropped, and if nothing is left no notice is sent.
 * **One notice per batch, listing every changed field.** The kind is `*.time_changed`, else `*.venue_changed`, else
   `*.details_changed` (places, who can join, joining rule and cost cover, skill range).
-* **Series:** if one transaction changed two or more occurrences of a game series, each person gets one
-  `game.series_changed`. A single occurrence cancelled on its own sends `game.occurrence_cancelled` to that
-  occurrence's players only.
+* **Series:** if one transaction changed two or more occurrences of a game series, each person gets one notice
+  across those occurrences:
+  * `game.series_cancelled` when every occurrence in that batch was cancelled in the transaction
+    (`rpc_cancel_game_series`) **and** the series is over: `game_series.status = 'ended'`, or no future occurrence
+    that is not cancelled remains (`20261117165950_kan1015b_series_cancel_only_when_over`). A shortened edit-future
+    that cancels the later dates while earlier ones go on is `game.series_changed`. EN "All upcoming {title} games were cancelled", AR "أُلغيت جميع مباريات {title}
+    القادمة". The title is `game_series.title`, else `kan981_event_title` without its own noun ("Football",
+    "كرة القدم"). Added by `20261117163934_kan1015_series_cancelled`;
+  * `game.series_changed` for any other series batch: an edit, including an edit that also cancels some dates.
+
+  A single occurrence cancelled on its own sends `game.occurrence_cancelled` to that occurrence's players only.
 * **No notice:** an event that is now cancelled, or already in the past, is consumed silently.
-* **Dedupe keys:** `w1_b3:change:<event>:<max id>` and `w1_b3:series:<series>:<max id>`. A replayed batch therefore
+* **Dedupe keys:** `w1_b3:change:<event>:<max id>`, `w1_b3:series:<series>:<max id>` and
+  `w1_b3:series_cancel:<series>:<max id>`. A replayed batch therefore
   writes nothing new.
 
 **What a notice carries (`args`)**
@@ -1627,7 +1636,7 @@ changes or is cancelled. **This is the only consumer of `event_changes` that sen
 **Kinds**
 * Active, all with `breaks_quiet = true`:
   * `game.cancelled`, `game.time_changed`, `game.venue_changed`, `game.details_changed`,
-    `game.occurrence_cancelled`, `game.series_changed`;
+    `game.occurrence_cancelled`, `game.series_changed`, `game.series_cancelled` (KAN-1015, category `games`);
   * `meetup.cancelled`, `meetup.time_changed`, `meetup.venue_changed`, `meetup.details_changed`.
 * Inactive: `meetup.occurrence_cancelled` and `meetup.series_changed`, because meetups have no series.
 
@@ -2082,3 +2091,109 @@ every game and meetup notice, so an untitled game (24 live on 2026-11-17) never 
 * **Waitlist joined:** `trg_kan982_waitlist_after_insert` tells the player (`args.position`). An approved request on
   a full game now gets this notice instead of a "you're in" `game.join_accepted`.
 * **Meetup participant left:** `trg_kan982_meetup_rsvp_left` (going → cancelled by the attendee) tells the host.
+
+## 22. Meetup: "wants to come, but it's full" (KAN-1013, 2026-11-17)
+
+Migration `20261117163717_kan1013_meetup_wants_to_join_full.sql`. Live test
+`supabase/tests/notifications_v2/kan1013_wants_to_join_full_probes.sql`.
+
+* A "Going" (or accept-invite) tap on a full meetup is still stored as `interested` by `rpc_meetup_rsvp`. Around that one
+  write the RPC sets the transaction-local marker `dabbler.rsvp_full_downgrade` = meetup id and clears it right after.
+* `trg_meetup_rsvp_interested_notify` (the one sender) sends **`meetup.wants_to_join_full`** to the organiser when the
+  marker matches ("{actor} asked to come to {title}, but it's full" / "طلب حضور {title} من {actor}، لكنه مكتمل"; plural-safe
+  for a grouped card, `20261117164151_kan1013b_wants_full_plural_safe`), and
+  `meetup.rsvp_interested` otherwise (a real Interested, unchanged). Dedupe `meetup_rsvps:<rsvp id>:wants_full`.
+* New kind: category `meetups`, in-app, priority low, mutable. Aggregation rule like Interested (3600 s window, push cap
+  900 s, push off) but its own `group_family = 'meetup_wants_full'`, so the two cases never share a card.
+
+## 23. Message notifications: sender, snippet, preview setting (KAN-984, 2026-11-17)
+
+Migration `20261117164003_kan984_messaging_push_preview`. Live test `supabase/tests/notifications_v2/kan984_messaging_test.sql`.
+Worker change (not deployed by the migration): `workers/messaging/src/notify.ts`.
+
+* **One sender of `message.received`: `msg_notify_core(uid, conversation_id, seq, access_mode, snippet)`** (SECURITY
+  DEFINER, service_role only). It writes through `notify_v2` (dedupe `message.received:<conversation>:<seq>`, group
+  `conv:<conversation>`). The old direct INSERT is gone.
+* **Entry points** (both SECURITY DEFINER): `msg_notify(uuid, bigint, text)` (EXECUTE for authenticated and
+  service_role; what the deployed Worker calls; sender-only push) and the overload `msg_notify(uuid, bigint, text, text)`
+  with `p_snippet`, **service_role only since KAN-984b (`20261117170659`)**: a member could otherwise push text that is
+  no message. A safe Worker path (HMAC header or service role) is proposed on KAN-984 and not built. The overload has
+  no defaults, so a 3-argument call resolves to the first.
+* **Recipients:** a game chat's active roster (host, player, sub); a DM's two members; a meetup chat's organiser and
+  every `meetup_rsvps` row with status `going`. Never the sender. Skipped: a member with `muted_at` on the
+  conversation, a block in either direction, and (unchanged) a recipient who already has an unread `message.received`
+  for the conversation from the last 2 minutes.
+* **Text (F-2):** title `{actor}{in_group}`: the sender's name, or "Sender in Group" / «المرسل في المجموعة» for a game
+  or meetup chat (the group name is the event title, not translated). The push body is the snippet when the
+  recipient's `message_preview` is `sender_and_message` (default) and the kind's generic body under `sender_only`. The
+  snippet is one line, at most 140 characters, and dropped when it hits `safety_blocklist_terms`.
+* **The snippet is in no table row.** It reaches the push only through `dabbler.push_body` (set per recipient, cleared
+  after), and sits transiently in the pg_net request row (`net.http_request_queue`) until pg_net sends it. `notification_push_dispatch` consumes that setting before any gate, so it cannot carry over to another row.
+* **Push data** adds `conversation_id` and `game_id` or `meetup_id` (from the row's args) so the app can skip the
+  alert for the open chat; the iOS category is `DABBLER_MESSAGE`. Message pushes are never time-sensitive and are
+  silent in quiet hours.
+
+## 19. Housekeeping and grants hygiene (KAN-986 W1-B8, KAN-1011, 2026-11-17)
+
+Migration `20261117164404_kan986_housekeeping_grants`. Live test `supabase/tests/notifications_v2/kan986_housekeeping.sql`.
+
+**Inbox retention (F-13, 90 days).**
+- `notifications_retention_candidates(p_days = 90, p_now = now())` lists what would be deleted.
+- `notifications_retention_run(p_days = 90, p_batch = 1000, p_max_batches = 50, p_now = now())` deletes it in
+  batches. It refuses a period under 90 days.
+- Both are SECURITY DEFINER; service_role only.
+- **Kept whatever their age:**
+  - an unread security notice;
+  - `game.join_request` while its `game_join_requests` row is pending;
+  - `game.invited`, `meetup.invited` and `squad.invited` while the invite is pending;
+  - `meetup.request_received` while the requester's RSVP is pending.
+- Friend-request kinds have no backing table (F-17) and are never kept.
+- **Side effects of a delete:**
+  - it cascades to `notification_deliveries`;
+  - it sets `notification_aggregates.notification_id` and `security_sign_ins.notification_id` to NULL.
+- **Cron:** `kan986_notifications_retention_daily` (`41 2 * * *`) was created INACTIVE. The first run is counted and
+  approved on KAN-986 before it is switched on (`cron.alter_job(jobid, active := true)`).
+
+**Cron run history.**
+- `cron_job_run_details_prune(p_keep = '7 days', p_batch = 100000, p_max_batches = 10)` keeps 7 days. It refuses less
+  than 1 day.
+- Cron `kan986_prune_cron_run_details_hourly` (`23 * * * *`).
+
+**Grants (KAN-1011).**
+- **Sequences:** no public sequence grants anything to PUBLIC, anon or authenticated. Default privileges of `postgres`
+  in `public`: new sequences give nothing to anon or authenticated, and new tables give them no MAINTAIN.
+  `supabase_admin`'s default privileges (anon/authenticated `arwdDxtm` on tables, `rwU` on sequences, `X` on functions)
+  cannot be changed by `postgres`.
+- **RPCs:** every volatile `public.rpc_*` function lost EXECUTE for anon and PUBLIC. authenticated and service_role
+  keep exactly what they had. There is one exception: 15 read-only RPCs stay executable by anon. They are
+  `rpc_admin_submission_action_state`, `rpc_autocomplete_people`, `rpc_feed_ranked`, `rpc_get_activity_feed`,
+  `rpc_meetup_card`, `rpc_my_venue_permissions`, `rpc_nearby_users`, `rpc_potential_vibes`, `rpc_profile_search`,
+  `rpc_submission_approval_state`, `rpc_submission_audit_timeline`, `rpc_test_ping`, `rpc_unified_search_sectioned`,
+  `rpc_username_availability` (called before sign-in) and `rpc_username_suggest`. `rpc_track_event(text,jsonb)` also keeps anon
+  (KAN-109: `flags_snapshot` before sign-in; the function refuses any other event for anon). It was restored by
+  `20261117165842_kan986b_track_event_anon` after PEER 16467.
+- **MAINTAIN:** anon and authenticated have no MAINTAIN on any public relation, with these exceptions:
+  - `notification_deliveries`: authenticated still has it. This table is out of bounds here and was reported on
+    KAN-979.
+  - PostGIS `spatial_ref_sys`, `geometry_columns` and `geography_columns`: granted by `supabase_admin`, so `postgres`
+    cannot revoke them.
+- **Notification objects:** anon has no grant on `notifications`, `notification_kinds`, `notification_scores`,
+  `notification_user_preferences` or `notification_hourly_caps`. anon also has no EXECUTE on
+  `mark_notification_read`, `render_notification`, `calculate_notification_rank`, `calculate_notification_score`,
+  `can_send_notification_now`, `should_bypass_quiet_hours` or `allow_social_notifications`.
+- **Kept for anon:** `next_quiet_exit` and `is_in_quiet_hours(timestamptz,text,integer,integer)`. Both are pure
+  arithmetic with no user data.
+
+## 23. Game invite notice (KAN-1017, 2026-11-17)
+
+Migration `20261117171717_kan1017_game_invite_notify.sql`. Live test
+`supabase/tests/notifications_v2/kan1017_game_invite_probes.sql`.
+
+* `rpc_invite_user` stores the caller's profile in `game_invites.invited_by_profile_id`: the organiser profile, else
+  the game's `creator_profile_id` when the caller created it, else the caller's oldest active profile. Before, only an
+  organiser profile was stored, so most invites had NULL.
+* `trg_game_invite_notify` (AFTER INSERT) sends `game.invited` through `notify_v2` only (via `kan982_notify`, so
+  `title_en/_ar` come from `kan981_event_title`); actor = the inviter (profile's user, else the caller); a self-invite
+  sends nothing; dedupe `game.invited:<invite id>`. The old `process_notification_event` call is gone.
+* `game.invited` titles: "{actor} invited you to {title}" / "{actor} دعاك إلى {title}".
+* No backfill: on 2026-11-17 the only invite was the QA device-test invite, left untouched.
