@@ -1486,6 +1486,83 @@ and the shared facts are read and written there.
 * **Mobile builds older than 181** read these columns from `games` directly and break. The CEO accepted that on
   2026-11-14 (Jira KAN-866 16314).
 
+### 13a. Event change signal: `schedule_revision`, `event_changes`, `event_timezone` (KAN-976, 2026-11-17)
+
+Migration `20261117045201_kan976_event_change_signal`. It is the one signal that an event changed. The change
+notifications (W1-B3), the reminder scheduler (KAN-983) and the producers (KAN-981) read it. **No other ticket in Epic
+KAN-973 adds a trigger on `events`.**
+
+**`events.schedule_revision`** (`integer NOT NULL DEFAULT 0`, check `>= 0`)
+* Goes up by 1 on an UPDATE that changes the time (`start_at`, `end_at`) or the place (`venue_id`, `area_id`,
+  `geo_location_id`).
+* Nothing else moves it.
+* The trigger owns the column: a direct write is replaced by the computed value and writes no row.
+
+**`public.event_changes`** (outbox) has one row per changed field per UPDATE.
+
+| Column | Type | Meaning |
+|---|---|---|
+| `id` | `bigint` identity PK | Cursor for consumers |
+| `event_id` | `uuid` FK `events(id)` ON DELETE CASCADE | The event that changed |
+| `event_type` | `text` (`game`, `meetup`) | The event's type |
+| `revision` | `integer` | `schedule_revision` after this UPDATE |
+| `field` | `text` | One of `start_at`, `end_at`, `venue_id`, `area_id`, `geo_location_id`, `capacity`, `join_policy`, `joining_rule`, `cost_cover`, `min_skill`, `max_skill`, `is_cancelled` |
+| `old_value`, `new_value` | `jsonb` | `to_jsonb` of the column, NULL when the column was NULL |
+| `schedule_change` | `boolean` | true for the five time and place fields |
+| `actor_user_id` | `uuid` | `auth.uid()`; NULL for service or system writes |
+| `change_group` | `uuid` | The same value for every row of one UPDATE of one event |
+| `occurred_at` | `timestamptz` | `now()`, the transaction time |
+| `consumed_by` | `jsonb` object, default `{}` | Per-consumer marker, for example `{"w1_b3": "<timestamptz>"}` |
+
+* Not recorded:
+  * `title`, `listing_visibility` and `sport_id`;
+  * `cancelled_at` and `cancelled_reason`. A meetup cannot store these (`events_meetup_cancel_null`; KAN-982 owns
+    that). A cancel is the `is_cancelled` row.
+* A venue move writes three rows in one `change_group` with one bump: `venue_id`, plus the `area_id` and
+  `geo_location_id` that `kan713_events_location` derives.
+* Access is server only:
+  * RLS is on, with no policy.
+  * `anon` and `authenticated` have nothing (42501).
+  * `service_role` has SELECT and UPDATE.
+  * The identity sequence `event_changes_id_seq` is closed too: PUBLIC, `anon` and `authenticated` were revoked by
+    `20261117053118_kan976b_event_changes_seq_acl_tz_names`. It had been created with `rwU` for them from the project
+    default ACL, so a client could `setval` it and break every tracked `events` UPDATE. The ACL is now postgres and
+    service_role only. **A new identity or serial column in `public` inherits this default; revoke it explicitly.**
+* Indexes: `(event_id, id)` and `(occurred_at)`.
+
+**Trigger `trg_kan976_events_change_signal`**
+* Definition: BEFORE UPDATE FOR EACH ROW, function `kan976_events_change_signal()`. The function is SECURITY DEFINER
+  with `search_path = ''`, and EXECUTE is revoked from PUBLIC, `anon` and `authenticated`.
+* Its WHEN clause lists the 12 recorded fields plus `schedule_revision`.
+* Its name sorts after every other BEFORE trigger on `events`, so it sees the location that `trg_kan713_*` derives.
+* No double firing:
+  * It does not write to `games` or `meetups`.
+  * `schedule_revision` is not in the WHEN clause of `trg_kan949_events_nudge_subtype`.
+  * So it adds no kan949 or kan950 nudge.
+* It sends no notification. The cancel notification (`trg_kan947_events_game_updated_notify`) is unchanged: a game
+  cancel with a roster of 1 gives +1 notification both before and after this migration.
+
+**`public.event_timezone(p_event_id uuid) RETURNS text`**
+* STABLE, SECURITY DEFINER, `search_path = ''`. EXECUTE is granted to `service_role` only.
+* Lookup order:
+  1. `venues.timezone` (trimmed), if it is accepted. Since `20261117054042_kan976c_event_timezone_fast_zone_check`
+     a zone is accepted when both checks pass:
+     * it has the shape `^(UTC|[A-Z][A-Za-z]+(/[A-Za-z0-9_+-]+)+)$`;
+     * `now() AT TIME ZONE` accepts it, run inside a BEGIN/EXCEPTION `invalid_parameter_value` block.
+
+     Everything else falls through: POSIX `UTC+4`, `+04`, `GST`, lowercase, empty, unknown names such as
+     `Mars/Olympus`, and legacy `EST5EDT`. Losing `EST5EDT` was accepted in PEER review.
+     **Do not use `pg_timezone_names` here.** `20261117053118` did, and it cost 54 ms per call (16.8 s for 315
+     events). The current check takes 79 ms for 315 calls;
+  2. the country of the event's area (`events.area_id`, else the area of its `geo_location_id`) through the map AE
+     `Asia/Dubai`, SA `Asia/Riyadh`, QA `Asia/Qatar`, KW `Asia/Kuwait`, BH `Asia/Bahrain`, OM `Asia/Muscat`;
+  3. `Asia/Dubai`.
+* Returns NULL when the event does not exist.
+* Today every venue is `Asia/Dubai` (`venues.timezone` is NOT NULL with that default) and every area is `AE`.
+
+Live test: `supabase/tests/notifications_v2/kan976_event_change_signal.sql`. Rollback:
+`supabase/schema/rollback/kan976_ROLLBACK_event_change_signal.sql`.
+
 ---
 
 ## 14. Profile discoverability — visible by default (KAN-958, 2026-11-16)
@@ -1514,3 +1591,145 @@ CEO decision 2026-11-16: profiles are discoverable unless the owner opts out. Mi
   still had `hide_in_search = true`).
 * **`is_benched(uuid)` is a known dead helper:** it reads `user_benches` / `benches`, neither of which
   exists, so it always returns false. The real benched state is `user_status.is_benched`. Left as is.
+
+## 15. Push devices: `fcm_tokens` is one row per installation (KAN-977, 2026-11-17)
+
+Migration `20261117045109_kan977_fcm_tokens_installations`. Probes:
+`supabase/tests/notifications_v2/kan977_devices_probes.sql`.
+
+* **Key:** unique `(user_id, installation_id)` (`fcm_tokens_user_installation_key`). One user can have any
+  number of devices, on any platform. **`token` is globally unique** (`fcm_tokens_token_key`), so a token
+  never receives two sends.
+* **Columns added:** `installation_id` (NOT NULL, 1..128 chars), `device_platform` (NOT NULL, the OS, on
+  every row, same value set as `platform`), `app_version` (≤ 64), `locale` (≤ 35), `os_permission`
+  (`granted` | `denied` | `provisional` | NULL = not asked or unknown), `last_seen_at` (set on every write).
+* **`platform` is now the legacy slot, and is NULL on installation rows.** Old builds upsert with
+  `onConflict: 'user_id,platform'`. Postgres needs a non-partial unique index on exactly
+  `(user_id, platform)` to plan that, and a partial index fails with 42P10. So `unique_user_platform` stays as
+  the arbiter for old builds only:
+  * legacy rows (old builds, and all 56 rows that existed on 2026-11-17): `platform` = the OS,
+    `installation_id = 'legacy:' || platform`, at most one per user and platform, as before;
+  * installation rows (`rpc_register_push_token`): `platform IS NULL`, so the unique index ignores them.
+  `fcm_tokens_legacy_slot_check` enforces that split. **Read `device_platform` for the OS, not `platform`.**
+  Once no old build is left, `platform` and `unique_user_platform` can go.
+* **Trigger `fcm_tokens_normalize`** (BEFORE INSERT OR UPDATE, SECURITY DEFINER, `search_path = ''`, no
+  EXECUTE for client roles) derives the legacy ids from `platform`, stamps `last_seen_at`, and **deletes
+  every other row that holds the same token**, whatever user owns it. That makes a token move to the new user
+  after an account switch on a shared device, and retire a device's legacy row when it upgrades and
+  registers through the RPC. It is definer because the other holder is usually another user's row, which
+  RLS hides.
+* **RPCs** (SECURITY INVOKER, `search_path = ''`, EXECUTE for `authenticated` only):
+  * `rpc_register_push_token(p_installation_id, p_token, p_platform, p_app_version, p_locale,
+    p_os_permission) → uuid` upserts this installation's row and returns its id. It refuses a NULL uid
+    (42501), and a blank or `legacy:` id, blank token, unknown platform or unknown permission (22023).
+  * `rpc_unregister_push_token(p_installation_id) → boolean` deletes the caller's row for that installation
+    only. It returns false when there was none.
+* **RLS:** four owner policies `TO authenticated`, `(select auth.uid()) = user_id`. `anon` has no grant.
+  `authenticated` keeps direct INSERT/UPDATE/DELETE because old builds write the table directly.
+* **Readers:** `send-push-notification` selects `token, platform` and prunes by token. It still delivers
+  to every row. Its `platforms` filter matches only legacy rows, and nothing passes it today. KAN-979 owns
+  moving it to `device_platform`.
+
+## 16. Notification envelope v2: `notify_v2`, envelope columns, kind templates (KAN-974, 2026-11-17)
+
+Migration `20261117045242_kan974_notification_envelope_v2.sql`. Live test
+`supabase/tests/notifications_v2/kan974_envelope_v2_test.sql` (39 checks, rolled back).
+
+* **`notify_v2(p_to_user_id uuid, p_kind_key text, p_args jsonb = '{}', p_entity_type text = NULL,
+  p_entity_id uuid = NULL, p_actor_user_id uuid = NULL, p_source_event_id text = NULL, p_dedupe_key text = NULL,
+  p_group_key text = NULL, p_action_route text = NULL) → uuid`**. SECURITY DEFINER, `search_path = public, pg_temp`,
+  EXECUTE for `service_role` only (proacl `{postgres=X/postgres,service_role=X/postgres}`). It is the sender every
+  later notification ticket writes to; `process_notification_event` stays unchanged for kinds that have not moved,
+  and a kind has one sender at a time.
+  * `p_dedupe_key` is required (22004). The call is idempotent on `(to_user_id, dedupe_key)`: a repeat returns the
+    existing row's id and writes nothing.
+  * Writes nothing (returns NULL) when the kind is inactive, when the actor and recipient block each other in either
+    direction (`user_blocks`), or when the kind is in the recipient's `notification_settings.muted_kinds` and the kind
+    has `can_mute = true`.
+  * Priority is the kind's `default_priority`.
+  * Language: the recipient's profile `language` (active profile first), then `user_settings.locale`, then `en`.
+    `ar` picks the `_ar` templates. `title`/`body` are rendered and stored so old app versions still show them;
+    `action_route` is `p_action_route` or the same game/meetup deep link `process_notification_event` builds.
+  * Templates use `{name}` placeholders filled from `args`; `{name}_ar` / `{name}_en` in `args` override `{name}` for
+    that language; `{actor}` defaults to the actor's display name ("Someone" / «شخص ما», also in
+    `context.actor_display_name`). Values are inserted literally in one pass (a value containing `{title}` is not
+    expanded); unfilled placeholders render empty (`notify_v2_render(text, jsonb, text)`, service_role only).
+  * A kind with an enabled `notification_aggregation_rules` row is handed to `process_notification_event` unchanged
+    (returns NULL, no dedupe on that path). Aggregation belongs to KAN-980.
+* **`notifications` new columns:** `template_key text`, `args jsonb` (object), `source_event_id text` (opaque, e.g.
+  an `event_changes.id`), `dedupe_key text` (partial unique index `notifications_to_user_dedupe_key_uidx` on
+  `(to_user_id, dedupe_key) WHERE dedupe_key IS NOT NULL`), `group_key text` (index), `schema_version smallint NOT NULL
+  DEFAULT 1` (1 = legacy row, 2 = `notify_v2`). The 1,337 rows that existed before read 1 with the other columns NULL.
+* **`notification_kinds` new columns:** `title_template_en/ar`, `body_template_en/ar` (all NOT NULL), `breaks_quiet
+  boolean` (default false), `can_mute boolean` (default true), `category text NOT NULL` in `social, messages, games,
+  meetups, activities, system, security, booking`. Readable by clients like the rest of the table.
+  * `breaks_quiet = true` only for I-3 kinds (cancellations, changes to an upcoming event, removal, waitlist
+    promotion, reminders) and security notices: 22 kinds. `can_mute = false` only for `security.*`.
+  * 87 kinds: the 35 existing (active, templates and flags added, sender unchanged) and 52 new, all **inactive**:
+    membership (`game.join_declined`, `game.invite_accepted/declined/withdrawn/expired`, `game.player_left`,
+    `game.full`, `game.waitlist_joined`, `game.waitlist_position_changed`, `meetup.removed`, `meetup.player_left`,
+    `meetup.rsvp_interested`), event changes (`game./meetup.` `time_changed`, `venue_changed`, `details_changed`,
+    `occurrence_cancelled`, `series_changed`, plus `game.cancelled`), reminders (`meetup.reminder`,
+    `meetup.confirm_attendance`), attendance, lifecycle, results and ratings (`activity.*`, 22 kinds), security
+    (`security.new_signin`, `security.password_changed`, `security.email_changed`) and social
+    (`social.comment_replied`, `social.post_reposted`). `activity.starting_soon` is deliberately absent (it is the
+    30m reminder rung). Each producer ticket activates its own kinds.
+
+## 17. Notification settings: one store, `notification_settings` (KAN-975, 2026-11-17)
+
+Migrations `20261117045159_kan975_notification_settings_contract`,
+`20261117053604_kan975b_category_keys_follow_registry` and `20261117054010_kan975c_quiet_hours_default_off`. Live test
+`supabase/tests/notifications_v2/kan975_settings_contract.sql`.
+
+`public.notification_settings` (PK `user_id`) is the only store for notification preferences. `user_settings` is
+no longer read for quiet hours or timezone by any function; it is still read for `locale` by
+`render_notification` and `notify_v2`, which is not a notification setting.
+
+| Column | Type / default | Meaning |
+|---|---|---|
+| `tz` | text, `'Asia/Dubai'` | IANA name from the device. Validated against `pg_timezone_names` by trigger `trg_notification_settings_guard`. |
+| `quiet_start_min`, `quiet_end_min` | int, default NULL (off) | Quiet window in local minutes, end exclusive, may cross midnight. Both NULL = quiet hours off. Checks: both or neither, 0..1439, start <> end. Switching on through the RPC with no window gives 00:00-08:00 (0 / 480). |
+| `quiet_hours_enabled` | bool, generated | `quiet_start_min IS NOT NULL AND quiet_end_min IS NOT NULL`. |
+| `message_preview` | text, `'sender_and_message'` | or `'sender_only'` (F-2). |
+| `reminder_rungs` | jsonb | `{"going"|"interested": {"24h","09:00","2h","30m": bool}}`, all true. Exact shape enforced by `notification_reminder_rungs_valid`. |
+| `category_prefs` | jsonb | `{<category>: {"in_app": bool, "push": bool}}`, all true. Keys: `social`, `messages`, `games`, `meetups`, `system` (UI: "Rewards & announcements"), `booking` (hidden in UI). Enforced by `notification_category_prefs_valid`. |
+| `muted_kinds` | text[] | Muted `notification_kinds.key`s. A security kind is rejected (22023). |
+| `push_enabled` | bool | Master push switch. Does not apply to security kinds. |
+| `email_enabled`, `sms_enabled` | bool | Legacy (F-15). Kept, read by no function, not settable through the RPC. |
+| `allow_high_priority_override`, `allow_all_override` | bool | Legacy, read only by `trg_push_on_notification_insert`. |
+
+**Category rules (delivery, KAN-979 must apply them).** Keys follow `notification_kinds.category`.
+- `security` has no key: always on, never mutable, never silenced by `push_enabled` (CEO answer from planning).
+- `activities` has no key: an activity kind (check-in, lifecycle, results, ratings) follows `games` when its entity
+  is a game and `meetups` when its entity is a meetup. `notification_channel_enabled` has no entity argument, so for
+  an `activities` kind it applies only `push_enabled` and `muted_kinds`; the caller that knows the entity checks
+  `category_prefs -> 'games' | 'meetups' -> <channel>` as well.
+
+**Functions.**
+| Function | Security | EXECUTE | Does |
+|---|---|---|---|
+| `rpc_get_my_notification_settings()` | invoker (RLS) | authenticated | Creates the caller's row with defaults on first read; returns it. |
+| `rpc_update_my_notification_settings(jsonb)` | invoker (RLS) | authenticated | Partial update. Keys: `tz`, `quiet_hours_enabled`, `quiet_start_min`, `quiet_end_min`, `message_preview`, `reminder_rungs`, `category_prefs` (both merged per key), `muted_kinds` (replaced), `push_enabled`. Unknown key = 22023. Quiet on with no window = 00:00-08:00; start = end = 22023. |
+| `rpc_set_my_notification_timezone(text)` | invoker | authenticated | Device timezone. |
+| `is_quiet_hour(uuid, timestamptz)` | definer | service_role | Quiet-hours rule; no row = off (same as the column defaults). anon/authenticated revoked. |
+| `is_in_quiet_hours(uuid)` | invoker | service_role | `is_quiet_hour(user, now())`. |
+| `notification_channel_enabled(uuid, text, text)` | definer | service_role | Delivery reader for `in_app` / `push`: security kinds true; else push master, mutes, category flag. |
+| `notification_kind_is_unmutable(text)` | definer | authenticated, service_role | `security.%` key, `category = 'security'` or `can_mute = false`. |
+
+RLS: policies `ns_self_ins`, `ns_self_rw`, `ns_self_upd` (`auth.uid() = user_id`); `anon` has no table grant.
+The existing client (`notification_settings_repository_impl.dart`) still reads and upserts the table directly.
+`trg_push_on_notification_insert` still reads `quiet_start_min`/`quiet_end_min` itself and drops the push in the
+window; I-2 (silent, not dropped) is the delivery ticket's change.
+
+**Quiet-hours default: OFF until KAN-979 (kan975c).** The CEO default is 00:00-08:00 (F-14), but
+`trg_push_on_notification_insert` still drops a push inside the window, and the current client upserts this table
+directly, so a 0/480 default would cost every new row its overnight pushes. Until silent delivery (I-2) lands the
+column defaults are NULL and `is_quiet_hour` treats a missing row as off. **KAN-979 owns switching the default to
+00:00-08:00** (column defaults `quiet_start_min` 0 / `quiet_end_min` 480 and the no-row branch of `is_quiet_hour`)
+**in the same migration where silent delivery lands.** Rows reset by kan975c: 0 (none had 0/480 since 20261117045159).
+* **Client writes (KAN-974b, `20261117053400`):** `authenticated` no longer has table-level UPDATE on
+  `notifications` (it could rewrite its own `dedupe_key` or `kind_key` and make `notify_v2` treat a notice as already
+  sent). It has column UPDATE on `is_read`, `read_at`, `clicked_at`, `interaction_count` only: markAsRead / markAllRead
+  (direct PostgREST update) and `increment_notification_interaction` (invoker) keep working. Table ACL now
+  `{postgres=arwdDxtm/postgres,anon=rm/postgres,authenticated=rm/postgres,service_role=arwdDxtm/postgres}`. A
+  client update of any other column fails with 42501.
