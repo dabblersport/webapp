@@ -1545,13 +1545,18 @@ KAN-973 adds a trigger on `events`.**
 **`public.event_timezone(p_event_id uuid) RETURNS text`**
 * STABLE, SECURITY DEFINER, `search_path = ''`. EXECUTE is granted to `service_role` only.
 * Lookup order:
-  1. `venues.timezone` (trimmed), if it is accepted. Since `20261117054042_kan976c_event_timezone_fast_zone_check`
-     a zone is accepted when both checks pass:
-     * it has the shape `^(UTC|[A-Z][A-Za-z]+(/[A-Za-z0-9_+-]+)+)$`;
+  1. `venues.timezone` (trimmed), if it is accepted. A zone is accepted when both checks pass:
+     * it has the shape `^(UTC|[A-Z][A-Za-z_]+(/[A-Z][A-Za-z_-]*)+)$`
+       (`20261117055656_kan976d_timezone_shape_tighten`, which replaced the looser kan976c shape);
      * `now() AT TIME ZONE` accepts it, run inside a BEGIN/EXCEPTION `invalid_parameter_value` block.
 
-     Everything else falls through: POSIX `UTC+4`, `+04`, `GST`, lowercase, empty, unknown names such as
-     `Mars/Olympus`, and legacy `EST5EDT`. Losing `EST5EDT` was accepted in PEER review.
+     Everything else falls through: POSIX `UTC+4`, `+04`, `Asia/Dubai+4`, `Etc/GMT±N`, `GST`, lowercase, empty,
+     unknown names such as `Mars/Olympus`, and legacy `EST5EDT`. Losing `EST5EDT` was accepted in PEER review.
+     Names that pass include `America/Port-au-Prince` and `America/North_Dakota/New_Salem`.
+
+     **`venues.timezone` carries the same shape as `CHECK venues_timezone_shape_chk`** (from kan976d; it was
+     validated against all 384 live rows, all `Asia/Dubai`). A bad zone cannot be stored, so the function's own
+     check only matters for data that bypasses the CHECK.
      **Do not use `pg_timezone_names` here.** `20261117053118` did, and it cost 54 ms per call (16.8 s for 315
      events). The current check takes 79 ms for 315 calls;
   2. the country of the event's area (`events.area_id`, else the area of its `geo_location_id`) through the map AE
@@ -1562,6 +1567,82 @@ KAN-973 adds a trigger on `events`.**
 
 Live test: `supabase/tests/notifications_v2/kan976_event_change_signal.sql`. Rollback:
 `supabase/schema/rollback/kan976_ROLLBACK_event_change_signal.sql`.
+
+### 13b. Event change and cancel notices (KAN-981, 2026-11-17)
+
+Migration `20261117102109_kan981_event_change_notices`. These notices tell people when an event they take part in
+changes or is cancelled. **This is the only consumer of `event_changes` that sends notices.** Its consumer key is
+`w1_b3`; the reminders of KAN-983 use `w1_b5`.
+
+**Who is told** (`kan981_recipients(event_id)`)
+* For a game, players whose `game_roster.status` is `active`.
+* For a meetup, RSVPs whose status is `going` or `interested`.
+* Never the creator, and never the person who made the change.
+* Not told: roster rows that are `left` or `kicked`, and RSVPs that are `cancelled` or `pending`. The old meetup cancel
+  path also reached `pending`; that was dropped on purpose.
+
+**Cancel: sent at once by a trigger**
+* The trigger is `trg_kan947_events_game_updated_notify` (AFTER UPDATE, `WHEN old.is_cancelled IS DISTINCT FROM
+  new.is_cancelled`). It now covers meetups too, keeps its old name, and still calls `trg_game_updated_notify()`.
+  No trigger was added to `events`.
+* On a false → true change it sends `game.cancelled` or `meetup.cancelled` through `notify_v2`, with
+  dedupe key `w1_b3:cancel:<event_changes.id>`, and marks that outbox row as consumed.
+* A game that is a series occurrence is skipped here. The consumer below sends it, so it can group a whole-series
+  cancel.
+
+**Old senders, removed in the same migration**
+* The `game.updated` loop. `game.updated` is now `is_active = false`, so nothing sends it.
+* The `process_notification_event('meetup.cancelled')` loop inside `rpc_meetup_cancel_kan712_inner`.
+
+**Changes: sent by a cron consumer**
+* `kan981_consume_event_changes(p_now, p_settle = 60 s, p_max_wait = 5 min)`, run by pg_cron job
+  `kan981_event_changes_every_minute`.
+* **Why cron and not a deferred trigger:**
+  * the debounce has to wait for edits to stop, and a deferred trigger fires at the writer's commit;
+  * a failure here never rolls back the organiser's save;
+  * one run can group the occurrences of a series.
+* **The cost:** a change notice arrives 1–2 minutes after the last edit.
+
+**How the consumer batches**
+* **Per event:** it takes all the event's unconsumed rows once the event has been quiet for 60 s, or once its oldest
+  unconsumed row is 5 minutes old.
+* **Collapse:** for each field it keeps the first old value and the last new value. A field that ends where it started
+  is dropped, and if nothing is left no notice is sent.
+* **One notice per batch, listing every changed field.** The kind is `*.time_changed`, else `*.venue_changed`, else
+  `*.details_changed` (places, who can join, joining rule and cost cover, skill range).
+* **Series:** if one transaction changed two or more occurrences of a game series, each person gets one
+  `game.series_changed`. A single occurrence cancelled on its own sends `game.occurrence_cancelled` to that
+  occurrence's players only.
+* **No notice:** an event that is now cancelled, or already in the past, is consumed silently.
+* **Dedupe keys:** `w1_b3:change:<event>:<max id>` and `w1_b3:series:<series>:<max id>`. A replayed batch therefore
+  writes nothing new.
+
+**What a notice carries (`args`)**
+* `title_*`, `field_*`, `old_*`, `new_*` and `when_*`, each in `en` and `ar`. `notify_v2_render` picks
+  `<key>_<lang>`.
+* `changes[]`, one entry per field.
+* `schedule_revision`.
+* Times are written as `Fri 20 Nov, 14:00–16:00` or `الجمعة 20 نوفمبر، 14:00–16:00`, in `event_timezone(event)`.
+
+**Kinds**
+* Active, all with `breaks_quiet = true`:
+  * `game.cancelled`, `game.time_changed`, `game.venue_changed`, `game.details_changed`,
+    `game.occurrence_cancelled`, `game.series_changed`;
+  * `meetup.cancelled`, `meetup.time_changed`, `meetup.venue_changed`, `meetup.details_changed`.
+* Inactive: `meetup.occurrence_cancelled` and `meetup.series_changed`, because meetups have no series.
+
+**Helpers:** `kan981_fmt_span`, `kan981_value_label`, `kan981_place_name` and `kan981_event_title`.
+
+**Grants:** all helpers are revoked from PUBLIC, `anon` and `authenticated`. Only the consumer has EXECUTE for
+`service_role`.
+
+**Not covered (known gaps)**
+* `meetups.location_name` is not an `events` field, so a meetup's free-text location change produces no notice.
+* `rpc_edit_game_series_future` never rewrites an occurrence that has players. So a series edit only notifies players
+  through `rpc_cancel_game_series`, or through the occurrences that edit does change.
+
+Live test: `supabase/tests/notifications_v2/kan981_event_change_notices.sql`. Rollback:
+`supabase/schema/rollback/kan981_ROLLBACK_event_change_notices.sql`.
 
 ---
 
@@ -1643,9 +1724,9 @@ Migration `20261117045242_kan974_notification_envelope_v2.sql`. Live test
   and a kind has one sender at a time.
   * `p_dedupe_key` is required (22004). The call is idempotent on `(to_user_id, dedupe_key)`: a repeat returns the
     existing row's id and writes nothing.
-  * Writes nothing (returns NULL) when the kind is inactive, when the actor and recipient block each other in either
-    direction (`user_blocks`), or when the kind is in the recipient's `notification_settings.muted_kinds` and the kind
-    has `can_mute = true`.
+  * Writes nothing (returns NULL) when the kind is inactive, or when the actor and recipient block each other in
+    either direction (`user_blocks`). **A muted kind still writes the inbox row** (KAN-974c `20261117101144`, design
+    PUSH-12); the push trigger skips its push (§18).
   * Priority is the kind's `default_priority`.
   * Language: the recipient's profile `language` (active profile first), then `user_settings.locale`, then `en`.
     `ar` picks the `_ar` templates. `title`/`body` are rendered and stored so old app versions still show them;
@@ -1674,6 +1755,12 @@ Migration `20261117045242_kan974_notification_envelope_v2.sql`. Live test
     (`security.new_signin`, `security.password_changed`, `security.email_changed`) and social
     (`social.comment_replied`, `social.post_reposted`). `activity.starting_soon` is deliberately absent (it is the
     30m reminder rung). Each producer ticket activates its own kinds.
+* **Client writes (KAN-974b, `20261117053400`):** `authenticated` no longer has table-level UPDATE on
+  `notifications` (it could rewrite its own `dedupe_key` or `kind_key` and make `notify_v2` treat a notice as already
+  sent). It has column UPDATE on `is_read`, `read_at`, `clicked_at`, `interaction_count` only: markAsRead / markAllRead
+  (direct PostgREST update) and `increment_notification_interaction` (invoker) keep working. Table ACL now
+  `{postgres=arwdDxtm/postgres,anon=rm/postgres,authenticated=rm/postgres,service_role=arwdDxtm/postgres}`. A
+  client update of any other column fails with 42501.
 
 ## 17. Notification settings: one store, `notification_settings` (KAN-975, 2026-11-17)
 
@@ -1688,7 +1775,7 @@ no longer read for quiet hours or timezone by any function; it is still read for
 | Column | Type / default | Meaning |
 |---|---|---|
 | `tz` | text, `'Asia/Dubai'` | IANA name from the device. Validated against `pg_timezone_names` by trigger `trg_notification_settings_guard`. |
-| `quiet_start_min`, `quiet_end_min` | int, default NULL (off) | Quiet window in local minutes, end exclusive, may cross midnight. Both NULL = quiet hours off. Checks: both or neither, 0..1439, start <> end. Switching on through the RPC with no window gives 00:00-08:00 (0 / 480). |
+| `quiet_start_min`, `quiet_end_min` | int, default 0 / 480 since KAN-979 (§18; NULL before) | Quiet window in local minutes, end exclusive, may cross midnight. Both NULL = quiet hours off. Checks: both or neither, 0..1439, start <> end. Switching on through the RPC with no window gives 00:00-08:00 (0 / 480). |
 | `quiet_hours_enabled` | bool, generated | `quiet_start_min IS NOT NULL AND quiet_end_min IS NOT NULL`. |
 | `message_preview` | text, `'sender_and_message'` | or `'sender_only'` (F-2). |
 | `reminder_rungs` | jsonb | `{"going"|"interested": {"24h","09:00","2h","30m": bool}}`, all true. Exact shape enforced by `notification_reminder_rungs_valid`. |
@@ -1711,14 +1798,15 @@ no longer read for quiet hours or timezone by any function; it is still read for
 | `rpc_get_my_notification_settings()` | invoker (RLS) | authenticated | Creates the caller's row with defaults on first read; returns it. |
 | `rpc_update_my_notification_settings(jsonb)` | invoker (RLS) | authenticated | Partial update. Keys: `tz`, `quiet_hours_enabled`, `quiet_start_min`, `quiet_end_min`, `message_preview`, `reminder_rungs`, `category_prefs` (both merged per key), `muted_kinds` (replaced), `push_enabled`. Unknown key = 22023. Quiet on with no window = 00:00-08:00; start = end = 22023. |
 | `rpc_set_my_notification_timezone(text)` | invoker | authenticated | Device timezone. |
-| `is_quiet_hour(uuid, timestamptz)` | definer | service_role | Quiet-hours rule; no row = off (same as the column defaults). anon/authenticated revoked. |
+| `is_quiet_hour(uuid, timestamptz)` | definer | service_role | Quiet-hours rule; no row = 00:00-08:00 Asia/Dubai since KAN-979 (§18; was off). anon/authenticated revoked. |
 | `is_in_quiet_hours(uuid)` | invoker | service_role | `is_quiet_hour(user, now())`. |
 | `notification_channel_enabled(uuid, text, text)` | definer | service_role | Delivery reader for `in_app` / `push`: security kinds true; else push master, mutes, category flag. |
 | `notification_kind_is_unmutable(text)` | definer | authenticated, service_role | `security.%` key, `category = 'security'` or `can_mute = false`. |
 
 RLS: policies `ns_self_ins`, `ns_self_rw`, `ns_self_upd` (`auth.uid() = user_id`); `anon` has no table grant.
 The existing client (`notification_settings_repository_impl.dart`) still reads and upserts the table directly.
-`trg_push_on_notification_insert` still reads `quiet_start_min`/`quiet_end_min` itself and drops the push in the
+**Superseded by KAN-979 (§18):** `trg_push_on_notification_insert` no longer drops the push; the text that follows
+describes the state before it. It used to read `quiet_start_min`/`quiet_end_min` itself and drop the push in the
 window; I-2 (silent, not dropped) is the delivery ticket's change.
 
 **Quiet-hours default: OFF until KAN-979 (kan975c).** The CEO default is 00:00-08:00 (F-14), but
@@ -1727,9 +1815,267 @@ directly, so a 0/480 default would cost every new row its overnight pushes. Unti
 column defaults are NULL and `is_quiet_hour` treats a missing row as off. **KAN-979 owns switching the default to
 00:00-08:00** (column defaults `quiet_start_min` 0 / `quiet_end_min` 480 and the no-row branch of `is_quiet_hour`)
 **in the same migration where silent delivery lands.** Rows reset by kan975c: 0 (none had 0/480 since 20261117045159).
-* **Client writes (KAN-974b, `20261117053400`):** `authenticated` no longer has table-level UPDATE on
-  `notifications` (it could rewrite its own `dedupe_key` or `kind_key` and make `notify_v2` treat a notice as already
-  sent). It has column UPDATE on `is_read`, `read_at`, `clicked_at`, `interaction_count` only: markAsRead / markAllRead
-  (direct PostgREST update) and `increment_notification_interaction` (invoker) keep working. Table ACL now
-  `{postgres=arwdDxtm/postgres,anon=rm/postgres,authenticated=rm/postgres,service_role=arwdDxtm/postgres}`. A
-  client update of any other column fails with 42501.
+
+## 18. Push delivery: silent quiet hours, payload v14, `notification_deliveries` (KAN-979, 2026-11-17)
+
+Migration `20261117055738_kan979_delivery_silent_quiet_hours`, edge function `send-push-notification` v14. Live test
+`supabase/tests/notifications_v2/kan979_delivery_test.sql` (database half; rolled back).
+
+* **`trg_push_on_notification_insert`** (AFTER INSERT on `notifications`, SECURITY DEFINER, service_role only) decides
+  whether a row becomes a push and how the device presents it. It never changes the row.
+  * **Gate:** the kind's `default_channels` must include `push`, and `notification_push_enabled(user, kind,
+    entity_type)` must be true. That function is `notification_channel_enabled(…, 'push')` (master switch, muted
+    kinds, category flags; security kinds always on), plus the activities rule: an `activities` kind follows
+    `category_prefs.games.push` for a game entity and `meetups.push` for a meetup entity.
+  * **Quiet hours deliver silently (I-2), they no longer drop the push.** Mode `silent`: Android channel
+    `dabbler_quiet`, `PRIORITY_LOW`, no sound, message priority normal; iOS `interruption-level: passive`, no sound,
+    `apns-priority: 5`; web `silent: true`.
+  * **Breakthrough (I-3):** a kind with `breaks_quiet` or a security kind (`notification_kind_is_unmutable`) always
+    alerts and is iOS `time-sensitive`. Everything else outside quiet hours alerts with `interruption-level: active`.
+  * The legacy `allow_all_override` / `allow_high_priority_override` flags are no longer read (no row had either on).
+  * **Payload to the edge function:** `user_id`, `notification_id`, `title`, `body` (the row's text; `notify_v2`
+    already rendered it in the recipient's language), `data` (all strings: `kind_key`, `action_route`, `entity_type`,
+    `entity_id` = the real entity, `notification_id`, `dedupe_key`, `group_key`, and `meetup_id` for a meetup, kept for
+    `meetupPushRoute` in current builds), and `delivery` (`mode`, `time_sensitive`, `android_channel_id`,
+    `ios_category`, `thread_id` = `group_key`, `collapse_id` = `group_key` or its md5 when over 64 bytes, `badge` =
+    the recipient's unread count after this row). Before v14, `data.entity_id` carried the notification id.
+  * **Message snippet hook (for KAN-984):** for a `messages` kind the push body is the transaction-local setting
+    `dabbler.push_body` when the producer sets it (`set_config('dabbler.push_body', snippet, true)` right before the
+    insert). It is consumed once and never stored in `notifications`.
+* **Android channel ids** (created on the device by KAN-992): `dabbler_social`, `dabbler_messages`, `dabbler_games`,
+  `dabbler_meetups`, `dabbler_activities`, `dabbler_system`, `dabbler_security`, `dabbler_booking` (one per
+  `notification_kinds.category`), `dabbler_quiet` (every quiet-hours push: low importance, no sound) and
+  `dabbler_default` (direct calls to the edge function).
+* **iOS categories** (`notification_push_category(kind)`, also sent as `data.category` so Android can build the same
+  actions): `DABBLER_MESSAGE` (`message.received`: Reply, Mark as read), `DABBLER_RSVP` (`meetup.confirm_attendance`:
+  Going, Not going), `DABBLER_WAITLIST` (`game.waitlist_promoted`: Cancel my place), `DABBLER_SECURITY`
+  (`security.*`: no actions, hidden-preview lock screen), `DABBLER_DEFAULT` (everything else: Mark as read).
+* **`send-push-notification` v14** (`verify_jwt` off, as before): the trusted lane (header `x-trigger-secret`
+  matches `get_push_trigger_secret()`) and the direct lane (user JWT, rate limit, block check, `callerMayNotify`) are
+  unchanged. Only the trusted lane honours `delivery` and `notification_id`, so a direct caller cannot ask for
+  time-sensitive delivery or write delivery rows. Tokens are read by `device_platform` (KAN-977); `platforms` filters
+  on `device_platform`. A token is pruned (by `fcm_tokens.id`) only on `unregistered` or `invalid_token`; a bare
+  `INVALID_ARGUMENT` about the payload (`invalid_payload`) no longer deletes tokens.
+* **`notification_deliveries`**: one row per device per push, written by v14 on the trusted lane: `notification_id`,
+  `channel = 'push'`, `status` (`accepted` | `failed`; the 8 older rows stay `queued`), `provider_id` (the FCM message
+  name), `error_class` (`unregistered`, `invalid_token`, `invalid_payload`, `sender_mismatch`, `apns_auth`, `quota`,
+  `auth`, `unavailable`, `unknown`), `token_id` (FK `fcm_tokens`, SET NULL when the token is pruned),
+  `device_platform`, `delivery_mode` (`alert` | `silent`), `time_sensitive`, `attempted_at`. **No token and no text.**
+  `error` is legacy and not written. RLS: `nd_self_read` (the recipient reads their own rows), `nd_block_dml`.
+  `anon` has no grant. The sequence `notification_deliveries_id_seq` is postgres and service_role only (it was `rwU`
+  for anon and authenticated from the project default ACL).
+* **Quiet-hours default 00:00-08:00 (F-14):** `notification_settings.quiet_start_min` / `quiet_end_min` default to
+  0 / 480, and `is_quiet_hour` treats a user with no row as Asia/Dubai 00:00-08:00. Existing rows with NULL stay off.
+* **Dispatch and re-push (KAN-979b, `20261117101852`).** `notification_push_dispatch(notification_id, repush)` holds the
+  gate and payload described above; `trg_push_on_notification_insert` only calls it. `notification_repush(uuid)
+  RETURNS void` (SECURITY DEFINER, service_role only) is the hook KAN-980's `flush_notification_aggregates` calls for a
+  grouped row that grew: it re-sends the row's current title and body with collapse/thread id = `group_key`, so it
+  replaces the group's earlier push, always silent (`dabbler_quiet`, iOS passive, never time-sensitive), under the same
+  gate as the first push. A blocked push, a row without `group_key` or a missing id sends nothing and never raises.
+  `data.repush` is `"true"` on a re-push and `"false"` otherwise. One `notification_deliveries` row per device, as for
+  any push.
+* **Grouped-kind templates read for one or many** (KAN-979b): `meetup.rsvp_interested` is "{actor} showed interest in
+  {title}" / «اهتمام بـ {title} من {actor}»; the Arabic titles of `social.post_liked`, `post_reacted`, `comment_liked`,
+  `followed` and `circle_joined` are noun phrases ("… من {actor}") so they agree with «سارة وشخصان آخران».
+
+
+## 18. Notification aggregation: one growing row per group (KAN-980, 2026-11-17)
+
+Migration `20261117100750_kan980_aggregation`. Live test `supabase/tests/notifications_v2/kan980_aggregation.sql`.
+Decisions F-6, I-1, design G-01.
+
+**Grouped kinds** (`notification_aggregation_rules`, all `aggregation_window_seconds = 3600`, `push_cap_seconds = 900`):
+
+| kind | group_family | push on growth |
+|---|---|---|
+| `social.post_liked`, `social.post_reacted` | `post` (shared; a mixed group uses the `post_reacted` template) | yes |
+| `social.comment_liked` | `comment` | yes |
+| `social.followed` | `follow` | yes |
+| `social.circle_joined` | `circle` | no push channel on the kind |
+| `meetup.rsvp_interested` | `meetup_interested` | no (`push_enabled = false`, kind is in-app only; I-1) |
+
+Comments and mentions have no rule (the `social.post_commented` rule is gone): they insert at once and are never
+grouped. `min_actors_to_aggregate` is no longer read.
+
+**Flow.** A grouped kind reaches `notify_v2`, which (after its active, block and mute checks) returns
+`notification_aggregate_add(...)`.
+- First actor: a real `notifications` row is inserted at once (`dedupe_key = 'agg:<aggregate id>'`,
+  `group_key = '<family>:<entity_type>:<entity_id>'`), so `trg_push_on_notification_insert` sends the t0 push.
+- Further actors within 1 hour of the first: the same row is updated in place: title from the kind template with
+  `{actor}` = "<newest> and N others" (AR: "و N آخرين"), `args`, `context.actor_user_ids` / `total_count`,
+  `is_read = false`, `read_at = NULL`, `created_at` = the event time (moves to the top). No insert, so no push.
+- The same person again (including a like and a reaction on the same post) counts once.
+- After the hour, the next actor starts a new row.
+
+`notification_aggregates` (new columns): `group_key`, `kinds`, `args`, `lang`, `notification_id` (FK, on delete set
+null), `push_enabled`, `push_pending`, `push_cap_seconds`, `last_push_at`, `push_count`, `repush_hook_calls`. Rows with
+`notification_id IS NULL` are the pre-KAN-980 buffer (all flushed).
+
+**15-minute cap.** `flush_notification_aggregates(p_now timestamptz DEFAULT now())`, cron
+`flush_notification_aggregates_every_minute` (`* * * * *`). For each open group with `push_pending` and
+`last_push_at <= p_now - push_cap_seconds` it calls **`public.notification_repush(p_notification_id uuid)`** (owned and
+built by KAN-979: replace the group's push, collapse id = `group_key`, no sound) if that function exists, then sets
+`last_push_at`. A group closes (`is_flushed`) when its window has ended and nothing is pending. Until KAN-979 creates
+the hook, rows still grow in place but growth is not re-pushed.
+
+**Senders (one per kind).** `fn_likes_notify`, `trg_post_reaction_notify`, `trg_profile_follow_notify`,
+`trg_circle_join_notify` call `notify_v2`; new trigger `trg_meetup_rsvp_interested_notify` on `meetup_rsvps` sends
+`meetup.rsvp_interested` to the organiser when a member marks Interested (not when the host approves a request into
+Interested). `meetup.rsvp_interested` is active.
+
+**Grants.** `flush_notification_aggregates`, `notification_aggregate_add`: postgres and service_role only. Tables:
+anon has nothing; authenticated keeps SELECT (RLS: own groups; rules readable). No sequences (uuid keys).
+
+## 19. Security notices: sign-in ledger, password and email change (KAN-985, 2026-11-17)
+
+Migrations `20261117100746_kan985_security_notices` and `20261117102449_kan985b_security_notices_review_fixes` (PEER fixes). Live test `supabase/tests/notifications_v2/kan985_security_notices.sql`
+(one DO block, rolled back; 39 checks, each positive paired with a negative control). Decisions F-16, CEO planning
+answer "security notices: always on, cannot be muted, break through quiet hours", G-08, I conflict 2 ("Not me" signs
+out that device only, no Face ID).
+
+**Tables.**
+- `security_sign_ins`: the sign-in ledger, one row per `auth.sessions` row (`session_id` unique, no FK so the row
+  outlives a revoked session). Columns: `user_id`, `installation_id`, `platform`, `device_label`, `device_key`
+  (version-free user-agent family, e.g. `web:chrome:macos`, `app:dabbler`; every other client is one family,
+  `other:client` since KAN-985b; seeded rows keep their older `other:curl` style keys), `place_city`,
+  `place_country` (always NULL: no IP-to-place source exists on this project), `signed_in_at`, `is_new_device`,
+  `state` (`known` no notice, `new` notice sent, `confirmed` "This was me", `secured` "Not me"), `notification_id`,
+  `confirmed_at`, `secured_at`. RLS: `authenticated` SELECT own rows only; no client writes; anon nothing.
+  Seeded with the 776 sessions that existed at apply time, all `known`.
+- `security_known_devices` (`user_id`, `kind` = `installation` | `agent`, `device_key`): control data (T-020).
+  RLS on, no policy, no grant to anon or authenticated. Seeded with each user's user-agent families from
+  `auth.sessions` (238 rows); no installation was seeded because every `fcm_tokens` row was still `legacy:*`.
+- No IP is copied anywhere. No sequences (uuid keys).
+
+**Detection.**
+- `security_on_session_created` AFTER INSERT ON `auth.sessions`: a session row is created once per sign-in and never
+  on a token refresh. It writes the ledger row and, when the user has history and the user-agent family is new,
+  sends `security.new_signin`.
+- `rpc_security_register_sign_in` (called by the app): binds the installation to the current session
+  (`auth.jwt() ->> 'session_id'`); a first-seen installation of a user who already has one sends the notice.
+- Baselines (KAN-985b): only an account created after ship (2026-11-17 10:07:46 UTC) is a silent first sign-in;
+  an older account with no session history notifies. The first installation a user binds is silent only from a
+  pre-ship (seeded) session row or a brand-new account; a fresh post-ship sign-in of an existing user notifies once.
+- Cap: at most 3 `security.new_signin` notices per user per rolling hour; beyond that the ledger row is still
+  `new` with `notification_id` NULL.
+- `security_on_auth_user_updated` AFTER UPDATE OF `encrypted_password, email` ON `auth.users`: password change
+  (except the first password of an account created in the last 24 h) and confirmed email change.
+- All three send through `notify_v2`. Dedupe keys: `security.new_signin:<session_id>`,
+  `security.password_changed:<user_id>:<txid>`, `security.email_changed:<user_id>:<txid>`. Both trigger bodies swallow
+  errors (RAISE WARNING) so a failure can never block a sign-in or an auth update.
+- Lock-screen text is the generic kind template (no device, no city); `args` carry `sign_in_id`, `device`,
+  `platform`, `city`, `country`, `signed_in_at`, `state` for the inbox row. Entity: `security_sign_in` / ledger id.
+
+**Client RPCs** (`authenticated`, SECURITY DEFINER, `search_path ''`):
+- `rpc_security_register_sign_in(p_installation_id text, p_platform text = NULL, p_device_label text = NULL) → jsonb`
+  `{sign_in_id, state, is_new_device}`; idempotent.
+- `rpc_security_sign_ins(p_limit int = 50) → table` own rows newest first, with `is_current` and `is_active`.
+- `rpc_security_confirm_sign_in(p_sign_in_id uuid) → jsonb {sign_in_id, state}`; refused (42501) from the session the
+  row describes; marks the inbox row `args.state = 'confirmed'`, read.
+- `rpc_security_not_me(p_sign_in_id uuid) → jsonb {sign_in_id, state, revoked_sessions, signed_out_installation,
+  route_to_password_change: true}`; deletes the `auth.sessions` of that installation (or that one session for an
+  unbound client), its `fcm_tokens` row and its known-device entry; never the caller's own session (22023).
+  KAN-985b: when the target row is on the caller's own installation (ledger row of the current session), only that
+  one old session is revoked; the token and the known entry stay, and the response has `kept_current_device: true`
+  and `signed_out_installation: null`.
+  Another user's row: P0002.
+
+**Kinds.** `security.new_signin`, `security.password_changed`, `security.email_changed` active (`can_mute` false,
+`breaks_quiet` true, priority high). Muting one is refused by `notification_settings_guard` (KAN-975).
+
+## 20. Reminders: `notification_jobs`, the 24h / 09:00 / 2h / 30m ladder (KAN-983, 2026-11-17)
+
+Migration `20261117102448_kan983_reminders` (applied 2026-11-17).
+Probes: `supabase/tests/notifications_v2/kan983_reminders_probes.sql`. Rollback:
+`supabase/schema/rollback/kan983_ROLLBACK_reminders.sql`. Replaces `schedule_game_reminders_for_user`, which is
+dropped (it had no callers and wrote to a table that did not exist).
+
+* **Ladder** (`reminder_rung_times(start, tz)`): 24h before; **09:00 on the event's local date** (`event_timezone`) only
+  if that is earlier than 2h before; 2h before; 30m before. `expires_at` is the next rung's due time (the start for
+  30m); a job not sent by then is skipped `expired`, never sent late. The 30m rung is never skipped and there is no
+  `activity.starting_soon` kind.
+* **Who** (`reminder_audience`): Going = an active `game_roster` row (any role) or `meetup_rsvps.status = 'going'`;
+  Interested = `meetup_rsvps.status = 'interested'` (meetups only; games have no Interested). Kinds
+  (`reminder_kind`): `game.reminder`; `meetup.reminder`; `meetup.confirm_attendance` for the Interested 09:00 rung.
+* **`notification_jobs`**: one row per (user, event, `schedule_revision`, rung). `dedupe_key =
+  'reminder:<user>:<event>:<rev>:<rung>'` is unique here and is the `notify_v2` dedupe key, so a replayed job writes
+  no second notification. `status` pending → claimed (lease 2 min, `FOR UPDATE SKIP LOCKED`) → sent | skipped |
+  failed (5 attempts, back-off `retry_at`). `skip_reason`: event_missing, event_cancelled, revision_changed, expired,
+  started, not_participant, rung_disabled, not_written (kind inactive, muted or blocked), max_attempts. RLS on, no
+  policy; table and sequence granted to `service_role` only.
+* **Planning.** New AFTER triggers `trg_kan983_roster_reminders` (`game_roster`) and `trg_kan983_rsvp_reminders`
+  (`meetup_rsvps`) call `reminder_plan_member(event, user)`: delete that person's pending jobs, plan the rungs still
+  ahead for the current revision. So a late joiner gets no passed rungs; leave, removal (`left`, `kicked`, delete),
+  `declined`, `cancelled` and "Not going" delete the pending jobs. A planner error is a WARNING, never a failed join.
+  Re-plan on change: `reminder_sync_event_changes()` reads `event_changes` rows not yet stamped
+  `consumed_by.w1_b5`, stamps them, and re-plans every event with a schedule change or an `is_cancelled` flip
+  (`reminder_plan_event`). No trigger on `events`.
+* **Sending.** Cron `kan983_reminders_worker` (`* * * * *`) runs `reminder_worker_run()`: sync, `reminder_jobs_claim`,
+  then `reminder_job_process` per job. At send time it re-checks: event exists, not cancelled, same
+  `schedule_revision`, not expired, not started, still Going/Interested, rung on in
+  `notification_settings.reminder_rungs -> audience -> rung` (no row = on). It renders `{title}`, `{when}`, `{time}` in
+  EN and AR and calls `notify_v2`. Reminders break quiet hours (`breaks_quiet`; delivery is KAN-979). Every worker and
+  planner function takes `p_now` (default `now()`) so probes can walk the clock; all are `service_role` only.
+* **The 09:00 card's answer.** `rpc_answer_meetup_attendance(p_meetup_id uuid, p_answer text) → text` (authenticated;
+  definer on the caller's own row). `'going'`: Interested becomes Going if the meetup is upcoming, not cancelled and
+  has a slot (else stays `'interested'`); later rungs stay. `'not_going'`: `rpc_meetup_rsvp(..., 'cancel')` →
+  `'cancelled'`; pending jobs are deleted. Errors: 42501 no user, 22023 bad answer, P0001 `not_attending`,
+  `not_found`, `cancelled`, `started`. The notification's `args.actions` is `["going","not_going"]`.
+* **Kinds.** `game.reminder` title becomes `{title} starts {when}` / `تبدأ {title} {when}`; `meetup.reminder` and
+  `meetup.confirm_attendance` are activated. `timing` records the rungs and the sender.
+
+## 21. Membership notices: removal with reason, waitlist promotion, invites (KAN-982, 2026-11-17)
+
+Migrations `20261117101222_kan982_membership_notices.sql` and `20261117102454_kan982b_removal_reason_optional.sql`.
+Live test `supabase/tests/notifications_v2/kan982_membership_probes.sql` (29 checks, rolled back).
+
+* **Every membership notice is sent through `notify_v2`** via `kan982_notify` (definer, service_role only), which
+  swallows a notice failure as a WARNING so a notice never rolls back the membership change. Dedupe keys are stable
+  per domain transition: `game.removed:<roster id>:<left_at>`, `game.player_joined:<roster id>:first|rejoin:<previous
+  left_at>`, `game.player_left:<roster id>:<left_at>`, `game.full:<game>:<join key>`,
+  `game.waitlist_joined|waitlist_promoted:<game>:<profile>:<waitlist joined_at>`, `game.join_accepted|join_declined:
+  <request id>`, `game.invite_<status>:<invite id>`, `meetup.removed|player_left:<rsvp id>:<updated_at>`.
+* **One sender per kind.** Moved to notify_v2 with the old path removed in the same migration: `game.removed`
+  (was `process_notification_event` in `rpc_remove_player`), `game.join_accepted` (was in `rpc_decide_join_request`),
+  `game.waitlist_promoted` (trigger `trg_game_waitlist_promoted_notify` dropped; it fired on every waitlist delete),
+  `game.player_joined` (the `game_join` branch of `fn_public_activities_notify` removed; `meetup_join` stays there).
+  Activated here: `game.join_declined`, `game.invite_accepted/declined/withdrawn/expired`, `game.player_left`,
+  `game.full`, `game.waitlist_joined`, `meetup.removed`, `meetup.player_left`. `breaks_quiet`: `game.removed`,
+  `meetup.removed`, `game.waitlist_promoted`.
+* **Removal reason (F-13), optional for now.** `rpc_remove_player(p_game_id, p_profile_id, p_reason text DEFAULT
+  NULL)` and `rpc_meetup_remove_attendee(p_meetup_id, p_user_id, p_reason text DEFAULT NULL)`. The two-argument
+  call shape the live app uses resolves to these functions. KAN-982 refused a missing reason (`reason_required`), which
+  broke removal in the live app; `20261117102454_kan982b_removal_reason_optional` accepts a NULL or blank reason
+  again. Over 500 chars is still refused (`reason_too_long`). The notice `args` carry `title`, `organiser` (the
+  remover's display name, or `organiser_en/_ar` "The organiser" / «المنظّم») and, only when a reason was given,
+  `reason` and `reason_line` (`': ' || reason`). Templates: "You were removed from {title}" /
+  "{organiser} removed you{reason_line}" (AR "أزالك {organiser}{reason_line}"), so no reason means no reason line.
+  * **TODO (KAN-982 follow-up):** the frontend ticket adds the required reason field to both removal flows and sends
+    `p_reason`. After that build ships, a later migration restores `reason_required` for a NULL or blank reason in
+    both functions. Until then a reasonless removal is allowed.
+* **Meetup removal has its own status:** `meetup_rsvps.status = 'removed'` (added to `meetup_rsvps_status_check`);
+  leaving stays `cancelled`. `rpc_meetup_remove_attendee` returns `'removed'` (was `'cancelled'`). A removed user can
+  still RSVP again through `rpc_meetup_rsvp` (unchanged; as before with `cancelled`).
+* **One promoter.** `trg_kan982_roster_after` (AFTER INSERT OR UPDATE OF status on `game_roster`) calls
+  `kan982_promote_waitlist(game)` whenever an active non-host row becomes `left` or `kicked`, by any path. It promotes
+  the first waitlisted person by `position` while the game has room, skips anyone who cannot be added (frozen,
+  blocked), and does nothing once the game has started or is cancelled. `rpc_leave_game` and `rpc_remove_player`
+  no longer promote inline; their return values (`left_promoted_waitlist`, `removed_promoted_waitlist`) are kept.
+  Policy `roster_update_self_leave` was dropped: it was dead (`authenticated` has no UPDATE grant on `game_roster`),
+  so leaving goes through the RPCs, and a promotion follows any leave that reaches the table.
+* **The same trigger** notifies the host on every transition into `active` (first join and **re-join**; not when the
+  host approved it himself), sends `game.full` to the host when the last place is taken, sends `game.player_left` to
+  the host on `left` (not on `kicked`), and marks a pending invite for that player and game `accepted`.
+* **`rpc_cancel_waitlist_place(p_game_id) → text`** (G-14, authenticated): an active non-host player gives up the
+  place (`place_released`; the next person is promoted), or a waitlisted player leaves the waitlist
+  (`waitlist_left`). Refused `started` once `start_at <= now()`, `cancelled`, `not_on_waitlist`. Nothing is recorded
+  against the player. The host still gets `game.player_left`.
+* **Invites:** `game_invites.status` gains `withdrawn`. `trg_kan982_game_invite_after_status` (pending → other):
+  accepted / declined notify the inviter (`invited_by_profile_id`'s user, else the host); withdrawn / expired notify
+  the invitee. New RPCs (authenticated): `rpc_decline_game_invite(p_invite_id)` (the invitee) and
+  `rpc_withdraw_game_invite(p_invite_id)` (host, inviter or admin), both returning the new status or
+  `already_<status>`. `expire_game_invites()` (service_role) expires pending invites to games that started or were
+  cancelled; pg_cron job `kan982_expire_game_invites` runs it every 5 minutes. Accepting happens by joining.
+* **Waitlist joined:** `trg_kan982_waitlist_after_insert` tells the player (`args.position`). An approved request on
+  a full game now gets this notice instead of a "you're in" `game.join_accepted`.
+* **Meetup participant left:** `trg_kan982_meetup_rsvp_left` (going → cancelled by the attendee) tells the host.

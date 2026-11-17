@@ -30,6 +30,14 @@
 --   After the fix, 2026-11-17: all 39 rows pass. P13 315 calls = 79.0 ms; N3 (kan976b body) = 16499.9 ms.
 --   Zones: Asia/Tokyo, UTC, America/Argentina/Buenos_Aires and '  Asia/Tokyo ' (trimmed) are accepted. Mars/Olympus,
 --   UTC+4, GST, +04, asia/tokyo, '' and EST5EDT fall through to the area map (Asia/Qatar).
+--
+-- KAN-976d (review 16424, migration 20261117055656) tightened the shape to ^(UTC|[A-Z][A-Za-z_]+(/[A-Z][A-Za-z_-]*)+)$
+-- in event_timezone and in CHECK venues_timezone_shape_chk. Added T16-T20, the Z layer (what venues can store), Z0 and
+-- the N4 control. The T layer drops the CHECK inside the rolled-back block so the function's own check is exercised.
+--   Run 2026-11-17 after apply: all 62 rows pass. N4: under the kan976c shape, 'Asia/Dubai+4' and 'Etc/GMT+4' matched
+--   and AT TIME ZONE accepted both, so the old function returned them. Now T16-T18 -> Asia/Qatar and Z16-Z18 are
+--   refused (23514). Port-au-Prince and North_Dakota/New_Salem are accepted at both layers.
+--   P13 = 563.5 ms this run (79.0 ms the run before), N3 = 21223.7 ms.
 
 CREATE TEMP TABLE IF NOT EXISTS kan976_results (probe text, pass boolean, detail text);
 TRUNCATE kan976_results;
@@ -295,30 +303,48 @@ BEGIN
     SELECT count(*) INTO n FROM public.event_changes WHERE event_id = m.id;
     r := r || ARRAY['P12 negative: meetup title writes nothing', (n = 0)::text, format('rows=%s', n)];
 
-    -- Venue zone probes (KAN-976c shape check + guarded AT TIME ZONE). G's area is set to QA, so every rejected zone
-    -- must come back as the area map's 'Asia/Qatar'. A value venues itself refuses (constraint) cannot exist, so it
-    -- passes with that reason in the detail.
+    -- Venue zone probes, two layers (KAN-976c/976d). G's area is set to QA, so every rejected zone must come back
+    -- as the area map's 'Asia/Qatar'.
+    --   Z: venues_timezone_shape_chk (20261117055656) decides what can be stored: each zone is written once, and
+    --      23514 means refused.
+    --   T: event_timezone itself, with the constraint dropped inside this rolled-back block so the function's own
+    --      shape check and AT TIME ZONE probe see every value (data written before the CHECK, or by a superuser).
     UPDATE public.areas SET country_code = 'QA' WHERE id = (SELECT area_id FROM public.events WHERE id = g.id);
-    FOR rec IN SELECT * FROM (VALUES
-        ('T1 venue zone wins (Asia/Tokyo)',                 'Asia/Tokyo',                     'Asia/Tokyo'),
-        ('T2 unknown well-shaped zone -> area map',         'Mars/Olympus',                   'Asia/Qatar'),
-        ('T7 POSIX UTC+4 -> area map',                      'UTC+4',                          'Asia/Qatar'),
-        ('T8 abbreviation GST -> area map',                 'GST',                            'Asia/Qatar'),
-        ('T9 offset +04 -> area map',                       '+04',                            'Asia/Qatar'),
-        ('T10 lowercase asia/tokyo -> area map',            'asia/tokyo',                     'Asia/Qatar'),
-        ('T11 empty string -> area map',                    '',                               'Asia/Qatar'),
-        ('T12 legacy EST5EDT -> area map (accepted loss)',  'EST5EDT',                        'Asia/Qatar'),
-        ('T13 UTC accepted',                                'UTC',                            'UTC'),
-        ('T14 three-part zone accepted',                    'America/Argentina/Buenos_Aires', 'America/Argentina/Buenos_Aires'),
-        ('T15 padded zone trimmed',                         '  Asia/Tokyo ',                  'Asia/Tokyo')
-      ) AS z(probe, zone, want) LOOP
+    CREATE TEMP TABLE IF NOT EXISTS kan976_zones (probe text, zone text, want text, storable boolean) ON COMMIT DROP;
+    TRUNCATE pg_temp.kan976_zones;
+    INSERT INTO pg_temp.kan976_zones VALUES
+        ('T1 venue zone wins (Asia/Tokyo)',                 'Asia/Tokyo',                     'Asia/Tokyo',                     true),
+        ('T2 unknown well-shaped zone -> area map',         'Mars/Olympus',                   'Asia/Qatar',                     true),
+        ('T7 POSIX UTC+4 -> area map',                      'UTC+4',                          'Asia/Qatar',                     false),
+        ('T8 abbreviation GST -> area map',                 'GST',                            'Asia/Qatar',                     false),
+        ('T9 offset +04 -> area map',                       '+04',                            'Asia/Qatar',                     false),
+        ('T10 lowercase asia/tokyo -> area map',            'asia/tokyo',                     'Asia/Qatar',                     false),
+        ('T11 empty string -> area map',                    '',                               'Asia/Qatar',                     false),
+        ('T12 legacy EST5EDT -> area map (accepted loss)',  'EST5EDT',                        'Asia/Qatar',                     false),
+        ('T13 UTC accepted',                                'UTC',                            'UTC',                            true),
+        ('T14 three-part zone accepted',                    'America/Argentina/Buenos_Aires', 'America/Argentina/Buenos_Aires', true),
+        ('T15 padded zone trimmed',                         '  Asia/Tokyo ',                  'Asia/Tokyo',                     false),
+        ('T16 POSIX-like Asia/Dubai+4 -> area map',         'Asia/Dubai+4',                   'Asia/Qatar',                     false),
+        ('T17 Etc/GMT+4 -> area map',                       'Etc/GMT+4',                      'Asia/Qatar',                     false),
+        ('T18 Etc/GMT+99 -> area map',                      'Etc/GMT+99',                     'Asia/Qatar',                     false),
+        ('T19 hyphenated America/Port-au-Prince accepted',  'America/Port-au-Prince',         'America/Port-au-Prince',         true),
+        ('T20 America/North_Dakota/New_Salem accepted',     'America/North_Dakota/New_Salem', 'America/North_Dakota/New_Salem', true);
+
+    FOR rec IN SELECT * FROM pg_temp.kan976_zones LOOP
       BEGIN
         UPDATE public.venues SET timezone = rec.zone WHERE id = v2;
-        s := public.event_timezone(g.id);
-        r := r || ARRAY[rec.probe, (s IS NOT DISTINCT FROM rec.want)::text, format('%L -> %s', rec.zone, coalesce(s, '<null>'))];
-      EXCEPTION WHEN check_violation OR not_null_violation THEN
-        r := r || ARRAY[rec.probe, 'true', format('%L refused by venues (%s)', rec.zone, SQLSTATE)];
+        ok := true;
+      EXCEPTION WHEN check_violation THEN ok := false;
       END;
+      r := r || ARRAY['Z' || substr(rec.probe, 2, strpos(rec.probe, ' ') - 1) || 'stored=' || rec.storable || ' ' || quote_literal(rec.zone),
+                      (ok = rec.storable)::text, format('%L stored=%s', rec.zone, ok)];
+    END LOOP;
+
+    ALTER TABLE public.venues DROP CONSTRAINT venues_timezone_shape_chk;   -- rolled back with this block
+    FOR rec IN SELECT * FROM pg_temp.kan976_zones LOOP
+      UPDATE public.venues SET timezone = rec.zone WHERE id = v2;
+      s := public.event_timezone(g.id);
+      r := r || ARRAY[rec.probe, (s IS NOT DISTINCT FROM rec.want)::text, format('%L -> %s', rec.zone, coalesce(s, '<null>'))];
     END LOOP;
     -- T3 no venue: area country map.
     UPDATE public.areas SET country_code = 'SA' WHERE id = a_area;
@@ -400,5 +426,23 @@ BEGIN
   INSERT INTO pg_temp.kan976_results VALUES ('N3 control: kan976b body, 315 calls >= 1000 ms (P13 predicate false)',
                                              ms_old >= 1000, format('ms=%s', ms_old));
 END $t$;
+
+-- N4 negative control (KAN-976d): the kan976c shape accepts 'Asia/Dubai+4' and 'Etc/GMT+4' and Postgres accepts them
+-- in AT TIME ZONE, so the old function would have returned them (T16/T17 would be false). Read-only.
+DO $n4$
+DECLARE z text; old_ok boolean; pg_ok boolean; d text := ''; all_ok boolean := true;
+BEGIN
+  FOREACH z IN ARRAY ARRAY['Asia/Dubai+4', 'Etc/GMT+4'] LOOP
+    old_ok := z ~ '^(UTC|[A-Z][A-Za-z]+(/[A-Za-z0-9_+-]+)+)$';
+    BEGIN PERFORM now() AT TIME ZONE z; pg_ok := true;
+    EXCEPTION WHEN invalid_parameter_value THEN pg_ok := false; END;
+    all_ok := all_ok AND old_ok AND pg_ok AND NOT (z ~ '^(UTC|[A-Z][A-Za-z_]+(/[A-Z][A-Za-z_-]*)+)$');
+    d := d || format('%s old_shape=%s pg_accepts=%s; ', z, old_ok, pg_ok);
+  END LOOP;
+  INSERT INTO pg_temp.kan976_results VALUES ('N4 control: kan976c shape + AT TIME ZONE accept Asia/Dubai+4, Etc/GMT+4', all_ok, d);
+  INSERT INTO pg_temp.kan976_results
+  SELECT 'Z0 venues_timezone_shape_chk present and validated after the run', count(*) = 1, string_agg(pg_get_constraintdef(oid), '')
+    FROM pg_constraint WHERE conrelid = 'public.venues'::regclass AND conname = 'venues_timezone_shape_chk' AND convalidated;
+END $n4$;
 
 SELECT probe, pass, detail FROM pg_temp.kan976_results ORDER BY probe;

@@ -10,12 +10,18 @@
 --   idempotency      same dedupe_key twice -> 1 row   | different dedupe_key -> 2nd row; different recipient -> row
 --   inactive kind    inactive -> nothing written      | same kind activated -> written
 --   block            either direction -> nothing      | no block -> written
---   mute             muted can_mute kind -> nothing   | same muted kind with can_mute=false -> written
+--   mute             muted kind -> inbox row, no push  | same kind unmuted -> row and one push
 --   language         'ar' profile -> Arabic title     | 'en' profile -> English title
 --   priority         high kind -> high row            | normal kind -> normal row
 --   grants           anon/authenticated cannot execute| service_role can
 --
 -- Run 2026-11-17 by backend-1 (Shu) after apply: 1..39, all ok, "# 0 failed of 39".
+-- Rerun 2026-11-17 10:2x UTC after KAN-974c and KAN-979b: 1..48, 47 ok; probe 5 then failed only on game.updated,
+-- retired by W1-B3, and was rewritten to exclude it (checked separately: game.updated is the only inactive old kind).
+-- Rerun 2026-11-17 after KAN-974c: 6 probes had pinned text that later tickets legitimately changed (kinds
+-- activated by KAN-980/982/985, game.player_joined reworded, security.new_signin activated); they now read the live
+-- registry. KAN-974c (20261117101144): mute probe now expects the inbox row and no queued push; the push-trigger md5 is no
+-- longer pinned (KAN-979 owns it); the aggregation probe follows KAN-980's notification_aggregate_add.
 -- P9..P11 added for 20261117053400_kan974b (PEER comment 16411): column-scoped UPDATE, literal render, AR fallback.
 -- Fault injection (second block below, also rolled back): M1..M5 each turned its probe to "not ok"; afterwards the live
 -- catalogue was re-read: notify_v2 proacl {postgres=X/postgres,service_role=X/postgres}, 35 active kinds, 22 breaks_quiet,
@@ -39,6 +45,7 @@ DECLARE
   t     text;
   sig   text := 'public.notify_v2(uuid,text,jsonb,text,uuid,uuid,text,text,text,text)';
   snap  timestamptz := '2026-11-17 04:50:40.099607+00';
+  k     text;   -- a still-inactive kind, picked at run time (producer tickets activate their own kinds)
 BEGIN
   -- plpgsql has no nested functions, so each check is written inline as: n := n + 1; tap := tap || <TAP line>
 
@@ -63,15 +70,20 @@ BEGIN
   n := n + 1; IF c = 87 THEN tap := tap || format(E'ok %s - 87 kinds (35 existing + 52 new)\n', n);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - kinds total %s\n', n, c); END IF;
 
-  SELECT count(*) INTO c FROM public.notification_kinds WHERE is_active AND created_at < snap;
-  n := n + 1; IF c = 35 AND (SELECT count(*) FROM public.notification_kinds WHERE is_active) = 35 THEN
-    tap := tap || format(E'ok %s - the 35 pre-existing kinds are the only active ones\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - active pre-existing kinds %s\n', n, c); END IF;
+  -- Since Wave 1 the producer tickets (KAN-980, KAN-982, KAN-985, ...) activate their own new kinds, so the
+  -- "all inactive" check of the first run (2026-11-17, 52/52) is now a count, not an invariant.
+  -- game.updated was retired by its own ticket (W1-B3: "game.updated stops meaning cancel"); every other
+  -- pre-existing kind must still be active.
+  SELECT count(*) INTO c FROM public.notification_kinds WHERE NOT is_active AND created_at < snap AND key <> 'game.updated';
+  n := n + 1; IF c = 0 THEN
+    tap := tap || format(E'ok %s - the pre-existing kinds are still active (game.updated retired by W1-B3)\n', n);
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - %s pre-existing kinds deactivated\n', n, c); END IF;
 
-  SELECT count(*) INTO c FROM public.notification_kinds WHERE created_at >= snap AND NOT is_active;
-  n := n + 1; IF c = 52 AND NOT EXISTS (SELECT 1 FROM public.notification_kinds WHERE created_at >= snap AND is_active) THEN
-    tap := tap || format(E'ok %s - all 52 new kinds are inactive\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - inactive new kinds %s\n', n, c); END IF;
+  SELECT count(*) INTO c FROM public.notification_kinds WHERE created_at >= snap;
+  n := n + 1; IF c = 52 THEN
+    tap := tap || format(E'ok %s - the 52 new kinds exist (%s activated by their producer tickets so far)\n', n,
+                         (SELECT count(*) FROM public.notification_kinds WHERE created_at >= snap AND is_active));
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - new kinds %s\n', n, c); END IF;
 
   SELECT count(*) INTO c FROM public.notification_kinds
    WHERE category IS NULL OR coalesce(title_template_en,'') = '' OR coalesce(title_template_ar,'') = ''
@@ -142,10 +154,10 @@ BEGIN
   n := n + 1; IF c = 0 THEN tap := tap || format(E'ok %s - old rows read schema_version 1 with empty envelope columns\n', n);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - %s old rows have envelope values\n', n, c); END IF;
 
+  -- (the push trigger is owned by KAN-979 since 20261117055738 and is no longer pinned here)
   n := n + 1; IF md5(pg_get_functiondef('public.process_notification_event(uuid,text,text,uuid,uuid,text,text)'::regprocedure)) = '960d2aa2d3b0187064497e6a27c2ed3a'
-                 AND md5(pg_get_functiondef('public.emit_event(text,text,uuid,uuid,jsonb)'::regprocedure)) = 'c3acfd9d3d7bfecf010400e0363db114'
-                 AND md5(pg_get_functiondef('public.trg_push_on_notification_insert()'::regprocedure)) = 'b11a6cbff6d04a165ade85be37ce85fb' THEN
-    tap := tap || format(E'ok %s - process_notification_event, emit_event (no-op) and the push trigger are unchanged\n', n);
+                 AND md5(pg_get_functiondef('public.emit_event(text,text,uuid,uuid,jsonb)'::regprocedure)) = 'c3acfd9d3d7bfecf010400e0363db114' THEN
+    tap := tap || format(E'ok %s - process_notification_event and emit_event (no-op) are unchanged\n', n);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - a legacy function definition changed\n', n); END IF;
 
   -------------------------------------------------------------------------------------------------- fixtures (rolled back)
@@ -192,7 +204,9 @@ BEGIN
   SELECT * INTO v FROM public.notifications WHERE id = id1;
   n := n + 1; IF v.template_key = 'game.player_joined' AND v.args->>'title' = 'Kickabout' AND v.args ? 'actor'
                  AND v.source_event_id = 'src-1' AND v.dedupe_key = 'kan974:dk1' AND v.group_key = 'grp-1'
-                 AND v.schema_version = 2 AND v.title LIKE '% joined your game' AND v.body = 'See who''s playing.'
+                 AND v.schema_version = 2
+                 AND v.title = public.notify_v2_render((SELECT title_template_en FROM public.notification_kinds WHERE key = 'game.player_joined'), v.args, 'en')
+                 AND v.body = public.notify_v2_render((SELECT body_template_en FROM public.notification_kinds WHERE key = 'game.player_joined'), v.args, 'en')
                  AND v.action_route = '/sports/games/' || g AND v.context->>'entity_id' = g::text THEN
     tap := tap || format(E'ok %s - v2 row carries the envelope and still fills title/body/action_route (%s)\n', n, v.title);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - v2 row %s\n', n, row_to_json(v)); END IF;
@@ -226,7 +240,11 @@ BEGIN
   UPDATE public.profiles SET language = 'ar' WHERE user_id = r;
   id1 := public.notify_v2(r, 'game.player_joined', '{}', 'game', g, NULL, NULL, 'kan974:lang-ar', NULL, NULL);
   SELECT title || ' | ' || coalesce(body, '') INTO t FROM public.notifications WHERE id = id1;
-  n := n + 1; IF t = 'شخص ما انضم إلى مباراتك | اطّلع على قائمة اللاعبين.' THEN
+  -- expected text comes from the live AR templates (KAN-982 reworded game.player_joined after the first run)
+  n := n + 1; IF t = (SELECT public.notify_v2_render(title_template_ar, '{"actor":"شخص ما"}', 'ar') || ' | '
+                          || coalesce(public.notify_v2_render(body_template_ar, '{"actor":"شخص ما"}', 'ar'), '')
+                        FROM public.notification_kinds WHERE key = 'game.player_joined')
+                 AND t ~ '[\u0600-\u06FF]' THEN
     tap := tap || format(E'ok %s - Arabic recipient gets the AR templates: %s\n', n, t);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - AR recipient got: %s\n', n, t); END IF;
 
@@ -243,7 +261,8 @@ BEGIN
   id2 := public.notify_v2(r, 'meetup.reminder', '{"title":"Run club","when_en":"in 2 hours","when_ar":"بعد ساعتين"}',
                           'meetup', g, NULL, NULL, 'kan974:lang-arg-en', NULL, NULL);
   SELECT (SELECT title FROM public.notifications WHERE id = id1) || ' | ' || (SELECT title FROM public.notifications WHERE id = id2) INTO t;
-  n := n + 1; IF t = 'Someone joined your game | Run club starts in 2 hours' THEN
+  n := n + 1; IF t = (SELECT public.notify_v2_render(title_template_en, '{"actor":"Someone"}', 'en') FROM public.notification_kinds
+                       WHERE key = 'game.player_joined') || ' | Run club starts in 2 hours' AND t !~ '[\u0600-\u06FF]' THEN
     tap := tap || format(E'ok %s - negative control: English recipient gets the EN templates: %s\n', n, t);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - EN recipient got: %s\n', n, t); END IF;
   UPDATE public.notification_kinds SET is_active = false WHERE key = 'meetup.reminder';
@@ -268,44 +287,49 @@ BEGIN
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - unblocked call wrote nothing\n', n); END IF;
 
   --------------------------------------------------------------------------------------------------------------- mute
-  -- (KAN-975's notification_settings_guard refuses muting a security kind, so the can_mute=false control flips the
-  -- flag on the muted kind itself instead.)
+  -- KAN-974c (design PUSH-12): a muted kind still writes the inbox row; the push trigger (KAN-979) skips the push.
+  -- The push is read from net.http_request_queue, queued by the trigger in this same (rolled back) transaction.
   INSERT INTO public.notification_settings (user_id, muted_kinds) VALUES (r, ARRAY['game.player_joined'])
   ON CONFLICT (user_id) DO UPDATE SET muted_kinds = EXCLUDED.muted_kinds;
   id1 := public.notify_v2(r, 'game.player_joined', '{}', 'game', g, a, NULL, 'kan974:muted', NULL, NULL);
-  SELECT count(*) INTO c FROM public.notifications WHERE to_user_id = r AND dedupe_key = 'kan974:muted';
-  n := n + 1; IF id1 IS NULL AND c = 0 THEN tap := tap || format(E'ok %s - a muted kind writes nothing\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - muted kind wrote %s rows\n', n, c); END IF;
+  SELECT count(*) INTO c FROM net.http_request_queue q WHERE convert_from(q.body, 'UTF8')::jsonb ->> 'notification_id' = id1::text;
+  n := n + 1; IF id1 IS NOT NULL AND EXISTS (SELECT 1 FROM public.notifications WHERE id = id1) AND c = 0 THEN
+    tap := tap || format(E'ok %s - a muted kind writes the inbox row and queues no push (PUSH-12)\n', n);
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - muted kind: row %s, pushes queued %s\n', n, id1, c); END IF;
 
-  UPDATE public.notification_kinds SET can_mute = false WHERE key = 'game.player_joined';
-  id1 := public.notify_v2(r, 'game.player_joined', '{}', 'game', g, a, NULL, 'kan974:muted-cannot-mute', NULL, NULL);
-  n := n + 1; IF id1 IS NOT NULL THEN
-    tap := tap || format(E'ok %s - negative control: the same muted kind with can_mute=false still writes\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - can_mute=false kind was suppressed by mute\n', n); END IF;
-  UPDATE public.notification_kinds SET can_mute = true WHERE key = 'game.player_joined';
+  UPDATE public.notification_settings SET muted_kinds = '{}' WHERE user_id = r;
+  id1 := public.notify_v2(r, 'game.player_joined', '{}', 'game', g, a, NULL, 'kan974:unmuted', NULL, NULL);
+  SELECT count(*) INTO c FROM net.http_request_queue q WHERE convert_from(q.body, 'UTF8')::jsonb ->> 'notification_id' = id1::text;
+  n := n + 1; IF id1 IS NOT NULL AND c = 1 THEN
+    tap := tap || format(E'ok %s - negative control: the same kind unmuted writes the row and queues one push\n', n);
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - unmuted kind: row %s, pushes queued %s\n', n, id1, c); END IF;
 
   ------------------------------------------------------------------------------------------------------ inactive kind
-  id1 := public.notify_v2(r, 'security.new_signin', '{}', NULL, NULL, NULL, NULL, 'kan974:inactive', NULL, NULL);
+  SELECT nk.key INTO k FROM public.notification_kinds nk
+   WHERE NOT nk.is_active AND NOT EXISTS (SELECT 1 FROM public.notification_aggregation_rules ar WHERE ar.kind_key = nk.key AND ar.enabled)
+   ORDER BY nk.key LIMIT 1;
+  id1 := public.notify_v2(r, k, '{}', NULL, NULL, NULL, NULL, 'kan974:inactive', NULL, NULL);
   SELECT count(*) INTO c FROM public.notifications WHERE to_user_id = r AND dedupe_key = 'kan974:inactive';
-  n := n + 1; IF id1 IS NULL AND c = 0 THEN tap := tap || format(E'ok %s - an inactive kind writes nothing\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - inactive kind wrote %s rows\n', n, c); END IF;
+  n := n + 1; IF k IS NOT NULL AND id1 IS NULL AND c = 0 THEN tap := tap || format(E'ok %s - an inactive kind (%s) writes nothing\n', n, k);
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - inactive kind %s wrote %s rows\n', n, k, c); END IF;
 
-  UPDATE public.notification_kinds SET is_active = true WHERE key = 'security.new_signin';
-  id1 := public.notify_v2(r, 'security.new_signin', '{}', NULL, NULL, NULL, NULL, 'kan974:activated', NULL, NULL);
+  UPDATE public.notification_kinds SET is_active = true WHERE key = k;
+  id1 := public.notify_v2(r, k, '{}', NULL, NULL, NULL, NULL, 'kan974:activated', NULL, NULL);
   SELECT * INTO v FROM public.notifications WHERE id = id1;
-  n := n + 1; IF id1 IS NOT NULL AND v.priority = 'high' AND v.title = 'New sign-in to your Dabbler account' THEN
+  n := n + 1; IF id1 IS NOT NULL AND v.kind_key = k
+                 AND v.priority = (SELECT default_priority FROM public.notification_kinds WHERE key = k) THEN
     tap := tap || format(E'ok %s - negative control: the same kind activated writes\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - activated security kind: %s\n', n, id1); END IF;
-  UPDATE public.notification_kinds SET is_active = false WHERE key = 'security.new_signin';
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - activated kind %s: %s\n', n, k, id1); END IF;
+  UPDATE public.notification_kinds SET is_active = false WHERE key = k;
 
   --------------------------------------------------------------------------------------------------- aggregation hand-off
-  SELECT count(*) INTO c FROM public.notification_aggregates WHERE to_user_id = r2 AND entity_id = g;
+  -- Since KAN-980 (20261117100750) the hand-off is notification_aggregate_add, which returns the grouped row's id.
   id1 := public.notify_v2(r2, 'social.post_liked', '{}', 'post', g, a, NULL, 'kan974:agg', NULL, NULL);
   n := n + 1;
-  IF id1 IS NULL AND NOT EXISTS (SELECT 1 FROM public.notifications WHERE to_user_id = r2 AND dedupe_key = 'kan974:agg')
-     AND (SELECT count(*) FROM public.notification_aggregates WHERE to_user_id = r2 AND entity_id = g) = c + 1 THEN
-    tap := tap || format(E'ok %s - a kind with an aggregation rule is handed to the existing aggregate path unchanged\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - aggregation hand-off\n', n); END IF;
+  IF id1 IS NOT NULL AND EXISTS (SELECT 1 FROM public.notifications WHERE id = id1 AND to_user_id = r2 AND group_key IS NOT NULL)
+     AND NOT EXISTS (SELECT 1 FROM public.notifications WHERE to_user_id = r2 AND dedupe_key = 'kan974:agg') THEN
+    tap := tap || format(E'ok %s - a kind with an aggregation rule is handed to notification_aggregate_add (KAN-980): grouped row\n', n);
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - aggregation hand-off: %s\n', n, id1); END IF;
 
   ---------------------------------------------------------- P9 (KAN-974b): clients can only update the read/click columns
   UPDATE public.notification_settings SET muted_kinds = '{}' WHERE user_id = r;
