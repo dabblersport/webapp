@@ -1,31 +1,38 @@
 // Extracted from notifications_screen_v2.dart by KAN-152 (pt.C of the split).
-// Public rather than library-private: Dart privacy is per-file, so the classes
-// must widen to be usable from the screen. No behaviour change.
 //
-// KAN-420: the digest strip is three DabblerStatTile cells under a caption. The
-// 8-day sparkline has no DS equivalent and is dropped (DS gap, see the KAN-420
-// report); the numbers it summarised are unchanged.
+// KAN-420: the digest strip is DabblerStatTile cells under a caption.
+//
+// KAN-990: the window is today and the six local days before it
+// ([activityLastSevenDays]); both labels are localized. The "day streak" tile
+// is gone: no data source defines that streak (the only server streak is the
+// 14-day Early Bird check-in program, a different thing), and the old figure
+// was counted from whichever pages happened to be loaded.
 
-import 'package:dabbler/core/constants/timing/profile_timing.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
+
+import 'package:dabbler/features/activities/domain/activity_log_time.dart';
+import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
 
 class ActivitySummaryCard extends StatelessWidget {
-  final dynamic state;
-  const ActivitySummaryCard({super.key, required this.state});
+  const ActivitySummaryCard({super.key, required this.state, this.now});
+
+  final ActivityLogState state;
+
+  /// Two tiles share one grid row.
+  static const int _halfRow = DabblerStatGrid.columns ~/ 2;
+
+  /// The clock; null is the current time (tests pin it).
+  final DateTime? now;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final activities = (state.activities as List<ActivityFeedEvent>);
-    final cutoff = DateTime.now().subtract(ProfileTiming.week);
-    final recent = activities
-        .where((a) => a.happenedAt.isAfter(cutoff))
-        .toList();
-    final total = recent.length;
-    final rewards = recent.where((a) => a.subjectType == 'reward').length;
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final ActivityLastSevenDays week = activityLastSevenDays(
+      state.activities,
+      now ?? DateTime.now(),
+    );
 
     return Padding(
       padding: const EdgeInsetsDirectional.fromSTEB(
@@ -45,34 +52,20 @@ class ActivitySummaryCard extends StatelessWidget {
           const SizedBox(height: DabblerSpacing.space3),
           DabblerStatGrid(
             children: [
-              DabblerStatTile(value: '$total', label: 'events'),
-              DabblerStatTile(value: '+$rewards', label: 'rewards'),
               DabblerStatTile(
-                value: '${_streak(activities)}',
-                label: l10n.activity_day_streak,
+                value: DabblerType.toWesternDigits('${week.events}'),
+                label: l10n.activity_stat_events,
+                span: _halfRow,
+              ),
+              DabblerStatTile(
+                value: DabblerType.toWesternDigits('${week.rewards}'),
+                label: l10n.activity_stat_rewards,
+                span: _halfRow,
               ),
             ],
           ),
         ],
       ),
     );
-  }
-
-  int _streak(List<ActivityFeedEvent> all) {
-    if (all.isEmpty) return 0;
-    final daysWithActivity = all
-        .map(
-          (a) =>
-              DateTime(a.happenedAt.year, a.happenedAt.month, a.happenedAt.day),
-        )
-        .toSet();
-    int streak = 0;
-    var cursor = DateTime.now();
-    cursor = DateTime(cursor.year, cursor.month, cursor.day);
-    while (daysWithActivity.contains(cursor)) {
-      streak += 1;
-      cursor = cursor.subtract(ProfileTiming.day);
-    }
-    return streak;
   }
 }

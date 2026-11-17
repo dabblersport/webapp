@@ -2,6 +2,11 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
+import 'package:dabbler/features/activities/domain/activity_log_time.dart';
+import 'package:dabbler/features/notifications/presentation/widgets/activity_row.dart'
+    show activityClockOf;
+import 'package:dabbler/l10n/app_localizations.dart';
+
 import '../../data/models/activity_feed_event.dart';
 
 /// Reusable widget for rendering an activity event card.
@@ -25,7 +30,7 @@ class ActivityEventCard extends StatelessWidget {
       leading: DabblerActivitySystemTile(_iconName()),
       actor: _getTitleText(),
       subject: _getSubtitleText(),
-      when: _formatDate(event.happenedAt),
+      when: _formatDate(context, event.happenedAt),
       sportLabel: role?.toUpperCase(),
       onTap: onTap,
     );
@@ -88,21 +93,20 @@ class ActivityEventCard extends StatelessWidget {
     return null;
   }
 
-  /// Formats the date for display.
-  String _formatDate(DateTime date) {
-    final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final yesterday = today.subtract(const Duration(days: 1));
-    final eventDate = DateTime(date.year, date.month, date.day);
-
-    if (eventDate == today) {
-      return 'Today • ${DateFormat('h:mm a').format(date)}';
-    } else if (eventDate == yesterday) {
-      return 'Yesterday • ${DateFormat('h:mm a').format(date)}';
-    } else if (now.difference(date).inDays < 7) {
-      return DateFormat('EEEE • h:mm a').format(date);
-    } else {
-      return DateFormat('MMM d, yyyy • h:mm a').format(date);
-    }
+  /// KAN-990: the date in the app locale and the clock time in the device's
+  /// 12/24-hour setting, in local time.
+  String _formatDate(BuildContext context, DateTime date) {
+    final DateTime now = DateTime.now();
+    final int ago = activityDaysAgo(date, now);
+    final AppLocalizations l10n = AppLocalizations.of(context);
+    final String locale = Localizations.localeOf(context).toLanguageTag();
+    final String clock = activityClockOf(context, date);
+    final DateTime local = date.toLocal();
+    if (ago == 0) return '${l10n.notif_section_today} • $clock';
+    if (ago == 1) return '${l10n.notif_section_yesterday} • $clock';
+    final String day = ago > 0 && ago < 7
+        ? DateFormat.EEEE(locale).format(local)
+        : DateFormat.yMMMd(locale).format(local);
+    return '${DabblerType.toWesternDigits(day)} • $clock';
   }
 }

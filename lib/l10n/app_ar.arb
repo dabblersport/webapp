@@ -1047,6 +1047,10 @@
   "activity_empty_no_activity": "لا يوجد نشاط بعد",
   "activity_empty_subtitle": "سيظهر نشاطك هنا",
   "activity_day_streak": "يوم متواصل",
+  "activity_stat_events": "فعاليات",
+  "activity_stat_rewards": "مكافآت",
+  "activity_group_count": "{count, plural, =1{فعالية واحدة} =2{فعاليتان} zero{{count} فعالية} few{{count} فعاليات} many{{count} فعالية} other{{count} فعالية}}",
+  "@activity_group_count": {"placeholders": {"count": {"type": "int"}}},
   "activity_participants_count": "{count, plural, =1{مشارك واحد} =2{مشاركان} few{{count} مشاركين} many{{count} مشاركًا} other{{count} مشارك}}",
   "@activity_participants_count": {
     "placeholders": {

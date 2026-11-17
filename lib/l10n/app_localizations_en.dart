@@ -2622,6 +2622,23 @@ class AppLocalizationsEn extends AppLocalizations {
   String get activity_day_streak => 'day streak';
 
   @override
+  String get activity_stat_events => 'Events';
+
+  @override
+  String get activity_stat_rewards => 'Rewards';
+
+  @override
+  String activity_group_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count events',
+      one: '1 event',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String activity_participants_count(int count) {
     return '$count participants';
   }

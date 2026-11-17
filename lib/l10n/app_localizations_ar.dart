@@ -2612,6 +2612,27 @@ class AppLocalizationsAr extends AppLocalizations {
   String get activity_day_streak => 'يوم متواصل';
 
   @override
+  String get activity_stat_events => 'فعاليات';
+
+  @override
+  String get activity_stat_rewards => 'مكافآت';
+
+  @override
+  String activity_group_count(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count فعالية',
+      many: '$count فعالية',
+      few: '$count فعاليات',
+      zero: '$count فعالية',
+      two: 'فعاليتان',
+      one: 'فعالية واحدة',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String activity_participants_count(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,

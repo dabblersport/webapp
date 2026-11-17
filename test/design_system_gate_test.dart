@@ -242,11 +242,6 @@ const List<GateAllow> allowList = [
     'Domain duration literal',
   ], _domainDurationReason),
   GateAllow(
-    'lib/features/activities/presentation/widgets/activity_event_card.dart',
-    ['Domain duration literal'],
-    _domainDurationReason,
-  ),
-  GateAllow(
     'lib/features/auth_onboarding/presentation/screens/create_user_information.dart',
     ['Domain duration literal'],
     _domainDurationReason,

@@ -422,7 +422,8 @@ void main() {
       }
       expect(tester.takeException(), isNull);
       expect(find.byType(DabblerActivityRow), findsWidgets);
-      expect(find.byType(DabblerStatTile), findsNWidgets(3));
+      // KAN-990: Events and Rewards; the day streak tile has no source.
+      expect(find.byType(DabblerStatTile), findsNWidgets(2));
       await _shoot(tester, key, 'notifications-activity-top-$dir');
       await tester.drag(find.byType(Scrollable).first, const Offset(0, -700));
       await tester.pump(const Duration(milliseconds: 200));
@@ -513,7 +514,11 @@ void main() {
         ),
       );
       final int all = find.byType(DabblerActivityRow).evaluate().length;
-      final Finder rewards = find.text(l10n.notif_chip_rewards);
+      // KAN-990: "Rewards" is also a Last 7 days tile label; tap the chip.
+      final Finder rewards = find.descendant(
+        of: find.byType(ChipsRow),
+        matching: find.text(l10n.notif_chip_rewards),
+      );
       await tester.ensureVisible(rewards);
       await tester.pump(const Duration(milliseconds: 100));
       await tester.tap(rewards);

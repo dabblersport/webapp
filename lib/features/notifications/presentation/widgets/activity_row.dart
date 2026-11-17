@@ -10,6 +10,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
+import 'package:dabbler/features/activities/domain/activity_log_time.dart';
 import 'notif_visual.dart';
 
 class ActivityRow extends StatelessWidget {
@@ -47,7 +48,7 @@ class ActivityRow extends StatelessWidget {
         ),
         actor: _activityTitle(event),
         subject: _activityMeta(context, event),
-        when: _formatHM(event.happenedAt),
+        when: activityClockOf(context, event.happenedAt),
         live: event.timeBucket == 'present',
         liveLabel: l10n.activity_pill_live,
         sportLabel: badge.isEmpty ? null : badge,
@@ -99,13 +100,18 @@ class ActivityRow extends StatelessWidget {
     if (a.subjectType == 'security') return l10n.activity_subject_security;
     return null;
   }
-
-  String _formatHM(DateTime dt) {
-    final h = dt.hour.toString().padLeft(2, '0');
-    final m = dt.minute.toString().padLeft(2, '0');
-    return '$h:$m';
-  }
 }
+
+/// KAN-990: [t]'s local clock time in the device's 12/24-hour setting
+/// (`MediaQuery.alwaysUse24HourFormat`, decision I-7), Western digits.
+String activityClockOf(BuildContext context, DateTime t) =>
+    DabblerType.toWesternDigits(
+      formatActivityClock(
+        t,
+        use24h: MediaQuery.alwaysUse24HourFormatOf(context),
+        locale: Localizations.localeOf(context).toLanguageTag(),
+      ),
+    );
 
 NotifVisual _activityVisual(ActivityFeedEvent e) {
   switch (e.subjectType) {

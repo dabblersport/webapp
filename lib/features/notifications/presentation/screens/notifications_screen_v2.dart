@@ -15,6 +15,7 @@ import '../providers/notification_center_badge_providers.dart';
 import '../widgets/notif_chips.dart';
 import '../widgets/notif_list_states.dart';
 import '../widgets/notif_section_header.dart';
+import '../widgets/activity_category_chips.dart';
 import '../widgets/activity_log_slivers.dart';
 import '../widgets/notif_prefs_sheet.dart';
 import '../widgets/notif_top_bar.dart';
@@ -265,18 +266,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
     ];
   }
 
-  List<ChipData> _activityChips() {
-    final l10n = AppLocalizations.of(context);
-    return [
-      ChipData('all', l10n.notif_chip_all, 'activity'),
-      ChipData('me', l10n.notif_chip_you, 'edit'),
-      ChipData('game', l10n.notif_chip_games, 'game'),
-      ChipData('booking', l10n.notif_chip_bookings, 'calendar'),
-      ChipData('social', l10n.notif_chip_social, 'people'),
-      ChipData('reward', l10n.notif_chip_rewards, 'coin'),
-      ChipData('security', l10n.notif_chip_security, 'security'),
-    ];
-  }
+  // KAN-990: the Activity log chips live with the Activity widgets.
+  List<ChipData> _activityChips() =>
+      activityCategoryChips(AppLocalizations.of(context));
 
   List<Widget> _buildNotificationsSlivers(String userId, dynamic state) {
     if (state.isLoading && state.notifications.isEmpty) {

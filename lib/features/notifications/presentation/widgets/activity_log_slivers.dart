@@ -10,13 +10,13 @@ import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
 
 import 'package:dabbler/features/activities/data/models/activity_feed_event.dart';
+import 'package:dabbler/features/activities/domain/activity_log_time.dart';
 import 'package:dabbler/features/activities/presentation/controllers/activity_log_controller.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'activity_empty_state.dart';
 import 'activity_no_match_state.dart';
 import 'activity_row.dart';
 import 'notif_list_states.dart';
-import 'notif_section_header.dart';
 
 List<Widget> buildActivityLogSlivers(
   BuildContext context,
@@ -24,7 +24,9 @@ List<Widget> buildActivityLogSlivers(
   required void Function(ActivityFeedEvent) onTap,
   required VoidCallback onRetry,
   required VoidCallback onLoadMore,
+  DateTime? now,
 }) {
+  final DateTime clock = now ?? DateTime.now();
   if (!state.loaded || (state.isLoading && state.activities.isEmpty)) {
     return const [SliverToBoxAdapter(child: NotifLoadingView())];
   }
@@ -71,16 +73,14 @@ List<Widget> buildActivityLogSlivers(
   final Map<String, List<ActivityFeedEvent>> grouped =
       <String, List<ActivityFeedEvent>>{};
   for (final ActivityFeedEvent a in activities) {
-    grouped.putIfAbsent(_dayLabel(context, a.happenedAt), () => []).add(a);
+    grouped
+        .putIfAbsent(activityDayLabel(context, a.happenedAt, clock), () => [])
+        .add(a);
   }
   grouped.forEach((day, items) {
     widgets.add(
       SliverToBoxAdapter(
-        child: NotifSectionHeader(
-          title: day,
-          count: items.length,
-          suffix: 'events',
-        ),
+        child: ActivityGroupHeader(title: day, count: items.length),
       ),
     );
     widgets.add(
@@ -112,18 +112,48 @@ List<Widget> buildActivityLogSlivers(
   return widgets;
 }
 
-String _dayLabel(BuildContext context, DateTime dt) {
-  final DateTime now = DateTime.now();
-  final DateTime today = DateTime(now.year, now.month, now.day);
-  final int diff = today.difference(DateTime(dt.year, dt.month, dt.day)).inDays;
+/// KAN-990: the local-day group label of [t] against [now]: "Today · Mon 17
+/// Nov", "Yesterday · …", else the date alone.
+String activityDayLabel(BuildContext context, DateTime t, DateTime now) {
+  final DateTime day = activityLocalDay(t);
+  final int ago = activityDaysAgo(t, now);
   final AppLocalizations l10n = AppLocalizations.of(context);
   final String localeCode = Localizations.localeOf(context).languageCode;
-  final String date =
-      '${DateFormat.E(localeCode).format(dt)} ${dt.day} '
-      '${DateFormat.MMM(localeCode).format(dt)}';
-  if (diff == 0) return '${l10n.notif_section_today} · $date';
-  if (diff == 1) return '${l10n.notif_section_yesterday} · $date';
+  final String date = DabblerType.toWesternDigits(
+    '${DateFormat.E(localeCode).format(day)} ${day.day} '
+    '${DateFormat.MMM(localeCode).format(day)}',
+  );
+  if (ago == 0) return '${l10n.notif_section_today} · $date';
+  if (ago == 1) return '${l10n.notif_section_yesterday} · $date';
   return date;
+}
+
+/// A day group header with its localized event count ("3 events").
+class ActivityGroupHeader extends StatelessWidget {
+  const ActivityGroupHeader({
+    super.key,
+    required this.title,
+    required this.count,
+  });
+
+  final String title;
+  final int count;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsetsDirectional.symmetric(
+        horizontal: DabblerSpacing.space6,
+      ),
+      child: DabblerActivityGroupHeader(
+        title,
+        dense: true,
+        count: DabblerType.toWesternDigits(
+          AppLocalizations.of(context).activity_group_count(count),
+        ),
+      ),
+    );
+  }
 }
 
 /// Inline failure above rows that did load.

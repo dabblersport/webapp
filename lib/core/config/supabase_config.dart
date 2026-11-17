@@ -390,4 +390,7 @@ class SupabaseConfig {
   static const String notificationDeliveriesTable = 'notification_deliveries';
   static const String notificationAggregatesTable = 'notification_aggregates';
   static const String notificationJobsTable = 'notification_jobs';
+
+  /// KAN-990: the viewer's personal Activity log.
+  static const String rpcGetActivityFeed = 'rpc_get_activity_feed';
 }

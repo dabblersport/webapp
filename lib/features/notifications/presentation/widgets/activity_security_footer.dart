@@ -1,36 +1,31 @@
 // Extracted from notifications_screen_v2.dart by KAN-152 (pt.C of the split).
-// Public rather than library-private: Dart privacy is per-file, so the classes
-// must widen to be usable from the screen. No behaviour change.
 //
-// KAN-420: a success DabblerBanner. The "Manage devices" text was inert emphasis
-// at the end of the body; it now ends the message (the banner takes plain text).
+// KAN-990: the Activity log security card. It shows real sign-in data only
+// (F-16, G.9, H.2): the fixed "All activity looks normal" banner is gone,
+// because it claimed "no unusual activity" with no data behind it.
+//
+// Until the sign-in ledger exists (KAN-985) [activityLastSignInProvider]
+// answers null and this card renders nothing, in every state (loading, error,
+// no data).
 
-import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
-import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-class ActivitySecurityFooter extends StatelessWidget {
+import 'package:dabbler/features/activities/domain/activity_last_sign_in.dart';
+
+class ActivitySecurityFooter extends ConsumerWidget {
   const ActivitySecurityFooter({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    return Padding(
-      padding: const EdgeInsetsDirectional.fromSTEB(
-        DabblerSpacing.space6,
-        DabblerSpacing.space4,
-        DabblerSpacing.space6,
-        DabblerSpacing.space4,
-      ),
-      child: DabblerBanner(
-        tone: DabblerBannerTone.success,
-        icon: const DabblerIcon('security'),
-        title: l10n.activity_all_normal_title,
-        // The l10n string ends in an arrow glyph the DS faces do not carry
-        // (it draws as a missing-glyph box); the text link is inert anyway.
-        message:
-            '${l10n.activity_all_normal_body}${l10n.activity_manage_devices.replaceAll('→', '').trim()}',
-      ),
-    );
+  Widget build(BuildContext context, WidgetRef ref) {
+    final ActivityLastSignIn? lastSignIn = ref
+        .watch(activityLastSignInProvider)
+        .valueOrNull;
+    if (lastSignIn == null) return const SizedBox.shrink();
+    // KAN-985 / KAN-1003 hook: draw "Last sign-in · time · device · city"
+    // from [lastSignIn] (time via formatActivityClock, device 12/24h) and a
+    // "Review sign-ins" link to the sign-in list. Until then, nothing is
+    // shown even if a test overrides the provider.
+    return const SizedBox.shrink();
   }
 }

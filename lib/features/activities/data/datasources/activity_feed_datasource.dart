@@ -1,3 +1,4 @@
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/activity_feed_event.dart';
 
@@ -10,7 +11,7 @@ class ActivityFeedDatasource {
 
   ActivityFeedDatasource(this._supabase);
 
-  /// Fetches activity feed from rpc_get_activity_feed RPC.
+  /// Fetches the activity feed from [SupabaseConfig.rpcGetActivityFeed].
   ///
   /// Parameters:
   /// - [period]: 'all' | 'past' | 'present' | 'upcoming'
@@ -26,7 +27,7 @@ class ActivityFeedDatasource {
   }) async {
     try {
       final response = await _supabase.rpc(
-        'rpc_get_activity_feed',
+        SupabaseConfig.rpcGetActivityFeed,
         params: {
           '_period': period,
           '_limit': limit,
@@ -44,7 +45,9 @@ class ActivityFeedDatasource {
             .toList();
       }
 
-      throw Exception('Unexpected response format from rpc_get_activity_feed');
+      throw Exception(
+        'Unexpected response format from ${SupabaseConfig.rpcGetActivityFeed}',
+      );
     } catch (e) {
       // Re-throw with context for better error handling
       throw Exception('Failed to fetch activity feed: $e');

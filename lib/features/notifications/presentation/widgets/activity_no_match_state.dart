@@ -20,17 +20,14 @@ class ActivityNoMatchState extends StatelessWidget {
   /// The ActivityLogState category key ('all', 'me', 'game', ...).
   final String category;
 
-  /// The label of the category chip for [category]. Mirrors the keys and l10n
-  /// getters of the Activity chips row (notifications_screen_v2.dart
-  /// `_activityChips`); an unknown key reads as All.
+  /// The label of the category chip for [category]. Mirrors
+  /// `activityCategoryChips` (KAN-990); an unknown key reads as All.
   static String categoryLabel(AppLocalizations l10n, String category) =>
       switch (category) {
         'me' => l10n.notif_chip_you,
         'game' => l10n.notif_chip_games,
-        'booking' => l10n.notif_chip_bookings,
         'social' => l10n.notif_chip_social,
         'reward' => l10n.notif_chip_rewards,
-        'security' => l10n.notif_chip_security,
         _ => l10n.notif_chip_all,
       };
 

@@ -990,6 +990,10 @@
   "activity_empty_no_activity": "No activity yet",
   "activity_empty_subtitle": "Your activity will appear here",
   "activity_day_streak": "day streak",
+  "activity_stat_events": "Events",
+  "activity_stat_rewards": "Rewards",
+  "activity_group_count": "{count, plural, =1{1 event} other{{count} events}}",
+  "@activity_group_count": {"placeholders": {"count": {"type": "int"}}},
   "activity_participants_count": "{count} participants",
   "@activity_participants_count": { "placeholders": { "count": { "type": "int" } } },
 

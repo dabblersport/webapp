@@ -4751,6 +4751,24 @@ abstract class AppLocalizations {
   /// **'day streak'**
   String get activity_day_streak;
 
+  /// No description provided for @activity_stat_events.
+  ///
+  /// In en, this message translates to:
+  /// **'Events'**
+  String get activity_stat_events;
+
+  /// No description provided for @activity_stat_rewards.
+  ///
+  /// In en, this message translates to:
+  /// **'Rewards'**
+  String get activity_stat_rewards;
+
+  /// No description provided for @activity_group_count.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 event} other{{count} events}}'**
+  String activity_group_count(int count);
+
   /// No description provided for @activity_participants_count.
   ///
   /// In en, this message translates to:

@@ -192,7 +192,11 @@ Finder get _clearButton => find.byWidgetPredicate(
 
 /// The chip row builds lazily: drag it until the chip is built, then tap.
 Future<void> _tapChip(WidgetTester tester, String label) async {
-  final Finder chip = find.text(label);
+  // KAN-990: "Rewards" is also a Last 7 days tile label; tap the chip.
+  final Finder chip = find.descendant(
+    of: find.byType(ChipsRow),
+    matching: find.text(label),
+  );
   await tester.dragUntilVisible(
     chip,
     find.byType(ChipsRow),
