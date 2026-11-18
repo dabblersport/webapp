@@ -2157,7 +2157,8 @@ Migration `20261117164404_kan986_housekeeping_grants`. Live test `supabase/tests
 **Cron run history.**
 - `cron_job_run_details_prune(p_keep = '7 days', p_batch = 100000, p_max_batches = 10)` keeps 7 days. It refuses less
   than 1 day.
-- Cron `kan986_prune_cron_run_details_hourly` (`23 * * * *`).
+- Cron `kan986_prune_cron_run_details_hourly` (`23 * * * *`), command `SET statement_timeout = '15min'; SELECT public.cron_job_run_details_prune()`.
+- Since `20261118052516_kan986c_prune_by_runid_ranges` (PEER 16482): the cutoff `runid` is found once by a binary search on the primary key, then rows are deleted in `runid` ranges of 10 000 (p_batch), at most 1000 ranges or 90 s per run. The first version's `IN (SELECT ... LIMIT)` scans timed out on the 2.3M-row backlog.
 
 **Grants (KAN-1011).**
 - **Sequences:** no public sequence grants anything to PUBLIC, anon or authenticated. Default privileges of `postgres`
