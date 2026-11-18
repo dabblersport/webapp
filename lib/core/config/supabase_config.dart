@@ -416,6 +416,9 @@ class SupabaseConfig {
   /// KAN-1002: the lifecycle state an attendee or organiser sees.
   static const String rpcEventLifecycleReadFn = 'rpc_event_lifecycle_read';
 
+  /// KAN-1008: the caller's ongoing/imminent events for the in-app ongoing card.
+  static const String rpcMyOngoingEventsFn = 'rpc_my_ongoing_events';
+
   /// KAN-1000 (G-02, G-03): results (KAN-996) and ratings (KAN-997).
   static const String rpcResultGetFn = 'rpc_result_get';
   static const String rpcResultSubmitFn = 'rpc_result_submit';

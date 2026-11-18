@@ -13,6 +13,22 @@ abstract final class NotificationTiming {
   /// "Check-in closes soon" is sent this long before it closes.
   static const Duration checkInClosingWarning = Duration(minutes: 15);
 
+  /// KAN-1008: check-in closes this long after the start (closes_at).
+  static const Duration checkInCloses = Duration(minutes: 15);
+
+  /// KAN-1008: the ongoing card's countdown step.
+  static const Duration ongoingCountdownTick = Duration(minutes: 1);
+
+  /// KAN-1008: the server drops a closed or cancelled event this long after
+  /// the close, so the card reads again then.
+  static const Duration ongoingClosedExpiry = Duration(hours: 2);
+
+  /// KAN-1008: one retry this long after a failed ongoing read.
+  static const Duration ongoingRetryAfterFailure = Duration(minutes: 1);
+
+  /// KAN-1008: trailing debounce on notice-driven ongoing reads.
+  static const Duration ongoingNoticeDebounce = Duration(milliseconds: 300);
+
   /// KAN-998: the check-in screen re-reads the server when its window opens
   /// or closes within this horizon, a moment after the edge.
   static const Duration checkInEdgeHorizon = Duration(hours: 1);

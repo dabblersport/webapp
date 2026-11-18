@@ -3667,5 +3667,15 @@
   "sec6_review_sign_ins": "مراجعة عمليات الدخول",
   "@sec6_review_sign_ins": {"description": "KAN-1003 W2-F6 security screens."},
   "sec6_known": "جهاز معروف، لا شيء مطلوب",
-  "@sec6_known": {"description": "KAN-1003 W2-F6 security screens."}
+  "@sec6_known": {"description": "KAN-1003 W2-F6 security screens."},
+  "oc_starts_in": "يبدأ خلال {minutes} د",
+  "oc_starting_now": "يبدأ الآن",
+  "oc_time_running": "الوقت المحدد جارٍ",
+  "oc_changed": "تغيّر: {old} ← {now}",
+  "oc_more": "+{count} أخرى",
+  "oc_sheet_title": "أنشطتك الآن",
+  "oc_game": "مباراة",
+  "oc_meetup": "لقاء",
+  "oc_organiser": "أنت المنظّم",
+  "oc_ended": "انتهى"
 }

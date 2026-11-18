@@ -11168,4 +11168,40 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get sec6_known => 'Known device, nothing to do';
+
+  @override
+  String oc_starts_in(int minutes) {
+    return 'Starts in $minutes min';
+  }
+
+  @override
+  String get oc_starting_now => 'Starting now';
+
+  @override
+  String get oc_time_running => 'Scheduled time running';
+
+  @override
+  String oc_changed(String old, String now) {
+    return 'Changed: $old → $now';
+  }
+
+  @override
+  String oc_more(int count) {
+    return '+$count more';
+  }
+
+  @override
+  String get oc_sheet_title => 'Your activities now';
+
+  @override
+  String get oc_game => 'Game';
+
+  @override
+  String get oc_meetup => 'Meetup';
+
+  @override
+  String get oc_organiser => 'You\'re organising';
+
+  @override
+  String get oc_ended => 'Ended';
 }

@@ -50,6 +50,7 @@ import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/features/messaging/presentation/messages_list_route.dart';
 import 'package:dabbler/features/messaging/presentation/providers/messages_list_providers.dart';
+import 'package:dabbler/features/ongoing/presentation/ongoing_card.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -445,6 +446,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
                   // KAN-706: on-bench strip with Manage; nothing when not
                   // benched.
                   const SliverToBoxAdapter(child: BenchHomeStrip()),
+                  const SliverToBoxAdapter(child: OngoingCardSlot()),
                   const SliverToBoxAdapter(child: HomeUpcoming()),
                   // Not sticky: the rail scrolls away with the feed. It keeps
                   // its hairline edge to edge and starts its tabs at the

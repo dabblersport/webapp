@@ -153,6 +153,10 @@ class FeatureFlags {
   /// (Start, Confirm end, Did not happen, the end-of-activity states).
   static const bool eventLifecycle = true;
 
+  /// KAN-1008 (W3-F1): the pinned ongoing-activity card on Home (above the
+  /// feed, never inside it) and at the top of the Notification Center.
+  static const bool ongoingCard = true;
+
   /// KAN-1000 (G-02, G-03): the post-activity flow, the organiser's result
   /// approval and the final score screens, and their notice routes.
   static const bool postActivity = true;

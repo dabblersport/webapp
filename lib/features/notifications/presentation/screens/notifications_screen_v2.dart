@@ -25,6 +25,7 @@ import '../widgets/notif_top_bar.dart';
 import '../widgets/activity_summary_card.dart';
 import '../widgets/activity_search_row.dart';
 import '../widgets/activity_security_footer.dart';
+import 'package:dabbler/features/ongoing/presentation/ongoing_card.dart';
 
 /// KAN-989 (W1-F3): the Notification Center shell — the Notifications and
 /// Activity log tabs, the chips, activity highlights under All, every list
@@ -161,6 +162,7 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                   : null,
             ),
           ),
+          const SliverToBoxAdapter(child: OngoingCardSlot()),
           SliverToBoxAdapter(
             child: ChipsRow(
               chips: isNotif

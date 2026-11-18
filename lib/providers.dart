@@ -14,6 +14,8 @@ export 'features/attendance/presentation/attendance_list_controller.dart';
 export 'features/attendance/presentation/no_show_controller.dart';
 export 'features/lifecycle/data/lifecycle_repository.dart';
 export 'features/lifecycle/presentation/lifecycle_controller.dart';
+export 'features/ongoing/data/ongoing_repository.dart';
+export 'features/ongoing/presentation/ongoing_controller.dart';
 export 'features/post_activity/data/post_activity_repository.dart';
 export 'features/post_activity/presentation/post_activity_controller.dart';
 export 'features/post_activity/presentation/result_approval_controller.dart';

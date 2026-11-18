@@ -19248,6 +19248,66 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Known device, nothing to do'**
   String get sec6_known;
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts in {minutes} min'**
+  String oc_starts_in(int minutes);
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Starting now'**
+  String get oc_starting_now;
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled time running'**
+  String get oc_time_running;
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed: {old} → {now}'**
+  String oc_changed(String old, String now);
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'+{count} more'**
+  String oc_more(int count);
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Your activities now'**
+  String get oc_sheet_title;
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Game'**
+  String get oc_game;
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'Meetup'**
+  String get oc_meetup;
+
+  /// KAN-1008 W3-F1 ongoing card.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re organising'**
+  String get oc_organiser;
+
+  /// KAN-1008 W3-F1 ongoing card: the organiser confirmed the end. No time: the server has no actual end.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended'**
+  String get oc_ended;
 }
 
 class _AppLocalizationsDelegate

@@ -11270,4 +11270,40 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get sec6_known => 'جهاز معروف، لا شيء مطلوب';
+
+  @override
+  String oc_starts_in(int minutes) {
+    return 'يبدأ خلال $minutes د';
+  }
+
+  @override
+  String get oc_starting_now => 'يبدأ الآن';
+
+  @override
+  String get oc_time_running => 'الوقت المحدد جارٍ';
+
+  @override
+  String oc_changed(String old, String now) {
+    return 'تغيّر: $old ← $now';
+  }
+
+  @override
+  String oc_more(int count) {
+    return '+$count أخرى';
+  }
+
+  @override
+  String get oc_sheet_title => 'أنشطتك الآن';
+
+  @override
+  String get oc_game => 'مباراة';
+
+  @override
+  String get oc_meetup => 'لقاء';
+
+  @override
+  String get oc_organiser => 'أنت المنظّم';
+
+  @override
+  String get oc_ended => 'انتهى';
 }
