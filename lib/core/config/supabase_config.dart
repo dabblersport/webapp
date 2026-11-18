@@ -415,6 +415,20 @@ class SupabaseConfig {
   /// KAN-1002: the lifecycle state an attendee or organiser sees.
   static const String rpcEventLifecycleReadFn = 'rpc_event_lifecycle_read';
 
+  /// KAN-1000 (G-02, G-03): results (KAN-996) and ratings (KAN-997).
+  static const String rpcResultGetFn = 'rpc_result_get';
+  static const String rpcResultSubmitFn = 'rpc_result_submit';
+  static const String rpcResultApproveFn = 'rpc_result_approve';
+  static const String rpcResultSetFinalFn = 'rpc_result_set_final';
+  static const String rpcRatingGetFn = 'rpc_rating_get';
+  static const String rpcRatePlayerFn = 'rpc_rate_player';
+  static const String rpcRateOrganiserFn = 'rpc_rate_organiser';
+  static const String rpcRateVenueFn = 'rpc_rate_venue';
+  static const String rpcRatingSubmitFn = 'rpc_rating_submit';
+  static const String rpcRatingDismissFn = 'rpc_rating_dismiss';
+  static const String reputationDimensionsTable = 'reputation_dimensions';
+  static const String venueRatingDimensionsTable = 'venue_rating_dimensions';
+
   /// KAN-983: the 09:00 "confirm your attendance" answer (`going` /
   /// `not_going`), also the push's Going / Not going actions (KAN-992).
   static const String rpcAnswerMeetupAttendance =

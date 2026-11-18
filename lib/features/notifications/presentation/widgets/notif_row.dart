@@ -350,6 +350,10 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
             icon: 'tick-circle',
             text: l.notif_res_place_given_up,
           ),
+          NotificationActionId.dismissRating => DabblerNotificationResult(
+            icon: 'tick-circle',
+            text: l.notif_res_rating_dismissed,
+          ),
           _ => DabblerNotificationResult(
             icon: 'tick-circle',
             text: l.notif_res_unavailable,

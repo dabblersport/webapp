@@ -2,6 +2,7 @@ import 'package:dabbler/features/profile/presentation/providers/profile_provider
     show myProfileIdProvider;
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
 import 'package:dabbler/features/attendance/presentation/attendance_list_entry.dart';
+import 'package:dabbler/features/post_activity/presentation/post_activity_entry.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
@@ -217,6 +218,11 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         ?gameCheckInEntry(game, show: ctrl.isOnRoster && !ctrl.isHost),
         AttendanceListEntry(eventId: game.id, show: ctrl.isHost),
         gameLifecycleCard(game),
+        PostActivityEntry(
+          eventId: game.id,
+          title: game.title,
+          endAt: game.endAt,
+        ),
         // KAN-516: the one flag-gated game-chat entry; absent while any
         // messaging flag is false.
         GameChatEntry(

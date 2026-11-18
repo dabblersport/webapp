@@ -409,6 +409,16 @@ abstract final class NotificationKinds {
       case NotificationRouteKind.noShow:
         final id = s('event_id') ?? s('entity_id');
         return id == null ? null : RoutePaths.noShow(id, title: s('title'));
+      case NotificationRouteKind.postActivity:
+        final id = s('event_id') ?? s('entity_id');
+        return id == null || !FeatureFlags.postActivity
+            ? null
+            : RoutePaths.postActivity(id, title: s('title'));
+      case NotificationRouteKind.resultApproval:
+        final id = s('event_id') ?? s('entity_id');
+        return id == null || !FeatureFlags.postActivity
+            ? null
+            : RoutePaths.resultApproval(id, title: s('title'));
     }
   }
 

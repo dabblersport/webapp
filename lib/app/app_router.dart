@@ -29,6 +29,7 @@ import 'routes/identity_routes.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'routes/check_in_routes.dart';
 import 'routes/attendance_routes.dart';
+import 'routes/post_activity_routes.dart';
 import 'routes/meetups_routes.dart';
 import 'package:dabbler/features/messaging/presentation/game_chat_route.dart';
 import 'package:dabbler/features/messaging/presentation/meetup_chat_route.dart';
@@ -457,6 +458,9 @@ class AppRouter {
     if (FeatureFlags.playerCheckIn) checkInRoute,
     if (FeatureFlags.organiserAttendance) attendanceRoute,
     if (FeatureFlags.organiserAttendance) noShowRoute,
+    if (FeatureFlags.postActivity) postActivityRoute,
+    if (FeatureFlags.postActivity) resultApprovalRoute,
+    if (FeatureFlags.postActivity) resultFinalRoute,
     newsNewsIdRoute,
     sportsVenuesVenueIdRoute,
     favouritesRoute,

@@ -238,3 +238,6 @@ pubspec_overrides.yaml
 *.cer
 AuthKey_*.p8
 .release-credentials/
+
+# Golden test failure images (never committed)
+test/**/failures/

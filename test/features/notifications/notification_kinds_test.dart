@@ -281,11 +281,20 @@ void main() {
           RoutePaths.checkIn('g1'),
         );
         expect(
-          r('activity.result_ready', {
+          r('activity.summary', {
             'entity_type': 'meetup',
             'entity_id': 'm1',
           }),
           RoutePaths.meetupDetail('m1'),
+        );
+        // KAN-1000: result notices open G-03, post-activity ones G-02.
+        expect(
+          r('activity.result_ready', {'event_id': 'e1', 'entity_id': 'm1'}),
+          RoutePaths.resultApproval('e1'),
+        );
+        expect(
+          r('activity.rating_reminder', {'event_id': 'e1'}),
+          RoutePaths.postActivity('e1'),
         );
         // KAN-998: both check-in notices open the check-in screen; the
         // event id falls back to entity_id.

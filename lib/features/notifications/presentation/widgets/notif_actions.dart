@@ -13,6 +13,8 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/attendance/data/attendance_review_repository.dart'
     show attendanceReviewRepositoryProvider;
+import 'package:dabbler/features/post_activity/data/post_activity_repository.dart'
+    show postActivityRepositoryProvider;
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart'
     show messagingRepositoryProvider;
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
@@ -154,6 +156,19 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     final kind = NotificationKinds.canonical(n.kindKey);
     return switch (action) {
       NotificationActionId.followBack => _guard(() => _followBack(n)),
+      // KAN-1000 (G-02, G-03): results and ratings.
+      NotificationActionId.approve when kind == 'activity.result_ready' =>
+        _guard(() => _approveResult(n)),
+      NotificationActionId.reject when kind == 'activity.result_ready' =>
+        _guard(() => _openFinal(n)),
+      NotificationActionId.enterScore
+          when kind == 'activity.result_enter_final' =>
+        _guard(() => _openFinal(n)),
+      NotificationActionId.dismissRating => _guard(() => _dismissRating(n)),
+      NotificationActionId.enterScore ||
+      NotificationActionId.rate => Future<NotifActionOutcome>.value(
+        _openEvent(n, RoutePaths.postActivity),
+      ),
       NotificationActionId.approve ||
       NotificationActionId.decline ||
       NotificationActionId.reject => _guard(
@@ -245,6 +260,62 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     }
     open(RoutePaths.noShow(event, title: _s(n.payload, 'title')));
     return NotifActionOutcome.success;
+  }
+
+  NotifActionOutcome _openEvent(
+    AppNotification n,
+    String Function(String eventId, {String? title}) path,
+  ) {
+    final event = _s(n.payload, 'event_id');
+    if (event == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    open(path(event, title: _s(n.payload, 'title')));
+    return NotifActionOutcome.success;
+  }
+
+  /// KAN-1000 (G-03): the final score entry is the organiser's alone; the
+  /// tally's is_organiser is checked before it is opened.
+  Future<NotifActionOutcome> _openFinal(AppNotification n) async {
+    final event = _s(n.payload, 'event_id');
+    if (event == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    final r = await _ref.read(postActivityRepositoryProvider).result(event);
+    return r.fold(
+      (f) => NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+      (t) => t.isOrganiser
+          ? _openEvent(n, RoutePaths.resultFinal)
+          : const NotifActionOutcome(NotifActionStatus.failed, 'not_organiser'),
+    );
+  }
+
+  /// KAN-1000 (G-02): no more post-activity prompts for this event.
+  Future<NotifActionOutcome> _dismissRating(AppNotification n) async {
+    final event = _s(n.payload, 'event_id');
+    if (event == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    final r = await _ref.read(postActivityRepositoryProvider).dismiss(event);
+    return r.fold(
+      (f) => NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+      (_) => NotifActionOutcome.success,
+    );
+  }
+
+  /// KAN-1000 (G-03): the organiser approves the majority result.
+  Future<NotifActionOutcome> _approveResult(AppNotification n) async {
+    final event = _s(n.payload, 'event_id');
+    if (event == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    final r = await _ref.read(postActivityRepositoryProvider).approve(event);
+    return r.fold(
+      (f) => f.code == 'result_final'
+          ? NotifActionOutcome.already
+          : NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+      (_) => NotifActionOutcome.success,
+    );
   }
 
   /// The organiser accepts the correction (attended) or keeps the no-show.

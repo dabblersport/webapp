@@ -10779,4 +10779,282 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get lc_scheduled => 'Scheduled';
+
+  @override
+  String get g02_title => 'How did it go?';
+
+  @override
+  String g02_closes_in(int hours) {
+    return 'Closes in ${hours}h';
+  }
+
+  @override
+  String g02_step_of(int step, int total) {
+    return 'Step $step of $total';
+  }
+
+  @override
+  String get g02_step_score => 'Score';
+
+  @override
+  String get g02_step_players => 'Players';
+
+  @override
+  String get g02_step_organiser => 'Organiser';
+
+  @override
+  String get g02_step_venue => 'Venue';
+
+  @override
+  String get g02_score_hint =>
+      'Enter the final score and the side you played on.';
+
+  @override
+  String get g02_side_a => 'Side A';
+
+  @override
+  String get g02_side_b => 'Side B';
+
+  @override
+  String get g02_my_side => 'I played on';
+
+  @override
+  String g02_score_final(String score) {
+    return 'Final score: $score';
+  }
+
+  @override
+  String get g02_score_locked =>
+      'The result is final, so the score can\'t be changed.';
+
+  @override
+  String get g02_players_hint =>
+      'Rate the players you played with. Each one is optional.';
+
+  @override
+  String get g02_organiser_hint => 'Rate the organiser.';
+
+  @override
+  String get g02_venue_hint => 'Rate the venue.';
+
+  @override
+  String get g02_next => 'Next';
+
+  @override
+  String get g02_skip => 'Skip step';
+
+  @override
+  String get g02_submit => 'Submit';
+
+  @override
+  String get g02_back => 'Back';
+
+  @override
+  String get g02_submitted => 'Submitted · waiting for others';
+
+  @override
+  String g02_submitted_count(int done, int total) {
+    return '$done of $total have entered the score';
+  }
+
+  @override
+  String get g02_submitted_body => 'Thanks. Your ratings are in.';
+
+  @override
+  String get g02_closed => 'Closed';
+
+  @override
+  String get g02_closed_body => 'The 48 hours are over. This is what you gave.';
+
+  @override
+  String get g02_not_eligible => 'Not eligible';
+
+  @override
+  String get g02_not_eligible_body =>
+      'Your attendance for this activity wasn\'t recorded as attended, so there\'s nothing to rate.';
+
+  @override
+  String get g02_not_open => 'Not open yet';
+
+  @override
+  String get g02_not_open_body =>
+      'This opens once the organiser finalizes attendance.';
+
+  @override
+  String get g02_load_failed => 'Couldn\'t load this.';
+
+  @override
+  String get g02_unnamed => 'Player';
+
+  @override
+  String get g02_err_window_closed => 'The 48 hours are over.';
+
+  @override
+  String get g02_err_not_eligible => 'You\'re not eligible for this activity.';
+
+  @override
+  String get g02_err_result_final => 'The result is already final.';
+
+  @override
+  String get g02_err_not_ended => 'This activity hasn\'t ended yet.';
+
+  @override
+  String get g02_err_cancelled => 'This activity was cancelled.';
+
+  @override
+  String get g02_err_generic => 'Couldn\'t save. Try again.';
+
+  @override
+  String get g03_title => 'Result';
+
+  @override
+  String get g03_waiting => 'Waiting for scores';
+
+  @override
+  String g03_waiting_body(int done, int total) {
+    return '$done of $total players have entered the score.';
+  }
+
+  @override
+  String g03_majority(int votes, int total, String score) {
+    return '$votes of $total said $score';
+  }
+
+  @override
+  String g03_confirms_in(int hours) {
+    return 'Confirms automatically in ${hours}h';
+  }
+
+  @override
+  String get g03_spread => 'Other scores';
+
+  @override
+  String g03_spread_row(String score, int votes) {
+    return '$score · $votes';
+  }
+
+  @override
+  String get g03_approve => 'Approve';
+
+  @override
+  String get g03_reject => 'Reject';
+
+  @override
+  String get g03_approved => 'Approved';
+
+  @override
+  String get g03_rejected => 'Final score entered';
+
+  @override
+  String get g03_auto => 'Confirmed after 24h';
+
+  @override
+  String g03_final_body(String score) {
+    return 'Final score $score.';
+  }
+
+  @override
+  String get g03_closed_no_result => 'Closed with no result';
+
+  @override
+  String get g03_closed_no_result_body =>
+      'No final score was entered within 24h.';
+
+  @override
+  String get g03_tie => 'Tie: no majority';
+
+  @override
+  String g03_tie_body(int hours) {
+    return 'The votes are tied. Enter the final score within ${hours}h, or it closes with no result.';
+  }
+
+  @override
+  String get g03_enter_final => 'Enter final score';
+
+  @override
+  String get g03_player_note => 'The organiser has the last word.';
+
+  @override
+  String get g03_non_competitive => 'No score for this activity';
+
+  @override
+  String get g03_approved_toast => 'Result approved';
+
+  @override
+  String get g03_err_no_majority => 'There\'s no majority score to approve.';
+
+  @override
+  String get g03_err_no_submissions => 'No one has entered a score yet.';
+
+  @override
+  String get g03_err_not_organiser => 'Only the organiser can do this.';
+
+  @override
+  String get g03f_title => 'Final score';
+
+  @override
+  String get g03f_body => 'Enter the final score. It\'s final for everyone.';
+
+  @override
+  String g03f_deadline(String time) {
+    return 'Enter by $time';
+  }
+
+  @override
+  String get g03f_confirm => 'Confirm final score';
+
+  @override
+  String get g03f_saved => 'Final score saved';
+
+  @override
+  String get g03f_err_invalid => 'Enter a valid score.';
+
+  @override
+  String g02_closes_in_min(int minutes) {
+    return 'Closes in $minutes min';
+  }
+
+  @override
+  String get g02_score_load_failed => 'Couldn\'t load the score.';
+
+  @override
+  String get g02_dismiss => 'Don\'t ask again';
+
+  @override
+  String get g02_dismissed_title => 'Dismissed';
+
+  @override
+  String get g02_dismissed => 'You won\'t be asked about this activity again.';
+
+  @override
+  String get g03f_organiser_only => 'Only the organiser sets the final score';
+
+  @override
+  String get g03f_organiser_only_body =>
+      'You\'ll see the result once it\'s confirmed.';
+
+  @override
+  String get g03f_waiting => 'Waiting for players\' scores';
+
+  @override
+  String get g03f_waiting_body =>
+      'You can set the final score once players have sent theirs.';
+
+  @override
+  String get pa_entry_rate => 'Rate and score';
+
+  @override
+  String get pa_entry_rate_note => 'Open for 48 hours after the activity';
+
+  @override
+  String get pa_entry_review => 'Review result';
+
+  @override
+  String get pa_entry_review_note => 'Approve it or set the final score';
+
+  @override
+  String get notif_action_dismiss => 'Dismiss';
+
+  @override
+  String get notif_res_rating_dismissed => 'Dismissed';
 }

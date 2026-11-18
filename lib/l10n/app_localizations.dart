@@ -18558,6 +18558,498 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Scheduled'**
   String get lc_scheduled;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'How did it go?'**
+  String get g02_title;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes in {hours}h'**
+  String g02_closes_in(int hours);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Step {step} of {total}'**
+  String g02_step_of(int step, int total);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Score'**
+  String get g02_step_score;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Players'**
+  String get g02_step_players;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser'**
+  String get g02_step_organiser;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Venue'**
+  String get g02_step_venue;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the final score and the side you played on.'**
+  String get g02_score_hint;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Side A'**
+  String get g02_side_a;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Side B'**
+  String get g02_side_b;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'I played on'**
+  String get g02_my_side;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Final score: {score}'**
+  String g02_score_final(String score);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'The result is final, so the score can\'t be changed.'**
+  String get g02_score_locked;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate the players you played with. Each one is optional.'**
+  String get g02_players_hint;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate the organiser.'**
+  String get g02_organiser_hint;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate the venue.'**
+  String get g02_venue_hint;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Next'**
+  String get g02_next;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Skip step'**
+  String get g02_skip;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Submit'**
+  String get g02_submit;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get g02_back;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Submitted · waiting for others'**
+  String get g02_submitted;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} have entered the score'**
+  String g02_submitted_count(int done, int total);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Thanks. Your ratings are in.'**
+  String get g02_submitted_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed'**
+  String get g02_closed;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'The 48 hours are over. This is what you gave.'**
+  String get g02_closed_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Not eligible'**
+  String get g02_not_eligible;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Your attendance for this activity wasn\'t recorded as attended, so there\'s nothing to rate.'**
+  String get g02_not_eligible_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Not open yet'**
+  String get g02_not_open;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'This opens once the organiser finalizes attendance.'**
+  String get g02_not_open_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load this.'**
+  String get g02_load_failed;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get g02_unnamed;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'The 48 hours are over.'**
+  String get g02_err_window_closed;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not eligible for this activity.'**
+  String get g02_err_not_eligible;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'The result is already final.'**
+  String get g02_err_result_final;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity hasn\'t ended yet.'**
+  String get g02_err_not_ended;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity was cancelled.'**
+  String get g02_err_cancelled;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save. Try again.'**
+  String get g02_err_generic;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Result'**
+  String get g03_title;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for scores'**
+  String get g03_waiting;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'{done} of {total} players have entered the score.'**
+  String g03_waiting_body(int done, int total);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'{votes} of {total} said {score}'**
+  String g03_majority(int votes, int total, String score);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirms automatically in {hours}h'**
+  String g03_confirms_in(int hours);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Other scores'**
+  String get g03_spread;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'{score} · {votes}'**
+  String g03_spread_row(String score, int votes);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve'**
+  String get g03_approve;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Reject'**
+  String get g03_reject;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approved'**
+  String get g03_approved;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Final score entered'**
+  String get g03_rejected;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirmed after 24h'**
+  String get g03_auto;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Final score {score}.'**
+  String g03_final_body(String score);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Closed with no result'**
+  String get g03_closed_no_result;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'No final score was entered within 24h.'**
+  String get g03_closed_no_result_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Tie: no majority'**
+  String get g03_tie;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'The votes are tied. Enter the final score within {hours}h, or it closes with no result.'**
+  String g03_tie_body(int hours);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter final score'**
+  String get g03_enter_final;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser has the last word.'**
+  String get g03_player_note;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'No score for this activity'**
+  String get g03_non_competitive;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Result approved'**
+  String get g03_approved_toast;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s no majority score to approve.'**
+  String get g03_err_no_majority;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'No one has entered a score yet.'**
+  String get g03_err_no_submissions;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the organiser can do this.'**
+  String get g03_err_not_organiser;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Final score'**
+  String get g03f_title;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter the final score. It\'s final for everyone.'**
+  String get g03f_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter by {time}'**
+  String g03f_deadline(String time);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm final score'**
+  String get g03f_confirm;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Final score saved'**
+  String get g03f_saved;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Enter a valid score.'**
+  String get g03f_err_invalid;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes in {minutes} min'**
+  String g02_closes_in_min(int minutes);
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the score.'**
+  String get g02_score_load_failed;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Don\'t ask again'**
+  String get g02_dismiss;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get g02_dismissed_title;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'You won\'t be asked about this activity again.'**
+  String get g02_dismissed;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the organiser sets the final score'**
+  String get g03f_organiser_only;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'ll see the result once it\'s confirmed.'**
+  String get g03f_organiser_only_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for players\' scores'**
+  String get g03f_waiting;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'You can set the final score once players have sent theirs.'**
+  String get g03f_waiting_body;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate and score'**
+  String get pa_entry_rate;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Open for 48 hours after the activity'**
+  String get pa_entry_rate_note;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Review result'**
+  String get pa_entry_review;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Approve it or set the final score'**
+  String get pa_entry_review_note;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismiss'**
+  String get notif_action_dismiss;
+
+  /// KAN-1000 G-02/G-03 post-activity flow and result approval.
+  ///
+  /// In en, this message translates to:
+  /// **'Dismissed'**
+  String get notif_res_rating_dismissed;
 }
 
 class _AppLocalizationsDelegate

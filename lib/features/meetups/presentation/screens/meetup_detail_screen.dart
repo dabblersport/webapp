@@ -5,6 +5,7 @@ import 'package:dabbler/features/games/presentation/providers/nearby_games_provi
     show gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/attendance/presentation/check_in_entry.dart';
 import 'package:dabbler/features/lifecycle/presentation/event_lifecycle_card.dart';
+import 'package:dabbler/features/post_activity/presentation/post_activity_entry.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
@@ -327,6 +328,11 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
         EventLifecycleCard(eventId: c.eventId ?? c.id),
         if (!c.isHost && c.myStatus == 'going')
           CheckInEntry(eventId: c.eventId ?? c.id),
+        PostActivityEntry(
+          eventId: c.eventId ?? c.id,
+          title: c.title,
+          endAt: c.endAt,
+        ),
         DabblerStatGrid(
           rowExtent: DabblerStatGrid.detailsRowHeight,
           children: <DabblerStatTile>[

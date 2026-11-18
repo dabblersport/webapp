@@ -92,6 +92,12 @@ enum NotificationRouteKind {
   /// KAN-999: the no-show and review outcome notices open the player's
   /// no-show screen.
   noShow,
+
+  /// KAN-1000: the post-activity and rating reminder notices open G-02.
+  postActivity,
+
+  /// KAN-1000: the result notices open the G-03 result screen.
+  resultApproval,
 }
 
 /// A row action. The first four are the live CTAs (they open the row); the
@@ -119,7 +125,10 @@ enum NotificationActionId {
   decline,
 
   /// KAN-988: giving up a place won from the waitlist (no penalty).
-  cancelPlace;
+  cancelPlace,
+
+  /// KAN-1000 (G-02): stop the post-activity prompts (rpc_rating_dismiss).
+  dismissRating;
 
   String label(AppLocalizations l) => switch (this) {
     respond => l.notif_action_respond,
@@ -141,6 +150,7 @@ enum NotificationActionId {
     notMe => l.notif_action_not_me,
     decline => l.notif_action_decline,
     cancelPlace => l.notif_action_cancel_place,
+    dismissRating => l.notif_action_dismiss,
   };
 }
 

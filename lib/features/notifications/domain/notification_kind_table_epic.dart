@@ -281,15 +281,18 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.post_activity',
     _calendar,
-    _R.activity,
+    _R.postActivity,
     _G.activities,
     needsAction: true,
-    ctas: [NotificationCta(_A.enterScore, filled: true)],
+    ctas: [
+      NotificationCta(_A.enterScore, filled: true),
+      NotificationCta(_A.dismissRating),
+    ],
   ),
   NotificationKindClient(
     'activity.result_ready',
     _calendar,
-    _R.activity,
+    _R.resultApproval,
     _G.activities,
     needsAction: true,
     ctas: [
@@ -300,7 +303,7 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.result_enter_final',
     _calendar,
-    _R.activity,
+    _R.resultApproval,
     _G.activities,
     needsAction: true,
     ctas: [NotificationCta(_A.enterScore, filled: true)],
@@ -308,28 +311,28 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.result_confirmed',
     _calendar,
-    _R.activity,
+    _R.resultApproval,
     _G.activities,
   ),
   NotificationKindClient(
     'activity.result_corrected',
     _calendar,
-    _R.activity,
+    _R.resultApproval,
     _G.activities,
   ),
   NotificationKindClient(
     'activity.result_closed',
     _calendar,
-    _R.activity,
+    _R.resultApproval,
     _G.activities,
   ),
   NotificationKindClient(
     'activity.rating_reminder',
     _calendar,
-    _R.activity,
+    _R.postActivity,
     _G.activities,
     needsAction: true,
-    ctas: [NotificationCta(_A.rate)],
+    ctas: [NotificationCta(_A.rate), NotificationCta(_A.dismissRating)],
   ),
   NotificationKindClient(
     'activity.summary',

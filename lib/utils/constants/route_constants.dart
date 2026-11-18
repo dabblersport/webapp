@@ -124,6 +124,23 @@ class RoutePaths {
     queryParameters: title == null || title.isEmpty ? null : {'title': title},
   ).toString();
 
+  /// KAN-1000 (G-02): the post-activity flow of one event.
+  static String postActivity(String eventId, {String? title}) =>
+      _evt('/post-activity/$eventId', title);
+
+  /// KAN-1000 (G-03): the result tally and the organiser's approval.
+  static String resultApproval(String eventId, {String? title}) =>
+      _evt('/result/$eventId', title);
+
+  /// KAN-1000 (G-03): the organiser's final score entry.
+  static String resultFinal(String eventId, {String? title}) =>
+      _evt('/result/$eventId/final', title);
+
+  static String _evt(String path, String? title) => Uri(
+    path: path,
+    queryParameters: title == null || title.isEmpty ? null : {'title': title},
+  ).toString();
+
   // News detail (root-level, no shell)
   static String newsDetail(String newsId) => '/news/$newsId';
 
@@ -209,6 +226,9 @@ class RouteNames {
   static const String checkIn = 'check-in';
   static const String attendance = 'attendance';
   static const String noShow = 'no-show';
+  static const String postActivity = 'post-activity';
+  static const String resultApproval = 'result-approval';
+  static const String resultFinal = 'result-final';
 
   // Game Creation Routes
   static const String locationIntro = 'location-intro';

@@ -10888,4 +10888,278 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get lc_scheduled => 'مجدول';
+
+  @override
+  String get g02_title => 'كيف كان النشاط؟';
+
+  @override
+  String g02_closes_in(int hours) {
+    return 'يُغلق خلال $hours س';
+  }
+
+  @override
+  String g02_step_of(int step, int total) {
+    return 'الخطوة $step من $total';
+  }
+
+  @override
+  String get g02_step_score => 'النتيجة';
+
+  @override
+  String get g02_step_players => 'اللاعبون';
+
+  @override
+  String get g02_step_organiser => 'المنظِّم';
+
+  @override
+  String get g02_step_venue => 'الملعب';
+
+  @override
+  String get g02_score_hint => 'أدخل النتيجة النهائية والجهة التي لعبت فيها.';
+
+  @override
+  String get g02_side_a => 'الفريق أ';
+
+  @override
+  String get g02_side_b => 'الفريق ب';
+
+  @override
+  String get g02_my_side => 'لعبت في';
+
+  @override
+  String g02_score_final(String score) {
+    return 'النتيجة النهائية: $score';
+  }
+
+  @override
+  String get g02_score_locked => 'النتيجة نهائية، فلا يمكن تغييرها.';
+
+  @override
+  String get g02_players_hint =>
+      'قيّم اللاعبين الذين لعبت معهم. كل تقييم اختياري.';
+
+  @override
+  String get g02_organiser_hint => 'قيّم المنظِّم.';
+
+  @override
+  String get g02_venue_hint => 'قيّم الملعب.';
+
+  @override
+  String get g02_next => 'التالي';
+
+  @override
+  String get g02_skip => 'تخطَّ الخطوة';
+
+  @override
+  String get g02_submit => 'إرسال';
+
+  @override
+  String get g02_back => 'رجوع';
+
+  @override
+  String get g02_submitted => 'تم الإرسال · بانتظار الآخرين';
+
+  @override
+  String g02_submitted_count(int done, int total) {
+    return '$done من $total أدخلوا النتيجة';
+  }
+
+  @override
+  String get g02_submitted_body => 'شكرًا. وصلت تقييماتك.';
+
+  @override
+  String get g02_closed => 'مُغلق';
+
+  @override
+  String get g02_closed_body => 'انتهت مدة 48 ساعة. هذا ما قدّمته.';
+
+  @override
+  String get g02_not_eligible => 'غير مؤهَّل';
+
+  @override
+  String get g02_not_eligible_body =>
+      'لم يُسجَّل حضورك في هذا النشاط، فلا يوجد ما تقيّمه.';
+
+  @override
+  String get g02_not_open => 'لم يُفتح بعد';
+
+  @override
+  String get g02_not_open_body => 'يُفتح بعد أن يعتمد المنظِّم الحضور.';
+
+  @override
+  String get g02_load_failed => 'تعذّر التحميل.';
+
+  @override
+  String get g02_unnamed => 'لاعب';
+
+  @override
+  String get g02_err_window_closed => 'انتهت مدة 48 ساعة.';
+
+  @override
+  String get g02_err_not_eligible => 'أنت غير مؤهَّل لهذا النشاط.';
+
+  @override
+  String get g02_err_result_final => 'النتيجة نهائية بالفعل.';
+
+  @override
+  String get g02_err_not_ended => 'لم ينتهِ هذا النشاط بعد.';
+
+  @override
+  String get g02_err_cancelled => 'أُلغي هذا النشاط.';
+
+  @override
+  String get g02_err_generic => 'تعذّر الحفظ. حاول مرة أخرى.';
+
+  @override
+  String get g03_title => 'النتيجة';
+
+  @override
+  String get g03_waiting => 'بانتظار النتائج';
+
+  @override
+  String g03_waiting_body(int done, int total) {
+    return '$done من $total لاعبين أدخلوا النتيجة.';
+  }
+
+  @override
+  String g03_majority(int votes, int total, String score) {
+    return '$votes من $total قالوا $score';
+  }
+
+  @override
+  String g03_confirms_in(int hours) {
+    return 'تُعتمد تلقائيًا خلال $hours س';
+  }
+
+  @override
+  String get g03_spread => 'نتائج أخرى';
+
+  @override
+  String g03_spread_row(String score, int votes) {
+    return '$score · $votes صوت';
+  }
+
+  @override
+  String get g03_approve => 'اعتماد';
+
+  @override
+  String get g03_reject => 'رفض';
+
+  @override
+  String get g03_approved => 'مُعتمدة';
+
+  @override
+  String get g03_rejected => 'أُدخلت النتيجة النهائية';
+
+  @override
+  String get g03_auto => 'اعتُمدت بعد 24 ساعة';
+
+  @override
+  String g03_final_body(String score) {
+    return 'النتيجة النهائية $score.';
+  }
+
+  @override
+  String get g03_closed_no_result => 'أُغلق دون نتيجة';
+
+  @override
+  String get g03_closed_no_result_body =>
+      'لم تُدخَل نتيجة نهائية خلال 24 ساعة.';
+
+  @override
+  String get g03_tie => 'تعادل: لا أغلبية';
+
+  @override
+  String g03_tie_body(int hours) {
+    return 'الأصوات متعادلة. أدخل النتيجة النهائية خلال $hours س، وإلا يُغلق دون نتيجة.';
+  }
+
+  @override
+  String get g03_enter_final => 'أدخل النتيجة النهائية';
+
+  @override
+  String get g03_player_note => 'الكلمة الأخيرة للمنظِّم.';
+
+  @override
+  String get g03_non_competitive => 'لا نتيجة لهذا النشاط';
+
+  @override
+  String get g03_approved_toast => 'اعتُمدت النتيجة';
+
+  @override
+  String get g03_err_no_majority => 'لا توجد نتيجة بأغلبية لاعتمادها.';
+
+  @override
+  String get g03_err_no_submissions => 'لم يُدخل أحد نتيجة بعد.';
+
+  @override
+  String get g03_err_not_organiser => 'هذا متاح للمنظِّم فقط.';
+
+  @override
+  String get g03f_title => 'النتيجة النهائية';
+
+  @override
+  String get g03f_body => 'أدخل النتيجة النهائية. ستكون نهائية للجميع.';
+
+  @override
+  String g03f_deadline(String time) {
+    return 'أدخلها قبل $time';
+  }
+
+  @override
+  String get g03f_confirm => 'تأكيد النتيجة';
+
+  @override
+  String get g03f_saved => 'حُفظت النتيجة النهائية';
+
+  @override
+  String get g03f_err_invalid => 'أدخل نتيجة صحيحة.';
+
+  @override
+  String g02_closes_in_min(int minutes) {
+    return 'يُغلق خلال $minutes د';
+  }
+
+  @override
+  String get g02_score_load_failed => 'تعذّر تحميل النتيجة.';
+
+  @override
+  String get g02_dismiss => 'لا تسألني مرة أخرى';
+
+  @override
+  String get g02_dismissed_title => 'تم التجاهل';
+
+  @override
+  String get g02_dismissed => 'لن نسألك عن هذا النشاط مرة أخرى.';
+
+  @override
+  String get g03f_organiser_only => 'المنظّم وحده يحدد النتيجة النهائية';
+
+  @override
+  String get g03f_organiser_only_body => 'سترى النتيجة بعد تأكيدها.';
+
+  @override
+  String get g03f_waiting => 'بانتظار نتائج اللاعبين';
+
+  @override
+  String get g03f_waiting_body =>
+      'يمكنك تحديد النتيجة النهائية بعد أن يرسل اللاعبون نتائجهم.';
+
+  @override
+  String get pa_entry_rate => 'قيّم وسجّل النتيجة';
+
+  @override
+  String get pa_entry_rate_note => 'متاح لمدة 48 ساعة بعد النشاط';
+
+  @override
+  String get pa_entry_review => 'راجِع النتيجة';
+
+  @override
+  String get pa_entry_review_note => 'اعتمدها أو حدّد النتيجة النهائية';
+
+  @override
+  String get notif_action_dismiss => 'تجاهل';
+
+  @override
+  String get notif_res_rating_dismissed => 'تم التجاهل';
 }
