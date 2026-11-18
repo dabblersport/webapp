@@ -3,6 +3,7 @@ import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
     show gamesSkillTierFor, gamesSkillTierLabel;
+import 'package:dabbler/features/attendance/presentation/check_in_entry.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_filters.dart';
@@ -322,6 +323,12 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
             if (faces.isNotEmpty) _names(l, faces, c.counts.going),
           ].join(' · '),
         ),
+        if (!c.isHost && c.myStatus == 'going')
+          CheckInEntry(
+            eventId: c.eventId ?? c.id,
+            title: c.title,
+            venue: c.locationName ?? c.venueName,
+          ),
         DabblerStatGrid(
           rowExtent: DabblerStatGrid.detailsRowHeight,
           children: <DabblerStatTile>[

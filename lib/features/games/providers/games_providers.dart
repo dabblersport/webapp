@@ -297,17 +297,6 @@ final publicGamesProvider = FutureProvider.autoDispose<List<Game>>((ref) async {
   );
 });
 
-/// Active check-in reminders
-final activeRemindersProvider = Provider.family<List<CheckInReminder>, String>((
-  ref,
-  userId,
-) {
-  final myGamesState = ref.watch(myGamesControllerProvider(userId));
-  return myGamesState.checkInReminders
-      .where((r) => r.isActive && r.shouldShowReminder)
-      .toList();
-});
-
 /// User's game statistics
 final gameStatisticsProvider = Provider.family<GameStatistics?, String>((
   ref,
@@ -554,12 +543,6 @@ class MyGamesActions {
     return await _ref
         .read(myGamesControllerProvider(_userId).notifier)
         .shareGame(gameId);
-  }
-
-  Future<void> checkInToGame(String gameId) async {
-    await _ref
-        .read(myGamesControllerProvider(_userId).notifier)
-        .checkInToGame(gameId);
   }
 
   Future<void> executeQuickAction(

@@ -10537,4 +10537,66 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get showup_rate_rule =>
       'نسبتك هي حصة المباريات واللقاءات المؤكدة التي حضرتها. لا تُحتسب الفعاليات الملغاة، والانسحابات بعذر، والفعاليات التي لم تُقم. تظهر بعد 3 مباريات أو لقاءات مؤكدة.';
+
+  @override
+  String get g04_title => 'تسجيل الحضور';
+
+  @override
+  String get g04_cta => 'سجّل حضورك';
+
+  @override
+  String get g04_submitting => 'جارٍ تسجيل الحضور…';
+
+  @override
+  String g04_opens(String time) {
+    return 'يفتح $time';
+  }
+
+  @override
+  String g04_open_until(String time) {
+    return 'مفتوح حتى $time';
+  }
+
+  @override
+  String g04_starts(String time) {
+    return 'يبدأ $time';
+  }
+
+  @override
+  String get g04_before_body => 'يفتح تسجيل الحضور قبل البداية بـ30 دقيقة.';
+
+  @override
+  String get g04_open_body => 'هل وصلت؟ سجّل حضورك ليعرف المنظّم.';
+
+  @override
+  String get g04_checked_in => 'تم تسجيل حضورك';
+
+  @override
+  String g04_checked_in_at(String time) {
+    return 'سُجّل الحضور الساعة $time';
+  }
+
+  @override
+  String get g04_closed => 'أُغلق تسجيل الحضور';
+
+  @override
+  String g04_closed_body(String time) {
+    return 'كان تسجيل الحضور متاحًا حتى $time. لا يزال بإمكان المنظّم تسجيلك كحاضر.';
+  }
+
+  @override
+  String get g04_not_eligible => 'أنت لست ضمن قائمة المشاركين';
+
+  @override
+  String get g04_not_eligible_body =>
+      'يمكن للمشاركين المؤكَّدين فقط تسجيل الحضور، وليس من في قائمة الانتظار.';
+
+  @override
+  String get g04_cancelled => 'تم إلغاء هذا';
+
+  @override
+  String get g04_load_failed => 'تعذّر تحميل تسجيل الحضور';
+
+  @override
+  String get g04_failed => 'تعذّر تسجيل الحضور. حاول مرة أخرى.';
 }

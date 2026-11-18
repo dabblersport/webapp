@@ -394,6 +394,10 @@ class SupabaseConfig {
   /// KAN-990: the viewer's personal Activity log.
   static const String rpcGetActivityFeed = 'rpc_get_activity_feed';
 
+  /// KAN-998 (G-04): the player's own check-in state, and the check-in.
+  static const String rpcAttendanceMyFn = 'rpc_attendance_my';
+  static const String rpcAttendanceCheckInFn = 'rpc_attendance_check_in';
+
   /// KAN-983: the 09:00 "confirm your attendance" answer (`going` /
   /// `not_going`), also the push's Going / Not going actions (KAN-992).
   static const String rpcAnswerMeetupAttendance =

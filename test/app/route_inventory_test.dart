@@ -113,9 +113,9 @@ void main() {
       );
     });
 
-    test('GoRoute count is 102', () {
+    test('GoRoute count is 103', () {
       final goRoutes = inventory.where((e) => e.type == 'GoRoute').length;
-      expect(goRoutes, 102);
+      expect(goRoutes, 103);
     });
 
     test('exactly one StatefulShellRoute.indexedStack, with 5 branches', () {

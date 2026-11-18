@@ -107,6 +107,19 @@ class RoutePaths {
   static String meetupEdit(String meetupId) => '/meetups/$meetupId/edit';
   static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
+  /// KAN-998 (G-04): the player check-in screen of one event (games.id and
+  /// meetups.id are their events.id). [title] and [venue] are shown as entered.
+  static String checkIn(String eventId, {String? title, String? venue}) {
+    final q = <String, String>{
+      if (title != null && title.isNotEmpty) 'title': title,
+      if (venue != null && venue.isNotEmpty) 'venue': venue,
+    };
+    return Uri(
+      path: '/check-in/$eventId',
+      queryParameters: q.isEmpty ? null : q,
+    ).toString();
+  }
+
   // News detail (root-level, no shell)
   static String newsDetail(String newsId) => '/news/$newsId';
 
@@ -189,6 +202,7 @@ class RouteNames {
   static const String meetupDetail = 'meetup-detail';
   static const String meetupManage = 'meetup-manage';
   static const String meetupEdit = 'meetup-edit';
+  static const String checkIn = 'check-in';
 
   // Game Creation Routes
   static const String locationIntro = 'location-intro';

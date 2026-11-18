@@ -26,6 +26,7 @@ import '../../support/connectivity_overrides.dart';
 import '../../support/geometry_dump.dart';
 import '../../support/render_mode.dart';
 import 'meetup_screens_harness.dart';
+import '../attendance/attendance_fakes.dart';
 
 /// Renders the Meetups screens LTR and RTL. Writes PNGs only with
 /// `--dart-define=MEETUPS_SHOTS_DIR=<dir>`.
@@ -67,6 +68,7 @@ Future<void> _shoot(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        noCheckInOverride,
         meetupRepositoryProvider.overrideWithValue(repo),
         // KAN-753: the meetup reads listen for reconnects; no plugin here.
         onlineConnectivity(),

@@ -141,6 +141,10 @@ class FeatureFlags {
   static const bool venuesBooking = true; // venues remain read-only
   static const bool enableBookingFlow = true;
 
+  /// KAN-998 (G-04): the player check-in screen and its entries in the game
+  /// and meetup details. Off hides the entries and the route.
+  static const bool playerCheckIn = true;
+
   // ============================================================================
   // SPORT CONFIGURATION
   // ============================================================================

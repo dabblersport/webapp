@@ -17,6 +17,7 @@ import 'package:go_router/go_router.dart';
 
 import '../../support/render_mode.dart';
 import 'meetup_screens_harness.dart';
+import '../attendance/attendance_fakes.dart';
 
 // KAN-559: the meetup-chat entry on the meetup detail screen. Provider
 // overrides only; the committed flags are never flipped. KAN-928: it opens
@@ -93,6 +94,7 @@ Future<_Nav> _pump(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        noCheckInOverride,
         meetupRepositoryProvider.overrideWithValue(repo),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         activeLocationProvider.overrideWith(_Denied.new),

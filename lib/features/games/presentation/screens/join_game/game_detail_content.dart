@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 
 import 'package:dabbler/core/utils/avatar_url_resolver.dart';
+import 'package:dabbler/features/attendance/presentation/check_in_entry.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -112,6 +113,12 @@ Widget gameFactTiles(BuildContext context, GameView game) {
     ],
   );
 }
+
+/// KAN-998: the check-in row, for a player on the roster (not the host). The
+/// game's id is its events.id.
+Widget? gameCheckInEntry(GameView game, {required bool show}) => show
+    ? CheckInEntry(eventId: game.id, title: game.title, venue: game.venueName)
+    : null;
 
 /// The host card (`:101-114`): avatar, "Hosted by", name — opens the profile.
 Widget gameHostCard(BuildContext context, GameView game) {

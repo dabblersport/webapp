@@ -21,6 +21,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import '../location/manual_location_surfaces_support.dart';
+import '../attendance/attendance_fakes.dart';
 
 /// A recording fake of the meetup repository.
 class FakeMeetupRepository implements MeetupRepository {
@@ -252,6 +253,7 @@ Future<void> pumpMeetups(
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
+        noCheckInOverride,
         fakeCatalogOverride,
         fakeCountryOverride,
         meetupRepositoryProvider.overrideWithValue(repo),

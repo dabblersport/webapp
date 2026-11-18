@@ -1,6 +1,4 @@
-import 'package:dabbler/core/constants/timing/play_timing.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'dart:async';
 import 'package:dabbler/core/utils/logger.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import '../../domain/usecases/cancel_game_usecase.dart';
@@ -10,7 +8,7 @@ import 'game_counts.dart';
 
 enum MyGameType { upcoming, past, organized, joined }
 
-enum QuickAction { share, cancel, checkIn, viewDetails, invite, rate }
+enum QuickAction { share, cancel, viewDetails, invite, rate }
 
 /// Counts from the games the user holds a seat in or created. Show-up rate,
 /// minutes played and a favourite sport are not derivable from this data, so
@@ -43,27 +41,6 @@ class GameStatistics {
   }
 }
 
-class CheckInReminder {
-  final String gameId;
-  final String gameTitle;
-  final DateTime scheduledTime;
-  final String venue;
-  final bool isActive;
-
-  const CheckInReminder({
-    required this.gameId,
-    required this.gameTitle,
-    required this.scheduledTime,
-    required this.venue,
-    this.isActive = true,
-  });
-
-  Duration get timeUntilGame => scheduledTime.difference(DateTime.now());
-  bool get isUpcoming => timeUntilGame.inMinutes > 0;
-  bool get shouldShowReminder =>
-      timeUntilGame.inHours <= 2 && timeUntilGame.inMinutes > 0;
-}
-
 class MyGamesState {
   final List<Game> upcomingGames;
   final List<Game> pastGames;
@@ -76,9 +53,7 @@ class MyGamesState {
   final bool isLoadingStatistics;
   final String? error;
   final GameStatistics? statistics;
-  final List<CheckInReminder> checkInReminders;
   final DateTime? lastUpdated;
-  final Timer? reminderTimer;
 
   const MyGamesState({
     this.upcomingGames = const [],
@@ -92,9 +67,7 @@ class MyGamesState {
     this.isLoadingStatistics = false,
     this.error,
     this.statistics,
-    this.checkInReminders = const [],
     this.lastUpdated,
-    this.reminderTimer,
   });
 
   bool get isLoading =>
@@ -106,8 +79,6 @@ class MyGamesState {
   bool get hasUpcomingGames => upcomingGames.isNotEmpty;
   bool get hasPastGames => pastGames.isNotEmpty;
   bool get hasStatistics => statistics != null;
-  bool get hasActiveReminders =>
-      checkInReminders.any((r) => r.isActive && r.shouldShowReminder);
 
   int get totalGames => upcomingGames.length + pastGames.length;
 
@@ -149,9 +120,7 @@ class MyGamesState {
     bool? isLoadingStatistics,
     String? error,
     GameStatistics? statistics,
-    List<CheckInReminder>? checkInReminders,
     DateTime? lastUpdated,
-    Timer? reminderTimer,
   }) {
     return MyGamesState(
       upcomingGames: upcomingGames ?? this.upcomingGames,
@@ -165,9 +134,7 @@ class MyGamesState {
       isLoadingStatistics: isLoadingStatistics ?? this.isLoadingStatistics,
       error: error,
       statistics: statistics ?? this.statistics,
-      checkInReminders: checkInReminders ?? this.checkInReminders,
       lastUpdated: lastUpdated ?? this.lastUpdated,
-      reminderTimer: reminderTimer ?? this.reminderTimer,
     );
   }
 }
@@ -179,7 +146,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
   final GameCompletionRewardsHandler _completionHandler;
 
   static const Duration _cacheValidity = Duration(minutes: 5);
-  static const Duration _reminderCheckInterval = Duration(minutes: 1);
   static const String _logTag = 'MyGamesController';
 
   MyGamesController({
@@ -192,7 +158,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
        _completionHandler = completionHandler ?? GameCompletionRewardsHandler(),
        super(const MyGamesState()) {
     _initializeMyGames();
-    _startReminderTimer();
   }
 
   /// Initialize and load all user games
@@ -232,9 +197,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
             isLoadingUpcoming: false,
             lastUpdated: DateTime.now(),
           );
-
-          // Update check-in reminders
-          _updateCheckInReminders();
         },
       );
     } catch (e) {
@@ -425,18 +387,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
     }
   }
 
-  /// Check in to a game
-  Future<void> checkInToGame(String gameId) async {
-    try {
-      await Future.delayed(PlayTiming.mockLatencyLong);
-
-      // Update game status or refresh data
-      await loadUpcomingGames();
-    } catch (e) {
-      state = state.copyWith(error: 'Failed to check in: $e');
-    }
-  }
-
   /// Get available quick actions for a game
   List<QuickAction> getAvailableActions(Game game) {
     final actions = <QuickAction>[];
@@ -457,11 +407,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
           actions.add(QuickAction.cancel);
         }
         actions.add(QuickAction.invite);
-      }
-
-      // Check-in available 30 minutes before game
-      if (timeUntilGame.inMinutes <= 30 && timeUntilGame.inMinutes > -15) {
-        actions.add(QuickAction.checkIn);
       }
     } else if (game.status == GameStatus.completed) {
       // Game is completed
@@ -485,9 +430,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
         // This would typically show a confirmation dialog
         // For now, we'll just call cancel with a default reason
         await cancelGame(gameId, 'Game cancelled by organizer');
-        break;
-      case QuickAction.checkIn:
-        await checkInToGame(gameId);
         break;
       case QuickAction.viewDetails:
         // This would navigate to game details
@@ -559,43 +501,6 @@ class MyGamesController extends StateNotifier<MyGamesState> {
     return DateTime.now().difference(state.lastUpdated!) > _cacheValidity;
   }
 
-  void _startReminderTimer() {
-    final timer = Timer.periodic(_reminderCheckInterval, (timer) {
-      if (mounted) {
-        _updateCheckInReminders();
-      } else {
-        timer.cancel();
-      }
-    });
-
-    state = state.copyWith(reminderTimer: timer);
-  }
-
-  void _updateCheckInReminders() {
-    final now = DateTime.now();
-    final reminders = <CheckInReminder>[];
-
-    for (final game in state.upcomingGames) {
-      final gameDateTime = _combineDateTime(game.scheduledDate, game.startTime);
-      final timeUntilGame = gameDateTime.difference(now);
-
-      // Create reminder for games starting within 2 hours
-      if (timeUntilGame.inMinutes > 0 && timeUntilGame.inHours <= 2) {
-        reminders.add(
-          CheckInReminder(
-            gameId: game.id,
-            gameTitle: game.title,
-            scheduledTime: gameDateTime,
-            venue: game.venueId ?? 'TBD',
-            isActive: true,
-          ),
-        );
-      }
-    }
-
-    state = state.copyWith(checkInReminders: reminders);
-  }
-
   DateTime _combineDateTime(DateTime date, String time) {
     final timeParts = time.split(':');
     return DateTime(
@@ -650,11 +555,5 @@ class MyGamesController extends StateNotifier<MyGamesState> {
     ];
 
     return '${weekdays[date.weekday - 1]}, ${months[date.month - 1]} ${date.day}';
-  }
-
-  @override
-  void dispose() {
-    state.reminderTimer?.cancel();
-    super.dispose();
   }
 }

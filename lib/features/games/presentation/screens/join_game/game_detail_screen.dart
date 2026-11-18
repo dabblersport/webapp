@@ -212,6 +212,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       bottomBar: _actionBar(state, ctrl),
       children: [
         gameHeadcount(state),
+        ?gameCheckInEntry(game, show: ctrl.isOnRoster && !ctrl.isHost),
         // KAN-516: the one flag-gated game-chat entry; absent while any
         // messaging flag is false.
         GameChatEntry(

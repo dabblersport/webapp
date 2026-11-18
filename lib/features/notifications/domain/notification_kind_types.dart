@@ -82,6 +82,9 @@ enum NotificationRouteKind {
   meetupGuest,
   meetupHost,
   activity,
+
+  /// KAN-998: the check-in notices open the G-04 check-in screen.
+  checkIn,
 }
 
 /// A row action. The first four are the live CTAs (they open the row); the

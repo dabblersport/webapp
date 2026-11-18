@@ -17946,6 +17946,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Your rate is the share of your confirmed games and meetups you attended. Cancelled events, excused withdrawals and events that did not happen are not counted. It shows after 3 confirmed games or meetups.'**
   String get showup_rate_rule;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in'**
+  String get g04_title;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in'**
+  String get g04_cta;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking in…'**
+  String get g04_submitting;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Opens {time}'**
+  String g04_opens(String time);
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Open until {time}'**
+  String g04_open_until(String time);
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Starts {time}'**
+  String g04_starts(String time);
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in opens 30 minutes before the start.'**
+  String get g04_before_body;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Here already? Check in so the organiser knows.'**
+  String get g04_open_body;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re checked in'**
+  String get g04_checked_in;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in at {time}'**
+  String g04_checked_in_at(String time);
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in is closed'**
+  String get g04_closed;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in ran until {time}. The organiser can still mark you as attended.'**
+  String g04_closed_body(String time);
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'You\'re not on the roster'**
+  String get g04_not_eligible;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Only confirmed players can check in. Players on the waitlist can\'t.'**
+  String get g04_not_eligible_body;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'This was cancelled'**
+  String get g04_cancelled;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load check-in'**
+  String get g04_load_failed;
+
+  /// KAN-998 G-04 check-in screen.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t check in. Try again.'**
+  String get g04_failed;
 }
 
 class _AppLocalizationsDelegate

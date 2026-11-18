@@ -7,6 +7,8 @@ export 'core/offline/cached_read.dart';
 export 'core/offline/game_codec.dart';
 export 'core/analytics/analytics_helpers.dart';
 export 'features/app_boot/providers.dart';
+export 'features/attendance/data/attendance_repository.dart';
+export 'features/attendance/presentation/check_in_controller.dart';
 export 'features/app_boot/schema_guard.dart';
 export 'features/app_boot/min_build/min_build_providers.dart';
 export 'features/app_boot/min_build/min_build_repository.dart';

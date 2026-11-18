@@ -18,7 +18,7 @@ abstract final class PlayTiming {
   /// Simulated latency of a mock fetch/search call.
   static const Duration mockLatencyMedium = Duration(milliseconds: 300);
 
-  /// Simulated latency of a mock write (accept, decline, send, check-in).
+  /// Simulated latency of a mock write (accept, decline, send).
   static const Duration mockLatencyLong = Duration(milliseconds: 500);
 
   /// Window in which a second back press exits the app.

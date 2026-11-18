@@ -278,7 +278,7 @@ void main() {
             'entity_type': 'game',
             'entity_id': 'g1',
           }),
-          RoutePaths.gameDetail('g1'),
+          RoutePaths.checkIn('g1'),
         );
         expect(
           r('activity.result_ready', {
@@ -287,6 +287,17 @@ void main() {
           }),
           RoutePaths.meetupDetail('m1'),
         );
+        // KAN-998: both check-in notices open the check-in screen; the
+        // event id falls back to entity_id.
+        expect(
+          r('activity.checkin_closing', {'event_id': 'e1', 'entity_id': 'g1'}),
+          RoutePaths.checkIn('e1'),
+        );
+        expect(
+          r('activity.checkin_closing', {'entity_id': 'g1'}),
+          RoutePaths.checkIn('g1'),
+        );
+        expect(r('activity.checkin_closing', {}), isNull);
         expect(r('activity.summary', {}), isNull);
         expect(r('security.new_signin', {'entity_id': 'x'}), isNull);
         expect(r('message.received', {'entity_id': 'x'}), isNull);

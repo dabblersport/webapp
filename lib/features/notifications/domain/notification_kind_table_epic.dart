@@ -180,7 +180,7 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.checkin_open',
     _calendar,
-    _R.activity,
+    _R.checkIn,
     _G.activities,
     needsAction: true,
     ctas: [NotificationCta(_A.checkIn, filled: true)],
@@ -188,7 +188,7 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.checkin_closing',
     _calendar,
-    _R.activity,
+    _R.checkIn,
     _G.activities,
     needsAction: true,
     ctas: [NotificationCta(_A.checkIn, filled: true)],

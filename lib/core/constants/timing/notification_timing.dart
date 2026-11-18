@@ -13,6 +13,11 @@ abstract final class NotificationTiming {
   /// "Check-in closes soon" is sent this long before it closes.
   static const Duration checkInClosingWarning = Duration(minutes: 15);
 
+  /// KAN-998: the check-in screen re-reads the server when its window opens
+  /// or closes within this horizon, a moment after the edge.
+  static const Duration checkInEdgeHorizon = Duration(hours: 1);
+  static const Duration checkInEdgeGrace = Duration(seconds: 1);
+
   /// The 2h reminder rung (the 09:00 rung only runs when earlier than this).
   static const Duration reminderShort = Duration(hours: 2);
 

@@ -10424,4 +10424,66 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get showup_rate_rule =>
       'Your rate is the share of your confirmed games and meetups you attended. Cancelled events, excused withdrawals and events that did not happen are not counted. It shows after 3 confirmed games or meetups.';
+
+  @override
+  String get g04_title => 'Check in';
+
+  @override
+  String get g04_cta => 'Check in';
+
+  @override
+  String get g04_submitting => 'Checking in…';
+
+  @override
+  String g04_opens(String time) {
+    return 'Opens $time';
+  }
+
+  @override
+  String g04_open_until(String time) {
+    return 'Open until $time';
+  }
+
+  @override
+  String g04_starts(String time) {
+    return 'Starts $time';
+  }
+
+  @override
+  String get g04_before_body => 'Check-in opens 30 minutes before the start.';
+
+  @override
+  String get g04_open_body => 'Here already? Check in so the organiser knows.';
+
+  @override
+  String get g04_checked_in => 'You\'re checked in';
+
+  @override
+  String g04_checked_in_at(String time) {
+    return 'Checked in at $time';
+  }
+
+  @override
+  String get g04_closed => 'Check-in is closed';
+
+  @override
+  String g04_closed_body(String time) {
+    return 'Check-in ran until $time. The organiser can still mark you as attended.';
+  }
+
+  @override
+  String get g04_not_eligible => 'You\'re not on the roster';
+
+  @override
+  String get g04_not_eligible_body =>
+      'Only confirmed players can check in. Players on the waitlist can\'t.';
+
+  @override
+  String get g04_cancelled => 'This was cancelled';
+
+  @override
+  String get g04_load_failed => 'Couldn\'t load check-in';
+
+  @override
+  String get g04_failed => 'Couldn\'t check in. Try again.';
 }
