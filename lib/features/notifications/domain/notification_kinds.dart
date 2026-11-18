@@ -403,6 +403,12 @@ abstract final class NotificationKinds {
       case NotificationRouteKind.checkIn:
         final id = s('event_id') ?? s('entity_id');
         return id == null ? null : RoutePaths.checkIn(id, title: s('title'));
+      case NotificationRouteKind.attendanceList:
+        final id = s('event_id') ?? s('entity_id');
+        return id == null ? null : RoutePaths.attendance(id, title: s('title'));
+      case NotificationRouteKind.noShow:
+        final id = s('event_id') ?? s('entity_id');
+        return id == null ? null : RoutePaths.noShow(id, title: s('title'));
     }
   }
 

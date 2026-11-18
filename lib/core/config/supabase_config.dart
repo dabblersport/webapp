@@ -398,6 +398,16 @@ class SupabaseConfig {
   static const String rpcAttendanceMyFn = 'rpc_attendance_my';
   static const String rpcAttendanceCheckInFn = 'rpc_attendance_check_in';
 
+  /// KAN-999 (G-05, G-06): the organiser's list, correction, finalize and
+  /// review decision; the player's review request.
+  static const String rpcAttendanceListFn = 'rpc_attendance_list';
+  static const String rpcAttendanceCorrectFn = 'rpc_attendance_correct';
+  static const String rpcAttendanceFinalizeFn = 'rpc_attendance_finalize';
+  static const String rpcAttendanceRequestReviewFn =
+      'rpc_attendance_request_review';
+  static const String rpcAttendanceDecideReviewFn =
+      'rpc_attendance_decide_review';
+
   /// KAN-983: the 09:00 "confirm your attendance" answer (`going` /
   /// `not_going`), also the push's Going / Not going actions (KAN-992).
   static const String rpcAnswerMeetupAttendance =

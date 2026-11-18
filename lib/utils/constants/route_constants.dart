@@ -120,6 +120,18 @@ class RoutePaths {
     ).toString();
   }
 
+  /// KAN-999 (G-05): the organiser's attendance list of one event.
+  static String attendance(String eventId, {String? title}) => Uri(
+    path: '/attendance/$eventId',
+    queryParameters: title == null || title.isEmpty ? null : {'title': title},
+  ).toString();
+
+  /// KAN-999 (G-06): the player's no-show and review state for one event.
+  static String noShow(String eventId, {String? title}) => Uri(
+    path: '/no-show/$eventId',
+    queryParameters: title == null || title.isEmpty ? null : {'title': title},
+  ).toString();
+
   // News detail (root-level, no shell)
   static String newsDetail(String newsId) => '/news/$newsId';
 
@@ -203,6 +215,8 @@ class RouteNames {
   static const String meetupManage = 'meetup-manage';
   static const String meetupEdit = 'meetup-edit';
   static const String checkIn = 'check-in';
+  static const String attendance = 'attendance';
+  static const String noShow = 'no-show';
 
   // Game Creation Routes
   static const String locationIntro = 'location-intro';

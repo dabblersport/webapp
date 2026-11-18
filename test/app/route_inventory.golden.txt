@@ -36,6 +36,8 @@
 /meetups/:meetupId/manage	meetup-manage	GoRoute
 /meetups/:meetupId/edit	meetup-edit	GoRoute
 /check-in/:eventId	check-in	GoRoute
+/attendance/:eventId	attendance	GoRoute
+/no-show/:eventId	no-show	GoRoute
 /news/:newsId	news-detail	GoRoute
 /sports/venues/:venueId	venue-detail	GoRoute
 /favourites	favourites	GoRoute

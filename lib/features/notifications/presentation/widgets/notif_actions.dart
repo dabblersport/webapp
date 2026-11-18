@@ -4,11 +4,15 @@
 // [NotifActionStatus.unavailable] and are marked `WAVE-2` for wiring.
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import 'package:dabbler/app/app_router.dart' show rootNavigatorKey;
 import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/attendance/data/attendance_review_repository.dart'
+    show attendanceReviewRepositoryProvider;
 import 'package:dabbler/features/messaging/presentation/providers/messaging_providers.dart'
     show messagingRepositoryProvider;
 import 'package:dabbler/features/notifications/data/models/notification_settings.dart';
@@ -18,6 +22,7 @@ import 'package:dabbler/features/notifications/presentation/providers/notificati
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider, profileIdByUserIdProvider;
+import 'package:dabbler/utils/constants/route_constants.dart';
 
 /// How an action ended.
 enum NotifActionStatus {
@@ -105,10 +110,13 @@ String? notifActorUserId(AppNotification n) {
 
 /// The live handler: existing RPCs and tables (`SupabaseConfig`).
 class SupabaseNotifActionHandler implements NotifActionHandler {
-  SupabaseNotifActionHandler(this._ref, this._db);
+  SupabaseNotifActionHandler(this._ref, this._db, {required this.open});
 
   final Ref _ref;
   final SupabaseClient _db;
+
+  /// Pushes a route (the app's router; tests record it).
+  final void Function(String location) open;
 
   /// Server codes that mean "already done": the RPCs' own words.
   static const Set<String> alreadyCodes = <String>{
@@ -153,6 +161,15 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
       ),
       NotificationActionId.going => _guard(() => _rsvp(n, 'going')),
       NotificationActionId.notGoing => _guard(() => _rsvp(n, 'cancel')),
+      // KAN-999 (G-06): the note sheet lives on the no-show screen.
+      NotificationActionId.requestReview => Future<NotifActionOutcome>.value(
+        _openNoShow(n),
+      ),
+      NotificationActionId.accept || NotificationActionId.keepDecision
+          when kind == 'activity.review_requested' =>
+        _guard(
+          () => _decideReview(n, accept: action == NotificationActionId.accept),
+        ),
       // WAVE-2: no backend yet — declining a game invite, giving up a
       // waitlist place (W1-B6 sheet), attendance, results, ratings, reviews
       // and the security answers.
@@ -221,6 +238,37 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
         : NotifActionOutcome.success;
   }
 
+  NotifActionOutcome _openNoShow(AppNotification n) {
+    final event = _s(n.payload, 'event_id');
+    if (event == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    open(RoutePaths.noShow(event, title: _s(n.payload, 'title')));
+    return NotifActionOutcome.success;
+  }
+
+  /// The organiser accepts the correction (attended) or keeps the no-show.
+  /// The server names the player in `player_user_id`.
+  Future<NotifActionOutcome> _decideReview(
+    AppNotification n, {
+    required bool accept,
+  }) async {
+    final event = _s(n.payload, 'event_id');
+    final player = _s(n.payload, 'player_user_id');
+    if (event == null || player == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    final r = await _ref
+        .read(attendanceReviewRepositoryProvider)
+        .decide(event, player, accept: accept);
+    return r.fold(
+      (f) => f.code == 'no_open_review'
+          ? NotifActionOutcome.already
+          : NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+      (_) => NotifActionOutcome.success,
+    );
+  }
+
   Future<NotifActionOutcome> _rsvp(AppNotification n, String action) async {
     final meetup = notifEntityId(n, 'meetup_id');
     if (meetup == null) {
@@ -278,5 +326,12 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
 
 /// The handler the rows use (tests override it with a fake).
 final notifActionHandlerProvider = Provider<NotifActionHandler>(
-  (ref) => SupabaseNotifActionHandler(ref, Supabase.instance.client),
+  (ref) => SupabaseNotifActionHandler(
+    ref,
+    Supabase.instance.client,
+    open: (location) {
+      final ctx = rootNavigatorKey.currentContext;
+      if (ctx != null) GoRouter.of(ctx).push(location);
+    },
+  ),
 );

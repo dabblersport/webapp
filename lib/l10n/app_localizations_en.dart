@@ -10486,4 +10486,233 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get g04_failed => 'Couldn\'t check in. Try again.';
+
+  @override
+  String get g05_title => 'Attendance';
+
+  @override
+  String get g05_entry_note => 'Check-ins, corrections and reviews';
+
+  @override
+  String g05_during_window(String time) {
+    return 'Check-in is open until $time. You can correct attendance after it closes.';
+  }
+
+  @override
+  String get g05_after_window =>
+      'Check-in closed. Tap a player to correct their attendance, then finalize.';
+
+  @override
+  String get g05_finalized =>
+      'Attendance is final. Players marked as no-show have 48h to ask for a review.';
+
+  @override
+  String get g05_auto_finalized =>
+      'Finalized automatically 24h after the end. Check-ins count as recorded; nobody was marked as no-show.';
+
+  @override
+  String get g05_status_checked_in => 'Checked in';
+
+  @override
+  String get g05_status_not => 'Not checked in';
+
+  @override
+  String get g05_status_corrected_attended => 'Corrected: attended';
+
+  @override
+  String get g05_status_corrected_no_show => 'Corrected: no-show';
+
+  @override
+  String get g05_status_attended => 'Attended';
+
+  @override
+  String get g05_status_pending_review => 'Pending review';
+
+  @override
+  String get g05_status_review_requested => 'Review requested';
+
+  @override
+  String get g05_status_no_show_confirmed => 'No-show confirmed';
+
+  @override
+  String get g05_status_not_recorded => 'Not recorded';
+
+  @override
+  String g05_reason_line(String reason) {
+    return 'Reason: $reason';
+  }
+
+  @override
+  String get g05_finalize => 'Finalize';
+
+  @override
+  String get g05_finalized_toast => 'Attendance finalized';
+
+  @override
+  String get g05_edit_title => 'Change attendance';
+
+  @override
+  String get g05_mark_attended => 'Mark attended';
+
+  @override
+  String get g05_mark_no_show => 'Mark no-show';
+
+  @override
+  String get g05_reason_label => 'Reason';
+
+  @override
+  String get g05_reason_hint => 'Shown to the player';
+
+  @override
+  String get g05_reason_required => 'Add a reason';
+
+  @override
+  String get g05_save => 'Save';
+
+  @override
+  String get g05_saved => 'Attendance updated';
+
+  @override
+  String get g05_failed => 'Couldn\'t update attendance. Try again.';
+
+  @override
+  String get g05_load_failed => 'Couldn\'t load attendance';
+
+  @override
+  String get g05_not_organiser => 'Only the organiser can see attendance';
+
+  @override
+  String get g05_empty => 'No players on the roster';
+
+  @override
+  String get g05_err_window_not_closed =>
+      'Check-in is still open. Try again after it closes.';
+
+  @override
+  String get g05_err_finalized => 'Attendance is already final.';
+
+  @override
+  String get g05_err_not_participant =>
+      'This player is no longer on the roster.';
+
+  @override
+  String get g05_err_cancelled => 'This was cancelled.';
+
+  @override
+  String get g05_unknown_player => 'Player';
+
+  @override
+  String get g06_review_verb => 'asked to review their attendance';
+
+  @override
+  String get g06_note_label => 'Note';
+
+  @override
+  String get g06_accept => 'Accept correction';
+
+  @override
+  String get g06_keep => 'Keep';
+
+  @override
+  String g06_review_due(int hours) {
+    return 'Decide within ${hours}h, or it\'s accepted';
+  }
+
+  @override
+  String g06_accepted_result(String name) {
+    return 'Marked as attended. $name was told.';
+  }
+
+  @override
+  String g06_kept_result(String name) {
+    return 'No-show kept. $name was told.';
+  }
+
+  @override
+  String get g06_sending => 'Sending…';
+
+  @override
+  String get g06_marked => 'Marked as not attended';
+
+  @override
+  String g06_confirms_in(int hours) {
+    return 'Confirms in ${hours}h unless you ask for a review';
+  }
+
+  @override
+  String get g06_request => 'Request review';
+
+  @override
+  String get g06_sheet_title => 'Request a review';
+
+  @override
+  String get g06_sheet_body =>
+      'The organiser sees your request and decides. If they don\'t answer in 48h, it\'s accepted.';
+
+  @override
+  String get g06_note_optional => 'Note (optional)';
+
+  @override
+  String get g06_send => 'Send request';
+
+  @override
+  String get g06_requested => 'Review requested';
+
+  @override
+  String g06_requested_body(int hours) {
+    return 'The organiser decides within ${hours}h. If they don\'t, it\'s accepted.';
+  }
+
+  @override
+  String get g06_accepted => 'Counted as attended';
+
+  @override
+  String get g06_accepted_body => 'The organiser accepted your review.';
+
+  @override
+  String get g06_expired_body =>
+      'The organiser didn\'t answer in 48h, so it counts as attended.';
+
+  @override
+  String get g06_kept => 'No-show kept';
+
+  @override
+  String get g06_kept_body => 'The organiser reviewed it and kept the no-show.';
+
+  @override
+  String get g06_confirmed => 'No-show confirmed';
+
+  @override
+  String get g06_confirmed_body => '48 hours passed without a review request.';
+
+  @override
+  String get g06_not_recorded => 'Not recorded';
+
+  @override
+  String get g06_not_recorded_body =>
+      'Attendance was finalized automatically. This doesn\'t count for or against you.';
+
+  @override
+  String get g06_none => 'Nothing to review';
+
+  @override
+  String get g06_failed => 'Couldn\'t send the request. Try again.';
+
+  @override
+  String get g06_err_closed => 'The 48 hours to ask for a review have passed.';
+
+  @override
+  String get g06_err_no_pending => 'There\'s no no-show to review.';
+
+  @override
+  String g06_organiser_reason(String reason) {
+    return 'Organiser\'s reason: $reason';
+  }
+
+  @override
+  String get g05_err_did_not_happen =>
+      'This didn\'t take place, so there\'s no attendance to finalize.';
+
+  @override
+  String get g06_err_already_decided => 'This review was already decided.';
 }

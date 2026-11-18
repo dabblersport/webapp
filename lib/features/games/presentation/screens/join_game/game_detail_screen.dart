@@ -1,6 +1,7 @@
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
+import 'package:dabbler/features/attendance/presentation/attendance_list_entry.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +18,7 @@ import 'package:dabbler/features/games/presentation/providers/nearby_games_provi
 import 'package:dabbler/features/games/presentation/screens/join_game/game_detail_content.dart';
 import 'package:dabbler/features/games/data/repositories/game_host_repository.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_host_actions.dart';
+import 'package:dabbler/features/games/presentation/screens/join_game/game_join_labels.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_series_widgets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_entry.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -213,6 +215,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
       children: [
         gameHeadcount(state),
         ?gameCheckInEntry(game, show: ctrl.isOnRoster && !ctrl.isHost),
+        AttendanceListEntry(eventId: game.id, show: ctrl.isHost),
         // KAN-516: the one flag-gated game-chat entry; absent while any
         // messaging flag is false.
         GameChatEntry(
@@ -393,9 +396,9 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     } else {
       cta = DabblerButton(
         label: state.isActing
-            ? _joiningLabel(game.joinPolicy)
-            : _joinLabel(game),
-        icon: state.isActing ? null : _joinIcon(game.joinPolicy),
+            ? gameJoiningLabel(game.joinPolicy)
+            : gameJoinLabel(game),
+        icon: state.isActing ? null : gameJoinIcon(game.joinPolicy),
         size: DabblerButtonSize.full,
         fullWidth: true,
         loading: state.isActing,
@@ -404,24 +407,6 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     }
     return DabblerActionBar(price: gameEntryLabel(game), primary: cta);
   }
-
-  String _joinLabel(GameView game) {
-    if (game.isFull && game.allowsWaitlist) return 'Join waitlist';
-    switch (game.joinPolicy) {
-      case 'request':
-        return 'Request to join';
-      case 'invite':
-        return 'Join (invited)';
-      default:
-        return 'Join game';
-    }
-  }
-
-  String _joiningLabel(String policy) =>
-      policy == 'request' ? 'Requesting…' : 'Joining…';
-
-  String _joinIcon(String policy) =>
-      policy == 'request' ? 'send' : 'tick-circle';
 
   Future<void> _openEditGame(String gameId, GameViewController ctrl) async {
     final game = ref.read(gameViewControllerProvider(widget.gameId)).game;

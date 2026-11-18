@@ -18048,6 +18048,414 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t check in. Try again.'**
   String get g04_failed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance'**
+  String get g05_title;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-ins, corrections and reviews'**
+  String get g05_entry_note;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in is open until {time}. You can correct attendance after it closes.'**
+  String g05_during_window(String time);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in closed. Tap a player to correct their attendance, then finalize.'**
+  String get g05_after_window;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance is final. Players marked as no-show have 48h to ask for a review.'**
+  String get g05_finalized;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalized automatically 24h after the end. Check-ins count as recorded; nobody was marked as no-show.'**
+  String get g05_auto_finalized;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in'**
+  String get g05_status_checked_in;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Not checked in'**
+  String get g05_status_not;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Corrected: attended'**
+  String get g05_status_corrected_attended;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Corrected: no-show'**
+  String get g05_status_corrected_no_show;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attended'**
+  String get g05_status_attended;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Pending review'**
+  String get g05_status_pending_review;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review requested'**
+  String get g05_status_review_requested;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'No-show confirmed'**
+  String get g05_status_no_show_confirmed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded'**
+  String get g05_status_not_recorded;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason: {reason}'**
+  String g05_reason_line(String reason);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Finalize'**
+  String get g05_finalize;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance finalized'**
+  String get g05_finalized_toast;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Change attendance'**
+  String get g05_edit_title;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark attended'**
+  String get g05_mark_attended;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Mark no-show'**
+  String get g05_mark_no_show;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason'**
+  String get g05_reason_label;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Shown to the player'**
+  String get g05_reason_hint;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Add a reason'**
+  String get g05_reason_required;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get g05_save;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance updated'**
+  String get g05_saved;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update attendance. Try again.'**
+  String get g05_failed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load attendance'**
+  String get g05_load_failed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Only the organiser can see attendance'**
+  String get g05_not_organiser;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'No players on the roster'**
+  String get g05_empty;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in is still open. Try again after it closes.'**
+  String get g05_err_window_not_closed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance is already final.'**
+  String get g05_err_finalized;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'This player is no longer on the roster.'**
+  String get g05_err_not_participant;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'This was cancelled.'**
+  String get g05_err_cancelled;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Player'**
+  String get g05_unknown_player;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'asked to review their attendance'**
+  String get g06_review_verb;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Note'**
+  String get g06_note_label;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Accept correction'**
+  String get g06_accept;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get g06_keep;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Decide within {hours}h, or it\'s accepted'**
+  String g06_review_due(int hours);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as attended. {name} was told.'**
+  String g06_accepted_result(String name);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'No-show kept. {name} was told.'**
+  String g06_kept_result(String name);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get g06_sending;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Marked as not attended'**
+  String get g06_marked;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirms in {hours}h unless you ask for a review'**
+  String g06_confirms_in(int hours);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Request review'**
+  String get g06_request;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Request a review'**
+  String get g06_sheet_title;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser sees your request and decides. If they don\'t answer in 48h, it\'s accepted.'**
+  String get g06_sheet_body;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Note (optional)'**
+  String get g06_note_optional;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Send request'**
+  String get g06_send;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Review requested'**
+  String get g06_requested;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser decides within {hours}h. If they don\'t, it\'s accepted.'**
+  String g06_requested_body(int hours);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Counted as attended'**
+  String get g06_accepted;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser accepted your review.'**
+  String get g06_accepted_body;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser didn\'t answer in 48h, so it counts as attended.'**
+  String get g06_expired_body;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'No-show kept'**
+  String get g06_kept;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'The organiser reviewed it and kept the no-show.'**
+  String get g06_kept_body;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'No-show confirmed'**
+  String get g06_confirmed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'48 hours passed without a review request.'**
+  String get g06_confirmed_body;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Not recorded'**
+  String get g06_not_recorded;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Attendance was finalized automatically. This doesn\'t count for or against you.'**
+  String get g06_not_recorded_body;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Nothing to review'**
+  String get g06_none;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send the request. Try again.'**
+  String get g06_failed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'The 48 hours to ask for a review have passed.'**
+  String get g06_err_closed;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'There\'s no no-show to review.'**
+  String get g06_err_no_pending;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'Organiser\'s reason: {reason}'**
+  String g06_organiser_reason(String reason);
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'This didn\'t take place, so there\'s no attendance to finalize.'**
+  String get g05_err_did_not_happen;
+
+  /// KAN-999 G-05/G-06 attendance and no-show review.
+  ///
+  /// In en, this message translates to:
+  /// **'This review was already decided.'**
+  String get g06_err_already_decided;
 }
 
 class _AppLocalizationsDelegate

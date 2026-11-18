@@ -10599,4 +10599,232 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get g04_failed => 'تعذّر تسجيل الحضور. حاول مرة أخرى.';
+
+  @override
+  String get g05_title => 'الحضور';
+
+  @override
+  String get g05_entry_note => 'تسجيلات الحضور والتصحيحات والمراجعات';
+
+  @override
+  String g05_during_window(String time) {
+    return 'تسجيل الحضور مفتوح حتى $time. يمكنك تصحيح الحضور بعد إغلاقه.';
+  }
+
+  @override
+  String get g05_after_window =>
+      'أُغلق تسجيل الحضور. اضغط على لاعب لتصحيح حضوره، ثم اعتمد القائمة.';
+
+  @override
+  String get g05_finalized =>
+      'الحضور نهائي. أمام من سُجّلوا غائبين 48 ساعة لطلب مراجعة.';
+
+  @override
+  String get g05_auto_finalized =>
+      'اعتُمد تلقائيًا بعد 24 ساعة من النهاية. احتُسبت تسجيلات الحضور كما هي، ولم يُسجَّل أحد غائبًا.';
+
+  @override
+  String get g05_status_checked_in => 'سجّل حضوره';
+
+  @override
+  String get g05_status_not => 'لم يسجّل حضوره';
+
+  @override
+  String get g05_status_corrected_attended => 'مُصحَّح: حاضر';
+
+  @override
+  String get g05_status_corrected_no_show => 'مُصحَّح: غائب';
+
+  @override
+  String get g05_status_attended => 'حضر';
+
+  @override
+  String get g05_status_pending_review => 'بانتظار المراجعة';
+
+  @override
+  String get g05_status_review_requested => 'طُلبت مراجعة';
+
+  @override
+  String get g05_status_no_show_confirmed => 'تأكّد الغياب';
+
+  @override
+  String get g05_status_not_recorded => 'غير مسجّل';
+
+  @override
+  String g05_reason_line(String reason) {
+    return 'السبب: $reason';
+  }
+
+  @override
+  String get g05_finalize => 'اعتماد';
+
+  @override
+  String get g05_finalized_toast => 'اعتُمد الحضور';
+
+  @override
+  String get g05_edit_title => 'تغيير الحضور';
+
+  @override
+  String get g05_mark_attended => 'تسجيل كحاضر';
+
+  @override
+  String get g05_mark_no_show => 'تسجيل كغائب';
+
+  @override
+  String get g05_reason_label => 'السبب';
+
+  @override
+  String get g05_reason_hint => 'يظهر للّاعب';
+
+  @override
+  String get g05_reason_required => 'أضف سببًا';
+
+  @override
+  String get g05_save => 'حفظ';
+
+  @override
+  String get g05_saved => 'تم تحديث الحضور';
+
+  @override
+  String get g05_failed => 'تعذّر تحديث الحضور. حاول مرة أخرى.';
+
+  @override
+  String get g05_load_failed => 'تعذّر تحميل الحضور';
+
+  @override
+  String get g05_not_organiser => 'يمكن للمنظّم فقط رؤية الحضور';
+
+  @override
+  String get g05_empty => 'لا يوجد لاعبون في القائمة';
+
+  @override
+  String get g05_err_window_not_closed =>
+      'تسجيل الحضور ما زال مفتوحًا. حاول بعد إغلاقه.';
+
+  @override
+  String get g05_err_finalized => 'الحضور معتمد بالفعل.';
+
+  @override
+  String get g05_err_not_participant => 'لم يعد هذا اللاعب ضمن القائمة.';
+
+  @override
+  String get g05_err_cancelled => 'تم إلغاء هذا.';
+
+  @override
+  String get g05_unknown_player => 'لاعب';
+
+  @override
+  String get g06_review_verb => 'طلب مراجعة حضوره';
+
+  @override
+  String get g06_note_label => 'ملاحظة';
+
+  @override
+  String get g06_accept => 'قبول التصحيح';
+
+  @override
+  String get g06_keep => 'إبقاء';
+
+  @override
+  String g06_review_due(int hours) {
+    return 'قرّر خلال $hours ساعة، وإلا تُقبل المراجعة';
+  }
+
+  @override
+  String g06_accepted_result(String name) {
+    return 'سُجّل حاضرًا. تم إبلاغ $name.';
+  }
+
+  @override
+  String g06_kept_result(String name) {
+    return 'بقي الغياب. تم إبلاغ $name.';
+  }
+
+  @override
+  String get g06_sending => 'جارٍ الإرسال…';
+
+  @override
+  String get g06_marked => 'سُجّلت غائبًا';
+
+  @override
+  String g06_confirms_in(int hours) {
+    return 'يتأكّد خلال $hours ساعة ما لم تطلب مراجعة';
+  }
+
+  @override
+  String get g06_request => 'طلب مراجعة';
+
+  @override
+  String get g06_sheet_title => 'طلب مراجعة';
+
+  @override
+  String get g06_sheet_body =>
+      'سيرى المنظّم طلبك ويقرّر. إن لم يرد خلال 48 ساعة، يُقبل الطلب.';
+
+  @override
+  String get g06_note_optional => 'ملاحظة (اختيارية)';
+
+  @override
+  String get g06_send => 'إرسال الطلب';
+
+  @override
+  String get g06_requested => 'طُلبت المراجعة';
+
+  @override
+  String g06_requested_body(int hours) {
+    return 'يقرّر المنظّم خلال $hours ساعة، وإلا يُقبل الطلب.';
+  }
+
+  @override
+  String get g06_accepted => 'احتُسبت حاضرًا';
+
+  @override
+  String get g06_accepted_body => 'قبل المنظّم طلب المراجعة.';
+
+  @override
+  String get g06_expired_body =>
+      'لم يرد المنظّم خلال 48 ساعة، فاحتُسبت حاضرًا.';
+
+  @override
+  String get g06_kept => 'بقي الغياب';
+
+  @override
+  String get g06_kept_body => 'راجع المنظّم الطلب وأبقى الغياب.';
+
+  @override
+  String get g06_confirmed => 'تأكّد الغياب';
+
+  @override
+  String get g06_confirmed_body => 'مرّت 48 ساعة دون طلب مراجعة.';
+
+  @override
+  String get g06_not_recorded => 'غير مسجّل';
+
+  @override
+  String get g06_not_recorded_body =>
+      'اعتُمد الحضور تلقائيًا، ولا يُحتسب لك أو عليك.';
+
+  @override
+  String get g06_none => 'لا يوجد ما تتم مراجعته';
+
+  @override
+  String get g06_failed => 'تعذّر إرسال الطلب. حاول مرة أخرى.';
+
+  @override
+  String get g06_err_closed => 'انتهت مهلة الـ48 ساعة لطلب المراجعة.';
+
+  @override
+  String get g06_err_no_pending => 'لا يوجد غياب لمراجعته.';
+
+  @override
+  String g06_organiser_reason(String reason) {
+    return 'سبب المنظّم: $reason';
+  }
+
+  @override
+  String get g05_err_did_not_happen =>
+      'لم يُقَم هذا النشاط، فلا يوجد حضور لاعتماده.';
+
+  @override
+  String get g06_err_already_decided => 'تم البتّ في هذه المراجعة مسبقًا.';
 }

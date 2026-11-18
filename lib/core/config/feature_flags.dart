@@ -145,6 +145,10 @@ class FeatureFlags {
   /// and meetup details. Off hides the entries and the route.
   static const bool playerCheckIn = true;
 
+  /// KAN-999 (G-05, G-06): the organiser's attendance list and the no-show
+  /// review screens, and their entries. Off hides the entries and routes.
+  static const bool organiserAttendance = true;
+
   // ============================================================================
   // SPORT CONFIGURATION
   // ============================================================================

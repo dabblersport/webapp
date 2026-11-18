@@ -208,7 +208,7 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.no_show_pending',
     _calendar,
-    _R.activity,
+    _R.noShow,
     _G.activities,
     needsAction: true,
     ctas: [NotificationCta(_A.requestReview)],
@@ -216,7 +216,7 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.review_requested',
     _calendar,
-    _R.activity,
+    _R.attendanceList,
     _G.activities,
     needsAction: true,
     ctas: [
@@ -227,19 +227,19 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'activity.review_accepted',
     _calendar,
-    _R.activity,
+    _R.noShow,
     _G.activities,
   ),
   NotificationKindClient(
     'activity.review_kept',
     _calendar,
-    _R.activity,
+    _R.noShow,
     _G.activities,
   ),
   NotificationKindClient(
     'activity.no_show_confirmed',
     _calendar,
-    _R.activity,
+    _R.noShow,
     _G.activities,
   ),
   NotificationKindClient(

@@ -85,6 +85,13 @@ enum NotificationRouteKind {
 
   /// KAN-998: the check-in notices open the G-04 check-in screen.
   checkIn,
+
+  /// KAN-999: a review request opens the organiser's attendance list.
+  attendanceList,
+
+  /// KAN-999: the no-show and review outcome notices open the player's
+  /// no-show screen.
+  noShow,
 }
 
 /// A row action. The first four are the live CTAs (they open the row); the

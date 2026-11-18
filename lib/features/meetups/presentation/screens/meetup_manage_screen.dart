@@ -1,4 +1,5 @@
 import 'package:dabbler/core/utils/bidi_isolate.dart';
+import 'package:dabbler/features/attendance/presentation/attendance_list_entry.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -232,6 +233,7 @@ class _MeetupManageScreenState extends ConsumerState<MeetupManageScreen> {
               section(l.meetups_section_pending, pending, true),
               section(l.meetups_section_going, going, false),
               section(l.meetups_section_interested, interested, false),
+              AttendanceListEntry(eventId: widget.meetupId),
               const DabblerGap.v(DabblerSpacing.space6),
               DabblerButton(
                 label: l.meetups_edit,

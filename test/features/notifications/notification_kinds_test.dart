@@ -298,6 +298,22 @@ void main() {
           RoutePaths.checkIn('g1'),
         );
         expect(r('activity.checkin_closing', {}), isNull);
+        // KAN-999: a review request opens the organiser's list; the no-show
+        // and review outcomes open the player's no-show screen.
+        expect(
+          r('activity.review_requested', {'event_id': 'e1', 'title': 'Padel'}),
+          RoutePaths.attendance('e1', title: 'Padel'),
+        );
+        for (final k in <String>[
+          'activity.no_show_pending',
+          'activity.review_accepted',
+          'activity.review_kept',
+          'activity.no_show_confirmed',
+        ]) {
+          expect(r(k, {'event_id': 'e1'}), RoutePaths.noShow('e1'));
+          expect(r(k, {'entity_id': 'g1'}), RoutePaths.noShow('g1'));
+        }
+        expect(r('activity.review_requested', {}), isNull);
         expect(r('activity.summary', {}), isNull);
         expect(r('security.new_signin', {'entity_id': 'x'}), isNull);
         expect(r('message.received', {'entity_id': 'x'}), isNull);
