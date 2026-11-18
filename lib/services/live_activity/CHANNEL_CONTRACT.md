@@ -36,6 +36,7 @@ Standard message codec. All keys are snake_case strings.
 | `organiser_action` | string? | `start` \| `confirm_end` (organiser only) |
 | `change` | string? | `time` \| `venue` (update only) |
 | `end_reason` | string? | `cancelled` `event_ended` `scheduled_time_ended` `left` `removed` `signed_out` `opted_out` `access_lost` |
+| `lang` | string? | `en` \| `ar`: the app's chosen language (SharedPreferences `mock_language`). The native views pick their strings and layout direction from it; absent, they follow the device language. Dart adds it to every local `start`, `update` and `end` content (and to the start `attributes`); the server will include it in its pushes (separate backend task). |
 
 ## Version rule
 
@@ -69,7 +70,7 @@ Each event is a map with `type`:
 |---|---|---|
 | `push_to_start_token` | `token` | `rpc_live_activity_register_push_to_start(installation_id, token)` |
 | `activity_token` | `event_id, activity_id, token` (`session_id` optional) | maps event_id to a session (below), then `rpc_live_activity_register(session_id, activity_id, token, null)` |
-| `activity_ended` | `event_id, activity_id?, reason: "user_dismissed"\|"system"\|"expired"` (`session_id` optional) | maps it, forgets the activity; `user_dismissed` is remembered (below) |
+| `activity_ended` | `event_id, activity_id?, reason: "user_dismissed"\|"system"\|"expired"` (`session_id` optional) | maps it, forgets the activity; `user_dismissed` is remembered (below). iOS: `system` when it ended without the app ending it; `expired` when it is dismissed after a server or system end (nothing after an app end); `user_dismissed` only when dismissed while still active. An app-initiated end sends nothing. |
 | `tap` | `event_id, action?: "open"\|"start"\|"confirm_end"` (`session_id` optional) | reserved for routing |
 
 Send `push_to_start_token` and each `activity_token` on every value and every rotation.

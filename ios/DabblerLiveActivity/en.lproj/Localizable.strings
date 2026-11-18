@@ -1,0 +1,25 @@
+/* KAN-1006: Live Activity text (English). Chip strings stay very short (G-17). */
+"la.title.game" = "Your game";
+"la.title.meetup" = "Your meet-up";
+"la.starts" = "Starts";
+"la.status.checkin_open" = "Check-in open";
+"la.status.checked_in" = "You're checked in";
+"la.status.starting_soon" = "Starting soon";
+"la.status.started" = "Started";
+"la.status.scheduled_until" = "Scheduled until";
+"la.status.under_way" = "Under way";
+"la.status.scheduled_ended" = "Scheduled time ended";
+"la.status.ended" = "It has ended";
+"la.status.cancelled" = "It was cancelled";
+"la.change.time" = "Time changed";
+"la.change.venue" = "Venue changed";
+"la.action.open" = "Open activity";
+"la.action.check_in" = "Check in";
+"la.action.start" = "Start";
+"la.action.confirm_end" = "Confirm end";
+"la.chip.check_in" = "Check in";
+"la.chip.checked_in" = "Checked in";
+"la.chip.live" = "Live";
+"la.chip.changed" = "Changed";
+"la.chip.ended" = "Ended";
+"la.chip.cancelled" = "Cancelled";

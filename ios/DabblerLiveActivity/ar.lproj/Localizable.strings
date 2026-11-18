@@ -1,0 +1,25 @@
+/* KAN-1006: نص النشاط المباشر (العربية). الصيغ القصيرة للشريحة حسب G-17. */
+"la.title.game" = "مباراتك";
+"la.title.meetup" = "لقاؤك";
+"la.starts" = "يبدأ";
+"la.status.checkin_open" = "تسجيل الحضور مفتوح";
+"la.status.checked_in" = "سجّلت حضورك";
+"la.status.starting_soon" = "يبدأ قريبًا";
+"la.status.started" = "بدأ";
+"la.status.scheduled_until" = "مقرر حتى";
+"la.status.under_way" = "جارٍ الآن";
+"la.status.scheduled_ended" = "انتهى الوقت المقرر";
+"la.status.ended" = "انتهى";
+"la.status.cancelled" = "أُلغي";
+"la.change.time" = "تغيّر الوقت";
+"la.change.venue" = "تغيّر المكان";
+"la.action.open" = "فتح النشاط";
+"la.action.check_in" = "تسجيل الحضور";
+"la.action.start" = "ابدأ";
+"la.action.confirm_end" = "تأكيد الانتهاء";
+"la.chip.check_in" = "تسجيل الحضور";
+"la.chip.checked_in" = "حاضر";
+"la.chip.live" = "جارٍ";
+"la.chip.changed" = "تغيّر";
+"la.chip.ended" = "انتهى";
+"la.chip.cancelled" = "أُلغي";

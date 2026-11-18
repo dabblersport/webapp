@@ -4,6 +4,7 @@
 import 'dart:io' show Platform;
 
 import 'package:flutter/services.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -27,6 +28,26 @@ class ChannelLiveActivityService implements LiveActivityService {
   final MethodChannel _methods;
   final EventChannel _events;
   Stream<LiveActivityEvent>? _stream;
+
+  /// The app's chosen language, the key the locale provider and the Android
+  /// half read (CHANNEL_CONTRACT.md `lang`). Null when none is chosen: the
+  /// native side then falls back to the device language.
+  static Future<String?> appLang() async {
+    try {
+      final v = (await SharedPreferences.getInstance()).getString(
+        'mock_language',
+      );
+      return (v == 'en' || v == 'ar') ? v : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// [map] with `lang` added when it has none and a language is chosen.
+  static Map<String, Object?> withLang(
+    Map<String, Object?> map,
+    String? lang,
+  ) => (lang == null || map.containsKey('lang')) ? map : {...map, 'lang': lang};
 
   Future<Result<T, Failure>> _call<T>(Future<T> Function() body) =>
       Result.guard(body, (e) {
@@ -53,10 +74,11 @@ class ChannelLiveActivityService implements LiveActivityService {
     required String sessionId,
     required LiveActivityContent content,
   }) => _call(() async {
+    final lang = await appLang();
     final m = await _methods.invokeMapMethod<Object?, Object?>('start', {
       'session_id': sessionId,
-      'attributes': content.attributes,
-      'content': content.raw,
+      'attributes': withLang(content.attributes, lang),
+      'content': withLang(content.raw, lang),
     });
     final started = LiveActivityStarted.fromMap(m);
     if (started == null) {
@@ -74,10 +96,11 @@ class ChannelLiveActivityService implements LiveActivityService {
     required String activityId,
     required LiveActivityContent content,
   }) => _call(() async {
+    final lang = await appLang();
     await _methods.invokeMethod<void>('update', {
       'session_id': sessionId,
       'activity_id': activityId,
-      'content': content.raw,
+      'content': withLang(content.raw, lang),
     });
     return const Unit();
   });
@@ -89,10 +112,11 @@ class ChannelLiveActivityService implements LiveActivityService {
     LiveActivityContent? content,
     DateTime? dismissalDate,
   }) => _call(() async {
+    final lang = content == null ? null : await appLang();
     await _methods.invokeMethod<void>('end', {
       'session_id': sessionId,
       'activity_id': activityId,
-      if (content != null) 'content': content.raw,
+      if (content != null) 'content': withLang(content.raw, lang),
       if (dismissalDate != null)
         'dismissal_date': dismissalDate.millisecondsSinceEpoch ~/ 1000,
     });

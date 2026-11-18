@@ -318,6 +318,11 @@ final class PushBridge {
       PlacesExperimentBridge.register(with: registrar)
     }
 
+    // KAN-1006: the Live Activity channel (pro.dabbler/live_activity).
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "LiveActivityPlugin") {
+      LiveActivityPlugin.register(with: registrar)
+    }
+
     // KAN-992: the push channel (badge, open chat, action titles, actions).
     PushBridge.shared.attach(messenger: engineBridge.applicationRegistrar.messenger())
 
