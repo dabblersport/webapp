@@ -149,6 +149,10 @@ class FeatureFlags {
   /// review screens, and their entries. Off hides the entries and routes.
   static const bool organiserAttendance = true;
 
+  /// KAN-1002 (W2-F5): the lifecycle card in the game and meetup details
+  /// (Start, Confirm end, Did not happen, the end-of-activity states).
+  static const bool eventLifecycle = true;
+
   // ============================================================================
   // SPORT CONFIGURATION
   // ============================================================================

@@ -10715,4 +10715,68 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get g06_err_already_decided => 'This review was already decided.';
+
+  @override
+  String lc_scheduled_until(String time) {
+    return 'Scheduled until $time';
+  }
+
+  @override
+  String lc_started_at(String time) {
+    return 'Started $time';
+  }
+
+  @override
+  String get lc_start => 'Start';
+
+  @override
+  String lc_awaiting(String time) {
+    return 'Scheduled to end $time';
+  }
+
+  @override
+  String get lc_awaiting_body_host =>
+      'Confirm the end, or mark it as did not happen.';
+
+  @override
+  String get lc_awaiting_body_guest =>
+      'Waiting for the organiser to confirm the end.';
+
+  @override
+  String get lc_confirm_end => 'Confirm end';
+
+  @override
+  String get lc_did_not_happen => 'Did not happen';
+
+  @override
+  String lc_confirmed(String time) {
+    return 'Ended $time';
+  }
+
+  @override
+  String get lc_time_ended => 'Scheduled time ended';
+
+  @override
+  String get lc_failed => 'Couldn\'t update. Try again.';
+
+  @override
+  String get lc_already_closed => 'This activity is already closed.';
+
+  @override
+  String get lc_not_started_yet =>
+      'You can start once the scheduled time begins.';
+
+  @override
+  String get lc_cancelled => 'This activity was cancelled';
+
+  @override
+  String lc_auto_close_at(String time) {
+    return 'Closes automatically at $time';
+  }
+
+  @override
+  String get lc_load_failed => 'Couldn\'t load the activity status.';
+
+  @override
+  String get lc_scheduled => 'Scheduled';
 }

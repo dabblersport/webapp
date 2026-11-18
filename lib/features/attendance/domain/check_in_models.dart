@@ -24,6 +24,8 @@ class MyAttendance {
     required this.opensAt,
     required this.closesAt,
     this.checkedInAt,
+    this.title,
+    this.venueName,
   });
 
   final CheckInPhase phase;
@@ -34,6 +36,11 @@ class MyAttendance {
   /// 15 minutes after the start.
   final DateTime closesAt;
   final DateTime? checkedInAt;
+
+  /// The event's title and venue as entered; null when the caller can't see
+  /// the event (KAN-1002 added them to rpc_attendance_my).
+  final String? title;
+  final String? venueName;
 
   /// The start, derived from the window the server sends.
   DateTime get startAt => opensAt.add(NotificationTiming.checkInOpens);
@@ -48,6 +55,8 @@ class MyAttendance {
       opensAt: parseInstantLocal(j['opens_at'])!,
       closesAt: parseInstantLocal(j['closes_at'])!,
       checkedInAt: checkedInAt,
+      title: j['title'] as String?,
+      venueName: j['venue_name'] as String?,
     );
   }
 
@@ -57,6 +66,8 @@ class MyAttendance {
         opensAt: opensAt,
         closesAt: closesAt,
         checkedInAt: checkedInAt ?? this.checkedInAt,
+        title: title,
+        venueName: venueName,
       );
 }
 

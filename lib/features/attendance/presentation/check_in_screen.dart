@@ -22,19 +22,9 @@ String checkInClock(BuildContext context, DateTime t) {
 }
 
 class CheckInScreen extends ConsumerWidget {
-  const CheckInScreen({
-    super.key,
-    required this.eventId,
-    this.title,
-    this.venue,
-    this.onBack,
-  });
+  const CheckInScreen({super.key, required this.eventId, this.onBack});
 
   final String eventId;
-
-  /// Shown as entered, never translated.
-  final String? title;
-  final String? venue;
 
   /// Defaults to popping the route.
   final VoidCallback? onBack;
@@ -71,18 +61,21 @@ class CheckInScreen extends ConsumerWidget {
               ),
       );
     }
+    // Title and venue come from rpc_attendance_my, shown as entered.
+    final title = a.title;
+    final venue = a.venueName;
     return DabblerPage(
       topBar: topBar,
       body: ListView(
         padding: DabblerInsets.screen,
         children: <Widget>[
-          if (title != null && title!.isNotEmpty)
+          if (title != null && title.isNotEmpty)
             DabblerText(context.isolate(title), style: DabblerType.title2),
           const DabblerGap.v(DabblerSpacing.space2),
           DabblerText(
             <String>[
               l.g04_starts(checkInClock(context, a.startAt)),
-              if (venue != null && venue!.isNotEmpty) context.isolate(venue),
+              if (venue != null && venue.isNotEmpty) context.isolate(venue),
             ].join(' · '),
             style: DabblerType.footnote,
             tone: DabblerTextTone.secondary,

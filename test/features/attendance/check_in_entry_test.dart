@@ -43,9 +43,7 @@ Future<List<String>> _pump(WidgetTester t, String state) async {
     routes: [
       GoRoute(
         path: '/',
-        builder: (_, __) => const Scaffold(
-          body: CheckInEntry(eventId: 'e1', title: 'Padel'),
-        ),
+        builder: (_, __) => const Scaffold(body: CheckInEntry(eventId: 'e1')),
       ),
       GoRoute(
         path: '/check-in/:eventId',
@@ -80,7 +78,7 @@ void main() {
     expect(find.byKey(const ValueKey('check-in-entry')), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('check-in-entry')));
     await t.pumpAndSettle();
-    expect(pushed.single, RoutePaths.checkIn('e1', title: 'Padel'));
+    expect(pushed.single, RoutePaths.checkIn('e1'));
   });
 
   for (final s in ['not_eligible', 'closed', 'cancelled']) {

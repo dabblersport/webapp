@@ -402,7 +402,7 @@ abstract final class NotificationKinds {
         return RoutePaths.gameDetail(id);
       case NotificationRouteKind.checkIn:
         final id = s('event_id') ?? s('entity_id');
-        return id == null ? null : RoutePaths.checkIn(id, title: s('title'));
+        return id == null ? null : RoutePaths.checkIn(id);
       case NotificationRouteKind.attendanceList:
         final id = s('event_id') ?? s('entity_id');
         return id == null ? null : RoutePaths.attendance(id, title: s('title'));

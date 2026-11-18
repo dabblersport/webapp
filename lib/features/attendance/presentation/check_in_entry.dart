@@ -14,17 +14,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 class CheckInEntry extends ConsumerWidget {
-  const CheckInEntry({
-    super.key,
-    required this.eventId,
-    this.title,
-    this.venue,
-  });
+  const CheckInEntry({super.key, required this.eventId});
 
   /// games.id / meetups.id, which is the events.id.
   final String eventId;
-  final String? title;
-  final String? venue;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -50,8 +43,7 @@ class CheckInEntry extends ConsumerWidget {
       icon: 'tick-circle',
       label: l.g04_cta,
       note: note,
-      onTap: () =>
-          context.push(RoutePaths.checkIn(eventId, title: title, venue: venue)),
+      onTap: () => context.push(RoutePaths.checkIn(eventId)),
     );
   }
 }

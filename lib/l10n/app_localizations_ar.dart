@@ -10827,4 +10827,65 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get g06_err_already_decided => 'تم البتّ في هذه المراجعة مسبقًا.';
+
+  @override
+  String lc_scheduled_until(String time) {
+    return 'مجدول حتى $time';
+  }
+
+  @override
+  String lc_started_at(String time) {
+    return 'بدأ $time';
+  }
+
+  @override
+  String get lc_start => 'ابدأ';
+
+  @override
+  String lc_awaiting(String time) {
+    return 'كان موعد الانتهاء $time';
+  }
+
+  @override
+  String get lc_awaiting_body_host => 'أكّد الانتهاء، أو حدّد أنه لم يحدث.';
+
+  @override
+  String get lc_awaiting_body_guest => 'بانتظار تأكيد المنظّم للانتهاء.';
+
+  @override
+  String get lc_confirm_end => 'تأكيد الانتهاء';
+
+  @override
+  String get lc_did_not_happen => 'لم يحدث';
+
+  @override
+  String lc_confirmed(String time) {
+    return 'انتهى $time';
+  }
+
+  @override
+  String get lc_time_ended => 'انتهى الوقت المحدد';
+
+  @override
+  String get lc_failed => 'تعذّر التحديث. حاول مرة أخرى.';
+
+  @override
+  String get lc_already_closed => 'هذا النشاط مغلق بالفعل.';
+
+  @override
+  String get lc_not_started_yet => 'يمكنك البدء عند حلول الموعد المحدد.';
+
+  @override
+  String get lc_cancelled => 'تم إلغاء هذا النشاط';
+
+  @override
+  String lc_auto_close_at(String time) {
+    return 'يُغلق تلقائياً الساعة $time';
+  }
+
+  @override
+  String get lc_load_failed => 'تعذّر تحميل حالة النشاط.';
+
+  @override
+  String get lc_scheduled => 'مجدول';
 }

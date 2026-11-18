@@ -38,11 +38,14 @@ class _FakeRepo implements AttendanceRepository {
   Map<String, dynamic> row;
   Result<DateTime?, Failure> checkInResult = Ok(DateTime(2026, 11, 18, 18, 50));
   Completer<void>? gate;
+  Completer<void>? readGate;
   int checkIns = 0;
 
   @override
-  Future<Result<MyAttendance, Failure>> my(String eventId) async =>
-      Ok(MyAttendance.fromJson(row));
+  Future<Result<MyAttendance, Failure>> my(String eventId) async {
+    await readGate?.future;
+    return Ok(MyAttendance.fromJson(row));
+  }
 
   @override
   Future<Result<DateTime?, Failure>> checkIn(String eventId) async {
@@ -60,6 +63,8 @@ Future<void> _pump(
   String title = 'Padel at Dubai Hills',
   String? venue = 'نادي الملعب',
 }) async {
+  // KAN-1002: the title and venue come from rpc_attendance_my, not the URL.
+  repo.row = {...repo.row, 'title': title, 'venue_name': venue};
   await tester.pumpWidget(
     ProviderScope(
       overrides: [attendanceRepositoryProvider.overrideWithValue(repo)],
@@ -72,12 +77,7 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
-        home: CheckInScreen(
-          eventId: 'e1',
-          title: title,
-          venue: venue,
-          onBack: () {},
-        ),
+        home: CheckInScreen(eventId: 'e1', onBack: () {}),
       ),
     ),
   );
@@ -242,6 +242,13 @@ void main() {
     expect(find.textContaining('\u2068Dubai Hills Park\u2069'), findsOneWidget);
   });
 
+  testWidgets('title and venue come from the read (no URL values)', (t) async {
+    // A notice opens /check-in/e1 with no venue; the read supplies it.
+    await _pump(t, _FakeRepo(_row('open')), venue: 'Court 3');
+    expect(find.textContaining('Padel at Dubai Hills'), findsOneWidget);
+    expect(find.textContaining('Court 3'), findsOneWidget);
+  });
+
   testWidgets('an empty venue is treated as absent', (t) async {
     await _pump(t, _FakeRepo(_row('open')), venue: '');
     expect(find.textContaining(' · '), findsNothing);
@@ -291,5 +298,19 @@ void main() {
         CheckInPhase.checkedIn,
       );
     });
+  });
+
+  testWidgets('a pending read shows the spinner, then the read title', (
+    t,
+  ) async {
+    final repo = _FakeRepo(_row('open'))..readGate = Completer<void>();
+    await _pump(t, repo, title: 'Padel Night');
+    expect(find.byType(DabblerSpinner), findsOneWidget);
+    expect(find.textContaining('Padel Night'), findsNothing);
+    repo.readGate!.complete();
+    await t.pump();
+    await t.pump();
+    expect(find.byType(DabblerSpinner), findsNothing);
+    expect(find.textContaining('Padel Night'), findsOneWidget);
   });
 }

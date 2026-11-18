@@ -18456,6 +18456,108 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This review was already decided.'**
   String get g06_err_already_decided;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled until {time}'**
+  String lc_scheduled_until(String time);
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Started {time}'**
+  String lc_started_at(String time);
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Start'**
+  String get lc_start;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled to end {time}'**
+  String lc_awaiting(String time);
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm the end, or mark it as did not happen.'**
+  String get lc_awaiting_body_host;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Waiting for the organiser to confirm the end.'**
+  String get lc_awaiting_body_guest;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm end'**
+  String get lc_confirm_end;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Did not happen'**
+  String get lc_did_not_happen;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Ended {time}'**
+  String lc_confirmed(String time);
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled time ended'**
+  String get lc_time_ended;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update. Try again.'**
+  String get lc_failed;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity is already closed.'**
+  String get lc_already_closed;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'You can start once the scheduled time begins.'**
+  String get lc_not_started_yet;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'This activity was cancelled'**
+  String get lc_cancelled;
+
+  /// KAN-1002 W2-F5 lifecycle card.
+  ///
+  /// In en, this message translates to:
+  /// **'Closes automatically at {time}'**
+  String lc_auto_close_at(String time);
+
+  /// KAN-1002 W2-F5 lifecycle card: the first read failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load the activity status.'**
+  String get lc_load_failed;
+
+  /// KAN-1002 W2-F5 lifecycle card: scheduled, no end time known.
+  ///
+  /// In en, this message translates to:
+  /// **'Scheduled'**
+  String get lc_scheduled;
 }
 
 class _AppLocalizationsDelegate

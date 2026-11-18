@@ -108,17 +108,9 @@ class RoutePaths {
   static String venueDetail(String venueId) => '/sports/venues/$venueId';
 
   /// KAN-998 (G-04): the player check-in screen of one event (games.id and
-  /// meetups.id are their events.id). [title] and [venue] are shown as entered.
-  static String checkIn(String eventId, {String? title, String? venue}) {
-    final q = <String, String>{
-      if (title != null && title.isNotEmpty) 'title': title,
-      if (venue != null && venue.isNotEmpty) 'venue': venue,
-    };
-    return Uri(
-      path: '/check-in/$eventId',
-      queryParameters: q.isEmpty ? null : q,
-    ).toString();
-  }
+  /// meetups.id are their events.id). The screen reads the title and venue
+  /// from the server (rpc_attendance_my), not from the URL.
+  static String checkIn(String eventId) => '/check-in/$eventId';
 
   /// KAN-999 (G-05): the organiser's attendance list of one event.
   static String attendance(String eventId, {String? title}) => Uri(

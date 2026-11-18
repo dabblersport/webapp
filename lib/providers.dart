@@ -12,6 +12,8 @@ export 'features/attendance/presentation/check_in_controller.dart';
 export 'features/attendance/data/attendance_review_repository.dart';
 export 'features/attendance/presentation/attendance_list_controller.dart';
 export 'features/attendance/presentation/no_show_controller.dart';
+export 'features/lifecycle/data/lifecycle_repository.dart';
+export 'features/lifecycle/presentation/lifecycle_controller.dart';
 export 'features/app_boot/schema_guard.dart';
 export 'features/app_boot/min_build/min_build_providers.dart';
 export 'features/app_boot/min_build/min_build_repository.dart';

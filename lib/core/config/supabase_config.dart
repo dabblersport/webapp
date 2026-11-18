@@ -407,6 +407,13 @@ class SupabaseConfig {
       'rpc_attendance_request_review';
   static const String rpcAttendanceDecideReviewFn =
       'rpc_attendance_decide_review';
+  /// KAN-1002 (W2-F5): the organiser's optional Start and the end
+  /// confirmation (`played` / `did_not_happen`), KAN-995.
+  static const String rpcEventStartFn = 'rpc_event_start';
+  static const String rpcEventConfirmEndFn = 'rpc_event_confirm_end';
+
+  /// KAN-1002: the lifecycle state an attendee or organiser sees.
+  static const String rpcEventLifecycleReadFn = 'rpc_event_lifecycle_read';
 
   /// KAN-983: the 09:00 "confirm your attendance" answer (`going` /
   /// `not_going`), also the push's Going / Not going actions (KAN-992).

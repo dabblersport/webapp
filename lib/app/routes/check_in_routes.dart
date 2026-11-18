@@ -15,8 +15,6 @@ RouteBase get checkInRoute => GoRoute(
     key: state.pageKey,
     child: CheckInScreen(
       eventId: state.pathParameters['eventId']!,
-      title: state.uri.queryParameters['title'],
-      venue: state.uri.queryParameters['venue'],
     ),
     type: SharedAxisType.horizontal,
   ),

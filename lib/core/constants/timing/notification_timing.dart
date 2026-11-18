@@ -36,4 +36,8 @@ abstract final class NotificationTiming {
 
   /// Inbox rows are kept this long.
   static const Duration inboxRetention = Duration(days: 90);
+
+  /// KAN-1002: the lifecycle card re-reads this long past a boundary, so the
+  /// server's now() is past it too.
+  static const Duration lifecycleBoundarySlack = Duration(seconds: 1);
 }
