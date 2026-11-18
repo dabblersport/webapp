@@ -167,13 +167,42 @@ void main() {
         await pumpPost(tester, repo, _screen(), locale: locale);
         expect(_k('g02-not-eligible'), findsOneWidget);
         expect(find.text(l.g02_not_eligible_body), findsOneWidget);
+        expect(_k('g02-organiser'), findsNothing);
+        expect(repo.resultReads, 0);
       });
+
+      for (final (name, code) in [
+        ('meetup', 'not_found'),
+        ('training game', 'no_score_step'),
+      ]) {
+        testWidgets('the organiser of a $name: organiser copy, no button', (
+          tester,
+        ) async {
+          final repo = FakePostRepo(
+            flowValue: const RatingFlow(
+              state: RatingFlowState.notEligible,
+              isOrganiser: true,
+            ),
+            tally: Err(Failure(code: code)),
+          );
+          await pumpPost(tester, repo, _screen(), locale: locale);
+          expect(_k('g02-organiser'), findsOneWidget);
+          expect(find.text(l.g02_organiser_title), findsOneWidget);
+          expect(find.text(l.g02_organiser_body_no_result), findsOneWidget);
+          expect(find.text(l.g02_organiser_body), findsNothing);
+          expect(_k('g02-organiser-result'), findsNothing);
+          expect(find.text(l.g02_not_eligible_body), findsNothing);
+        });
+      }
 
       testWidgets('the organiser of a competitive game: organiser copy', (
         tester,
       ) async {
         final repo = FakePostRepo(
-          flowValue: const RatingFlow(state: RatingFlowState.notEligible),
+          flowValue: const RatingFlow(
+            state: RatingFlowState.notEligible,
+            isOrganiser: true,
+          ),
           tally: const Ok(ResultTally(competitive: true, isOrganiser: true)),
         );
         await pumpPost(tester, repo, _screen(), locale: locale);

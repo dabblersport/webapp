@@ -19321,6 +19321,12 @@ abstract class AppLocalizations {
   /// **'Players rate it; you can review the result.'**
   String get g02_organiser_body;
 
+  /// KAN-1000 organiser body on a meetup or a non-competitive game, which has no result to review.
+  ///
+  /// In en, this message translates to:
+  /// **'Players can rate it.'**
+  String get g02_organiser_body_no_result;
+
   /// No description provided for @g02_organiser_result.
   ///
   /// In en, this message translates to:

@@ -11213,5 +11213,8 @@ class AppLocalizationsEn extends AppLocalizations {
       'Players rate it; you can review the result.';
 
   @override
+  String get g02_organiser_body_no_result => 'Players can rate it.';
+
+  @override
   String get g02_organiser_result => 'Review the result';
 }

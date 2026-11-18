@@ -101,23 +101,26 @@ class PostActivityScreen extends ConsumerWidget {
       );
     }
     final Widget body = switch (flow.state) {
-      RatingFlowState.notEligible when state.tally?.isOrganiser == true =>
-        Center(
-          child: DabblerEmptyState(
-            key: const ValueKey<String>('g02-organiser'),
-            icon: 'task-square',
-            title: l.g02_organiser_title,
-            text: l.g02_organiser_body,
-            action: DabblerButton(
-              key: const ValueKey<String>('g02-organiser-result'),
-              label: l.g02_organiser_result,
-              tone: DabblerButtonTone.secondary,
-              onPressed: () => context.push(
-                RoutePaths.resultApproval(eventId, title: title),
-              ),
-            ),
-          ),
+      RatingFlowState.notEligible when flow.isOrganiser => Center(
+        child: DabblerEmptyState(
+          key: const ValueKey<String>('g02-organiser'),
+          icon: 'task-square',
+          title: l.g02_organiser_title,
+          text: state.tally?.competitive == true
+              ? l.g02_organiser_body
+              : l.g02_organiser_body_no_result,
+          action: state.tally?.competitive != true
+              ? null
+              : DabblerButton(
+                  key: const ValueKey<String>('g02-organiser-result'),
+                  label: l.g02_organiser_result,
+                  tone: DabblerButtonTone.secondary,
+                  onPressed: () => context.push(
+                    RoutePaths.resultApproval(eventId, title: title),
+                  ),
+                ),
         ),
+      ),
       RatingFlowState.notEligible => empty(
         'g02-not-eligible',
         'user-remove',

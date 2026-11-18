@@ -11314,5 +11314,8 @@ class AppLocalizationsAr extends AppLocalizations {
   String get g02_organiser_body => 'يقيّمه اللاعبون، ويمكنك مراجعة النتيجة.';
 
   @override
+  String get g02_organiser_body_no_result => 'يمكن للاعبين تقييمه.';
+
+  @override
   String get g02_organiser_result => 'مراجعة النتيجة';
 }

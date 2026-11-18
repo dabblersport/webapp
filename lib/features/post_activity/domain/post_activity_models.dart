@@ -52,6 +52,7 @@ class RatingFlow {
     this.players = const [],
     this.organiser,
     this.venue,
+    this.isOrganiser = false,
   });
 
   factory RatingFlow.fromJson(Map<String, dynamic> j) {
@@ -69,10 +70,15 @@ class RatingFlow {
       ],
       organiser: one(j['organiser'], 'user_id'),
       venue: one(j['venue'], 'venue_id'),
+      isOrganiser: j['is_organiser'] == true,
     );
   }
 
   final RatingFlowState state;
+
+  /// rpc_rating_get `is_organiser`: the caller organised this event, on
+  /// every event type.
+  final bool isOrganiser;
   final DateTime? closesAt;
   final List<RatingTarget> players;
   final RatingTarget? organiser;
@@ -85,6 +91,7 @@ class RatingFlow {
         players: [for (final p in players) p.named(people[p.id])],
         organiser: organiser?.named(people[organiser!.id]),
         venue: venue?.named(venueName),
+        isOrganiser: isOrganiser,
       );
 }
 
