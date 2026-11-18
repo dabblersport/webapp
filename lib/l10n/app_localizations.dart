@@ -19050,6 +19050,204 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Dismissed'**
   String get notif_res_rating_dismissed;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Review sign-in'**
+  String get sec6_review_title;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-ins and devices'**
+  String get sec6_list_title;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'New sign-in'**
+  String get sec6_new_signin;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'{date} · {time}'**
+  String sec6_at(String date, String time);
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Approximate city unavailable'**
+  String get sec6_place_unknown;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown device'**
+  String get sec6_device_unknown;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Secure my account'**
+  String get sec6_secure;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Wasn\'t you? Secure your account'**
+  String get sec6_wasnt_you;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'You confirmed this was you'**
+  String get sec6_confirmed;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'That device was signed out. Change your password next.'**
+  String get sec6_secured;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Change password'**
+  String get sec6_change_password;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Confirm this from another device you use.'**
+  String get sec6_confirm_elsewhere;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'This is the device you\'re using now.'**
+  String get sec6_current_note;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t send your answer. Try again.'**
+  String get sec6_failed;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'This sign-in was already handled.'**
+  String get sec6_already;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load your sign-ins.'**
+  String get sec6_load_failed;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'This sign-in is no longer in your list.'**
+  String get sec6_not_found;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Sending…'**
+  String get sec6_sending;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Changed {when}'**
+  String sec6_changed_at(String when);
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'If you made this change, there\'s nothing to do.'**
+  String get sec6_change_hint;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed in now'**
+  String get sec6_active;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Recent sign-ins'**
+  String get sec6_recent;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'This device'**
+  String get sec6_this_device;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign out'**
+  String get sec6_sign_out;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out'**
+  String get sec6_signed_out;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Signed out of {device}'**
+  String sec6_signed_out_toast(String device);
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'No sign-ins yet'**
+  String get sec6_empty;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Security notices are always on and can\'t be muted.'**
+  String get sec6_always_on;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Sign-ins and devices'**
+  String get sec6_acct_row;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'See where your account is signed in'**
+  String get sec6_acct_row_sub;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Last sign-in · {when} · {device}'**
+  String sec6_last_sign_in(String when, String device);
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Review sign-ins'**
+  String get sec6_review_sign_ins;
+
+  /// KAN-1003 W2-F6 security screens.
+  ///
+  /// In en, this message translates to:
+  /// **'Known device, nothing to do'**
+  String get sec6_known;
 }
 
 class _AppLocalizationsDelegate

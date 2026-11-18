@@ -11057,4 +11057,115 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_res_rating_dismissed => 'Dismissed';
+
+  @override
+  String get sec6_review_title => 'Review sign-in';
+
+  @override
+  String get sec6_list_title => 'Sign-ins and devices';
+
+  @override
+  String get sec6_new_signin => 'New sign-in';
+
+  @override
+  String sec6_at(String date, String time) {
+    return '$date · $time';
+  }
+
+  @override
+  String get sec6_place_unknown => 'Approximate city unavailable';
+
+  @override
+  String get sec6_device_unknown => 'Unknown device';
+
+  @override
+  String get sec6_secure => 'Secure my account';
+
+  @override
+  String get sec6_wasnt_you => 'Wasn\'t you? Secure your account';
+
+  @override
+  String get sec6_confirmed => 'You confirmed this was you';
+
+  @override
+  String get sec6_secured =>
+      'That device was signed out. Change your password next.';
+
+  @override
+  String get sec6_change_password => 'Change password';
+
+  @override
+  String get sec6_confirm_elsewhere =>
+      'Confirm this from another device you use.';
+
+  @override
+  String get sec6_current_note => 'This is the device you\'re using now.';
+
+  @override
+  String get sec6_failed => 'Couldn\'t send your answer. Try again.';
+
+  @override
+  String get sec6_already => 'This sign-in was already handled.';
+
+  @override
+  String get sec6_load_failed => 'Couldn\'t load your sign-ins.';
+
+  @override
+  String get sec6_not_found => 'This sign-in is no longer in your list.';
+
+  @override
+  String get sec6_sending => 'Sending…';
+
+  @override
+  String sec6_changed_at(String when) {
+    return 'Changed $when';
+  }
+
+  @override
+  String get sec6_change_hint =>
+      'If you made this change, there\'s nothing to do.';
+
+  @override
+  String get sec6_active => 'Signed in now';
+
+  @override
+  String get sec6_recent => 'Recent sign-ins';
+
+  @override
+  String get sec6_this_device => 'This device';
+
+  @override
+  String get sec6_sign_out => 'Sign out';
+
+  @override
+  String get sec6_signed_out => 'Signed out';
+
+  @override
+  String sec6_signed_out_toast(String device) {
+    return 'Signed out of $device';
+  }
+
+  @override
+  String get sec6_empty => 'No sign-ins yet';
+
+  @override
+  String get sec6_always_on =>
+      'Security notices are always on and can\'t be muted.';
+
+  @override
+  String get sec6_acct_row => 'Sign-ins and devices';
+
+  @override
+  String get sec6_acct_row_sub => 'See where your account is signed in';
+
+  @override
+  String sec6_last_sign_in(String when, String device) {
+    return 'Last sign-in · $when · $device';
+  }
+
+  @override
+  String get sec6_review_sign_ins => 'Review sign-ins';
+
+  @override
+  String get sec6_known => 'Known device, nothing to do';
 }

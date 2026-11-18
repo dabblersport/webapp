@@ -11162,4 +11162,112 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notif_res_rating_dismissed => 'تم التجاهل';
+
+  @override
+  String get sec6_review_title => 'مراجعة تسجيل الدخول';
+
+  @override
+  String get sec6_list_title => 'عمليات الدخول والأجهزة';
+
+  @override
+  String get sec6_new_signin => 'تسجيل دخول جديد';
+
+  @override
+  String sec6_at(String date, String time) {
+    return '$date، $time';
+  }
+
+  @override
+  String get sec6_place_unknown => 'المدينة التقريبية غير متاحة';
+
+  @override
+  String get sec6_device_unknown => 'جهاز غير معروف';
+
+  @override
+  String get sec6_secure => 'تأمين حسابي';
+
+  @override
+  String get sec6_wasnt_you => 'لم تكن أنت؟ أمّن حسابك';
+
+  @override
+  String get sec6_confirmed => 'أكدت أن هذا كان أنت';
+
+  @override
+  String get sec6_secured => 'تم تسجيل خروج ذلك الجهاز. غيّر كلمة المرور الآن.';
+
+  @override
+  String get sec6_change_password => 'تغيير كلمة المرور';
+
+  @override
+  String get sec6_confirm_elsewhere => 'أكّد ذلك من جهاز آخر تستخدمه.';
+
+  @override
+  String get sec6_current_note => 'هذا هو الجهاز الذي تستخدمه الآن.';
+
+  @override
+  String get sec6_failed => 'تعذّر إرسال ردك. حاول مرة أخرى.';
+
+  @override
+  String get sec6_already => 'تمت معالجة تسجيل الدخول هذا بالفعل.';
+
+  @override
+  String get sec6_load_failed => 'تعذّر تحميل عمليات الدخول.';
+
+  @override
+  String get sec6_not_found => 'لم يعد تسجيل الدخول هذا في قائمتك.';
+
+  @override
+  String get sec6_sending => 'جارٍ الإرسال…';
+
+  @override
+  String sec6_changed_at(String when) {
+    return 'تم التغيير $when';
+  }
+
+  @override
+  String get sec6_change_hint =>
+      'إذا أجريت هذا التغيير بنفسك، فلا يلزمك فعل شيء.';
+
+  @override
+  String get sec6_active => 'مسجّل الدخول الآن';
+
+  @override
+  String get sec6_recent => 'عمليات الدخول الأخيرة';
+
+  @override
+  String get sec6_this_device => 'هذا الجهاز';
+
+  @override
+  String get sec6_sign_out => 'تسجيل الخروج';
+
+  @override
+  String get sec6_signed_out => 'تم تسجيل الخروج';
+
+  @override
+  String sec6_signed_out_toast(String device) {
+    return 'تم تسجيل الخروج من $device';
+  }
+
+  @override
+  String get sec6_empty => 'لا توجد عمليات دخول بعد';
+
+  @override
+  String get sec6_always_on => 'إشعارات الأمان مفعّلة دائماً ولا يمكن كتمها.';
+
+  @override
+  String get sec6_acct_row => 'عمليات الدخول والأجهزة';
+
+  @override
+  String get sec6_acct_row_sub => 'اعرف أين تم تسجيل الدخول إلى حسابك';
+
+  @override
+  String sec6_last_sign_in(String when, String device) {
+    return 'آخر تسجيل دخول · $when · $device';
+  }
+
+  @override
+  String get sec6_review_sign_ins => 'مراجعة عمليات الدخول';
+
+  @override
+  String get sec6_known => 'جهاز معروف، لا شيء مطلوب';
 }

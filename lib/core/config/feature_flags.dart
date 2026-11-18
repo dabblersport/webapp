@@ -157,6 +157,10 @@ class FeatureFlags {
   /// approval and the final score screens, and their notice routes.
   static const bool postActivity = true;
 
+  /// KAN-1003 (W2-F6): the sign-in review and the sign-in list screens, and
+  /// their links from the account screen, the inbox and the Activity log.
+  static const bool securityScreens = true;
+
   // ============================================================================
   // SPORT CONFIGURATION
   // ============================================================================

@@ -157,7 +157,9 @@ RouteBase get settingsAccountRoute =>
       path: '/settings/account',
       pageBuilder: (context, state) => SharedAxisTransitionPage(
         key: state.pageKey,
-        child: const AccountManagementScreen(),
+        child: AccountManagementScreen(
+          openPassword: state.uri.queryParameters['password'] == '1',
+        ),
         type: SharedAxisType.horizontal,
       ),
     );

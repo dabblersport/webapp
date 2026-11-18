@@ -1,3 +1,5 @@
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/security/data/security_repository.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 /// KAN-990 hook for the Activity log security card.
@@ -31,7 +33,20 @@ class ActivityLastSignIn {
   final bool isNewDevice;
 }
 
-/// The latest sign-in of the viewer; null until the KAN-985 ledger exists.
-final activityLastSignInProvider = FutureProvider<ActivityLastSignIn?>(
-  (ref) async => null,
-);
+/// The latest sign-in of the viewer from the KAN-985 ledger (KAN-1003);
+/// null when there is none or the read fails.
+final activityLastSignInProvider = FutureProvider<ActivityLastSignIn?>((
+  ref,
+) async {
+  if (!FeatureFlags.securityScreens) return null;
+  final r = await ref.watch(securityRepositoryProvider).signIns();
+  final rows = r.isSuccess ? r.requireValue : null;
+  if (rows == null || rows.isEmpty) return null;
+  final s = rows.first;
+  return ActivityLastSignIn(
+    at: s.signedInAt,
+    device: s.deviceLabel.isEmpty ? null : s.deviceLabel,
+    city: s.place,
+    isNewDevice: s.isNewDevice,
+  );
+});

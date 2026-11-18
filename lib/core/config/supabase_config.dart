@@ -407,6 +407,7 @@ class SupabaseConfig {
       'rpc_attendance_request_review';
   static const String rpcAttendanceDecideReviewFn =
       'rpc_attendance_decide_review';
+
   /// KAN-1002 (W2-F5): the organiser's optional Start and the end
   /// confirmation (`played` / `did_not_happen`), KAN-995.
   static const String rpcEventStartFn = 'rpc_event_start';
@@ -428,6 +429,14 @@ class SupabaseConfig {
   static const String rpcRatingDismissFn = 'rpc_rating_dismiss';
   static const String reputationDimensionsTable = 'reputation_dimensions';
   static const String venueRatingDimensionsTable = 'venue_rating_dimensions';
+  /// KAN-1003 (W2-F6, backend KAN-985): the sign-in ledger read, "This was
+  /// me" and "Not me" (signs out that one device).
+  static const String rpcSecuritySignInsFn = 'rpc_security_sign_ins';
+  static const String rpcSecurityConfirmSignInFn =
+      'rpc_security_confirm_sign_in';
+  static const String rpcSecurityNotMeFn = 'rpc_security_not_me';
+  static const String rpcSecurityRegisterSignInFn =
+      'rpc_security_register_sign_in';
 
   /// KAN-983: the 09:00 "confirm your attendance" answer (`going` /
   /// `not_going`), also the push's Going / Not going actions (KAN-992).

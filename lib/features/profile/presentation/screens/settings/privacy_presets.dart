@@ -47,7 +47,6 @@ PrivacySettings privacyPresetSettings(PrivacyPreset preset) {
         allowGameRecommendations: true,
         hideFromNearby: false,
         twoFactorEnabled: false,
-        loginAlerts: true,
       );
     case PrivacyPreset.friendsOnly:
       return const PrivacySettings(
@@ -80,7 +79,6 @@ PrivacySettings privacyPresetSettings(PrivacyPreset preset) {
         allowGameRecommendations: true,
         hideFromNearby: false,
         twoFactorEnabled: false,
-        loginAlerts: true,
       );
     case PrivacyPreset.private:
       return const PrivacySettings(
@@ -113,7 +111,6 @@ PrivacySettings privacyPresetSettings(PrivacyPreset preset) {
         allowGameRecommendations: false,
         hideFromNearby: true,
         twoFactorEnabled: false,
-        loginAlerts: true,
       );
   }
 }

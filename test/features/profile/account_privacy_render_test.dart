@@ -53,7 +53,14 @@ void main() {
       );
       expect(tester.takeException(), isNull);
       expect(find.text(t('Sign-in', 'تسجيل الدخول')), findsOneWidget);
-      expect(find.byType(DabblerToggle), findsNWidgets(2));
+      // KAN-1003: only 2FA is a switch; "Login alerts" is gone (security
+      // notices are always on) and the sign-in list row replaces it.
+      expect(find.byType(DabblerToggle), findsOneWidget);
+      expect(find.text(t('Login alerts', 'تنبيهات الدخول')), findsNothing);
+      expect(
+        find.text(t('Sign-ins and devices', 'عمليات الدخول والأجهزة')),
+        findsOneWidget,
+      );
       expect(find.text(t('Delete account', 'حذف الحساب')), findsOneWidget);
       await shootSettings(tester, 'account-default-$dir');
     });

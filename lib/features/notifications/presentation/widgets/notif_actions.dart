@@ -22,6 +22,8 @@ import 'package:dabbler/features/notifications/data/models/notification_model.da
 import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notification_settings_providers.dart';
 import 'package:dabbler/features/notifications/presentation/providers/notifications_providers.dart';
+import 'package:dabbler/features/security/data/security_repository.dart'
+    show securityRepositoryProvider;
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider, profileIdByUserIdProvider;
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -185,9 +187,12 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
         _guard(
           () => _decideReview(n, accept: action == NotificationActionId.accept),
         ),
+      // KAN-1003: the security answers (KAN-985). "Not me" signs out that
+      // one device, then opens the password change.
+      NotificationActionId.thisWasMe => _security(n, notMe: false),
+      NotificationActionId.notMe => _security(n, notMe: true),
       // WAVE-2: no backend yet — declining a game invite, giving up a
-      // waitlist place (W1-B6 sheet), attendance, results, ratings, reviews
-      // and the security answers.
+      // waitlist place (W1-B6 sheet), attendance, results, ratings and reviews.
       _ => Future<NotifActionOutcome>.value(NotifActionOutcome.unavailable),
     };
   }
@@ -251,6 +256,27 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     return '$res' == 'already_decided'
         ? NotifActionOutcome.already
         : NotifActionOutcome.success;
+  }
+
+  Future<NotifActionOutcome> _security(
+    AppNotification n, {
+    required bool notMe,
+  }) async {
+    final id = _s(n.args, 'sign_in_id') ?? notifEntityId(n);
+    if (id == null) {
+      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+    }
+    final repo = _ref.read(securityRepositoryProvider);
+    final r = notMe ? await repo.notMe(id) : await repo.confirm(id);
+    return r.fold(
+      (f) => f.code == '22023' || f.code == 'P0002'
+          ? NotifActionOutcome.already
+          : NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+      (_) {
+        if (notMe) open(RoutePaths.settingsAccountPassword);
+        return NotifActionOutcome.success;
+      },
+    );
   }
 
   NotifActionOutcome _openNoShow(AppNotification n) {

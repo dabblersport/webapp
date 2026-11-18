@@ -140,6 +140,24 @@ class RoutePaths {
     path: path,
     queryParameters: title == null || title.isEmpty ? null : {'title': title},
   ).toString();
+  /// KAN-1003 (W2-F6): the review of one security notice ([kind] is
+  /// `new_signin`, `password_changed` or `email_changed`; [signInId] the
+  /// ledger row of a new sign-in) and the sign-in list.
+  static String securityReview(String kind, {String? signInId, String? at}) {
+    final q = <String, String>{
+      if (signInId != null && signInId.isNotEmpty) 'id': signInId,
+      if (at != null && at.isNotEmpty) 'at': at,
+    };
+    return Uri(
+      path: '/security/review/$kind',
+      queryParameters: q.isEmpty ? null : q,
+    ).toString();
+  }
+
+  static const String securitySignIns = '/security/sign-ins';
+
+  /// The account screen with the password change sheet open.
+  static const String settingsAccountPassword = '/settings/account?password=1';
 
   // News detail (root-level, no shell)
   static String newsDetail(String newsId) => '/news/$newsId';
@@ -229,6 +247,8 @@ class RouteNames {
   static const String postActivity = 'post-activity';
   static const String resultApproval = 'result-approval';
   static const String resultFinal = 'result-final';
+  static const String securityReview = 'security-review';
+  static const String securitySignIns = 'security-sign-ins';
 
   // Game Creation Routes
   static const String locationIntro = 'location-intro';

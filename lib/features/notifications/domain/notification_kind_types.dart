@@ -98,6 +98,8 @@ enum NotificationRouteKind {
 
   /// KAN-1000: the result notices open the G-03 result screen.
   resultApproval,
+  /// KAN-1003: the security notices open their review screen.
+  securityReview,
 }
 
 /// A row action. The first four are the live CTAs (they open the row); the

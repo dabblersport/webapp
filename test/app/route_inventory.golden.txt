@@ -41,6 +41,8 @@
 /post-activity/:eventId	post-activity	GoRoute
 /result/:eventId	result-approval	GoRoute
 /result/:eventId/final	result-final	GoRoute
+/security/review/:kind	security-review	GoRoute
+/security/sign-ins	security-sign-ins	GoRoute
 /news/:newsId	news-detail	GoRoute
 /sports/venues/:venueId	venue-detail	GoRoute
 /favourites	favourites	GoRoute

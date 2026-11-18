@@ -411,8 +411,6 @@ class PrivacyController extends StateNotifier<PrivacyState> {
       // Security
       case 'twoFactorEnabled':
         return current.copyWith(twoFactorEnabled: value as bool);
-      case 'loginAlerts':
-        return current.copyWith(loginAlerts: value as bool);
 
       default:
         return current;
@@ -512,10 +510,6 @@ class PrivacyController extends StateNotifier<PrivacyState> {
 
     if (!settings.twoFactorEnabled) {
       warnings.add('Two-factor authentication is not enabled');
-    }
-
-    if (!settings.loginAlerts) {
-      warnings.add('Login alerts are disabled');
     }
 
     if (settings.allowProfileIndexing) {

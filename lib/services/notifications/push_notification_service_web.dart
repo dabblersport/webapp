@@ -10,6 +10,7 @@ import 'package:dabbler/core/config/notification_preference.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 
 import 'push_token_registrar.dart';
+import 'security_sign_in_registrar.dart';
 
 /// Web (Chrome) implementation of push notification service.
 ///
@@ -48,6 +49,7 @@ class PushNotificationService {
   bool _wired = false;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<AuthState>? _authStateSub;
+  final SecuritySignInRegistrar _securitySignIn = SecuritySignInRegistrar();
 
   /// Present for API parity with the mobile implementation. On web,
   /// notification taps navigate via URL (service worker), so this is unused.
@@ -114,6 +116,8 @@ class PushNotificationService {
           state.event == AuthChangeEvent.signedIn ||
           (state.event == AuthChangeEvent.initialSession &&
               state.session != null);
+      // Every sign-in is registered with the server, push or not.
+      unawaited(_securitySignIn.onAuthState(state));
       if (signedIn && _wired) {
         await _fetchAndSaveToken();
       }

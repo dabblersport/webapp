@@ -419,6 +419,14 @@ abstract final class NotificationKinds {
         return id == null || !FeatureFlags.postActivity
             ? null
             : RoutePaths.resultApproval(id, title: s('title'));
+      case NotificationRouteKind.securityReview:
+        if (!FeatureFlags.securityScreens) return null;
+        final isSignIn = _entityType(ctx) == 'security_sign_in';
+        return RoutePaths.securityReview(
+          kindKey.substring(kindKey.indexOf('.') + 1),
+          signInId: isSignIn ? (s('sign_in_id') ?? s('entity_id')) : null,
+          at: s('changed_at'),
+        );
     }
   }
 

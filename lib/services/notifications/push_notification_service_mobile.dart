@@ -17,6 +17,7 @@ import 'push_local_display.dart';
 import 'push_prompt_preference.dart';
 import 'push_presence.dart';
 import 'push_token_registrar.dart';
+import 'security_sign_in_registrar.dart';
 
 /// The native notification permission, behind a seam so a test can prove when
 /// the system prompt is (not) asked for. [request] shows the native alert;
@@ -88,6 +89,7 @@ class PushNotificationService {
   bool _activated = false;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<AuthState>? _authStateSub;
+  final SecuritySignInRegistrar _securitySignIn = SecuritySignInRegistrar();
 
   /// Callback invoked when user taps a notification.
   /// Receives the action_route string from the notification data payload.
@@ -163,6 +165,8 @@ class PushNotificationService {
           state.event == AuthChangeEvent.signedIn ||
           (state.event == AuthChangeEvent.initialSession &&
               state.session != null);
+      // Every sign-in is registered with the server, push or not.
+      unawaited(_securitySignIn.onAuthState(state));
       // Only once notifications are allowed: no permission, no token.
       if (signedIn && await _permissionGranted()) {
         await _logFcmToken();

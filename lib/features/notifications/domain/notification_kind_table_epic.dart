@@ -340,11 +340,11 @@ notificationEpicKindTable = <NotificationKindClient>[
     _R.activity,
     _G.activities,
   ),
-  // Security notices (W1-B7): always on; the route lands with W1-B7.
+  // Security notices (W1-B7): always on; they open the KAN-1003 review.
   NotificationKindClient(
     'security.new_signin',
     _shield,
-    _R.none,
+    _R.securityReview,
     _G.security,
     needsAction: true,
     ctas: [
@@ -355,13 +355,13 @@ notificationEpicKindTable = <NotificationKindClient>[
   NotificationKindClient(
     'security.password_changed',
     _shield,
-    _R.none,
+    _R.securityReview,
     _G.security,
   ),
   NotificationKindClient(
     'security.email_changed',
     _shield,
-    _R.none,
+    _R.securityReview,
     _G.security,
   ),
   // Replies and reposts

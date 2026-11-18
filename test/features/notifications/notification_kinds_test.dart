@@ -271,7 +271,7 @@ void main() {
     });
 
     test(
-      'activities follow their entity; security and system open nothing',
+      'activities follow their entity; security opens its review; system nothing',
       () {
         expect(
           r('activity.checkin_open', {
@@ -324,7 +324,21 @@ void main() {
         }
         expect(r('activity.review_requested', {}), isNull);
         expect(r('activity.summary', {}), isNull);
-        expect(r('security.new_signin', {'entity_id': 'x'}), isNull);
+        // KAN-1003: security notices open their review screen.
+        expect(
+          r('security.new_signin', {
+            'entity_type': 'security_sign_in',
+            'entity_id': 'x',
+          }),
+          RoutePaths.securityReview('new_signin', signInId: 'x'),
+        );
+        expect(
+          r('security.password_changed', {
+            'entity_type': 'account',
+            'entity_id': 'u1',
+          }),
+          RoutePaths.securityReview('password_changed'),
+        );
         expect(r('message.received', {'entity_id': 'x'}), isNull);
         expect(r('unknown.kind', {'entity_id': 'x'}), isNull);
       },
