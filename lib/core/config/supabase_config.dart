@@ -429,6 +429,7 @@ class SupabaseConfig {
   static const String rpcRatingDismissFn = 'rpc_rating_dismiss';
   static const String reputationDimensionsTable = 'reputation_dimensions';
   static const String venueRatingDimensionsTable = 'venue_rating_dimensions';
+
   /// KAN-1003 (W2-F6, backend KAN-985): the sign-in ledger read, "This was
   /// me" and "Not me" (signs out that one device).
   static const String rpcSecuritySignInsFn = 'rpc_security_sign_ins';
@@ -449,4 +450,17 @@ class SupabaseConfig {
 
   /// KAN-1001: a user's show-up rate from settled attendance (KAN-994).
   static const String rpcShowUpRate = 'rpc_showup_rate';
+
+  /// KAN-1004/1005: Live Activity sessions of this installation.
+  static const String rpcLiveActivitySessions = 'rpc_live_activity_sessions';
+
+  /// KAN-1004/1005: a started activity's push token or notification id.
+  static const String rpcLiveActivityRegister = 'rpc_live_activity_register';
+
+  /// KAN-1004b/1005: the iOS 17.2+ push-to-start token of this installation.
+  static const String rpcLiveActivityRegisterPushToStart =
+      'rpc_live_activity_register_push_to_start';
+
+  /// KAN-1004/1005: Live Activities on or off for this installation.
+  static const String rpcLiveActivityOptOut = 'rpc_live_activity_opt_out';
 }

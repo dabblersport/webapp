@@ -25,6 +25,7 @@ import 'package:dabbler/services/notifications/push_notification_service.dart'
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
     as push_mobile;
 import 'package:dabbler/services/notifications/push_app_wiring.dart';
+import 'package:dabbler/services/live_activity/live_activity_providers.dart';
 import 'package:dabbler/services/notifications/push_background.dart';
 import 'package:dabbler/features/notifications/data/notification_settings_timezone.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -243,6 +244,8 @@ Future<Widget> _bootstrap() async {
       );
       // Init push service (Firebase, foreground listener, onMessageOpenedApp, etc.)
       unawaited(push_mobile.PushNotificationService.instance.init());
+      // KAN-1005: Live Activities (flag-gated, best-effort, never awaited).
+      wireLiveActivities(container);
     } else {
       // Web push: wires token save + refresh if permission is already
       // granted; the permission prompt itself comes from the Home drawer

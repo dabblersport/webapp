@@ -161,6 +161,10 @@ class FeatureFlags {
   /// their links from the account screen, the inbox and the Activity log.
   static const bool securityScreens = true;
 
+  /// KAN-1005 (W3-N1): the Live Activity bridge (iOS ActivityKit, Android
+  /// Live Update). Off until the native halves (KAN-1006/1007) ship.
+  static const bool liveActivities = false;
+
   // ============================================================================
   // SPORT CONFIGURATION
   // ============================================================================

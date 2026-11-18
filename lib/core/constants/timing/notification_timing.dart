@@ -40,4 +40,7 @@ abstract final class NotificationTiming {
   /// KAN-1002: the lifecycle card re-reads this long past a boundary, so the
   /// server's now() is past it too.
   static const Duration lifecycleBoundarySlack = Duration(seconds: 1);
+
+  /// KAN-1005: a resume re-syncs Live Activities at most once per this.
+  static const Duration liveActivityResumeThrottle = Duration(seconds: 30);
 }
