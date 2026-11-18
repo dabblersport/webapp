@@ -337,3 +337,41 @@ PushTarget pushTarget(
   }
   return const PushTarget.none();
 }
+
+/// KAN-1016: what Android draws for a push — the notification block's text
+/// and channel when FCM sent one, else (a v15 data-only message) `title`,
+/// `body`, `android_channel_id` and `collapse_id` from the data. Null when
+/// there is nothing to show.
+typedef PushDrawing = ({
+  String? title,
+  String? body,
+  String? channelId,
+  String? tag,
+});
+
+PushDrawing? pushDrawingOf(
+  Map<String, dynamic> data, {
+  String? notificationTitle,
+  String? notificationBody,
+  String? notificationChannelId,
+  String? notificationTag,
+  String? collapseKey,
+}) {
+  String? s(Object? v) => v is String && v.trim().isNotEmpty ? v : null;
+  final title = s(notificationTitle) ?? s(data['title']);
+  final body = s(notificationBody) ?? s(data['body']);
+  if (title == null && body == null) return null;
+  return (
+    title: title,
+    body: body,
+    channelId: s(notificationChannelId) ?? s(data['android_channel_id']),
+    tag: s(notificationTag) ?? s(data['collapse_id']) ?? s(collapseKey),
+  );
+}
+
+/// KAN-1016: v15 sends RSVP, waitlist and message pushes to Android as
+/// data-only messages (no notification block): the app draws them.
+bool isDataOnlyPush({
+  required bool hasNotificationBlock,
+  required Map<String, dynamic> data,
+}) => !hasNotificationBlock && pushDrawingOf(data) != null;

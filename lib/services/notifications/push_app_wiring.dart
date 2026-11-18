@@ -71,7 +71,13 @@ void wirePushToApp({
       result.fold((f) => throw StateError(f.message), (_) {});
     },
     confirmCancelPlace: (_) async {
-      final ctx = navContext();
+      // KAN-1016: from a killed app the action arrives before the first
+      // frame; wait for the navigator as the tap route does.
+      var ctx = navContext();
+      for (var i = 0; i < 20 && (ctx == null || !ctx.mounted); i++) {
+        await Future<void>.delayed(DabblerMotion.delaySettle);
+        ctx = navContext();
+      }
       if (ctx == null || !ctx.mounted) return false;
       return await _confirmCancelPlace(ctx) ?? false;
     },

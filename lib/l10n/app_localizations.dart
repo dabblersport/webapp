@@ -16223,6 +16223,162 @@ abstract class AppLocalizations {
   /// **'Complete the payment to keep your booking.'**
   String get notif_b_arena_payment_required;
 
+  /// KAN-1010: server template booking.pending (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Booking request sent to {venue}'**
+  String notif_t_booking_pending(String venue);
+
+  /// KAN-1010: server template booking.pending (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'We\'ll tell you when they confirm.'**
+  String get notif_b_booking_pending;
+
+  /// KAN-1010: server template booking.confirmed (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Booking confirmed by {venue}'**
+  String notif_t_booking_confirmed(String venue);
+
+  /// KAN-1010: server template booking.confirmed (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'See your booking for {slot}.'**
+  String notif_b_booking_confirmed(String slot);
+
+  /// KAN-1010: server template booking.rejected (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'{venue} couldn\'t take your booking'**
+  String notif_t_booking_rejected(String venue);
+
+  /// KAN-1010: server template booking.rejected (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Find another slot.'**
+  String get notif_b_booking_rejected;
+
+  /// KAN-1010: server template booking.hold_expiring (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Your hold at {venue} ends {when}'**
+  String notif_t_booking_hold_expiring(String venue, String when);
+
+  /// KAN-1010: server template booking.hold_expiring (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Complete your booking to keep the slot.'**
+  String get notif_b_booking_hold_expiring;
+
+  /// KAN-1010: server template booking.changed (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking at {venue} changed'**
+  String notif_t_booking_changed(String venue);
+
+  /// KAN-1010: server template booking.changed (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Was {oldValue}, now {newValue}.'**
+  String notif_b_booking_changed(String oldValue, String newValue);
+
+  /// KAN-1010: server template booking.cancelled (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking at {venue} was cancelled'**
+  String notif_t_booking_cancelled(String venue);
+
+  /// KAN-1010: server template booking.cancelled (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Any refund is shown separately.'**
+  String get notif_b_booking_cancelled;
+
+  /// KAN-1010: server template venue.feedback_request (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'How was {venue}?'**
+  String notif_t_venue_feedback_request(String venue);
+
+  /// KAN-1010: server template venue.feedback_request (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Rate your visit.'**
+  String get notif_b_venue_feedback_request;
+
+  /// KAN-1010: server template payment.pending (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Payment needed for your booking · {amount}'**
+  String notif_t_payment_pending(String amount);
+
+  /// KAN-1010: server template payment.pending (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Complete the payment to keep your booking.'**
+  String get notif_b_payment_pending;
+
+  /// KAN-1010: server template payment.succeeded (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Payment received · {amount}'**
+  String notif_t_payment_succeeded(String amount);
+
+  /// KAN-1010: server template payment.succeeded (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Your booking is paid.'**
+  String get notif_b_payment_succeeded;
+
+  /// KAN-1010: server template payment.failed (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Payment didn\'t go through · {amount}'**
+  String notif_t_payment_failed(String amount);
+
+  /// KAN-1010: server template payment.failed (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Try again or get help.'**
+  String get notif_b_payment_failed;
+
+  /// KAN-1010: server template refund.processing (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Refund on its way · {amount}'**
+  String notif_t_refund_processing(String amount);
+
+  /// KAN-1010: server template refund.processing (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Banks can take a few days.'**
+  String get notif_b_refund_processing;
+
+  /// KAN-1010: server template refund.completed (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Refund completed · {amount}'**
+  String notif_t_refund_completed(String amount);
+
+  /// KAN-1010: server template refund.completed (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'It\'s back on your payment method.'**
+  String get notif_b_refund_completed;
+
+  /// KAN-1010: server template refund.failed (title); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'We couldn\'t refund {amount}'**
+  String notif_t_refund_failed(String amount);
+
+  /// KAN-1010: server template refund.failed (body); booking is not live (F-12).
+  ///
+  /// In en, this message translates to:
+  /// **'Get help to sort it out.'**
+  String get notif_b_refund_failed;
+
   /// KAN-978: server template auth.welcome (title).
   ///
   /// In en, this message translates to:

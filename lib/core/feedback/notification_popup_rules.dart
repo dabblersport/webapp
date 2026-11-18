@@ -15,6 +15,9 @@ enum NotificationPopupDecision {
   /// The app is in the background (the push shows it there).
   background,
 
+  /// A kind whose cards are hidden (booking and payment, F-12).
+  hiddenKind,
+
   /// The row arrived already read.
   alreadyRead,
 
@@ -95,6 +98,9 @@ NotificationPopupDecision decideNotificationPopup({
   NotificationSettings? settings,
 }) {
   if (!foreground) return NotificationPopupDecision.background;
+  if (!NotificationKinds.isShown(n.kindKey)) {
+    return NotificationPopupDecision.hiddenKind;
+  }
   if (n.isRead) return NotificationPopupDecision.alreadyRead;
   final String here = _path(location);
   if (here == RoutePaths.notifications ||

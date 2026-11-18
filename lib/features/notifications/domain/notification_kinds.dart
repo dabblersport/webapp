@@ -11,6 +11,7 @@
 library;
 
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:dabbler/features/notifications/data/models/notification_model.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -118,10 +119,37 @@ abstract final class NotificationKinds {
   static NotificationCta? ctaOf(String kindKey) =>
       _specs[kindKey]?.ctas.firstOrNull;
 
+  // ── Booking and payment (KAN-1010, F-12) ───────────────────────────────
+
+  /// Whether booking and payment cards may show. Off: booking is not live
+  /// (F-12). Follows `FeatureFlags.bookingNotifications`; tests flip it.
+  @visibleForTesting
+  static bool bookingCardsEnabled = FeatureFlags.bookingNotifications;
+
+  /// Whether [kindKey] is a booking or payment kind (category `booking`, or
+  /// a key of that family the client does not know yet).
+  static bool isBookingKind(String kindKey) {
+    final spec = _specs[kindKey];
+    if (spec != null) return spec.category == NotificationCategory.booking;
+    bool p(String s) => kindKey.startsWith(s);
+    return p('booking.') ||
+        p('payment.') ||
+        p('refund.') ||
+        p('venue.') ||
+        p('arena.');
+  }
+
+  /// Whether a row of [kindKey] may show at all: every kind, except booking
+  /// and payment kinds while [bookingCardsEnabled] is off.
+  static bool isShown(String kindKey) =>
+      bookingCardsEnabled || !isBookingKind(kindKey);
+
   // ── Chips ──────────────────────────────────────────────────────────────
 
-  /// Whether [n] shows under [chip].
+  /// Whether [n] shows under [chip]. A row that may not show
+  /// ([isShown]) is under no chip.
   static bool inChip(NotificationChip chip, AppNotification n) =>
+      isShown(n.kindKey) &&
       switch (chip) {
         NotificationChip.all => true,
         NotificationChip.unread => !n.isRead,

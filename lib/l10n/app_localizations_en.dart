@@ -9270,6 +9270,116 @@ class AppLocalizationsEn extends AppLocalizations {
       'Complete the payment to keep your booking.';
 
   @override
+  String notif_t_booking_pending(String venue) {
+    return 'Booking request sent to $venue';
+  }
+
+  @override
+  String get notif_b_booking_pending => 'We\'ll tell you when they confirm.';
+
+  @override
+  String notif_t_booking_confirmed(String venue) {
+    return 'Booking confirmed by $venue';
+  }
+
+  @override
+  String notif_b_booking_confirmed(String slot) {
+    return 'See your booking for $slot.';
+  }
+
+  @override
+  String notif_t_booking_rejected(String venue) {
+    return '$venue couldn\'t take your booking';
+  }
+
+  @override
+  String get notif_b_booking_rejected => 'Find another slot.';
+
+  @override
+  String notif_t_booking_hold_expiring(String venue, String when) {
+    return 'Your hold at $venue ends $when';
+  }
+
+  @override
+  String get notif_b_booking_hold_expiring =>
+      'Complete your booking to keep the slot.';
+
+  @override
+  String notif_t_booking_changed(String venue) {
+    return 'Your booking at $venue changed';
+  }
+
+  @override
+  String notif_b_booking_changed(String oldValue, String newValue) {
+    return 'Was $oldValue, now $newValue.';
+  }
+
+  @override
+  String notif_t_booking_cancelled(String venue) {
+    return 'Your booking at $venue was cancelled';
+  }
+
+  @override
+  String get notif_b_booking_cancelled => 'Any refund is shown separately.';
+
+  @override
+  String notif_t_venue_feedback_request(String venue) {
+    return 'How was $venue?';
+  }
+
+  @override
+  String get notif_b_venue_feedback_request => 'Rate your visit.';
+
+  @override
+  String notif_t_payment_pending(String amount) {
+    return 'Payment needed for your booking · $amount';
+  }
+
+  @override
+  String get notif_b_payment_pending =>
+      'Complete the payment to keep your booking.';
+
+  @override
+  String notif_t_payment_succeeded(String amount) {
+    return 'Payment received · $amount';
+  }
+
+  @override
+  String get notif_b_payment_succeeded => 'Your booking is paid.';
+
+  @override
+  String notif_t_payment_failed(String amount) {
+    return 'Payment didn\'t go through · $amount';
+  }
+
+  @override
+  String get notif_b_payment_failed => 'Try again or get help.';
+
+  @override
+  String notif_t_refund_processing(String amount) {
+    return 'Refund on its way · $amount';
+  }
+
+  @override
+  String get notif_b_refund_processing => 'Banks can take a few days.';
+
+  @override
+  String notif_t_refund_completed(String amount) {
+    return 'Refund completed · $amount';
+  }
+
+  @override
+  String get notif_b_refund_completed => 'It\'s back on your payment method.';
+
+  @override
+  String notif_t_refund_failed(String amount) {
+    return 'We couldn\'t refund $amount';
+  }
+
+  @override
+  String get notif_b_refund_failed => 'Get help to sort it out.';
+
+  @override
   String get notif_t_auth_welcome => 'Welcome to Dabbler';
 
   @override

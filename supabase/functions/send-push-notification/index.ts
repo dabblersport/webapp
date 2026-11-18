@@ -3,6 +3,10 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // v14 (KAN-979, 2026-11-17): quiet-hours silent delivery, iOS interruption levels, Android
 // channels, thread/collapse ids, badge, device_platform, one notification_deliveries row per device.
+// v15 (KAN-1016, 2026-11-18): on Android, the actionable categories (RSVP, waitlist, message) go out
+// as data-only messages so the app draws them with their action buttons (KAN-992). Only to an
+// installation whose app build is at least PUSH_DATA_ONLY_MIN_BUILD (secret); unset = off, and every
+// push is the v14 notification message. iOS, the web and the other categories are unchanged.
 //
 // NOTE: You need to set these secrets in Supabase Dashboard:
 // - FIREBASE_SERVICE_ACCOUNT: Your Firebase service account JSON (as string)
@@ -46,6 +50,33 @@ interface TokenRow {
   id: string;
   token: string;
   device_platform: string;
+  app_version: string | null;
+}
+
+/** v15: the categories whose Android push the app draws itself, with actions (push_contract.dart). */
+const DATA_ONLY_CATEGORIES = new Set(["DABBLER_RSVP", "DABBLER_WAITLIST", "DABBLER_MESSAGE"]);
+
+/**
+ * v15: the lowest app build (the number after "+" in fcm_tokens.app_version) whose background
+ * handler draws a data-only push. Unset or not a number = data-only is off for every device.
+ */
+const DATA_ONLY_MIN_BUILD = (() => {
+  const n = Number(Deno.env.get("PUSH_DATA_ONLY_MIN_BUILD") ?? "");
+  return Number.isInteger(n) && n > 0 ? n : Infinity;
+})();
+
+/** "1.7.10+181" -> 181; null when there is no build number. */
+function appBuild(appVersion: string | null | undefined): number | null {
+  const m = /\+(\d+)\s*$/.exec(appVersion ?? "");
+  return m ? Number(m[1]) : null;
+}
+
+/** v15: whether this device gets a data-only message for this push. */
+function sendsDataOnly(row: TokenRow, delivery: DeliveryOptions, trusted: boolean): boolean {
+  if (!trusted || row.device_platform !== "android") return false;
+  if (!DATA_ONLY_CATEGORIES.has(delivery.ios_category)) return false;
+  const build = appBuild(row.app_version);
+  return build !== null && build >= DATA_ONLY_MIN_BUILD;
 }
 
 /** Default presentation for the direct lane and for callers that send no delivery block (v13 behaviour). */
@@ -174,7 +205,7 @@ Deno.serve(async (req: Request) => {
     // row (platform is the legacy slot and NULL on installation rows).
     let query = supabase
       .from("fcm_tokens")
-      .select("id, token, device_platform")
+      .select("id, token, device_platform, app_version")
       .eq("user_id", user_id);
 
     // Filter by platforms if specified
@@ -208,10 +239,12 @@ Deno.serve(async (req: Request) => {
     // Send notification to each token. Each send resolves to a per-token
     // outcome so we can prune tokens FCM reports as permanently invalid.
     const outcomes = await Promise.all(
-      (tokens as TokenRow[]).map(async ({ id, token, device_platform }) => {
+      (tokens as TokenRow[]).map(async (row) => {
+        const { id, token, device_platform } = row;
         try {
           const providerId = await sendFCMNotification(
-            accessToken, token, title, effectiveBody, data, delivery);
+            accessToken, token, title, effectiveBody, data, delivery,
+            sendsDataOnly(row, delivery, trusted));
           return { id, device_platform, ok: true, invalid: false, providerId, errorClass: null as string | null };
         } catch (e) {
           // Surface FCM's real response in the logs — essential for
@@ -627,14 +660,40 @@ async function sendFCMNotification(
   title: string,
   body: string,
   data: Record<string, string> | undefined,
-  delivery: DeliveryOptions
+  delivery: DeliveryOptions,
+  dataOnly = false
 ): Promise<string | null> {
   const alert = delivery.mode === "alert";
+  const badge = typeof delivery.badge === "number" ? delivery.badge : undefined;
+
+  if (dataOnly) {
+    // v15 (KAN-1016): Android, actionable category. No `notification` block, so Android hands the
+    // message to the app, which draws it on `android_channel_id` (dabbler_quiet in quiet hours, so
+    // a silent push stays silent) with the category's actions. FCM data values are strings only.
+    const d: Record<string, string> = {
+      ...(data || {}),
+      title,
+      body,
+      category: delivery.ios_category,
+      delivery_mode: delivery.mode,
+      android_channel_id: delivery.android_channel_id,
+      time_sensitive: delivery.time_sensitive ? "true" : "false",
+    };
+    if (delivery.collapse_id) d.collapse_id = delivery.collapse_id;
+    if (delivery.thread_id) d.thread_id = delivery.thread_id;
+    if (badge !== undefined) d.badge = String(badge);
+    const et = d.entity_type, eid = d.entity_id;
+    if (eid && et === "game" && !d.game_id) d.game_id = eid;
+    if (eid && et === "meetup" && !d.meetup_id) d.meetup_id = eid;
+    if (eid && et === "conversation" && !d.conversation_id) d.conversation_id = eid;
+    const android: Record<string, unknown> = { priority: alert ? "high" : "normal" };
+    if (delivery.collapse_id) android.collapse_key = delivery.collapse_id;
+    return await postFcm(accessToken, { message: { token, data: d, android } });
+  }
   // iOS: passive in quiet hours (no sound, no screen wake), time-sensitive for
   // breaks_quiet and security kinds, active otherwise. Without a sound the iOS
   // banner arrives silently, so only an alerting push carries one.
   const interruptionLevel = delivery.time_sensitive ? "time-sensitive" : alert ? "active" : "passive";
-  const badge = typeof delivery.badge === "number" ? delivery.badge : undefined;
 
   const aps: Record<string, unknown> = {
     "interruption-level": interruptionLevel,
@@ -686,6 +745,11 @@ async function sendFCMNotification(
     },
   };
 
+  return await postFcm(accessToken, fcmPayload);
+}
+
+/** POST one FCM v1 message; returns the provider id, throws with FCM's answer on failure. */
+async function postFcm(accessToken: string, fcmPayload: unknown): Promise<string | null> {
   const response = await fetch(
     `https://fcm.googleapis.com/v1/projects/${FIREBASE_PROJECT_ID}/messages:send`,
     {

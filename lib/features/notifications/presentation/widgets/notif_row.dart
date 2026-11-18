@@ -119,6 +119,8 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
 
   @override
   Widget build(BuildContext context) {
+    // KAN-1010 (F-12): booking and payment cards stay hidden behind the flag.
+    if (!NotificationKinds.isShown(n.kindKey)) return const SizedBox.shrink();
     final l = AppLocalizations.of(context);
     final view = NotifCardView.of(l, n);
     final unread = !(_read ?? n.isRead);

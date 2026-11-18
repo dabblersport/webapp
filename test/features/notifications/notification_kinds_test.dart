@@ -15,8 +15,10 @@ import 'package:flutter_test/flutter_test.dart';
 
 import '../../support/render_mode.dart';
 
-/// The 89 kinds of `public.notification_kinds`: 87 after KAN-974 (35 live,
-/// 52 new), plus KAN-1013 and KAN-1015's two live kinds. A kind added on the server must be added here and to the registry.
+/// The 102 kinds of `public.notification_kinds`: 87 after KAN-974 (35 live,
+/// 52 new), KAN-1013 and KAN-1015's two live kinds, and KAN-1010's 13
+/// inactive booking and payment kinds (which also made
+/// `arena.payment_required` inactive: 36 live). A kind added on the server must be added here and to the registry.
 const List<String> serverKinds = <String>[
   // live (35)
   'arena.payment_required', 'auth.welcome', 'friend.accepted',
@@ -55,6 +57,11 @@ const List<String> serverKinds = <String>[
   'social.comment_replied', 'social.post_reposted',
   // KAN-1013 / KAN-1015 (live)
   'meetup.wants_to_join_full', 'game.series_cancelled',
+  // KAN-1010 (inactive, F-12)
+  'booking.pending', 'booking.confirmed', 'booking.rejected',
+  'booking.hold_expiring', 'booking.changed', 'booking.cancelled',
+  'venue.feedback_request', 'payment.pending', 'payment.succeeded',
+  'payment.failed', 'refund.processing', 'refund.completed', 'refund.failed',
 ];
 
 AppNotification _n(
@@ -81,11 +88,11 @@ final AppLocalizations ar = lookupAppLocalizations(const Locale('ar'));
 void main() {
   group('coverage', () {
     test('every server kind is in the registry, and nothing else', () {
-      expect(serverKinds, hasLength(89));
-      expect(serverKinds.toSet(), hasLength(89));
+      expect(serverKinds, hasLength(102));
+      expect(serverKinds.toSet(), hasLength(102));
       expect(NotificationKinds.keys.toSet(), serverKinds.toSet());
       expect(notificationServerKinds.keys.toSet(), serverKinds.toSet());
-      expect(NotificationKinds.all.where((s) => s.active), hasLength(37));
+      expect(NotificationKinds.all.where((s) => s.active), hasLength(36));
     });
 
     test('every kind has an EN and AR title and body', () {
@@ -111,6 +118,7 @@ void main() {
               'score': '1-0',
               'when': 'w',
               'time': 't',
+              'slot': 's',
               'title': 'T',
               'actor': 'A',
             }),

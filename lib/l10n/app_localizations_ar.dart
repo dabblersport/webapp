@@ -9391,6 +9391,114 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_b_arena_payment_required => 'أكمل الدفع للاحتفاظ بحجزك.';
 
   @override
+  String notif_t_booking_pending(String venue) {
+    return 'تم إرسال طلب الحجز إلى $venue';
+  }
+
+  @override
+  String get notif_b_booking_pending => 'سنخبرك عندما يتم التأكيد.';
+
+  @override
+  String notif_t_booking_confirmed(String venue) {
+    return 'أكّد $venue حجزك';
+  }
+
+  @override
+  String notif_b_booking_confirmed(String slot) {
+    return 'اطّلع على حجزك لموعد $slot.';
+  }
+
+  @override
+  String notif_t_booking_rejected(String venue) {
+    return 'تعذّر على $venue قبول حجزك';
+  }
+
+  @override
+  String get notif_b_booking_rejected => 'ابحث عن موعد آخر.';
+
+  @override
+  String notif_t_booking_hold_expiring(String venue, String when) {
+    return 'ينتهي حجزك المؤقت في $venue $when';
+  }
+
+  @override
+  String get notif_b_booking_hold_expiring => 'أكمل الحجز للاحتفاظ بالموعد.';
+
+  @override
+  String notif_t_booking_changed(String venue) {
+    return 'تغيّر حجزك في $venue';
+  }
+
+  @override
+  String notif_b_booking_changed(String oldValue, String newValue) {
+    return 'كان $oldValue، والآن $newValue.';
+  }
+
+  @override
+  String notif_t_booking_cancelled(String venue) {
+    return 'أُلغي حجزك في $venue';
+  }
+
+  @override
+  String get notif_b_booking_cancelled => 'يظهر أي استرداد بشكل منفصل.';
+
+  @override
+  String notif_t_venue_feedback_request(String venue) {
+    return 'كيف كانت تجربتك في $venue؟';
+  }
+
+  @override
+  String get notif_b_venue_feedback_request => 'قيّم زيارتك.';
+
+  @override
+  String notif_t_payment_pending(String amount) {
+    return 'مطلوب الدفع لحجزك · $amount';
+  }
+
+  @override
+  String get notif_b_payment_pending => 'أكمل الدفع للاحتفاظ بحجزك.';
+
+  @override
+  String notif_t_payment_succeeded(String amount) {
+    return 'تم استلام الدفعة · $amount';
+  }
+
+  @override
+  String get notif_b_payment_succeeded => 'تم دفع حجزك.';
+
+  @override
+  String notif_t_payment_failed(String amount) {
+    return 'لم تتم عملية الدفع · $amount';
+  }
+
+  @override
+  String get notif_b_payment_failed => 'حاول مرة أخرى أو اطلب المساعدة.';
+
+  @override
+  String notif_t_refund_processing(String amount) {
+    return 'الاسترداد في الطريق · $amount';
+  }
+
+  @override
+  String get notif_b_refund_processing => 'قد يستغرق البنك بضعة أيام.';
+
+  @override
+  String notif_t_refund_completed(String amount) {
+    return 'اكتمل الاسترداد · $amount';
+  }
+
+  @override
+  String get notif_b_refund_completed => 'أُعيد المبلغ إلى وسيلة الدفع.';
+
+  @override
+  String notif_t_refund_failed(String amount) {
+    return 'تعذّر استرداد $amount';
+  }
+
+  @override
+  String get notif_b_refund_failed => 'تواصل مع الدعم لحل المشكلة.';
+
+  @override
   String get notif_t_auth_welcome => 'أهلًا بك في دابلر';
 
   @override

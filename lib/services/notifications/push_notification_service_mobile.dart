@@ -7,13 +7,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart' show Locale;
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:async';
 
 import 'package:dabbler/core/config/notification_preference.dart';
 
 import 'push_contract.dart';
+import 'push_background.dart';
 import 'push_local_display.dart';
+import 'push_prompt_preference.dart';
 import 'push_presence.dart';
 import 'push_token_registrar.dart';
 
@@ -83,6 +84,7 @@ class PushNotificationService {
   Locale _locale = const Locale('en');
 
   bool _initialized = false;
+  bool _launchHandled = false;
   bool _activated = false;
   StreamSubscription<String>? _tokenRefreshSub;
   StreamSubscription<AuthState>? _authStateSub;
@@ -96,10 +98,6 @@ class PushNotificationService {
   /// expired, no access, already handled): the app shows W1-F3's sheet.
   void Function(NotifTargetState state)? onTargetUnavailable;
 
-  static const String _notificationPromptPreferenceKey =
-      'notification_prompt_preference';
-  static const String _notificationPromptNextAtKey =
-      'notification_prompt_next_at_ms';
   static const Duration _remindLaterCooldown = Duration(hours: 72);
 
   /// Startup: wires what needs no permission and never shows the native
@@ -197,7 +195,19 @@ class PushNotificationService {
       await _localNotificationsPlugin.initialize(
         initSettings,
         onDidReceiveNotificationResponse: _onLocalNotificationTap,
+        onDidReceiveBackgroundNotificationResponse: pushBackgroundResponse,
       );
+      // KAN-1016: a tap or action on a notification drawn while the app was
+      // killed launches it; that response arrives here, not as a callback.
+      final launch = await _localNotificationsPlugin
+          .getNotificationAppLaunchDetails();
+      final launchResponse = launch?.notificationResponse;
+      if (!_launchHandled &&
+          (launch?.didNotificationLaunchApp ?? false) &&
+          launchResponse != null) {
+        _launchHandled = true;
+        _onLocalNotificationTap(launchResponse);
+      }
 
       // KAN-992: every channel KAN-979 sends to, created up front so a
       // background FCM push (system-drawn) lands in its own channel;
@@ -277,8 +287,17 @@ class PushNotificationService {
       openChat: presence.openChat,
       inAppBannerShows: presence.inAppBannerShows,
     );
+    // KAN-1016: a data-only push (no notification block) is drawn too.
+    final drawing = pushDrawingOf(
+      data,
+      notificationTitle: notification?.title,
+      notificationBody: notification?.body,
+      notificationChannelId: notification?.android?.channelId,
+      notificationTag: notification?.android?.tag,
+      collapseKey: message.collapseKey,
+    );
     final drawsHere =
-        defaultTargetPlatform == TargetPlatform.android && notification != null;
+        defaultTargetPlatform == TargetPlatform.android && drawing != null;
     presence.reportForeground(
       ForegroundPush(
         // KAN-993: title and body, for a push that beats its Realtime row.
@@ -296,10 +315,10 @@ class PushNotificationService {
     if (suppressed || !drawsHere) return;
     await _display.show(
       data: data,
-      title: notification.title,
-      body: notification.body,
-      channelId: notification.android?.channelId,
-      tag: notification.android?.tag ?? message.collapseKey,
+      title: drawing.title,
+      body: drawing.body,
+      channelId: drawing.channelId,
+      tag: drawing.tag,
       l10n: lookupAppLocalizations(_locale),
     );
   }
@@ -409,63 +428,12 @@ class PushNotificationService {
 
   /// Check if we should show the notification permission prompt
   /// Returns true if user hasn't decided yet (remind later or never asked)
-  Future<bool> shouldShowNotificationPrompt() async {
-    final prefs = await SharedPreferences.getInstance();
-    final preference = prefs.getString(_notificationPromptPreferenceKey);
-
-    // Never prompt again
-    if (preference == 'never' || preference == 'allow') {
-      return false;
-    }
-
-    // First time
-    if (preference == null) {
-      return true;
-    }
-
-    // Cooldown gating for "remind_later"
-    if (preference == 'remind_later') {
-      final nextAtMs = prefs.getInt(_notificationPromptNextAtKey);
-
-      // Backward-compat: older installs stored only the string.
-      // Apply the cooldown starting now.
-      if (nextAtMs == null) {
-        final nextAt = DateTime.now().add(_remindLaterCooldown);
-        await prefs.setInt(
-          _notificationPromptNextAtKey,
-          nextAt.millisecondsSinceEpoch,
-        );
-        return false;
-      }
-
-      return DateTime.now().millisecondsSinceEpoch >= nextAtMs;
-    }
-
-    // Unknown value -> treat as eligible
-    return true;
-  }
+  Future<bool> shouldShowNotificationPrompt() =>
+      PushPromptPreference.shouldShow(cooldown: _remindLaterCooldown);
 
   /// Save user's notification permission preference
-  Future<void> saveNotificationPreference(
-    NotificationPreference preference,
-  ) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(
-      _notificationPromptPreferenceKey,
-      preference.wireValue,
-    );
-
-    if (preference == NotificationPreference.remindLater) {
-      final nextAt = DateTime.now().add(_remindLaterCooldown);
-      await prefs.setInt(
-        _notificationPromptNextAtKey,
-        nextAt.millisecondsSinceEpoch,
-      );
-    } else {
-      // If user allowed or never wants prompts, clear any scheduled reminder.
-      await prefs.remove(_notificationPromptNextAtKey);
-    }
-  }
+  Future<void> saveNotificationPreference(NotificationPreference preference) =>
+      PushPromptPreference.save(preference, cooldown: _remindLaterCooldown);
 
   /// Check current permission status without requesting
   Future<AuthorizationStatus> checkPermissionStatus() async {

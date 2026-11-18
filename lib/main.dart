@@ -25,6 +25,7 @@ import 'package:dabbler/services/notifications/push_notification_service.dart'
 import 'package:dabbler/services/notifications/push_notification_service_mobile.dart'
     as push_mobile;
 import 'package:dabbler/services/notifications/push_app_wiring.dart';
+import 'package:dabbler/services/notifications/push_background.dart';
 import 'package:dabbler/features/notifications/data/notification_settings_timezone.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
@@ -47,10 +48,14 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   // Background messages run in their own isolate — Firebase must be
   // initialized here independently of the main isolate.
   await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
-  // Handle background messages here
-  // You can show local notifications, update badge counts, etc.
-  // Note: Avoid heavy processing here
   debugPrint('Background message received: ${message.messageId}');
+  // KAN-1016: a data-only push (RSVP, waitlist, message on Android) is drawn
+  // here, on its channel with its actions; FCM draws the rest itself.
+  try {
+    await drawBackgroundPush(message);
+  } catch (e) {
+    debugPrint('Background push draw failed: $e');
+  }
 }
 
 /// Navigate to a notification's deep-link route, waiting for the navigator to

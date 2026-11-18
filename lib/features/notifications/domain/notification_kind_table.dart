@@ -8,6 +8,7 @@
 // order of the settings toggles.
 
 import 'notification_kind_table_epic.dart';
+import 'notification_kind_table_booking.dart';
 import 'notification_kind_types.dart';
 
 const _gameAmber = ('game', NotifTone.amber);
@@ -87,6 +88,8 @@ notificationLiveKindTable = <NotificationKindClient>[
     _R.arena,
     _G.booking,
     needsAction: true,
+    // KAN-1010: inactive on the server, an alias of payment.pending.
+    aliasOf: 'payment.pending',
   ),
   // ── Social (live) ────────────────────────────────────────────────────────
   NotificationKindClient('social.post_liked', _heart, _R.post, _G.likes),
@@ -235,4 +238,5 @@ const List<NotificationKindClient> notificationKindTable =
     <NotificationKindClient>[
       ...notificationLiveKindTable,
       ...notificationEpicKindTable,
+      ...notificationBookingKindTable,
     ];

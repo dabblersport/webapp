@@ -114,6 +114,11 @@ class FeatureFlags {
   /// Payments & Bookings
   static const bool enablePayments = false;
 
+  /// KAN-1010 (F-12): booking and payment notification cards. Off: booking
+  /// and payments are not live, so no such card shows (and there is no
+  /// Booking chip, category or settings row either way).
+  static const bool bookingNotifications = false;
+
   /// Community tab (RealFriendsScreen) in the compact mobile bottom-nav pill.
   /// The pill redesign (KAN-41 audit finding, 2223e77) only has room for two
   /// segmented groups + one icon slot, so Community was left reachable via

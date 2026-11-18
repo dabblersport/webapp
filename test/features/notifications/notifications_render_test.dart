@@ -346,13 +346,15 @@ void main() {
           hasMore: false,
         ),
       );
-      // KAN-989: chip 1 is Unread (rows 1, 2 and 4 of the sample).
+      // KAN-989: chip 1 is Unread (rows 1, 2 and 4 of the sample). KAN-1010:
+      // one of them is arena.payment_required, a booking kind, hidden while
+      // booking is not live (F-12).
       await tester.tap(find.byType(DabblerChip).at(1));
       for (var i = 0; i < 5; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       expect(tester.takeException(), isNull);
-      expect(find.byType(DabblerNotificationCard), findsNWidgets(3));
+      expect(find.byType(DabblerNotificationCard), findsNWidgets(2));
       await _shoot(tester, key, 'notifications-filtered-$dir');
     });
 
