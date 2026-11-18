@@ -19,7 +19,7 @@ Future<bool?> showReviewRequestSheet({
   return showDabblerSheet<bool>(
     context: context,
     title: l.g06_sheet_title,
-    detents: const <double>[0.9],
+    detent: DabblerSheetDetent.content,
     builder: (_) => ReviewRequestSheet(onSend: onSend),
   );
 }

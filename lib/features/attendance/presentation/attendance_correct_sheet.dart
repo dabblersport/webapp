@@ -24,7 +24,7 @@ Future<void> showAttendanceCorrectSheet({
   return showDabblerSheet<void>(
     context: context,
     title: l.g05_edit_title,
-    detents: const <double>[0.9],
+    detent: DabblerSheetDetent.content,
     builder: (_) => AttendanceCorrectSheet(row: row, onSave: onSave),
   );
 }
