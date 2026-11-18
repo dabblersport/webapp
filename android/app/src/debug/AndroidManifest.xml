@@ -4,4 +4,14 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <application>
+        <!-- KAN-1007: debug-only fake Live Activity data message (adb broadcast). -->
+        <receiver
+            android:name=".liveactivity.LiveActivityDebugReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="pro.dabbler.live_activity.DEBUG" />
+            </intent-filter>
+        </receiver>
+    </application>
 </manifest>

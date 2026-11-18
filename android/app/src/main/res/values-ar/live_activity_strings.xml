@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- KAN-1007: Arabic. Chip short forms per G-17 ('تسجيل الحضور', 'بعد 25 د'). -->
+<resources>
+    <string name="la_channel_name">النشاط المباشر</string>
+    <string name="la_channel_description">المباراة أو اللقاء الذي ستحضره، يُحدَّث بهدوء</string>
+    <string name="la_title_game">مباراتك</string>
+    <string name="la_title_meetup">لقاؤك</string>
+    <string name="la_status_checkin_open">تسجيل الحضور مفتوح · يبدأ %1$s</string>
+    <string name="la_status_starting_soon">سجّلت حضورك · يبدأ %1$s</string>
+    <string name="la_status_running">جارٍ الآن</string>
+    <string name="la_status_running_until">جارٍ الآن · حتى %1$s</string>
+    <string name="la_status_ended">انتهى</string>
+    <string name="la_status_cancelled">أُلغي</string>
+    <string name="la_change_time">تغيّر الوقت</string>
+    <string name="la_change_venue">تغيّر المكان</string>
+    <string name="la_action_open">فتح النشاط</string>
+    <string name="la_action_check_in">تسجيل الحضور</string>
+    <string name="la_action_start">ابدأ</string>
+    <string name="la_action_confirm_end">تأكيد الانتهاء</string>
+    <string name="la_chip_check_in">تسجيل الحضور</string>
+    <string name="la_chip_checked_in">حاضر</string>
+    <string name="la_chip_in_minutes">بعد %1$d د</string>
+    <string name="la_chip_in_hours">بعد %1$d س</string>
+    <string name="la_chip_live">جارٍ</string>
+    <string name="la_chip_changed">تغيّر</string>
+    <string name="la_chip_ended">انتهى</string>
+    <string name="la_chip_cancelled">أُلغي</string>
+</resources>

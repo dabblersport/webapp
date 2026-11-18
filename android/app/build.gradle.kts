@@ -82,4 +82,10 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.0.4")
     // AndroidX Activity for enableEdgeToEdge() backward compatibility (Android 15+)
     implementation("androidx.activity:activity-ktx:1.9.3")
+    // KAN-1007: DabblerMessagingService handles Live Activity data messages.
+    implementation(platform("com.google.firebase:firebase-bom:34.7.0"))
+    implementation("com.google.firebase:firebase-messaging")
+    testImplementation("junit:junit:4.13.2")
+    // Real org.json on the JVM test classpath (android.jar only has stubs).
+    testImplementation("org.json:json:20240303")
 }

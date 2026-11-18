@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Location permissions for venue and games functionality -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
@@ -9,6 +10,8 @@
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <!-- Notifications permission for Android 13+ -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <!-- KAN-1007: Android 16 Live Updates (promoted ongoing notifications). -->
+    <uses-permission android:name="android.permission.POST_PROMOTED_NOTIFICATIONS" />
     
     <!-- Camera permission for image picker -->
     <uses-permission android:name="android.permission.CAMERA" />
@@ -22,6 +25,7 @@
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:allowBackup="true"
+        android:supportsRtl="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules">
         <activity
@@ -91,6 +95,26 @@
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="dabbler_default" />
+        <!-- KAN-1007: Live Activity data messages are drawn natively. This
+             service replaces firebase_messaging's own (it subclasses it, so
+             token refresh is unchanged); Dart still receives every message
+             through the plugin's broadcast receiver.
+             Pinned to firebase_messaging 16.1.1 (pubspec.lock): the removed
+             class is io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingService.
+             Re-check this name on every firebase_messaging upgrade. -->
+        <service
+            android:name="io.flutter.plugins.firebase.messaging.FlutterFirebaseMessagingService"
+            tools:node="remove" />
+        <service
+            android:name=".liveactivity.DabblerMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
+        <receiver
+            android:name=".liveactivity.LiveActivityDismissReceiver"
+            android:exported="false" />
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data

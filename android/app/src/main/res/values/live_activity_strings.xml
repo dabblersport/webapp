@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- KAN-1007: Live Update / ongoing notification text. Drawn from the state
+     keys, never from server strings. Chip strings stay very short (G-17). -->
+<resources>
+    <string name="la_channel_name">Live activity</string>
+    <string name="la_channel_description">The game or meet-up you are going to, updated quietly</string>
+    <string name="la_title_game">Your game</string>
+    <string name="la_title_meetup">Your meet-up</string>
+    <string name="la_status_checkin_open">Check-in is open · Starts %1$s</string>
+    <string name="la_status_starting_soon">You\'re checked in · Starts %1$s</string>
+    <string name="la_status_running">Under way</string>
+    <string name="la_status_running_until">Under way · Until %1$s</string>
+    <string name="la_status_ended">It has ended</string>
+    <string name="la_status_cancelled">It was cancelled</string>
+    <string name="la_change_time">Time changed</string>
+    <string name="la_change_venue">Venue changed</string>
+    <string name="la_action_open">Open activity</string>
+    <string name="la_action_check_in">Check in</string>
+    <string name="la_action_start">Start</string>
+    <string name="la_action_confirm_end">Confirm end</string>
+    <string name="la_chip_check_in">Check in</string>
+    <string name="la_chip_checked_in">Checked in</string>
+    <string name="la_chip_in_minutes">In %1$dm</string>
+    <string name="la_chip_in_hours">In %1$dh</string>
+    <string name="la_chip_live">Live</string>
+    <string name="la_chip_changed">Changed</string>
+    <string name="la_chip_ended">Ended</string>
+    <string name="la_chip_cancelled">Cancelled</string>
+</resources>
