@@ -169,6 +169,22 @@ void main() {
         expect(find.text(l.g02_not_eligible_body), findsOneWidget);
       });
 
+      testWidgets('the organiser of a competitive game: organiser copy', (
+        tester,
+      ) async {
+        final repo = FakePostRepo(
+          flowValue: const RatingFlow(state: RatingFlowState.notEligible),
+          tally: const Ok(ResultTally(competitive: true, isOrganiser: true)),
+        );
+        await pumpPost(tester, repo, _screen(), locale: locale);
+        expect(_k('g02-organiser'), findsOneWidget);
+        expect(find.text(l.g02_organiser_title), findsOneWidget);
+        expect(find.text(l.g02_organiser_body), findsOneWidget);
+        expect(find.text(l.g02_organiser_result), findsOneWidget);
+        expect(_k('g02-organiser-result'), findsOneWidget);
+        expect(find.text(l.g02_not_eligible_body), findsNothing);
+      });
+
       testWidgets('a refusal never shows success and reloads', (tester) async {
         final repo = FakePostRepo(
           flowValue: flowOf(RatingFlowState.notStarted),

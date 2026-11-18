@@ -70,7 +70,7 @@ void attendanceToast(BuildContext context, String message, {bool err = false}) {
   );
 }
 
-class AttendanceListScreen extends ConsumerWidget {
+class AttendanceListScreen extends ConsumerStatefulWidget {
   const AttendanceListScreen({
     super.key,
     required this.eventId,
@@ -81,6 +81,38 @@ class AttendanceListScreen extends ConsumerWidget {
   final String eventId;
 
   /// Shown as entered.
+  final String? title;
+  final VoidCallback? onBack;
+
+  @override
+  ConsumerState<AttendanceListScreen> createState() => _AttendanceListScreenState();
+}
+
+/// Every open reads the server again (KAN-999): a state kept from an earlier
+/// visit is dropped, never shown.
+class _AttendanceListScreenState extends ConsumerState<AttendanceListScreen> {
+  bool _invalidated = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_invalidated) return;
+    _invalidated = true;
+    ref.invalidate(attendanceListProvider(widget.eventId));
+  }
+
+  @override
+  Widget build(BuildContext context) => _AttendanceListScreenBody(
+    eventId: widget.eventId,
+    title: widget.title,
+    onBack: widget.onBack,
+  );
+}
+
+class _AttendanceListScreenBody extends ConsumerWidget {
+  const _AttendanceListScreenBody({required this.eventId, this.title, this.onBack});
+
+  final String eventId;
   final String? title;
   final VoidCallback? onBack;
 

@@ -47,7 +47,12 @@ class _ShowUpRateViewState extends State<ShowUpRateView> {
     final ShowUpRate r = widget.rate;
     final int? percent = r.enough ? r.rate : null;
     return Padding(
-      padding: const EdgeInsets.only(bottom: DabblerSpacing.space8),
+      // Same horizontal inset as the neighbouring profile sections.
+      padding: const EdgeInsetsDirectional.only(
+        start: DabblerSpacing.space6,
+        end: DabblerSpacing.space6,
+        bottom: DabblerSpacing.space8,
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         mainAxisSize: MainAxisSize.min,

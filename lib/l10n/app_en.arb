@@ -4580,5 +4580,8 @@
   "oc_organiser": "You're organising",
   "@oc_organiser": {"description": "KAN-1008 W3-F1 ongoing card."},
   "oc_ended": "Ended",
-  "@oc_ended": {"description": "KAN-1008 W3-F1 ongoing card: the organiser confirmed the end. No time: the server has no actual end."}
+  "@oc_ended": {"description": "KAN-1008 W3-F1 ongoing card: the organiser confirmed the end. No time: the server has no actual end."},
+  "g02_organiser_title": "You organised this activity",
+  "g02_organiser_body": "Players rate it; you can review the result.",
+  "g02_organiser_result": "Review the result"
 }

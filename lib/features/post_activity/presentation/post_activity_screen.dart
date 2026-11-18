@@ -12,6 +12,7 @@ import 'package:dabbler/features/post_activity/domain/post_activity_models.dart'
 import 'package:dabbler/features/post_activity/presentation/post_activity_controller.dart';
 import 'package:dabbler/features/post_activity/presentation/post_activity_steps.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -100,6 +101,23 @@ class PostActivityScreen extends ConsumerWidget {
       );
     }
     final Widget body = switch (flow.state) {
+      RatingFlowState.notEligible when state.tally?.isOrganiser == true =>
+        Center(
+          child: DabblerEmptyState(
+            key: const ValueKey<String>('g02-organiser'),
+            icon: 'task-square',
+            title: l.g02_organiser_title,
+            text: l.g02_organiser_body,
+            action: DabblerButton(
+              key: const ValueKey<String>('g02-organiser-result'),
+              label: l.g02_organiser_result,
+              tone: DabblerButtonTone.secondary,
+              onPressed: () => context.push(
+                RoutePaths.resultApproval(eventId, title: title),
+              ),
+            ),
+          ),
+        ),
       RatingFlowState.notEligible => empty(
         'g02-not-eligible',
         'user-remove',

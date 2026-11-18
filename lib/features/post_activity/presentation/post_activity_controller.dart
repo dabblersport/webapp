@@ -132,9 +132,21 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       );
       return;
     }
-    if (flow.state == RatingFlowState.notEligible ||
-        flow.state == RatingFlowState.notOpen) {
+    if (flow.state == RatingFlowState.notOpen) {
       state = PostActivityState(flow: flow, loading: false);
+      return;
+    }
+    if (flow.state == RatingFlowState.notEligible) {
+      // The organiser is not a rater (attendance_participants). Only
+      // rpc_result_get says the caller is the organiser, and only for a
+      // competitive event; a player it refuses keeps the plain notice.
+      final t = await _repo.result(eventId);
+      if (!mounted) return;
+      state = PostActivityState(
+        flow: flow,
+        loading: false,
+        tally: t.fold((_) => null, (v) => v),
+      );
       return;
     }
     final t = await _repo.result(eventId);

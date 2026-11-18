@@ -18,7 +18,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-class NoShowScreen extends ConsumerWidget {
+class NoShowScreen extends ConsumerStatefulWidget {
   const NoShowScreen({
     super.key,
     required this.eventId,
@@ -29,6 +29,38 @@ class NoShowScreen extends ConsumerWidget {
   final String eventId;
 
   /// Shown as entered.
+  final String? title;
+  final VoidCallback? onBack;
+
+  @override
+  ConsumerState<NoShowScreen> createState() => _NoShowScreenState();
+}
+
+/// Every open reads the server again (KAN-999): a state kept from an earlier
+/// visit is dropped, never shown.
+class _NoShowScreenState extends ConsumerState<NoShowScreen> {
+  bool _invalidated = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_invalidated) return;
+    _invalidated = true;
+    ref.invalidate(noShowProvider(widget.eventId));
+  }
+
+  @override
+  Widget build(BuildContext context) => _NoShowScreenBody(
+    eventId: widget.eventId,
+    title: widget.title,
+    onBack: widget.onBack,
+  );
+}
+
+class _NoShowScreenBody extends ConsumerWidget {
+  const _NoShowScreenBody({required this.eventId, this.title, this.onBack});
+
+  final String eventId;
   final String? title;
   final VoidCallback? onBack;
 

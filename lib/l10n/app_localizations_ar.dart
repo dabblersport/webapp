@@ -11306,4 +11306,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get oc_ended => 'انتهى';
+
+  @override
+  String get g02_organiser_title => 'أنت من نظّم هذا النشاط';
+
+  @override
+  String get g02_organiser_body => 'يقيّمه اللاعبون، ويمكنك مراجعة النتيجة.';
+
+  @override
+  String get g02_organiser_result => 'مراجعة النتيجة';
 }

@@ -1,3 +1,4 @@
+import 'package:dabbler_design_system/dabbler_design_system.dart' show DabblerSpacing;
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/showup_rate/data/showup_rate_repository.dart';
@@ -150,6 +151,14 @@ void main() {
       });
     });
   }
+
+  testWidgets('padded like the neighbouring profile sections', (t) async {
+    for (final own in [true, false]) {
+      await _pump(t, _host(_Repo(Ok(ShowUpRate.fromJson(_few))), own: own));
+      final title = t.getTopLeft(find.text('Show-up rate'));
+      expect(title.dx, DabblerSpacing.space6);
+    }
+  });
 
   testWidgets('a failed read renders nothing', (t) async {
     await _pump(t, _host(_Repo(const Err(Failure()))));

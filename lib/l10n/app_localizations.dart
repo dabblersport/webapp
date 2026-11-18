@@ -19308,6 +19308,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ended'**
   String get oc_ended;
+
+  /// No description provided for @g02_organiser_title.
+  ///
+  /// In en, this message translates to:
+  /// **'You organised this activity'**
+  String get g02_organiser_title;
+
+  /// No description provided for @g02_organiser_body.
+  ///
+  /// In en, this message translates to:
+  /// **'Players rate it; you can review the result.'**
+  String get g02_organiser_body;
+
+  /// No description provided for @g02_organiser_result.
+  ///
+  /// In en, this message translates to:
+  /// **'Review the result'**
+  String get g02_organiser_result;
 }
 
 class _AppLocalizationsDelegate

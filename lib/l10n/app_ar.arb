@@ -3677,5 +3677,8 @@
   "oc_game": "مباراة",
   "oc_meetup": "لقاء",
   "oc_organiser": "أنت المنظّم",
-  "oc_ended": "انتهى"
+  "oc_ended": "انتهى",
+  "g02_organiser_title": "أنت من نظّم هذا النشاط",
+  "g02_organiser_body": "يقيّمه اللاعبون، ويمكنك مراجعة النتيجة.",
+  "g02_organiser_result": "مراجعة النتيجة"
 }

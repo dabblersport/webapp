@@ -11204,4 +11204,14 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get oc_ended => 'Ended';
+
+  @override
+  String get g02_organiser_title => 'You organised this activity';
+
+  @override
+  String get g02_organiser_body =>
+      'Players rate it; you can review the result.';
+
+  @override
+  String get g02_organiser_result => 'Review the result';
 }
