@@ -2116,8 +2116,14 @@ Worker change (not deployed by the migration): `workers/messaging/src/notify.ts`
   `conv:<conversation>`). The old direct INSERT is gone.
 * **Entry points** (both SECURITY DEFINER): `msg_notify(uuid, bigint, text)` (EXECUTE for authenticated and
   service_role; what the deployed Worker calls; sender-only push) and the overload `msg_notify(uuid, bigint, text, text)`
-  with `p_snippet`, **service_role only since KAN-984b (`20261117170659`)**: a member could otherwise push text that is
-  no message. A safe Worker path (HMAC header or service role) is proposed on KAN-984 and not built. The overload has
+  with `p_snippet`. KAN-984b (`20261117170659`) made it service_role only (a member could push text that is no
+  message); **KAN-984c (`20261118052921`) grants it back to authenticated behind a MAC**: the snippet is kept only when
+  the request header `x-msg-snippet-mac` equals lowercase-hex HMAC-SHA256(key, `<conversation uuid>:<seq>:<snippet>`),
+  key = Vault secret `msg_snippet_hmac_key` = Worker secret `MSG_SNIPPET_HMAC_KEY` (values never in the repo). The check
+  is `msg_snippet_verified(uuid, bigint, text)` (SECURITY DEFINER, postgres only, compares digests of both MACs, never
+  raises). No header, a malformed MAC, no Vault key, or a MAC for another conversation, seq, text or key: the snippet is
+  dropped and the push is sender-only; the notice is still sent. The Worker signs in `src/snippet_mac.ts` and sends
+  the user's token unchanged. Live test `supabase/tests/notifications_v2/kan984c_snippet_mac.sql`. The overload has
   no defaults, so a 3-argument call resolves to the first.
 * **Recipients:** a game chat's active roster (host, player, sub); a DM's two members; a meetup chat's organiser and
   every `meetup_rsvps` row with status `going`. Never the sender. Skipped: a member with `muted_at` on the
@@ -2212,3 +2218,59 @@ Migration `20261117174309_kan1018_full_once_invite_single.sql`. Live test
   Edge: a capacity edit with no roster change does not move the episode (next roster change corrects it).
 * A join that accepts a pending invite sends only `game.invite_accepted` (invite trigger); `game.player_joined` is
   skipped for that join.
+
+---
+
+## 25. Event lifecycle: optional Start, end confirmation, auto-close, "did not happen" (KAN-995, 2026-11-18)
+
+Migration `20261118053016_kan995_event_lifecycle` (F-9; plan W2-B2). It is the KAN-994 attendance read contract.
+
+**Tables (server only: RLS on, no policy, no client grant; the audit sequence is closed too)**
+* `event_lifecycle`, one row per event, created on first use:
+  * `state`: `scheduled` → `started` → `ended` | `auto_closed` | `did_not_happen`. The last three are closed and
+    final; a closed event is not reopened.
+  * `actual_started_at` / `started_by`, `actual_ended_at`, `closed_at` / `closed_by`;
+  * `closed_reason`: `played`, `did_not_happen`, `time_ended`, or `pre_lifecycle` (seeded, see below);
+  * `confirm_requested_at`, `reminder_sent_at`, and `end_revision`, the `events.schedule_revision` those two belong to;
+  * `revision`, the transition counter.
+* `event_lifecycle_transitions`: every transition with `from_state`, `to_state`, `actor_user_id`, `reason` and time.
+* Cancellation stays on `events.is_cancelled`. A cancelled event gets no lifecycle step.
+
+**Scheduled end:** `coalesce(end_at, start_at + 2h)`, so a meetup with no `end_at` ends 2h after its start.
+
+**Organiser RPCs** (`authenticated`; the organiser is `events.creator_user_id`, or an admin):
+* `rpc_event_start(p_event_id)`:
+  * refused before the scheduled start, on a cancelled event, for anyone else, and on a closed event;
+  * a repeat returns `already_started` with the same `actual_started_at`.
+* `rpc_event_confirm_end(p_event_id, p_outcome)`, outcome `played` or `did_not_happen`:
+  * the same refusals apply;
+  * a repeat with the same outcome is idempotent; a different outcome on a closed event is `already_closed`;
+  * `played` sends `activity.ended` to the participants (game: active roster; meetup: going), never to the organiser;
+  * `did_not_happen` notifies nobody.
+
+**Worker:** `kan995_lifecycle_worker(p_now)`, run by pg_cron job `kan995_lifecycle_every_minute`. It is not the
+KAN-983 queue, whose checks only allow reminders.
+* It looks at events that are not cancelled and not closed, whose scheduled end passed within the last day.
+* At the end: `activity.confirm_end` to the organiser.
+* At `max(end + 2h, request + 2h)`: `activity.confirm_end_reminder`.
+* At `max(end + 4h, reminder + 2h)`: the state becomes `auto_closed` (`time_ended`), and the organiser gets
+  `activity.auto_closed`. The `max()` spaces the steps out after an outage.
+* **Reschedule:** a new `schedule_revision` resets the request and reminder, so all three steps follow the new end.
+* **Dedupe keys:** `lifecycle:<step>:<event>:<revision>`.
+* The 4 kinds are in category `activities`, with `breaks_quiet = false`.
+
+**Read contract:** `event_lifecycle_state(p_event_id)` → `state`, `effective_end_at`, `scheduled_end_at`,
+`actual_started_at`, `actual_ended_at`, `closed_at`, `closed_reason`.
+* It is `service_role` only, and it returns `scheduled` when there is no row.
+* `effective_end_at` = `actual_ended_at`, else the scheduled end.
+* KAN-994's `attendance_lifecycle()` reads it, and only it: auto-finalize runs 24h after `effective_end_at`, and a
+  `did_not_happen` event is finalized with no outcomes.
+
+**Seed:** the 2 non-cancelled events whose scheduled end had passed within the last day of the migration got a quiet
+closed row (`auto_closed` / `pre_lifecycle`, no notice).
+
+**Not here:** attendance and no-show (KAN-994), the UI (W2-F5 / KAN-1002), and a client read of the lifecycle. The
+app has no lifecycle read yet; W2-F5 needs one.
+
+Live test: `supabase/tests/notifications_v2/kan995_event_lifecycle.sql`. Rollback:
+`supabase/schema/rollback/kan995_ROLLBACK_event_lifecycle.sql`.

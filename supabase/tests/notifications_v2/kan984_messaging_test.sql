@@ -195,9 +195,12 @@ BEGIN
     tap := tap || format(E'ok %s - meetup chat, EN recipient: "%s"\n', n, t);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - EN group title: %s\n', n, t); END IF;
 
-  ------------------------------------------------------------------------- R4 (KAN-984b): no client-supplied snippet
+  ------------------------------------------------------------------------- R4 (KAN-984b, KAN-984c): no client-supplied snippet
+  -- KAN-984c: the 4-argument overload is callable by members again, but a snippet without the Worker's MAC
+  -- (x-msg-snippet-mac) is dropped: the ghost text reaches no push. The MAC cases live in kan984c_snippet_mac.sql.
   UPDATE public.notifications SET is_read = true WHERE to_user_id = v AND kind_key = 'message.received';
   PERFORM set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
+  PERFORM set_config('request.headers', '{}', true);
   EXECUTE 'SET LOCAL ROLE authenticated';
   BEGIN
     PERFORM public.msg_notify(dm, 987654321, 'all', 'GHOST text that is no message');
@@ -205,12 +208,15 @@ BEGIN
   EXCEPTION WHEN insufficient_privilege THEN t := '42501';
   END;
   EXECUTE 'RESET ROLE';
+  SELECT id INTO nid FROM public.notifications WHERE to_user_id = v AND dedupe_key = 'message.received:' || dm || ':987654321';
+  SELECT convert_from(q.body, 'UTF8')::jsonb INTO b FROM net.http_request_queue q
+   WHERE convert_from(q.body, 'UTF8')::jsonb ->> 'notification_id' = nid::text;
   n := n + 1;
-  IF t = '42501'
-     AND NOT EXISTS (SELECT 1 FROM public.notifications WHERE to_user_id = v AND dedupe_key = 'message.received:' || dm || ':987654321')
+  IF t = 'accepted' AND nid IS NOT NULL AND b ->> 'body' = 'Open the chat to read it.'
      AND NOT EXISTS (SELECT 1 FROM net.http_request_queue q WHERE convert_from(q.body, 'UTF8') LIKE '%GHOST text%') THEN
-    tap := tap || format(E'ok %s - R4 a member calling the snippet overload directly is refused (42501): no row, no push, no text queued\n', n);
-  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - R4 direct snippet call: %s\n', n, t); END IF;
+    tap := tap || format(E'ok %s - R4 a member''s direct snippet call without the Worker MAC is sender-only: the ghost text is queued nowhere\n', n);
+  ELSE bad := bad + 1; tap := tap || format(E'not ok %s - R4 direct snippet call: %s / %s\n', n, t, b ->> 'body'); END IF;
+  UPDATE public.notifications SET is_read = true WHERE to_user_id = v AND kind_key = 'message.received';
 
   PERFORM set_config('request.jwt.claims', json_build_object('sub', u, 'role', 'authenticated')::text, true);
   EXECUTE 'SET LOCAL ROLE authenticated';
@@ -232,9 +238,10 @@ BEGIN
   n := n + 1;
   IF c = 0 AND NOT has_function_privilege('authenticated', 'public.msg_notify_core(uuid,uuid,bigint,text,text)', 'EXECUTE')
      AND NOT has_function_privilege('anon', 'public.msg_notify(uuid,bigint,text,text)', 'EXECUTE')
-     AND NOT has_function_privilege('authenticated', 'public.msg_notify(uuid,bigint,text,text)', 'EXECUTE')
+     AND has_function_privilege('authenticated', 'public.msg_notify(uuid,bigint,text,text)', 'EXECUTE')  -- KAN-984c
+     AND NOT has_function_privilege('authenticated', 'public.msg_snippet_verified(uuid,bigint,text)', 'EXECUTE')
      AND has_function_privilege('authenticated', 'public.msg_notify(uuid,bigint,text)', 'EXECUTE') THEN
-    tap := tap || format(E'ok %s - message.received has one sender (msg_notify_core); core is not client-callable; anon cannot call msg_notify\n', n);
+    tap := tap || format(E'ok %s - message.received has one sender (msg_notify_core); core and the MAC check are not client-callable; anon cannot call msg_notify\n', n);
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - senders %s / grants\n', n, c); END IF;
 
   RAISE EXCEPTION E'KAN-984 TAP (rolled back)\n1..%\n%# % failed of %', n, tap, bad, n;

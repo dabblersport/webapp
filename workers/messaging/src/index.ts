@@ -226,7 +226,8 @@ async function sendMessage(request: Request, env: Env, conversationId: string, c
   }
   // KAN-543: wake the members only for a NEW message (201), never for an idempotent repeat (200). Scheduled after the
   // response with ctx.waitUntil; it never delays or changes the send result.
-  if (created) scheduleNotify(ctx, env, request.headers.get("Authorization"), conversationId, row.seq);
+  // KAN-984: the stored text goes along as the push snippet (see notify.ts); an empty caption sends none.
+  if (created) scheduleNotify(ctx, env, request.headers.get("Authorization"), conversationId, row.seq, row.body);
   const [withImages] = await withAttachments(env.DB, [toApiMessage(row, auth.grant.userId)]);
   return json(created ? 201 : 200, withImages);
 }

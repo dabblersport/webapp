@@ -34,13 +34,14 @@ describe("(g) static guard over src/", () => {
   it("found source files", () => expect(files.length).toBeGreaterThan(0));
   for (const [name, re] of FORBIDDEN) {
     it(`no ${name}`, () => {
-      // KAN-510: the HMAC check of the signed internal endpoint is the one legitimate crypto.subtle user.
-      // It never touches a bearer token; every other file stays under the ban.
+      // KAN-510: the HMAC check of the signed internal endpoint is a legitimate crypto.subtle user.
+      // KAN-984c: snippet_mac.ts signs the push snippet (key + conversation:seq:snippet in, hex out). Neither file ever
+      // touches a request, a header or a bearer token; every other file stays under the ban.
       // KAN-581: the private R2 bucket (binding MEDIA) is the approved home of message image bytes. It may be declared (env.d.ts,
       // auth.ts Env) and used (attachments.ts) only; no other file touches R2.
       const exempt =
         name === "crypto.subtle"
-          ? ["system_line.ts"]
+          ? ["system_line.ts", "snippet_mac.ts"]
           : name === "R2"
             ? ["attachments.ts", "auth.ts", "env.d.ts"]
             : name.startsWith("SUPABASE_SERVICE_KEY")

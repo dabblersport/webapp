@@ -5,6 +5,8 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import worker from "../src/index";
+import { createHmac } from "node:crypto";
+import { SNIPPET_MAC_HEADER, SNIPPET_MAX_CHARS, snippetMac, snippetOf } from "../src/notify";
 import { CONV_A, RPC_URL, SUPABASE_URL, authRow, env, localD1 } from "./helpers";
 
 const NOTIFY_URL = `${SUPABASE_URL}/rest/v1/rpc/msg_notify`;
@@ -79,7 +81,9 @@ describe("a new stored message wakes the members", () => {
         p_conversation_id: CONV_A,
         p_seq: msg.seq,
         p_access_mode: "allowlist",
+        // KAN-984c: no MSG_SNIPPET_HMAC_KEY binding in this env, so no snippet and no MAC leave the Worker
       });
+      expect(h[SNIPPET_MAC_HEADER]).toBeUndefined();
       expect(unmocked).toEqual([]);
     } finally {
       await mf.dispose();
@@ -253,5 +257,90 @@ describe("nothing sensitive is logged or leaked", () => {
     const text = readdirSync(dir).map((f) => readFileSync(join(dir, f), "utf8")).join("\n");
     expect(/\bconsole\s*\./.test(text)).toBe(false);
     for (const re of [/SERVICE_ROLE/i, /jwt-decode/i, /JWT_SECRET/i]) expect(re.test(text)).toBe(false);
+  });
+});
+
+// KAN-984 (W1-B6): the push snippet. Supabase applies the recipient's message_preview; the Worker offers it only with
+// a MAC (KAN-984c, option A): HMAC-SHA256(MSG_SNIPPET_HMAC_KEY, "<conversation>:<seq>:<snippet>") in x-msg-snippet-mac.
+// TEST_KEY is a throwaway test value, not the real key (which exists only in the two secret stores).
+const TEST_KEY = "kan984c-test-key-not-the-real-one";
+const WITH_KEY = { MSG_SNIPPET_HMAC_KEY: TEST_KEY };
+/** The MAC computed independently with node:crypto, the way msg_notify recomputes it with pgcrypto. */
+const expectedMac = (conv: string, seq: number, snippet: string) =>
+  createHmac("sha256", TEST_KEY).update(`${conv}:${seq}:${snippet}`, "utf8").digest("hex");
+
+describe("KAN-984 the message text goes along as the push snippet, with its MAC", () => {
+  it("no key binding: no snippet and no MAC header (the 3-argument msg_notify, sender only)", async () => {
+    const { notifyCalls } = stub();
+    const { mf, db } = await localD1();
+    try {
+      const { ctx, scheduled } = context();
+      await send(db, KEY(1), ctx, {}, "see you at 8");
+      await Promise.all(scheduled);
+      const h = notifyCalls[0].init.headers as Record<string, string>;
+      expect(JSON.parse(notifyCalls[0].init.body as string).p_snippet).toBeUndefined();
+      expect(h[SNIPPET_MAC_HEADER]).toBeUndefined();
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("with the key: p_snippet = the trimmed text and a good MAC over conversation:seq:snippet; the token is unchanged", async () => {
+    const { notifyCalls } = stub();
+    const { mf, db } = await localD1();
+    try {
+      const { ctx, scheduled } = context();
+      const res = await send(db, KEY(1), ctx, WITH_KEY, "  see you at 8  ");
+      const msg = (await res.json()) as { seq: number };
+      await Promise.all(scheduled);
+      const h = notifyCalls[0].init.headers as Record<string, string>;
+      const sent = JSON.parse(notifyCalls[0].init.body as string);
+      expect(sent.p_snippet).toBe("see you at 8");
+      expect(h[SNIPPET_MAC_HEADER]).toBe(expectedMac(CONV_A, msg.seq, "see you at 8"));
+      expect(h.Authorization).toBe(TOKEN);
+      // the key itself never travels
+      expect(JSON.stringify(notifyCalls[0].init)).not.toContain(TEST_KEY);
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("a MAC is bound to its seq and its text: another seq or another text gives another MAC", async () => {
+    const good = await snippetMac(TEST_KEY, CONV_A, 7, "see you at 8");
+    expect(good).toBe(expectedMac(CONV_A, 7, "see you at 8"));
+    expect(await snippetMac(TEST_KEY, CONV_A, 8, "see you at 8")).not.toBe(good); // wrong seq
+    expect(await snippetMac(TEST_KEY, CONV_A, 7, "see you at 9")).not.toBe(good); // wrong text
+    expect(await snippetMac(TEST_KEY, "22222222-2222-4222-8222-222222222222", 7, "see you at 8")).not.toBe(good);
+    expect(await snippetMac("another-key", CONV_A, 7, "see you at 8")).not.toBe(good); // wrong key
+    // the conversation id is lowercased, as Postgres prints a uuid
+    expect(await snippetMac(TEST_KEY, CONV_A.toUpperCase(), 7, "see you at 8")).toBe(good);
+  });
+
+  it("the MAC covers the exact text sent: Arabic, emoji, cut to SNIPPET_MAX_CHARS characters (not bytes)", async () => {
+    const { notifyCalls } = stub();
+    const { mf, db } = await localD1();
+    try {
+      const { ctx, scheduled } = context();
+      const res = await send(db, KEY(1), ctx, WITH_KEY, "ب".repeat(300) + "⚽");
+      const msg = (await res.json()) as { seq: number };
+      await Promise.all(scheduled);
+      const sent = JSON.parse(notifyCalls[0].init.body as string).p_snippet as string;
+      expect(Array.from(sent)).toHaveLength(SNIPPET_MAX_CHARS);
+      const h = notifyCalls[0].init.headers as Record<string, string>;
+      expect(h[SNIPPET_MAC_HEADER]).toBe(expectedMac(CONV_A, msg.seq, sent));
+    } finally {
+      await mf.dispose();
+    }
+  });
+
+  it("snippetOf: empty or whitespace text gives no snippet; controls and lone surrogates are made safe", () => {
+    expect(snippetOf("")).toBeNull();
+    expect(snippetOf("   ")).toBeNull();
+    expect(snippetOf(null)).toBeNull();
+    expect(snippetOf(undefined)).toBeNull();
+    expect(snippetOf("hi")).toBe("hi");
+    expect(snippetOf("a\u0000b\nc")).toBe("a b c");
+    expect(snippetOf("x\ud800y")).toBe("x�y");
+    expect(snippetOf("goal ⚽")).toBe("goal ⚽"); // a real surrogate pair is kept
   });
 });
