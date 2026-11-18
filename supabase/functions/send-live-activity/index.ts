@@ -1,7 +1,9 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
-// send-live-activity v2 (KAN-1004d, 2026-11-18): the real Android Live Activity sender.
+// send-live-activity v3 (KAN-1004e, 2026-11-18): Android and iOS Live Activity sender.
+// v3: iOS rows are sent through FCM HTTP v1 (apns block + apns.live_activity_token) only when
+// live_activity_config.ios_sender_enabled is true; otherwise 'unsent: no credentials' / ios_sender_disabled.
 // v2: rows are claimed atomically by live_activity_claim (queued -> sending, attempts + 1, at most 20, inactive
 // sessions skipped); only claimed rows are sent. android message carries ttl 3600s + collapse_key la:<session>.
 // Called only by the database (live_activity_post via pg_net) with x-trigger-secret, the same trusted lane
@@ -10,7 +12,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // nothing reaches a device; outcomes are still recorded, so a test can prove the rejection path).
 // android: FCM HTTP v1 data message {token, android.priority high, data: the stored payload's string keys} to the
 //          installation's fcm_tokens token (server-side only, never logged or returned).
-// iOS:     nothing is sent until an APNs key exists; the row is marked 'unsent: no credentials'.
+// iOS:     {token: fcm token, apns: {live_activity_token, headers, payload}} from the stored apns block.
 // Outcomes: sent | token_rejected (UNREGISTERED / token INVALID_ARGUMENT -> session stale, via
 //           live_activity_record_result) | failed (error_class) | transient -> live_activity_retry (3 attempts).
 
@@ -56,13 +58,29 @@ Deno.serve(async (req: Request) => {
     // deno-lint-ignore no-explicit-any
     for (const row of (sends ?? []) as any[]) {
       const s = row;
+      if (s.platform === "iOS") {
+        // Defence in depth: live_activity_send never hands an iOS row off while the flag is false.
+        const { data: cfg } = await supabase.from("live_activity_config").select("ios_sender_enabled").maybeSingle();
+        if (cfg?.ios_sender_enabled !== true) {
+          await supabase.from("live_activity_sends")
+            .update({ status: "unsent: no credentials", error_class: "ios_sender_disabled",
+                      result_at: new Date().toISOString() })
+            .eq("id", row.id).eq("status", "sending");
+          bump("unsent_ios_sender_disabled");
+          continue;
+        }
+        const message = await buildIosMessage(supabase, row, validateOnly);
+        if (typeof message === "string") {
+          await record(supabase, row.id, "failed", message);
+          bump("failed");
+          continue;
+        }
+        accessToken = await sendAndRecord(supabase, row.id, message, accessToken, validateOnly, bump);
+        continue;
+      }
       if (s.platform !== "android") {
-        // No APNs key yet: the database flag live_activity_config.ios_sender_enabled keeps iOS rows from
-        // reaching here; one that does is left exactly as the stub left it.
-        await supabase.from("live_activity_sends")
-          .update({ status: "unsent: no credentials", result_at: new Date().toISOString() })
-          .eq("id", row.id).eq("status", "sending");
-        bump("unsent_no_credentials");
+        await record(supabase, row.id, "failed", "unknown_platform");
+        bump("failed");
         continue;
       }
       const { data: tok } = await supabase.from("fcm_tokens").select("token")
@@ -89,26 +107,7 @@ Deno.serve(async (req: Request) => {
           data,
         },
       };
-      try {
-        accessToken ??= await getAccessToken();
-        await postFcm(accessToken, message);
-        await record(supabase, row.id, "sent", validateOnly ? "validate_only" : null);
-        bump("sent");
-      } catch (e) {
-        const raw = String(e instanceof Error ? e.message : e);
-        const cls = raw.startsWith("FCM request failed") ? classifyFcmError(e) : "network";
-        if (cls === "unregistered" || cls === "invalid_token") {
-          await record(supabase, row.id, "token_rejected", cls);
-          bump("token_rejected");
-        } else if (TRANSIENT.has(cls)) {
-          await supabase.rpc("live_activity_retry", { p_send_id: row.id, p_error_class: cls });
-          bump("retry");
-        } else {
-          await record(supabase, row.id, "failed", cls);
-          bump("failed");
-        }
-        console.error("send-live-activity: send", row.id, "failed:", cls);
-      }
+      accessToken = await sendAndRecord(supabase, row.id, message, accessToken, validateOnly, bump);
     }
     return json({ received: ids.length, claimed: (sends ?? []).length, validate_only: validateOnly, ...counts });
   } catch (e) {
@@ -122,6 +121,70 @@ async function record(supabase: any, id: number, outcome: string, errorClass: st
   const { error } = await supabase.rpc("live_activity_record_result",
     { p_send_id: id, p_outcome: outcome, p_error_class: errorClass });
   if (error) console.error("live_activity_record_result failed for", id, error.code);
+}
+
+
+// One FCM post and its bookkeeping, shared by android and iOS: sent | token_rejected (session stale) |
+// transient -> live_activity_retry (backoff, 3 attempts) | failed.
+async function sendAndRecord(
+  // deno-lint-ignore no-explicit-any
+  supabase: any, id: number, message: unknown, accessToken: string | null, validateOnly: boolean,
+  bump: (k: string) => void,
+): Promise<string | null> {
+  try {
+    accessToken ??= await getAccessToken();
+    await postFcm(accessToken, message);
+    await record(supabase, id, "sent", validateOnly ? "validate_only" : null);
+    bump("sent");
+  } catch (e) {
+    const raw = String(e instanceof Error ? e.message : e);
+    const cls = raw.startsWith("FCM request failed") ? classifyFcmError(e) : "network";
+    if (cls === "unregistered" || cls === "invalid_token") {
+      await record(supabase, id, "token_rejected", cls);
+      bump("token_rejected");
+    } else if (TRANSIENT.has(cls)) {
+      await supabase.rpc("live_activity_retry", { p_send_id: id, p_error_class: cls });
+      bump("retry");
+    } else {
+      await record(supabase, id, "failed", cls);
+      bump("failed");
+    }
+    console.error("send-live-activity: send", id, "failed:", cls);
+  }
+  return accessToken;
+}
+
+// iOS: FCM HTTP v1 message relayed to APNs with the project's APNs auth key. No top-level notification.
+// message.token = the installation's FCM registration token; apns.live_activity_token = the push-to-start token
+// (start) or the per-activity token (update/end). The apns block (headers incl. apns-topic, payload.aps) is built
+// in SQL by live_activity_enqueue. Returns an error class string when a token is missing. Tokens are never logged.
+// deno-lint-ignore no-explicit-any
+async function buildIosMessage(supabase: any, row: any, validateOnly: boolean): Promise<unknown | string> {
+  const apns = row.payload?.apns;
+  const event = apns?.payload?.aps?.event;
+  if (!apns || !["start", "update", "end"].includes(event)) return "invalid_payload";
+  const { data: tok } = await supabase.from("fcm_tokens").select("token")
+    .eq("user_id", row.user_id).eq("installation_id", row.installation_id)
+    .order("updated_at", { ascending: false }).limit(1).maybeSingle();
+  if (!tok?.token) return "no_token";
+  let laToken: string | null = null;
+  if (event === "start") {
+    const { data } = await supabase.from("live_activity_push_to_start").select("token")
+      .eq("user_id", row.user_id).eq("installation_id", row.installation_id).maybeSingle();
+    laToken = data?.token ?? null;
+  } else {
+    const { data } = await supabase.from("live_activity_sessions").select("push_token")
+      .eq("id", row.session_id).maybeSingle();
+    laToken = data?.push_token ?? null;
+  }
+  if (!laToken) return "no_live_activity_token";
+  return {
+    validate_only: validateOnly || undefined,
+    message: {
+      token: tok.token,
+      apns: { live_activity_token: laToken, headers: apns.headers, payload: apns.payload },
+    },
+  };
 }
 
 // --- helpers copied verbatim from send-push-notification ---

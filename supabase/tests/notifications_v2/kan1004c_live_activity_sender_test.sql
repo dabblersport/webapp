@@ -239,7 +239,7 @@ BEGIN
     AND (SELECT array_agg(k2 ORDER BY k2) FROM jsonb_object_keys(pl -> 'android') k2) = ARRAY['collapse_key', 'priority', 'ttl']
     AND pl #>> '{android,ttl}' = '3600s' AND pl #>> '{android,collapse_key}' = 'la:' || sa::text
     AND (SELECT array_agg(k2 ORDER BY k2) FROM jsonb_object_keys(pl -> 'data') k2)
-        = ARRAY['content', 'la_event', 'session_id', 'state_version', 'type']
+        = ARRAY['content', 'la_event', 'lang', 'session_id', 'state_version', 'type']
     AND NOT EXISTS (SELECT 1 FROM jsonb_each(pl -> 'data') e WHERE jsonb_typeof(e.value) <> 'string');
   IF NOT ok THEN bad := bad + 1; END IF;
   tap := tap || format(E'%s %s - payload: exact keys, string data, ttl 3600s, collapse key la:<session>\n', CASE WHEN ok THEN 'ok' ELSE 'not ok' END, n);
