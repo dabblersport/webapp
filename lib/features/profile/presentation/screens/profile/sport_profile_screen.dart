@@ -175,7 +175,6 @@ class _ScoreboardGrid extends StatelessWidget {
     'Matches': 'cup',
     'Rating': 'star',
     'Form': 'trend-up',
-    'Reliability': 'verify',
     'Hosted': 'calendar-tick',
     'Upcoming': 'clock',
     'Level': 'ranking',

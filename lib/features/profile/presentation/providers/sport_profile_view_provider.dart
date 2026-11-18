@@ -241,10 +241,6 @@ List<SportProfileMetric> _buildPlayerMetrics(
       label: 'Form',
       value: profile.formScore.toStringAsFixed(1),
     ),
-    SportProfileMetric(
-      label: 'Reliability',
-      value: profile.reliabilityScore.toStringAsFixed(0),
-    ),
   ];
 }
 

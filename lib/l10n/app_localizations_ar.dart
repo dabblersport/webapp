@@ -2410,9 +2410,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get user_profile_stat_sports => 'الرياضات';
 
   @override
-  String get user_profile_stat_reliability => 'الالتزام';
-
-  @override
   String get user_profile_stat_activity => 'النشاط';
 
   @override
@@ -10508,4 +10505,36 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get notif_push_keep_place => 'احتفظ بمكاني';
+
+  @override
+  String get showup_rate_title => 'نسبة الحضور';
+
+  @override
+  String showup_rate_percent(int rate) {
+    return '$rate%';
+  }
+
+  @override
+  String showup_rate_basis(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count مباراة مؤكدة',
+      many: '$count مباراة مؤكدة',
+      few: '$count مباريات مؤكدة',
+      two: 'مباراتين مؤكدتين',
+      one: 'مباراة مؤكدة واحدة',
+    );
+    return 'من $_temp0';
+  }
+
+  @override
+  String get showup_rate_not_enough => 'لا توجد مباريات كافية بعد';
+
+  @override
+  String get showup_rate_how_counted => 'كيف تُحتسب';
+
+  @override
+  String get showup_rate_rule =>
+      'نسبتك هي حصة المباريات واللقاءات المؤكدة التي حضرتها. لا تُحتسب الفعاليات الملغاة، والانسحابات بعذر، والفعاليات التي لم تُقم. تظهر بعد 3 مباريات أو لقاءات مؤكدة.';
 }

@@ -2420,9 +2420,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get user_profile_stat_sports => 'Sports played';
 
   @override
-  String get user_profile_stat_reliability => 'Reliability';
-
-  @override
   String get user_profile_stat_activity => 'Activity';
 
   @override
@@ -10398,4 +10395,33 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get notif_push_keep_place => 'Keep my place';
+
+  @override
+  String get showup_rate_title => 'Show-up rate';
+
+  @override
+  String showup_rate_percent(int rate) {
+    return '$rate%';
+  }
+
+  @override
+  String showup_rate_basis(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count confirmed games',
+      one: '1 confirmed game',
+    );
+    return 'from $_temp0';
+  }
+
+  @override
+  String get showup_rate_not_enough => 'Not enough games yet';
+
+  @override
+  String get showup_rate_how_counted => 'How it\'s counted';
+
+  @override
+  String get showup_rate_rule =>
+      'Your rate is the share of your confirmed games and meetups you attended. Cancelled events, excused withdrawals and events that did not happen are not counted. It shows after 3 confirmed games or meetups.';
 }

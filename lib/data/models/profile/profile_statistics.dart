@@ -61,27 +61,6 @@ class ProfileStatistics {
     return '${totalHoursPlayed.toStringAsFixed(1)} hours';
   }
 
-  /// Returns reliability score based on various factors (0-100)
-  double getReliabilityScore() {
-    if (totalGamesPlayed == 0) return 0.0;
-
-    // Base score from games played (up to 40 points)
-    double score = (totalGamesPlayed * 2.0).clamp(0, 40);
-
-    // Bonus for organizing games (up to 20 points)
-    score += (totalGamesOrganized * 4.0).clamp(0, 20);
-
-    // Bonus for consistent play (up to 20 points)
-    score += (longestPlayStreak * 1.0).clamp(0, 20);
-
-    // Bonus for good ratings (up to 20 points)
-    if (totalRatingsReceived > 0) {
-      score += ((averageRating - 2.5) * 8.0).clamp(0, 20);
-    }
-
-    return score.clamp(0, 100);
-  }
-
   /// Returns activity level based on recent play
   String getActivityLevel() {
     if (lastGameDate == null) return 'Inactive';
@@ -105,9 +84,7 @@ class ProfileStatistics {
 
   /// Returns true if player is considered experienced
   bool isExperiencedPlayer() {
-    return totalGamesPlayed >= 10 &&
-        getReliabilityScore() >= 60 &&
-        averageRating >= 3.5;
+    return totalGamesPlayed >= 10 && averageRating >= 3.5;
   }
 
   /// Returns true if player is a regular organizer
@@ -129,7 +106,6 @@ class ProfileStatistics {
     for (final entry in sportGamesCount.entries)
       entry.key: averageRating + (entry.value * 0.1).clamp(-1.0, 1.0),
   };
-  double get improvementRate => getReliabilityScore() * 0.3;
   int get eventsAttended => totalGamesPlayed;
   int get mentorshipSessions => totalGamesOrganized;
 

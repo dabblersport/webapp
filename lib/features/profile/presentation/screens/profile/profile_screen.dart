@@ -15,6 +15,8 @@ import 'package:dabbler/features/profile/presentation/widgets/profile/own_profil
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_sport_picker.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
 import 'package:dabbler/features/ratings/presentation/widgets/rating_summary.dart';
+import 'package:dabbler/features/showup_rate/presentation/widgets/showup_rate_section.dart';
+import 'package:dabbler/features/showup_rate/providers/showup_rate_providers.dart';
 import '../../../../../app/app_router.dart';
 import '../../providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
@@ -126,6 +128,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
 
       // Invalidate dependent providers to refresh their data
       ref.invalidate(myPostsCountProvider);
+      ref.invalidate(showUpRateProvider(user.id));
       ref.invalidate(
         sportProfileHeaderProvider((userId: user.id, profileId: null)),
       );
@@ -402,9 +405,6 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               minutesPlayed: personaType == 'player' && !isContributor
                   ? ((profile?.statistics.totalHoursPlayed ?? 0) * 60).round()
                   : null,
-              reliability: personaType == 'player' && !isContributor
-                  ? profile?.statistics.getReliabilityScore().round()
-                  : null,
               primarySports: sportProfiles
                   .where((p) => p.isPrimarySport)
                   .length,
@@ -442,6 +442,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
                   : null,
             ),
             const DabblerGap.v(DabblerSpacing.space8),
+            ShowUpRateSection(userId: profile?.userId, own: true),
             RatingSummary(userId: profile?.userId),
             if (personaType == 'socialiser')
               OwnProfileFollowedSports(sports: mySports)

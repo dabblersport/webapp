@@ -64,7 +64,6 @@ void main() {
               organised: 3,
               upcoming: 1,
               minutesPlayed: null,
-              reliability: null,
             ),
           ),
           _en,

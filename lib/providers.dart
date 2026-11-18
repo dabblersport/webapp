@@ -67,3 +67,4 @@ export 'core/feedback/feedback_intent.dart';
 export 'core/feedback/presentation_context.dart';
 export 'features/sports/presentation/providers/sport_overview_providers.dart';
 export 'features/bench/presentation/providers/bench_providers.dart';
+export 'features/showup_rate/providers/showup_rate_providers.dart';

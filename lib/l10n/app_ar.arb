@@ -975,7 +975,6 @@
   "user_profile_stat_games": "المباريات",
   "user_profile_stat_win_rate": "نسبة الفوز",
   "user_profile_stat_sports": "الرياضات",
-  "user_profile_stat_reliability": "الالتزام",
   "user_profile_stat_activity": "النشاط",
   "user_profile_stat_last_play": "آخر مباراة",
   "user_profile_block_dialog_title": "حظر المستخدم",
@@ -3395,5 +3394,11 @@
   "notif_push_cancel_place_title": "هل تتخلى عن مكانك؟",
   "notif_push_cancel_place_hint": "بدون أي غرامة. يحصل عليه اللاعب التالي في قائمة الانتظار.",
   "notif_push_cancel_place_confirm": "تخلَّ عن مكاني",
-  "notif_push_keep_place": "احتفظ بمكاني"
+  "notif_push_keep_place": "احتفظ بمكاني",
+  "showup_rate_title": "نسبة الحضور",
+  "showup_rate_percent": "{rate}%",
+  "showup_rate_basis": "من {count, plural, =1{مباراة مؤكدة واحدة} =2{مباراتين مؤكدتين} few{{count} مباريات مؤكدة} many{{count} مباراة مؤكدة} other{{count} مباراة مؤكدة}}",
+  "showup_rate_not_enough": "لا توجد مباريات كافية بعد",
+  "showup_rate_how_counted": "كيف تُحتسب",
+  "showup_rate_rule": "نسبتك هي حصة المباريات واللقاءات المؤكدة التي حضرتها. لا تُحتسب الفعاليات الملغاة، والانسحابات بعذر، والفعاليات التي لم تُقم. تظهر بعد 3 مباريات أو لقاءات مؤكدة."
 }

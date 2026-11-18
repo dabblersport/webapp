@@ -919,7 +919,6 @@
   "user_profile_stat_games": "Games played",
   "user_profile_stat_win_rate": "Win rate",
   "user_profile_stat_sports": "Sports played",
-  "user_profile_stat_reliability": "Reliability",
   "user_profile_stat_activity": "Activity",
   "user_profile_stat_last_play": "Last play",
 
@@ -4115,5 +4114,17 @@
   "notif_push_cancel_place_confirm": "Give up my place",
   "@notif_push_cancel_place_confirm": {"description": "KAN-992 push on device."},
   "notif_push_keep_place": "Keep my place",
-  "@notif_push_keep_place": {"description": "KAN-992 push on device."}
+  "@notif_push_keep_place": {"description": "KAN-992 push on device."},
+  "showup_rate_title": "Show-up rate",
+  "@showup_rate_title": {"description": "KAN-1001 profile show-up rate, section label."},
+  "showup_rate_percent": "{rate}%",
+  "@showup_rate_percent": {"description": "KAN-1001 the server's show-up percentage.", "placeholders": {"rate": {"type": "int"}}},
+  "showup_rate_basis": "from {count, plural, =1{1 confirmed game} other{{count} confirmed games}}",
+  "@showup_rate_basis": {"description": "KAN-1001 basis under the rate (games and meetups).", "placeholders": {"count": {"type": "int"}}},
+  "showup_rate_not_enough": "Not enough games yet",
+  "@showup_rate_not_enough": {"description": "KAN-1001 fewer than 3 confirmed games or meetups."},
+  "showup_rate_how_counted": "How it's counted",
+  "@showup_rate_how_counted": {"description": "KAN-1001 own profile only: shows the rule."},
+  "showup_rate_rule": "Your rate is the share of your confirmed games and meetups you attended. Cancelled events, excused withdrawals and events that did not happen are not counted. It shows after 3 confirmed games or meetups.",
+  "@showup_rate_rule": {"description": "KAN-1001 the counting rule, own profile."}
 }

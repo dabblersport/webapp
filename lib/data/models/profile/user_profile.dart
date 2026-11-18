@@ -262,17 +262,6 @@ class UserProfile {
       score += 15.0;
     }
 
-    // Reliability compatibility (10%)
-    final myReliability = statistics.getReliabilityScore();
-    final otherReliability = otherUser.statistics.getReliabilityScore();
-    final reliabilityDiff = (myReliability - otherReliability).abs();
-
-    if (reliabilityDiff <= 10) {
-      score += 10.0;
-    } else if (reliabilityDiff <= 20) {
-      score += 5.0;
-    }
-
     return score.clamp(0.0, 100.0);
   }
 

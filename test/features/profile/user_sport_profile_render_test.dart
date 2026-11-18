@@ -275,7 +275,7 @@ Future<void> _pumpSport(
                   SportProfileMetric(label: 'Matches', value: '86'),
                   SportProfileMetric(label: 'Rating', value: '4.9'),
                   SportProfileMetric(label: 'Form', value: '7.2'),
-                  SportProfileMetric(label: 'Reliability', value: '99'),
+                  SportProfileMetric(label: 'Level', value: '3'),
                 ],
         ),
       ),

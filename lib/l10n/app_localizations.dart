@@ -4361,12 +4361,6 @@ abstract class AppLocalizations {
   /// **'Sports played'**
   String get user_profile_stat_sports;
 
-  /// No description provided for @user_profile_stat_reliability.
-  ///
-  /// In en, this message translates to:
-  /// **'Reliability'**
-  String get user_profile_stat_reliability;
-
   /// No description provided for @user_profile_stat_activity.
   ///
   /// In en, this message translates to:
@@ -17916,6 +17910,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Keep my place'**
   String get notif_push_keep_place;
+
+  /// KAN-1001 profile show-up rate, section label.
+  ///
+  /// In en, this message translates to:
+  /// **'Show-up rate'**
+  String get showup_rate_title;
+
+  /// KAN-1001 the server's show-up percentage.
+  ///
+  /// In en, this message translates to:
+  /// **'{rate}%'**
+  String showup_rate_percent(int rate);
+
+  /// KAN-1001 basis under the rate (games and meetups).
+  ///
+  /// In en, this message translates to:
+  /// **'from {count, plural, =1{1 confirmed game} other{{count} confirmed games}}'**
+  String showup_rate_basis(int count);
+
+  /// KAN-1001 fewer than 3 confirmed games or meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Not enough games yet'**
+  String get showup_rate_not_enough;
+
+  /// KAN-1001 own profile only: shows the rule.
+  ///
+  /// In en, this message translates to:
+  /// **'How it\'s counted'**
+  String get showup_rate_how_counted;
+
+  /// KAN-1001 the counting rule, own profile.
+  ///
+  /// In en, this message translates to:
+  /// **'Your rate is the share of your confirmed games and meetups you attended. Cancelled events, excused withdrawals and events that did not happen are not counted. It shows after 3 confirmed games or meetups.'**
+  String get showup_rate_rule;
 }
 
 class _AppLocalizationsDelegate

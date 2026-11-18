@@ -23,8 +23,9 @@ bool ownProfileIsNewContributor(AsyncValue<GameCounts>? counts) {
 }
 
 /// The Profiles design's bento: a hero tile in the chosen sport's accent and
-/// small tiles in a six-column [DabblerStatGrid] (rated, win rate, show-up,
-/// sports played, primary sports). Only figures the app holds are drawn; the
+/// small tiles in a six-column [DabblerStatGrid] (rated, minutes, sports
+/// played, primary sports). The show-up rate is its own section
+/// (ShowUpRateSection, KAN-1001). Only figures the app holds are drawn; the
 /// same composition serves the own profile and another user's.
 class OwnProfileStats extends StatelessWidget {
   const OwnProfileStats({
@@ -39,7 +40,6 @@ class OwnProfileStats extends StatelessWidget {
     this.onRetryCounts,
     this.rating,
     this.minutesPlayed,
-    this.reliability,
     this.primarySports,
     this.heroLabel,
     this.heroSub,
@@ -80,9 +80,6 @@ class OwnProfileStats extends StatelessWidget {
   /// Total minutes played (the frame's ink tile); null or zero draws no tile.
   final int? minutesPlayed;
 
-  /// The reliability score as a percentage; null draws no tile.
-  final int? reliability;
-
   /// How many sports are marked primary; null draws no tile.
   final int? primarySports;
 
@@ -120,7 +117,6 @@ class OwnProfileStats extends StatelessWidget {
     final int? games = gamesPlayed;
     final double? stars = rating;
     final int? minutes = minutesPlayed;
-    final int? show = reliability;
     final int? primary = primarySports;
     if (newContributor) {
       return Padding(
@@ -206,13 +202,6 @@ class OwnProfileStats extends StatelessWidget {
               ).format(minutes),
               label: l10n.profile_stat_minutes_played,
               tone: DabblerStatTileTone.ink,
-              fitValue: true,
-            ),
-          if (!scoped && show != null)
-            DabblerStatTile(
-              value: '$show%',
-              label: l10n.user_profile_stat_reliability,
-              tone: DabblerStatTileTone.info,
               fitValue: true,
             ),
           if (!scoped)

@@ -16,6 +16,7 @@ const Map<String, String> _identicalAllowed = {
   'post_card_kick_in_label': 'brand term "Kick-in"',
   'notif_quiet_hours_range': 'time range placeholders only',
   'composer_media_gif': 'format name "GIF", LTR token',
+  'showup_rate_percent': 'number + "%" only, as the AR show-up push writes it',
 };
 
 const _validCategories = {'zero', 'one', 'two', 'few', 'many', 'other'};

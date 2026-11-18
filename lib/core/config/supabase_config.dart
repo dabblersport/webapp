@@ -402,4 +402,7 @@ class SupabaseConfig {
   /// KAN-982: gives up a waitlist-promoted place with no penalty; the push's
   /// Cancel my place action (KAN-992).
   static const String rpcCancelWaitlistPlace = 'rpc_cancel_waitlist_place';
+
+  /// KAN-1001: a user's show-up rate from settled attendance (KAN-994).
+  static const String rpcShowUpRate = 'rpc_showup_rate';
 }

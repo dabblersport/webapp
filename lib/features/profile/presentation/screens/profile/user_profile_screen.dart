@@ -16,6 +16,7 @@ import 'package:dabbler/features/profile/presentation/widgets/profile/own_profil
 import 'package:dabbler/features/profile/presentation/widgets/profile/own_profile_stats.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile/visitor/contributor_visitor_sections.dart';
 import 'package:dabbler/features/ratings/presentation/widgets/rating_summary.dart';
+import 'package:dabbler/features/showup_rate/presentation/widgets/showup_rate_section.dart';
 import 'package:dabbler/data/models/profile/sports_profile.dart';
 import '../../models/sport_profile_route_args.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_message_action.dart';
@@ -263,6 +264,7 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
               actions: _buildActionButtons(context),
             ),
             const DabblerGap.v(DabblerSpacing.space8),
+            ShowUpRateSection(userId: authUserId),
             if (isContributor && profileId != null && authUserId != null)
               ContributorVisitorSections(
                 userId: authUserId,
@@ -364,7 +366,6 @@ class _UserProfileScreenState extends ConsumerState<UserProfileScreen>
           ? null
           : rated.fold<double>(0, (a, p) => a + p.averageRating) / rated.length,
       minutesPlayed: (statistics.totalHoursPlayed * 60).round(),
-      reliability: statistics.getReliabilityScore().round(),
       primarySports: sports.where((p) => p.isPrimarySport).length,
       heroSub: sports.isEmpty
           ? null
