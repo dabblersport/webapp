@@ -11256,4 +11256,27 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hc_checked_in => 'Checked in';
+
+  @override
+  String hc_time_range(String start, String end) {
+    return '$start until $end';
+  }
+
+  @override
+  String get hc_check_in_available => 'Check in available';
+
+  @override
+  String get hc_check_in_closed => 'Check in closed';
+
+  @override
+  String get settings_time_format_title => 'Time format';
+
+  @override
+  String get settings_time_format_system => 'System';
+
+  @override
+  String get settings_time_format_12 => '12-hour';
+
+  @override
+  String get settings_time_format_24 => '24-hour';
 }

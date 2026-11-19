@@ -3696,5 +3696,12 @@
   "@g04_confirm_no": {"description": "Closes the check-in sheet without checking in."},
   "hc_under_way": "جارية الآن",
   "hc_under_way_until": "جارية الآن · حتى {time}",
-  "hc_checked_in": "تم تسجيل الحضور"
+  "hc_checked_in": "تم تسجيل الحضور",
+  "hc_time_range": "{start} حتى {end}",
+  "hc_check_in_available": "تسجيل الحضور متاح",
+  "hc_check_in_closed": "تسجيل الحضور مغلق",
+  "settings_time_format_title": "تنسيق الوقت",
+  "settings_time_format_system": "النظام",
+  "settings_time_format_12": "12 ساعة",
+  "settings_time_format_24": "24 ساعة"
 }

@@ -3,6 +3,7 @@ import 'package:dabbler/core/services/connectivity_service.dart';
 import 'dart:async';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/core/providers/time_format_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:timeago/timeago.dart' as timeago;
@@ -322,6 +323,7 @@ class MyApp extends ConsumerWidget {
     // KAN-608: the offline settings queue lives as long as the app.
     ref.watch(settingsSyncProvider.notifier);
     final locale = ref.watch(localeProvider);
+    final hourFormat = ref.watch(hourFormatProvider);
     ref.listen<UserProfile?>(currentUserProfileProvider, (prev, next) {
       if (next == null) return;
       ref.read(localeProvider.notifier).hydrateFromProfile(next);
@@ -352,21 +354,25 @@ class MyApp extends ConsumerWidget {
             // Arabic), bundled by `dabbler_design_system`.
             // One toast queue for the whole app, mounted above the router, and
             // the design system's page ground behind every route.
-            return Theme(
-              data: DabblerDesignSystemTheme.withFonts(base, locale: locale),
-              child: Builder(
-                builder: (context) => SystemChromeSync(
-                  child: ColoredBox(
-                    color: DabblerColors.of(context).bgPrimary,
-                    // Shell-aware: on the main shell a toast is presented by
-                    // the Action Area; elsewhere it is the standard toast.
-                    child: ShellAwareToastProvider(
-                      // KAN-993: the in-app pop-up for a notification that
-                      // arrives while the app is open.
-                      child: NotificationPopupPresenter(
-                        currentLocation: _routerLocation,
-                        openRoute: (String route) => appRouter.push(route),
-                        child: child,
+            // The user's 12/24-hour choice, for every clock on every route.
+            return MediaQuery(
+              data: applyHourFormat(MediaQuery.of(context), hourFormat),
+              child: Theme(
+                data: DabblerDesignSystemTheme.withFonts(base, locale: locale),
+                child: Builder(
+                  builder: (context) => SystemChromeSync(
+                    child: ColoredBox(
+                      color: DabblerColors.of(context).bgPrimary,
+                      // Shell-aware: on the main shell a toast is presented by
+                      // the Action Area; elsewhere it is the standard toast.
+                      child: ShellAwareToastProvider(
+                        // KAN-993: the in-app pop-up for a notification that
+                        // arrives while the app is open.
+                        child: NotificationPopupPresenter(
+                          currentLocation: _routerLocation,
+                          openRoute: (String route) => appRouter.push(route),
+                          child: child,
+                        ),
                       ),
                     ),
                   ),

@@ -79,6 +79,8 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
             title: e.title.isEmpty ? (byId[e.eventId]?.title ?? '') : e.title,
             start: e.startAt,
             venue: byId[e.eventId]?.venueName,
+            // rpc_my_ongoing_events carries no sport: the games list does.
+            sport: byId[e.eventId]?.sport,
             live: e,
             isMeetup: e.kind == OngoingKind.meetup,
           ),
@@ -92,6 +94,8 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
           title: g.title,
           start: g.getScheduledStartDateTime(),
           venue: g.venueName,
+          end: _scheduledEnd(g),
+          sport: g.sport,
         ),
       );
     }
@@ -133,5 +137,16 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
         ],
       ),
     );
+  }
+}
+
+/// The game's scheduled end, or null when its end time is missing or not
+/// after the start.
+DateTime? _scheduledEnd(Game g) {
+  try {
+    final end = g.getScheduledEndDateTime();
+    return end.isAfter(g.getScheduledStartDateTime()) ? end : null;
+  } catch (_) {
+    return null;
   }
 }

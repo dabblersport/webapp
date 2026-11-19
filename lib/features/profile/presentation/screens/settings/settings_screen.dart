@@ -284,6 +284,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
         onTap: () => showSettingsLanguageRegionSheet(context, ref),
       ),
       SettingsSearchEntry(
+        icon: 'clock',
+        label: l10n.settings_time_format_title,
+        path: l10n.settings_tile_language_region,
+        terms: const ['time', 'clock', '12', '24', 'hour'],
+        onTap: () => showSettingsLanguageRegionSheet(context, ref),
+      ),
+      SettingsSearchEntry(
         icon: 'global',
         label: l10n.settings_item_country_title,
         path: l10n.settings_tile_language_region,

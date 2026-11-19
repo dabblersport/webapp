@@ -5,6 +5,8 @@ import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_game_card.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_post_display.dart'
+    show homeSportEmoji;
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
 import 'package:dabbler/features/lifecycle/presentation/lifecycle_controller.dart';
 import 'package:dabbler/features/ongoing/data/ongoing_repository.dart';
@@ -52,6 +54,7 @@ Future<void> _pump(
   List<Game> games = const [],
   String locale = 'en',
   DateTime? now,
+  bool h24 = false,
 }) async {
   final clock = now ?? ocClock;
   final router = GoRouter(
@@ -88,6 +91,10 @@ Future<void> _pump(
         localizationsDelegates: AppLocalizations.localizationsDelegates,
         supportedLocales: AppLocalizations.supportedLocales,
         theme: DabblerDesignSystemTheme.withTokens(ThemeData.light()),
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(alwaysUse24HourFormat: h24),
+          child: child!,
+        ),
       ),
     ),
   );
@@ -137,15 +144,103 @@ void main() {
         expect(ocKey('home-game-check-in'), findsNothing);
       });
 
-      testWidgets('checked in: a small Checked in status', (t) async {
+      Text statusText(WidgetTester t) => t.widget<Text>(
+        find.descendant(
+          of: ocKey('home-game-check-in-status'),
+          matching: find.byType(Text),
+        ),
+      );
+
+      testWidgets('checked in: Checked in label, no button', (t) async {
         await _pump(
           t,
           rows: [ocRow(checkIn: 'checked_in')],
           locale: lang,
         );
-        expect(ocKey('home-game-checked-in'), findsOneWidget);
-        expect(find.text(l.hc_checked_in), findsOneWidget);
+        expect(statusText(t).data, l.hc_checked_in);
         expect(ocKey('home-game-check-in'), findsNothing);
+      });
+
+      testWidgets('check-in open: Check in available label', (t) async {
+        await _pump(
+          t,
+          rows: [ocRow(checkIn: 'open')],
+          locale: lang,
+        );
+        expect(statusText(t).data, l.hc_check_in_available);
+        expect(ocKey('home-game-check-in'), findsOneWidget);
+      });
+
+      testWidgets('check-in closed: Check in closed label', (t) async {
+        await _pump(
+          t,
+          rows: [ocRow(checkIn: 'closed')],
+          locale: lang,
+          now: DateTime(2026, 11, 18, 21),
+        );
+        expect(statusText(t).data, l.hc_check_in_closed);
+        expect(ocKey('home-game-check-in'), findsNothing);
+      });
+
+      testWidgets('before the window or organiser: no check-in label', (
+        t,
+      ) async {
+        await _pump(
+          t,
+          rows: [
+            ocRow(id: 'a'),
+            ocRow(id: 'b', organiser: true, checkIn: 'open'),
+          ],
+          locale: lang,
+        );
+        expect(cards, findsNWidgets(2));
+        expect(ocKey('home-game-check-in-status'), findsNothing);
+      });
+
+      testWidgets('time on one line: start until end', (t) async {
+        await _pump(t, rows: [ocRow()], locale: lang);
+        final want = l.hc_time_range(ocClk(lang, ocStart), ocClk(lang, ocEnd));
+        expect(ocHas(want), findsOneWidget);
+        final line = t.widget<Text>(ocHas(want));
+        expect(line.maxLines, 1);
+      });
+
+      testWidgets('24-hour when the MediaQuery flag is set', (t) async {
+        await _pump(t, rows: [ocRow()], locale: lang, h24: true);
+        final want = l.hc_time_range(
+          ocClk(lang, ocStart, h24: true),
+          ocClk(lang, ocEnd, h24: true),
+        );
+        expect(ocHas(want), findsOneWidget);
+        expect(ocHas('20:30'), findsOneWidget);
+      });
+
+      testWidgets('running: the sport emoji in the ring', (t) async {
+        await _pump(
+          t,
+          games: [_game('e1', 'Padel Night', ocStart)],
+          rows: [ocRow()],
+          locale: lang,
+          now: DateTime(2026, 11, 18, 20, 40),
+        );
+        expect(
+          find.descendant(
+            of: ocKey('home-game-running'),
+            matching: ocKey('home-game-sport'),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text(homeSportEmoji('Football')), findsOneWidget);
+      });
+
+      testWidgets('running, no sport known: the play icon', (t) async {
+        await _pump(
+          t,
+          rows: [ocRow()],
+          locale: lang,
+          now: DateTime(2026, 11, 18, 20, 40),
+        );
+        expect(ocKey('home-game-sport'), findsNothing);
       });
 
       testWidgets('scheduled time running: running indicator, until', (
@@ -159,7 +254,9 @@ void main() {
         );
         expect(ocKey('home-game-running'), findsOneWidget);
         expect(ocKey('home-game-countdown'), findsNothing);
-        expect(ocHas(l.hc_under_way_until(ocClk(lang, ocEnd))), findsOneWidget);
+        expect(ocHas(l.hc_under_way), findsOneWidget);
+        // The end time appears once: on the time line, not the status.
+        expect(ocHas(ocClk(lang, ocEnd)), findsOneWidget);
       });
 
       testWidgets('started by the organiser: Started <time>', (t) async {

@@ -1,14 +1,20 @@
 // CEO 2026-11-19: one Home card per game, in the Upcoming card's design (date
 // tile, title, venue · time, countdown ring). When the game starts the same
 // card switches to its running state (KAN-1008 states): the ring becomes a
-// running indicator with "Under way · until …" or "Started …"; a changed
-// schedule shows old → new; check-in open shows Check in (never for the
-// organiser); checked in shows a small status. Tap opens the event.
+// running indicator holding the sport's emoji, with "Under way" or
+// "Started …"; the time line reads "2:45 PM until 4:15 PM" in the user's
+// 12/24-hour format; a changed schedule shows old → new; under the time, one
+// check-in label (Checked in / Check in available / Check in closed) and,
+// while open, the Check in button (never for the organiser). Tap opens the
+// event.
 
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_screen.dart'
     show checkInClock;
+import 'package:dabbler/features/attendance/domain/check_in_models.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_sheet.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_post_display.dart'
+    show homeSportEmoji;
 import 'package:dabbler/features/ongoing/domain/ongoing_models.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -26,6 +32,8 @@ class HomeGameEntry {
     required this.title,
     required this.start,
     this.venue,
+    this.end,
+    this.sport,
     this.live,
     this.isMeetup = false,
   });
@@ -34,6 +42,12 @@ class HomeGameEntry {
   final String title;
   final DateTime start;
   final String? venue;
+
+  /// The scheduled end from the games list; the live row's end wins.
+  final DateTime? end;
+
+  /// The sport's English name, for the running ring's emoji.
+  final String? sport;
   final OngoingEvent? live;
   final bool isMeetup;
 
@@ -71,16 +85,22 @@ class HomeGameCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
-    final locale = Localizations.localeOf(context).toString();
     final e = entry.live;
     final status = e?.statusAt(now);
     final running = entry.isRunningAt(now);
     final start = e?.startAt ?? entry.start;
-    final time = DateFormat('h:mm a', locale).format(start);
+    final end = e?.scheduledEnd ?? entry.end;
+    final time = end == null
+        ? checkInClock(context, start)
+        : l.hc_time_range(
+            checkInClock(context, start),
+            checkInClock(context, end),
+          );
     final venue = entry.venue;
     final detail = venue == null || venue.isEmpty ? time : '$venue · $time';
     final statusLine = e == null ? null : _statusLine(context, l, e, status!);
     final changed = e == null ? null : _changedLine(context, e);
+    final checkIn = e == null ? null : _checkInLabel(l, e);
     return DabblerFeedTappable(
       key: ValueKey<String>('home-game-${entry.id}'),
       onTap: () => context.push(entry.route),
@@ -125,6 +145,20 @@ class HomeGameCard extends StatelessWidget {
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                         ),
+                      if (checkIn != null)
+                        DabblerText(
+                          checkIn.$1,
+                          key: const ValueKey<String>(
+                            'home-game-check-in-status',
+                          ),
+                          style: DabblerType.caption1,
+                          weight: DabblerTextWeight.medium,
+                          tone: checkIn.$2
+                              ? DabblerTextTone.brand
+                              : DabblerTextTone.secondary,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       if (changed != null)
                         DabblerText(
                           changed,
@@ -141,25 +175,6 @@ class HomeGameCard extends StatelessWidget {
                 running ? _runningRing(e) : _countdownRing(l, start),
               ],
             ),
-            if (e != null && e.isCheckedIn) ...<Widget>[
-              const DabblerGap.v(DabblerSpacing.space2),
-              Row(
-                key: const ValueKey<String>('home-game-checked-in'),
-                children: <Widget>[
-                  DabblerIcon(
-                    'tick-circle',
-                    size: DabblerSizing.iconXs,
-                    color: DabblerColors.of(context).brandPrimary,
-                  ),
-                  const DabblerGap.h(DabblerSpacing.space1),
-                  DabblerText(
-                    l.hc_checked_in,
-                    style: DabblerType.caption1,
-                    tone: DabblerTextTone.brand,
-                  ),
-                ],
-              ),
-            ],
             if (e != null && e.canCheckIn) ...<Widget>[
               const DabblerGap.v(DabblerSpacing.space3),
               DabblerButton(
@@ -253,25 +268,46 @@ class HomeGameCard extends StatelessWidget {
       key: const ValueKey<String>('home-game-running'),
       fraction: fraction,
       diameter: DabblerUpcomingReminder.ringSize,
-      child: const DabblerIcon('play', size: DabblerSizing.iconSm),
+      child: _sportMark(),
     );
   }
 
-  String _statusLine(
+  /// The sport's emoji; the play icon only when no sport is known.
+  Widget _sportMark() {
+    final sport = entry.sport?.trim();
+    if (sport == null || sport.isEmpty) {
+      return const DabblerIcon('play', size: DabblerSizing.iconSm);
+    }
+    return DabblerText(
+      homeSportEmoji(sport),
+      key: const ValueKey<String>('home-game-sport'),
+      style: DabblerType.title3,
+    );
+  }
+
+  /// The one check-in label under the time, and whether it is the brand
+  /// tone; null when check-in does not concern the viewer (the organiser,
+  /// not eligible, before the window, cancelled).
+  (String, bool)? _checkInLabel(AppLocalizations l, OngoingEvent e) {
+    if (e.isOrganiser || e.isCancelled) return null;
+    if (e.isCheckedIn) return (l.hc_checked_in, true);
+    if (e.canCheckIn) return (l.hc_check_in_available, true);
+    if (e.checkIn == CheckInPhase.closed) return (l.hc_check_in_closed, false);
+    return null;
+  }
+
+  String? _statusLine(
     BuildContext context,
     AppLocalizations l,
     OngoingEvent e,
     OngoingStatus status,
   ) {
     String clock(DateTime t) => checkInClock(context, t);
-    final end = e.scheduledEnd;
     return switch (status) {
-      OngoingStatus.startingSoon =>
-        end == null
-            ? l.g04_starts(clock(e.startAt))
-            : l.lc_scheduled_until(clock(end)),
-      OngoingStatus.running =>
-        end == null ? l.hc_under_way : l.hc_under_way_until(clock(end)),
+      // Before the start the ring counts down and the time line holds the
+      // range, so there is nothing more to say.
+      OngoingStatus.startingSoon => null,
+      OngoingStatus.running => l.hc_under_way,
       OngoingStatus.started =>
         e.startedAt == null
             ? l.hc_under_way

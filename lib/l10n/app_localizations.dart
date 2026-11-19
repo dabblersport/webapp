@@ -19404,6 +19404,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Checked in'**
   String get hc_checked_in;
+
+  /// Home game card: start and end time on one line.
+  ///
+  /// In en, this message translates to:
+  /// **'{start} until {end}'**
+  String hc_time_range(String start, String end);
+
+  /// Home game card: check-in window is open for the player.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in available'**
+  String get hc_check_in_available;
+
+  /// Home game card: check-in window has closed without a check-in.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in closed'**
+  String get hc_check_in_closed;
+
+  /// Settings: heading of the 12/24-hour clock choice.
+  ///
+  /// In en, this message translates to:
+  /// **'Time format'**
+  String get settings_time_format_title;
+
+  /// Settings: follow the device's 12/24-hour setting.
+  ///
+  /// In en, this message translates to:
+  /// **'System'**
+  String get settings_time_format_system;
+
+  /// Settings: show times as 2:45 PM.
+  ///
+  /// In en, this message translates to:
+  /// **'12-hour'**
+  String get settings_time_format_12;
+
+  /// Settings: show times as 14:45.
+  ///
+  /// In en, this message translates to:
+  /// **'24-hour'**
+  String get settings_time_format_24;
 }
 
 class _AppLocalizationsDelegate

@@ -11356,4 +11356,27 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get hc_checked_in => 'تم تسجيل الحضور';
+
+  @override
+  String hc_time_range(String start, String end) {
+    return '$start حتى $end';
+  }
+
+  @override
+  String get hc_check_in_available => 'تسجيل الحضور متاح';
+
+  @override
+  String get hc_check_in_closed => 'تسجيل الحضور مغلق';
+
+  @override
+  String get settings_time_format_title => 'تنسيق الوقت';
+
+  @override
+  String get settings_time_format_system => 'النظام';
+
+  @override
+  String get settings_time_format_12 => '12 ساعة';
+
+  @override
+  String get settings_time_format_24 => '24 ساعة';
 }

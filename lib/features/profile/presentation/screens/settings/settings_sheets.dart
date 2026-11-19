@@ -4,6 +4,7 @@ import 'package:dabbler/features/auth_onboarding/domain/location/service_region.
 import 'package:dabbler/features/auth_onboarding/presentation/service_region_labels.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
+import 'package:dabbler/core/providers/time_format_provider.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/selected_country_provider.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -24,6 +25,7 @@ void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
     ref.read(selectedCountryProvider).valueOrNull,
   );
   final langCode = ref.read(localeProvider).languageCode;
+  final hourFormat = ref.read(hourFormatProvider);
   showAppSheet<void>(
     context: context,
     title: l10n.settings_tile_language_region,
@@ -67,6 +69,28 @@ void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
               Navigator.pop(sheetContext);
             },
           ),
+        const DabblerGap.v(DabblerSpacing.space4),
+        DabblerText(
+          l10n.settings_time_format_title,
+          style: DabblerType.footnote,
+          weight: DabblerTextWeight.semibold,
+          tone: DabblerTextTone.secondary,
+        ),
+        const DabblerGap.v(DabblerSpacing.space3),
+        for (final (f, label) in <(HourFormat, String)>[
+          (HourFormat.system, l10n.settings_time_format_system),
+          (HourFormat.h12, l10n.settings_time_format_12),
+          (HourFormat.h24, l10n.settings_time_format_24),
+        ])
+          _PickerRow(
+            key: ValueKey<String>('settings-hour-format-${f.name}'),
+            label: label,
+            selected: hourFormat == f,
+            onTap: () {
+              ref.read(hourFormatProvider.notifier).set(f);
+              Navigator.pop(sheetContext);
+            },
+          ),
       ],
     ),
   );
@@ -74,6 +98,7 @@ void showSettingsLanguageRegionSheet(BuildContext context, WidgetRef ref) {
 
 class _PickerRow extends StatelessWidget {
   const _PickerRow({
+    super.key,
     required this.label,
     required this.selected,
     required this.onTap,

@@ -4609,5 +4609,19 @@
   "hc_under_way_until": "Under way · until {time}",
   "@hc_under_way_until": {"description": "Home game card: the game is past its start; time is the scheduled end.", "placeholders": {"time": {"type": "String"}}},
   "hc_checked_in": "Checked in",
-  "@hc_checked_in": {"description": "Home game card: small status once the player checked in."}
+  "@hc_checked_in": {"description": "Home game card: small status once the player checked in."},
+  "hc_time_range": "{start} until {end}",
+  "@hc_time_range": {"description": "Home game card: start and end time on one line.", "placeholders": {"start": {"type": "String"}, "end": {"type": "String"}}},
+  "hc_check_in_available": "Check in available",
+  "@hc_check_in_available": {"description": "Home game card: check-in window is open for the player."},
+  "hc_check_in_closed": "Check in closed",
+  "@hc_check_in_closed": {"description": "Home game card: check-in window has closed without a check-in."},
+  "settings_time_format_title": "Time format",
+  "@settings_time_format_title": {"description": "Settings: heading of the 12/24-hour clock choice."},
+  "settings_time_format_system": "System",
+  "@settings_time_format_system": {"description": "Settings: follow the device's 12/24-hour setting."},
+  "settings_time_format_12": "12-hour",
+  "@settings_time_format_12": {"description": "Settings: show times as 2:45 PM."},
+  "settings_time_format_24": "24-hour",
+  "@settings_time_format_24": {"description": "Settings: show times as 14:45."}
 }
