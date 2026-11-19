@@ -10,7 +10,15 @@ import 'package:dabbler/features/post_activity/domain/post_activity_models.dart'
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-enum PostStep { score, players, organiser, venue }
+enum PostStep { score, players, mvp, organiser, venue }
+
+/// KAN-968: refusals of the MVP vote after which the step is hidden.
+const Set<String> kMvpHide = {
+  'not_eligible',
+  'not_ratable',
+  'window_not_open',
+  'window_closed',
+};
 
 /// Refusals after which the screen re-reads the server's state.
 const Set<String> kPostActivityReload = {
@@ -41,7 +49,15 @@ class PostActivityState {
     this.dismissed = false,
     this.scoreNotEnded = false,
     this.saveFailure,
+    this.mvp,
+    this.mvpPick,
   });
+
+  /// KAN-968: rpc_mvp_get; null (no step) when it failed or was refused.
+  final MvpBallot? mvp;
+
+  /// The MVP chosen on the step; starts at the caller's saved vote.
+  final String? mvpPick;
 
   /// KAN-1027: rpc_result_submit said not_ended (the organiser has not
   /// confirmed the end). The score step shows a note and Next moves on
@@ -76,6 +92,7 @@ class PostActivityState {
   List<PostStep> get steps => [
     if (tally?.competitive == true || tallyFailure != null) PostStep.score,
     if (flow?.players.isNotEmpty == true) PostStep.players,
+    if (mvp?.candidates.isNotEmpty == true) PostStep.mvp,
     if (flow?.organiser != null) PostStep.organiser,
     if (flow?.venue != null) PostStep.venue,
   ];
@@ -108,7 +125,12 @@ class PostActivityState {
     bool? scoreNotEnded,
     Failure? saveFailure,
     bool clearSaveFailure = false,
+    MvpBallot? mvp,
+    bool clearMvp = false,
+    String? mvpPick,
   }) => PostActivityState(
+    mvp: clearMvp ? null : mvp ?? this.mvp,
+    mvpPick: mvpPick ?? this.mvpPick,
     flow: flow ?? this.flow,
     tally: tally ?? this.tally,
     dims: dims ?? this.dims,
@@ -173,7 +195,9 @@ class PostActivityController extends StateNotifier<PostActivityState> {
     }
     final t = await _repo.result(eventId);
     final d = await _repo.dimensions();
+    final m = await _repo.mvp(eventId);
     if (!mounted) return;
+    final MvpBallot? mvp = m.fold((_) => null, (v) => v);
     // Only the server saying "no score step" (or competitive: false) drops
     // the score step; any other refusal or a timeout keeps it with a retry.
     final Failure? tallyFailure = t.fold(
@@ -200,6 +224,8 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       score: tally?.mine?.score ?? tally?.finalScore ?? const Score(0, 0),
       side: tally?.mine?.side,
       tallyFailure: tallyFailure,
+      mvp: mvp,
+      mvpPick: mvp?.myVote,
     );
     next = next.copyWith(step: _resumeAt(next));
     if (keep && before.flow != null) {
@@ -217,6 +243,8 @@ class PostActivityController extends StateNotifier<PostActivityState> {
         tallyFailure: next.tallyFailure,
         scoreNotEnded: before.scoreNotEnded,
         saveFailure: before.saveFailure,
+        mvp: next.mvp,
+        mvpPick: before.mvpPick ?? next.mvpPick,
       );
     }
     state = next;
@@ -229,6 +257,7 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       final done = switch (steps[i]) {
         PostStep.score => s.tally?.mine != null,
         PostStep.players => s.flow!.players.any((p) => p.mine.isNotEmpty),
+        PostStep.mvp => s.mvp?.myVote != null,
         PostStep.organiser => s.flow!.organiser!.mine.isNotEmpty,
         PostStep.venue => s.flow!.venue!.mine.isNotEmpty,
       };
@@ -264,6 +293,8 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       side: t?.mine?.side ?? s.side,
       tallyFailure: f,
       scoreNotEnded: s.scoreNotEnded,
+      mvp: s.mvp,
+      mvpPick: s.mvpPick,
     );
   }
 
@@ -282,6 +313,8 @@ class PostActivityController extends StateNotifier<PostActivityState> {
   void setScore(Score s) => state = state.copyWith(score: s);
 
   void setSide(String side) => state = state.copyWith(side: side);
+
+  void setMvp(String userId) => state = state.copyWith(mvpPick: userId);
 
   void setRating(String target, String dim, int value) {
     final drafts = Map<String, Map<String, int>>.of(state.drafts);
@@ -314,6 +347,13 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       if (f.code == 'not_ended' && state.current == PostStep.score) {
         state = state.copyWith(busy: false, scoreNotEnded: true);
         return null;
+      }
+      // KAN-968: the caller cannot vote here; drop the step and stay put.
+      if (state.current == PostStep.mvp && kMvpHide.contains(f.code)) {
+        final at = state.step;
+        state = state.copyWith(busy: false, clearMvp: true, saveFailure: f);
+        state = state.copyWith(step: at.clamp(0, state.steps.length - 1));
+        return f;
       }
       // Any other refusal keeps what was entered and shows the error.
       state = state.copyWith(busy: false, saveFailure: f);
@@ -367,6 +407,14 @@ class PostActivityController extends StateNotifier<PostActivityState> {
           if (f != null) return f;
         }
         return null;
+      case PostStep.mvp:
+        final pick = s.mvpPick;
+        if (pick == null || pick == s.mvp?.myVote) return null;
+        final r = await _repo.voteMvp(eventId, pick);
+        return r.fold((f) => f, (_) {
+          state = state.copyWith(mvp: state.mvp?.voted(pick));
+          return null;
+        });
       case PostStep.organiser:
         return rate(RatingSubject.organiser, 'organiser', flow.organiser!);
       case PostStep.venue:

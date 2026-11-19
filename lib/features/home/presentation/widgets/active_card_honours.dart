@@ -68,13 +68,30 @@ abstract final class ActiveHonours {
     return e.title ?? '';
   }
 
-  static String _statLabel(AppLocalizations l, String key) => switch (key) {
+  static String statLabel(AppLocalizations l, String key) => switch (key) {
     'games' => l.act_stat_label_games,
     'hosted' => l.act_stat_label_hosted,
     'bookings' => l.act_stat_label_bookings,
     'rating' => l.act_stat_label_rating,
+    'mvp_votes' => l.act_stat_label_mvp_votes,
+    'wins' => l.act_stat_label_wins,
     _ => key,
   };
+
+  /// The stats a card shows (KAN-969): player of the week shows MVP votes
+  /// and player of the month shows Wins in place of Hosted; other cards keep
+  /// every stat but the two award-only keys.
+  static List<ActiveStat> statsFor(ActiveItem e, ActiveLook look) {
+    final drop = switch (look) {
+      ActiveLook.playerWeek => const <String>{'hosted', 'wins'},
+      ActiveLook.playerMonth => const <String>{'hosted', 'mvp_votes'},
+      _ => const <String>{'mvp_votes', 'wins'},
+    };
+    return <ActiveStat>[
+      for (final s in e.stats)
+        if (!drop.contains(s.key)) s,
+    ];
+  }
 
   static String _statValue(ActiveStat s) =>
       s.key == 'rating' ? oneDecimal(s.value) : s.value.round().toString();
@@ -207,10 +224,10 @@ abstract final class ActiveHonours {
           ink: tone.ink,
         ),
       ],
-      if (event.stats.isNotEmpty)
+      if (statsFor(event, look) case final stats when stats.isNotEmpty)
         DabblerActivityStats(
           items: <(String, String)>[
-            for (final s in event.stats) (_statValue(s), _statLabel(l, s.key)),
+            for (final s in stats) (_statValue(s), statLabel(l, s.key)),
           ],
         ),
       if (look == ActiveLook.venueDay && event.reasons.isNotEmpty)

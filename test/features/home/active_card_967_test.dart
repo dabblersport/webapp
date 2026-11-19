@@ -35,11 +35,13 @@ void main() {
     expect(back.distanceKm, 2.1);
     expect(back.rating, 4.8);
     final award = ActiveItem.fromRow(activeAward().toRow())!;
-    // CEO 2026-11-16: players show Games / Rating / Hosted.
+    // KAN-969: the row carries mvp_votes and wins too; the card picks.
     expect(award.stats.map((s) => s.key), <String>[
       'games',
       'rating',
       'hosted',
+      'mvp_votes',
+      'wins',
     ]);
     // The live columns: no reasons or distance (venue of the day is later),
     // venue_rating_avg on a rating row.
@@ -192,7 +194,7 @@ void main() {
       expect(stats.items, <(String, String)>[
         ('6', l.act_stat_label_games),
         ('4.9', l.act_stat_label_rating),
-        ('2', l.act_stat_label_hosted),
+        ('3', l.act_stat_label_mvp_votes),
       ]);
       expect(
         tester

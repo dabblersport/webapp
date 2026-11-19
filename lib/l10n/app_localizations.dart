@@ -16151,6 +16151,18 @@ abstract class AppLocalizations {
   /// **'Hosted'**
   String get act_stat_label_hosted;
 
+  /// KAN-969 Player of the week stat label: MVP votes received.
+  ///
+  /// In en, this message translates to:
+  /// **'MVP votes'**
+  String get act_stat_label_mvp_votes;
+
+  /// KAN-969 Player of the month stat label: games won.
+  ///
+  /// In en, this message translates to:
+  /// **'Wins'**
+  String get act_stat_label_wins;
+
   /// KAN-967 Home Active card (ActivityCard.dc.html, ACT_LOOK / ACT_ACTION / actCardNew). Stat strip label.
   ///
   /// In en, this message translates to:
@@ -18792,6 +18804,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'This activity was cancelled.'**
   String get g02_err_cancelled;
+
+  /// KAN-968 post-activity MVP vote step.
+  ///
+  /// In en, this message translates to:
+  /// **'MVP'**
+  String get g02_step_mvp;
+
+  /// KAN-968 post-activity MVP vote step.
+  ///
+  /// In en, this message translates to:
+  /// **'Who was the best player? Pick one, or skip.'**
+  String get g02_mvp_hint;
+
+  /// KAN-968 post-activity MVP vote step.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t vote for yourself.'**
+  String get g02_err_mvp_self;
+
+  /// KAN-968 post-activity MVP vote step.
+  ///
+  /// In en, this message translates to:
+  /// **'That player can\'t be voted for. Pick another.'**
+  String get g02_err_mvp_player;
 
   /// KAN-1000 G-02/G-03 post-activity flow and result approval.
   ///

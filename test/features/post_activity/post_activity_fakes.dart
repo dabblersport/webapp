@@ -116,6 +116,23 @@ class FakePostRepo implements PostActivityRepository {
   @override
   Future<Result<void, Failure>> approve(String eventId) => _w('approve', null);
 
+  /// rpc_mvp_get's answer; no candidates (no step) by default.
+  Result<MvpBallot, Failure> mvpValue = const Ok(MvpBallot());
+
+  /// Set to make only the MVP vote fail.
+  Failure? voteFailure;
+
+  @override
+  Future<Result<MvpBallot, Failure>> mvp(String eventId) async => mvpValue;
+
+  @override
+  Future<Result<void, Failure>> voteMvp(String eventId, String userId) async {
+    calls.add('mvp:$userId');
+    await gate?.future;
+    final f = voteFailure ?? failure;
+    return f != null ? Err(f) : const Ok(null);
+  }
+
   @override
   Future<Result<void, Failure>> setFinal(String eventId, Score score) =>
       _w('final:${score.a}-${score.b}', null);

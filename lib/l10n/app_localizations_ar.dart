@@ -9339,6 +9339,12 @@ class AppLocalizationsAr extends AppLocalizations {
   String get act_stat_label_hosted => 'استضافات';
 
   @override
+  String get act_stat_label_mvp_votes => 'أصوات أفضل لاعب';
+
+  @override
+  String get act_stat_label_wins => 'انتصارات';
+
+  @override
   String get act_stat_label_rating => 'التقييم';
 
   @override
@@ -11016,6 +11022,19 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get g02_err_cancelled => 'أُلغي هذا النشاط.';
+
+  @override
+  String get g02_step_mvp => 'أفضل لاعب';
+
+  @override
+  String get g02_mvp_hint => 'من كان أفضل لاعب؟ اختر واحدًا أو تخطَّ.';
+
+  @override
+  String get g02_err_mvp_self => 'لا يمكنك التصويت لنفسك.';
+
+  @override
+  String get g02_err_mvp_player =>
+      'لا يمكن التصويت لهذا اللاعب. اختر لاعبًا آخر.';
 
   @override
   String get g02_err_generic => 'تعذّر الحفظ. حاول مرة أخرى.';

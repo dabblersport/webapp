@@ -115,11 +115,15 @@ ActiveItem activeAward({
           (key: 'games', value: 22),
           (key: 'rating', value: 5),
           (key: 'hosted', value: 7),
+          (key: 'mvp_votes', value: 9),
+          (key: 'wins', value: 14),
         ]
       : const <ActiveStat>[
           (key: 'games', value: 6),
           (key: 'rating', value: 4.9),
           (key: 'hosted', value: 2),
+          (key: 'mvp_votes', value: 3),
+          (key: 'wins', value: 4),
         ],
 );
 

@@ -41,6 +41,8 @@ String postActivityError(AppLocalizations l, Failure f) => switch (f.code) {
   'no_submissions' => l.g03_err_no_submissions,
   'not_organiser' => l.g03_err_not_organiser,
   'invalid_score' => l.g03f_err_invalid,
+  'self_vote' => l.g02_err_mvp_self,
+  'invalid_player' || 'player_not_eligible' => l.g02_err_mvp_player,
   _ => l.g02_err_generic,
 };
 
@@ -260,6 +262,7 @@ class PostActivityScreen extends ConsumerWidget {
     final (String head, String hint) = switch (step) {
       PostStep.score => (l.g02_step_score, ''),
       PostStep.players => (l.g02_step_players, l.g02_players_hint),
+      PostStep.mvp => (l.g02_step_mvp, l.g02_mvp_hint),
       PostStep.organiser => (l.g02_step_organiser, l.g02_organiser_hint),
       PostStep.venue => (l.g02_step_venue, l.g02_venue_hint),
       null => (l.g02_title, ''),
@@ -331,6 +334,13 @@ class PostActivityScreen extends ConsumerWidget {
                   onSide: t.open && !s.busy && !s.scoreNotEnded
                       ? ctrl.setSide
                       : null,
+                )
+              else if (step == PostStep.mvp)
+                MvpStep(
+                  candidates: s.mvp?.candidates ?? const [],
+                  pick: s.mvpPick,
+                  unnamed: l.g02_unnamed,
+                  onPick: s.busy ? null : ctrl.setMvp,
                 )
               else if (step != null)
                 ..._groups(l, s, s.flow!, step, s.busy ? null : ctrl),

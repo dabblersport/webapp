@@ -9216,6 +9216,12 @@ class AppLocalizationsEn extends AppLocalizations {
   String get act_stat_label_hosted => 'Hosted';
 
   @override
+  String get act_stat_label_mvp_votes => 'MVP votes';
+
+  @override
+  String get act_stat_label_wins => 'Wins';
+
+  @override
   String get act_stat_label_rating => 'Rating';
 
   @override
@@ -10910,6 +10916,19 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get g02_err_cancelled => 'This activity was cancelled.';
+
+  @override
+  String get g02_step_mvp => 'MVP';
+
+  @override
+  String get g02_mvp_hint => 'Who was the best player? Pick one, or skip.';
+
+  @override
+  String get g02_err_mvp_self => 'You can\'t vote for yourself.';
+
+  @override
+  String get g02_err_mvp_player =>
+      'That player can\'t be voted for. Pick another.';
 
   @override
   String get g02_err_generic => 'Couldn\'t save. Try again.';

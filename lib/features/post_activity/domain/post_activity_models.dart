@@ -247,3 +247,40 @@ int minutesUntil(DateTime deadline, DateTime now) {
   if (s <= 0) return 0;
   return (s + 59) ~/ 60;
 }
+
+/// One player the caller can vote MVP (rpc_mvp_get `candidates`).
+@immutable
+class MvpCandidate {
+  const MvpCandidate({required this.userId, this.name, this.avatarUrl});
+
+  final String userId;
+
+  /// As entered by the user; never translated.
+  final String? name;
+  final String? avatarUrl;
+}
+
+/// KAN-968: rpc_mvp_get. The caller and blocked users are never candidates.
+@immutable
+class MvpBallot {
+  const MvpBallot({this.candidates = const [], this.myVote});
+
+  factory MvpBallot.fromJson(Map<String, dynamic> j) => MvpBallot(
+    myVote: j['my_vote'] as String?,
+    candidates: [
+      for (final c in (j['candidates'] as List? ?? const []))
+        if (c is Map && c['user_id'] != null)
+          MvpCandidate(
+            userId: '${c['user_id']}',
+            name: c['display_name'] as String?,
+            avatarUrl: c['avatar_url'] as String?,
+          ),
+    ],
+  );
+
+  final List<MvpCandidate> candidates;
+  final String? myVote;
+
+  MvpBallot voted(String userId) =>
+      MvpBallot(candidates: candidates, myVote: userId);
+}

@@ -45,6 +45,12 @@ abstract class PostActivityRepository {
 
   Future<Result<void, Failure>> approve(String eventId);
 
+  /// KAN-968: rpc_mvp_get, the candidates and the caller's vote.
+  Future<Result<MvpBallot, Failure>> mvp(String eventId);
+
+  /// KAN-968: rpc_mvp_vote; a second vote replaces the first.
+  Future<Result<void, Failure>> voteMvp(String eventId, String playerUserId);
+
   Future<Result<void, Failure>> setFinal(String eventId, Score score);
 }
 
@@ -197,6 +203,24 @@ class SupabasePostActivityRepository implements PostActivityRepository {
   Future<Result<void, Failure>> approve(String eventId) =>
       guardWithTimeout(() async {
         await _rpc(SupabaseConfig.rpcResultApproveFn, {'p_event_id': eventId});
+      }, mapError: attendanceFailure);
+
+  @override
+  Future<Result<MvpBallot, Failure>> mvp(String eventId) =>
+      guardWithTimeout(() async {
+        final data = await _rpc(SupabaseConfig.rpcMvpGetFn, {
+          'p_event_id': eventId,
+        });
+        return MvpBallot.fromJson(Map<String, dynamic>.from(data as Map));
+      }, mapError: attendanceFailure);
+
+  @override
+  Future<Result<void, Failure>> voteMvp(String eventId, String playerUserId) =>
+      guardWithTimeout(() async {
+        await _rpc(SupabaseConfig.rpcMvpVoteFn, {
+          'p_event_id': eventId,
+          'p_player_user_id': playerUserId,
+        });
       }, mapError: attendanceFailure);
 
   @override

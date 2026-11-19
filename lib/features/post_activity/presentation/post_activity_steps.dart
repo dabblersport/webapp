@@ -91,6 +91,48 @@ class ScoreStep extends StatelessWidget {
   }
 }
 
+/// KAN-968: the MVP vote, one choice among [candidates].
+class MvpStep extends StatelessWidget {
+  const MvpStep({
+    super.key,
+    required this.candidates,
+    required this.pick,
+    required this.unnamed,
+    this.onPick,
+  });
+
+  final List<MvpCandidate> candidates;
+  final String? pick;
+
+  /// The name shown for a candidate without one.
+  final String unnamed;
+  final ValueChanged<String>? onPick;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      for (final c in candidates)
+        Padding(
+          padding: const EdgeInsetsDirectional.only(
+            bottom: DabblerSpacing.space2,
+          ),
+          child: DabblerSelectableCard(
+            key: ValueKey<String>('g02-mvp-${c.userId}'),
+            title: context.isolate(c.name ?? unnamed),
+            leading: DabblerAvatar(
+              seed: c.userId,
+              imageUrl: c.avatarUrl,
+              size: DabblerAvatarSize.sm,
+            ),
+            selected: pick == c.userId,
+            onChanged: onPick == null ? null : (_) => onPick!(c.userId),
+          ),
+        ),
+    ],
+  );
+}
+
 /// One target's ratings: its name, then a star row per dimension.
 class RatingGroup extends StatelessWidget {
   const RatingGroup({
