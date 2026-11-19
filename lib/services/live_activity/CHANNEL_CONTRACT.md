@@ -32,6 +32,8 @@ Standard message codec. All keys are snake_case strings.
 | `start_at` | int | Unix seconds |
 | `end_at`, `scheduled_end_at`, `actual_started_at` | int? | Unix seconds |
 | `checked_in` | bool | |
+| `checkin_open` | bool? | KAN-1024: true while this user may check in (false once checked in, before the window, after it closes, or not eligible). Present: native offers Check in when `checkin_open && !checked_in && role != organiser` and now < `checkin_closes_at` — including while `started`/`scheduled_time_running` (the chip stays live). Absent (older payload): Check in only in `checkin_open` state. The server pushes a new `state_version` when the window closes. |
+| `checkin_closes_at` | int? | KAN-1024: Unix seconds the check-in window closes |
 | `role` | string | `participant` \| `organiser` |
 | `organiser_action` | string? | `start` \| `confirm_end` (organiser only) |
 | `change` | string? | `time` \| `venue` (update only) |

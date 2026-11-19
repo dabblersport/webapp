@@ -45,6 +45,10 @@ struct DabblerActivityAttributes: ActivityAttributes {
     var endReason: String?
     /// "en" | "ar": the app's chosen language. Absent: the device language.
     var lang: String?
+    /// KAN-1024: the server's check-in window flag; nil on an older payload.
+    var checkinOpen: Bool?
+    /// KAN-1024: Unix seconds the check-in window closes, when known.
+    var checkinClosesAt: Int?
 
     enum CodingKeys: String, CodingKey {
       case state
@@ -62,6 +66,8 @@ struct DabblerActivityAttributes: ActivityAttributes {
       case change
       case endReason = "end_reason"
       case lang
+      case checkinOpen = "checkin_open"
+      case checkinClosesAt = "checkin_closes_at"
     }
 
     /// state, state_version, event_id and start_at are required; the rest
@@ -92,6 +98,8 @@ struct DabblerActivityAttributes: ActivityAttributes {
       endReason = try c.decodeIfPresent(String.self, forKey: .endReason)
       let l = try? c.decodeIfPresent(String.self, forKey: .lang)
       lang = (l == "en" || l == "ar") ? l : nil
+      checkinOpen = try? c.decodeIfPresent(Bool.self, forKey: .checkinOpen)
+      checkinClosesAt = try State.int(c, .checkinClosesAt)
     }
 
     /// Unix seconds sent as an integer (or, defensively, a whole double).
@@ -167,5 +175,16 @@ extension DabblerActivityAttributes.State {
   }
 
   /// Check in is offered only to a participant who has not checked in.
-  var offersCheckIn: Bool { phase == .checkInOpen }
+  var offersCheckIn: Bool { offersCheckIn(at: Date()) }
+
+  /// KAN-1024: with `checkin_open` present the server decides (true while the
+  /// game runs too), hidden once `now` reaches `checkin_closes_at`. Absent: the
+  /// pre-KAN-1024 rule. The organiser never gets Check in.
+  func offersCheckIn(at now: Date) -> Bool {
+    if isOrganiser || isFinal || phase == .neutral { return false }
+    guard let open = checkinOpen else { return phase == .checkInOpen }
+    if !open || checkedIn { return false }
+    if let closes = checkinClosesAt, now >= DabblerActivityAttributes.State.date(closes) { return false }
+    return true
+  }
 }

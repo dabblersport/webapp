@@ -23,6 +23,10 @@ data class LaContent(
     val organiserAction: String?,
     val change: String?,
     val endReason: String?,
+    /** KAN-1024: server's check-in window flag; null on an older payload. */
+    val checkinOpen: Boolean? = null,
+    /** KAN-1024: Unix seconds the check-in window closes, when known. */
+    val checkinClosesAt: Long? = null,
 ) {
     val isOrganiser: Boolean get() = role == "organiser"
 
@@ -39,7 +43,20 @@ data class LaContent(
 
     /** Check in is offered only to a participant who has not checked in. */
     val offersCheckIn: Boolean
-        get() = uiState == UiState.CHECKIN_OPEN && !isOrganiser
+        get() = offersCheckInAt(System.currentTimeMillis() / 1000)
+
+    /**
+     * KAN-1024: with `checkin_open` present the server decides (it stays true
+     * while the game runs, so Check in shows beside the RUNNING chip), hidden
+     * once [nowSec] reaches `checkin_closes_at`. Absent: the pre-KAN-1024 rule.
+     */
+    fun offersCheckInAt(nowSec: Long): Boolean {
+        if (isOrganiser || isFinal) return false
+        val open = checkinOpen ?: return uiState == UiState.CHECKIN_OPEN
+        if (!open || checkedIn) return false
+        val closes = checkinClosesAt
+        return closes == null || nowSec < closes
+    }
 
     /** The end of the running window, when known. */
     val runningEnd: Long? get() = scheduledEndAt
@@ -87,6 +104,13 @@ data class LaContent(
                 organiserAction = str("organiser_action"),
                 change = str("change"),
                 endReason = str("end_reason"),
+                checkinOpen = when (val v = m["checkin_open"]) {
+                    is Boolean -> v
+                    "true" -> true
+                    "false" -> false
+                    else -> null
+                },
+                checkinClosesAt = long("checkin_closes_at"),
             )
         }
     }

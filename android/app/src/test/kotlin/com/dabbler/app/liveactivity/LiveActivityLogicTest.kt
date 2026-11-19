@@ -70,4 +70,21 @@ class LiveActivityLogicTest {
         assertEquals(LaRoutes.stableNotificationId("s1"), LaRoutes.stableNotificationId("s1"))
         assertTrue(LaRoutes.stableNotificationId("s1") > 0)
     }
+
+    @Test fun kan1024CheckinOpenDrivesTheAction() {
+        fun at(now: Long, vararg e: Pair<String, Any?>) = LaContent.fromMap(content(*e))!!.offersCheckInAt(now)
+        val running = arrayOf("state" to "started", "checkin_open" to true)
+        assertTrue(at(2_100, *running))
+        assertEquals(UiState.RUNNING, LaContent.fromMap(content(*running))!!.uiState)
+        assertFalse(at(2_100, "state" to "started", "checkin_open" to false))
+        assertFalse(at(1_900, "checkin_open" to false))
+        assertFalse(at(2_100, *running, "role" to "organiser"))
+        assertFalse(at(2_100, *running, "checked_in" to true))
+        assertTrue(at(2_100, *running, "checkin_closes_at" to 2_200L))
+        assertFalse(at(2_200, *running, "checkin_closes_at" to 2_200L))
+        assertFalse(at(2_100, "state" to "ended", "checkin_open" to true))
+        // Missing field: the old rule.
+        assertTrue(at(2_100))
+        assertFalse(at(2_100, "state" to "started"))
+    }
 }

@@ -72,6 +72,15 @@ class LiveActivityContent {
   DateTime? get startAt => _date(raw['start_at']);
   DateTime? get endAt => _date(raw['end_at']);
   bool get checkedIn => raw['checked_in'] == true;
+
+  /// KAN-1024: whether this user may check in now; null on an older payload.
+  bool? get checkinOpen {
+    final v = raw['checkin_open'];
+    return v is bool ? v : null;
+  }
+
+  /// KAN-1024: when the check-in window closes, when known.
+  DateTime? get checkinClosesAt => _date(raw['checkin_closes_at']);
   String? get role => raw['role'] as String?;
   String? get endReason => raw['end_reason'] as String?;
 
