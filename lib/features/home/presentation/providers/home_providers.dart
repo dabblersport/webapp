@@ -2,6 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:dabbler/data/models/area.dart';
 import 'package:dabbler/data/models/social/post.dart';
+import 'package:dabbler/features/games/providers/games_providers.dart'
+    show gamesRepositoryProvider;
 import 'package:dabbler/features/location/providers/location_providers.dart'
     show areaRepositoryProvider;
 import 'package:dabbler/features/social/providers/post_providers.dart';
@@ -9,6 +11,21 @@ import 'package:dabbler/features/social/providers/post_providers.dart';
 /// The clock Home's Upcoming countdown reads. Defaults to [DateTime.now];
 /// tests override it to pin the date (KAN-784).
 final homeNowProvider = Provider<DateTime Function()>((ref) => DateTime.now);
+
+/// The sport (English name) of a game Home shows as running. A started game
+/// leaves [userUpcomingGamesProvider] and rpc_my_ongoing_events carries no
+/// sport, so it is read from the game itself (the games repository, as the
+/// game detail screen does). Null when the read fails.
+final homeEventSportProvider = FutureProvider.autoDispose
+    .family<String?, String>((ref, gameId) async {
+      try {
+        final res = await ref.read(gamesRepositoryProvider).getGame(gameId);
+        final String? sport = res.fold((_) => null, (g) => g.sport);
+        return sport;
+      } catch (_) {
+        return null;
+      }
+    });
 
 /// Re-exports the home feed from post_providers for backward compatibility.
 /// Uses page 0 (first page) as the default home view.

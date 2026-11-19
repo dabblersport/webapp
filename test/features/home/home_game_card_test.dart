@@ -1,10 +1,9 @@
-// CEO 2026-11-19: one Home card per game in the Upcoming design; the same
-// card carries the KAN-1008 running states; running first; no section title.
+// CEO 2026-11-19: Home's games in the DabblerUpcomingReminder stack; one time
+// line plus at most one short label; running first; sport emoji in the ring.
 
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
-import 'package:dabbler/features/home/presentation/widgets/home_game_card.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_post_display.dart'
     show homeSportEmoji;
 import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
@@ -12,6 +11,7 @@ import 'package:dabbler/features/lifecycle/presentation/lifecycle_controller.dar
 import 'package:dabbler/features/ongoing/data/ongoing_repository.dart';
 import 'package:dabbler/features/ongoing/presentation/ongoing_controller.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -55,6 +55,7 @@ Future<void> _pump(
   String locale = 'en',
   DateTime? now,
   bool h24 = false,
+  String? liveSport,
 }) async {
   final clock = now ?? ocClock;
   final router = GoRouter(
@@ -84,6 +85,7 @@ Future<void> _pump(
         ongoingNoticeSignalProvider.overrideWith((ref) => null),
         userUpcomingGamesProvider.overrideWith((ref) async => games),
         noCheckInOverride,
+        homeEventSportProvider.overrideWith((ref, id) async => liveSport),
       ],
       child: MaterialApp.router(
         routerConfig: router,
@@ -105,193 +107,113 @@ Future<void> _pump(
 void main() {
   for (final lang in ['en', 'ar']) {
     final l = lookupAppLocalizations(Locale(lang));
-    final cards = find.byType(HomeGameCard);
+    final block = find.byType(DabblerUpcomingReminder);
+    List<DabblerUpcomingItem> items(WidgetTester t) =>
+        t.widget<DabblerUpcomingReminder>(block).items;
+    String time(DateTime a, DateTime b, {bool h24 = false}) =>
+        l.hc_time_range(ocClk(lang, a, h24: h24), ocClk(lang, b, h24: h24));
+    final running = DateTime(2026, 11, 18, 20, 40);
 
-    group('HomeGameCard ($lang)', () {
-      testWidgets('before the start: countdown ring, no Check in', (t) async {
+    group('Home games stack ($lang)', () {
+      testWidgets('uses the reminder with no title', (t) async {
         await _pump(t, rows: [ocRow()], locale: lang);
-        expect(cards, findsOneWidget);
-        expect(ocKey('home-game-countdown'), findsOneWidget);
-        expect(ocKey('home-game-running'), findsNothing);
-        expect(find.text('25'), findsOneWidget);
-        expect(find.text(l.home_upcoming_min), findsOneWidget);
-        expect(ocKey('home-game-check-in'), findsNothing);
+        expect(block, findsOneWidget);
+        expect(t.widget<DabblerUpcomingReminder>(block).title, '');
+        expect(find.text(l.home_upcoming_title), findsNothing);
       });
 
-      testWidgets('check-in open: Check in opens the confirm sheet in place', (
-        t,
-      ) async {
+      testWidgets('before the start: countdown ring, time only', (t) async {
+        await _pump(t, rows: [ocRow()], locale: lang);
+        final u = items(t).single;
+        expect(u.ringBig, '25');
+        expect(u.ringSmall, l.home_upcoming_min);
+        expect(u.detail, time(ocStart, ocEnd));
+      });
+
+      testWidgets('24-hour when the MediaQuery flag is set', (t) async {
+        await _pump(t, rows: [ocRow()], locale: lang, h24: true);
+        expect(items(t).single.detail, time(ocStart, ocEnd, h24: true));
+      });
+
+      testWidgets('check-in open: Check in, tap opens the sheet', (t) async {
         await _pump(
           t,
           rows: [ocRow(checkIn: 'open')],
           locale: lang,
         );
-        expect(ocKey('home-game-check-in'), findsOneWidget);
-        expect(find.text(l.g04_cta), findsOneWidget);
-        await t.tap(ocKey('home-game-check-in'));
+        expect(
+          items(t).single.detail,
+          '${time(ocStart, ocEnd)} · ${l.g04_cta}',
+        );
+        items(t).single.onTap!();
         await t.pumpAndSettle();
         expect(find.text(l.g04_confirm_title), findsOneWidget);
-        expect(find.text('route:check-in:e1'), findsNothing);
+        expect(find.text('route:sports:e1'), findsNothing);
       });
 
-      testWidgets('the organiser sees no Check in', (t) async {
+      testWidgets('organiser: no Check in, tap opens the event', (t) async {
         await _pump(
           t,
           rows: [ocRow(organiser: true, checkIn: 'open')],
           locale: lang,
         );
-        expect(cards, findsOneWidget);
-        expect(ocKey('home-game-check-in'), findsNothing);
+        expect(items(t).single.detail, time(ocStart, ocEnd));
+        items(t).single.onTap!();
+        await t.pumpAndSettle();
+        expect(find.text('route:sports:e1'), findsOneWidget);
       });
 
-      Text statusText(WidgetTester t) => t.widget<Text>(
-        find.descendant(
-          of: ocKey('home-game-check-in-status'),
-          matching: find.byType(Text),
-        ),
-      );
-
-      testWidgets('checked in: Checked in label, no button', (t) async {
+      testWidgets('checked in: Checked in', (t) async {
         await _pump(
           t,
           rows: [ocRow(checkIn: 'checked_in')],
           locale: lang,
         );
-        expect(statusText(t).data, l.hc_checked_in);
-        expect(ocKey('home-game-check-in'), findsNothing);
+        expect(items(t).single.detail, endsWith(l.hc_checked_in));
       });
 
-      testWidgets('check-in open: Check in available label', (t) async {
-        await _pump(
-          t,
-          rows: [ocRow(checkIn: 'open')],
-          locale: lang,
-        );
-        expect(statusText(t).data, l.hc_check_in_available);
-        expect(ocKey('home-game-check-in'), findsOneWidget);
-      });
-
-      testWidgets('check-in closed: Check in closed label', (t) async {
-        await _pump(
-          t,
-          rows: [ocRow(checkIn: 'closed')],
-          locale: lang,
-          now: DateTime(2026, 11, 18, 21),
-        );
-        expect(statusText(t).data, l.hc_check_in_closed);
-        expect(ocKey('home-game-check-in'), findsNothing);
-      });
-
-      testWidgets('before the window or organiser: no check-in label', (
-        t,
-      ) async {
-        await _pump(
-          t,
-          rows: [
-            ocRow(id: 'a'),
-            ocRow(id: 'b', organiser: true, checkIn: 'open'),
-          ],
-          locale: lang,
-        );
-        expect(cards, findsNWidgets(2));
-        expect(ocKey('home-game-check-in-status'), findsNothing);
-      });
-
-      testWidgets('time on one line: start until end', (t) async {
-        await _pump(t, rows: [ocRow()], locale: lang);
-        final want = l.hc_time_range(ocClk(lang, ocStart), ocClk(lang, ocEnd));
-        expect(ocHas(want), findsOneWidget);
-        final line = t.widget<Text>(ocHas(want));
-        expect(line.maxLines, 1);
-      });
-
-      testWidgets('24-hour when the MediaQuery flag is set', (t) async {
-        await _pump(t, rows: [ocRow()], locale: lang, h24: true);
-        final want = l.hc_time_range(
-          ocClk(lang, ocStart, h24: true),
-          ocClk(lang, ocEnd, h24: true),
-        );
-        expect(ocHas(want), findsOneWidget);
-        expect(ocHas('20:30'), findsOneWidget);
-      });
-
-      testWidgets('running: the sport emoji in the ring', (t) async {
+      testWidgets('running: Live and the sport emoji', (t) async {
         await _pump(
           t,
           games: [_game('e1', 'Padel Night', ocStart)],
           rows: [ocRow()],
           locale: lang,
-          now: DateTime(2026, 11, 18, 20, 40),
+          now: running,
         );
-        expect(
-          find.descendant(
-            of: ocKey('home-game-running'),
-            matching: ocKey('home-game-sport'),
-          ),
-          findsOneWidget,
-        );
-        expect(find.text(homeSportEmoji('Football')), findsOneWidget);
+        final u = items(t).single;
+        expect(u.ringBig, homeSportEmoji('Football'));
+        expect(u.detail, '${time(ocStart, ocEnd)} · ${l.activity_pill_live}');
+        expect(u.detail, isNot(contains(l.hc_under_way)));
       });
 
-      testWidgets('running, no sport known: the play icon', (t) async {
-        await _pump(
-          t,
-          rows: [ocRow()],
-          locale: lang,
-          now: DateTime(2026, 11, 18, 20, 40),
-        );
-        expect(ocKey('home-game-sport'), findsNothing);
-      });
-
-      testWidgets('scheduled time running: running indicator, until', (
+      testWidgets('started game not in the games list: sport from the game', (
         t,
       ) async {
         await _pump(
           t,
-          rows: [ocRow()],
+          rows: [
+            ocRow(state: 'started', startedAt: DateTime(2026, 11, 18, 20, 32)),
+          ],
           locale: lang,
-          now: DateTime(2026, 11, 18, 20, 40),
+          now: running,
+          liveSport: 'Padel',
         );
-        expect(ocKey('home-game-running'), findsOneWidget);
-        expect(ocKey('home-game-countdown'), findsNothing);
-        expect(ocHas(l.hc_under_way), findsOneWidget);
-        // The end time appears once: on the time line, not the status.
-        expect(ocHas(ocClk(lang, ocEnd)), findsOneWidget);
+        expect(items(t).single.ringBig, homeSportEmoji('Padel'));
       });
 
-      testWidgets('started by the organiser: Started <time>', (t) async {
-        final at = DateTime(2026, 11, 18, 20, 32);
-        await _pump(
-          t,
-          rows: [ocRow(state: 'started', startedAt: at)],
-          locale: lang,
-          now: DateTime(2026, 11, 18, 20, 40),
-        );
-        expect(ocKey('home-game-running'), findsOneWidget);
-        expect(ocHas(l.lc_started_at(ocClk(lang, at))), findsOneWidget);
-      });
-
-      testWidgets('changed: old → new', (t) async {
-        await _pump(
-          t,
-          rows: [ocRow(previousStart: DateTime(2026, 11, 18, 20))],
-          locale: lang,
-        );
-        expect(ocKey('home-game-changed'), findsOneWidget);
-        expect(ocHas(ocClk(lang, DateTime(2026, 11, 18, 20))), findsOneWidget);
-      });
-
-      testWidgets('scheduled time ended', (t) async {
+      testWidgets('scheduled time ended: Ended, no long text', (t) async {
         await _pump(
           t,
           rows: [ocRow()],
           locale: lang,
           now: DateTime(2026, 11, 18, 21, 40),
         );
-        expect(ocHas(l.lc_time_ended), findsOneWidget);
+        final u = items(t).single;
+        expect(u.detail, endsWith(l.oc_ended));
+        expect(u.detail, isNot(contains(l.lc_time_ended)));
       });
 
-      testWidgets('ended or cancelled: the card leaves', (t) async {
+      testWidgets('ended or cancelled: the item leaves', (t) async {
         await _pump(
           t,
           rows: [
@@ -300,42 +222,19 @@ void main() {
           ],
           locale: lang,
         );
-        expect(cards, findsNothing);
+        expect(block, findsNothing);
       });
 
-      testWidgets('tap opens the event', (t) async {
-        await _pump(t, rows: [ocRow()], locale: lang);
-        await t.tap(ocKey('home-game-e1'));
-        await t.pumpAndSettle();
-        expect(find.text('route:sports:e1'), findsOneWidget);
-      });
-
-      testWidgets('one game: one card, and no Upcoming title', (t) async {
-        final start = DateTime(2026, 11, 19, 19, 30);
-        await _pump(
-          t,
-          games: [_game('e1', 'Padel Night', start)],
-          rows: [ocRow(start: start, end: start.add(const Duration(hours: 1)))],
-          locale: lang,
-        );
-        expect(cards, findsOneWidget);
-        expect(find.text(l.home_upcoming_title), findsNothing);
-        expect(ocHas(l.home_upcoming_title_count(1)), findsNothing);
-        expect(find.text(l.home_upcoming_hide), findsNothing);
-      });
-
-      testWidgets('running plus upcoming: two cards, running first', (t) async {
+      testWidgets('running plus upcoming: running first', (t) async {
         await _pump(
           t,
           games: [_game('g2', 'Tomorrow Game', DateTime(2026, 11, 19, 19))],
           rows: [ocRow()],
           locale: lang,
-          now: DateTime(2026, 11, 18, 20, 40),
+          now: running,
         );
-        expect(cards, findsNWidgets(2));
-        final running = t.getTopLeft(ocKey('home-game-e1'));
-        final upcoming = t.getTopLeft(ocKey('home-game-g2'));
-        expect(running.dy, lessThan(upcoming.dy));
+        expect(items(t).map((u) => u.title).last, 'Tomorrow Game');
+        expect(items(t), hasLength(2));
       });
     });
   }
