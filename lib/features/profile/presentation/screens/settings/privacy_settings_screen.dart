@@ -10,6 +10,7 @@ import 'package:dabbler/features/profile/presentation/screens/settings/privacy_t
 import 'package:dabbler/features/profile/presentation/widgets/settings/settings_top_bar.dart';
 import 'package:dabbler/features/profile/presentation/widgets/blocked_accounts_group.dart';
 import 'package:dabbler/features/social/block_providers.dart';
+import 'package:dabbler/features/bans/presentation/banned_people_group.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -31,6 +32,7 @@ enum _Page {
   data,
   notifications,
   blocked,
+  banned,
 }
 
 class PrivacySettingsScreen extends ConsumerStatefulWidget {
@@ -95,6 +97,8 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
                 padding: kSettingsBodyPadding,
                 children: _page == _Page.blocked
                     ? _blockedPage()
+                    : _page == _Page.banned
+                    ? const [BannedPeopleGroup()]
                     : settings == null
                     ? const []
                     : [
@@ -115,6 +119,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
     _Page.data => l10n.priv_data_title,
     _Page.notifications => l10n.priv_notif_title,
     _Page.blocked => l10n.priv_blocked_title,
+    _Page.banned => l10n.ban_list_title,
   };
 
   List<Widget> _pageBody(AppLocalizations l10n, PrivacySettings s) {
@@ -128,7 +133,7 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
         _toggleGroup(privacyNotificationToggles, s, l10n, false),
       ],
       _Page.contact => [_contactGroup(l10n, s)],
-      _Page.blocked => const [],
+      _Page.blocked || _Page.banned => const [],
     };
   }
 
@@ -215,6 +220,13 @@ class _PrivacySettingsScreenState extends ConsumerState<PrivacySettingsScreen> {
             l10n.priv_blocked_sub,
             DabblerType.toWesternDigits('$blockedCount'),
             _Page.blocked,
+          ),
+          _navRow(
+            'user-remove',
+            l10n.ban_list_title,
+            l10n.ban_list_sub,
+            '',
+            _Page.banned,
           ),
         ],
       ),

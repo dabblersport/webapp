@@ -1,5 +1,5 @@
-import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/attendance/presentation/attendance_list_entry.dart';
+import 'package:dabbler/features/bans/presentation/remove_with_ban_sheet.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_enums.dart';
 import 'package:dabbler/features/meetups/domain/models/meetup_models.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_providers.dart';
@@ -61,30 +61,23 @@ class _MeetupManageScreenState extends ConsumerState<MeetupManageScreen> {
   Future<void> _remove(MeetupAttendee a) async {
     final l = AppLocalizations.of(context);
     final name = a.displayName ?? a.username ?? '';
-    final ok = await showDabblerDialog<bool>(
+    final choice = await showRemoveWithBanSheet(
       context: context,
-      builder: (ctx) => DabblerDialog(
-        title: l.meetups_remove_title(context.isolate(name)),
-        description: l.meetups_remove_body,
-        destructive: true,
-        onClose: () => Navigator.pop(ctx, false),
-        secondaryAction: DabblerDialogAction(
-          label: l.composer_cancel,
-          onPressed: () => Navigator.pop(ctx, false),
-        ),
-        primaryAction: DabblerDialogAction(
-          label: l.meetups_remove,
-          onPressed: () => Navigator.pop(ctx, true),
-        ),
-      ),
+      name: name,
+      description: l.meetups_remove_body,
     );
-    if (ok != true || !mounted) return;
+    if (choice == null || !mounted) return;
     await _run((l) async {
       final uid = await _userId(a);
       if (uid == null) return l.meetups_action_failed;
       final r = await ref
           .read(meetupActionsProvider)
-          .removeAttendee(widget.meetupId, uid);
+          .removeAttendee(
+            widget.meetupId,
+            uid,
+            banScope: choice.scope.wire,
+            reason: choice.reason,
+          );
       return r.fold(
         (f) => meetupErrorText(l, f, l.meetups_action_failed),
         (_) => null,

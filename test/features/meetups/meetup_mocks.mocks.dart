@@ -262,19 +262,36 @@ class MockMeetupDataSource extends _i1.Mock implements _i2.MeetupDataSource {
           as _i3.Future<String>);
 
   @override
-  _i3.Future<String> removeAttendee(String? meetupId, String? userId) =>
+  _i3.Future<String> removeAttendee(
+    String? meetupId,
+    String? userId, {
+    String? banScope = 'none',
+    String? reason,
+  }) =>
       (super.noSuchMethod(
-            Invocation.method(#removeAttendee, [meetupId, userId]),
+            Invocation.method(
+              #removeAttendee,
+              [meetupId, userId],
+              {#banScope: banScope, #reason: reason},
+            ),
             returnValue: _i3.Future<String>.value(
               _i5.dummyValue<String>(
                 this,
-                Invocation.method(#removeAttendee, [meetupId, userId]),
+                Invocation.method(
+                  #removeAttendee,
+                  [meetupId, userId],
+                  {#banScope: banScope, #reason: reason},
+                ),
               ),
             ),
             returnValueForMissingStub: _i3.Future<String>.value(
               _i5.dummyValue<String>(
                 this,
-                Invocation.method(#removeAttendee, [meetupId, userId]),
+                Invocation.method(
+                  #removeAttendee,
+                  [meetupId, userId],
+                  {#banScope: banScope, #reason: reason},
+                ),
               ),
             ),
           )

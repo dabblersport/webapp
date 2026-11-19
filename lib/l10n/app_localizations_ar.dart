@@ -11420,4 +11420,82 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get hashtag_follow_retry => 'إعادة المحاولة';
+
+  @override
+  String ban_remove_title(String name) {
+    return 'إزالة $name؟';
+  }
+
+  @override
+  String get ban_remove_game_body =>
+      'سيفقد مكانه وسيتم إشعاره. إذا كانت للمباراة قائمة انتظار، يأخذ أول لاعب فيها مكانه.';
+
+  @override
+  String get ban_remove_only => 'إزالة فقط';
+
+  @override
+  String get ban_remove_event => 'إزالة وحظر من هذه الفعالية';
+
+  @override
+  String get ban_remove_series => 'إزالة وحظر من هذه السلسلة';
+
+  @override
+  String get ban_remove_all => 'إزالة وحظر من كل فعالياتي';
+
+  @override
+  String get ban_reason_label => 'السبب (اختياري)';
+
+  @override
+  String get ban_remove_confirm => 'إزالة';
+
+  @override
+  String get ban_join_refused => 'لا يمكنك الانضمام إلى هذه الفعالية.';
+
+  @override
+  String get ban_list_title => 'الأشخاص المحظورون';
+
+  @override
+  String get ban_list_sub => 'أشخاص حظرتهم من فعالياتك';
+
+  @override
+  String get ban_list_empty => 'لم تحظر أي شخص.';
+
+  @override
+  String get ban_list_load_failed => 'تعذّر تحميل الأشخاص المحظورين.';
+
+  @override
+  String get ban_scope_all => 'كل فعالياتك';
+
+  @override
+  String ban_scope_event(String title) {
+    return 'الفعالية: $title';
+  }
+
+  @override
+  String ban_scope_series(String title) {
+    return 'السلسلة: $title';
+  }
+
+  @override
+  String get ban_scope_one_event => 'فعالية واحدة';
+
+  @override
+  String get ban_unknown_person => 'غير معروف';
+
+  @override
+  String get ban_unban => 'إلغاء الحظر';
+
+  @override
+  String ban_unban_title(String name) {
+    return 'إلغاء حظر $name؟';
+  }
+
+  @override
+  String get ban_unban_body => 'سيتمكن من الانضمام مجددًا.';
+
+  @override
+  String get ban_unbanned => 'تم إلغاء الحظر';
+
+  @override
+  String get ban_unban_failed => 'تعذّر إلغاء الحظر. حاول مرة أخرى.';
 }

@@ -11321,4 +11321,82 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get hashtag_follow_retry => 'Retry';
+
+  @override
+  String ban_remove_title(String name) {
+    return 'Remove $name?';
+  }
+
+  @override
+  String get ban_remove_game_body =>
+      'They will lose their spot and be notified. If the game has a waitlist, the first player in line takes their place.';
+
+  @override
+  String get ban_remove_only => 'Remove only';
+
+  @override
+  String get ban_remove_event => 'Remove and ban from this event';
+
+  @override
+  String get ban_remove_series => 'Remove and ban from this series';
+
+  @override
+  String get ban_remove_all => 'Remove and ban from all my events';
+
+  @override
+  String get ban_reason_label => 'Reason (optional)';
+
+  @override
+  String get ban_remove_confirm => 'Remove';
+
+  @override
+  String get ban_join_refused => 'You can\'t join this event.';
+
+  @override
+  String get ban_list_title => 'Banned people';
+
+  @override
+  String get ban_list_sub => 'People you banned from your events';
+
+  @override
+  String get ban_list_empty => 'You haven\'t banned anyone.';
+
+  @override
+  String get ban_list_load_failed => 'Couldn\'t load banned people.';
+
+  @override
+  String get ban_scope_all => 'All your events';
+
+  @override
+  String ban_scope_event(String title) {
+    return 'Event: $title';
+  }
+
+  @override
+  String ban_scope_series(String title) {
+    return 'Series: $title';
+  }
+
+  @override
+  String get ban_scope_one_event => 'One event';
+
+  @override
+  String get ban_unknown_person => 'Unknown';
+
+  @override
+  String get ban_unban => 'Unban';
+
+  @override
+  String ban_unban_title(String name) {
+    return 'Unban $name?';
+  }
+
+  @override
+  String get ban_unban_body => 'They will be able to join again.';
+
+  @override
+  String get ban_unbanned => 'Ban lifted';
+
+  @override
+  String get ban_unban_failed => 'Couldn\'t lift the ban. Try again.';
 }

@@ -126,8 +126,17 @@ class MeetupRepositoryImpl implements MeetupRepository {
   @override
   Future<Result<RsvpStatus, Failure>> removeAttendee(
     String meetupId,
-    String userId,
-  ) => _guard(
-    () async => RsvpStatus.fromDb(await _ds.removeAttendee(meetupId, userId)),
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  }) => _guard(
+    () async => RsvpStatus.fromDb(
+      await _ds.removeAttendee(
+        meetupId,
+        userId,
+        banScope: banScope,
+        reason: reason,
+      ),
+    ),
   );
 }

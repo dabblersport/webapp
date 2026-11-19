@@ -67,8 +67,11 @@ abstract class MeetupRepository {
   );
 
   /// Host removes an attendee; yields [RsvpStatus.cancelled].
+  /// KAN-1014: [banScope] is the `p_ban_scope` wire value.
   Future<Result<RsvpStatus, Failure>> removeAttendee(
     String meetupId,
-    String userId,
-  );
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  });
 }

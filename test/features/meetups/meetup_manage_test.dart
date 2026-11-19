@@ -94,14 +94,34 @@ void main() {
     await settle(tester);
     expect(find.text('Remove Lina Haddad?'), findsOneWidget);
     expect(repo.removeCalls, isEmpty);
-    await tester.tap(
-      find.descendant(
-        of: find.byType(DabblerDialog),
-        matching: find.text('Remove'),
-      ),
-    );
+    // KAN-1014: the sheet defaults to "Remove only".
+    await tester.tap(find.byKey(const ValueKey<String>('ban-remove-confirm')));
     await settle(tester);
     expect(repo.removeCalls, [('m1', 'u-p1')]);
+    expect(repo.removeScopes, ['none']);
+  });
+
+  testWidgets('KAN-1014: remove and ban passes the chosen scope', (
+    tester,
+  ) async {
+    final repo = await _manage(tester);
+    await tester.tap(find.text('Remove').first);
+    await settle(tester);
+    expect(find.text('Remove and ban from this event'), findsOneWidget);
+    expect(find.text('Remove and ban from all my events'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey<String>('ban-scope-event')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey<String>('ban-remove-confirm')));
+    await settle(tester);
+    expect(repo.removeScopes, ['event']);
+
+    await tester.tap(find.text('Remove').first);
+    await settle(tester);
+    await tester.tap(find.byKey(const ValueKey<String>('ban-scope-organiser')));
+    await tester.pump();
+    await tester.tap(find.byKey(const ValueKey<String>('ban-remove-confirm')));
+    await settle(tester);
+    expect(repo.removeScopes, ['event', 'organiser']);
   });
 
   testWidgets('cancel asks first, then cancels and leaves', (tester) async {

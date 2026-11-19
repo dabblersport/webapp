@@ -45,6 +45,7 @@ String joinRefusalMessage(AppLocalizations l, String code) => switch (code) {
   'requested' => l.game_join_err_requested,
   'joined' => l.game_join_err_joined,
   'host' => l.game_join_err_host,
+  'banned' => l.ban_join_refused,
   _ => l.feedback_join_failed,
 };
 

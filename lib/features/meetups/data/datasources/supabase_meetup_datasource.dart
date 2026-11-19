@@ -170,10 +170,20 @@ class SupabaseMeetupDataSource implements MeetupDataSource {
   }
 
   @override
-  Future<String> removeAttendee(String meetupId, String userId) async {
+  Future<String> removeAttendee(
+    String meetupId,
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  }) async {
     final data = await _client.rpc(
       SupabaseConfig.rpcMeetupRemoveAttendeeFn,
-      params: MeetupRpcParams.removeAttendee(meetupId, userId),
+      params: MeetupRpcParams.removeAttendee(
+        meetupId,
+        userId,
+        banScope: banScope,
+        reason: reason,
+      ),
     );
     return data.toString();
   }

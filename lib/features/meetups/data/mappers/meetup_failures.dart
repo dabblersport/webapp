@@ -22,6 +22,8 @@ class MeetupFailures {
     'capacity_below_going_count': FailureCode.conflict,
     'no_pending_request': FailureCode.conflict,
     'attendee_not_found': FailureCode.notFound,
+    'invalid_ban_scope': FailureCode.validation,
+    'banned': FailureCode.forbidden,
   };
 
   static Failure from(Object error, [StackTrace? st]) {

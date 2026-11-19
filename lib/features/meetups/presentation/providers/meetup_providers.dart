@@ -308,9 +308,16 @@ class MeetupActionsController {
 
   Future<Result<RsvpStatus, Failure>> removeAttendee(
     String meetupId,
-    String userId,
-  ) async {
-    final r = await _repo.removeAttendee(meetupId, userId);
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  }) async {
+    final r = await _repo.removeAttendee(
+      meetupId,
+      userId,
+      banScope: banScope,
+      reason: reason,
+    );
     if (r.isSuccess) _refresh(meetupId);
     return r;
   }

@@ -54,6 +54,7 @@ class FakeMeetupRepository implements MeetupRepository {
   final List<(String, String, String)> decideCalls =
       <(String, String, String)>[];
   final List<(String, String)> removeCalls = <(String, String)>[];
+  final List<String> removeScopes = <String>[];
   final List<String> cancelCalls = <String>[];
   Failure? manageFailure;
   final List<(String, RsvpAction)> rsvpCalls = <(String, RsvpAction)>[];
@@ -157,9 +158,12 @@ class FakeMeetupRepository implements MeetupRepository {
   @override
   Future<Result<RsvpStatus, Failure>> removeAttendee(
     String meetupId,
-    String userId,
-  ) async {
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  }) async {
     removeCalls.add((meetupId, userId));
+    removeScopes.add(banScope);
     if (manageFailure != null) return Err(manageFailure!);
     return const Ok(RsvpStatus.cancelled);
   }

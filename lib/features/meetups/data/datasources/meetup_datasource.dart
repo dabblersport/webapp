@@ -76,8 +76,17 @@ class MeetupRpcParams {
     String decision,
   ) => {'p_meetup_id': meetupId, 'p_user_id': userId, 'p_decision': decision};
 
-  static Map<String, dynamic> removeAttendee(String meetupId, String userId) =>
-      {'p_meetup_id': meetupId, 'p_user_id': userId};
+  static Map<String, dynamic> removeAttendee(
+    String meetupId,
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  }) => {
+    'p_meetup_id': meetupId,
+    'p_user_id': userId,
+    'p_reason': reason,
+    'p_ban_scope': banScope,
+  };
 
   static Map<String, dynamic> canCreate(String actorProfileId) => {
     'p_actor': actorProfileId,
@@ -125,5 +134,10 @@ abstract class MeetupDataSource {
   Future<void> cancel(String meetupId);
   Future<Map<String, dynamic>> update(UpdateMeetupInput input);
   Future<String> decideRequest(String meetupId, String userId, String decision);
-  Future<String> removeAttendee(String meetupId, String userId);
+  Future<String> removeAttendee(
+    String meetupId,
+    String userId, {
+    String banScope = 'none',
+    String? reason,
+  });
 }

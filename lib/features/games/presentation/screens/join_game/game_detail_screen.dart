@@ -1,3 +1,4 @@
+import 'package:dabbler/features/bans/presentation/remove_with_ban_sheet.dart';
 import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_bar.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
@@ -467,25 +468,19 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
     GameViewController ctrl,
     GameRosterEntry player,
   ) async {
-    final confirmed = await showDabblerDialog<bool>(
+    final choice = await showRemoveWithBanSheet(
       context: context,
-      builder: (ctx) => DabblerDialog(
-        title: 'Remove ${player.displayName}?',
-        description:
-            'They will lose their spot and be notified. If the game has a '
-            'waitlist, the first player in line takes their place.',
-        destructive: true,
-        onClose: () => Navigator.pop(ctx, false),
-        secondaryAction: DabblerDialogAction(
-          label: AppLocalizations.of(context).composer_cancel,
-          onPressed: () => Navigator.pop(ctx, false),
-        ),
-        primaryAction: DabblerDialogAction(
-          label: AppLocalizations.of(context).sports_prefs_remove,
-          onPressed: () => Navigator.pop(ctx, true),
-        ),
-      ),
+      name: player.displayName,
+      description: AppLocalizations.of(context).ban_remove_game_body,
+      isSeries:
+          ref.read(gameViewControllerProvider(widget.gameId)).game?.seriesId !=
+          null,
     );
-    if (confirmed == true) await ctrl.removePlayer(player.profileId);
+    if (choice == null) return;
+    await ctrl.removePlayer(
+      player.profileId,
+      banScope: choice.scope,
+      reason: choice.reason,
+    );
   }
 }

@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/features/bans/domain/ban_models.dart';
 import 'package:dabbler/features/games/presentation/controllers/game_view_controller.dart';
 
 import '../../../../helpers/supabase_test_client.dart';
@@ -319,6 +320,31 @@ void main() {
       expect(controller.state.error, 'The creator cannot be removed.');
       controller.dispose();
     });
+
+    for (final scope in BanScope.values) {
+      test('KAN-1014: sends p_ban_scope ${scope.wire} and the reason', () async {
+        late Map<String, dynamic> body;
+        final controller = await buildAndSettle(
+          loadRouter(
+            extra: (request) async {
+              if (request.method == 'POST' &&
+                  request.url.path.contains('/rpc/${SupabaseConfig.rpcRemovePlayerFn}')) {
+                body = _decodeJsonBody(request.body);
+                return emptyOkResponse(request: request);
+              }
+              return jsonListResponse(const [], request: request);
+            },
+          ),
+        );
+
+        await controller.removePlayer('p1', banScope: scope, reason: 'late');
+
+        expect(body['p_profile_id'], 'p1');
+        expect(body['p_ban_scope'], scope.wire);
+        expect(body['p_reason'], 'late');
+        controller.dispose();
+      });
+    }
   });
 }
 

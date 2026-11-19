@@ -136,7 +136,17 @@ void main() {
     ds = build((r) => _ok(r, jsonEncode('cancelled')));
     expect(await ds.removeAttendee('m', 'u'), 'cancelled');
     expect(path(), '/rest/v1/rpc/rpc_meetup_remove_attendee');
-    expect(body(), {'p_meetup_id': 'm', 'p_user_id': 'u'});
+    expect(body(), {
+      'p_meetup_id': 'm',
+      'p_user_id': 'u',
+      'p_reason': null,
+      'p_ban_scope': 'none',
+    });
+    // KAN-1014: the chosen ban scope and reason reach the RPC.
+    ds = build((r) => _ok(r, jsonEncode('removed')));
+    await ds.removeAttendee('m', 'u', banScope: 'organiser', reason: 'r');
+    expect(body()['p_ban_scope'], 'organiser');
+    expect(body()['p_reason'], 'r');
   });
 
   test('retired overload names are never used', () {

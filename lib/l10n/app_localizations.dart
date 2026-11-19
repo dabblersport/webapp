@@ -19524,6 +19524,144 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Retry'**
   String get hashtag_follow_retry;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {name}?'**
+  String ban_remove_title(String name);
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'They will lose their spot and be notified. If the game has a waitlist, the first player in line takes their place.'**
+  String get ban_remove_game_body;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove only'**
+  String get ban_remove_only;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove and ban from this event'**
+  String get ban_remove_event;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove and ban from this series'**
+  String get ban_remove_series;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove and ban from all my events'**
+  String get ban_remove_all;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Reason (optional)'**
+  String get ban_reason_label;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get ban_remove_confirm;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'You can\'t join this event.'**
+  String get ban_join_refused;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Banned people'**
+  String get ban_list_title;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'People you banned from your events'**
+  String get ban_list_sub;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'You haven\'t banned anyone.'**
+  String get ban_list_empty;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t load banned people.'**
+  String get ban_list_load_failed;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'All your events'**
+  String get ban_scope_all;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Event: {title}'**
+  String ban_scope_event(String title);
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Series: {title}'**
+  String ban_scope_series(String title);
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'One event'**
+  String get ban_scope_one_event;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Unknown'**
+  String get ban_unknown_person;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Unban'**
+  String get ban_unban;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Unban {name}?'**
+  String ban_unban_title(String name);
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'They will be able to join again.'**
+  String get ban_unban_body;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Ban lifted'**
+  String get ban_unbanned;
+
+  /// KAN-1014 organiser bans.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t lift the ban. Try again.'**
+  String get ban_unban_failed;
 }
 
 class _AppLocalizationsDelegate

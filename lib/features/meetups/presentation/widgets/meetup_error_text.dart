@@ -16,6 +16,7 @@ String meetupErrorText(AppLocalizations l, Failure failure, String fallback) =>
       'invalid_capacity' => l.meetups_err_invalid_capacity,
       'capacity_below_going_count' => l.meetups_err_capacity_below_going,
       'auth_required' => l.meetups_err_auth_required,
+      'banned' => l.ban_join_refused,
       'meetup_cancelled' => l.meetups_error_cancelled,
       'attendee_not_found' => l.meetups_err_attendee_not_found,
       'no_pending_request' => l.meetups_err_no_pending,

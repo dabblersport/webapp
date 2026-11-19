@@ -3,6 +3,7 @@ import 'package:dabbler_design_system/dabbler_design_system.dart'
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/features/bans/domain/ban_models.dart';
 import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/cache/offline_cache.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
@@ -780,14 +781,26 @@ class GameViewController extends StateNotifier<GameViewState> {
   /// Creator removes an active player from the roster. The player's row is
   /// marked 'kicked', they get an in-app/push notification, and the first
   /// waitlisted player is promoted into the freed slot.
-  Future<void> removePlayer(String profileId) async {
+  ///
+  /// KAN-1014: [banScope] also bans them from this game (or its series) or
+  /// from every event the creator runs; [reason] is optional.
+  Future<void> removePlayer(
+    String profileId, {
+    BanScope banScope = BanScope.none,
+    String? reason,
+  }) async {
     if (currentUserId == null) return;
     state = state.copyWith(isActing: true, clearError: true);
 
     try {
       await _db.rpc(
         SupabaseConfig.rpcRemovePlayerFn,
-        params: {'p_game_id': gameId, 'p_profile_id': profileId},
+        params: {
+          'p_game_id': gameId,
+          'p_profile_id': profileId,
+          'p_reason': reason,
+          'p_ban_scope': banScope.wire,
+        },
       );
       await _load();
       state = state.copyWith(isActing: false);
@@ -804,6 +817,7 @@ class GameViewController extends StateNotifier<GameViewState> {
         'not_host' => 'Only the game creator can do that.',
         'player_not_on_roster' => 'This player is no longer on the roster.',
         'cannot_remove_host' => 'The creator cannot be removed.',
+        'banned' => _l10n?.call().ban_join_refused ?? msg,
         _ => msg,
       };
     }
