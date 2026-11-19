@@ -11217,4 +11217,23 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get g02_organiser_result => 'Review the result';
+
+  @override
+  String get game_leave => 'Leave game';
+
+  @override
+  String get game_leaving => 'Leaving…';
+
+  @override
+  String get game_leave_title => 'Leave game?';
+
+  @override
+  String get game_leave_body =>
+      'You will lose your spot and may not be able to rejoin.';
+
+  @override
+  String get game_leave_confirm => 'Leave';
+
+  @override
+  String get meetups_cant_make_it => 'Can\'t make it';
 }

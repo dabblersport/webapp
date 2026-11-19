@@ -431,12 +431,13 @@ void main() {
           ),
         ],
       );
-      await tester.tap(find.text('Leave game'));
+      final l = lookupAppLocalizations(locale);
+      await tester.tap(find.text(l.game_leave));
       for (var i = 0; i < 8; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }
       _noException(tester);
-      expect(find.text('Leave game?'), findsOneWidget);
+      expect(find.text(l.game_leave_title), findsOneWidget);
       await _shoot(tester, const Key('shot'), 'game-leave-dialog-$dir');
       await _unmount(tester);
     }, variant: desktop);

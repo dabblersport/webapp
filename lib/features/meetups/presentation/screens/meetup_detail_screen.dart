@@ -1,6 +1,7 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
+import 'package:dabbler/features/attendance/presentation/check_in_bar.dart';
 import 'package:dabbler/features/games/presentation/providers/nearby_games_provider.dart'
     show gamesSkillTierFor, gamesSkillTierLabel;
 import 'package:dabbler/features/attendance/presentation/check_in_entry.dart';
@@ -243,6 +244,15 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
             going: c.counts.going,
           );
     final loadingCta = !c.isCancelled && elig.valueOrNull == null;
+    final checkIn = !c.isHost && !c.isCancelled && c.myStatus == 'going'
+        ? checkInBarActions(
+            context,
+            ref,
+            eventId: c.eventId ?? c.id,
+            leaveLabel: l.meetups_cant_make_it,
+            onLeave: _busy ? null : () => _press(DabblerRsvpCtaState.going, c),
+          )
+        : null;
     final hostName = c.host?.displayName ?? c.host?.username;
     final distance = ref.watch(meetupDistancesProvider)[c.id];
     // The vibe tag comes from the list row (`v_meetup_list.vibe_key`); a deep
@@ -299,12 +309,15 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
       bottomBar: DabblerActionBar(
         price: l.listing_free,
         caption: l.meetups_free_note,
-        primary: DabblerRsvpCta(
-          state: state,
-          label: rsvpLabel(l, state),
-          loading: _busy || loadingCta,
-          onPressed: () => _press(state, c),
-        ),
+        secondary: checkIn?.secondary,
+        primary:
+            checkIn?.primary ??
+            DabblerRsvpCta(
+              state: state,
+              label: rsvpLabel(l, state),
+              loading: _busy || loadingCta,
+              onPressed: () => _press(state, c),
+            ),
       ),
       children: <Widget>[
         DabblerHeadcount(

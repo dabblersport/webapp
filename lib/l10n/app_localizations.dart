@@ -19332,6 +19332,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Review the result'**
   String get g02_organiser_result;
+
+  /// Check-in CTA: the bottom bar of a game or meetup detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave game'**
+  String get game_leave;
+
+  /// Check-in CTA: the bottom bar of a game or meetup detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Leaving…'**
+  String get game_leaving;
+
+  /// Check-in CTA: the bottom bar of a game or meetup detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave game?'**
+  String get game_leave_title;
+
+  /// Check-in CTA: the bottom bar of a game or meetup detail.
+  ///
+  /// In en, this message translates to:
+  /// **'You will lose your spot and may not be able to rejoin.'**
+  String get game_leave_body;
+
+  /// Check-in CTA: the bottom bar of a game or meetup detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Leave'**
+  String get game_leave_confirm;
+
+  /// Check-in CTA: the bottom bar of a game or meetup detail.
+  ///
+  /// In en, this message translates to:
+  /// **'Can\'t make it'**
+  String get meetups_cant_make_it;
 }
 
 class _AppLocalizationsDelegate

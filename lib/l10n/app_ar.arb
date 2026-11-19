@@ -3681,5 +3681,11 @@
   "g02_organiser_title": "أنت من نظّم هذا النشاط",
   "g02_organiser_body": "يقيّمه اللاعبون، ويمكنك مراجعة النتيجة.",
   "g02_organiser_body_no_result": "يمكن للاعبين تقييمه.",
-  "g02_organiser_result": "مراجعة النتيجة"
+  "g02_organiser_result": "مراجعة النتيجة",
+  "game_leave": "مغادرة المباراة",
+  "game_leaving": "جارٍ المغادرة…",
+  "game_leave_title": "مغادرة المباراة؟",
+  "game_leave_body": "ستفقد مكانك وقد لا تتمكن من الانضمام مجددًا.",
+  "game_leave_confirm": "مغادرة",
+  "meetups_cant_make_it": "لن أتمكن من الحضور"
 }

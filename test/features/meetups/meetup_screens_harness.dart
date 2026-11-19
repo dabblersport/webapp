@@ -245,9 +245,10 @@ Future<void> pumpMeetups(
   bool denied = false,
   FollowLog? follow,
   List<Override> overrides = const <Override>[],
+  Size size = const Size(393, 852),
 }) async {
   final log = follow ?? FollowLog();
-  tester.view.physicalSize = const Size(393, 852);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(

@@ -1,3 +1,4 @@
+import 'package:dabbler/features/attendance/presentation/check_in_bar.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
 import 'package:dabbler/features/games/presentation/screens/game_composer_screen.dart';
@@ -372,8 +373,23 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         disabled: true,
       );
     } else if (ctrl.isOnRoster) {
+      final l = AppLocalizations.of(context);
+      final ci = checkInBarActions(
+        context,
+        ref,
+        eventId: game.id,
+        leaveLabel: state.isActing ? l.game_leaving : l.game_leave,
+        onLeave: state.isActing ? null : _confirmLeave,
+      );
+      if (ci != null) {
+        return DabblerActionBar(
+          price: gameEntryLabel(game),
+          secondary: ci.secondary,
+          primary: ci.primary,
+        );
+      }
       cta = DabblerButton(
-        label: state.isActing ? 'Leaving…' : 'Leave game',
+        label: state.isActing ? l.game_leaving : l.game_leave,
         icon: 'logout',
         tone: DabblerButtonTone.outlined,
         size: DabblerButtonSize.full,
@@ -442,24 +458,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
   }
 
   Future<void> _confirmLeave() async {
-    final confirmed = await showDabblerDialog<bool>(
-      context: context,
-      builder: (ctx) => DabblerDialog(
-        title: 'Leave game?',
-        description: 'You will lose your spot and may not be able to rejoin.',
-        destructive: true,
-        onClose: () => Navigator.pop(ctx, false),
-        secondaryAction: DabblerDialogAction(
-          label: AppLocalizations.of(context).composer_cancel,
-          onPressed: () => Navigator.pop(ctx, false),
-        ),
-        primaryAction: DabblerDialogAction(
-          label: 'Leave',
-          onPressed: () => Navigator.pop(ctx, true),
-        ),
-      ),
-    );
-    if (confirmed == true && mounted) {
+    if (await confirmLeaveGame(context) && mounted) {
       ref.read(gameViewControllerProvider(widget.gameId).notifier).leaveGame();
     }
   }

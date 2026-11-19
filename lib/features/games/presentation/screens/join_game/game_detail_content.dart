@@ -367,3 +367,26 @@ Widget? gameWhereSection(GameView game) {
 
 /// KAN-1002 (W2-F5): the lifecycle card; the server's is_organiser gates the controls.
 Widget gameLifecycleCard(GameView game) => EventLifecycleCard(eventId: game.id);
+
+/// The "Leave game?" confirm; true when the player confirms.
+Future<bool> confirmLeaveGame(BuildContext context) async {
+  final l = AppLocalizations.of(context);
+  final confirmed = await showDabblerDialog<bool>(
+    context: context,
+    builder: (ctx) => DabblerDialog(
+      title: l.game_leave_title,
+      description: l.game_leave_body,
+      destructive: true,
+      onClose: () => Navigator.pop(ctx, false),
+      secondaryAction: DabblerDialogAction(
+        label: l.composer_cancel,
+        onPressed: () => Navigator.pop(ctx, false),
+      ),
+      primaryAction: DabblerDialogAction(
+        label: l.game_leave_confirm,
+        onPressed: () => Navigator.pop(ctx, true),
+      ),
+    ),
+  );
+  return confirmed == true;
+}

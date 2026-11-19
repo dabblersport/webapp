@@ -4585,5 +4585,17 @@
   "g02_organiser_body": "Players rate it; you can review the result.",
   "g02_organiser_body_no_result": "Players can rate it.",
   "@g02_organiser_body_no_result": {"description": "KAN-1000 organiser body on a meetup or a non-competitive game, which has no result to review."},
-  "g02_organiser_result": "Review the result"
+  "g02_organiser_result": "Review the result",
+  "game_leave": "Leave game",
+  "@game_leave": {"description": "Check-in CTA: the bottom bar of a game or meetup detail."},
+  "game_leaving": "Leaving…",
+  "@game_leaving": {"description": "Check-in CTA: the bottom bar of a game or meetup detail."},
+  "game_leave_title": "Leave game?",
+  "@game_leave_title": {"description": "Check-in CTA: the bottom bar of a game or meetup detail."},
+  "game_leave_body": "You will lose your spot and may not be able to rejoin.",
+  "@game_leave_body": {"description": "Check-in CTA: the bottom bar of a game or meetup detail."},
+  "game_leave_confirm": "Leave",
+  "@game_leave_confirm": {"description": "Check-in CTA: the bottom bar of a game or meetup detail."},
+  "meetups_cant_make_it": "Can't make it",
+  "@meetups_cant_make_it": {"description": "Check-in CTA: the bottom bar of a game or meetup detail."}
 }

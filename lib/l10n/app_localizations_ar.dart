@@ -11318,4 +11318,22 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get g02_organiser_result => 'مراجعة النتيجة';
+
+  @override
+  String get game_leave => 'مغادرة المباراة';
+
+  @override
+  String get game_leaving => 'جارٍ المغادرة…';
+
+  @override
+  String get game_leave_title => 'مغادرة المباراة؟';
+
+  @override
+  String get game_leave_body => 'ستفقد مكانك وقد لا تتمكن من الانضمام مجددًا.';
+
+  @override
+  String get game_leave_confirm => 'مغادرة';
+
+  @override
+  String get meetups_cant_make_it => 'لن أتمكن من الحضور';
 }
