@@ -420,6 +420,10 @@ class SupabaseConfig {
   /// KAN-1008: the caller's ongoing/imminent events for the in-app ongoing card.
   static const String rpcMyOngoingEventsFn = 'rpc_my_ongoing_events';
 
+  /// KAN-968: MVP vote (cast/change) and my vote + candidates.
+  static const String rpcMvpVoteFn = 'rpc_mvp_vote';
+  static const String rpcMvpGetFn = 'rpc_mvp_get';
+
   /// KAN-1000 (G-02, G-03): results (KAN-996) and ratings (KAN-997).
   static const String rpcResultGetFn = 'rpc_result_get';
   static const String rpcResultSubmitFn = 'rpc_result_submit';
