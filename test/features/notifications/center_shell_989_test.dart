@@ -19,6 +19,7 @@ import 'package:dabbler/features/notifications/presentation/widgets/notif_target
 import 'package:dabbler/features/notifications/presentation/widgets/notification_badge.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
+import 'package:dabbler/features/ongoing/presentation/ongoing_card.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -277,7 +278,33 @@ void main() {
         expect(find.text(l.notif_title_activity_log), findsOneWidget);
         expect(find.bySemanticsLabel(l.notif_mark_all_read), findsOneWidget);
         expect(find.bySemanticsLabel(l.notif_refresh), findsOneWidget);
-        expect(find.text(l.notif_unread_count(4)), findsOneWidget);
+        // KAN-1028: the count lives only in the Unread chip.
+        expect(find.text(l.notif_unread_count(4)), findsNothing);
+        expect(
+          find.byKey(const ValueKey<String>('notif-unread-count')),
+          findsNothing,
+        );
+        // Mark all read is a text button, not a glyph.
+        expect(
+          find.ancestor(
+            of: find.text(l.notif_mark_all_read),
+            matching: find.byType(DabblerTextLink),
+          ),
+          findsOneWidget,
+        );
+        // No settings glyph in the header.
+        expect(find.bySemanticsLabel(l.settings_header_title), findsNothing);
+        expect(find.byType(DabblerNavigationTopBar), findsNothing);
+        // No ongoing card in the Center (it lives on Home).
+        expect(find.byType(OngoingCardSlot), findsNothing);
+        // Group headers carry the label only.
+        final headers = tester.widgetList<DabblerActivityGroupHeader>(
+          find.byType(DabblerActivityGroupHeader),
+        );
+        expect(headers, isNotEmpty);
+        for (final h in headers) {
+          expect(h.count, isNull);
+        }
         await tester.tap(find.bySemanticsLabel(l.notif_mark_all_read));
         await tester.pump();
         expect(p.notifs.markAll, 1);

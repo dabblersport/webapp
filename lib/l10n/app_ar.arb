@@ -3316,6 +3316,7 @@
   "notif_b_social_comment_replied": "اضغط لقراءة الرد.",
   "notif_t_social_post_reposted": "{actor} أعاد نشر منشورك",
   "notif_b_social_post_reposted": "اضغط لعرض المنشور.",
+  "notif_back": "رجوع",
   "notif_refresh": "تحديث",
   "notif_unread_count": "{count} غير مقروء",
   "notif_chip_unread": "غير المقروء",

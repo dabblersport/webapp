@@ -20,12 +20,10 @@ import '../widgets/notif_list_states.dart';
 import '../widgets/notif_target_states.dart';
 import '../widgets/activity_category_chips.dart';
 import '../widgets/activity_log_slivers.dart';
-import '../widgets/notif_prefs_sheet.dart';
 import '../widgets/notif_top_bar.dart';
 import '../widgets/activity_summary_card.dart';
 import '../widgets/activity_search_row.dart';
 import '../widgets/activity_security_footer.dart';
-import 'package:dabbler/features/ongoing/presentation/ongoing_card.dart';
 
 /// KAN-989 (W1-F3): the Notification Center shell — the Notifications and
 /// Activity log tabs, the chips, activity highlights under All, every list
@@ -148,11 +146,9 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                   : l10n.notif_title_activity_log,
               mode: mode,
               onModeChanged: hideToggle ? null : _setMode,
-              onOpenSettings: () => showNotifPrefsSheet(context),
               onRefresh: () =>
                   isNotif ? _refreshFromHeader(userId) : _refreshActivity(),
               refreshing: isNotif && _refreshing,
-              unreadCount: notificationState.unreadCount,
               // NC-02: mark all read clears the dots of notifications only.
               onMarkAllRead:
                   (isNotif && !offline && notificationState.unreadCount > 0)
@@ -162,7 +158,6 @@ class _NotificationsScreenV2State extends ConsumerState<NotificationsScreenV2> {
                   : null,
             ),
           ),
-          const SliverToBoxAdapter(child: OngoingCardSlot()),
           SliverToBoxAdapter(
             child: ChipsRow(
               chips: isNotif

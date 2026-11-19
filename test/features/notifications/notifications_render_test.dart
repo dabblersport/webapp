@@ -14,6 +14,7 @@ import 'package:dabbler/features/notifications/presentation/widgets/activity_log
 import 'package:dabbler/features/notifications/presentation/widgets/notif_chips.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
+import 'package:dabbler/features/notifications/presentation/widgets/notif_prefs_sheet.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -322,7 +323,8 @@ void main() {
           hasMore: true,
         ),
       );
-      await tester.tap(find.bySemanticsLabel(l10n.settings_header_title));
+      // KAN-1028: the header has no settings glyph; the sheet opens directly.
+      showNotifPrefsSheet(tester.element(find.byType(NotificationsScreenV2)));
       for (var i = 0; i < 10; i++) {
         await tester.pump(const Duration(milliseconds: 100));
       }

@@ -17437,6 +17437,12 @@ abstract class AppLocalizations {
   /// **'Tap to see the post.'**
   String get notif_b_social_post_reposted;
 
+  /// No description provided for @notif_back.
+  ///
+  /// In en, this message translates to:
+  /// **'Back'**
+  String get notif_back;
+
   /// KAN-989 Notification Center shell.
   ///
   /// In en, this message translates to:

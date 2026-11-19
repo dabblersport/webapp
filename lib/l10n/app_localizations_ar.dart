@@ -10217,6 +10217,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_b_social_post_reposted => 'اضغط لعرض المنشور.';
 
   @override
+  String get notif_back => 'رجوع';
+
+  @override
   String get notif_refresh => 'تحديث';
 
   @override

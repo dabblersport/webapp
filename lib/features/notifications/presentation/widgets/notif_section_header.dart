@@ -6,9 +6,10 @@
 // optional suffix) joins the label because that header carries a label only.
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
-import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter/widgets.dart';
 
+/// KAN-1028: the group header is the label alone (Today / Yesterday / …);
+/// [count] and [suffix] are kept for callers but no longer drawn.
 class NotifSectionHeader extends StatelessWidget {
   final String title;
   final int count;
@@ -22,20 +23,11 @@ class NotifSectionHeader extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final n = DabblerType.toWesternDigits('$count');
     return Padding(
       padding: const EdgeInsetsDirectional.symmetric(
         horizontal: DabblerSpacing.space6,
       ),
-      child: DabblerActivityGroupHeader(
-        title,
-        dense: true,
-        count: suffix == null
-            ? DabblerType.toWesternDigits(
-                AppLocalizations.of(context).notif_group_count(count),
-              )
-            : '$n $suffix',
-      ),
+      child: DabblerActivityGroupHeader(title, dense: true),
     );
   }
 }

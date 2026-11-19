@@ -10112,6 +10112,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notif_b_social_post_reposted => 'Tap to see the post.';
 
   @override
+  String get notif_back => 'Back';
+
+  @override
   String get notif_refresh => 'Refresh';
 
   @override

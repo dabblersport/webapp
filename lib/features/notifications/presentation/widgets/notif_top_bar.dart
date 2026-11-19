@@ -27,15 +27,9 @@ class TopBar extends StatelessWidget {
   /// Enables "mark all read" (Notifications tab only; dimmed when null).
   final VoidCallback? onMarkAllRead;
 
-  /// Opens the "What reaches you" preferences sheet.
-  final VoidCallback onOpenSettings;
-
   /// Refreshes the tab's list; [refreshing] shows its spinner.
   final VoidCallback? onRefresh;
   final bool refreshing;
-
-  /// The server's unread count, shown under the bar on the Notifications tab.
-  final int unreadCount;
 
   const TopBar({
     super.key,
@@ -43,10 +37,8 @@ class TopBar extends StatelessWidget {
     required this.mode,
     required this.onModeChanged,
     this.onMarkAllRead,
-    required this.onOpenSettings,
     this.onRefresh,
     this.refreshing = false,
-    this.unreadCount = 0,
   });
 
   bool get _isNotifications => mode == ViewMode.notifications;
@@ -54,59 +46,65 @@ class TopBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final router = GoRouter.maybeOf(context);
+    final canBack = router?.canPop() ?? false;
+    // KAN-1028: design A header — display title, Refresh, and a text
+    // "Mark all read" (Notifications tab only). No settings glyph (settings
+    // live under Profile > Settings > Notifications) and no bottom border.
+    // Back shows only when the route was pushed.
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        DabblerNavigationTopBar.titled(
-          title: title,
-          safeArea: false,
-          border: true,
-          onBack: () => context.canPop() ? context.pop() : context.go('/home'),
-          actions: [
-            DabblerNavigationAction(
-              icon: 'refresh',
-              label: l10n.notif_refresh,
-              loading: refreshing,
-              onPressed: onRefresh,
-            ),
-            if (_isNotifications)
-              DabblerNavigationAction(
-                icon: 'tick-circle',
-                label: l10n.notif_mark_all_read,
-                // Brand while something is unread, subtle once nothing is.
-                tone: onMarkAllRead != null
-                    ? DabblerNavigationActionTone.brand
-                    : DabblerNavigationActionTone.subtle,
-                onPressed: onMarkAllRead,
-              ),
-            DabblerNavigationAction(
-              icon: 'setting-2',
-              label: l10n.settings_header_title,
-              onPressed: onOpenSettings,
-            ),
-          ],
-        ),
-        if (_isNotifications && unreadCount > 0)
-          Padding(
-            key: const ValueKey<String>('notif-unread-count'),
-            padding: const EdgeInsetsDirectional.only(
-              start: DabblerSpacing.space6,
-              top: DabblerSpacing.space2,
-              end: DabblerSpacing.space6,
-            ),
-            child: DabblerText(
-              DabblerType.toWesternDigits(l10n.notif_unread_count(unreadCount)),
-              style: DabblerType.footnote,
-              tone: DabblerTextTone.secondary,
-            ),
+        Padding(
+          padding: const EdgeInsetsDirectional.fromSTEB(
+            DabblerSpacing.space6,
+            DabblerSpacing.space1,
+            DabblerSpacing.space4,
+            DabblerSpacing.space3,
           ),
+          child: Row(
+            children: [
+              if (canBack)
+                DabblerButton.icon(
+                  key: const ValueKey<String>('notif-header-back'),
+                  icon: DabblerNavigationTopBar.backIcon,
+                  semanticLabel: l10n.notif_back,
+                  tone: DabblerButtonTone.text,
+                  mirrorInRtl: true,
+                  onPressed: () => router!.pop(),
+                ),
+              Expanded(
+                child: DabblerText(
+                  title,
+                  key: const ValueKey<String>('notif-header-title'),
+                  style: DabblerType.displaySection,
+                  maxLines: 1,
+                ),
+              ),
+              DabblerButton.icon(
+                key: const ValueKey<String>('notif-header-refresh'),
+                icon: 'refresh',
+                semanticLabel: l10n.notif_refresh,
+                tone: DabblerButtonTone.text,
+                loading: refreshing,
+                onPressed: onRefresh,
+              ),
+              if (_isNotifications)
+                DabblerTextLink(
+                  key: const ValueKey<String>('notif-mark-all-read'),
+                  label: l10n.notif_mark_all_read,
+                  underline: false,
+                  onPressed: onMarkAllRead,
+                ),
+            ],
+          ),
+        ),
         if (onModeChanged != null)
           Padding(
-            padding: const EdgeInsetsDirectional.fromSTEB(
-              DabblerSpacing.space6,
-              DabblerSpacing.space2,
-              DabblerSpacing.space6,
-              DabblerSpacing.space3,
+            padding: const EdgeInsetsDirectional.only(
+              start: DabblerSpacing.space6,
+              end: DabblerSpacing.space6,
+              bottom: DabblerSpacing.space3,
             ),
             child: ModeToggle(mode: mode, onChanged: onModeChanged!),
           ),
@@ -131,12 +129,10 @@ class ModeToggle extends StatelessWidget {
         DabblerTabItem(
           id: ViewMode.notifications.name,
           label: l10n.notif_title_notifications,
-          icon: const DabblerIcon('notification'),
         ),
         DabblerTabItem(
           id: ViewMode.activity.name,
           label: l10n.notif_title_activity_log,
-          icon: const DabblerIcon('activity'),
         ),
       ],
       onChanged: (id) => onChanged(

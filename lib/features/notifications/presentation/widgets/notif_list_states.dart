@@ -148,7 +148,9 @@ class NotifOfflineBanner extends StatelessWidget {
           );
     return _BannerPad(
       child: DabblerBanner(
-        tone: DabblerBannerTone.warning,
+        // KAN-1028: offline is the neutral notice (design A), not a warning.
+        tone: DabblerBannerTone.neutral,
+        icon: const DabblerIcon('cloud-cross'),
         message: time == null
             ? l.notif_offline_banner_unsaved
             : l.notif_offline_banner(time),
@@ -168,7 +170,9 @@ class NotifRefreshFailedBanner extends StatelessWidget {
     final l = AppLocalizations.of(context);
     return _BannerPad(
       child: DabblerBanner(
-        tone: DabblerBannerTone.error,
+        // KAN-1028: a failed refresh keeps the list — a warning, not an error.
+        tone: DabblerBannerTone.warning,
+        icon: const DabblerIcon('warning-2'),
         message: l.notif_refresh_failed,
         action: DabblerBannerAction(
           label: l.notif_btn_retry,

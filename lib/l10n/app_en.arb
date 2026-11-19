@@ -3957,6 +3957,7 @@
   "@notif_t_social_post_reposted": {"description": "KAN-978: server template social.post_reposted (title).", "placeholders": {"actor": {"type": "String"}}},
   "notif_b_social_post_reposted": "Tap to see the post.",
   "@notif_b_social_post_reposted": {"description": "KAN-978: server template social.post_reposted (body)."},
+  "notif_back": "Back",
   "notif_refresh": "Refresh",
   "@notif_refresh": {"description": "KAN-989 Notification Center shell."},
   "notif_unread_count": "{count} unread",
