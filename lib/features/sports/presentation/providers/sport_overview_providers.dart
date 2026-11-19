@@ -340,6 +340,8 @@ class SportFollowController extends StateNotifier<SportFollowState> {
           outcome == SportFollowOutcome.unfollowed;
       if (wrote) {
         await _ref.read(profileControllerProvider.notifier).refreshProfile();
+        // KAN-1030: the follower count is server-side; re-read it.
+        _ref.invalidate(sportOverviewCountsProvider);
       }
       if (!mounted) return;
       state = SportFollowState(
