@@ -71,10 +71,13 @@ extension _AccountPasswordSheet on _AccountManagementScreenState {
                     : (_hasPassword
                           ? l10n.acct_password_change
                           : l10n.acct_password_set),
-                size: DabblerButtonSize.block,
+                size: DabblerButtonSize.full,
+                fullWidth: true,
                 disabled: _isSaving,
                 onPressed: _changePassword,
               ),
+              // Clear of the system navigation bar / home indicator.
+              SizedBox(height: MediaQuery.viewPaddingOf(context).bottom),
             ],
           );
         },

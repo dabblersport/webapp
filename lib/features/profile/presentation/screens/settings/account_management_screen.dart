@@ -310,10 +310,13 @@ class _AccountManagementScreenState
                 label: _isSaving
                     ? l10n.acct_email_updating
                     : l10n.acct_email_update,
-                size: DabblerButtonSize.block,
+                size: DabblerButtonSize.full,
+                fullWidth: true,
                 disabled: _isSaving,
                 onPressed: _updateEmail,
               ),
+              // Clear of the system navigation bar / home indicator.
+              SizedBox(height: MediaQuery.viewPaddingOf(context).bottom),
             ],
           );
         },

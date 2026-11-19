@@ -60,7 +60,8 @@ class DeleteAccountSheetBody extends StatelessWidget {
         DabblerButton(
           label: l10n.acct_delete_confirm,
           tone: DabblerButtonTone.destructive,
-          size: DabblerButtonSize.block,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
           loading: deleting,
           onPressed: deleting ? null : onConfirm,
         ),
@@ -68,10 +69,13 @@ class DeleteAccountSheetBody extends StatelessWidget {
         DabblerButton(
           label: l10n.acct_cancel,
           tone: DabblerButtonTone.outlined,
-          size: DabblerButtonSize.block,
+          size: DabblerButtonSize.full,
+          fullWidth: true,
           disabled: deleting,
           onPressed: onCancel,
         ),
+        // Clear of the system navigation bar / home indicator.
+        SizedBox(height: MediaQuery.viewPaddingOf(context).bottom),
       ],
     );
   }
