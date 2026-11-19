@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- KAN-1020: status-bar / notification small icon. Android renders only the
+     alpha channel, so this is the Dabbler mark as a white silhouette. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="65"
+    android:viewportHeight="65">
+    <group android:translateX="3.4">
+        <path
+            android:fillColor="#FFFFFFFF"
+            android:fillType="evenOdd"
+            android:pathData="M30.776,13.678L30.776,0L58.132,0L58.132,51.291L44.454,51.291L44.454,13.678L30.776,13.678ZM44.454,51.291L44.454,64.969L13.679,64.969L13.679,51.291L44.454,51.291ZM13.679,51.291L0,51.291L0,27.355L13.679,13.678L30.776,13.678L30.776,27.355L13.679,27.355L13.679,51.291Z" />
+    </group>
+</vector>

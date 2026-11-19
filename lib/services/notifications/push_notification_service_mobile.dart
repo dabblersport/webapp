@@ -194,7 +194,9 @@ class PushNotificationService {
   Future<void> _configurePlatform() async {
     if (defaultTargetPlatform == TargetPlatform.android) {
       // Android: foreground messages are displayed via flutter_local_notifications.
-      const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+      const androidInit = AndroidInitializationSettings(
+        '@drawable/ic_notification',
+      );
       const initSettings = InitializationSettings(android: androidInit);
 
       await _localNotificationsPlugin.initialize(

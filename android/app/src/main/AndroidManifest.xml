@@ -90,11 +90,14 @@
         <!-- KAN-992: a push names its own channel (dabbler_social, dabbler_games,
              ... dabbler_quiet; created at init in push_local_display.dart). One
              without a channel falls back to dabbler_default.
-             NOTE: ic_notification.png is a full-color tile, not a valid
-             status-bar silhouette, so no default icon override is set. -->
+             KAN-1020: ic_notification is a white vector silhouette of the
+             Dabbler mark, used as the default small icon. -->
         <meta-data
             android:name="com.google.firebase.messaging.default_notification_channel_id"
             android:value="dabbler_default" />
+        <meta-data
+            android:name="com.google.firebase.messaging.default_notification_icon"
+            android:resource="@drawable/ic_notification" />
         <!-- KAN-1007: Live Activity data messages are drawn natively. This
              service replaces firebase_messaging's own (it subclasses it, so
              token refresh is unchanged); Dart still receives every message

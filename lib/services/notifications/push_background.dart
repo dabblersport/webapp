@@ -42,7 +42,7 @@ Future<void> drawBackgroundPush(
   final p = plugin ?? FlutterLocalNotificationsPlugin();
   await p.initialize(
     const InitializationSettings(
-      android: AndroidInitializationSettings('@mipmap/ic_launcher'),
+      android: AndroidInitializationSettings('@drawable/ic_notification'),
     ),
     onDidReceiveBackgroundNotificationResponse: pushBackgroundResponse,
   );
