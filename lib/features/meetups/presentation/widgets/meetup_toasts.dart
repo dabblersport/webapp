@@ -17,3 +17,8 @@ void showMeetupFailure(
     ),
   );
 }
+
+/// The RSVP became a join request (KAN-1012): say so, never "Going".
+void showMeetupRequested(DabblerToastController? toasts, AppLocalizations l) {
+  toasts?.show(DabblerToastSpec(message: l.listing_request_sent));
+}

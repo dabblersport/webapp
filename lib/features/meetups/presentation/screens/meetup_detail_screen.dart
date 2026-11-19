@@ -72,7 +72,11 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
     final result = await ref
         .read(meetupActionsProvider)
         .rsvp(widget.meetupId, action);
-    result.fold((f) => showMeetupFailure(toasts, l, f), (_) {});
+    result.fold((f) => showMeetupFailure(toasts, l, f), (status) {
+      if (rsvpBecameRequest(action, status)) {
+        showMeetupRequested(toasts, l);
+      }
+    });
     if (mounted) setState(() => _busy = false);
   }
 

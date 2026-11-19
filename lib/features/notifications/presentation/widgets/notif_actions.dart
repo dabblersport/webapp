@@ -63,7 +63,23 @@ class NotifActionOutcome {
   static const already = NotifActionOutcome(NotifActionStatus.alreadyHandled);
   static const unavailable = NotifActionOutcome(NotifActionStatus.unavailable);
   static const opened = NotifActionOutcome(NotifActionStatus.opened);
+
+  /// A Going on a request-policy meetup: the server stored a join request.
+  static const requested = NotifActionOutcome(
+    NotifActionStatus.success,
+    'pending',
+  );
+
+  /// Whether this outcome is a join request rather than a confirmed RSVP.
+  bool get isRequested =>
+      status == NotifActionStatus.success && detail == 'pending';
 }
+
+/// The outcome of an RSVP whose RPC answered [rpcResult] (KAN-1012): a
+/// request-policy meetup answers `pending` to a Going.
+NotifActionOutcome notifRsvpOutcome(Object? rpcResult) => rpcResult == 'pending'
+    ? NotifActionOutcome.requested
+    : NotifActionOutcome.success;
 
 /// Whether [action] runs inline (true) or only opens the row (false).
 bool notifActionRunsInline(NotificationActionId action) => switch (action) {
@@ -395,11 +411,11 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     if (meetup == null) {
       return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
-    await _db.rpc(
+    final status = await _db.rpc(
       SupabaseConfig.rpcMeetupRsvpFn,
       params: {'p_meetup_id': meetup, 'p_action': action},
     );
-    return NotifActionOutcome.success;
+    return notifRsvpOutcome(status);
   }
 
   @override

@@ -95,3 +95,9 @@ RsvpAction? rsvpActionFor(DabblerRsvpCtaState state) => switch (state) {
   DabblerRsvpCtaState.full => RsvpAction.interested,
   _ => null,
 };
+
+/// Whether [action] came back as a join request the host must approve: a
+/// request-policy meetup answers `pending` to Going or an invite accept
+/// (KAN-1012). The plain request flow already expects it.
+bool rsvpBecameRequest(RsvpAction action, RsvpStatus status) =>
+    status == RsvpStatus.pending && action != RsvpAction.request;

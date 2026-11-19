@@ -363,6 +363,12 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
                 ? l.notif_res_invite_declined
                 : l.notif_res_request_declined,
           ),
+          NotificationActionId.going when o.isRequested =>
+            DabblerNotificationResult(
+              icon: 'clock',
+              text: l.listing_request_sent,
+              tone: DabblerNotificationTone.info,
+            ),
           NotificationActionId.going => DabblerNotificationResult(
             icon: 'tick-circle',
             text: l.notif_res_going,
