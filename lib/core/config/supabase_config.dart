@@ -340,6 +340,10 @@ class SupabaseConfig {
   static const String rpcUpdateGameFn = 'rpc_update_game';
   static const String rpcDecideJoinRequestFn = 'rpc_decide_join_request';
   static const String rpcRemovePlayerFn = 'rpc_remove_player';
+  // KAN-1014: organiser bans. Removal RPCs take p_ban_scope 'none'|'event'|'organiser'.
+  static const String organiserBansTable = 'organiser_bans';
+  static const String rpcListMyBansFn = 'rpc_list_my_bans';
+  static const String rpcLiftBanFn = 'rpc_lift_ban';
   static const String rpcUnfollowUserFn = 'rpc_unfollow_user';
   static const String rpcIsFollowingUserFn = 'rpc_is_following_user';
   static const String rpcTrackEventFn = 'rpc_track_event';
