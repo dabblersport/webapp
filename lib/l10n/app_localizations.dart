@@ -18763,6 +18763,12 @@ abstract class AppLocalizations {
   /// **'The result is already final.'**
   String get g02_err_result_final;
 
+  /// KAN-1027 post-activity score step: the event is not ended yet.
+  ///
+  /// In en, this message translates to:
+  /// **'The score opens when the organiser confirms the game ended. You can rate the organiser and venue now.'**
+  String get g02_score_not_ended;
+
   /// KAN-1000 G-02/G-03 post-activity flow and result approval.
   ///
   /// In en, this message translates to:

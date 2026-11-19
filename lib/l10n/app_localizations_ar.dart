@@ -11002,6 +11002,10 @@ class AppLocalizationsAr extends AppLocalizations {
   String get g02_err_result_final => 'النتيجة نهائية بالفعل.';
 
   @override
+  String get g02_score_not_ended =>
+      'تُفتح النتيجة عندما يؤكد المنظّم انتهاء اللعبة. يمكنك تقييم المنظّم والملعب الآن.';
+
+  @override
   String get g02_err_not_ended => 'لم ينتهِ هذا النشاط بعد.';
 
   @override

@@ -10896,6 +10896,10 @@ class AppLocalizationsEn extends AppLocalizations {
   String get g02_err_result_final => 'The result is already final.';
 
   @override
+  String get g02_score_not_ended =>
+      'The score opens when the organiser confirms the game ended. You can rate the organiser and venue now.';
+
+  @override
   String get g02_err_not_ended => 'This activity hasn\'t ended yet.';
 
   @override

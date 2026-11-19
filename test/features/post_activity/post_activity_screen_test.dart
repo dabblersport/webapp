@@ -225,7 +225,9 @@ void main() {
           await tester.pumpAndSettle();
         }
         expect(repo.calls, ['submit']);
-        expect(find.text(l.g02_err_window_closed), findsOneWidget);
+        // KAN-1027: the toast and the inline banner both carry it.
+        expect(find.text(l.g02_err_window_closed), findsWidgets);
+        expect(_k('g02-save-failed'), findsOneWidget);
         expect(find.text(l.g02_submitted), findsNothing);
         expect(repo.flowReads, 2);
         await tester.pump(const Duration(seconds: 10));

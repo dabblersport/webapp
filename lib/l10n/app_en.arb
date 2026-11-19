@@ -4399,6 +4399,8 @@
   "@g02_err_not_eligible": {"description": "KAN-1000 G-02/G-03 post-activity flow and result approval."},
   "g02_err_result_final": "The result is already final.",
   "@g02_err_result_final": {"description": "KAN-1000 G-02/G-03 post-activity flow and result approval."},
+  "g02_score_not_ended": "The score opens when the organiser confirms the game ended. You can rate the organiser and venue now.",
+  "@g02_score_not_ended": {"description": "KAN-1027 post-activity score step: the event is not ended yet."},
   "g02_err_not_ended": "This activity hasn't ended yet.",
   "@g02_err_not_ended": {"description": "KAN-1000 G-02/G-03 post-activity flow and result approval."},
   "g02_err_cancelled": "This activity was cancelled.",

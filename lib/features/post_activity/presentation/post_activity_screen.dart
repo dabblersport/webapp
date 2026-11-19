@@ -267,6 +267,7 @@ class PostActivityScreen extends ConsumerWidget {
     final scoreReady =
         step != PostStep.score ||
         t?.open != true ||
+        s.scoreNotEnded ||
         (s.side != null && s.score != null);
     return Column(
       children: [
@@ -296,6 +297,22 @@ class PostActivityScreen extends ConsumerWidget {
                 DabblerText(hint, tone: DabblerTextTone.secondary),
               ],
               const DabblerGap.v(DabblerSpacing.space4),
+              if (s.saveFailure != null) ...[
+                DabblerBanner(
+                  key: const ValueKey<String>('g02-save-failed'),
+                  tone: DabblerBannerTone.error,
+                  message: postActivityError(l, s.saveFailure!),
+                ),
+                const DabblerGap.v(DabblerSpacing.space4),
+              ],
+              if (step == PostStep.score && s.scoreNotEnded) ...[
+                DabblerBanner(
+                  key: const ValueKey<String>('g02-score-not-ended'),
+                  tone: DabblerBannerTone.info,
+                  message: l.g02_score_not_ended,
+                ),
+                const DabblerGap.v(DabblerSpacing.space4),
+              ],
               if (step == PostStep.score && t == null)
                 DabblerEmptyState.error(
                   key: const ValueKey<String>('g02-score-failed'),
@@ -308,8 +325,12 @@ class PostActivityScreen extends ConsumerWidget {
                   score: s.score ?? const Score(0, 0),
                   side: s.side,
                   finalScore: t!.open ? null : t.finalScore,
-                  onScore: t.open && !s.busy ? ctrl.setScore : null,
-                  onSide: t.open && !s.busy ? ctrl.setSide : null,
+                  onScore: t.open && !s.busy && !s.scoreNotEnded
+                      ? ctrl.setScore
+                      : null,
+                  onSide: t.open && !s.busy && !s.scoreNotEnded
+                      ? ctrl.setSide
+                      : null,
                 )
               else if (step != null)
                 ..._groups(l, s, s.flow!, step, s.busy ? null : ctrl),

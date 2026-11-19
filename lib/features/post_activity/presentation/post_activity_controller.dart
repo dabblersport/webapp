@@ -39,7 +39,17 @@ class PostActivityState {
     this.side,
     this.tallyFailure,
     this.dismissed = false,
+    this.scoreNotEnded = false,
+    this.saveFailure,
   });
+
+  /// KAN-1027: rpc_result_submit said not_ended (the organiser has not
+  /// confirmed the end). The score step shows a note and Next moves on
+  /// without saving the score, like Skip.
+  final bool scoreNotEnded;
+
+  /// The last refused write, shown inline on the step; cleared on a move.
+  final Failure? saveFailure;
 
   final RatingFlow? flow;
 
@@ -95,6 +105,9 @@ class PostActivityState {
     String? side,
     Failure? tallyFailure,
     bool? dismissed,
+    bool? scoreNotEnded,
+    Failure? saveFailure,
+    bool clearSaveFailure = false,
   }) => PostActivityState(
     flow: flow ?? this.flow,
     tally: tally ?? this.tally,
@@ -108,6 +121,8 @@ class PostActivityState {
     side: side ?? this.side,
     tallyFailure: tallyFailure ?? this.tallyFailure,
     dismissed: dismissed ?? this.dismissed,
+    scoreNotEnded: scoreNotEnded ?? this.scoreNotEnded,
+    saveFailure: clearSaveFailure ? null : saveFailure ?? this.saveFailure,
   );
 }
 
@@ -120,7 +135,10 @@ class PostActivityController extends StateNotifier<PostActivityState> {
   final PostActivityRepository _repo;
   final String eventId;
 
-  Future<void> load() async {
+  /// Reads the server's state. With [keep] (a reload after a refused
+  /// write) what the user entered and the step they are on survive it.
+  Future<void> load({bool keep = false}) async {
+    final before = state;
     state = state.copyWith(loading: true);
     final f = await _repo.flow(eventId);
     if (!mounted) return;
@@ -184,6 +202,23 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       tallyFailure: tallyFailure,
     );
     next = next.copyWith(step: _resumeAt(next));
+    if (keep && before.flow != null) {
+      final same = before.current;
+      final at = same == null ? -1 : next.steps.indexOf(same);
+      next = PostActivityState(
+        flow: next.flow,
+        tally: next.tally,
+        dims: next.dims,
+        loading: false,
+        step: at >= 0 ? at : next.step,
+        drafts: {...next.drafts, ...before.drafts},
+        score: next.tally?.open == false ? next.score : before.score,
+        side: next.tally?.open == false ? next.side : before.side,
+        tallyFailure: next.tallyFailure,
+        scoreNotEnded: before.scoreNotEnded,
+        saveFailure: before.saveFailure,
+      );
+    }
     state = next;
   }
 
@@ -228,6 +263,7 @@ class PostActivityController extends StateNotifier<PostActivityState> {
       score: t?.mine?.score ?? t?.finalScore ?? s.score,
       side: t?.mine?.side ?? s.side,
       tallyFailure: f,
+      scoreNotEnded: s.scoreNotEnded,
     );
   }
 
@@ -254,7 +290,9 @@ class PostActivityController extends StateNotifier<PostActivityState> {
   }
 
   void back() {
-    if (state.step > 0) state = state.copyWith(step: state.step - 1);
+    if (state.step > 0) {
+      state = state.copyWith(step: state.step - 1, clearSaveFailure: true);
+    }
   }
 
   /// Saves the step, then moves on (Submit on the last). Null on success.
@@ -265,14 +303,21 @@ class PostActivityController extends StateNotifier<PostActivityState> {
 
   Future<Failure?> _run({required bool save}) async {
     if (state.busy || state.flow == null) return const Failure(code: 'busy');
-    state = state.copyWith(busy: true);
+    state = state.copyWith(busy: true, clearSaveFailure: true);
     final f =
         (save ? await _save() : null) ??
         (state.isLast ? await _submit() : null);
     if (!mounted) return null;
     if (f != null) {
-      state = state.copyWith(busy: false);
-      if (kPostActivityReload.contains(f.code)) await load();
+      // KAN-1027: the score cannot be given until the game is ended. Keep
+      // the values, show the note and stay; Next now moves on unsaved.
+      if (f.code == 'not_ended' && state.current == PostStep.score) {
+        state = state.copyWith(busy: false, scoreNotEnded: true);
+        return null;
+      }
+      // Any other refusal keeps what was entered and shows the error.
+      state = state.copyWith(busy: false, saveFailure: f);
+      if (kPostActivityReload.contains(f.code)) await load(keep: true);
       return f;
     }
     if (state.isLast) {
@@ -304,7 +349,12 @@ class PostActivityController extends StateNotifier<PostActivityState> {
     switch (s.current) {
       case PostStep.score:
         final score = s.score, side = s.side;
-        if (score == null || side == null || s.tally?.open != true) return null;
+        if (score == null ||
+            side == null ||
+            s.tally?.open != true ||
+            s.scoreNotEnded) {
+          return null;
+        }
         final mine = s.tally?.mine;
         if (mine != null && mine.score == score && mine.side == side) {
           return null;
