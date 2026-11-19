@@ -304,6 +304,7 @@ class SupabaseSportOverviewRepository implements SportOverviewRepository {
         .from(SupabaseConfig.venuesTable)
         .select(
           'id, name_en, name_ar, app_rating, rating_count, area, '
+          'venue_photos(url, sort_order), '
           '${cityCode == null ? 'areas(city_code, name)' : 'areas!inner(city_code, name)'}',
         )
         .eq('is_active', true)
@@ -330,7 +331,23 @@ class SupabaseSportOverviewRepository implements SportOverviewRepository {
       // 0 is "not rated yet" in the data, never a rating to draw.
       rating: rating != null && rating > 0 ? rating : null,
       ratingCount: (row['rating_count'] as num?)?.toInt(),
+      coverUrl: _firstPhoto(row['venue_photos']),
     );
+  }
+
+  /// The lowest-`sort_order` photo URL, or null when there is none.
+  static String? _firstPhoto(Object? photos) {
+    if (photos is! List) return null;
+    final List<Map> rows =
+        <Map>[
+          for (final Object? p in photos)
+            if (p is Map && (p['url'] as String?)?.trim().isNotEmpty == true) p,
+        ]..sort(
+          (Map a, Map b) => ((a['sort_order'] as num?) ?? 0).compareTo(
+            (b['sort_order'] as num?) ?? 0,
+          ),
+        );
+    return rows.isEmpty ? null : rows.first['url'] as String;
   }
 
   @override

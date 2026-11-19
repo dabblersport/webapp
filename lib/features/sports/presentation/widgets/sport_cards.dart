@@ -330,8 +330,8 @@ class _SportRailGameCardState extends ConsumerState<SportRailGameCard>
   }
 }
 
-/// A venue on the "Top venues" rail. The data has no venue photo, so the photo
-/// slot is the design's faint block (recorded on KAN-591).
+/// A venue on the "Top venues" rail. With no photo (or a failed load) the slot
+/// shows the design system's placeholder glyph, never a bare block (KAN-1029).
 class SportRailVenueCard extends StatelessWidget {
   const SportRailVenueCard({super.key, required this.venue});
 
@@ -379,9 +379,11 @@ class _VenueCardBody extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: <Widget>[
-              DabblerSurface.sunken(
+              DabblerImage(
+                key: const ValueKey<String>('sport-venue-photo'),
+                url: venue.coverUrl,
                 height: photoHeight,
-                radius: DabblerRadius.xl,
+                placeholderGlyph: true,
               ),
               Padding(
                 padding: const EdgeInsetsDirectional.fromSTEB(

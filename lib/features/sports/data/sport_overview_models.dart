@@ -128,6 +128,7 @@ class SportVenue {
     this.areaName,
     this.rating,
     this.ratingCount,
+    this.coverUrl,
   });
 
   final String id;
@@ -138,6 +139,9 @@ class SportVenue {
   /// `venues.app_rating`; null or 0 means not rated yet.
   final double? rating;
   final int? ratingCount;
+
+  /// First `venue_photos` row by sort order; null when the venue has none.
+  final String? coverUrl;
 
   String name(String languageCode) {
     final String? ar = nameAr?.trim();
