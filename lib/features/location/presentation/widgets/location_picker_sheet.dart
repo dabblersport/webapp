@@ -179,7 +179,8 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
       final position = await Geolocator.getCurrentPosition(
         timeLimit: GpsService.fixCap,
       );
-      String name = 'Current location';
+      if (!mounted) return;
+      String name = AppLocalizations.of(context).location_current_label;
 
       try {
         final placemarks = await placemarkFromCoordinates(
@@ -192,7 +193,7 @@ class _LocationPickerSheetState extends ConsumerState<LocationPickerSheet> {
               ? pm.subLocality!
               : pm.locality?.isNotEmpty == true
               ? pm.locality!
-              : pm.administrativeArea ?? 'Current location';
+              : pm.administrativeArea ?? name;
         }
       } catch (_) {
         // Keep default name on geocoding failure.

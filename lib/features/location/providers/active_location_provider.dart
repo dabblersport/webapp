@@ -12,6 +12,7 @@ import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/auth_profile_providers.dart'
     show currentUserIdProvider;
 import 'package:dabbler/features/location/data/device_location_store.dart';
+import 'package:dabbler/features/location/data/point_geocoder.dart';
 import 'package:dabbler/features/location/providers/profile_location_providers.dart';
 
 // =============================================================================
@@ -117,6 +118,40 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
       await _resolveArea(lat, lng, hintAreaId: hintAreaId) ??
       _pointArea(lat, lng);
 
+  /// A device fix outside every covered Area gets a reverse-geocoded display
+  /// name (KAN-1025) without blocking the fix; on failure the label keeps its
+  /// fallback. Only the in-memory state changes, never the store.
+  void _nameUncoveredFix(ActiveLocationState? s) {
+    if (s is! ActiveLocationReady) return;
+    final ActiveLocation loc = s.location;
+    if (loc.source != ActiveLocationSource.gps ||
+        loc.displayName != null ||
+        loc.area.name.trim().isNotEmpty ||
+        loc.area.city.trim().isNotEmpty) {
+      return;
+    }
+    Future<void>(() async {
+      final String? name = await ref.read(pointGeocoderProvider)(
+        loc.lat,
+        loc.lng,
+      );
+      if (name == null || name.isEmpty) return;
+      final ActiveLocationState? now = state.valueOrNull;
+      if (now is! ActiveLocationReady ||
+          now.location.lat != loc.lat ||
+          now.location.lng != loc.lng ||
+          now.location.source != ActiveLocationSource.gps) {
+        return;
+      }
+      state = AsyncData(
+        ActiveLocationReady(
+          now.location.copyWith(displayName: name),
+          fixedAt: now.fixedAt,
+        ),
+      );
+    }).catchError((Object _) {});
+  }
+
   @override
   Future<ActiveLocationState> build() async {
     // Keep alive so nearby feeds don't re-initialise on navigation.
@@ -126,6 +161,7 @@ class ActiveLocationNotifier extends AsyncNotifier<ActiveLocationState> {
     } catch (_) {
       _accountId = null;
     }
+    listenSelf((_, next) => _nameUncoveredFix(next.valueOrNull));
 
     return _initialise();
   }

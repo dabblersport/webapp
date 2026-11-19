@@ -20,6 +20,8 @@ String activeLocationLabel(AppLocalizations l, ActiveLocationState? s) {
     if (place.isNotEmpty) return place;
     final String city = s.location.area.city.trim();
     if (city.isNotEmpty) return city;
+    final String? shown = s.location.displayName?.trim();
+    if (shown != null && shown.isNotEmpty) return shown;
     // A device fix with no resolved name: "Current location" stays a fallback.
     return s.location.source == ActiveLocationSource.gps
         ? l.location_current_label

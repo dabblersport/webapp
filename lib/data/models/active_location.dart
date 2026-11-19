@@ -19,6 +19,7 @@ class ActiveLocation {
     required this.source,
     this.savedLocationId,
     this.savedLocationLabel,
+    this.displayName,
   });
 
   final double lat;
@@ -42,6 +43,11 @@ class ActiveLocation {
   /// Human-readable label, e.g. "Home", "Work", or a custom name.
   final String? savedLocationLabel;
 
+  /// A reverse-geocoded name for a device fix outside every covered Area
+  /// (KAN-1025). Display only: never persisted and never read as an Area, so
+  /// filtering is unchanged.
+  final String? displayName;
+
   ActiveLocation copyWith({
     double? lat,
     double? lng,
@@ -51,6 +57,7 @@ class ActiveLocation {
     ActiveLocationSource? source,
     String? savedLocationId,
     String? savedLocationLabel,
+    String? displayName,
   }) {
     return ActiveLocation(
       lat: lat ?? this.lat,
@@ -61,6 +68,7 @@ class ActiveLocation {
       source: source ?? this.source,
       savedLocationId: savedLocationId ?? this.savedLocationId,
       savedLocationLabel: savedLocationLabel ?? this.savedLocationLabel,
+      displayName: displayName ?? this.displayName,
     );
   }
 }
