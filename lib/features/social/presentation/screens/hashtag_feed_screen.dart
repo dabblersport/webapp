@@ -181,13 +181,18 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
       return DabblerRefresh(
         onRefresh: _loadInitial,
         child: ListView(
-          padding: const EdgeInsets.all(DabblerSpacing.space6),
           children: [
-            DabblerEmptyState(
-              icon: 'hashtag',
-              title: AppLocalizations.of(
-                context,
-              ).sfx_hashtag_empty(widget.hashtagSlug),
+            // KAN-971: the follow button lives in the header; an empty tag
+            // can still be followed.
+            _buildHeader(totalLabel),
+            Padding(
+              padding: const EdgeInsets.all(DabblerSpacing.space6),
+              child: DabblerEmptyState(
+                icon: 'hashtag',
+                title: AppLocalizations.of(
+                  context,
+                ).sfx_hashtag_empty(widget.hashtagSlug),
+              ),
             ),
           ],
         ),
