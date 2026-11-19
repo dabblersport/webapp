@@ -8,6 +8,7 @@ import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/data/models/social/post_enums.dart';
 import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
 import 'package:dabbler/features/home/presentation/widgets/home_news_rows.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_upcoming.dart';
 import 'package:dabbler/features/news/providers/news_providers.dart';
 import 'package:dabbler/features/social/providers/active_feed_notifier.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
@@ -17,6 +18,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart' show Override;
 import 'package:flutter_test/flutter_test.dart';
 
 import 'home_measure_data.dart';
+import 'home_measure_support.dart';
 import 'home_test_harness.dart';
 import 'active_fixtures.dart';
 
@@ -193,4 +195,8 @@ Future<void> pumpFrameHome(
     ),
   );
   await settleHome(tester);
+  final Finder block = find.byType(HomeUpcoming);
+  upcomingShift = block.evaluate().isEmpty
+      ? -kFrameUpcomingSpan
+      : tester.getSize(block).height - kFrameUpcomingSpan;
 }

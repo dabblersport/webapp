@@ -1,5 +1,5 @@
-// KAN-1008 (W3-F1): the pinned ongoing-activity card, on Home above the feed
-// and at the top of the Notification Center. Same states as the Live
+// KAN-1008 (W3-F1): the pinned ongoing-activity card, at the top of the
+// Notification Center (Home shows HomeGameCard instead). Same states as the Live
 // Activity: starting soon (countdown), check-in open (Check in), checked in,
 // scheduled until / started at, changed (old → new), scheduled time running,
 // scheduled time ended, ended (confirmed / did not happen), cancelled. The

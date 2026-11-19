@@ -11245,4 +11245,15 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get g04_confirm_no => 'No';
+
+  @override
+  String get hc_under_way => 'Under way';
+
+  @override
+  String hc_under_way_until(String time) {
+    return 'Under way · until $time';
+  }
+
+  @override
+  String get hc_checked_in => 'Checked in';
 }

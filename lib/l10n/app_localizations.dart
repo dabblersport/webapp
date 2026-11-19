@@ -19386,6 +19386,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'No'**
   String get g04_confirm_no;
+
+  /// Home game card: the game is past its start, no scheduled end.
+  ///
+  /// In en, this message translates to:
+  /// **'Under way'**
+  String get hc_under_way;
+
+  /// Home game card: the game is past its start; time is the scheduled end.
+  ///
+  /// In en, this message translates to:
+  /// **'Under way · until {time}'**
+  String hc_under_way_until(String time);
+
+  /// Home game card: small status once the player checked in.
+  ///
+  /// In en, this message translates to:
+  /// **'Checked in'**
+  String get hc_checked_in;
 }
 
 class _AppLocalizationsDelegate

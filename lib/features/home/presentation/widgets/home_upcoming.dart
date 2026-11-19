@@ -1,101 +1,136 @@
+// CEO 2026-11-19: Home shows one card per game, in the Upcoming card's design,
+// with no section title. The viewer's next games ([userUpcomingGamesProvider])
+// are merged with their ongoing activities (KAN-1008,
+// [ongoingControllerProvider]) by event id, so a game that starts keeps its
+// card and switches it to the running state. Closed and cancelled activities
+// leave. Running first, then the nearest upcoming; at most
+// 1 + [DabblerUpcomingReminder.listRest] cards, then "See all".
+
+import 'dart:async';
+
+import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/core/constants/timing/notification_timing.dart';
 import 'package:dabbler/data/models/games/game.dart';
 import 'package:dabbler/features/games/providers/games_providers.dart';
 import 'package:dabbler/features/home/presentation/providers/home_providers.dart';
+import 'package:dabbler/features/home/presentation/widgets/home_game_card.dart';
+import 'package:dabbler/features/ongoing/domain/ongoing_models.dart';
+import 'package:dabbler/features/ongoing/presentation/ongoing_controller.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:intl/intl.dart';
 
-/// The Upcoming block above the feed tabs: the viewer's next games from
-/// [userUpcomingGamesProvider], as the design's reminder (card, stack, list or
-/// strip). Folding and opening are view state kept here.
-///
 class HomeUpcoming extends ConsumerStatefulWidget {
   const HomeUpcoming({super.key});
+
+  /// The most cards shown: the old Upcoming list's first card and its rest.
+  static const int maxCards = 1 + DabblerUpcomingReminder.listRest;
 
   @override
   ConsumerState<HomeUpcoming> createState() => _HomeUpcomingState();
 }
 
 class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
-  bool _collapsed = false;
-  bool _expanded = false;
+  /// Redraws a minute countdown at the next minute. One-shot, display only;
+  /// the server is read by the ongoing controller's boundary timer.
+  Timer? _tick;
 
-  /// The countdown window the ring fills over — three days (`gauge()`).
-  static const int _windowSeconds = 3 * 24 * 60 * 60;
+  @override
+  void dispose() {
+    _tick?.cancel();
+    super.dispose();
+  }
 
-  DabblerUpcomingItem _item(Game game, String locale, AppLocalizations l) {
-    final DateTime start = game.getScheduledStartDateTime();
-    final Duration left = start.difference(ref.watch(homeNowProvider)());
-    final Duration safe = left.isNegative ? Duration.zero : left;
-    final int days = safe.inDays;
-    final int hours = safe.inHours % 24;
-    final int minutes = safe.inMinutes % 60;
-    final (String big, String small) = days > 0
-        ? ('$days', days == 1 ? l.home_upcoming_day : l.home_upcoming_days)
-        : hours > 0
-        ? ('$hours', hours == 1 ? l.home_upcoming_hour : l.home_upcoming_hours)
-        : ('$minutes', l.home_upcoming_min);
-    final String short = days > 0
-        ? l.home_upcoming_in_days(days)
-        : hours > 0
-        ? l.home_upcoming_in_hours(hours, minutes)
-        : l.home_upcoming_in_minutes(minutes);
-    final String time = DateFormat('h:mm a', locale).format(start);
-    final String? venue = game.venueName;
-    return DabblerUpcomingItem(
-      month: DateFormat('MMM', 'en').format(start).toUpperCase(),
-      day: '${start.day}',
-      title: game.title,
-      detail: venue == null || venue.isEmpty ? time : '$venue · $time',
-      ringFraction: 1 - (safe.inSeconds / _windowSeconds).clamp(0.0, 1.0),
-      ringBig: big,
-      ringSmall: small,
-      short: short,
-      onTap: () => context.push(RoutePaths.gameDetail(game.id)),
-    );
+  void _armTick(List<HomeGameEntry> shown, DateTime now) {
+    _tick?.cancel();
+    _tick = null;
+    const tick = NotificationTiming.ongoingCountdownTick;
+    Duration? soonest;
+    for (final g in shown) {
+      final left = g.start.difference(now);
+      if (left.isNegative || left.inHours > 0) continue;
+      if (soonest == null || left < soonest) soonest = left;
+    }
+    final left = soonest;
+    if (left == null) return;
+    final toMinute = left - tick * left.inMinutes;
+    _tick = Timer(toMinute <= Duration.zero ? tick : toMinute, () {
+      if (mounted) setState(() {});
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final List<Game> games =
+    final games =
         ref.watch(userUpcomingGamesProvider).valueOrNull ?? const <Game>[];
-    if (games.isEmpty) return const SizedBox.shrink();
-    final String locale = Localizations.localeOf(context).toString();
-    final int count = games.length;
-    final AppLocalizations l = AppLocalizations.of(context);
+    final live = FeatureFlags.ongoingCard
+        ? ref.watch(ongoingControllerProvider).events
+        : const <OngoingEvent>[];
+    final now = ref.watch(homeNowProvider)();
+    final byId = <String, Game>{for (final g in games) g.id: g};
+    final entries = <HomeGameEntry>[
+      for (final e in live)
+        if (!e.isClosed)
+          HomeGameEntry(
+            id: e.eventId,
+            title: e.title.isEmpty ? (byId[e.eventId]?.title ?? '') : e.title,
+            start: e.startAt,
+            venue: byId[e.eventId]?.venueName,
+            live: e,
+            isMeetup: e.kind == OngoingKind.meetup,
+          ),
+    ];
+    final liveIds = <String>{for (final e in live) e.eventId};
+    for (final g in games) {
+      if (liveIds.contains(g.id)) continue;
+      entries.add(
+        HomeGameEntry(
+          id: g.id,
+          title: g.title,
+          start: g.getScheduledStartDateTime(),
+          venue: g.venueName,
+        ),
+      );
+    }
+    if (entries.isEmpty) {
+      _tick?.cancel();
+      return const SizedBox.shrink();
+    }
+    final ordered = orderHomeGames(entries, now);
+    final shown = ordered.take(HomeUpcoming.maxCards).toList();
+    _armTick(shown, now);
+    final l = AppLocalizations.of(context);
     return Padding(
-      // The frame's block: `padding: 0 18px 12px`.
-      padding: EdgeInsetsDirectional.only(
+      padding: const EdgeInsetsDirectional.only(
         start: DabblerSpacing.space6,
         end: DabblerSpacing.space6,
-        // Folded, the strip has `margin:0 18px 9px` instead.
-        bottom: _collapsed ? DabblerSpacing.space3 : DabblerSpacing.space4,
+        bottom: DabblerSpacing.space4,
       ),
-      child: DabblerUpcomingReminder(
-        metrics: DabblerFeedMetrics.drawn,
-        items: <DabblerUpcomingItem>[
-          for (final g in games) _item(g, locale, l),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        mainAxisSize: MainAxisSize.min,
+        children: <Widget>[
+          for (var i = 0; i < shown.length; i++) ...<Widget>[
+            if (i > 0) const DabblerGap.v(DabblerSpacing.space2),
+            HomeGameCard(entry: shown[i], now: now),
+          ],
+          if (ordered.length > shown.length) ...<Widget>[
+            const DabblerGap.v(DabblerSpacing.space2),
+            Align(
+              alignment: AlignmentDirectional.centerStart,
+              child: DabblerButton(
+                key: const ValueKey<String>('home-games-see-all'),
+                label: l.home_upcoming_see_all(ordered.length),
+                tone: DabblerButtonTone.neutral,
+                size: DabblerButtonSize.small,
+                onPressed: () => context.go(RoutePaths.gamesTab),
+              ),
+            ),
+          ],
         ],
-        title: count > 1
-            ? l.home_upcoming_title_count(count)
-            : l.home_upcoming_title,
-        collapsed: _collapsed,
-        expanded: _expanded,
-        onDismiss: () => setState(() => _collapsed = true),
-        onExpandStrip: () => setState(() => _collapsed = false),
-        onToggleExpanded: () => setState(() => _expanded = !_expanded),
-        stripLabel: count > 1
-            ? l.home_upcoming_strip_count(count)
-            : l.home_upcoming_title,
-        moreLabel: l.home_upcoming_more(count - 1),
-        showLessLabel: l.home_upcoming_show_less,
-        dismissLabel: l.home_upcoming_hide,
-        seeAllLabel: l.home_upcoming_see_all(count),
-        onSeeAll: () => context.go(RoutePaths.gamesTab),
       ),
     );
   }

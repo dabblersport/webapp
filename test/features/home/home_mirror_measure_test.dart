@@ -10,17 +10,14 @@ library;
 import 'package:dabbler/data/repositories/area_repository_v2.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart' show Override;
-import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'home_measure_cases.dart';
 import 'home_measure_data.dart';
 import 'home_measure_cases_city.dart';
-import 'home_measure_cases_list.dart';
 import 'home_measure_cases_page.dart';
 import 'home_measure_cases_sheets.dart';
-import 'home_measure_cases_strip.dart';
 import 'home_measure_cases_tabs.dart';
 import 'home_measure_support.dart';
 import '../../support/render_mode.dart';
@@ -95,68 +92,6 @@ void main() {
       expect(failures, isEmpty);
     }, variant: desktop);
 
-    testWidgets('Home mirrors the frame: folded upcoming strip - $dir', (
-      tester,
-    ) async {
-      await pump(tester);
-      final AppLocalizations l = lookupAppLocalizations(locale);
-      await tester.tap(find.bySemanticsLabel(l.home_upcoming_hide).first);
-      await settleHome(tester);
-      final MeasureTable table = MeasureTable(rtl: rtl);
-      addStripRows(
-        table,
-        tester,
-        rtl: rtl,
-        countLabel: l.home_upcoming_strip_count(3),
-      );
-      // The strip's fill: `background:var(--faint)` = rgb(232, 224, 207)
-      // (`Home Feed.dc.html:82`, computed in `out/base.json`), light theme.
-      final Iterable<Color?> fills = tester
-          .widgetList<DecoratedBox>(
-            find.ancestor(
-              of: find.byType(DabblerIcon),
-              matching: find.byType(DecoratedBox),
-            ),
-          )
-          .map((DecoratedBox b) => b.decoration)
-          .whereType<BoxDecoration>()
-          .map((BoxDecoration b) => b.color);
-      expect(
-        fills.any((Color? c) => c == const Color(0xFFE8E0CF)),
-        isTrue,
-        reason: 'folded strip fill must be the frame\'s faint rgb(232,224,207)',
-      );
-      table.write('Home, folded Upcoming strip, $dir');
-      final List<String> failures = table.failures();
-      // ignore: avoid_print
-      failures.forEach(print);
-      expect(failures, isEmpty);
-    }, variant: desktop);
-
-    testWidgets('Home mirrors the frame: opened upcoming list - $dir', (
-      tester,
-    ) async {
-      await pump(tester);
-      final AppLocalizations l = lookupAppLocalizations(locale);
-      await tester.tap(find.text(l.home_upcoming_more(2)).first);
-      await settleHome(tester);
-      final MeasureTable table = MeasureTable(rtl: rtl);
-      addUpcomingListRows(
-        table,
-        tester,
-        title1: d.listTitle1,
-        short1: l.home_upcoming_in_hours(12, 30),
-        title2: d.listTitle2,
-        short2: l.home_upcoming_in_days(1),
-        less: l.home_upcoming_show_less,
-      );
-      table.write('Home, opened Upcoming list, $dir');
-      final List<String> failures = table.failures();
-      // ignore: avoid_print
-      failures.forEach(print);
-      expect(failures, isEmpty);
-    }, variant: desktop);
-
     testWidgets('Home mirrors the frame: post options sheet - $dir', (
       tester,
     ) async {
@@ -191,7 +126,7 @@ void main() {
       // KAN-962: the frame draws the tag row open; a re-tap opens it.
       await tester.tap(find.text(l.tab_news).first);
       await settleHome(tester);
-      final MeasureTable table = MeasureTable(rtl: rtl);
+      final MeasureTable table = MeasureTable(rtl: rtl, feedShift: true);
       addNewsRows(table, tester, rtl: rtl);
       table.write('Home, News tab (first card), $dir');
       final List<String> failures = table.failures();
@@ -214,17 +149,16 @@ void main() {
       expect(failures, isEmpty);
     }, variant: desktop);
 
-    testWidgets('Home mirrors the frame: header, upcoming, tabs, post - $dir', (
+    testWidgets('Home mirrors the frame: header, tabs, post - $dir', (
       tester,
     ) async {
       await pump(tester);
-      final MeasureTable table = MeasureTable(rtl: rtl);
+      final MeasureTable table = MeasureTable(rtl: rtl, feedShift: true);
       addHeaderRows(table, tester, rtl: rtl);
-      addUpcomingRows(table, tester, rtl: rtl);
       addTabRows(table, tester, rtl: rtl);
       addTabItemRows(table, tester, rtl: rtl);
       addPostRows(table, tester, rtl: rtl, l: lookupAppLocalizations(locale));
-      table.write('Home, For you tab, 3 upcoming (stack), $dir');
+      table.write('Home, For you tab, 3 upcoming games, $dir');
       final List<String> failures = table.failures();
       // ignore: avoid_print
       failures.forEach(print);

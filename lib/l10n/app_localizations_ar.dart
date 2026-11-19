@@ -11345,4 +11345,15 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get g04_confirm_no => 'لا';
+
+  @override
+  String get hc_under_way => 'جارية الآن';
+
+  @override
+  String hc_under_way_until(String time) {
+    return 'جارية الآن · حتى $time';
+  }
+
+  @override
+  String get hc_checked_in => 'تم تسجيل الحضور';
 }

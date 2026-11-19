@@ -4603,5 +4603,11 @@
   "g04_confirm_yes": "Yes, check in",
   "@g04_confirm_yes": {"description": "Confirms the check-in in the sheet."},
   "g04_confirm_no": "No",
-  "@g04_confirm_no": {"description": "Closes the check-in sheet without checking in."}
+  "@g04_confirm_no": {"description": "Closes the check-in sheet without checking in."},
+  "hc_under_way": "Under way",
+  "@hc_under_way": {"description": "Home game card: the game is past its start, no scheduled end."},
+  "hc_under_way_until": "Under way · until {time}",
+  "@hc_under_way_until": {"description": "Home game card: the game is past its start; time is the scheduled end.", "placeholders": {"time": {"type": "String"}}},
+  "hc_checked_in": "Checked in",
+  "@hc_checked_in": {"description": "Home game card: small status once the player checked in."}
 }

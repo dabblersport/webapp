@@ -95,6 +95,18 @@ class Measure {
 /// anything above this is a real width difference.
 const double kTextAdvanceTolerance = 0.6;
 
+/// The frame's Upcoming block (`Home Feed.dc.html` section 4): its top, and
+/// its height with the 12 below it (165 + 12). CEO 2026-11-19 replaced that
+/// block (title, stack, toggle) with one card per game, so it is no longer
+/// measured; everything the frame draws below it is compared after moving
+/// the app's rect by [upcomingShift], the app block's height minus this.
+const double kFrameUpcomingTop = 113;
+const double kFrameUpcomingSpan = 177;
+
+/// Set by `pumpFrameHome`: how much taller the app's game cards are than the
+/// frame's Upcoming block.
+double upcomingShift = 0;
+
 String _f(double v) {
   final String s = v.toStringAsFixed(2);
   return s.endsWith('.00') ? s.substring(0, s.length - 3) : s;
@@ -136,8 +148,12 @@ String? verdict(Measure m) {
 
 /// Collects rows for one (state, direction) and writes the table.
 class MeasureTable {
-  MeasureTable({required this.rtl});
+  MeasureTable({required this.rtl, this.feedShift = false});
   final bool rtl;
+
+  /// Whether rows in the feed scroll below the Upcoming block are moved by
+  /// [upcomingShift] (sheets and the page's bottom are not in that scroll).
+  final bool feedShift;
   final List<(String, Measure)> rows = <(String, Measure)>[];
 
   void add(String section, Measure m) {

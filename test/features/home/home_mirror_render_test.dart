@@ -66,7 +66,7 @@ void main() {
       ),
     );
 
-    testWidgets('renders For you with the upcoming stack - $dir', (
+    testWidgets('renders For you with the upcoming games - $dir', (
       tester,
     ) async {
       await pump(tester);
@@ -89,20 +89,6 @@ void main() {
         await _shoot(tester, 'app-$dir-$id');
       }, variant: desktop);
     }
-
-    testWidgets('renders the folded and the opened Upcoming - $dir', (
-      tester,
-    ) async {
-      await pump(tester);
-      final AppLocalizations l = lookupAppLocalizations(locale);
-      await tester.tap(find.text(l.home_upcoming_more(2)).first);
-      await settleHome(tester);
-      await _shoot(tester, 'app-$dir-upcoming-open');
-      await pump(tester);
-      await tester.tap(find.bySemanticsLabel(l.home_upcoming_hide).first);
-      await settleHome(tester);
-      await _shoot(tester, 'app-$dir-upcoming-strip');
-    }, variant: desktop);
 
     testWidgets('renders the city sheet - $dir', (tester) async {
       await pump(tester);

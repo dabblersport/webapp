@@ -3693,5 +3693,8 @@
   "g04_confirm_yes": "نعم، سجّل حضوري",
   "@g04_confirm_yes": {"description": "Confirms the check-in in the sheet."},
   "g04_confirm_no": "لا",
-  "@g04_confirm_no": {"description": "Closes the check-in sheet without checking in."}
+  "@g04_confirm_no": {"description": "Closes the check-in sheet without checking in."},
+  "hc_under_way": "جارية الآن",
+  "hc_under_way_until": "جارية الآن · حتى {time}",
+  "hc_checked_in": "تم تسجيل الحضور"
 }

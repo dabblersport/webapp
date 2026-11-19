@@ -32,7 +32,13 @@ void row(
     token: token,
   );
   try {
-    m.app = app();
+    final Rect a = app();
+    // Below the Upcoming block: compare as if the block were the frame's.
+    m.app =
+        t.feedShift &&
+            a.top >= kFrameUpcomingTop + kFrameUpcomingSpan + upcomingShift - 1
+        ? a.shift(Offset(0, -upcomingShift))
+        : a;
   } catch (e) {
     m.app = Rect.zero;
   }
@@ -149,139 +155,6 @@ void addHeaderRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
       tester,
       _within(DabblerNavigationTopBar, find.byType(DabblerAvatar)),
     ),
-  );
-}
-
-/// Upcoming reminder, default 3-item stack (section 4).
-void addUpcomingRows(MeasureTable t, WidgetTester tester, {required bool rtl}) {
-  const String s = 'Upcoming reminder (stack)';
-  final Finder block = find.byType(DabblerUpcomingReminder);
-  final Finder icons = _icons(DabblerUpcomingReminder);
-  final Finder surfaces = _within(
-    DabblerUpcomingReminder,
-    find.byType(DabblerSurface),
-  );
-  row(
-    t,
-    s,
-    'reminder block (inside the 18 gutter)',
-    ltr: rc(18, 113, 357, 165),
-    rtl: rc(18, 113, 357, 165),
-    app: () => _r(tester, block),
-  );
-  row(
-    t,
-    s,
-    'title',
-    ltr: rc(18, 113, 120.83, 25),
-    rtl: rc(285.7, 107, 89.3, 37),
-    basis: Basis.text,
-    app: () => _r(tester, find.textContaining('·').first),
-  );
-  row(
-    t,
-    s,
-    'hide button',
-    ltr: rc(349, 108.5, 34, 34),
-    rtl: rc(18, 108.5, 34, 34),
-    app: () => _r(
-      tester,
-      _within(DabblerUpcomingReminder, find.byType(DabblerExpandedHitArea)),
-      1,
-    ),
-  );
-  row(
-    t,
-    s,
-    'hide glyph',
-    ltr: rc(357, 116.5, 18, 18),
-    rtl: rc(26, 116.5, 18, 18),
-    app: () => _r(tester, icons, 0),
-  );
-  row(
-    t,
-    s,
-    'back card (white)',
-    ltr: rc(32, 194, 329, 42),
-    rtl: rc(32, 194, 329, 42),
-    app: () => _r(tester, surfaces, 0),
-  );
-  row(
-    t,
-    s,
-    'back card (sunken)',
-    ltr: rc(25, 201, 343, 42),
-    rtl: rc(25, 201, 343, 42),
-    app: () => _r(tester, surfaces, 1),
-  );
-  row(
-    t,
-    s,
-    'front card',
-    ltr: rc(18, 147, 357, 82),
-    rtl: rc(18, 147, 357, 82),
-    app: () => _r(tester, surfaces, 2),
-  );
-  row(
-    t,
-    s,
-    'date block',
-    ltr: rc(31, 160, 48, 56),
-    rtl: rc(314, 160, 48, 56),
-    app: () => _r(tester, surfaces, 3),
-  );
-  row(
-    t,
-    s,
-    'month',
-    ltr: rc(46.67, 170, 16.66, 12),
-    rtl: rc(327.36, 166.5, 21.3, 17),
-    basis: Basis.text,
-    app: () => _r(tester, find.text('OCT')),
-  );
-  row(
-    t,
-    s,
-    'card title',
-    ltr: rc(91, 171, 99.89, 16),
-    rtl: rc(219.86, 167.5, 82.14, 23),
-    basis: Basis.text,
-    app: () => _r(tester, find.text(FrameData.of(rtl).gameTitle)),
-  );
-  row(
-    t,
-    s,
-    'meta line',
-    ltr: rc(91, 191, 203, 16),
-    rtl: rc(99, 192.5, 203, 16),
-    basis: Basis.line,
-    app: () => _r(tester, find.textContaining(FrameData.of(rtl).venue)),
-  );
-  row(
-    t,
-    s,
-    'ring',
-    ltr: rc(306, 160, 56, 56),
-    rtl: rc(31, 160, 56, 56),
-    app: () => _r(tester, find.byType(DabblerRing)),
-  );
-  row(
-    t,
-    s,
-    'more row',
-    ltr: rc(18, 246, 357, 32),
-    rtl: rc(18, 246, 357, 32),
-    app: () => tester.getRect(
-      _within(DabblerUpcomingReminder, find.byType(DabblerFeedTappable)).last,
-    ),
-  );
-  row(
-    t,
-    s,
-    'more chevron',
-    ltr: rc(234.44, 254, 16, 16),
-    rtl: rc(137.03, 254, 16, 16),
-    app: () => _r(tester, icons, 1),
   );
 }
 
