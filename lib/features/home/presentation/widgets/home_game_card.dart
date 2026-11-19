@@ -15,6 +15,7 @@ import 'package:dabbler/features/ongoing/domain/ongoing_models.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
@@ -149,8 +150,13 @@ DabblerUpcomingItem homeUpcomingItem(
         ? (now.difference(from).inSeconds / end.difference(from).inSeconds)
               .clamp(0.0, 1.0)
         : 0.0;
-    final sport = g.sport?.trim();
-    big = sport == null || sport.isEmpty ? '' : homeSportEmoji(sport);
+    final emoji = e?.sportEmoji?.trim();
+    final sport = (g.sport ?? e?.sportKey)?.trim();
+    big = emoji != null && emoji.isNotEmpty
+        ? emoji
+        : sport == null || sport.isEmpty
+        ? ''
+        : homeSportEmoji(sport);
     small = '';
     short = label ?? time;
   } else {
@@ -185,8 +191,11 @@ DabblerUpcomingItem homeUpcomingItem(
     ringBig: big,
     ringSmall: small,
     short: short,
-    onTap: () => g.canCheckIn
-        ? showCheckInSheet(context, g.live!.eventId)
-        : context.push(g.route),
+    onTap: () {
+      HapticFeedback.selectionClick();
+      g.canCheckIn
+          ? showCheckInSheet(context, g.live!.eventId)
+          : context.push(g.route);
+    },
   );
 }

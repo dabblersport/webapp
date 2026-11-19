@@ -57,6 +57,8 @@ class OngoingEvent {
     this.previousStartAt,
     this.previousEndAt,
     this.scheduleRevision,
+    this.sportKey,
+    this.sportEmoji,
   });
 
   /// events.id, which is also games.id / meetups.id.
@@ -81,6 +83,10 @@ class OngoingEvent {
   final DateTime? previousStartAt;
   final DateTime? previousEndAt;
   final int? scheduleRevision;
+
+  /// The event's sport, for the Home ring's emoji.
+  final String? sportKey;
+  final String? sportEmoji;
 
   bool get isClosed =>
       isCancelled ||
@@ -168,6 +174,8 @@ class OngoingEvent {
       previousStartAt: parseInstantLocal(m['previous_start_at']),
       previousEndAt: parseInstantLocal(m['previous_end_at']),
       scheduleRevision: rev is num ? rev.toInt() : null,
+      sportKey: m['sport_key'] as String?,
+      sportEmoji: m['sport_emoji'] as String?,
     );
   }
 }

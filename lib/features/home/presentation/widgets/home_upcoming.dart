@@ -118,27 +118,30 @@ class _HomeUpcomingState extends ConsumerState<HomeUpcoming> {
         end: DabblerSpacing.space6,
         bottom: _collapsed ? DabblerSpacing.space3 : DabblerSpacing.space4,
       ),
-      child: DabblerUpcomingReminder(
-        key: const ValueKey<String>('home-games'),
-        metrics: DabblerFeedMetrics.drawn,
-        items: <DabblerUpcomingItem>[
-          for (final g in ordered) homeUpcomingItem(context, g, now),
-        ],
-        // CEO: no "Upcoming" title on Home.
-        title: '',
-        collapsed: _collapsed,
-        expanded: _expanded,
-        onDismiss: () => setState(() => _collapsed = true),
-        onExpandStrip: () => setState(() => _collapsed = false),
-        onToggleExpanded: () => setState(() => _expanded = !_expanded),
-        stripLabel: count > 1
-            ? l.home_upcoming_strip_count(count)
-            : l.home_upcoming_title,
-        moreLabel: l.home_upcoming_more(count - 1),
-        showLessLabel: l.home_upcoming_show_less,
-        dismissLabel: l.home_upcoming_hide,
-        seeAllLabel: l.home_upcoming_see_all(count),
-        onSeeAll: () => context.go(RoutePaths.gamesTab),
+      // Cards press (scale 0.98, design system) — the tap micro-interaction.
+      child: DabblerPressScale.gesture(
+        child: DabblerUpcomingReminder(
+          key: const ValueKey<String>('home-games'),
+          metrics: DabblerFeedMetrics.drawn,
+          items: <DabblerUpcomingItem>[
+            for (final g in ordered) homeUpcomingItem(context, g, now),
+          ],
+          // CEO: no "Upcoming" title on Home.
+          title: '',
+          collapsed: _collapsed,
+          expanded: _expanded,
+          onDismiss: () => setState(() => _collapsed = true),
+          onExpandStrip: () => setState(() => _collapsed = false),
+          onToggleExpanded: () => setState(() => _expanded = !_expanded),
+          stripLabel: count > 1
+              ? l.home_upcoming_strip_count(count)
+              : l.home_upcoming_title,
+          moreLabel: l.home_upcoming_more(count - 1),
+          showLessLabel: l.home_upcoming_show_less,
+          dismissLabel: l.home_upcoming_hide,
+          seeAllLabel: l.home_upcoming_see_all(count),
+          onSeeAll: () => context.go(RoutePaths.gamesTab),
+        ),
       ),
     );
   }
