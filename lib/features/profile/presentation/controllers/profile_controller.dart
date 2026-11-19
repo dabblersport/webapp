@@ -162,8 +162,12 @@ class ProfileController extends StateNotifier<ProfileState> {
 
   /// Refresh profile data
   Future<void> refreshProfile() async {
-    if (state.profile == null) return;
-    await loadProfile(state.profile!.userId);
+    final current = state.profile;
+    if (current == null) return;
+    // By profile id: this skips the stale-while-revalidate cache (KAN-607),
+    // which otherwise hands back the pre-write copy, and keeps the active
+    // persona rather than whichever one the user-id lookup prefers (KAN-970).
+    await loadProfile(current.userId, profileId: current.id);
   }
 
   /// Update profile with new data

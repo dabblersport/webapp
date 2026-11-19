@@ -35,6 +35,7 @@ export 'features/social/circles_providers.dart';
 export 'features/social/providers.dart';
 export 'features/social/providers/post_providers.dart';
 export 'features/social/providers/post_composer_providers.dart';
+export 'features/social/presentation/providers/hashtag_follow_providers.dart';
 export 'features/social/providers/tab_feed_notifier.dart';
 export 'features/social/providers/active_feed_notifier.dart';
 export 'features/social/providers/feed_impressions.dart';

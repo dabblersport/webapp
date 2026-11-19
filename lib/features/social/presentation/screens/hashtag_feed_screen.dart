@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dabbler/data/models/social/post.dart';
 import 'package:dabbler/core/feed/post_layout_resolver.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
+import 'package:dabbler/features/social/presentation/providers/hashtag_follow_providers.dart';
 
 /// Shows posts that contain a specific hashtag (design X04, "Hashtag result").
 class HashtagFeedScreen extends ConsumerStatefulWidget {
@@ -127,8 +128,29 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
   /// The tag, isolated as left-to-right so `#` stays in front of it in RTL.
   String get _tag => '\u2066#${widget.hashtagSlug}\u2069';
 
+  void _noticeFollow(HashtagFollowState? previous, HashtagFollowState next) {
+    if (!mounted || next.error == null) return;
+    final AppLocalizations l = AppLocalizations.of(context);
+    final provider = hashtagFollowControllerProvider(widget.hashtagSlug);
+    DabblerToastProvider.of(context).show(
+      DabblerToastSpec(
+        message: l.hashtag_follow_failed,
+        tone: DabblerToastTone.error,
+        action: DabblerToastAction(
+          label: l.hashtag_follow_retry,
+          onPressed: () => ref.read(provider.notifier).toggle(),
+        ),
+      ),
+    );
+    ref.read(provider.notifier).clearError();
+  }
+
   @override
   Widget build(BuildContext context) {
+    ref.listen<HashtagFollowState>(
+      hashtagFollowControllerProvider(widget.hashtagSlug),
+      _noticeFollow,
+    );
     final totalLabel = widget.initialPostCount != null
         ? '${widget.initialPostCount} posts'
         : '${_posts.length} posts';
@@ -222,11 +244,41 @@ class _HashtagFeedScreenState extends ConsumerState<HashtagFeedScreen> {
                   style: DabblerType.headline,
                 ),
               ),
+              _HashtagFollowButton(slug: widget.hashtagSlug),
             ],
           ),
         ),
         const DabblerDivider(),
       ],
+    );
+  }
+}
+
+/// Follow / Following for the hashtag (KAN-971).
+class _HashtagFollowButton extends ConsumerWidget {
+  const _HashtagFollowButton({required this.slug});
+
+  final String slug;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final AppLocalizations l = AppLocalizations.of(context);
+    final provider = hashtagFollowControllerProvider(slug);
+    final HashtagFollowState follow = ref.watch(provider);
+    final bool following = follow.following ?? false;
+    return DabblerButton(
+      key: const ValueKey<String>('hashtag-follow-button'),
+      label: following ? l.hashtag_following : l.hashtag_follow,
+      tone: following ? DabblerButtonTone.outlined : DabblerButtonTone.primary,
+      loading: follow.busy,
+      leadingWidget: DabblerIcon(
+        following ? 'tick-circle' : 'add',
+        weight: DabblerIconWeight.bold,
+        size: DabblerSizing.iconSm,
+      ),
+      onPressed: follow.following == null
+          ? null
+          : () => ref.read(provider.notifier).toggle(),
     );
   }
 }

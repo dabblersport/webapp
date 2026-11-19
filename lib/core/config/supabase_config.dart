@@ -163,6 +163,7 @@ class SupabaseConfig {
   static const String payoutsTable = 'payouts';
   static const String postCirclesTable = 'post_circles';
   static const String postHashtagsTable = 'post_hashtags';
+  static const String userHashtagPreferencesTable = 'user_hashtag_preferences';
   static const String postMediaTable = 'post_media';
   static const String postRepostsTable = 'post_reposts';
   static const String postSquadsTable = 'post_squads';

@@ -19464,6 +19464,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'24-hour'**
   String get settings_time_format_24;
+
+  /// KAN-971 hashtag page follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Follow'**
+  String get hashtag_follow;
+
+  /// KAN-971 hashtag page follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get hashtag_following;
+
+  /// KAN-971 hashtag page follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update this hashtag. Try again.'**
+  String get hashtag_follow_failed;
+
+  /// KAN-971 hashtag page follow.
+  ///
+  /// In en, this message translates to:
+  /// **'Retry'**
+  String get hashtag_follow_retry;
 }
 
 class _AppLocalizationsDelegate

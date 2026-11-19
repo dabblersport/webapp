@@ -4628,5 +4628,13 @@
   "settings_time_format_12": "12-hour",
   "@settings_time_format_12": {"description": "Settings: show times as 2:45 PM."},
   "settings_time_format_24": "24-hour",
-  "@settings_time_format_24": {"description": "Settings: show times as 14:45."}
+  "@settings_time_format_24": {"description": "Settings: show times as 14:45."},
+  "hashtag_follow": "Follow",
+  "@hashtag_follow": {"description": "KAN-971 hashtag page follow."},
+  "hashtag_following": "Following",
+  "@hashtag_following": {"description": "KAN-971 hashtag page follow."},
+  "hashtag_follow_failed": "Couldn't update this hashtag. Try again.",
+  "@hashtag_follow_failed": {"description": "KAN-971 hashtag page follow."},
+  "hashtag_follow_retry": "Retry",
+  "@hashtag_follow_retry": {"description": "KAN-971 hashtag page follow."}
 }

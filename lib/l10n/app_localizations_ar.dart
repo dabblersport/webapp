@@ -11389,4 +11389,16 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get settings_time_format_24 => '24 ساعة';
+
+  @override
+  String get hashtag_follow => 'متابعة';
+
+  @override
+  String get hashtag_following => 'تتابعه';
+
+  @override
+  String get hashtag_follow_failed => 'تعذّر تحديث هذا الوسم. حاول مرة أخرى.';
+
+  @override
+  String get hashtag_follow_retry => 'إعادة المحاولة';
 }

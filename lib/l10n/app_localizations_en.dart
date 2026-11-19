@@ -11289,4 +11289,17 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settings_time_format_24 => '24-hour';
+
+  @override
+  String get hashtag_follow => 'Follow';
+
+  @override
+  String get hashtag_following => 'Following';
+
+  @override
+  String get hashtag_follow_failed =>
+      'Couldn\'t update this hashtag. Try again.';
+
+  @override
+  String get hashtag_follow_retry => 'Retry';
 }
