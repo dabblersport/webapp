@@ -29,7 +29,7 @@ BEGIN
   INSERT INTO public.game_waitlist (game_id, profile_id, user_id, position, joined_at) VALUES (gid, xp, x, 1, now());
   DELETE FROM public.live_activity_sessions WHERE event_id = g;
   DELETE FROM public.live_activity_optouts WHERE user_id IN (v, x);
-  DELETE FROM public.fcm_tokens WHERE user_id IN (v, x) OR installation_id LIKE 'k1004-%';
+  DELETE FROM public.fcm_tokens WHERE user_id IN (u, v, x) OR installation_id LIKE 'k1004-%';   -- U's real devices too: counts see only k1004 rows
   DELETE FROM public.live_activity_push_to_start WHERE user_id IN (u, v, x);
   INSERT INTO public.fcm_tokens (user_id, installation_id, token, device_platform, locale) VALUES
     (v, 'k1004-v-ios', 'k1004-tok-v-ios', 'iOS', 'en'), (v, 'k1004-v-and', 'k1004-tok-v-and', 'android', 'en'),
@@ -351,6 +351,8 @@ BEGIN
   ELSE bad := bad + 1; tap := tap || format(E'not ok %s - %s\n', n, j); END IF;
 
   DROP TRIGGER kan1004_test_boom ON public.live_activity_sends;
+  -- the sweep also planned live events where V/U really take part; drop those so later counts/listings see only G and M
+  DELETE FROM public.live_activity_sessions WHERE installation_id LIKE 'k1004-%' AND event_id NOT IN (g, m);
 
   ------------------------------------------------------------------ C11 push-to-start payload (iOS 17.2+), EN and AR
   DELETE FROM public.live_activity_sessions WHERE event_id = g;
