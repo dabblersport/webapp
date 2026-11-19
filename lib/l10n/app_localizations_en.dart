@@ -10284,6 +10284,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get notif_res_elsewhere => 'Already handled on another device';
 
   @override
+  String get notif_res_refused => 'Couldn’t do that here. Open it to continue.';
+
+  @override
   String get notif_res_unavailable => 'Not available yet';
 
   @override

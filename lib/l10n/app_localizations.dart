@@ -17749,6 +17749,12 @@ abstract class AppLocalizations {
   /// **'Already handled on another device'**
   String get notif_res_elsewhere;
 
+  /// Notification row result when the server refuses an inline action (not a network failure); no Retry.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn’t do that here. Open it to continue.'**
+  String get notif_res_refused;
+
   /// KAN-988 notification row (NotificationRow.dc.html). Result for an action without a backend yet.
   ///
   /// In en, this message translates to:

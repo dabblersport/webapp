@@ -33,12 +33,20 @@ enum NotifActionStatus {
   /// It ran; the row shows its result.
   success,
 
+  /// It opened a screen (post-activity, final score, no-show): the row stays
+  /// as it was, marked read.
+  opened,
+
   /// The server says it was already done (another device, or the state moved
   /// on): the row shows "Already handled on another device".
   alreadyHandled,
 
-  /// It failed; the row offers Retry.
+  /// It failed on the network (offline, timeout); the row offers Retry.
   failed,
+
+  /// The server refused it, or the row lacks what it needs: Retry would fail
+  /// the same way, so the row says so and offers no Retry.
+  refused,
 
   /// No backend yet (WAVE-2); the row says "Not available yet".
   unavailable,
@@ -54,6 +62,7 @@ class NotifActionOutcome {
   static const success = NotifActionOutcome(NotifActionStatus.success);
   static const already = NotifActionOutcome(NotifActionStatus.alreadyHandled);
   static const unavailable = NotifActionOutcome(NotifActionStatus.unavailable);
+  static const opened = NotifActionOutcome(NotifActionStatus.opened);
 }
 
 /// Whether [action] runs inline (true) or only opens the row (false).
@@ -97,6 +106,21 @@ String? notifEntityId(AppNotification n, [String? alt]) =>
     _s(n.payload, 'entity_id') ??
     (alt == null ? null : _s(n.payload, alt)) ??
     _s(n.args, 'entity_id');
+
+String? _arg(AppNotification n, String k) => _s(n.payload, k) ?? _s(n.args, k);
+
+/// The event a post-activity / attendance row is about. The server writes
+/// `event_id` into `args` (not `context`), so both are read, then the entity.
+String? notifEventId(AppNotification n) =>
+    _arg(n, 'event_id') ?? notifEntityId(n);
+
+/// A failure of [f]: Retry only when the network failed; else refused.
+NotifActionOutcome notifFailureOutcome(Failure f) => NotifActionOutcome(
+  f.isNetwork || f.isTimeout
+      ? NotifActionStatus.failed
+      : NotifActionStatus.refused,
+  f.code ?? f.message,
+);
 
 /// The actor's user id (`actor_user_id`, else the first follower / actor).
 String? notifActorUserId(AppNotification n) {
@@ -146,7 +170,7 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
       return await f();
     } catch (e) {
       if (isAlreadyHandledError(e)) return NotifActionOutcome.already;
-      return NotifActionOutcome(NotifActionStatus.failed, '$e');
+      return notifFailureOutcome(Failure.from(e));
     }
   }
 
@@ -204,7 +228,7 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
         ? null
         : await _ref.read(profileIdByUserIdProvider(actor).future);
     if (me == null || target == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_profile');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_profile');
     }
     await _db.from(SupabaseConfig.profileFollowsTable).insert({
       'follower_profile_id': me,
@@ -225,7 +249,7 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     if (kind.startsWith('meetup.')) {
       final meetup = notifEntityId(n, 'meetup_id');
       if (meetup == null || requester == null) {
-        return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+        return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
       }
       await _db.rpc(
         SupabaseConfig.rpcMeetupDecideRequestFn,
@@ -239,7 +263,7 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     }
     final game = notifEntityId(n, 'game_id');
     if (game == null || requester == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     final rows = await _db
         .from(SupabaseConfig.gameJoinRequestsTable)
@@ -264,14 +288,14 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
   }) async {
     final id = _s(n.args, 'sign_in_id') ?? notifEntityId(n);
     if (id == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     final repo = _ref.read(securityRepositoryProvider);
     final r = notMe ? await repo.notMe(id) : await repo.confirm(id);
     return r.fold(
       (f) => f.code == '22023' || f.code == 'P0002'
           ? NotifActionOutcome.already
-          : NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+          : notifFailureOutcome(f),
       (_) {
         if (notMe) open(RoutePaths.settingsAccountPassword);
         return NotifActionOutcome.success;
@@ -280,66 +304,66 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
   }
 
   NotifActionOutcome _openNoShow(AppNotification n) {
-    final event = _s(n.payload, 'event_id');
+    final event = notifEventId(n);
     if (event == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
-    open(RoutePaths.noShow(event, title: _s(n.payload, 'title')));
-    return NotifActionOutcome.success;
+    open(RoutePaths.noShow(event, title: _arg(n, 'title')));
+    return NotifActionOutcome.opened;
   }
 
   NotifActionOutcome _openEvent(
     AppNotification n,
     String Function(String eventId, {String? title}) path,
   ) {
-    final event = _s(n.payload, 'event_id');
+    final event = notifEventId(n);
     if (event == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
-    open(path(event, title: _s(n.payload, 'title')));
-    return NotifActionOutcome.success;
+    open(path(event, title: _arg(n, 'title')));
+    return NotifActionOutcome.opened;
   }
 
   /// KAN-1000 (G-03): the final score entry is the organiser's alone; the
   /// tally's is_organiser is checked before it is opened.
   Future<NotifActionOutcome> _openFinal(AppNotification n) async {
-    final event = _s(n.payload, 'event_id');
+    final event = notifEventId(n);
     if (event == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     final r = await _ref.read(postActivityRepositoryProvider).result(event);
     return r.fold(
-      (f) => NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+      notifFailureOutcome,
       (t) => t.isOrganiser
           ? _openEvent(n, RoutePaths.resultFinal)
-          : const NotifActionOutcome(NotifActionStatus.failed, 'not_organiser'),
+          : const NotifActionOutcome(
+              NotifActionStatus.refused,
+              'not_organiser',
+            ),
     );
   }
 
   /// KAN-1000 (G-02): no more post-activity prompts for this event.
   Future<NotifActionOutcome> _dismissRating(AppNotification n) async {
-    final event = _s(n.payload, 'event_id');
+    final event = notifEventId(n);
     if (event == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     final r = await _ref.read(postActivityRepositoryProvider).dismiss(event);
-    return r.fold(
-      (f) => NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
-      (_) => NotifActionOutcome.success,
-    );
+    return r.fold(notifFailureOutcome, (_) => NotifActionOutcome.success);
   }
 
   /// KAN-1000 (G-03): the organiser approves the majority result.
   Future<NotifActionOutcome> _approveResult(AppNotification n) async {
-    final event = _s(n.payload, 'event_id');
+    final event = notifEventId(n);
     if (event == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     final r = await _ref.read(postActivityRepositoryProvider).approve(event);
     return r.fold(
       (f) => f.code == 'result_final'
           ? NotifActionOutcome.already
-          : NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+          : notifFailureOutcome(f),
       (_) => NotifActionOutcome.success,
     );
   }
@@ -350,10 +374,10 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     AppNotification n, {
     required bool accept,
   }) async {
-    final event = _s(n.payload, 'event_id');
-    final player = _s(n.payload, 'player_user_id');
+    final event = notifEventId(n);
+    final player = _arg(n, 'player_user_id');
     if (event == null || player == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     final r = await _ref
         .read(attendanceReviewRepositoryProvider)
@@ -361,7 +385,7 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
     return r.fold(
       (f) => f.code == 'no_open_review'
           ? NotifActionOutcome.already
-          : NotifActionOutcome(NotifActionStatus.failed, f.code ?? f.message),
+          : notifFailureOutcome(f),
       (_) => NotifActionOutcome.success,
     );
   }
@@ -369,7 +393,7 @@ class SupabaseNotifActionHandler implements NotifActionHandler {
   Future<NotifActionOutcome> _rsvp(AppNotification n, String action) async {
     final meetup = notifEntityId(n, 'meetup_id');
     if (meetup == null) {
-      return const NotifActionOutcome(NotifActionStatus.failed, 'no_target');
+      return const NotifActionOutcome(NotifActionStatus.refused, 'no_target');
     }
     await _db.rpc(
       SupabaseConfig.rpcMeetupRsvpFn,

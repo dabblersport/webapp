@@ -50,7 +50,7 @@ void main() {
       NotificationActionId.requestReview,
       notif('activity.no_show_pending', payload: {'event_id': 'e1'}),
     );
-    expect(o.status, NotifActionStatus.success);
+    expect(o.status, NotifActionStatus.opened);
     expect(opened, [RoutePaths.noShow('e1')]);
   });
 
@@ -59,7 +59,7 @@ void main() {
       NotificationActionId.requestReview,
       notif('activity.no_show_pending', payload: const {}),
     );
-    expect(o.status, NotifActionStatus.failed);
+    expect(o.status, NotifActionStatus.refused);
     expect(opened, isEmpty);
   });
 
@@ -89,7 +89,7 @@ void main() {
         NotificationActionId.keepDecision,
       ]) {
         final o = await handler.run(a, notif(review, payload: p));
-        expect(o.status, NotifActionStatus.failed);
+        expect(o.status, NotifActionStatus.refused);
       }
       expect(repo.calls, isEmpty);
     });
@@ -110,7 +110,7 @@ void main() {
         NotificationActionId.keepDecision,
         notif(review, payload: full),
       )).status,
-      NotifActionStatus.failed,
+      NotifActionStatus.refused,
     );
   });
 

@@ -60,7 +60,7 @@ void main() {
     final (h, opened) = handler(repo);
     expect(
       (await h.run(NotificationActionId.thisWasMe, row)).status,
-      NotifActionStatus.failed,
+      NotifActionStatus.refused,
     );
     repo.answerFail = const Failure(code: '22023');
     expect(
@@ -73,7 +73,7 @@ void main() {
         NotificationActionId.notMe,
         notif('security.new_signin'),
       )).status,
-      NotifActionStatus.failed,
+      NotifActionStatus.refused,
     );
   });
 

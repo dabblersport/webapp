@@ -10385,6 +10385,9 @@ class AppLocalizationsAr extends AppLocalizations {
   String get notif_res_elsewhere => 'تمّت معالجته على جهاز آخر';
 
   @override
+  String get notif_res_refused => 'تعذّر ذلك من هنا. افتحه للمتابعة.';
+
+  @override
   String get notif_res_unavailable => 'غير متاح بعد';
 
   @override

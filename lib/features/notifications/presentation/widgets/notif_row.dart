@@ -81,9 +81,18 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
     });
     final outcome = await _handler.run(action, n);
     if (!mounted) return;
+    if (outcome.status == NotifActionStatus.opened) {
+      setState(() {
+        _phase = _Phase.idle;
+        _read = true;
+      });
+      return;
+    }
     setState(() {
       _outcome = outcome;
-      _phase = outcome.status == NotifActionStatus.failed
+      _phase =
+          outcome.status == NotifActionStatus.failed ||
+              outcome.status == NotifActionStatus.refused
           ? _Phase.failed
           : _Phase.done;
       _read = true;
@@ -208,65 +217,73 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
           ];
 
     final people = view.people;
-    return Padding(
-      padding: const EdgeInsetsDirectional.symmetric(
-        horizontal: DabblerSpacing.space6,
-        vertical: DabblerSpacing.space1,
+    // A real DefaultTextStyle for the card's texts: without one (the Center
+    // has no Scaffold above the rows) Flutter's fallback paints the result's
+    // underlined Retry / Undo link with a yellow double underline.
+    return DefaultTextStyle(
+      style: DabblerType.captionNotif.resolveForDirection(
+        Directionality.of(context),
       ),
-      child: DabblerNotificationCard(
-        semanticLabel: '${head.actor} ${head.verb}'.trim(),
-        leading: _leading(view),
-        actor: head.actor,
-        verb: head.verb,
-        time: _formatTime(l, n.createdAt),
-        unread: unread,
-        onOpen: () {
-          setState(() => _read = true);
-          widget.onTap();
-        },
-        onMenu: () => setState(() => _menu = !_menu),
-        menuLabel: l.notif_menu_more,
-        urgent: result == null && !expired ? view.urgent : null,
-        sub: view.sub,
-        excerpt: view.excerpt,
-        change: view.change,
-        meta: view.meta(context),
-        people: view.grouped && people.length > 1
-            ? DabblerNotificationPeople(
-                toggleLabel: _people
-                    ? l.notif_people_hide
-                    : l.notif_people_see_all(people.length),
-                open: _people,
-                onToggle: () => setState(() => _people = !_people),
-                people: <DabblerNotificationPerson>[
-                  for (final p in people)
-                    DabblerNotificationPerson(
-                      name: p.name,
-                      imageUrl: p.avatarUrl,
-                      time: p.at == null ? null : _formatTime(l, p.at!),
+      child: Padding(
+        padding: const EdgeInsetsDirectional.symmetric(
+          horizontal: DabblerSpacing.space6,
+          vertical: DabblerSpacing.space1,
+        ),
+        child: DabblerNotificationCard(
+          semanticLabel: '${head.actor} ${head.verb}'.trim(),
+          leading: _leading(view),
+          actor: head.actor,
+          verb: head.verb,
+          time: _formatTime(l, n.createdAt),
+          unread: unread,
+          onOpen: () {
+            setState(() => _read = true);
+            widget.onTap();
+          },
+          onMenu: () => setState(() => _menu = !_menu),
+          menuLabel: l.notif_menu_more,
+          urgent: result == null && !expired ? view.urgent : null,
+          sub: view.sub,
+          excerpt: view.excerpt,
+          change: view.change,
+          meta: view.meta(context),
+          people: view.grouped && people.length > 1
+              ? DabblerNotificationPeople(
+                  toggleLabel: _people
+                      ? l.notif_people_hide
+                      : l.notif_people_see_all(people.length),
+                  open: _people,
+                  onToggle: () => setState(() => _people = !_people),
+                  people: <DabblerNotificationPerson>[
+                    for (final p in people)
+                      DabblerNotificationPerson(
+                        name: p.name,
+                        imageUrl: p.avatarUrl,
+                        time: p.at == null ? null : _formatTime(l, p.at!),
+                      ),
+                  ],
+                )
+              : null,
+          actions: showActions
+              ? <DabblerNotificationCardAction>[
+                  for (final c in ctas)
+                    DabblerNotificationCardAction(
+                      c.label(l),
+                      primary: c.filled,
+                      onPressed: () => _run(c.action),
                     ),
-                ],
-              )
-            : null,
-        actions: showActions
-            ? <DabblerNotificationCardAction>[
-                for (final c in ctas)
-                  DabblerNotificationCardAction(
-                    c.label(l),
-                    primary: c.filled,
-                    onPressed: () => _run(c.action),
-                  ),
-              ]
-            : const <DabblerNotificationCardAction>[],
-        pending: _phase == _Phase.pending
-            ? (_action == NotificationActionId.decline ||
-                      _action == NotificationActionId.reject ||
-                      _action == NotificationActionId.notGoing
-                  ? l.notif_pending_declining
-                  : l.notif_pending_sending)
-            : null,
-        result: result,
-        menu: menu,
+                ]
+              : const <DabblerNotificationCardAction>[],
+          pending: _phase == _Phase.pending
+              ? (_action == NotificationActionId.decline ||
+                        _action == NotificationActionId.reject ||
+                        _action == NotificationActionId.notGoing
+                    ? l.notif_pending_declining
+                    : l.notif_pending_sending)
+              : null,
+          result: result,
+          menu: menu,
+        ),
       ),
     );
   }
@@ -307,6 +324,14 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
           linkLabel: l.notif_res_retry,
           onLink: () => _run(_action!),
         );
+      case NotifActionStatus.refused:
+        // The server said no (or the row lacks its target): no connection
+        // copy and no Retry, which would fail the same way.
+        return DabblerNotificationResult(
+          icon: 'info-circle',
+          text: l.notif_res_refused,
+          tone: DabblerNotificationTone.err,
+        );
       case NotifActionStatus.alreadyHandled:
         return DabblerNotificationResult(
           icon: 'mobile',
@@ -318,6 +343,7 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
           icon: 'info-circle',
           text: l.notif_res_unavailable,
         );
+      case NotifActionStatus.opened:
       case NotifActionStatus.success:
         return switch (_action!) {
           NotificationActionId.followBack => DabblerNotificationResult(

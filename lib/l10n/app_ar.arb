@@ -3368,6 +3368,7 @@
   "notif_pending_declining": "جارٍ الرفض…",
   "notif_res_failed": "تعذّر ذلك. تحقّق من اتصالك.",
   "notif_res_elsewhere": "تمّت معالجته على جهاز آخر",
+  "notif_res_refused": "تعذّر ذلك من هنا. افتحه للمتابعة.",
   "notif_res_unavailable": "غير متاح بعد",
   "notif_res_following": "تتابع {name}",
   "notif_res_mutual": "أنتما تتابعان بعضكما",

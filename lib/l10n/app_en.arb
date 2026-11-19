@@ -4061,6 +4061,8 @@
   "@notif_res_failed": {"description": "KAN-988 notification row (NotificationRow.dc.html). Result after a failed action."},
   "notif_res_elsewhere": "Already handled on another device",
   "@notif_res_elsewhere": {"description": "KAN-988 notification row (NotificationRow.dc.html). Result when the server says it was already done."},
+  "notif_res_refused": "Couldn’t do that here. Open it to continue.",
+  "@notif_res_refused": {"description": "Notification row result when the server refuses an inline action (not a network failure); no Retry."},
   "notif_res_unavailable": "Not available yet",
   "@notif_res_unavailable": {"description": "KAN-988 notification row (NotificationRow.dc.html). Result for an action without a backend yet."},
   "notif_res_following": "Following {name}",

@@ -61,6 +61,7 @@ AppNotification notif(
   String title = 'Title',
   String? body,
   Map<String, dynamic>? payload,
+  Map<String, dynamic> args = const <String, dynamic>{},
   bool read = false,
   DateTime? at,
 }) => AppNotification(
@@ -70,6 +71,7 @@ AppNotification notif(
   title: title,
   body: body,
   payload: payload,
+  args: args,
   isRead: read,
   createdAt: at ?? DateTime.now().subtract(const Duration(minutes: 2)),
 );
