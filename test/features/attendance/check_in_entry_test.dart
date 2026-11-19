@@ -1,5 +1,5 @@
 // KAN-998: the check-in row in the game and meetup details shows only for an
-// eligible participant, and opens /check-in/:eventId.
+// eligible participant, and opens the check-in sheet in place.
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
@@ -8,7 +8,6 @@ import 'package:dabbler/features/attendance/domain/check_in_models.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_entry.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/themes/dabbler_design_system_theme.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,14 +70,15 @@ Future<List<String>> _pump(WidgetTester t, String state) async {
 }
 
 void main() {
-  testWidgets('an eligible player sees the row and it opens the screen', (
+  testWidgets('an eligible player sees the row and it opens the sheet', (
     t,
   ) async {
     final pushed = await _pump(t, 'open');
     expect(find.byKey(const ValueKey('check-in-entry')), findsOneWidget);
     await t.tap(find.byKey(const ValueKey('check-in-entry')));
     await t.pumpAndSettle();
-    expect(pushed.single, RoutePaths.checkIn('e1'));
+    expect(pushed, isEmpty);
+    expect(find.byKey(const ValueKey('check-in-sheet-yes')), findsOneWidget);
   });
 
   for (final s in ['not_eligible', 'closed', 'cancelled']) {

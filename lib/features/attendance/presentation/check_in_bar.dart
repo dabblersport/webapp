@@ -7,12 +7,11 @@ import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/attendance/domain/check_in_models.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_controller.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_screen.dart';
+import 'package:dabbler/features/attendance/presentation/check_in_sheet.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
-import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// The bar's actions when check-in changes them; null when the screen keeps
 /// its own bar (before the window, no data, not eligible, flag off).
@@ -51,7 +50,7 @@ import 'package:go_router/go_router.dart';
           size: DabblerButtonSize.full,
           fullWidth: true,
           loading: submitting,
-          onPressed: () => context.push(RoutePaths.checkIn(eventId)),
+          onPressed: () => showCheckInSheet(context, eventId),
         ),
         secondary: DabblerButton(
           key: const ValueKey<String>('check-in-leave'),

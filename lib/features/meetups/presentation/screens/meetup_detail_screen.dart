@@ -1,3 +1,4 @@
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
@@ -111,7 +112,7 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
   Widget build(BuildContext context) {
     final l = AppLocalizations.of(context);
     final card = ref.watch(meetupCardProvider(widget.meetupId));
-    final back = widget.onBack ?? () => context.pop();
+    final back = widget.onBack ?? () => backOrTab(context);
     return card.when(
       loading: () => DabblerDetailPage(
         header: SystemChromeSurface.detailHeader(

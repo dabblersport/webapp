@@ -11236,4 +11236,13 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get meetups_cant_make_it => 'Can\'t make it';
+
+  @override
+  String get g04_confirm_title => 'Check in now?';
+
+  @override
+  String get g04_confirm_yes => 'Yes, check in';
+
+  @override
+  String get g04_confirm_no => 'No';
 }

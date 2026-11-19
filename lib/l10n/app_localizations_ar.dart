@@ -11336,4 +11336,13 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get meetups_cant_make_it => 'لن أتمكن من الحضور';
+
+  @override
+  String get g04_confirm_title => 'تسجيل الحضور الآن؟';
+
+  @override
+  String get g04_confirm_yes => 'نعم، سجّل حضوري';
+
+  @override
+  String get g04_confirm_no => 'لا';
 }

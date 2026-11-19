@@ -6,6 +6,7 @@
 // (from finalized attendance), not open yet. Non-competitive events have no
 // score step. Players do not dispute: there is no dispute action.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/post_activity/domain/post_activity_models.dart';
@@ -66,7 +67,7 @@ class PostActivityScreen extends ConsumerWidget {
       title: title != null && title!.isNotEmpty
           ? context.isolate(title)
           : l.g02_title,
-      onBack: onBack ?? () => context.pop(),
+      onBack: onBack ?? () => backOrTab(context),
     );
     final flow = state.flow;
     if (flow == null || state.loading && state.tally == null) {

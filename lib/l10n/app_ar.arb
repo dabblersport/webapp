@@ -3687,5 +3687,11 @@
   "game_leave_title": "مغادرة المباراة؟",
   "game_leave_body": "ستفقد مكانك وقد لا تتمكن من الانضمام مجددًا.",
   "game_leave_confirm": "مغادرة",
-  "meetups_cant_make_it": "لن أتمكن من الحضور"
+  "meetups_cant_make_it": "لن أتمكن من الحضور",
+  "g04_confirm_title": "تسجيل الحضور الآن؟",
+  "@g04_confirm_title": {"description": "Title of the in-place check-in confirmation sheet."},
+  "g04_confirm_yes": "نعم، سجّل حضوري",
+  "@g04_confirm_yes": {"description": "Confirms the check-in in the sheet."},
+  "g04_confirm_no": "لا",
+  "@g04_confirm_no": {"description": "Closes the check-in sheet without checking in."}
 }

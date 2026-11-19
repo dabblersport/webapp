@@ -3,6 +3,7 @@
 // email change happened); /security/sign-ins — the sign-in list. Root-level,
 // no shell; registered only while FeatureFlags.securityScreens.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/core/utils/instant.dart';
 import 'package:dabbler/features/security/domain/security_sign_in.dart';
@@ -18,12 +19,14 @@ RouteBase get securityReviewRoute => GoRoute(
   parentNavigatorKey: rootNavigatorKey,
   pageBuilder: (context, state) => SharedAxisTransitionPage(
     key: state.pageKey,
-    child: SecurityReviewScreen(
-      kind:
-          SecurityNoticeKind.parse(state.pathParameters['kind']) ??
-          SecurityNoticeKind.newSignIn,
-      signInId: state.uri.queryParameters['id'],
-      changedAt: parseInstantLocal(state.uri.queryParameters['at']),
+    child: BackOrTabScope(
+      child: SecurityReviewScreen(
+        kind:
+            SecurityNoticeKind.parse(state.pathParameters['kind']) ??
+            SecurityNoticeKind.newSignIn,
+        signInId: state.uri.queryParameters['id'],
+        changedAt: parseInstantLocal(state.uri.queryParameters['at']),
+      ),
     ),
     type: SharedAxisType.horizontal,
   ),

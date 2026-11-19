@@ -1,4 +1,5 @@
 import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:dabbler/services/notifications/launch_once.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notif_target_states.dart';
@@ -210,7 +211,12 @@ class PushNotificationService {
           (launch?.didNotificationLaunchApp ?? false) &&
           launchResponse != null) {
         _launchHandled = true;
-        _onLocalNotificationTap(launchResponse);
+        final key =
+            'local:${launchResponse.id}:${launchResponse.actionId}:'
+            '${launchResponse.payload.hashCode}';
+        if (await LaunchOnce.instance.claim(key)) {
+          _onLocalNotificationTap(launchResponse);
+        }
       }
 
       // KAN-992: every channel KAN-979 sends to, created up front so a
@@ -353,7 +359,10 @@ class PushNotificationService {
   /// Handle the case where the app was terminated and opened via notification tap.
   Future<void> _handleInitialMessage() async {
     final initial = await FirebaseMessaging.instance.getInitialMessage();
-    if (initial != null) {
+    if (initial != null &&
+        await LaunchOnce.instance.claim(
+          initial.messageId == null ? null : 'fcm:${initial.messageId}',
+        )) {
       _handleRemoteMessageTap(initial);
     }
   }

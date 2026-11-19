@@ -2,6 +2,7 @@
 // home_shell_route.dart). Both are registered only while
 // FeatureFlags.enableMeetups is true.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/meetups/presentation/screens/meetup_detail_screen.dart';
@@ -20,7 +21,9 @@ RouteBase get meetupDetailRoute => GoRoute(
       FeatureFlags.enableMeetups ? null : RoutePaths.home,
   pageBuilder: (context, state) => SharedAxisTransitionPage(
     key: state.pageKey,
-    child: MeetupDetailScreen(meetupId: state.pathParameters['meetupId']!),
+    child: BackOrTabScope(
+      child: MeetupDetailScreen(meetupId: state.pathParameters['meetupId']!),
+    ),
     type: SharedAxisType.horizontal,
   ),
 );

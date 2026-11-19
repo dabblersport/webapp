@@ -19368,6 +19368,24 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Can\'t make it'**
   String get meetups_cant_make_it;
+
+  /// Title of the in-place check-in confirmation sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Check in now?'**
+  String get g04_confirm_title;
+
+  /// Confirms the check-in in the sheet.
+  ///
+  /// In en, this message translates to:
+  /// **'Yes, check in'**
+  String get g04_confirm_yes;
+
+  /// Closes the check-in sheet without checking in.
+  ///
+  /// In en, this message translates to:
+  /// **'No'**
+  String get g04_confirm_no;
 }
 
 class _AppLocalizationsDelegate

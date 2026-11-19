@@ -6,6 +6,7 @@
 // are always on: there is no mute and no toggle here. The card is the
 // inbox's card (W1-F2).
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/features/security/domain/security_sign_in.dart';
 import 'package:dabbler/features/security/presentation/security_format.dart';
@@ -52,7 +53,7 @@ class SecurityReviewScreen extends ConsumerWidget {
     final l = AppLocalizations.of(context);
     final topBar = DabblerNavigationTopBar.titled(
       title: l.sec6_review_title,
-      onBack: onBack ?? () => context.pop(),
+      onBack: onBack ?? () => backOrTab(context),
     );
     final Widget body = kind == SecurityNoticeKind.newSignIn
         ? _NewSignIn(signInId: signInId)

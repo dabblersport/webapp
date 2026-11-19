@@ -3,6 +3,7 @@
 // /result/:eventId/final — the organiser's final score entry. Root-level, no
 // shell; registered only while FeatureFlags.postActivity.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/post_activity/presentation/final_score_screen.dart';
 import 'package:dabbler/features/post_activity/presentation/post_activity_screen.dart';
@@ -33,7 +34,9 @@ GoRoute _route(
 RouteBase get postActivityRoute => _route(
   '/post-activity/:eventId',
   RouteNames.postActivity,
-  (id, title) => PostActivityScreen(eventId: id, title: title),
+  (id, title) => BackOrTabScope(
+    child: PostActivityScreen(eventId: id, title: title),
+  ),
 );
 
 RouteBase get resultApprovalRoute => _route(

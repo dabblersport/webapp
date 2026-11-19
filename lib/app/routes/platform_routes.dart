@@ -24,212 +24,204 @@ import 'package:dabbler/app/app_router.dart';
 import 'placeholder_screen.dart';
 
 // Root route - handles OAuth callbacks with ?code=xxx
-RouteBase get rootRoute =>
-    GoRoute(
-      path: '/',
-      redirect: (context, state) {
-        // If there's a code query param, this is an OAuth callback
-        // Let the redirect logic handle where to send the user
-        final hasCode = state.uri.queryParameters.containsKey('code');
-        if (hasCode) {
-          // Return landing so redirect logic can properly route authenticated user
-          return RoutePaths.landing;
-        }
-        // Otherwise redirect to landing
-        return RoutePaths.landing;
-      },
-    );
+RouteBase get rootRoute => GoRoute(
+  path: '/',
+  redirect: (context, state) {
+    // If there's a code query param, this is an OAuth callback
+    // Let the redirect logic handle where to send the user
+    final hasCode = state.uri.queryParameters.containsKey('code');
+    if (hasCode) {
+      // Return landing so redirect logic can properly route authenticated user
+      return RoutePaths.landing;
+    }
+    // Otherwise redirect to landing
+    return RoutePaths.landing;
+  },
+);
 
 // Language selection route (placeholder)
-RouteBase get languageSelectionRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '/language_selection',
-      pageBuilder: (context, state) => FadeTransitionPage(
-        key: state.pageKey,
-        child: const DabblerPage(
-          body: Center(
-            child: DabblerEmptyState(text: 'Language Selection - Coming Soon'),
-          ),
-        ),
+RouteBase get languageSelectionRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '/language_selection',
+  pageBuilder: (context, state) => FadeTransitionPage(
+    key: state.pageKey,
+    child: const DabblerPage(
+      body: Center(
+        child: DabblerEmptyState(text: 'Language Selection - Coming Soon'),
       ),
-    );
+    ),
+  ),
+);
 
 // Rewards route
-RouteBase get rewardsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.rewards,
-      name: RouteNames.rewards,
-      redirect: (context, state) {
-        if (!FeatureFlags.enableEarlyBirdCheckIn) {
-          return RoutePaths.home;
-        }
-        return null;
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const RewardsScreen(),
-      ),
-    );
+RouteBase get rewardsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.rewards,
+  name: RouteNames.rewards,
+  redirect: (context, state) {
+    if (!FeatureFlags.enableEarlyBirdCheckIn) {
+      return RoutePaths.home;
+    }
+    return null;
+  },
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: const RewardsScreen(),
+  ),
+);
 
 // Transactions route
-RouteBase get transactionsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '/transactions',
-      redirect: (context, state) {
-        if (!FeatureFlags.enablePayments) {
-          return RoutePaths.home;
-        }
-        return null;
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const TransactionsScreen(),
-      ),
-    );
+RouteBase get transactionsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '/transactions',
+  redirect: (context, state) {
+    if (!FeatureFlags.enablePayments) {
+      return RoutePaths.home;
+    }
+    return null;
+  },
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: const TransactionsScreen(),
+  ),
+);
 
 // Help & Support routes
-RouteBase get helpCenterRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '/help/center',
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const HelpCenterScreen(),
-        type: SharedAxisType.horizontal,
-      ),
-    );
+RouteBase get helpCenterRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '/help/center',
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const HelpCenterScreen(),
+    type: SharedAxisType.horizontal,
+  ),
+);
 
 // Placeholder Social Routes (for routes referenced in code but screens don't exist yet)
-RouteBase get socialNotificationsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialNotifications,
-      name: RouteNames.socialNotifications,
-      redirect: (context, state) {
-        if (!FeatureFlags.notifications) return RoutePaths.home;
-        return null;
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const PlaceholderScreen(title: 'Social Notifications'),
+RouteBase get socialNotificationsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialNotifications,
+  name: RouteNames.socialNotifications,
+  redirect: (context, state) {
+    if (!FeatureFlags.notifications) return RoutePaths.home;
+    return null;
+  },
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: const PlaceholderScreen(title: 'Social Notifications'),
+  ),
+);
+
+RouteBase get socialMessagesRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialMessages,
+  name: RouteNames.socialMessages,
+  redirect: (context, state) {
+    if (!FeatureFlags.messaging) return RoutePaths.home;
+    return null;
+  },
+  pageBuilder: (context, state) => FadeThroughTransitionPage(
+    key: state.pageKey,
+    child: const PlaceholderScreen(title: 'Messages'),
+  ),
+);
+
+RouteBase get socialChatConversationIdRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '${RoutePaths.socialChat}/:conversationId',
+  name: RouteNames.socialChat,
+  redirect: (context, state) {
+    if (!FeatureFlags.messaging) return RoutePaths.home;
+    return null;
+  },
+  pageBuilder: (context, state) {
+    final conversationId = state.pathParameters['conversationId'] ?? '';
+    return FadeThroughTransitionPage(
+      key: state.pageKey,
+      child: PlaceholderScreen(
+        title: 'Chat: ${conversationId.substring(0, 8)}...',
       ),
     );
+  },
+);
 
-RouteBase get socialMessagesRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialMessages,
-      name: RouteNames.socialMessages,
-      redirect: (context, state) {
-        if (!FeatureFlags.messaging) return RoutePaths.home;
-        return null;
-      },
-      pageBuilder: (context, state) => FadeThroughTransitionPage(
-        key: state.pageKey,
-        child: const PlaceholderScreen(title: 'Messages'),
-      ),
-    );
+RouteBase get socialEditPostRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialEditPost,
+  name: RouteNames.socialEditPost,
+  pageBuilder: (context, state) => BottomSheetTransitionPage(
+    key: state.pageKey,
+    child: const PlaceholderScreen(title: 'Edit Post'),
+  ),
+);
 
-RouteBase get socialChatConversationIdRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '${RoutePaths.socialChat}/:conversationId',
-      name: RouteNames.socialChat,
-      redirect: (context, state) {
-        if (!FeatureFlags.messaging) return RoutePaths.home;
-        return null;
-      },
-      pageBuilder: (context, state) {
-        final conversationId = state.pathParameters['conversationId'] ?? '';
-        return FadeThroughTransitionPage(
-          key: state.pageKey,
-          child: PlaceholderScreen(
-            title: 'Chat: ${conversationId.substring(0, 8)}...',
-          ),
-        );
-      },
-    );
-
-RouteBase get socialEditPostRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialEditPost,
-      name: RouteNames.socialEditPost,
-      pageBuilder: (context, state) => BottomSheetTransitionPage(
-        key: state.pageKey,
-        child: const PlaceholderScreen(title: 'Edit Post'),
-      ),
-    );
-
-RouteBase get socialAnalyticsRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.socialAnalytics,
-      name: RouteNames.socialAnalytics,
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const PlaceholderScreen(title: 'Social Analytics'),
-        type: SharedAxisType.horizontal,
-      ),
-    );
+RouteBase get socialAnalyticsRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.socialAnalytics,
+  name: RouteNames.socialAnalytics,
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const PlaceholderScreen(title: 'Social Analytics'),
+    type: SharedAxisType.horizontal,
+  ),
+);
 
 // Admin routes with admin check guards
-RouteBase get adminModerationQueueRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.adminModerationQueue,
-      redirect: (context, state) async {
-        // Gate on authentication before the admin RPC, so the route is never
-        // momentarily reachable while auth state is still hydrating.
-        if (Supabase.instance.client.auth.currentSession == null) {
-          return RoutePaths.landing;
-        }
-        try {
-          final response = await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn);
-          if (response != true) {
-            return RoutePaths.home; // Redirect non-admins to home
-          }
-        } catch (e) {
-          return RoutePaths.home; // Redirect on error
-        }
-        return null; // Allow access if admin
-      },
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const ModerationQueueScreen(),
-        type: SharedAxisType.horizontal,
-      ),
-    );
+RouteBase get adminModerationQueueRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.adminModerationQueue,
+  redirect: (context, state) async {
+    // Gate on authentication before the admin RPC, so the route is never
+    // momentarily reachable while auth state is still hydrating.
+    if (Supabase.instance.client.auth.currentSession == null) {
+      return RoutePaths.landing;
+    }
+    try {
+      final response = await Supabase.instance.client.rpc(
+        SupabaseConfig.isAdminFn,
+      );
+      if (response != true) {
+        return RoutePaths.home; // Redirect non-admins to home
+      }
+    } catch (e) {
+      return RoutePaths.home; // Redirect on error
+    }
+    return null; // Allow access if admin
+  },
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const ModerationQueueScreen(),
+    type: SharedAxisType.horizontal,
+  ),
+);
 
-RouteBase get adminSafetyOverviewRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: RoutePaths.adminSafetyOverview,
-      redirect: (context, state) async {
-        // Gate on authentication before the admin RPC, so the route is never
-        // momentarily reachable while auth state is still hydrating.
-        if (Supabase.instance.client.auth.currentSession == null) {
-          return RoutePaths.landing;
-        }
-        try {
-          final response = await Supabase.instance.client.rpc(SupabaseConfig.isAdminFn);
-          if (response != true) {
-            return RoutePaths.home; // Redirect non-admins to home
-          }
-        } catch (e) {
-          return RoutePaths.home; // Redirect on error
-        }
-        return null; // Allow access if admin
-      },
-      pageBuilder: (context, state) => SharedAxisTransitionPage(
-        key: state.pageKey,
-        child: const SafetyOverviewScreen(),
-        type: SharedAxisType.horizontal,
-      ),
-    );
+RouteBase get adminSafetyOverviewRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: RoutePaths.adminSafetyOverview,
+  redirect: (context, state) async {
+    // Gate on authentication before the admin RPC, so the route is never
+    // momentarily reachable while auth state is still hydrating.
+    if (Supabase.instance.client.auth.currentSession == null) {
+      return RoutePaths.landing;
+    }
+    try {
+      final response = await Supabase.instance.client.rpc(
+        SupabaseConfig.isAdminFn,
+      );
+      if (response != true) {
+        return RoutePaths.home; // Redirect non-admins to home
+      }
+    } catch (e) {
+      return RoutePaths.home; // Redirect on error
+    }
+    return null; // Allow access if admin
+  },
+  pageBuilder: (context, state) => SharedAxisTransitionPage(
+    key: state.pageKey,
+    child: const SafetyOverviewScreen(),
+    type: SharedAxisType.horizontal,
+  ),
+);
 
 // KAN-552: admin Reports (message reports). Same gate as the admin routes
 // above (session, then the existing is_admin RPC) plus the two messaging flags.
@@ -243,16 +235,15 @@ RouteBase get adminMessageReportsRouteDef => adminMessageReportsRoute(
 );
 
 // Error route
-RouteBase get errorMessageRoute =>
-    GoRoute(
-      parentNavigatorKey: rootNavigatorKey,
-      path: '${RoutePaths.error}:message',
-      name: RouteNames.error,
-      pageBuilder: (context, state) {
-        final message = state.pathParameters['message'];
-        return FadeTransitionPage(
-          key: state.pageKey,
-          child: ErrorPage(message: message),
-        );
-      },
+RouteBase get errorMessageRoute => GoRoute(
+  parentNavigatorKey: rootNavigatorKey,
+  path: '${RoutePaths.error}:message',
+  name: RouteNames.error,
+  pageBuilder: (context, state) {
+    final message = state.pathParameters['message'];
+    return FadeTransitionPage(
+      key: state.pageKey,
+      child: ErrorPage(message: message),
     );
+  },
+);

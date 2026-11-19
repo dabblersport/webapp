@@ -2,6 +2,7 @@
 // list; /no-show/:eventId — the player's no-show and review state. Both
 // root-level, no shell; registered only while FeatureFlags.organiserAttendance.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/attendance/presentation/attendance_list_screen.dart';
 import 'package:dabbler/features/attendance/presentation/no_show_screen.dart';
@@ -15,9 +16,11 @@ RouteBase get attendanceRoute => GoRoute(
   parentNavigatorKey: rootNavigatorKey,
   pageBuilder: (context, state) => SharedAxisTransitionPage(
     key: state.pageKey,
-    child: AttendanceListScreen(
-      eventId: state.pathParameters['eventId']!,
-      title: state.uri.queryParameters['title'],
+    child: BackOrTabScope(
+      child: AttendanceListScreen(
+        eventId: state.pathParameters['eventId']!,
+        title: state.uri.queryParameters['title'],
+      ),
     ),
     type: SharedAxisType.horizontal,
   ),

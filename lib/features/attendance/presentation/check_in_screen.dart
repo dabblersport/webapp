@@ -1,6 +1,7 @@
 // KAN-998 (G-04): the player check-in screen. Opened from the game and meetup
 // details, the check-in notices and the Live Activity.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/attendance/domain/check_in_models.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_controller.dart';
@@ -8,7 +9,6 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
 /// [t]'s clock time in the device's 12/24-hour setting (decision I-7),
@@ -42,7 +42,7 @@ class CheckInScreen extends ConsumerWidget {
         );
       }
     });
-    final back = onBack ?? () => context.pop();
+    final back = onBack ?? () => backOrTab(context);
     final topBar = DabblerNavigationTopBar.titled(
       title: l.g04_title,
       onBack: back,

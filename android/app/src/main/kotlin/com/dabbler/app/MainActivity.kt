@@ -16,9 +16,21 @@ class MainActivity : FlutterActivity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        // A relaunch from Recents (after the process died) or a recreate
+        // re-delivers the ORIGINAL launch intent: the same dabbler:// deep link,
+        // FCM extras and notification payload. Flutter's deep linking,
+        // getInitialMessage and getNotificationAppLaunchDetails all read
+        // getIntent(), so the app reopened the notification's screen every
+        // time. Such a launch is a plain app open: strip it before anything
+        // reads it.
+        val fromHistory = ((intent?.flags ?: 0) and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY) != 0
+        if (savedInstanceState != null || fromHistory) intent = plainLaunchIntent()
         super.onCreate(savedInstanceState)
         if (savedInstanceState == null) reportLiveActivityTap(intent)
     }
+
+    private fun plainLaunchIntent(): Intent =
+        Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_LAUNCHER).setClass(this, MainActivity::class.java)
 
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)

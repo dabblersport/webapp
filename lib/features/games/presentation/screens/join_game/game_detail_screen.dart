@@ -1,3 +1,4 @@
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_bar.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
@@ -9,7 +10,6 @@ import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart' hide TextDirection;
 import 'package:share_plus/share_plus.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -191,7 +191,7 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
             icon: 'arrow-circle-left',
             mirrorInRtl: true,
             semanticLabel: AppLocalizations.of(context).auth_back,
-            onPressed: () => context.pop(),
+            onPressed: () => backOrTab(context),
           ),
           actions: [
             DabblerOnColorIconButton(
@@ -309,12 +309,12 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
 
   Widget _error(String message) {
     return DabblerPage(
-      topBar: DabblerNavigationTopBar.titled(onBack: () => context.pop()),
+      topBar: DabblerNavigationTopBar.titled(onBack: () => backOrTab(context)),
       body: DabblerEmptyState.error(
         icon: 'warning-2',
         title: message,
         retryLabel: 'Go back',
-        onRetry: () => context.pop(),
+        onRetry: () => backOrTab(context),
       ),
     );
   }

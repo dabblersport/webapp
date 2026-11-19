@@ -1,6 +1,7 @@
 // KAN-998 (G-04): /check-in/:eventId — the player check-in screen
 // (root-level, no shell). Registered only while FeatureFlags.playerCheckIn.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/app/app_router.dart';
 import 'package:dabbler/features/attendance/presentation/check_in_screen.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -13,8 +14,8 @@ RouteBase get checkInRoute => GoRoute(
   parentNavigatorKey: rootNavigatorKey,
   pageBuilder: (context, state) => SharedAxisTransitionPage(
     key: state.pageKey,
-    child: CheckInScreen(
-      eventId: state.pathParameters['eventId']!,
+    child: BackOrTabScope(
+      child: CheckInScreen(eventId: state.pathParameters['eventId']!),
     ),
     type: SharedAxisType.horizontal,
   ),

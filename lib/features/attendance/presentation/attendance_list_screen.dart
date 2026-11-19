@@ -4,6 +4,7 @@
 // with a reason shown to the player; Finalize locks it. Open review requests
 // (G-06) show as the inbox's review card above the roster.
 
+import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/attendance/domain/attendance_list_models.dart';
@@ -16,7 +17,6 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 /// The attendance RPC a refusal came from: each raises its own set.
 enum AttendanceCall { correct, finalize, decide, requestReview }
@@ -123,7 +123,7 @@ class _AttendanceListScreenBody extends ConsumerWidget {
     final ctrl = ref.read(attendanceListProvider(eventId).notifier);
     final topBar = DabblerNavigationTopBar.titled(
       title: l.g05_title,
-      onBack: onBack ?? () => context.pop(),
+      onBack: onBack ?? () => backOrTab(context),
     );
     final list = state.list;
     if (list == null) {
