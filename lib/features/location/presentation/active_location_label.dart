@@ -2,9 +2,10 @@ import 'package:dabbler/features/location/providers/active_location_provider.dar
 import 'package:dabbler/data/models/active_location.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 
-/// The text of every location chip (KAN-586, KAN-589): "Current location" for
-/// a device fix, the label of the saved place that is selected here, else the
-/// place picked. The city alone after a city change, "<area> · Last known" when
+/// The text of every location chip (KAN-586, KAN-589, KAN-1022): the label of
+/// the saved place that is selected or matched here, else the resolved area or
+/// city name of the place (a device fix included), and "Current location" only
+/// when a device fix has no resolved name. The city alone after a city change, "<area> · Last known" when
 /// Auto is unavailable, otherwise the "Set location" prompt.
 String activeLocationLabel(AppLocalizations l, ActiveLocationState? s) {
   if (s is ActiveLocationReady) {
@@ -15,12 +16,14 @@ String activeLocationLabel(AppLocalizations l, ActiveLocationState? s) {
         place.isEmpty ? l.location_current_label : place,
       );
     }
-    // A device fix reads "Current location", never a city or area name.
-    if (s.location.source == ActiveLocationSource.gps) {
-      return l.location_current_label;
-    }
-    if (saved != null && saved.trim().isNotEmpty) return saved;
-    return place.isEmpty ? l.location_point_selected : place;
+    if (saved != null && saved.trim().isNotEmpty) return saved.trim();
+    if (place.isNotEmpty) return place;
+    final String city = s.location.area.city.trim();
+    if (city.isNotEmpty) return city;
+    // A device fix with no resolved name: "Current location" stays a fallback.
+    return s.location.source == ActiveLocationSource.gps
+        ? l.location_current_label
+        : l.location_point_selected;
   }
   if (s is ActiveLocationCityOnly) return s.city;
   return l.listing_set_location;

@@ -137,8 +137,8 @@ void main() {
   tearDown(() => GeolocatorPlatform.instance = original);
 
   group('granted: the device coordinates are the location', () {
-    test('inside a covered Area it reads "Current location", not the area '
-        'name', () async {
+    test('inside a covered Area it reads the area name, not "Current '
+        'location" (KAN-1022)', () async {
       GeolocatorPlatform.instance = _Platform(LocationPermission.always);
       SharedPreferences.setMockInitialValues(_manualMarina);
       final c = _container(_Areas(resolveTo: _marina));
@@ -152,7 +152,7 @@ void main() {
       expect(loc.source, ActiveLocationSource.gps);
       expect(loc.lat, 24.4539);
       expect(loc.lng, 54.3773);
-      expect(_label(c), 'Current location');
+      expect(_label(c), 'Dubai Marina');
       expect((await _stored()).mode, DeviceLocationMode.auto);
     });
 
