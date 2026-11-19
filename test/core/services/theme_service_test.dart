@@ -20,22 +20,49 @@ void main() {
         .clearPlatformBrightnessTestValue();
   });
 
-  for (final Brightness b in Brightness.values) {
-    test('fresh install follows the device appearance, ${b.name}, whatever '
-        'the time of day', () async {
-      TestWidgetsFlutterBinding
-              .instance
-              .platformDispatcher
-              .platformBrightnessTestValue =
-          b;
+  test(
+    'fresh install hands ThemeMode.system to MaterialApp (KAN-1021)',
+    () async {
       final ThemeService s = await load(<String, Object>{});
       expect(s.autoThemeEnabled, isFalse);
-      expect(
-        s.effectiveThemeMode,
-        b == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
-      );
+      expect(s.effectiveThemeMode, ThemeMode.system);
+    },
+  );
+
+  for (final ThemeMode m in <ThemeMode>[ThemeMode.light, ThemeMode.dark]) {
+    test('explicit ${m.name} choice is honoured', () async {
+      final ThemeService s = await load(<String, Object>{
+        'theme_mode': m.index,
+        'auto_theme_enabled': false,
+      });
+      expect(s.effectiveThemeMode, m);
     });
   }
+
+  testWidgets('system mode follows a device appearance change after the '
+      'first build (KAN-1021)', (WidgetTester tester) async {
+    final ThemeService s = await load(<String, Object>{});
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.light;
+    late Brightness seen;
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: ThemeData(brightness: Brightness.light),
+        darkTheme: ThemeData(brightness: Brightness.dark),
+        themeMode: s.effectiveThemeMode,
+        home: Builder(
+          builder: (BuildContext context) {
+            seen = Theme.of(context).brightness;
+            return const SizedBox();
+          },
+        ),
+      ),
+    );
+    expect(seen, Brightness.light);
+    tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
+    await tester.pumpAndSettle();
+    expect(seen, Brightness.dark);
+    tester.platformDispatcher.clearPlatformBrightnessTestValue();
+  });
 
   test('stored auto_theme_enabled = true is honoured unchanged', () async {
     final ThemeService s = await load(<String, Object>{

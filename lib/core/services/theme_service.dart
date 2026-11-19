@@ -44,9 +44,14 @@ class ThemeService extends ChangeNotifier {
   TimeOfDay get nightStartTime => _nightStartTime;
 
   // Get effective theme mode (considering auto theme)
+  //
+  // KAN-1021: system mode is passed through as [ThemeMode.system] so
+  // MaterialApp resolves it from MediaQuery and rebuilds when the device
+  // appearance changes. Snapshotting platformBrightness here froze iOS on
+  // light, because iOS reports its brightness after the first build.
   ThemeMode get effectiveThemeMode {
-    if (_themeMode == ThemeMode.system || _autoThemeEnabled) {
-      return _getSystemThemeMode();
+    if (_autoThemeEnabled) {
+      return _isNightTime() ? ThemeMode.dark : ThemeMode.light;
     }
     return _themeMode;
   }
@@ -275,19 +280,6 @@ class ThemeService extends ChangeNotifier {
       notifyListeners();
       unawaited(_saveThemePreferencesToAccountIfAvailable());
     }
-  }
-
-  // Get system theme mode based on time
-  ThemeMode _getSystemThemeMode() {
-    if (!_autoThemeEnabled) {
-      // Use system settings
-      final brightness =
-          WidgetsBinding.instance.platformDispatcher.platformBrightness;
-      return brightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light;
-    }
-
-    // Use time-based theme
-    return _isNightTime() ? ThemeMode.dark : ThemeMode.light;
   }
 
   // Get system brightness
