@@ -4,6 +4,7 @@ import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/mapbox_place.dart';
 import 'package:dabbler/features/location/providers/mapbox_geocode_provider.dart';
+import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/sports/data/sport_follow_repository.dart';
 import 'package:dabbler/features/sports/data/sport_overview_models.dart';
 import 'package:dabbler/features/sports/presentation/widgets/sport_page_link.dart';
@@ -82,6 +83,29 @@ void main() {
       expect(find.text('More'), findsNothing);
       expect(h.repo.calls, contains('sport:$kFootball'));
     });
+
+    testWidgets(
+      'opened from a link with no profile loaded, it loads the active '
+      'profile and shows Following (KAN-970)',
+      (tester) async {
+        final SportHarness h = SportHarness(following: <String>[]);
+        h.profile.unload();
+        await pumpSport(
+          tester,
+          h,
+          overrides: <Override>[
+            initializeProfileDataProvider.overrideWith((ref) async {
+              await Future<void>.delayed(Duration.zero);
+              h.profile.loadWith(<String>[kFootball]);
+              return true;
+            }),
+          ],
+        );
+        await tester.pumpAndSettle();
+        expect(find.text('Following'), findsOneWidget);
+        expect(find.text('Follow'), findsNothing);
+      },
+    );
 
     testWidgets(
       'an unfollowed sport can be browsed and says what Follow does',
@@ -203,7 +227,11 @@ void main() {
       expect(find.text('3 games · 2 meetups'), findsOneWidget);
       expect(find.text('4'), findsOneWidget);
       expect(find.text('To book'), findsOneWidget);
-      expect(find.text('Inside venues'), findsNothing, reason: 'Spaces dropped');
+      expect(
+        find.text('Inside venues'),
+        findsNothing,
+        reason: 'Spaces dropped',
+      );
       // Posts: the header counter and the tile.
       expect(find.text('17'), findsNWidgets(2));
       expect(find.text('13'), findsNothing, reason: 'venues + spaces summed');
@@ -878,8 +906,9 @@ void main() {
       await pumpSport(tester, h);
       expect(find.textContaining('Followed by'), findsNothing);
       expect(
-        SportOverviewCounts.fromJson(const <String, dynamic>{'followers': 1})
-            .mutualFollowers,
+        SportOverviewCounts.fromJson(const <String, dynamic>{
+          'followers': 1,
+        }).mutualFollowers,
         isEmpty,
       );
     });

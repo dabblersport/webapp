@@ -118,6 +118,12 @@ class SportHeader extends ConsumerWidget {
         (s) => s.profile?.interests?.contains(sport.id) ?? false,
       ),
     );
+    // Opened straight from a link the page sits outside the shell, so nothing
+    // has loaded the active profile and Follow would read an empty Following
+    // (KAN-970). Run the same once-per-session bootstrap the shell runs.
+    if (ref.watch(profileControllerProvider.select((s) => s.profile == null))) {
+      ref.watch(initializeProfileDataProvider);
+    }
     final SportFollowState follow = ref.watch(sportFollowControllerProvider);
     final bool canCreate = canCreateGameOrMeetup(
       ref.watch(activePersonaProvider),

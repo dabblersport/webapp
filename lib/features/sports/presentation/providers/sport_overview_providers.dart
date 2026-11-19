@@ -316,8 +316,15 @@ class SportFollowController extends StateNotifier<SportFollowState> {
   /// only once the write succeeded.
   Future<void> toggle(SportInfo sport) async {
     if (state.busy) return;
-    final profile = _ref.read(profileControllerProvider).profile;
-    if (profile == null) return;
+    var profile = _ref.read(profileControllerProvider).profile;
+    if (profile == null) {
+      // Not loaded yet (page opened from a link, outside the shell): load the
+      // active profile before deciding follow vs unfollow (KAN-970).
+      await _ref.read(initializeProfileDataProvider.future);
+      if (!mounted) return;
+      profile = _ref.read(profileControllerProvider).profile;
+      if (profile == null) return;
+    }
     final bool follow = !isFollowing(sport.id);
     state = const SportFollowState(busy: true);
     final repo = _ref.read(sportFollowRepositoryProvider);

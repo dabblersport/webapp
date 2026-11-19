@@ -284,6 +284,13 @@ class FakeProfileController extends StateNotifier<ProfileState>
     interests: interests,
   );
 
+  /// Nothing loaded yet: the page was opened from a link (KAN-970).
+  void unload() => state = const ProfileState();
+
+  /// What the profile bootstrap loads.
+  void loadWith(List<String> interests) =>
+      state = ProfileState(profile: _profile(interests));
+
   @override
   Future<void> refreshProfile() async {
     refreshes++;
