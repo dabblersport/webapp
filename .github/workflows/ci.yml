@@ -17,7 +17,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
 
       - name: Setup Flutter
         # No flutter-version pin, deliberately: scripts/cloudflare-build.sh
@@ -26,7 +26,7 @@ jobs:
         # ships, instead of a stale pin drifting out of sync with it (that
         # divergence is what silently killed the old deploy-web.yml — see
         # KAN-112 / DECISIONS.md T-042).
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           cache: true

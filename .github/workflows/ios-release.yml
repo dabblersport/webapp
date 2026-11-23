@@ -116,7 +116,7 @@ jobs:
       confirm_submit: ${{ steps.resolve.outputs.confirm_submit }}
     steps:
       - name: Checkout the requested ref
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ inputs.ref || github.sha }}
           fetch-depth: 0
@@ -211,12 +211,12 @@ jobs:
     timeout-minutes: 45
     steps:
       - name: Checkout the resolved commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.prepare.outputs.sha }}
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -247,7 +247,7 @@ jobs:
     timeout-minutes: 90
     steps:
       - name: Checkout the resolved commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.prepare.outputs.sha }}
 
@@ -268,7 +268,7 @@ jobs:
           (( MAJOR >= XCODE_MIN_MAJOR )) || { echo "::error::Xcode $MAJOR is older than the required Xcode $XCODE_MIN_MAJOR"; exit 1; }
 
       - name: Set up Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
         with:
           channel: stable
           flutter-version: ${{ env.FLUTTER_VERSION }}
@@ -408,7 +408,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload the metadata (not the IPA)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         with:
           name: ios-metadata
           path: ${{ runner.temp }}/out/metadata.json
@@ -451,7 +451,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout (release tooling)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.prepare.outputs.sha }}
 
@@ -498,7 +498,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - name: Checkout (release tooling)
-        uses: actions/checkout@v4
+        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
         with:
           ref: ${{ needs.prepare.outputs.sha }}
 

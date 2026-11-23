@@ -607,16 +607,6 @@ newly anon-readable.**
 <!-- ANON_ALLOWLIST_START -->
 geography_columns
 geometry_columns
-kan718_games_compat
-kan718_meetups_compat
-v_challenge_card
-v_game_card
-v_meetup_list
-v_my_games
-v_potential_vibes_default
-v_rateable_after_game
-v_recreate_candidates
-v_recreate_quickpicks
 v_space_slots_today
 <!-- ANON_ALLOWLIST_END -->
 
@@ -821,7 +811,6 @@ can_view_circle(p_circle_id uuid, p_profile_id uuid)
 can_view_post(p_post_id uuid, p_user_id uuid, p_profile_id uuid)
 can_view_venue_bookings(p_user_id uuid, p_venue_id uuid)
 create_system_post(p_profile_id uuid, p_body text, p_kind post_kind, p_visibility text, p_vibe_id uuid, p_sport_id uuid, p_post_type post_type_enum, p_origin_type origin_type_enum, p_origin_id uuid, p_location_name text, p_geo_lat double precision, p_geo_lng double precision, p_media jsonb)
-is_admin(p_user uuid)
 is_blocked(user_a uuid, user_b uuid)
 is_circle_member(p_circle_id uuid, p_user_id uuid)
 is_frozen(p_user uuid)
