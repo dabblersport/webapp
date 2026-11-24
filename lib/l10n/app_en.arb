@@ -313,7 +313,6 @@
   "set_password_validate_username_taken": "Username is already taken",
   "set_password_validate_username_checking": "Error checking username",
   "set_password_validate_password_required": "Password is required",
-  "set_password_validate_password_min": "Password must be at least 6 characters",
   "set_password_validate_confirm_required": "Please confirm your password",
   "set_password_validate_confirm_match": "Passwords do not match",
   "set_password_wait_validation": "Please wait for username validation",

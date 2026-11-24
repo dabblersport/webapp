@@ -307,7 +307,6 @@
   "set_password_validate_username_taken": "هذا المعرّف مستخدم بالفعل",
   "set_password_validate_username_checking": "خطأ في التحقق من المعرّف",
   "set_password_validate_password_required": "كلمة المرور مطلوبة",
-  "set_password_validate_password_min": "يجب أن تتكون كلمة المرور من 6 أحرف على الأقل",
   "set_password_validate_confirm_required": "يرجى تأكيد كلمة المرور",
   "set_password_validate_confirm_match": "كلمتا المرور غير متطابقتين",
   "set_password_wait_validation": "انتظر حتى ينتهي التحقق من المعرّف",

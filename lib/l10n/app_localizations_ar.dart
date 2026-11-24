@@ -879,10 +879,6 @@ class AppLocalizationsAr extends AppLocalizations {
   String get set_password_validate_password_required => 'كلمة المرور مطلوبة';
 
   @override
-  String get set_password_validate_password_min =>
-      'يجب أن تتكون كلمة المرور من 6 أحرف على الأقل';
-
-  @override
   String get set_password_validate_confirm_required => 'يرجى تأكيد كلمة المرور';
 
   @override

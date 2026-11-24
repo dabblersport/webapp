@@ -890,10 +890,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get set_password_validate_password_required => 'Password is required';
 
   @override
-  String get set_password_validate_password_min =>
-      'Password must be at least 6 characters';
-
-  @override
   String get set_password_validate_confirm_required =>
       'Please confirm your password';
 

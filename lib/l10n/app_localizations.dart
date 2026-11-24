@@ -1676,12 +1676,6 @@ abstract class AppLocalizations {
   /// **'Password is required'**
   String get set_password_validate_password_required;
 
-  /// No description provided for @set_password_validate_password_min.
-  ///
-  /// In en, this message translates to:
-  /// **'Password must be at least 6 characters'**
-  String get set_password_validate_password_min;
-
   /// No description provided for @set_password_validate_confirm_required.
   ///
   /// In en, this message translates to:
