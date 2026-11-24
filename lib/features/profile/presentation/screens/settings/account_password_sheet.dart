@@ -97,31 +97,15 @@ extension _AccountPasswordSheet on _AccountManagementScreenState {
 
     _update(() => _passwordError = null);
 
-    // Validation. The current password is only required when the account
-    // already has one (email/password users); OAuth-only users are setting a
-    // password for the first time.
-    if (_hasPassword && currentPassword.isEmpty) {
-      _update(() => _passwordError = l10n.acct_password_err_current);
-      return;
-    }
-
-    if (newPassword.isEmpty) {
-      _update(() => _passwordError = l10n.acct_password_err_new);
-      return;
-    }
-
-    if (newPassword.length < 6) {
-      _update(() => _passwordError = l10n.acct_password_err_short);
-      return;
-    }
-
-    if (newPassword != confirmPassword) {
-      _update(() => _passwordError = l10n.acct_password_err_mismatch);
-      return;
-    }
-
-    if (_hasPassword && currentPassword == newPassword) {
-      _update(() => _passwordError = l10n.acct_password_err_same);
+    final error = accountPasswordError(
+      l10n,
+      hasPassword: _hasPassword,
+      currentPassword: currentPassword,
+      newPassword: newPassword,
+      confirmPassword: confirmPassword,
+    );
+    if (error != null) {
+      _update(() => _passwordError = error);
       return;
     }
 

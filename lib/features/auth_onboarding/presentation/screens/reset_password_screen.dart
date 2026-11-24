@@ -1,3 +1,4 @@
+import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
@@ -69,7 +70,7 @@ class _ResetPasswordScreenState extends State<ResetPasswordScreen> {
                   if (v == null || v.isEmpty) {
                     return l10n.reset_password_validate_enter;
                   }
-                  if (v.length < 8) {
+                  if (v.length < SupabaseConfig.minPasswordLength) {
                     return l10n.reset_password_validate_min;
                   }
                   return null;

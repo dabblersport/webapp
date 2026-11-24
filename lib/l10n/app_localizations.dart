@@ -5402,7 +5402,7 @@ abstract class AppLocalizations {
   /// No description provided for @acct_password_new_helper.
   ///
   /// In en, this message translates to:
-  /// **'At least 6 characters'**
+  /// **'At least 8 characters'**
   String get acct_password_new_helper;
 
   /// No description provided for @acct_password_confirm.
@@ -5462,7 +5462,7 @@ abstract class AppLocalizations {
   /// No description provided for @acct_password_err_short.
   ///
   /// In en, this message translates to:
-  /// **'Password must be at least 6 characters long'**
+  /// **'Password must be at least 8 characters long'**
   String get acct_password_err_short;
 
   /// No description provided for @acct_password_err_mismatch.

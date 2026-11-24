@@ -3022,7 +3022,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get acct_password_new => 'كلمة المرور الجديدة';
 
   @override
-  String get acct_password_new_helper => '6 أحرف على الأقل';
+  String get acct_password_new_helper => '8 أحرف على الأقل';
 
   @override
   String get acct_password_confirm => 'تأكيد كلمة المرور الجديدة';
@@ -3053,7 +3053,7 @@ class AppLocalizationsAr extends AppLocalizations {
   String get acct_password_err_new => 'أدخل كلمة مرور جديدة';
 
   @override
-  String get acct_password_err_short => 'يجب ألا تقل كلمة المرور عن 6 أحرف';
+  String get acct_password_err_short => 'يجب ألا تقل كلمة المرور عن 8 أحرف';
 
   @override
   String get acct_password_err_mismatch => 'كلمتا المرور غير متطابقتين';

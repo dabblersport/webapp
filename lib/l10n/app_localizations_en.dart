@@ -3018,7 +3018,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get acct_password_new => 'New password';
 
   @override
-  String get acct_password_new_helper => 'At least 6 characters';
+  String get acct_password_new_helper => 'At least 8 characters';
 
   @override
   String get acct_password_confirm => 'Confirm new password';
@@ -3050,7 +3050,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get acct_password_err_short =>
-      'Password must be at least 6 characters long';
+      'Password must be at least 8 characters long';
 
   @override
   String get acct_password_err_mismatch => 'Passwords do not match';

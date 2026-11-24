@@ -19,6 +19,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../../../../../core/services/auth_service.dart';
 import 'account_danger_zone.dart';
+import 'account_password_validation.dart';
 
 part 'account_password_sheet.dart';
 
