@@ -730,6 +730,24 @@ RE-READ.** The Supabase MCP has been disconnected since `T-077` Amendment 1 and 
 authoritative for nothing about what ran. **None of these seven is confirmed current state.** They are
 on the `T-077` owed-on-reconnect list.
 
+**Live re-read, 2026-11-24 (`KAN-1038`, `backend-3`), `has_function_privilege` on `wtncuzcskpigqpmnxwws`:** none of the
+rows above is anon-executable today. `settle_game(uuid, boolean)`, `create_system_post`, `process_notification_event` and
+`set_session_user` are executable by neither `anon` nor `authenticated`. `rpc_remove_player(uuid, uuid, text, text)`,
+`rpc_decide_join_request(uuid, boolean)` and `content_hits_blocklist(text, text)` are `authenticated` only. The 7-arg
+`rpc_potential_vibes` no longer exists; the remaining 6-arg wrapper is still anon-executable and has no identity argument.
+
+**`KAN-1038` (SEC-8), 2026-11-24, migration `20261124183000_kan1038_sec8_definer_fixes`:** `PUBLIC` and `anon` revoked
+(`authenticated` kept) on `admin_actor`, `admin_approve_payout`, `admin_assert_posts_integrity`, `admin_cancel_payout`,
+`admin_cleanup_user_data`, `admin_force_delete_auth_user`, `admin_is_hidden`, `admin_mark_payout_paid`,
+`admin_mark_payout_processing`, `admin_overview_row`, `admin_resolve_report`, `admin_take_action`,
+`rpc_admin_submission_action_state`, `rpc_submission_approval_state`, `rpc_submission_audit_timeline` and
+`upsert_area_from_mapbox`. `_debug_can_view`, `_whoami_definer`, `effective_actor_uid_debug`: service_role only.
+`rpc_expire_freezes`: service_role only. `rpc_toggle_post_vibe` dropped (its table `post_vibes` is gone).
+`rpc_squad_request_join` now raises 42501 unless `p_profile_id` is the caller's profile. **Kept anon on purpose:**
+`admin_override()` and `can_review_venue_submission(uuid)`, because RLS policies with role PUBLIC on `challenges`,
+`demo_content` and `venue_submissions` call them, and an anon read of those tables would fail with 42501 without them.
+The allowlist below was pruned to the 17 signatures still anon-executable on that date.
+
 **Why this record is load-bearing and not bookkeeping.** A revoke that exists in no artefact is one
 `DROP` + `CREATE` away from being silently undone, because a recreated function re-derives its grants
 from `pg_default_acl`. `T-045` closed the **`postgres` default-privilege rule for tables**; whether
@@ -798,70 +816,22 @@ reviewable diff is the whole mechanism. Do not add one to make the gate pass wit
 establishing why a new function needs an unguarded caller-supplied identity.
 
 <!-- ANON_FUNCTION_ALLOWLIST_START -->
-admin_cleanup_user_data(p_user_id uuid, p_dry_run boolean)
-admin_take_action(p_action mod_action, p_target_type mod_target, p_target_id uuid, p_target_user_id uuid, p_reason text, p_expires_at timestamp with time zone, p_meta jsonb)
-admin_whois_profile(p_profile_id uuid)
 audit_log(p_action text, p_target_type mod_target, p_target_id uuid, p_target_user_id uuid, p_meta jsonb)
-can_create_venue_booking(p_user_id uuid, p_venue_id uuid)
-can_edit_venue_details(p_user_id uuid, p_venue_id uuid)
-can_manage_venue(p_user_id uuid, p_venue_id uuid)
-can_manage_venue_members(p_user_id uuid, p_venue_id uuid)
 can_review_venue_submission(p_user_id uuid)
 can_view_circle(p_circle_id uuid, p_profile_id uuid)
 can_view_post(p_post_id uuid, p_user_id uuid, p_profile_id uuid)
-can_view_venue_bookings(p_user_id uuid, p_venue_id uuid)
-create_system_post(p_profile_id uuid, p_body text, p_kind post_kind, p_visibility text, p_vibe_id uuid, p_sport_id uuid, p_post_type post_type_enum, p_origin_type origin_type_enum, p_origin_id uuid, p_location_name text, p_geo_lat double precision, p_geo_lng double precision, p_media jsonb)
 is_blocked(user_a uuid, user_b uuid)
 is_circle_member(p_circle_id uuid, p_user_id uuid)
 is_frozen(p_user uuid)
 is_post_owner(p_post_id uuid, p_profile_id uuid)
-meetup_my_status(p_meetup_id uuid, p_actor uuid)
 perform_check_in(p_user_id uuid, p_device_info jsonb)
-process_notification_event(p_to_user_id uuid, p_kind_key text, p_entity_type text, p_entity_id uuid, p_actor_user_id uuid, p_title text, p_body text)
-reputation_recompute(p_user_id uuid)
 request_payout(p_amount_aed numeric, p_beneficiary_id uuid)
 respond_vibe_request(p_other_user uuid, p_action text)
-reuse_touch(p_context text, p_fields jsonb, p_hash text, p_version integer, p_user uuid, p_payload jsonb)
-rpc_add_comment(p_post_id uuid, p_author_profile_id uuid, p_body text, p_parent_comment_id uuid)
-rpc_admin_freeze_user(p_user_id uuid, p_scope text, p_days integer, p_reason text)
-rpc_block_user(p_peer uuid)
-rpc_block_user(p_peer uuid, p_block boolean)
-rpc_create_post(p_author_profile_id uuid, p_kind text, p_visibility text, p_body text, p_lang text, p_sport_key text, p_venue_id uuid, p_geo_lat double precision, p_geo_lng double precision, p_media jsonb, p_vibe_ids uuid[])
-rpc_create_sport_profile(p_profile_id uuid, p_sport_id uuid, p_sport_key text, p_skill_level integer)
-rpc_create_squad(p_actor_profile_id uuid, p_sport text, p_name text, p_bio text, p_logo_url text)
 rpc_feed_ranked(p_scope text, p_author_user_id uuid, p_sport text, p_lat double precision, p_lng double precision, p_radius_km numeric, p_since timestamp with time zone, p_limit integer)
-rpc_freeze_user(p_user_id uuid, p_reason text, p_until timestamp with time zone)
-rpc_hide_user(p_peer uuid, p_hide boolean)
-rpc_hide_user(target_user uuid)
-rpc_invite_user(p_game_id uuid, p_to_user_id uuid)
 rpc_is_following_user(p_target_profile_id uuid)
-rpc_meetup_create(p_owner_profile_id uuid, p_title text, p_description text, p_start_at timestamp with time zone, p_end_at timestamp with time zone, p_location_name text, p_lat double precision, p_lng double precision, p_listing_visibility text, p_rsvp_policy text, p_capacity integer, p_vibe_key text, p_meta jsonb)
-rpc_meetup_invite_user(p_meetup_id uuid, p_to_user_id uuid, p_expires_at timestamp with time zone)
-rpc_meetup_rsvp(p_meetup_id uuid, p_action text, p_profile_id uuid, p_link_token uuid)
-rpc_meetup_set_attendee(p_meetup_id uuid, p_target_actor uuid, p_status text)
-rpc_potential_vibes_debug(p_me uuid, p_sport text, p_as_role text, p_lat double precision, p_lng double precision, p_radius_km numeric, p_limit integer)
-rpc_rate_game(p_game_id uuid, p_rater_profile_id uuid, p_scores jsonb, p_comment text)
-rpc_rate_user(p_game_id uuid, p_rater_profile_id uuid, p_ratee_user_id uuid, p_scores jsonb, p_comment text)
-rpc_rate_venue(p_game_id uuid, p_venue_id uuid, p_rater_profile_id uuid, p_scores jsonb, p_comment text)
-rpc_remove_player(p_game_id uuid, p_profile_id uuid)
-rpc_squad_add_member(p_squad_id uuid, p_profile_id uuid, p_as_captain boolean)
-rpc_squad_create(p_created_by_profile_id uuid, p_sport text, p_name text, p_bio text, p_listing_visibility text, p_join_policy text, p_max_members integer, p_captain_user_id uuid)
-rpc_squad_invite(p_squad_id uuid, p_to_profile_id uuid, p_expires_at timestamp with time zone)
-rpc_squad_remove_member(p_squad_id uuid, p_profile_id uuid)
-rpc_squad_request_join(p_squad_id uuid, p_profile_id uuid, p_message text, p_link_token uuid)
-rpc_squad_respond_invite(p_invite_id uuid, p_action text, p_profile_id uuid)
-rpc_squad_set_captain(p_squad_id uuid, p_profile_id uuid, p_is_captain boolean)
-rpc_unblock_user(p_peer uuid)
-rpc_unfollow_user(p_target_profile_id uuid)
-rpc_unfreeze_user(p_user_id uuid, p_reason text)
-rpc_unhide_user(target_user uuid)
-rpc_unverify_profile(p_profile_id uuid, p_reason text)
-rpc_verify_profile(p_profile_id uuid, p_reason text)
 send_vibe_request(p_to_user uuid)
 set_hidden_mode(p_target_user uuid, p_enable boolean, p_reason text)
-set_session_user(p_user uuid)
 switch_active_profile(p_profile_id uuid)
-toggle_venue_favorite(venue_id uuid, user_id uuid)
 unsync(p_other_user uuid)
 <!-- ANON_FUNCTION_ALLOWLIST_END -->
 
