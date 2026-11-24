@@ -8,6 +8,7 @@ const ALLOWED_ORIGINS = new Set([
   "https://app.dabbler.pro",
   "https://canary.dabbler.pro",
   "https://alpha.dabbler.pro",
+  "https://staging.dabbler.pro",
 ]);
 
 // Cloudflare Pages previews of the webapp project
@@ -15,6 +16,7 @@ const ALLOWED_ORIGINS = new Set([
 // and local builds (`http://localhost:<any port>`).
 const ALLOWED_ORIGIN_PATTERNS = [
   /^https:\/\/([a-z0-9-]+\.)*webapp\.pages\.dev$/,
+  /^https:\/\/([a-z0-9-]+\.)*dabbler-staging\.pages\.dev$/,
   /^http:\/\/localhost(:\d+)?$/,
 ];
 

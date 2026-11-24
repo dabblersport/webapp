@@ -21,6 +21,9 @@ test("the app origins, previews and localhost are allowed", () => {
       "https://alpha-x.webapp.pages.dev",
       "http://localhost:8640",
       "http://localhost",
+      "https://staging.dabbler.pro",
+      "https://dabbler-staging.pages.dev",
+      "https://abc123.dabbler-staging.pages.dev",
     ]
   ) {
     assert.equal(corsHeaders(req(o))["Access-Control-Allow-Origin"], o, o);
@@ -36,6 +39,9 @@ test("other origins get no allow-origin header", () => {
       "https://webapp.pages.dev.evil.example",
       "http://localhost.evil.example",
       "http://localhost:80@evil.example",
+      "https://evil-dabbler-staging.pages.dev.attacker.com",
+      "https://evildabbler-staging.pages.dev",
+      "http://staging.dabbler.pro",
     ]
   ) {
     assert.equal(isAllowedOrigin(o), false, o);
