@@ -13,7 +13,6 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 // - FIREBASE_PROJECT_ID: Your Firebase project ID
 
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
 const FIREBASE_SERVICE_ACCOUNT = Deno.env.get("FIREBASE_SERVICE_ACCOUNT")!;
 const FIREBASE_PROJECT_ID = Deno.env.get("FIREBASE_PROJECT_ID") || "dabblersportapp";
@@ -110,24 +109,11 @@ Deno.serve(async (req: Request) => {
     }
     const effectiveBody = body || title;
 
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Unauthorized" }),
-        { status: 401, headers: { "Content-Type": "application/json" } }
-      );
-    }
-
-    // Service-role client: used for the trusted-call check, token lookup, and
-    // (further down) invalid-token cleanup.
+    // KAN-1037: the only caller is the notifications push trigger
+    // (trg_push_on_notification_insert via pg_net), which sends a shared
+    // secret in x-trigger-secret. There is no user-JWT lane: without a
+    // valid secret the request is rejected.
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Trusted server call? The notifications push trigger
-    // (trg_push_on_notification_insert) sends a shared secret in
-    // x-trigger-secret. When it matches, this is a fan-out from a notification
-    // row that already targeted the correct recipient, so we skip the per-user
-    // auth + block checks. The anon-key bearer it also sends only exists to
-    // satisfy the platform's verify_jwt gate.
     const triggerSecret = req.headers.get("x-trigger-secret");
     let trusted = false;
     if (triggerSecret) {
@@ -136,61 +122,11 @@ Deno.serve(async (req: Request) => {
         trusted = true;
       }
     }
-
     if (!trusted) {
-      // Per-user path: require an authenticated caller (defense in depth on top
-      // of verify_jwt) and enforce blocking.
-      const callerClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-        global: { headers: { Authorization: authHeader } },
-      });
-      const { data: { user: caller }, error: callerError } =
-        await callerClient.auth.getUser();
-      if (callerError || !caller) {
-        return new Response(
-          JSON.stringify({ error: "Unauthorized" }),
-          { status: 401, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      // Per-caller rate limit on the direct (non-trusted) lane — applies
-      // regardless of outcome below, so it also caps relationship-probing.
-      const limited = await isRateLimited(supabase, caller.id, user_id);
-      if (limited) {
-        return new Response(
-          JSON.stringify({ error: "Rate limit exceeded. Try again later." }),
-          { status: 429, headers: { "Content-Type": "application/json" } }
-        );
-      }
-
-      // A caller may not notify a user who has blocked them (or whom they have
-      // blocked). Self-notifications are exempt.
-      if (caller.id !== user_id) {
-        const { data: block } = await supabase
-          .from("user_blocks")
-          .select("id")
-          .or(
-            `and(blocker_user_id.eq.${caller.id},blocked_user_id.eq.${user_id}),` +
-            `and(blocker_user_id.eq.${user_id},blocked_user_id.eq.${caller.id})`
-          )
-          .maybeSingle();
-        if (block) {
-          return new Response(
-            JSON.stringify({ message: "Notification skipped (blocked)", sent: 0 }),
-            { status: 200, headers: { "Content-Type": "application/json" } }
-          );
-        }
-
-        // Authentication proved WHO is calling; this proves the caller has a
-        // reason to reach this specific target. Without it, any registered
-        // account could push arbitrary title/body to any other user (KAN-59).
-        const authorized = await callerMayNotify(supabase, caller.id, user_id);
-        if (!authorized) {
-          return new Response(
-            JSON.stringify({ error: "Not authorized to notify this user" }),
-            { status: 403, headers: { "Content-Type": "application/json" } }
-          );
-        }
-      }
+      return new Response(
+        JSON.stringify({ error: "unauthorized" }),
+        { status: 401, headers: { "Content-Type": "application/json" } }
+      );
     }
 
     // v14: the delivery block and the delivery records are accepted only from
@@ -336,165 +272,6 @@ Deno.serve(async (req: Request) => {
     );
   }
 });
-
-/** Max direct (non-trusted) push calls a single caller may make per hour. */
-const DIRECT_SEND_RATE_LIMIT_PER_HOUR = 20;
-
-/**
- * Per-caller rate limit for the direct (non-trusted) lane, backed by
- * `audit_events` (actor_user_id, action='push.direct_send'). No new table:
- * this is an existing generic audit log, and service-role bypasses its RLS.
- * Counts+records every direct call regardless of downstream outcome, so it
- * also bounds relationship-probing via repeated 403s.
- */
-// deno-lint-ignore no-explicit-any
-async function isRateLimited(
-  supabase: any,
-  callerId: string,
-  targetUserId: string
-): Promise<boolean> {
-  const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
-  const { count, error } = await supabase
-    .from("audit_events")
-    .select("id", { count: "exact", head: true })
-    .eq("actor_user_id", callerId)
-    .eq("action", "push.direct_send")
-    .gte("created_at", oneHourAgo);
-
-  if (error) {
-    // Fail closed: an unreadable rate-limit ledger must not become an
-    // unlimited-send bypass.
-    console.error("Rate limit check failed:", error);
-    return true;
-  }
-  if ((count ?? 0) >= DIRECT_SEND_RATE_LIMIT_PER_HOUR) {
-    return true;
-  }
-
-  const { error: insertError } = await supabase.from("audit_events").insert({
-    actor_user_id: callerId,
-    action: "push.direct_send",
-    target_user_id: targetUserId,
-    meta: {},
-  });
-  if (insertError) {
-    console.error("Failed to record rate-limit event:", insertError);
-  }
-  return false;
-}
-
-/**
- * Whether `callerId` has a legitimate relationship to `targetUserId` that
- * justifies sending them a direct push: a mutual follow, shared circle,
- * shared active squad, shared active game roster, or shared meetup
- * attendance. Mirrors the relationships that already drive the server-side
- * notify triggers (friend/circle/squad/game/meetup) — see
- * trg_*_notify in db-triggers-functions memory. Self-notifications bypass
- * this entirely (checked by the caller before invoking).
- */
-// deno-lint-ignore no-explicit-any
-async function callerMayNotify(
-  supabase: any,
-  callerId: string,
-  targetUserId: string
-): Promise<boolean> {
-  // profile_follows/circle_members key off profile ids, not auth user ids —
-  // resolve every profile (player and/or organiser) each user holds.
-  const { data: profiles } = await supabase
-    .from("profiles")
-    .select("id, user_id")
-    .in("user_id", [callerId, targetUserId]);
-
-  const callerProfileIds = (profiles ?? [])
-    .filter((p: { user_id: string }) => p.user_id === callerId)
-    .map((p: { id: string }) => p.id);
-  const targetProfileIds = (profiles ?? [])
-    .filter((p: { user_id: string }) => p.user_id === targetUserId)
-    .map((p: { id: string }) => p.id);
-
-  if (callerProfileIds.length > 0 && targetProfileIds.length > 0) {
-    const { data: follow } = await supabase
-      .from("profile_follows")
-      .select("id")
-      .or(
-        `and(follower_profile_id.in.(${callerProfileIds.join(",")}),following_profile_id.in.(${targetProfileIds.join(",")})),` +
-        `and(follower_profile_id.in.(${targetProfileIds.join(",")}),following_profile_id.in.(${callerProfileIds.join(",")}))`
-      )
-      .limit(1)
-      .maybeSingle();
-    if (follow) return true;
-
-    const { data: callerCircles } = await supabase
-      .from("circle_members")
-      .select("circle_id")
-      .in("member_profile_id", callerProfileIds);
-    const circleIds = (callerCircles ?? []).map((c: { circle_id: string }) => c.circle_id);
-    if (circleIds.length > 0) {
-      const { data: sharedCircle } = await supabase
-        .from("circle_members")
-        .select("circle_id")
-        .in("circle_id", circleIds)
-        .in("member_profile_id", targetProfileIds)
-        .limit(1)
-        .maybeSingle();
-      if (sharedCircle) return true;
-    }
-  }
-
-  const { data: callerSquads } = await supabase
-    .from("squad_members")
-    .select("squad_id")
-    .eq("user_id", callerId)
-    .eq("status", "active");
-  const squadIds = (callerSquads ?? []).map((s: { squad_id: string }) => s.squad_id);
-  if (squadIds.length > 0) {
-    const { data: sharedSquad } = await supabase
-      .from("squad_members")
-      .select("squad_id")
-      .in("squad_id", squadIds)
-      .eq("user_id", targetUserId)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle();
-    if (sharedSquad) return true;
-  }
-
-  const { data: callerGames } = await supabase
-    .from("game_roster")
-    .select("game_id")
-    .eq("user_id", callerId)
-    .eq("status", "active");
-  const gameIds = (callerGames ?? []).map((g: { game_id: string }) => g.game_id);
-  if (gameIds.length > 0) {
-    const { data: sharedGame } = await supabase
-      .from("game_roster")
-      .select("game_id")
-      .in("game_id", gameIds)
-      .eq("user_id", targetUserId)
-      .eq("status", "active")
-      .limit(1)
-      .maybeSingle();
-    if (sharedGame) return true;
-  }
-
-  const { data: callerMeetups } = await supabase
-    .from("meetup_attendees")
-    .select("meetup_id")
-    .eq("user_id", callerId);
-  const meetupIds = (callerMeetups ?? []).map((m: { meetup_id: string }) => m.meetup_id);
-  if (meetupIds.length > 0) {
-    const { data: sharedMeetup } = await supabase
-      .from("meetup_attendees")
-      .select("meetup_id")
-      .in("meetup_id", meetupIds)
-      .eq("user_id", targetUserId)
-      .limit(1)
-      .maybeSingle();
-    if (sharedMeetup) return true;
-  }
-
-  return false;
-}
 
 /**
  * Fetch the push-trigger shared secret via the service_role-only RPC.
