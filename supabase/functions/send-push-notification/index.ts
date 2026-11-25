@@ -3,6 +3,8 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 
 // v14 (KAN-979, 2026-11-17): quiet-hours silent delivery, iOS interruption levels, Android
 // channels, thread/collapse ids, badge, device_platform, one notification_deliveries row per device.
+// v19 (KAN-1045, 2026-11-25): channel_key (Android channel behind PUSH_CHANNEL_KEY_MIN_BUILD, legacy
+// category channel otherwise), thread-id = channel_key, per-channel iOS interruption level.
 // v15 (KAN-1016, 2026-11-18): on Android, the actionable categories (RSVP, waitlist, message) go out
 // as data-only messages so the app draws them with their action buttons (KAN-992). Only to an
 // installation whose app build is at least PUSH_DATA_ONLY_MIN_BUILD (secret); unset = off, and every
@@ -28,7 +30,9 @@ interface DeliveryOptions {
   time_sensitive: boolean;          // breaks_quiet / security kinds (I-3): iOS time-sensitive
   android_channel_id: string;       // one channel per category, plus dabbler_quiet
   ios_category: string;             // UNNotificationCategory id (actions), also data.category
-  thread_id?: string | null;        // from group_key
+  thread_id?: string | null;        // v19: channel_key (was group_key)
+  channel_key?: string | null;      // v19 (KAN-1045): notification_kinds.channel_key, e.g. games.invites
+  interruption_level?: string | null; // v19: per-channel iOS level from notification_push_dispatch
   collapse_id?: string | null;      // from group_key, <= 64 bytes
   badge?: number | null;            // recipient's unread count
 }
@@ -63,6 +67,24 @@ const DATA_ONLY_MIN_BUILD = (() => {
   const n = Number(Deno.env.get("PUSH_DATA_ONLY_MIN_BUILD") ?? "");
   return Number.isInteger(n) && n > 0 ? n : Infinity;
 })();
+
+/**
+ * v19 (KAN-1045): the lowest app build that creates the channel_key Android channels. Below it (and while
+ * unset) Android keeps the legacy category channel, which every installed build has.
+ */
+const CHANNEL_KEY_MIN_BUILD = (() => {
+  const n = Number(Deno.env.get("PUSH_CHANNEL_KEY_MIN_BUILD") ?? "");
+  return Number.isInteger(n) && n > 0 ? n : Infinity;
+})();
+
+/** v19: the Android channel for this device: channel_key on a build that has it, else the legacy id. */
+function androidChannelFor(row: TokenRow, delivery: DeliveryOptions): string {
+  if (delivery.mode !== "alert" || !delivery.channel_key) return delivery.android_channel_id;
+  const build = appBuild(row.app_version);
+  return build !== null && build >= CHANNEL_KEY_MIN_BUILD ? delivery.channel_key : delivery.android_channel_id;
+}
+
+const IOS_LEVELS = new Set(["time-sensitive", "active", "passive"]);
 
 /** "1.7.10+181" -> 181; null when there is no build number. */
 function appBuild(appVersion: string | null | undefined): number | null {
@@ -179,7 +201,8 @@ Deno.serve(async (req: Request) => {
         const { id, token, device_platform } = row;
         try {
           const providerId = await sendFCMNotification(
-            accessToken, token, title, effectiveBody, data, delivery,
+            accessToken, token, title, effectiveBody, data,
+            { ...delivery, android_channel_id: androidChannelFor(row, delivery) },
             sendsDataOnly(row, delivery, trusted));
           return { id, device_platform, ok: true, invalid: false, providerId, errorClass: null as string | null };
         } catch (e) {
@@ -470,7 +493,10 @@ async function sendFCMNotification(
   // iOS: passive in quiet hours (no sound, no screen wake), time-sensitive for
   // breaks_quiet and security kinds, active otherwise. Without a sound the iOS
   // banner arrives silently, so only an alerting push carries one.
-  const interruptionLevel = delivery.time_sensitive ? "time-sensitive" : alert ? "active" : "passive";
+  // v19: the dispatcher's per-channel level when it sent a valid one; never louder than the mode allows.
+  const interruptionLevel = delivery.time_sensitive ? "time-sensitive" : !alert ? "passive"
+    : (delivery.interruption_level && IOS_LEVELS.has(delivery.interruption_level)) ? delivery.interruption_level
+    : "active";
 
   const aps: Record<string, unknown> = {
     "interruption-level": interruptionLevel,

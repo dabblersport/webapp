@@ -396,6 +396,17 @@ class SupabaseConfig {
   static const String notificationAggregatesTable = 'notification_aggregates';
   static const String notificationJobsTable = 'notification_jobs';
 
+  /// KAN-1045: notification channels (groups = category) and per-user channel mutes.
+  static const String notificationChannelsTable = 'notification_channels';
+  static const String notificationChannelMutesTable =
+      'notification_channel_mutes';
+  static const String rpcListNotificationChannels =
+      'rpc_list_notification_channels';
+  static const String rpcSetNotificationChannelMuted =
+      'rpc_set_notification_channel_muted';
+  static const String rpcSetNotificationGroupMuted =
+      'rpc_set_notification_group_muted';
+
   /// KAN-990: the viewer's personal Activity log.
   static const String rpcGetActivityFeed = 'rpc_get_activity_feed';
 
