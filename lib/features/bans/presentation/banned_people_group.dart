@@ -2,6 +2,7 @@
 // the event or series title for an event ban), date, and Unban behind a
 // confirm. Lives on the Privacy page of Settings, beside Blocked accounts.
 
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/bans/data/bans_repository.dart';
 import 'package:dabbler/features/bans/domain/ban_models.dart';
@@ -65,7 +66,7 @@ class BannedPeopleGroup extends ConsumerWidget {
       subtitle: date == null ? scope : '$scope · $date',
       leading: DabblerAvatar(
         seed: b.username ?? name,
-        imageUrl: b.avatarUrl,
+        imageUrl: avatarImageUrl(b.avatarUrl),
         size: DabblerAvatarSize.md,
       ),
       trailing: DabblerRowAction(

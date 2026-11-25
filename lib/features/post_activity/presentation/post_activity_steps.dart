@@ -3,6 +3,7 @@
 // DabblerRating per active dimension). Read-only when [onChanged] is null.
 // Names are shown as entered, bidi-isolated.
 
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/utils/bidi_isolate.dart';
 import 'package:dabbler/features/post_activity/domain/post_activity_models.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -122,7 +123,7 @@ class MvpStep extends StatelessWidget {
             title: context.isolate(c.name ?? unnamed),
             leading: DabblerAvatar(
               seed: c.userId,
-              imageUrl: c.avatarUrl,
+              imageUrl: avatarImageUrl(c.avatarUrl),
               size: DabblerAvatarSize.sm,
             ),
             selected: pick == c.userId,

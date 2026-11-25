@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'dart:async';
 
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -454,7 +455,7 @@ class _PostComposerScreenState extends ConsumerState<PostComposerScreen> {
         children: [
           DabblerAvatar(
             seed: displayName,
-            imageUrl: avatarUrl,
+            imageUrl: avatarImageUrl(avatarUrl),
             size: DabblerAvatarSize.md,
           ),
           const SizedBox(width: DabblerSpacing.space4),

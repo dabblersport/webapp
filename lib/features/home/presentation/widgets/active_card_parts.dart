@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -38,7 +39,7 @@ class ActiveCardFooter extends StatelessWidget {
         if (host) ...<Widget>[
           DabblerAvatar(
             seed: event.actorName,
-            imageUrl: event.actorAvatarUrl,
+            imageUrl: avatarImageUrl(event.actorAvatarUrl),
             size: DabblerAvatarSize.xs,
             ringColor: colors.surfaceCard,
           ),

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/services/auth_service.dart';
 import 'package:dabbler/features/auth_onboarding/domain/models/onboarding_intention.dart';
 import 'package:dabbler/features/auth_onboarding/presentation/providers/onboarding_data_provider.dart';
@@ -294,7 +295,7 @@ class _WelcomeScreenState extends State<WelcomeScreen> {
           DabblerAvatar(
             size: DabblerAvatarSize.lg,
             seed: name,
-            imageUrl: avatarUrl,
+            imageUrl: avatarImageUrl(avatarUrl),
           ),
           const DabblerGap.h(DabblerSpacing.space5),
           Expanded(

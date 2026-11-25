@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
@@ -25,7 +26,7 @@ class PublicActivityCard extends StatelessWidget {
     return DabblerActivityRow(
       leading: DabblerAvatar(
         seed: activity.actorUsername,
-        imageUrl: activity.actorAvatarUrl,
+        imageUrl: avatarImageUrl(activity.actorAvatarUrl),
         size: DabblerAvatarSize.sm,
       ),
       actor: activity.actorUsername,

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/features/profile/utils/persona_label.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
@@ -156,7 +157,7 @@ class OwnProfileHeader extends StatelessWidget {
               children: <Widget>[
                 DabblerAvatar(
                   seed: name.isNotEmpty ? name : 'User',
-                  imageUrl: p?.avatarUrl,
+                  imageUrl: avatarImageUrl(p?.avatarUrl),
                   size: DabblerAvatarSize.lg,
                 ),
                 const DabblerGap.h(DabblerSpacing.space5),

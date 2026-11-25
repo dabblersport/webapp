@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/navigation/back_or_tab.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
@@ -332,7 +333,9 @@ class _MeetupDetailScreenState extends ConsumerState<MeetupDetailScreen> {
                   people: <String>[
                     for (final a in shown) a.displayName ?? a.avatarUrl ?? '',
                   ],
-                  imageUrls: <String?>[for (final a in shown) a.avatarUrl],
+                  imageUrls: <String?>[
+                    for (final a in shown) avatarImageUrl(a.avatarUrl),
+                  ],
                   overflow: c.counts.going > shown.length
                       ? c.counts.going - shown.length
                       : 0,
@@ -448,7 +451,7 @@ class _HostSection extends ConsumerWidget {
         : null;
     return DabblerHostCard(
       name: name,
-      imageUrl: host.avatarUrl,
+      imageUrl: avatarImageUrl(host.avatarUrl),
       caption: l.meetups_host_caption,
       actionLabel: !canFollow || following == null
           ? null

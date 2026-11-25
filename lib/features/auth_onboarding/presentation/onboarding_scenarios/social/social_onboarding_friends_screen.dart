@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -90,7 +91,7 @@ class _SocialOnboardingFriendsScreenState
     return DabblerInputRow(
       leading: DabblerAvatar(
         seed: suggestion.name,
-        imageUrl: suggestion.avatar,
+        imageUrl: avatarImageUrl(suggestion.avatar),
       ),
       title: suggestion.name,
       subtitle: mutual > 0

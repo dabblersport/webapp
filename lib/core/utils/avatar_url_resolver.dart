@@ -36,3 +36,17 @@ String? resolveAvatarUrl(String? avatarUrlOrPath) {
       .from(SupabaseConfig.avatarsBucket)
       .getPublicUrl(value);
 }
+
+/// The value a network image loader may fetch for an avatar, or null.
+///
+/// A `ds:` reference is a design-system portrait seed, not a URL: handing it to
+/// `Image.network` makes the browser issue a request for `ds:profile:...`, which
+/// fails (CORS, ERR_FAILED) and is blocked by the CSP (KAN-1043). Every avatar
+/// value passed to a design-system `imageUrl`/`imageUrls` goes through this, so
+/// a `ds:` value draws the seed portrait instead.
+String? avatarImageUrl(String? avatarUrlOrPath) {
+  final value = avatarUrlOrPath?.trim();
+  if (value == null || value.isEmpty) return null;
+  if (isDsAvatarReference(value)) return null;
+  return value;
+}

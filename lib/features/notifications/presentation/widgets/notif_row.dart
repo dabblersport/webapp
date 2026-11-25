@@ -9,6 +9,7 @@
 // that has started shows no CTA; a deleted target or withdrawn access shows
 // the row without an action.
 
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -258,7 +259,7 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
                     for (final p in people)
                       DabblerNotificationPerson(
                         name: p.name,
-                        imageUrl: p.avatarUrl,
+                        imageUrl: avatarImageUrl(p.avatarUrl),
                         time: p.at == null ? null : _formatTime(l, p.at!),
                       ),
                   ],
@@ -295,14 +296,14 @@ class _NotificationRowState extends ConsumerState<NotificationRow> {
       return DabblerNotificationAvatarPair(
         seed: people[0].name,
         seed2: people[1].name,
-        imageUrl: people[0].avatarUrl,
+        imageUrl: avatarImageUrl(people[0].avatarUrl),
         imageUrl2: people[1].avatarUrl,
       );
     }
     if (name != null) {
       return DabblerAvatar(
         seed: name,
-        imageUrl: view.actorAvatar,
+        imageUrl: avatarImageUrl(view.actorAvatar),
         size: DabblerAvatarSize.sm,
       );
     }

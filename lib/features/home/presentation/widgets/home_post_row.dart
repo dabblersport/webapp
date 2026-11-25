@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -472,7 +473,7 @@ class _HomePostRowState extends ConsumerState<HomePostRow> {
           metrics: widget.metrics,
           name: authorLabel,
           seed: authorLabel,
-          imageUrl: post.authorAvatarUrl,
+          imageUrl: avatarImageUrl(post.authorAvatarUrl),
           onAuthorTap: author.isEmpty
               ? null
               : () => _navigateToAuthorProfile(context, post),
@@ -610,7 +611,7 @@ class HomeRepostRow extends ConsumerWidget {
     return DabblerRepostRow(
       name: authorLabel,
       seed: authorLabel,
-      imageUrl: post.authorAvatarUrl,
+      imageUrl: avatarImageUrl(post.authorAvatarUrl),
       onAuthorTap: isAnonymous ? null : openAuthor,
       badge: post.personaTypeSnapshot == null
           ? null
@@ -670,7 +671,7 @@ class HomeThreadPreview extends ConsumerWidget {
             children: [
               DabblerAvatar(
                 seed: name,
-                imageUrl: comment.authorAvatarUrl,
+                imageUrl: avatarImageUrl(comment.authorAvatarUrl),
                 size: DabblerAvatarSize.xs,
               ),
               const SizedBox(width: DabblerSpacing.space3),

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 
@@ -84,7 +85,7 @@ class SearchPersonCard extends StatelessWidget {
       children: [
         DabblerAvatar(
           seed: profile.id,
-          imageUrl: profile.avatarUrl,
+          imageUrl: avatarImageUrl(profile.avatarUrl),
           size: DabblerAvatarSize.md,
         ),
         Column(
@@ -135,7 +136,7 @@ class SearchPersonRow extends StatelessWidget {
   Widget build(BuildContext context) => DabblerInputRow(
     leading: DabblerAvatar(
       seed: profile.id,
-      imageUrl: profile.avatarUrl,
+      imageUrl: avatarImageUrl(profile.avatarUrl),
       size: DabblerAvatarSize.md,
     ),
     titleSpan: DabblerInputRow.highlightSpan(

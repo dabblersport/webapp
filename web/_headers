@@ -24,13 +24,13 @@
 
 # Security headers for every path (KAN-1034, SEC-4). Cloudflare Pages merges
 # this block with the more specific rules above; none of these names appear in
-# them. Only frame-ancestors is enforced; the full policy is Report-Only until
-# staging shows 0 reports, then a follow-up ticket enforces it.
+# them. The CSP is enforced (KAN-1043) after a Report-Only survey of staging;
+# it is one header so frame-ancestors and every other directive apply together.
+# Avatar `ds:` seeds are never fetched (avatarImageUrl), so no ds: scheme here.
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
   X-Frame-Options: DENY
   Strict-Transport-Security: max-age=31536000
   Permissions-Policy: geolocation=(self), camera=(self), microphone=(self), payment=(), usb=(), serial=(), hid=(), midi=(), magnetometer=(), gyroscope=(), accelerometer=(), display-capture=(), browsing-topics=(), interest-cohort=()
-  Content-Security-Policy: frame-ancestors 'none'
-  Content-Security-Policy-Report-Only: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com; img-src 'self' data: blob: https://wtncuzcskpigqpmnxwws.supabase.co https://tile.openstreetmap.org https://api.mapbox.com https://images.unsplash.com https://*.giphy.com https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data: https://fonts.gstatic.com https://www.gstatic.com; connect-src 'self' https://wtncuzcskpigqpmnxwws.supabase.co wss://wtncuzcskpigqpmnxwws.supabase.co https://*.googleapis.com https://www.gstatic.com https://fonts.gstatic.com https://api.mapbox.com https://tile.openstreetmap.org https://images.unsplash.com https://api.giphy.com https://*.giphy.com https://accounts.google.com https://dabblersportapp.firebaseapp.com https://cloudflareinsights.com; frame-src https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' https://accounts.google.com https://www.gstatic.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://accounts.google.com https://fonts.googleapis.com; img-src 'self' data: blob: https://wtncuzcskpigqpmnxwws.supabase.co https://tile.openstreetmap.org https://api.mapbox.com https://images.unsplash.com https://*.giphy.com https://giphy.com https://*.googleusercontent.com https://www.gstatic.com; font-src 'self' data: https://fonts.gstatic.com https://www.gstatic.com; connect-src 'self' https://wtncuzcskpigqpmnxwws.supabase.co wss://wtncuzcskpigqpmnxwws.supabase.co https://*.googleapis.com https://www.gstatic.com https://fonts.gstatic.com https://api.mapbox.com https://tile.openstreetmap.org https://images.unsplash.com https://api.giphy.com https://*.giphy.com https://giphy.com https://dabbler-messaging-staging.dabbler-sport.workers.dev https://accounts.google.com https://dabblersportapp.firebaseapp.com https://cloudflareinsights.com; frame-src https://accounts.google.com; worker-src 'self' blob:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'

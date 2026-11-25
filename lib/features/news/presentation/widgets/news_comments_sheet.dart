@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/services.dart' show TextInputAction;
@@ -53,7 +54,7 @@ class _CommentsList extends ConsumerWidget {
                     for (final c in comments)
                       DabblerCommentRow(
                         name: c.authorDisplayName ?? c.authorUsername ?? 'User',
-                        imageUrl: c.authorAvatarUrl,
+                        imageUrl: avatarImageUrl(c.authorAvatarUrl),
                         time: timeago.format(c.createdAt, locale: lang),
                         body: c.body,
                         showLike: false,

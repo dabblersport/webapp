@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart'
     show myProfileIdProvider;
 import 'package:dabbler/features/games/presentation/utils/favourite_toast.dart';
@@ -180,7 +181,9 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
         people: <String>[
           for (final a in m.attendeeAvatars) a.displayName ?? a.avatarUrl ?? '',
         ],
-        imageUrls: <String?>[for (final a in m.attendeeAvatars) a.avatarUrl],
+        imageUrls: <String?>[
+          for (final a in m.attendeeAvatars) avatarImageUrl(a.avatarUrl),
+        ],
         goingLabel: l.meetups_going_count(m.goingCount),
         capacityLabel: m.capacity == null
             ? null

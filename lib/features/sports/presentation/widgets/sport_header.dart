@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/sports/data/sport_overview_models.dart';
@@ -306,7 +307,7 @@ class SportHeader extends ConsumerWidget {
                         for (final MutualFollower m
                             in counts?.mutualFollowers ??
                                 const <MutualFollower>[])
-                          if (m.label != null) m.avatarUrl,
+                          if (m.label != null) avatarImageUrl(m.avatarUrl),
                       ],
                     ),
                     const DabblerGap.h(DabblerSpacing.space4),

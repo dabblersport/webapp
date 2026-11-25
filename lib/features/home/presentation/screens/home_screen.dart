@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_refresh.dart';
 import 'package:dabbler/features/location/presentation/active_location_label.dart';
@@ -1234,7 +1235,7 @@ class _HomeHeader extends ConsumerWidget {
           ),
         ],
         avatarSeed: name,
-        avatarImageUrl: avatarUrl ?? profile?.avatarUrl,
+        avatarImageUrl: avatarImageUrl(avatarUrl ?? profile?.avatarUrl),
         avatarLabel: name,
         onAvatarPressed: () => context.push(RoutePaths.profile),
       ),

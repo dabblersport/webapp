@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/feedback/shell_action_area_host.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -427,7 +428,7 @@ class _ProfileTileState extends ConsumerState<_ProfileTile> {
       onTap: widget.onTap,
       leading: DabblerAvatar(
         seed: _displayName,
-        imageUrl: _avatarUrl,
+        imageUrl: avatarImageUrl(_avatarUrl),
         size: DabblerAvatarSize.md,
       ),
       title: _displayName,

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/features/bench/presentation/widgets/bench_entry_points.dart';
 import 'package:dabbler/features/profile/presentation/screens/settings/setting_sync_hint.dart';
@@ -128,7 +129,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen>
                   onTap: () => context.push('/settings/account'),
                   leading: DabblerAvatar(
                     seed: avatarName.isNotEmpty ? avatarName : 'User',
-                    imageUrl: activeProfile?.avatarUrl,
+                    imageUrl: avatarImageUrl(activeProfile?.avatarUrl),
                     size: DabblerAvatarSize.md,
                   ),
                   title: email.isEmpty

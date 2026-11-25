@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/services.dart';
@@ -576,7 +577,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     return DabblerOpenPost(
       name: label,
       seed: label,
-      imageUrl: post.authorAvatarUrl,
+      imageUrl: avatarImageUrl(post.authorAvatarUrl),
       badgeLabel: post.postType == PostType.dab
           ? AppLocalizations.of(context).composer_type_dab
           : null,
@@ -833,7 +834,7 @@ class _PostDetailScreenState extends ConsumerState<PostDetailScreen> {
     return DabblerCommentRow(
       name: displayName,
       seed: displayName,
-      imageUrl: c.authorAvatarUrl,
+      imageUrl: avatarImageUrl(c.authorAvatarUrl),
       time: homeRelativeTime(c.createdAt),
       body: c.body,
       depth: reply ? 1 : 0,

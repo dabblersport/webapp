@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -287,7 +288,7 @@ class _PlayerBody extends StatelessWidget {
       children: <Widget>[
         DabblerAvatar(
           seed: event.actorName ?? event.title,
-          imageUrl: event.actorAvatarUrl,
+          imageUrl: avatarImageUrl(event.actorAvatarUrl),
           size: DabblerAvatarSize.lg,
           ringColor: colors.surfaceCard,
           ringWidth: ring,

@@ -1,3 +1,4 @@
+import 'package:dabbler/core/utils/avatar_url_resolver.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:intl/intl.dart';
@@ -172,7 +173,7 @@ abstract final class ActiveHonours {
       if (look.isAward)
         DabblerActivityAward(
           seed: name.isEmpty ? event.entityId : name,
-          imageUrl: event.actorAvatarUrl,
+          imageUrl: avatarImageUrl(event.actorAvatarUrl),
           mark: look.mark,
           ink: tone.ink,
           headline: name,
@@ -208,7 +209,7 @@ abstract final class ActiveHonours {
         DabblerActivityReview(
           seed: name.isEmpty ? event.entityId : name,
           name: name,
-          imageUrl: event.actorAvatarUrl,
+          imageUrl: avatarImageUrl(event.actorAvatarUrl),
           line: event.ratedGameAt == null
               ? ''
               : l.act_played_here(
