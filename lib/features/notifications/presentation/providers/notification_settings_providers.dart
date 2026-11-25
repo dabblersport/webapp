@@ -12,8 +12,10 @@ import 'package:dabbler/features/messaging/presentation/providers/messages_list_
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
+import '../../data/notification_channels_repository.dart';
 import '../../data/notification_settings_repository.dart';
 import '../../data/notification_settings_repository_impl.dart';
+import '../controllers/notification_channels_controller.dart';
 import '../controllers/notification_settings_controller.dart';
 
 /// Supabase-backed repository for `public.notification_settings`.
@@ -96,4 +98,21 @@ final notificationSetConversationMutedProvider =
         ref.invalidate(messagesListProvider);
         return result.isSuccess;
       },
+    );
+
+/// KAN-1048: Supabase-backed repository for the notification channels.
+final notificationChannelsRepositoryProvider =
+    Provider<NotificationChannelsRepository>(
+      (ref) => NotificationChannelsRepositoryImpl(Supabase.instance.client),
+    );
+
+/// KAN-1048: the caller's channels and mutes (loads on first watch).
+final notificationChannelsControllerProvider =
+    StateNotifierProvider.autoDispose<
+      NotificationChannelsController,
+      NotificationChannelsState
+    >(
+      (ref) => NotificationChannelsController(
+        ref.watch(notificationChannelsRepositoryProvider),
+      ),
     );

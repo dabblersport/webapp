@@ -11494,4 +11494,41 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String get ban_unban_failed => 'تعذّر إلغاء الحظر. حاول مرة أخرى.';
+
+  @override
+  String get notif_channels_group_games => 'المباريات';
+
+  @override
+  String get notif_channels_group_meetups => 'اللقاءات';
+
+  @override
+  String get notif_channels_group_activities => 'تسجيل الحضور والنتائج';
+
+  @override
+  String get notif_channels_group_messages => 'الرسائل';
+
+  @override
+  String get notif_channels_group_social => 'التواصل';
+
+  @override
+  String get notif_channels_group_booking => 'الحجوزات';
+
+  @override
+  String get notif_channels_group_security => 'الحساب والأمان';
+
+  @override
+  String get notif_channels_group_system => 'من دابلر';
+
+  @override
+  String notif_channels_all(String group) {
+    return 'كل «$group»';
+  }
+
+  @override
+  String get notif_channels_locked_note =>
+      'تنبيهات الأمان تحمي حسابك ولا يمكن إيقافها.';
+
+  @override
+  String get notif_channels_update_failed =>
+      'تعذّر حفظ هذا التغيير. حاول مرة أخرى.';
 }

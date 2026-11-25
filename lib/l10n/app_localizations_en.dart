@@ -11395,4 +11395,41 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get ban_unban_failed => 'Couldn\'t lift the ban. Try again.';
+
+  @override
+  String get notif_channels_group_games => 'Games';
+
+  @override
+  String get notif_channels_group_meetups => 'Meet-ups';
+
+  @override
+  String get notif_channels_group_activities => 'Check-in & results';
+
+  @override
+  String get notif_channels_group_messages => 'Messages';
+
+  @override
+  String get notif_channels_group_social => 'Social';
+
+  @override
+  String get notif_channels_group_booking => 'Bookings';
+
+  @override
+  String get notif_channels_group_security => 'Account & security';
+
+  @override
+  String get notif_channels_group_system => 'Dabbler';
+
+  @override
+  String notif_channels_all(String group) {
+    return 'All \'$group\'';
+  }
+
+  @override
+  String get notif_channels_locked_note =>
+      'Security alerts protect your account and cannot be turned off.';
+
+  @override
+  String get notif_channels_update_failed =>
+      'Couldn\'t save that change. Try again.';
 }

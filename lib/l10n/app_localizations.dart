@@ -19656,6 +19656,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t lift the ban. Try again.'**
   String get ban_unban_failed;
+
+  /// No description provided for @notif_channels_group_games.
+  ///
+  /// In en, this message translates to:
+  /// **'Games'**
+  String get notif_channels_group_games;
+
+  /// No description provided for @notif_channels_group_meetups.
+  ///
+  /// In en, this message translates to:
+  /// **'Meet-ups'**
+  String get notif_channels_group_meetups;
+
+  /// No description provided for @notif_channels_group_activities.
+  ///
+  /// In en, this message translates to:
+  /// **'Check-in & results'**
+  String get notif_channels_group_activities;
+
+  /// No description provided for @notif_channels_group_messages.
+  ///
+  /// In en, this message translates to:
+  /// **'Messages'**
+  String get notif_channels_group_messages;
+
+  /// No description provided for @notif_channels_group_social.
+  ///
+  /// In en, this message translates to:
+  /// **'Social'**
+  String get notif_channels_group_social;
+
+  /// No description provided for @notif_channels_group_booking.
+  ///
+  /// In en, this message translates to:
+  /// **'Bookings'**
+  String get notif_channels_group_booking;
+
+  /// No description provided for @notif_channels_group_security.
+  ///
+  /// In en, this message translates to:
+  /// **'Account & security'**
+  String get notif_channels_group_security;
+
+  /// No description provided for @notif_channels_group_system.
+  ///
+  /// In en, this message translates to:
+  /// **'Dabbler'**
+  String get notif_channels_group_system;
+
+  /// No description provided for @notif_channels_all.
+  ///
+  /// In en, this message translates to:
+  /// **'All \'{group}\''**
+  String notif_channels_all(String group);
+
+  /// No description provided for @notif_channels_locked_note.
+  ///
+  /// In en, this message translates to:
+  /// **'Security alerts protect your account and cannot be turned off.'**
+  String get notif_channels_locked_note;
+
+  /// No description provided for @notif_channels_update_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save that change. Try again.'**
+  String get notif_channels_update_failed;
 }
 
 class _AppLocalizationsDelegate

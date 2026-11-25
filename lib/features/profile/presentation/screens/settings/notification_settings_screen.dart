@@ -19,6 +19,7 @@ import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/services/notifications/push_notification_service.dart';
 
 import 'notification_settings_categories_section.dart';
+import 'notification_settings_channels_section.dart';
 import 'notification_settings_muted_section.dart';
 import 'notification_settings_preview_section.dart';
 import 'notification_settings_quiet_section.dart';
@@ -144,6 +145,9 @@ class _NotificationSettingsScreenState
           onPushTurnedOn: () => unawaited(
             PushNotificationService.instance.requestNotificationPermission(),
           ),
+        ),
+        NotificationSettingsChannelsSection(
+          pushLocked: osDenied || !settings.pushEnabled,
         ),
         gap,
         NotificationSettingsPreviewSection(

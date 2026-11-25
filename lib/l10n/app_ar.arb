@@ -3738,5 +3738,16 @@
   "ban_unban_title": "إلغاء حظر {name}؟",
   "ban_unban_body": "سيتمكن من الانضمام مجددًا.",
   "ban_unbanned": "تم إلغاء الحظر",
-  "ban_unban_failed": "تعذّر إلغاء الحظر. حاول مرة أخرى."
+  "ban_unban_failed": "تعذّر إلغاء الحظر. حاول مرة أخرى.",
+  "notif_channels_group_games": "المباريات",
+  "notif_channels_group_meetups": "اللقاءات",
+  "notif_channels_group_activities": "تسجيل الحضور والنتائج",
+  "notif_channels_group_messages": "الرسائل",
+  "notif_channels_group_social": "التواصل",
+  "notif_channels_group_booking": "الحجوزات",
+  "notif_channels_group_security": "الحساب والأمان",
+  "notif_channels_group_system": "من دابلر",
+  "notif_channels_all": "كل «{group}»",
+  "notif_channels_locked_note": "تنبيهات الأمان تحمي حسابك ولا يمكن إيقافها.",
+  "notif_channels_update_failed": "تعذّر حفظ هذا التغيير. حاول مرة أخرى."
 }
