@@ -1,0 +1,162 @@
+[
+ {
+  "key": "games.invites",
+  "group_key": "games",
+  "label_en": "Invites & join requests",
+  "label_ar": "الدعوات وطلبات الانضمام",
+  "android_importance": "high",
+  "sort_order": 10
+ },
+ {
+  "key": "games.reminders",
+  "group_key": "games",
+  "label_en": "Reminders",
+  "label_ar": "التذكيرات",
+  "android_importance": "max",
+  "sort_order": 11
+ },
+ {
+  "key": "games.changes",
+  "group_key": "games",
+  "label_en": "Changes & cancellations",
+  "label_ar": "التغييرات والإلغاءات",
+  "android_importance": "high",
+  "sort_order": 12
+ },
+ {
+  "key": "games.roster",
+  "group_key": "games",
+  "label_en": "Roster updates",
+  "label_ar": "تحديثات قائمة اللاعبين",
+  "android_importance": "default",
+  "sort_order": 13
+ },
+ {
+  "key": "meetups.invites",
+  "group_key": "meetups",
+  "label_en": "Invites & RSVPs",
+  "label_ar": "الدعوات وتأكيدات الحضور",
+  "android_importance": "high",
+  "sort_order": 20
+ },
+ {
+  "key": "meetups.reminders",
+  "group_key": "meetups",
+  "label_en": "Reminders",
+  "label_ar": "التذكيرات",
+  "android_importance": "max",
+  "sort_order": 21
+ },
+ {
+  "key": "meetups.changes",
+  "group_key": "meetups",
+  "label_en": "Changes & cancellations",
+  "label_ar": "التغييرات والإلغاءات",
+  "android_importance": "high",
+  "sort_order": 22
+ },
+ {
+  "key": "activities.checkin",
+  "group_key": "activities",
+  "label_en": "Check-in",
+  "label_ar": "تسجيل الحضور",
+  "android_importance": "max",
+  "sort_order": 30
+ },
+ {
+  "key": "activities.attendance",
+  "group_key": "activities",
+  "label_en": "Attendance",
+  "label_ar": "الحضور",
+  "android_importance": "default",
+  "sort_order": 31
+ },
+ {
+  "key": "activities.results",
+  "group_key": "activities",
+  "label_en": "Results & ratings",
+  "label_ar": "النتائج والتقييمات",
+  "android_importance": "default",
+  "sort_order": 32
+ },
+ {
+  "key": "messages.direct",
+  "group_key": "messages",
+  "label_en": "Direct chats",
+  "label_ar": "المحادثات المباشرة",
+  "android_importance": "max",
+  "sort_order": 40
+ },
+ {
+  "key": "messages.threads",
+  "group_key": "messages",
+  "label_en": "Game & meet-up chats",
+  "label_ar": "محادثات المباريات واللقاءات",
+  "android_importance": "high",
+  "sort_order": 41
+ },
+ {
+  "key": "social.follows",
+  "group_key": "social",
+  "label_en": "New followers",
+  "label_ar": "المتابعون الجدد",
+  "android_importance": "default",
+  "sort_order": 50
+ },
+ {
+  "key": "social.reactions",
+  "group_key": "social",
+  "label_en": "Likes & comments",
+  "label_ar": "الإعجابات والتعليقات",
+  "android_importance": "default",
+  "sort_order": 51
+ },
+ {
+  "key": "social.mentions",
+  "group_key": "social",
+  "label_en": "Mentions",
+  "label_ar": "الإشارات",
+  "android_importance": "high",
+  "sort_order": 52
+ },
+ {
+  "key": "booking.confirmations",
+  "group_key": "booking",
+  "label_en": "Confirmations & changes",
+  "label_ar": "التأكيدات والتغييرات",
+  "android_importance": "high",
+  "sort_order": 60
+ },
+ {
+  "key": "booking.payments",
+  "group_key": "booking",
+  "label_en": "Payments",
+  "label_ar": "المدفوعات",
+  "android_importance": "high",
+  "sort_order": 61
+ },
+ {
+  "key": "security.alerts",
+  "group_key": "security",
+  "label_en": "Sign-in & security alerts",
+  "label_ar": "تنبيهات تسجيل الدخول والأمان",
+  "android_importance": "max",
+  "sort_order": 70
+ },
+ {
+  "key": "system.announcements",
+  "group_key": "system",
+  "label_en": "Announcements",
+  "label_ar": "الإعلانات",
+  "android_importance": "default",
+  "sort_order": 80
+ },
+ {
+  "key": "system.rewards",
+  "group_key": "system",
+  "label_en": "Rewards & badges",
+  "label_ar": "المكافآت والشارات",
+  "android_importance": "default",
+  "sort_order": 81
+ }
+]

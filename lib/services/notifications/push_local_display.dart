@@ -39,11 +39,42 @@ AndroidNotificationAction androidActionFor(PushActionId a, AppLocalizations l) {
 }
 
 Importance _importance(PushImportance i) => switch (i) {
+  PushImportance.min => Importance.min,
   PushImportance.low => Importance.low,
   PushImportance.defaultLevel => Importance.defaultImportance,
   PushImportance.high => Importance.high,
   PushImportance.max => Importance.max,
 };
+
+/// KAN-1046: a channel group's name in the app's language.
+String pushChannelGroupName(AppLocalizations l, String group) =>
+    switch (group) {
+      'games' => l.notif_channels_group_games,
+      'meetups' => l.notif_channels_group_meetups,
+      'activities' => l.notif_channels_group_activities,
+      'messages' => l.notif_channels_group_messages,
+      'social' => l.notif_channels_group_social,
+      'booking' => l.notif_channels_group_booking,
+      'security' => l.notif_channels_group_security,
+      'system' => l.notif_channels_group_system,
+      _ => group,
+    };
+
+/// KAN-1046: the channel [id] as drawn in [l]'s language: a channel_key
+/// channel named by its label and described by its group, else the quiet or
+/// default channel.
+PushChannel pushChannelFor(String id, AppLocalizations l) {
+  if (id == PushChannels.quiet) return PushChannels.quietChannel;
+  final spec = PushChannelTable.byKey(id);
+  if (spec == null) return PushChannels.fallbackChannel;
+  return PushChannel(
+    spec.key,
+    spec.label(l.localeName),
+    pushChannelGroupName(l, spec.group),
+    importance: spec.importance,
+    group: spec.group,
+  );
+}
 
 class PushLocalDisplay {
   PushLocalDisplay(this._plugin);
@@ -55,16 +86,44 @@ class PushLocalDisplay {
         AndroidFlutterLocalNotificationsPlugin
       >();
 
-  /// Creates every channel KAN-979 sends to (and drops the pre-KAN-992 one).
-  Future<void> createChannels() async {
+  /// KAN-1046: creates one group per [PushChannelTable.groups] and every
+  /// channel inside its group, named in [l10n]'s language, plus the quiet and
+  /// default channels; then (only once those exist) deletes the legacy flat
+  /// category channels. Creating an existing channel again renames it, so the
+  /// app calls this again when its language changes. With [onlyMissing]
+  /// (the background isolate, which only knows the device's language) the
+  /// channels that already exist keep their names.
+  Future<void> createChannels(
+    AppLocalizations l10n, {
+    bool onlyMissing = false,
+  }) async {
     final android = _android;
     if (android == null) return;
-    for (final c in PushChannels.all) {
+    Set<String> existing = const {};
+    if (onlyMissing) {
+      try {
+        final list = await android.getNotificationChannels();
+        existing = {for (final c in list ?? const []) c.id};
+      } catch (_) {}
+    }
+    for (final g in PushChannelTable.groups) {
+      await android.createNotificationChannelGroup(
+        AndroidNotificationChannelGroup(g, pushChannelGroupName(l10n, g)),
+      );
+    }
+    for (final c in [
+      for (final spec in PushChannelTable.channels)
+        pushChannelFor(spec.key, l10n),
+      PushChannels.quietChannel,
+      PushChannels.fallbackChannel,
+    ]) {
+      if (existing.contains(c.id)) continue;
       await android.createNotificationChannel(
         AndroidNotificationChannel(
           c.id,
           c.name,
           description: c.description,
+          groupId: c.group,
           importance: _importance(c.importance),
           playSound: c.sound,
           enableVibration: c.sound,
@@ -72,9 +131,11 @@ class PushLocalDisplay {
         ),
       );
     }
-    try {
-      await android.deleteNotificationChannel('default_channel');
-    } catch (_) {}
+    for (final old in [...PushChannelTable.legacy.keys, 'default_channel']) {
+      try {
+        await android.deleteNotificationChannel(old);
+      } catch (_) {}
+    }
   }
 
   /// Shows a foreground push on its channel with its actions. A push with the
@@ -87,8 +148,9 @@ class PushLocalDisplay {
     String? tag,
     required AppLocalizations l10n,
   }) async {
-    final channel = PushChannels.byId(
+    final channel = pushChannelFor(
       PushChannels.of(data, serverChannelId: channelId),
+      l10n,
     );
     final secure = PushCategories.hidesPreview(data);
     final actions = PushCategories.actionsOf(data);
@@ -101,9 +163,7 @@ class PushLocalDisplay {
       channel.name,
       channelDescription: channel.description,
       importance: _importance(channel.importance),
-      priority: channel.importance == PushImportance.low
-          ? Priority.low
-          : Priority.high,
+      priority: !channel.sound ? Priority.low : Priority.high,
       playSound: channel.sound,
       tag: collapse,
       // G-08: a security push shows nothing private on the lock screen.

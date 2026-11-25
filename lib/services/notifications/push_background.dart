@@ -47,14 +47,15 @@ Future<void> drawBackgroundPush(
     onDidReceiveBackgroundNotificationResponse: pushBackgroundResponse,
   );
   final display = PushLocalDisplay(p);
-  await display.createChannels();
+  final l10n = lookupAppLocalizations(pushBackgroundLocale());
+  await display.createChannels(l10n, onlyMissing: true);
   await display.show(
     data: data,
     title: drawing.title,
     body: drawing.body,
     channelId: drawing.channelId,
     tag: drawing.tag,
-    l10n: lookupAppLocalizations(pushBackgroundLocale()),
+    l10n: l10n,
   );
 }
 

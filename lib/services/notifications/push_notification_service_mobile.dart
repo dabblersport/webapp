@@ -221,10 +221,10 @@ class PushNotificationService {
         }
       }
 
-      // KAN-992: every channel KAN-979 sends to, created up front so a
-      // background FCM push (system-drawn) lands in its own channel;
-      // dabbler_default is the manifest's fallback.
-      await _display.createChannels();
+      // KAN-992/KAN-1046: every channel, in its group and named in the app's
+      // language, created up front so a background FCM push (system-drawn)
+      // lands in its own channel; dabbler_default is the manifest's fallback.
+      await _display.createChannels(lookupAppLocalizations(_locale));
     } else {
       // iOS/macOS: DO NOT initialize flutter_local_notifications here — it
       // takes over the UNUserNotificationCenter delegate and swallows the
@@ -414,9 +414,16 @@ class PushNotificationService {
 
   /// The app locale changed (or was first read): send it with the token.
   Future<void> updateLocale(Locale locale) async {
+    final renamed = locale.languageCode != _locale.languageCode;
     _locale = locale;
     if (_initialized && defaultTargetPlatform == TargetPlatform.iOS) {
       _sendActionTitles();
+    }
+    // KAN-1046: Android keeps a channel's name; creating it again renames it.
+    if (_initialized &&
+        renamed &&
+        defaultTargetPlatform == TargetPlatform.android) {
+      await _display.createChannels(lookupAppLocalizations(locale));
     }
     if (registrar.setLocale(locale)) await _resync();
   }

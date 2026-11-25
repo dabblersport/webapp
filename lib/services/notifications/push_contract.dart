@@ -13,120 +13,88 @@ import 'package:dabbler/features/notifications/domain/notification_kinds.dart';
 import 'package:dabbler/features/notifications/presentation/widgets/notif_target_states.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
-/// Android importance, as the plugin's levels (kept as an enum here so the
-/// rules stay plugin-free).
-enum PushImportance { low, defaultLevel, high, max }
+import 'push_channel_table.dart';
 
-/// One Android notification channel.
+export 'push_channel_table.dart';
+
+/// One Android notification channel, as drawn.
 class PushChannel {
   const PushChannel(
     this.id,
     this.name,
     this.description, {
     this.importance = PushImportance.high,
-    this.sound = true,
+    this.group,
   });
 
   final String id;
   final String name;
   final String description;
   final PushImportance importance;
-  final bool sound;
+
+  /// The channel group id (null for the ungrouped quiet and default ones).
+  final String? group;
+
+  /// Low and min channels play no sound and do not vibrate.
+  bool get sound => importance.sounds;
 }
 
-/// The channels KAN-979 sends to: one per category, `dabbler_quiet` for every
-/// quiet-hours push (low, no sound) and `dabbler_default` for direct calls.
-/// Social and messages are not urgent (I-3); events, security and the default
-/// are.
+/// KAN-1046: the grouped channel_key channels ([PushChannelTable]), plus
+/// `dabbler_quiet` for every quiet-hours push (low, no sound) and
+/// `dabbler_default` (the manifest's fallback) for direct calls.
 abstract final class PushChannels {
   static const String quiet = 'dabbler_quiet';
   static const String fallback = 'dabbler_default';
 
-  static const List<PushChannel> all = <PushChannel>[
-    PushChannel(
-      'dabbler_social',
-      'Social',
-      'Follows, likes, comments and mentions',
-      importance: PushImportance.defaultLevel,
-    ),
-    PushChannel(
-      'dabbler_messages',
-      'Messages',
-      'Chats and game and meet-up threads',
-    ),
-    PushChannel(
-      'dabbler_games',
-      'Games',
-      'Invites, changes, reminders and cancellations',
-      importance: PushImportance.max,
-    ),
-    PushChannel(
-      'dabbler_meetups',
-      'Meet-ups',
-      'Invites, changes, reminders and cancellations',
-      importance: PushImportance.max,
-    ),
-    PushChannel(
-      'dabbler_activities',
-      'Check-in and results',
-      'Check-in, attendance, results and ratings',
-      importance: PushImportance.high,
-    ),
-    PushChannel(
-      'dabbler_system',
-      'Dabbler',
-      'Announcements and rewards',
-      importance: PushImportance.defaultLevel,
-    ),
-    PushChannel(
-      'dabbler_security',
-      'Account security',
-      'Sign-ins and account changes',
-      importance: PushImportance.max,
-    ),
-    PushChannel(
-      'dabbler_booking',
-      'Bookings',
-      'Bookings and payments',
-      importance: PushImportance.high,
-    ),
-    PushChannel(
-      quiet,
-      'Quiet hours',
-      'Delivered silently during quiet hours',
-      importance: PushImportance.low,
-      sound: false,
-    ),
-    PushChannel(
-      fallback,
-      'General',
-      'General notifications',
-      importance: PushImportance.max,
-    ),
-  ];
+  /// The two ungrouped channels, in English (the plugin needs a name; the
+  /// display names them in the app's language).
+  static const PushChannel quietChannel = PushChannel(
+    quiet,
+    'Quiet hours',
+    'Delivered silently during quiet hours',
+    importance: PushImportance.low,
+  );
+  static const PushChannel fallbackChannel = PushChannel(
+    fallback,
+    'General',
+    'General notifications',
+    importance: PushImportance.max,
+  );
 
-  static final Set<String> _ids = {for (final c in all) c.id};
+  /// Every channel id the app creates.
+  static final Set<String> ids = {
+    quiet,
+    fallback,
+    for (final c in PushChannelTable.channels) c.key,
+  };
 
-  static PushChannel byId(String id) =>
-      all.firstWhere((c) => c.id == id, orElse: () => all.last);
+  /// A known id as itself; a legacy `dabbler_<category>` id as its
+  /// channel_key; else null.
+  static String? _resolve(Object? raw) {
+    if (raw is! String) return null;
+    if (ids.contains(raw)) return raw;
+    return PushChannelTable.legacy[raw];
+  }
 
-  /// The channel a push belongs to: the server's channel when it names a
-  /// known one, `dabbler_quiet` for a silent push, else by the kind's
-  /// category, else the default.
+  /// The channel a push belongs to: `dabbler_quiet` for a silent push, then
+  /// `data.channel_key`, then the server's channel (a legacy id maps to its
+  /// channel_key), else by the kind's category, else the default.
   static String of(Map<String, dynamic> data, {String? serverChannelId}) {
+    if (data['delivery_mode'] == 'silent') return quiet;
+    final key = data['channel_key'];
+    if (key is String && PushChannelTable.byKey(key) != null) return key;
     for (final raw in [
       serverChannelId,
       data['android_channel_id'],
       data['channel_id'],
     ]) {
-      if (raw is String && _ids.contains(raw)) return raw;
+      final id = _resolve(raw);
+      if (id != null) return id;
     }
-    if (data['delivery_mode'] == 'silent') return quiet;
     final kind = data['kind_key'];
     final spec = kind is String ? NotificationKinds.of(kind) : null;
     if (spec == null) return fallback;
-    final id = 'dabbler_${spec.category.name}';
-    return _ids.contains(id) ? id : fallback;
+    return PushChannelTable.legacy['dabbler_${spec.category.name}'] ?? fallback;
   }
 }
 
