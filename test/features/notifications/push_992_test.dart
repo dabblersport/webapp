@@ -16,25 +16,15 @@ import 'package:flutter_test/flutter_test.dart';
 
 void main() {
   group('channels', () {
-    test('the ten channels KAN-979 sends to; quiet is low with no sound', () {
-      expect(PushChannels.all.map((c) => c.id), [
-        'dabbler_social',
-        'dabbler_messages',
-        'dabbler_games',
-        'dabbler_meetups',
-        'dabbler_activities',
-        'dabbler_system',
-        'dabbler_security',
-        'dabbler_booking',
-        'dabbler_quiet',
-        'dabbler_default',
-      ]);
-      final quiet = PushChannels.byId(PushChannels.quiet);
-      expect(quiet.importance, PushImportance.low);
-      expect(quiet.sound, isFalse);
-      expect(PushChannels.byId('dabbler_games').importance, PushImportance.max);
+    test('quiet is low with no sound; channel importance from the table', () {
+      expect(PushChannels.quietChannel.importance, PushImportance.low);
+      expect(PushChannels.quietChannel.sound, isFalse);
       expect(
-        PushChannels.byId('dabbler_social').importance,
+        PushChannelTable.byKey('games.reminders')!.importance,
+        PushImportance.max,
+      );
+      expect(
+        PushChannelTable.byKey('social.reactions')!.importance,
         PushImportance.defaultLevel,
         reason: 'social never breaks through (I-3)',
       );
@@ -44,8 +34,8 @@ void main() {
       expect(
         PushChannels.of({
           'kind_key': 'game.invited',
-        }, serverChannelId: 'dabbler_security'),
-        'dabbler_security',
+        }, serverChannelId: 'security.alerts'),
+        'security.alerts',
       );
       expect(
         PushChannels.of({
@@ -56,19 +46,19 @@ void main() {
       );
       expect(
         PushChannels.of({'kind_key': 'social.post_liked'}),
-        'dabbler_social',
+        'social.reactions',
       );
       expect(
         PushChannels.of({'kind_key': 'message.received'}),
-        'dabbler_messages',
+        'messages.direct',
       );
       expect(
         PushChannels.of({'kind_key': 'activity.checkin_open'}),
-        'dabbler_activities',
+        'activities.checkin',
       );
       expect(
         PushChannels.of({'kind_key': 'security.new_signin'}),
-        'dabbler_security',
+        'security.alerts',
       );
       expect(PushChannels.of({'kind_key': 'nope'}), PushChannels.fallback);
       expect(

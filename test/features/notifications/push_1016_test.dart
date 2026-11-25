@@ -68,7 +68,7 @@ void main() {
     });
 
     test('the payload keys line up with the contract', () {
-      expect(PushChannels.of(_waitlist), 'dabbler_games');
+      expect(PushChannels.of(_waitlist), 'games.invites');
       expect(PushCategories.of(_waitlist), PushCategories.waitlist);
       expect(PushCategories.actionsOf(_waitlist), [PushActionId.cancelPlace]);
       expect(pushBadge(_waitlist), 3);
@@ -121,12 +121,12 @@ void main() {
           .where((c) => c.method == 'createNotificationChannel')
           .map((c) => (c.arguments as Map)['id'])
           .toList();
-      expect(created, containsAll(['dabbler_games', 'dabbler_quiet']));
+      expect(created, containsAll(['games.invites', 'dabbler_quiet']));
       final show = shown();
       expect(show['title'], _waitlist['title']);
       expect(show['body'], _waitlist['body']);
       final details = show['platformSpecifics'] as Map;
-      expect(details['channelId'], 'dabbler_games');
+      expect(details['channelId'], 'games.invites');
       expect(details['tag'], 'game:g1');
       final actions = (details['actions'] as List).cast<Map>();
       expect(actions.map((a) => a['id']), ['CANCEL_PLACE']);
@@ -158,7 +158,7 @@ void main() {
       expect(calls.where((c) => c.method == 'show'), hasLength(1));
       expect(
         (shown()['platformSpecifics'] as Map)['channelId'],
-        'dabbler_games',
+        'games.invites',
       );
       expect(seen.single.alerted, isTrue);
       expect(seen.single.dedupeKey, 'd1');
