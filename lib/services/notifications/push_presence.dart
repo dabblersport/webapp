@@ -75,6 +75,34 @@ class PushPresence {
   /// Actions tapped on notifications.
   Stream<PushActionEvent> get actions => _actions.stream;
 
+  final StreamController<void> _openSettings =
+      StreamController<void>.broadcast();
+
+  /// KAN-1047: iOS Settings > Dabbler > Notifications > "Dabbler Notification
+  /// Settings" was tapped; the app opens [notificationSettingsRoute].
+  Stream<void> get openSettingsRequests => _openSettings.stream;
+
+  /// The in-app notification settings screen.
+  static const String notificationSettingsRoute = '/settings/notifications';
+
+  bool _settingsPending = false;
+
+  void _requestOpenSettings() {
+    if (_openSettings.hasListener) {
+      _openSettings.add(null);
+    } else {
+      _settingsPending = true;
+    }
+  }
+
+  /// Whether the settings link was tapped before anything listened (a cold
+  /// start from it); clears it.
+  bool takePendingOpenSettings() {
+    final pending = _settingsPending;
+    _settingsPending = false;
+    return pending;
+  }
+
   bool _nativeWired = false;
 
   void reportForeground(ForegroundPush push) => _foreground.add(push);
@@ -115,6 +143,7 @@ class PushPresence {
     _nativeWired = true;
     channel.setMethodCallHandler((call) async {
       if (call.method == 'action') _onNativeAction(call.arguments);
+      if (call.method == 'openSettings') _requestOpenSettings();
       return null;
     });
     try {
@@ -124,6 +153,14 @@ class PushPresence {
       }
     } catch (e) {
       debugPrint('Push presence: no pending actions ($e)');
+    }
+    // KAN-1047: the settings link tapped before Dart was listening.
+    try {
+      if (await channel.invokeMethod<bool>('pendingOpenSettings') ?? false) {
+        _requestOpenSettings();
+      }
+    } catch (e) {
+      debugPrint('Push presence: no pending settings link ($e)');
     }
   }
 

@@ -46,6 +46,8 @@ class _FirebasePermissionGateway implements PushPermissionGateway {
         criticalAlert: false,
         provisional: false,
         sound: true,
+        // KAN-1047: iOS Settings links to the in-app settings screen.
+        providesAppNotificationSettings: true,
       )).authorizationStatus;
 }
 

@@ -132,6 +132,8 @@ final class PushBridge {
   private var openChat: [String: String] = [:]
   /// KAN-993: the in-app pop-up presents foreground notifications.
   var bannerShows = false
+  /// KAN-1047: the Settings link tapped before Dart was listening.
+  private var pendingOpenSettings = false
 
   /// Registers the categories; [titles] are the action titles in the app's
   /// language (English until Dart sends them).
@@ -197,6 +199,10 @@ final class PushBridge {
       case "setCategories":
         self.registerCategories(titles: (call.arguments as? [String: String]) ?? [:])
         result(nil)
+      case "pendingOpenSettings":
+        let out = self.pendingOpenSettings
+        self.pendingOpenSettings = false
+        result(out)
       case "pendingActions":
         let out = self.pending
         self.pending.removeAll()
@@ -219,6 +225,16 @@ final class PushBridge {
       }
     }
     return false
+  }
+
+  /// KAN-1047: iOS Settings' "Dabbler Notification Settings" link: Dart opens
+  /// the in-app screen, or does so once it listens.
+  func openSettings() {
+    if let c = channel {
+      c.invokeMethod("openSettings", arguments: nil)
+    } else {
+      pendingOpenSettings = true
+    }
   }
 
   /// A tapped action: handed to Dart, or kept until it listens.
@@ -280,6 +296,15 @@ final class PushBridge {
       center, didReceive: response, withCompletionHandler: completionHandler)
   }
 
+  // KAN-1047: firebase_messaging (the center's delegate) forwards this here.
+  // FlutterAppDelegate has no implementation of its own to chain to.
+  func userNotificationCenter(
+    _ center: UNUserNotificationCenter,
+    openSettingsFor notification: UNNotification?
+  ) {
+    PushBridge.shared.openSettings()
+  }
+
   override func application(
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
@@ -295,6 +320,17 @@ final class PushBridge {
 
     // KAN-992: the categories exist before the first push arrives.
     PushBridge.shared.registerCategories()
+
+    // KAN-1047: a user who allowed notifications before this build gets the
+    // Settings link too. Already authorized, so iOS shows no prompt.
+    UNUserNotificationCenter.current().getNotificationSettings { settings in
+      guard settings.authorizationStatus == .authorized,
+        !settings.providesAppNotificationSettings
+      else { return }
+      UNUserNotificationCenter.current().requestAuthorization(
+        options: [.alert, .badge, .sound, .providesAppNotificationSettings]
+      ) { _, _ in }
+    }
 
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }

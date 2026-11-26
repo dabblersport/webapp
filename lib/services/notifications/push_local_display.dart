@@ -76,6 +76,28 @@ PushChannel pushChannelFor(String id, AppLocalizations l) {
   );
 }
 
+/// KAN-1047: the iOS interruption level a push's data names
+/// (`interruption_level`, the server's `aps.interruption-level` values), or
+/// null for the system default (active). Critical is never drawn locally: it
+/// needs an entitlement the app does not have.
+InterruptionLevel? pushInterruptionLevelOf(Map<String, dynamic> data) =>
+    switch ((data['interruption_level'] as Object?)?.toString()) {
+      'time-sensitive' || 'time_sensitive' => InterruptionLevel.timeSensitive,
+      'active' => InterruptionLevel.active,
+      'passive' => InterruptionLevel.passive,
+      _ => null,
+    };
+
+/// KAN-1047: iOS details for a push the app draws itself: stacked by its
+/// channel_key (the server's `aps.thread-id`) at its interruption level.
+DarwinNotificationDetails darwinDetailsFor(Map<String, dynamic> data) {
+  final key = data['channel_key'];
+  return DarwinNotificationDetails(
+    threadIdentifier: key is String && key.isNotEmpty ? key : null,
+    interruptionLevel: pushInterruptionLevelOf(data),
+  );
+}
+
 class PushLocalDisplay {
   PushLocalDisplay(this._plugin);
 
@@ -176,7 +198,7 @@ class PushLocalDisplay {
       id,
       title,
       body,
-      NotificationDetails(android: details),
+      NotificationDetails(android: details, iOS: darwinDetailsFor(data)),
       payload: jsonEncode(data),
     );
   }

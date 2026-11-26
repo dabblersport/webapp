@@ -83,6 +83,13 @@ void wirePushToApp({
     },
     openRoute: openRoute,
   );
+  // KAN-1047: iOS Settings' "Dabbler Notification Settings" link.
+  presence.openSettingsRequests.listen(
+    (_) => openRoute(PushPresence.notificationSettingsRoute),
+  );
+  if (presence.takePendingOpenSettings()) {
+    openRoute(PushPresence.notificationSettingsRoute);
+  }
   presence.actions.listen((event) async {
     final outcome = await runner.run(event);
     debugPrint('Push action ${event.action.wire}: ${outcome.name}');
