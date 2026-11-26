@@ -11439,4 +11439,10 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get manage_sports_remove_failed =>
       'Couldn\'t remove this sport. Try again.';
+
+  @override
+  String get sports_browse_all => 'Browse all sports';
+
+  @override
+  String get sports_show_mine => 'Show only my sports';
 }

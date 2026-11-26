@@ -24,6 +24,7 @@ import 'package:dabbler/features/venues/domain/venue_listing_filters.dart';
 import 'package:dabbler/features/venues/presentation/providers/nearby_venues_provider.dart';
 import 'package:dabbler/features/venues/presentation/providers/venues_with_sports_providers.dart';
 import 'package:dabbler/providers.dart' hide nearbyVenuesProvider;
+import 'package:dabbler/features/sports/presentation/widgets/browse_all_sports.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -53,10 +54,26 @@ class VenuesScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (sports) => _VenuesTabScreen(
-        key: ValueKey(sports.map((s) => s.id).join()),
-        sports: sports,
-      ),
+      data: (catalogue) {
+        // KAN-1052: tabs for any of the viewer's sports, unless "Browse all
+        // sports" is on (or they have none).
+        final mine = ref.watch(mySportsNowProvider);
+        final sports = mine.scope(
+          catalogue,
+          SportSection.venues,
+          (s) => s.id,
+          browseAll: ref.watch(browseAllSportsProvider(SportSection.venues)),
+        );
+        return _VenuesTabScreen(
+          key: ValueKey(sports.map((s) => s.id).join()),
+          sports: sports,
+          hasMoreSports: mine.hasMore(
+            catalogue,
+            SportSection.venues,
+            (s) => s.id,
+          ),
+        );
+      },
     );
   }
 }
@@ -66,9 +83,16 @@ class VenuesScreen extends ConsumerWidget {
 // =============================================================================
 
 class _VenuesTabScreen extends ConsumerStatefulWidget {
-  const _VenuesTabScreen({super.key, required this.sports});
+  const _VenuesTabScreen({
+    super.key,
+    required this.sports,
+    this.hasMoreSports = false,
+  });
 
   final List<Sport> sports;
+
+  /// Whether sports outside the viewer's list exist ("Browse all sports").
+  final bool hasMoreSports;
 
   @override
   ConsumerState<_VenuesTabScreen> createState() => _VenuesTabScreenState();
@@ -150,6 +174,17 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
     ];
 
     final denied = activeLocationNeedsManualChange(locState);
+    final browseAllChip = browseAllSportsRailItem(
+      context,
+      ref,
+      SportSection.venues,
+    );
+    final browseAllAction = browseAllSportsAction(
+      context,
+      ref,
+      SportSection.venues,
+      hasMore: widget.hasMoreSports,
+    );
 
     return SetLocationWhenDenied(
       child: DabblerPage(
@@ -166,6 +201,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
                       ? showSetLocationDrawer(context)
                       : HomeLocationPickerSheet.show(context),
                   actions: <DabblerPageHeaderAction>[
+                    ?browseAllAction,
                     if (isOrganiser)
                       DabblerPageHeaderAction(
                         icon: 'add',
@@ -200,7 +236,7 @@ class _VenuesTabScreenState extends ConsumerState<_VenuesTabScreen> {
                       label: sport.localizedName(context),
                     ),
                 ],
-                filters: active,
+                filters: [?browseAllChip, ...active],
                 clearAllLabel: l.listing_clear_all,
                 onClearAll: _resetFilters,
                 pages: [

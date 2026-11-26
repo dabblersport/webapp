@@ -16,6 +16,8 @@ import 'package:dabbler/features/meetups/presentation/widgets/meetup_listing_car
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_load_more.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_upcoming.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
+import 'package:dabbler/features/sports/presentation/providers/my_sports_provider.dart';
+import 'package:dabbler/features/sports/presentation/widgets/browse_all_sports.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
@@ -51,19 +53,51 @@ class MeetupsScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (list) => _MeetupsTabs(
-        sports: list,
-        onOpen: onOpen,
-        onPickLocation: onPickLocation,
-      ),
+      data: (catalogue) {
+        // KAN-1052: tabs for the viewer's can-solo sports only, unless
+        // "Browse all sports" is on (or they have none).
+        final mine = ref.watch(mySportsNowProvider);
+        final list = mine.scope(
+          catalogue,
+          SportSection.meetups,
+          (s) => s.id,
+          browseAll: ref.watch(browseAllSportsProvider(SportSection.meetups)),
+        );
+        return _MeetupsTabs(
+          sports: list,
+          scopeIds: list.length < catalogue.length
+              ? {for (final s in list) s.id}
+              : null,
+          hasMoreSports: mine.hasMore(
+            catalogue,
+            SportSection.meetups,
+            (s) => s.id,
+          ),
+          onOpen: onOpen,
+          onPickLocation: onPickLocation,
+        );
+      },
     );
   }
 }
 
 class _MeetupsTabs extends ConsumerWidget {
-  const _MeetupsTabs({required this.sports, this.onOpen, this.onPickLocation});
+  const _MeetupsTabs({
+    required this.sports,
+    this.scopeIds,
+    this.hasMoreSports = false,
+    this.onOpen,
+    this.onPickLocation,
+  });
 
   final List<MeetupSport> sports;
+
+  /// KAN-1052: the "All" tab's sport ids while the viewer's sports narrow
+  /// the list; null lists every sport.
+  final Set<String>? scopeIds;
+
+  /// Whether sports outside the viewer's list exist ("Browse all sports").
+  final bool hasMoreSports;
   final ValueChanged<String>? onOpen;
   final VoidCallback? onPickLocation;
 
@@ -117,6 +151,17 @@ class _MeetupsTabs extends ConsumerWidget {
         ),
     ];
     final denied = activeLocationNeedsManualChange(loc);
+    final browseAllChip = browseAllSportsRailItem(
+      context,
+      ref,
+      SportSection.meetups,
+    );
+    final browseAllAction = browseAllSportsAction(
+      context,
+      ref,
+      SportSection.meetups,
+      hasMore: hasMoreSports,
+    );
     return SetLocationWhenDenied(
       child: DabblerPage(
         body: ListingScaffold(
@@ -132,6 +177,7 @@ class _MeetupsTabs extends ConsumerWidget {
                     ? showSetLocationDrawer(context)
                     : HomeLocationPickerSheet.show(context),
             actions: <DabblerPageHeaderAction>[
+              ?browseAllAction,
               // The Favourites entry (`Listings.2026-10-08b.dc.html:403-405`).
               DabblerPageHeaderAction(
                 icon: 'heart',
@@ -163,12 +209,12 @@ class _MeetupsTabs extends ConsumerWidget {
             for (final s in sports)
               DabblerTabItem(id: s.id, label: meetupSportName(context, s)),
           ],
-          filters: active,
+          filters: [?browseAllChip, ...active],
           clearAllLabel: l.listing_clear_all,
           onClearAll: reset,
           pages: <Widget>[
-            for (final id in <String?>[null, for (final s in sports) s.id])
-              _MeetupsBody(sportId: id, onOpen: onOpen),
+            _MeetupsBody(sportId: null, scopeIds: scopeIds, onOpen: onOpen),
+            for (final s in sports) _MeetupsBody(sportId: s.id, onOpen: onOpen),
           ],
         ),
       ),
@@ -190,9 +236,12 @@ String _sortLabel(AppLocalizations l, MeetupSort s) => switch (s) {
 };
 
 class _MeetupsBody extends ConsumerWidget {
-  const _MeetupsBody({required this.sportId, this.onOpen});
+  const _MeetupsBody({required this.sportId, this.scopeIds, this.onOpen});
 
   final String? sportId;
+
+  /// KAN-1052: on the "All" tab, the sport ids it lists; null lists all.
+  final Set<String>? scopeIds;
   final ValueChanged<String>? onOpen;
 
   void _open(BuildContext context, String id) =>
@@ -307,7 +356,14 @@ class _MeetupsBody extends ConsumerWidget {
         onRetry: () => ref.invalidate(meetupListProvider),
         onRefresh: refresh,
       ),
-      data: (all) {
+      data: (fetched) {
+        final ids = scopeIds;
+        final all = ids == null
+            ? fetched
+            : [
+                for (final m in fetched)
+                  if (ids.contains(m.sportId)) m,
+              ];
         final now = ref.read(meetupClockProvider)();
         // A meetup the viewer answered going or interested, still ahead,
         // counts down in the Upcoming row (the list row carries my_rsvp_status).

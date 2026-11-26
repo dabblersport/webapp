@@ -3751,5 +3751,7 @@
   "notif_channels_locked_note": "تنبيهات الأمان تحمي حسابك ولا يمكن إيقافها.",
   "notif_channels_update_failed": "تعذّر حفظ هذا التغيير. حاول مرة أخرى.",
   "manage_sports_add_failed": "تعذّرت إضافة هذه الرياضة. حاول مرة أخرى.",
-  "manage_sports_remove_failed": "تعذّرت إزالة هذه الرياضة. حاول مرة أخرى."
+  "manage_sports_remove_failed": "تعذّرت إزالة هذه الرياضة. حاول مرة أخرى.",
+  "sports_browse_all": "تصفح كل الرياضات",
+  "sports_show_mine": "اعرض رياضاتي فقط"
 }

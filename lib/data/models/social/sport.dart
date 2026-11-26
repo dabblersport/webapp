@@ -12,6 +12,8 @@ class Sport {
     this.emoji,
     this.category,
     this.colorCode,
+    this.isChallengeSport = false,
+    this.canSolo = false,
   });
 
   final String id;
@@ -21,6 +23,12 @@ class Sport {
   final String? emoji;
   final String? category;
   final String? colorCode;
+
+  /// `sports.is_challenge_sport`: played as a game (Games section).
+  final bool isChallengeSport;
+
+  /// `sports.can_solo`: done on your own (Meetups section).
+  final bool canSolo;
 
   /// Returns the locale-appropriate display name. Falls back to English when
   /// the Arabic translation is missing.
@@ -42,6 +50,8 @@ class Sport {
       emoji: map['emoji'] as String?,
       category: map['category'] as String?,
       colorCode: map['color_code'] as String?,
+      isChallengeSport: map['is_challenge_sport'] == true,
+      canSolo: map['can_solo'] == true,
     );
   }
 
@@ -53,6 +63,8 @@ class Sport {
     'emoji': emoji,
     'category': category,
     'color_code': colorCode,
+    'is_challenge_sport': isChallengeSport,
+    'can_solo': canSolo,
   };
 
   @override

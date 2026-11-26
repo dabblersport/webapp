@@ -19734,6 +19734,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t remove this sport. Try again.'**
   String get manage_sports_remove_failed;
+
+  /// KAN-1052: header action and rail chip that shows sports outside the viewer's own list
+  ///
+  /// In en, this message translates to:
+  /// **'Browse all sports'**
+  String get sports_browse_all;
+
+  /// KAN-1052: removes the Browse all sports chip, back to the viewer's sports
+  ///
+  /// In en, this message translates to:
+  /// **'Show only my sports'**
+  String get sports_show_mine;
 }
 
 class _AppLocalizationsDelegate

@@ -19,6 +19,7 @@ import 'package:dabbler/features/location/presentation/widgets/nearby_filter_chi
 import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/features/explore/presentation/widgets/listing_scaffold.dart';
+import 'package:dabbler/features/sports/presentation/widgets/browse_all_sports.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/providers.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
@@ -52,10 +53,33 @@ class GamesScreen extends ConsumerWidget {
           ),
         ),
       ),
-      data: (sports) => _GamesTabScreen(
-        key: ValueKey(sports.map((s) => s.id).join()),
-        sports: sports,
-      ),
+      data: (catalogue) {
+        // KAN-1052: tabs for the viewer's challenge sports only, unless
+        // "Browse all sports" is on (or they have none).
+        final mine = ref.watch(mySportsNowProvider);
+        final browseAll = ref.watch(
+          browseAllSportsProvider(SportSection.games),
+        );
+        final sports = mine.scope(
+          catalogue,
+          SportSection.games,
+          (s) => s.id,
+          browseAll: browseAll,
+        );
+        final scoped = sports.length < catalogue.length;
+        return _GamesTabScreen(
+          key: ValueKey(sports.map((s) => s.id).join()),
+          sports: sports,
+          scopeNames: scoped
+              ? {for (final s in sports) s.nameEn.toLowerCase()}
+              : null,
+          hasMoreSports: mine.hasMore(
+            catalogue,
+            SportSection.games,
+            (s) => s.id,
+          ),
+        );
+      },
     );
   }
 }
@@ -97,9 +121,21 @@ bool _passes(WidgetRef ref, NearbyGameModel g, DateTime now) {
 // =============================================================================
 
 class _GamesTabScreen extends ConsumerStatefulWidget {
-  const _GamesTabScreen({super.key, required this.sports});
+  const _GamesTabScreen({
+    super.key,
+    required this.sports,
+    this.scopeNames,
+    this.hasMoreSports = false,
+  });
 
   final List<Sport> sports;
+
+  /// KAN-1052: the "All" tab's sports (English names, lower case) while the
+  /// viewer's sports narrow the list; null shows every sport.
+  final Set<String>? scopeNames;
+
+  /// Whether sports outside the viewer's list exist ("Browse all sports").
+  final bool hasMoreSports;
 
   @override
   ConsumerState<_GamesTabScreen> createState() => _GamesTabScreenState();
@@ -170,6 +206,17 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
     final sortOrder = ref.watch(nearbyGameSortProvider);
     final locState = ref.watch(activeLocationProvider).valueOrNull;
 
+    final browseAllChip = browseAllSportsRailItem(
+      context,
+      ref,
+      SportSection.games,
+    );
+    final browseAllAction = browseAllSportsAction(
+      context,
+      ref,
+      SportSection.games,
+      hasMore: widget.hasMoreSports,
+    );
     final active = <DabblerFilterRailItem>[
       if (nearby)
         DabblerFilterRailItem(
@@ -218,6 +265,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
                 ? showSetLocationDrawer(context)
                 : HomeLocationPickerSheet.show(context),
             actions: <DabblerPageHeaderAction>[
+              ?browseAllAction,
               // The Favourites entry (`Listings.2026-10-08b.dc.html:96-98`).
               DabblerPageHeaderAction(
                 icon: 'heart',
@@ -251,7 +299,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
             for (final sport in widget.sports)
               DabblerTabItem(id: sport.id, label: sport.localizedName(context)),
           ],
-          filters: active,
+          filters: [?browseAllChip, ...active],
           clearAllLabel: l.listing_clear_all,
           onClearAll: _resetFilters,
           // The whole rail opens the sheet (`Listings.2026-10-08.dc.html:111`).
@@ -262,6 +310,7 @@ class _GamesTabScreenState extends ConsumerState<_GamesTabScreen> {
             (i) => _GameTabBody(
               sports: widget.sports,
               sportId: _sportIdForTab(i),
+              scopeNames: i == 0 ? widget.scopeNames : null,
               scrollController: _scrollControllers[i],
               onRetry: () {
                 ref.invalidate(nearbyGamesProvider);
@@ -380,6 +429,7 @@ class _GameTabBody extends ConsumerWidget {
   const _GameTabBody({
     required this.sports,
     required this.sportId,
+    this.scopeNames,
     required this.scrollController,
     required this.onRetry,
     required this.onChangeFilters,
@@ -388,6 +438,17 @@ class _GameTabBody extends ConsumerWidget {
   /// The listing's sports, to show a game's sport in the viewer's language.
   final List<Sport> sports;
   final String? sportId;
+
+  /// KAN-1052: on the "All" tab, the sports it lists; null lists every sport.
+  final Set<String>? scopeNames;
+
+  bool _inScope(NearbyGameModel g) {
+    final names = scopeNames;
+    if (names == null) return true;
+    final n = g.sportName?.toLowerCase();
+    return n != null && names.contains(n);
+  }
+
   final ScrollController scrollController;
   final VoidCallback onRetry;
   final VoidCallback onChangeFilters;
@@ -464,7 +525,9 @@ class _GameTabBody extends ConsumerWidget {
         if (ref.watch(gamesMapModeProvider)) {
           final now = DateTime.now();
           return GamesMapView(
-            games: games.where((g) => _passes(ref, g, now)).toList(),
+            games: games
+                .where((g) => _inScope(g) && _passes(ref, g, now))
+                .toList(),
           );
         }
         final pinnedIds = {for (final g in pinned) g.id};
@@ -479,6 +542,7 @@ class _GameTabBody extends ConsumerWidget {
 
         final listed = games
             .where((g) => !pinnedIds.contains(g.id))
+            .where(_inScope)
             .where((g) => _passes(ref, g, now))
             .toList();
         // Default order is starting soonest (CEO 2026-10-08), whichever path

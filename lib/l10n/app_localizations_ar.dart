@@ -11539,4 +11539,10 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get manage_sports_remove_failed =>
       'تعذّرت إزالة هذه الرياضة. حاول مرة أخرى.';
+
+  @override
+  String get sports_browse_all => 'تصفح كل الرياضات';
+
+  @override
+  String get sports_show_mine => 'اعرض رياضاتي فقط';
 }

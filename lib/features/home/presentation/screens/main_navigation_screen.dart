@@ -17,6 +17,7 @@ import 'package:dabbler/features/meetups/presentation/screens/meetup_composer_sc
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/feed_notifier.dart';
+import 'package:dabbler/features/sports/presentation/providers/my_sports_provider.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
 import 'package:dabbler/core/services/app_lifecycle_manager.dart';
 import 'package:dabbler/features/rewards/controllers/check_in_controller.dart';
@@ -364,6 +365,16 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     ref.watch(initializeProfileDataProvider);
 
     final l = AppLocalizations.of(context);
+    // KAN-1052: Games and Meetups follow the viewer's sports; a hidden branch
+    // that is current (e.g. its last sport was just removed) falls back Home.
+    final mySports = ref.watch(mySportsNowProvider);
+    final branch = NavigationBranch.values[_currentIndex];
+    if ((branch == NavigationBranch.games && !mySports.showsGames) ||
+        (branch == NavigationBranch.meetups && !mySports.showsMeetups)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _goBranch(NavigationBranch.home);
+      });
+    }
     final canCreateMeetup = ref.watch(canOfferCreateMeetupProvider);
     // Create game follows the persona rule alone (unknown persona: hidden).
     final canCreateGame = canCreateGameOrMeetup(
@@ -449,12 +460,13 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   icon: 'location',
                   label: l.nav_venues,
                 ),
-                DabblerNavigationItem(
-                  id: _idGames,
-                  icon: 'game',
-                  label: l.nav_games,
-                ),
-                if (FeatureFlags.enableMeetups)
+                if (mySports.showsGames)
+                  DabblerNavigationItem(
+                    id: _idGames,
+                    icon: 'game',
+                    label: l.nav_games,
+                  ),
+                if (FeatureFlags.enableMeetups && mySports.showsMeetups)
                   DabblerNavigationItem(
                     id: _idMeetups,
                     icon: 'calendar-1',
