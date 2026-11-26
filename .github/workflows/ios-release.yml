@@ -92,8 +92,10 @@ concurrency:
 
 env:
   BUNDLE_ID: app.dabbler.pro
+  EXT_BUNDLE_ID: app.dabbler.pro.DabblerLiveActivity
   TEAM_ID: J5636UH8V8
-  PROFILE_NAME: Dabbler App Store
+  # Profile names are not fixed here (KAN-1047): the build job fetches the ACTIVE App Store
+  # profiles from App Store Connect and exports IOS_APP_PROFILE_NAME / IOS_EXT_PROFILE_NAME.
   # Recorded toolchain. The runner image and Xcode are read at run time and written to the
   # run summary; Apple requires App Store uploads from a current Xcode major, so the build
   # fails below this.
@@ -280,8 +282,7 @@ jobs:
           "$RUNNER_TEMP/venv/bin/pip" install --disable-pip-version-check -r scripts/ios/requirements.txt
           echo "$RUNNER_TEMP/venv/bin" >> "$GITHUB_PATH"
 
-      - name: Write the App Store Connect API key (runner only)
-        if: needs.prepare.outputs.target == 'testflight'
+      - name: Write the App Store Connect API key (runner only; every target, the profiles are fetched with it)
         env:
           ASC_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY_P8 }}
           ASC_KEY_ID: ${{ secrets.APP_STORE_CONNECT_KEY_ID }}
@@ -333,8 +334,29 @@ jobs:
           IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
         run: bash scripts/ios/install_signing.sh
 
-      - name: Switch the Runner target to manual distribution signing (runner copy only)
-        run: python3 scripts/ios/prepare_manual_signing.py ios/Runner.xcodeproj/project.pbxproj "$BUNDLE_ID" "$IOS_PROFILE_NAME"
+      - name: Fetch and install the ACTIVE App Store profiles for the app and the extension
+        run: |
+          set -euo pipefail
+          if [[ -n "${ASC_KEY_FILE:-}" && -f "$ASC_KEY_FILE" ]]; then
+            python3 scripts/ios/fetch_profiles.py install --cert-serial "$IOS_CERT_SERIAL" \
+              --app-bundle-id "$BUNDLE_ID" --ext-bundle-id "$EXT_BUNDLE_ID" \
+              --key-file "$ASC_KEY_FILE" --key-id "$ASC_KEY_ID" --issuer-id "$ASC_ISSUER_ID"
+          elif [[ -n "${IOS_FALLBACK_PROFILE_NAME:-}" ]]; then
+            echo "::warning::no App Store Connect key; falling back to IOS_PROVISIONING_PROFILE_BASE64 for the app"
+            echo "::error::the fallback secret covers $BUNDLE_ID only; $EXT_BUNDLE_ID needs the App Store Connect key to fetch its profile"
+            exit 1
+          else
+            echo "::error::no App Store Connect key and no fallback profile secret: cannot provision the build"; exit 1
+          fi
+
+      - name: Switch the app and extension targets to manual distribution signing (runner copy only)
+        run: |
+          set -euo pipefail
+          python3 scripts/ios/prepare_manual_signing.py ios/Runner.xcodeproj/project.pbxproj \
+            "$BUNDLE_ID=$IOS_APP_PROFILE_NAME" "$EXT_BUNDLE_ID=$IOS_EXT_PROFILE_NAME"
+          python3 scripts/ios/fetch_profiles.py export-options --template ios/ExportOptions-AppStore.plist \
+            --out "$RUNNER_TEMP/ExportOptions-AppStore.plist" \
+            "$BUNDLE_ID=$IOS_APP_PROFILE_NAME" "$EXT_BUNDLE_ID=$IOS_EXT_PROFILE_NAME"
 
       - name: Install dependencies
         run: flutter pub get
@@ -369,7 +391,7 @@ jobs:
           security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_PATH"
           flutter build ipa --release \
             --build-name="$VNAME" --build-number="$BUILD_NUMBER" \
-            --export-options-plist=ios/ExportOptions-AppStore.plist \
+            --export-options-plist="$RUNNER_TEMP/ExportOptions-AppStore.plist" \
             --dart-define=SUPABASE_URL="$SUPABASE_URL" \
             --dart-define=SUPABASE_ANON_KEY="$SUPABASE_ANON_KEY" \
             --dart-define=SUPABASE_PUBLISHABLE_KEY="${SUPABASE_PUBLISHABLE_KEY:-}" \
@@ -391,7 +413,7 @@ jobs:
         run: |
           set -euo pipefail
           OUT="$RUNNER_TEMP/out"; mkdir -p "$OUT"
-          scripts/ios/verify_ipa.sh "$IPA_PATH" "$BUNDLE_ID" "$VNAME" "$BUILD_NUMBER" "$TEAM_ID" "$PROFILE_NAME" "$OUT/metadata.json"
+          scripts/ios/verify_ipa.sh "$IPA_PATH" "$BUNDLE_ID" "$VNAME" "$BUILD_NUMBER" "$TEAM_ID" "$IOS_APP_PROFILE_NAME" "$OUT/metadata.json" "$EXT_BUNDLE_ID" "$IOS_EXT_PROFILE_NAME"
           ISHA="$(sed -n 's/.*"ipaSha256": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
           AUTH="$(sed -n 's/.*"signingAuthority": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
           EXP="$(sed -n 's/.*"profileExpires": "\([^"]*\)".*/\1/p' "$OUT/metadata.json")"
@@ -403,7 +425,8 @@ jobs:
             echo "| versionName / build number | \`$VNAME\` / \`$BUILD_NUMBER\` |"
             echo "| Team | \`$TEAM_ID\` |"
             echo "| Signed by | \`$AUTH\` |"
-            echo "| Provisioning profile | \`$PROFILE_NAME\` (expires $EXP) |"
+            echo "| Provisioning profile (app) | \`$IOS_APP_PROFILE_NAME\` (expires $EXP) |"
+            echo "| Provisioning profile (extension) | \`$IOS_EXT_PROFILE_NAME\` |"
             echo "| IPA SHA-256 | \`$ISHA\` |"
           } >> "$GITHUB_STEP_SUMMARY"
 

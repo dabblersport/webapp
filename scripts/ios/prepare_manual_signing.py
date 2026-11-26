@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-"""Switch the Runner app target to manual distribution signing, on the CI runner only (KAN-568).
+"""Switch the app targets to manual distribution signing, on the CI runner only (KAN-568, KAN-1047).
 
 The committed Xcode project signs automatically (a developer's Xcode account). A CI runner has no
 Apple account: it has the Apple Distribution certificate in a temporary keychain and the App
 Store provisioning profile. This script edits the checked-out copy of
-ios/Runner.xcodeproj/project.pbxproj IN PLACE, for the Runner app target's Release and Profile
-configurations only:
+ios/Runner.xcodeproj/project.pbxproj IN PLACE, for the Release and Profile configurations of
+every target whose bundle id is given (the Runner app and, since KAN-1047, the
+DabblerLiveActivity widget extension):
 
     CODE_SIGN_STYLE = Manual
     "CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "Apple Distribution"
@@ -14,7 +15,10 @@ configurations only:
 Debug, the RunnerTests targets and the Pods project are left alone. The edit is never committed
 (the workflow runs it on a throwaway checkout).
 
-    prepare_manual_signing.py <project.pbxproj> <bundle id> <profile name>
+    prepare_manual_signing.py <project.pbxproj> <bundle id>=<profile name> [<bundle id>=<profile name>...]
+    prepare_manual_signing.py <project.pbxproj> <bundle id> <profile name>     (single target, legacy)
+
+Each bundle id must have exactly its Release and Profile configurations patched, or nothing is written.
 """
 import re
 import sys
@@ -44,19 +48,40 @@ def patch(text, bundle_id, profile_name):
     return CONFIG_BLOCK.sub(rewrite, text), patched
 
 
+def parse_targets(args):
+    """['a=X', 'b=Y'] -> [('a','X'), ('b','Y')]; legacy ['a', 'X'] -> [('a','X')]."""
+    if len(args) == 2 and "=" not in args[0]:
+        return [(args[0], args[1])]
+    out = []
+    for a in args:
+        bid, sep, name = a.partition("=")
+        if not sep or not bid or not name:
+            raise SystemExit("expected <bundle id>=<profile name>, got %r" % a)
+        out.append((bid, name))
+    return out
+
+
+def patch_all(text, targets):
+    """Patch each (bundle id, profile) target; every one must get Release and Profile."""
+    for bid, name in targets:
+        text, patched = patch(text, bid, name)
+        if sorted(patched) != ["Profile", "Release"]:
+            raise SystemExit("expected to patch the Release and Profile configurations of %s, patched: %s" % (bid, patched))
+    return text
+
+
 def main(argv):
-    if len(argv) != 4:
+    if len(argv) < 3:
         print(__doc__)
         return 2
-    path, bundle_id, profile_name = argv[1:]
+    path, targets = argv[1], parse_targets(argv[2:])
     with open(path, "r", encoding="utf-8") as fh:
         text = fh.read()
-    new, patched = patch(text, bundle_id, profile_name)
-    if sorted(patched) != ["Profile", "Release"]:
-        raise SystemExit("expected to patch the Runner Release and Profile configurations, patched: %s" % patched)
+    new = patch_all(text, targets)
     with open(path, "w", encoding="utf-8") as fh:
         fh.write(new)
-    print("patched Runner configurations: %s" % ", ".join(sorted(patched)))
+    for bid, name in targets:
+        print("patched Release, Profile of %s -> '%s'" % (bid, name))
     return 0
 
 

@@ -8,12 +8,16 @@
 # Environment (set by the workflow from repository secrets; names only here):
 #   IOS_DISTRIBUTION_CERT_P12_BASE64   the Apple Distribution certificate + private key, .p12, base64
 #   IOS_DISTRIBUTION_CERT_PASSWORD     the .p12 password
-#   IOS_PROVISIONING_PROFILE_BASE64    the "Dabbler App Store" .mobileprovision, base64
+#   IOS_PROVISIONING_PROFILE_BASE64    OPTIONAL FALLBACK (KAN-1047): an app .mobileprovision, base64.
+#                                      The workflow normally fetches the ACTIVE profiles at build
+#                                      time with scripts/ios/fetch_profiles.py instead.
 #   RUNNER_TEMP                        GitHub's per-job temp dir
-# Output (appended to $GITHUB_ENV): KEYCHAIN_PATH, IOS_PROFILE_UUID, IOS_PROFILE_NAME
+# Output (appended to $GITHUB_ENV): KEYCHAIN_PATH, KEYCHAIN_PASSWORD, IOS_CERT_SERIAL (the installed
+# distribution certificate's serial, not secret) and, when the fallback secret is set,
+# IOS_FALLBACK_PROFILE_UUID / IOS_FALLBACK_PROFILE_NAME
 set -euo pipefail
 
-for n in IOS_DISTRIBUTION_CERT_P12_BASE64 IOS_DISTRIBUTION_CERT_PASSWORD IOS_PROVISIONING_PROFILE_BASE64; do
+for n in IOS_DISTRIBUTION_CERT_P12_BASE64 IOS_DISTRIBUTION_CERT_PASSWORD; do
   [[ -n "${!n:-}" ]] || { echo "::error::a required iOS signing secret is empty (see dabbler-docs/dabbler-code/IOS_RELEASE.md for the secret names)"; exit 1; }
 done
 
@@ -34,20 +38,30 @@ security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$KC_PASS"
 # Make the temporary keychain the only one searched for this job.
 security list-keychains -d user -s "$KC"
 
-PROFILE="$RUNNER_TEMP/profile.mobileprovision"
-printf '%s' "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE"
-security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"
-UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")"
-NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")"
-mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
-cp "$PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
-rm -f "$PROFILE" "$RUNNER_TEMP/profile.plist"
+# Serial of the installed Apple Distribution certificate, used to pick the profiles that include it.
+SERIAL="$(security find-certificate -a -c "Apple Distribution" -p "$KC" | openssl x509 -noout -serial | sed 's/^serial=//')"
+[[ -n "$SERIAL" ]] || { echo "::error::could not read the installed Apple Distribution certificate's serial"; exit 1; }
 
 {
   echo "KEYCHAIN_PATH=$KC"
   echo "KEYCHAIN_PASSWORD=$KC_PASS"
-  echo "IOS_PROFILE_UUID=$UUID"
-  echo "IOS_PROFILE_NAME=$NAME"
+  echo "IOS_CERT_SERIAL=$SERIAL"
 } >> "$GITHUB_ENV"
-echo "Installed the distribution identity (temporary keychain) and profile '$NAME'."
+
+if [[ -n "${IOS_PROVISIONING_PROFILE_BASE64:-}" ]]; then
+  PROFILE="$RUNNER_TEMP/profile.mobileprovision"
+  printf '%s' "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$PROFILE"
+  security cms -D -i "$PROFILE" > "$RUNNER_TEMP/profile.plist"
+  UUID="$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/profile.plist")"
+  NAME="$(/usr/libexec/PlistBuddy -c 'Print :Name' "$RUNNER_TEMP/profile.plist")"
+  mkdir -p "$HOME/Library/MobileDevice/Provisioning Profiles"
+  cp "$PROFILE" "$HOME/Library/MobileDevice/Provisioning Profiles/$UUID.mobileprovision"
+  rm -f "$PROFILE" "$RUNNER_TEMP/profile.plist"
+  {
+    echo "IOS_FALLBACK_PROFILE_UUID=$UUID"
+    echo "IOS_FALLBACK_PROFILE_NAME=$NAME"
+  } >> "$GITHUB_ENV"
+  echo "Installed the fallback profile '$NAME' from the secret."
+fi
+echo "Installed the distribution identity (temporary keychain), certificate serial $SERIAL."
 security find-identity -v -p codesigning "$KC" | sed -E 's/[0-9A-F]{40}/<sha1>/' | tail -3

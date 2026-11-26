@@ -2,8 +2,10 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
 <dict>
-	<!-- KAN-568: export for App Store Connect / TestFlight with the manually installed
-	     "Dabbler App Store" profile. No secret here: team id, bundle id and the profile NAME. -->
+	<!-- KAN-568 / KAN-1047: export for App Store Connect / TestFlight with manually installed
+	     profiles. CI rewrites provisioningProfiles at build time from the ACTIVE profiles it
+	     fetched (scripts/ios/fetch_profiles.py export-options); the names below are the current
+	     ones. No secret here: team id, bundle ids and profile NAMES. -->
 	<key>method</key>
 	<string>app-store-connect</string>
 	<key>teamID</key>
@@ -15,7 +17,9 @@
 	<key>provisioningProfiles</key>
 	<dict>
 		<key>app.dabbler.pro</key>
-		<string>Dabbler App Store</string>
+		<string>Dabbler App Store Live Activities</string>
+		<key>app.dabbler.pro.DabblerLiveActivity</key>
+		<string>Dabbler Live Activity App Store</string>
 	</dict>
 	<key>uploadSymbols</key>
 	<true/>
