@@ -156,4 +156,66 @@ void main() {
     expect(find.byType(DabblerSettingsHeader), findsOneWidget);
     expect(_barColor(tester), _colors(tester).surfaceHeaderMessages);
   });
+
+  group('no page-ground gap under a status-bar inset', () {
+    setUp(() {
+      final view =
+          TestWidgetsFlutterBinding.instance.platformDispatcher.views.first;
+      // An iPhone notch: 47 logical top inset.
+      view.padding = const FakeViewPadding(top: 47 * 3.0);
+    });
+    tearDown(() {
+      TestWidgetsFlutterBinding.instance.platformDispatcher.views.first
+          .resetPadding();
+    });
+
+    Rect barRect(WidgetTester tester) =>
+        tester.getRect(find.byType(AnimatedContainer).first);
+    Rect heroRect(WidgetTester tester) =>
+        tester.getRect(find.byType(DabblerSettingsHeader));
+
+    testWidgets('a short list: the hero starts where the bar ends', (
+      tester,
+    ) async {
+      final repo = FakeMessagingRepository()..seedMyConversations(_chats(3));
+      await tester.pumpWidget(_app(repo));
+      await _settle(tester);
+      final colors = _colors(tester);
+      expect(heroRect(tester).top, moreOrLessEquals(barRect(tester).bottom));
+      expect(_barColor(tester), colors.surfaceHeaderMessages);
+      expect(
+        tester
+            .widget<DabblerSettingsHeader>(find.byType(DabblerSettingsHeader))
+            .tint,
+        colors.surfaceHeaderMessages,
+      );
+    });
+
+    testWidgets('a long list, at the top and scrolled: no gap', (tester) async {
+      final repo = FakeMessagingRepository()..seedMyConversations(_chats(20));
+      await tester.pumpWidget(_app(repo));
+      await _settle(tester);
+      expect(heroRect(tester).top, moreOrLessEquals(barRect(tester).bottom));
+
+      final scroll = tester.state<ScrollableState>(
+        find.byType(Scrollable).first,
+      );
+      scroll.position.jumpTo(20);
+      await _settle(tester);
+      expect(
+        heroRect(tester).top,
+        moreOrLessEquals(barRect(tester).bottom - 20),
+      );
+      expect(_barColor(tester), _colors(tester).surfaceHeaderMessages);
+    });
+
+    testWidgets('the empty state: the hero starts where the bar ends', (
+      tester,
+    ) async {
+      final repo = FakeMessagingRepository()..seedMyConversations(const []);
+      await tester.pumpWidget(_app(repo));
+      await _settle(tester);
+      expect(heroRect(tester).top, moreOrLessEquals(barRect(tester).bottom));
+    });
+  });
 }

@@ -86,6 +86,9 @@ class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
     if (result == null || async.isLoading) {
       body = ListView(
         controller: _scroll,
+        // The top bar already pads the status bar; the default MediaQuery
+        // inset would open a page-ground band above the hero.
+        padding: EdgeInsets.zero,
         physics: const NeverScrollableScrollPhysics(),
         children: [
           _hero(context, l10n),
@@ -100,6 +103,9 @@ class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
       body = chats.isEmpty
           ? ListView(
               controller: _scroll,
+              // The top bar already pads the status bar; the default MediaQuery
+              // inset would open a page-ground band above the hero.
+              padding: EdgeInsets.zero,
               children: [
                 _hero(context, l10n),
                 DabblerEmptyState(
@@ -115,6 +121,9 @@ class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
     } else {
       body = ListView(
         controller: _scroll,
+        // The top bar already pads the status bar; the default MediaQuery
+        // inset would open a page-ground band above the hero.
+        padding: EdgeInsets.zero,
         children: [
           _hero(context, l10n),
           DabblerEmptyState.error(
@@ -154,6 +163,9 @@ class _MessagesListScreenState extends ConsumerState<MessagesListScreen> {
     return ListView.builder(
       key: MessagesListScreen.listKey,
       controller: _scroll,
+      // The top bar already pads the status bar; the default MediaQuery
+      // inset would open a page-ground band above the hero.
+      padding: EdgeInsets.zero,
       itemCount: chats.length + 1,
       itemBuilder: (context, index) {
         if (index == 0) return _hero(context, l10n);
