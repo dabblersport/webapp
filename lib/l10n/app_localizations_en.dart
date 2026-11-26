@@ -11432,4 +11432,11 @@ class AppLocalizationsEn extends AppLocalizations {
   @override
   String get notif_channels_update_failed =>
       'Couldn\'t save that change. Try again.';
+
+  @override
+  String get manage_sports_add_failed => 'Couldn\'t add this sport. Try again.';
+
+  @override
+  String get manage_sports_remove_failed =>
+      'Couldn\'t remove this sport. Try again.';
 }

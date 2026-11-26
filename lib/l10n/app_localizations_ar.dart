@@ -11531,4 +11531,12 @@ class AppLocalizationsAr extends AppLocalizations {
   @override
   String get notif_channels_update_failed =>
       'تعذّر حفظ هذا التغيير. حاول مرة أخرى.';
+
+  @override
+  String get manage_sports_add_failed =>
+      'تعذّرت إضافة هذه الرياضة. حاول مرة أخرى.';
+
+  @override
+  String get manage_sports_remove_failed =>
+      'تعذّرت إزالة هذه الرياضة. حاول مرة أخرى.';
 }

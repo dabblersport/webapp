@@ -2,6 +2,7 @@ import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -174,7 +175,12 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       await ref.read(profileControllerProvider.notifier).refreshProfile();
     } catch (e) {
       if (mounted) {
-        _toast('Failed to update sport: $e');
+        final l10n = AppLocalizations.of(context);
+        _toast(
+          isAdding
+              ? l10n.manage_sports_add_failed
+              : l10n.manage_sports_remove_failed,
+        );
       }
     } finally {
       widget.saving.value = false;

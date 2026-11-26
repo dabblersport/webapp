@@ -3749,5 +3749,7 @@
   "notif_channels_group_system": "من دابلر",
   "notif_channels_all": "كل «{group}»",
   "notif_channels_locked_note": "تنبيهات الأمان تحمي حسابك ولا يمكن إيقافها.",
-  "notif_channels_update_failed": "تعذّر حفظ هذا التغيير. حاول مرة أخرى."
+  "notif_channels_update_failed": "تعذّر حفظ هذا التغيير. حاول مرة أخرى.",
+  "manage_sports_add_failed": "تعذّرت إضافة هذه الرياضة. حاول مرة أخرى.",
+  "manage_sports_remove_failed": "تعذّرت إزالة هذه الرياضة. حاول مرة أخرى."
 }

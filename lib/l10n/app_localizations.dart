@@ -19722,6 +19722,18 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Couldn\'t save that change. Try again.'**
   String get notif_channels_update_failed;
+
+  /// No description provided for @manage_sports_add_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t add this sport. Try again.'**
+  String get manage_sports_add_failed;
+
+  /// No description provided for @manage_sports_remove_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t remove this sport. Try again.'**
+  String get manage_sports_remove_failed;
 }
 
 class _AppLocalizationsDelegate

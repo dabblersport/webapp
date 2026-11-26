@@ -563,6 +563,10 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
 
   /// Convert error to user-friendly message
   String _getErrorMessage(dynamic error) {
+    // Never surface raw database errors (PostgrestException) to the user.
+    if (error is PostgrestException) {
+      return 'Something went wrong. Please try again.';
+    }
     if (error is Exception) {
       return error.toString().replaceAll('Exception: ', '');
     }

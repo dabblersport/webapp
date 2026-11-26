@@ -4705,5 +4705,7 @@
   "notif_channels_all": "All '{group}'",
   "@notif_channels_all": {"placeholders": {"group": {"type": "String"}}},
   "notif_channels_locked_note": "Security alerts protect your account and cannot be turned off.",
-  "notif_channels_update_failed": "Couldn't save that change. Try again."
+  "notif_channels_update_failed": "Couldn't save that change. Try again.",
+  "manage_sports_add_failed": "Couldn't add this sport. Try again.",
+  "manage_sports_remove_failed": "Couldn't remove this sport. Try again."
 }
