@@ -5,7 +5,6 @@ import 'package:dabbler/core/cache/cache_providers.dart';
 import 'package:dabbler/core/fp/result.dart';
 
 import 'package:dabbler/features/location/domain/models/nearby_sort_order.dart';
-import 'package:dabbler/features/location/providers/active_location_provider.dart';
 import 'package:dabbler/features/location/providers/listing_city.dart';
 import 'package:dabbler/core/data/supabase_remote_data_source.dart';
 import 'package:dabbler/features/games/data/datasources/nearby_games_datasource.dart';
@@ -25,33 +24,9 @@ final nearbyGamesRepositoryProvider = Provider<NearbyGamesRepository>((ref) {
   return NearbyGamesRepositoryImpl(ref.watch(nearbyGamesDatasourceProvider));
 });
 
-/// The games list's default radius (`Listings.2026-10-08.dc.html:1989`: the
-/// design opens on "Within 5 km").
+/// The radius preselected in the distance picker when the viewer turns the
+/// filter on. The list itself opens with no distance filter.
 const int kGamesDefaultRadiusMeters = 5000;
-
-/// A value that starts as [ifReady] when the viewer's location is ready, and
-/// otherwise as [otherwise] — switching to [ifReady] once, the first time the
-/// location becomes ready, as long as nothing has been applied by hand before.
-///
-/// This never asks for a location: it only listens to [activeLocationProvider],
-/// which the games screen already watches for its header. No location, no
-/// default — the filters stay off.
-T _defaultOnLocation<T>(StateProviderRef<T> ref, T ifReady, T otherwise) {
-  final bool readyNow =
-      ref.read(activeLocationProvider).valueOrNull is ActiveLocationReady;
-  var settled = readyNow;
-  final T initial = readyNow ? ifReady : otherwise;
-  ref.listen<AsyncValue<ActiveLocationState>>(activeLocationProvider, (
-    _,
-    next,
-  ) {
-    if (settled || next.valueOrNull is! ActiveLocationReady) return;
-    settled = true;
-    // Only when the viewer has not changed it meanwhile.
-    if (ref.controller.state == initial) ref.controller.state = ifReady;
-  });
-  return initial;
-}
 
 /// The games list's sort, or null for the default: "Starting soonest" (start
 /// time ascending, CEO 2026-10-08), which shows no rail chip. "Nearest" is an
@@ -59,14 +34,13 @@ T _defaultOnLocation<T>(StateProviderRef<T> ref, T ifReady, T otherwise) {
 /// since the unlocated query is always in start-time order.
 final nearbyGameSortProvider = StateProvider<NearbySortOrder?>((ref) => null);
 
-/// Whether the "nearby" distance filter is active on the games list. On by
-/// default only when the viewer's location is ready.
-final nearbyGamesFilterEnabledProvider = StateProvider<bool>(
-  (ref) => _defaultOnLocation<bool>(ref, true, false),
-);
+/// Whether the "nearby" distance filter is active on the games list. Off by
+/// default (CEO 2026-11-26: no default distance filter, no chip, no badge);
+/// on only once the viewer picks a distance.
+final nearbyGamesFilterEnabledProvider = StateProvider<bool>((ref) => false);
 
-/// The games list's own radius, in metres — "Within 5 km" until the viewer
-/// picks another preset. Kept apart from the location's saved radius so the
+/// The games list's own radius, in metres — the preset shown when the viewer
+/// turns the distance filter on. Kept apart from the location's saved radius so the
 /// games default does not move other listings.
 final gamesRadiusProvider = StateProvider<int>(
   (ref) => kGamesDefaultRadiusMeters,
