@@ -297,8 +297,9 @@ final class PushBridge {
   }
 
   // KAN-1047: firebase_messaging (the center's delegate) forwards this here.
-  // FlutterAppDelegate has no implementation of its own to chain to.
-  @objc func userNotificationCenter(
+  // FlutterAppDelegate declares this, so it is an override. super is not
+  // called: PushBridge fully handles opening the settings screen.
+  override func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     openSettingsFor notification: UNNotification?
   ) {
