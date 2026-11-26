@@ -298,7 +298,7 @@ final class PushBridge {
 
   // KAN-1047: firebase_messaging (the center's delegate) forwards this here.
   // FlutterAppDelegate has no implementation of its own to chain to.
-  func userNotificationCenter(
+  @objc func userNotificationCenter(
     _ center: UNUserNotificationCenter,
     openSettingsFor notification: UNNotification?
   ) {
