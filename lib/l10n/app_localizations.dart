@@ -19741,6 +19741,42 @@ abstract class AppLocalizations {
   /// **'Your primary sport can\'t be removed. Change your primary sport first.'**
   String get manage_sports_remove_primary;
 
+  /// No description provided for @manage_sports_title.
+  ///
+  /// In en, this message translates to:
+  /// **'Manage Sports'**
+  String get manage_sports_title;
+
+  /// No description provided for @manage_sports_subtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap a sport to add or remove it from your profile.'**
+  String get manage_sports_subtitle;
+
+  /// No description provided for @manage_sports_search.
+  ///
+  /// In en, this message translates to:
+  /// **'Search sports'**
+  String get manage_sports_search;
+
+  /// No description provided for @manage_sports_no_match.
+  ///
+  /// In en, this message translates to:
+  /// **'No sports match your search'**
+  String get manage_sports_no_match;
+
+  /// No description provided for @manage_sports_load_failed.
+  ///
+  /// In en, this message translates to:
+  /// **'Failed to load sports'**
+  String get manage_sports_load_failed;
+
+  /// No description provided for @manage_sports_last_sport.
+  ///
+  /// In en, this message translates to:
+  /// **'You must have at least one sport'**
+  String get manage_sports_last_sport;
+
   /// KAN-1052: header action and rail chip that shows sports outside the viewer's own list
   ///
   /// In en, this message translates to:

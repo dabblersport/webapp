@@ -3753,6 +3753,12 @@
   "manage_sports_add_failed": "تعذّرت إضافة هذه الرياضة. حاول مرة أخرى.",
   "manage_sports_remove_failed": "تعذّرت إزالة هذه الرياضة. حاول مرة أخرى.",
   "manage_sports_remove_primary": "لا يمكن إزالة رياضتك الأساسية. غيّر رياضتك الأساسية أولاً.",
+  "manage_sports_title": "إدارة الرياضات",
+  "manage_sports_subtitle": "اضغط على رياضة لإضافتها إلى ملفك الشخصي أو إزالتها منه.",
+  "manage_sports_search": "ابحث عن رياضة",
+  "manage_sports_no_match": "لا توجد رياضات تطابق بحثك",
+  "manage_sports_load_failed": "تعذّر تحميل الرياضات",
+  "manage_sports_last_sport": "يجب أن تكون لديك رياضة واحدة على الأقل",
   "sports_browse_all": "تصفح كل الرياضات",
   "sports_show_mine": "اعرض رياضاتي فقط"
 }

@@ -11445,6 +11445,25 @@ class AppLocalizationsEn extends AppLocalizations {
       'Your primary sport can\'t be removed. Change your primary sport first.';
 
   @override
+  String get manage_sports_title => 'Manage Sports';
+
+  @override
+  String get manage_sports_subtitle =>
+      'Tap a sport to add or remove it from your profile.';
+
+  @override
+  String get manage_sports_search => 'Search sports';
+
+  @override
+  String get manage_sports_no_match => 'No sports match your search';
+
+  @override
+  String get manage_sports_load_failed => 'Failed to load sports';
+
+  @override
+  String get manage_sports_last_sport => 'You must have at least one sport';
+
+  @override
   String get sports_browse_all => 'Browse all sports';
 
   @override

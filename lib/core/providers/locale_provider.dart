@@ -29,8 +29,14 @@ class LocaleNotifier extends StateNotifier<Locale> {
 
   String? _activeProfileId;
 
+  /// KAN-1058: set once the account's saved language (or a user choice) has
+  /// been applied, so the slower start-up read of local storage never
+  /// overwrites it with the device language.
+  bool _accountApplied = false;
+
   Future<void> _load() async {
     final prefs = await SharedPreferences.getInstance();
+    if (_accountApplied) return;
     final saved = prefs.getString(_kLangKey);
     if (saved != null && _kSupported.contains(saved)) {
       state = Locale(saved);
@@ -45,10 +51,15 @@ class LocaleNotifier extends StateNotifier<Locale> {
 
   /// Hydrate locale from a loaded profile. Tracks the active profile id so
   /// future setLocale calls write back to the right row.
-  Future<void> hydrateFromProfile(UserProfile? profile) async {
-    _activeProfileId = profile?.id;
-    final lang = profile?.language;
+  Future<void> hydrateFromProfile(UserProfile? profile) =>
+      hydrateFromLanguage(profile?.language, profileId: profile?.id);
+
+  /// Apply the language saved on the account (`profiles.language`). This is
+  /// the account's source of truth; local storage only seeds the first frame.
+  Future<void> hydrateFromLanguage(String? lang, {String? profileId}) async {
+    _activeProfileId = profileId;
     if (lang == null || !_kSupported.contains(lang)) return;
+    _accountApplied = true;
     if (state.languageCode == lang) return;
     // KAN-608: a language change still waiting for the server is newer.
     if (await SettingsSyncBridge.hasPendingEdit(SettingKeys.language)) return;
@@ -60,6 +71,7 @@ class LocaleNotifier extends StateNotifier<Locale> {
   /// User-initiated locale change. Persists to SharedPreferences and, when
   /// logged in, writes to the active profile.
   Future<void> setLocale(Locale locale) async {
+    _accountApplied = true;
     if (state.languageCode == locale.languageCode) return;
     state = locale;
     final prefs = await SharedPreferences.getInstance();

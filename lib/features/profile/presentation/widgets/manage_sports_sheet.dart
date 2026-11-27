@@ -5,6 +5,7 @@ import 'package:dabbler/core/config/supabase_config.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/profile/domain/services/sport_removal.dart';
+import 'package:dabbler/features/profile/domain/services/sport_selection.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -31,12 +32,15 @@ class ManageSportsSheet extends ConsumerStatefulWidget {
     final ValueNotifier<bool> saving = ValueNotifier<bool>(false);
     return showAppSheet<void>(
       context: context,
-      title: 'Manage Sports',
+      title: AppLocalizations.of(context).manage_sports_title,
       detent: DabblerSheetDetent.content,
       titleWidget: Row(
         children: [
-          const Expanded(
-            child: DabblerText('Manage Sports', style: DabblerType.title3),
+          Expanded(
+            child: DabblerText(
+              AppLocalizations.of(context).manage_sports_title,
+              style: DabblerType.title3,
+            ),
           ),
           ValueListenableBuilder<bool>(
             valueListenable: saving,
@@ -57,10 +61,10 @@ class ManageSportsSheet extends ConsumerStatefulWidget {
 class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   /// Currently selected sport IDs (UUIDs): the same union as
   /// [mySportsProvider] (interests, sport_profiles rows, primary sport).
-  Set<String> _selectedIds = {};
+  SportSelection _selection = SportSelection(const []);
 
   /// The profile's `interests` alone. Writes go to this set, never to
-  /// [_selectedIds], so a card-only sport is not copied into interests.
+  /// [_selection], so a card-only sport is not copied into interests.
   Set<String> _interests = {};
   bool _isSaving = false;
   String? _profileId;
@@ -79,13 +83,13 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   void _loadCurrent() {
     final profile = ref.read(profileControllerProvider).profile;
     _interests = Set<String>.from(profile?.interests ?? []);
-    _selectedIds = {..._interests};
+    _selection = SportSelection(_interests);
     // KAN-1057: legacy profiles hold sport_profiles rows missing from
     // interests; tick those chips too, from the provider the nav uses.
     ref.listenManual<AsyncValue<MySports>>(mySportsProvider, (_, next) {
       final mine = next.valueOrNull;
       if (!mounted || mine == null || mine.sports.isEmpty) return;
-      setState(() => _selectedIds.addAll(mine.sports.map((s) => s.id)));
+      setState(() => _selection.mergeFromProvider(mine.sports.map((s) => s.id)));
     }, fireImmediately: true);
     _profileId = profile?.id;
     _primarySport = profile?.primarySport;
@@ -111,13 +115,14 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         (sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_'))
             .toLowerCase();
 
-    final isAdding = !_selectedIds.contains(sport.id);
+    if (_selection.isPending(sport.id)) return;
+    final isAdding = !_selection.isTicked(sport.id);
 
     final block = isAdding
         ? null
         : sportRemovalBlock(
             sportId: sport.id,
-            selectedCount: _selectedIds.length,
+            selectedCount: _selection.count,
             profileType: _profileType ?? 'player',
             primarySport: _primarySport,
             preferredSport: _preferredSport,
@@ -125,7 +130,9 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     if (block != null) {
       if (mounted) {
         _toast(switch (block) {
-          SportRemovalBlock.lastSport => 'You must have at least one sport',
+          SportRemovalBlock.lastSport => AppLocalizations.of(
+            context,
+          ).manage_sports_last_sport,
           SportRemovalBlock.primarySport => AppLocalizations.of(
             context,
           ).manage_sports_remove_primary,
@@ -134,8 +141,14 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       return;
     }
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+      isAdding
+          ? _selection.startAdd(sport.id)
+          : _selection.startRemove(sport.id);
+    });
     widget.saving.value = true;
+    var ok = false;
 
     try {
       if (isAdding) {
@@ -165,10 +178,8 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           }, onConflict: 'profile_id,sport');
         }
 
-        setState(() {
-          _selectedIds.add(sport.id);
-          _interests.add(sport.id);
-        });
+        _interests.add(sport.id);
+        ok = true;
       } else {
         // Row first, then interests: the contributor trigger requires every
         // sport row to have its sport in interests (KAN-1051).
@@ -186,10 +197,9 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           throw Exception((result as Err<Unit, Failure>).error.message);
         }
 
-        setState(() {
-          _selectedIds.remove(sport.id);
-          _interests.remove(sport.id);
-        });
+        _interests.remove(sport.id);
+        // The write landed: a later refresh failure must not re-tick it.
+        ok = true;
       }
 
       // Refresh the relevant controller so the profile screen updates.
@@ -216,6 +226,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       }
     } finally {
       widget.saving.value = false;
+      _selection.finish(sport.id, removing: !isAdding, ok: ok);
       if (mounted) setState(() => _isSaving = false);
     }
   }
@@ -238,7 +249,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DabblerText(
-          'Tap a sport to add or remove it from your profile.',
+          AppLocalizations.of(context).manage_sports_subtitle,
           style: DabblerType.subheadline,
           tone: DabblerTextTone.secondary,
         ),
@@ -246,7 +257,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         DabblerSearchField(
           controller: _searchController,
           enabled: !_isSaving,
-          placeholder: 'Search sports',
+          placeholder: AppLocalizations.of(context).manage_sports_search,
           onChanged: (value) {
             setState(() => _searchQuery = value.trim().toLowerCase());
           },
@@ -261,6 +272,10 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
                       .where(
                         (sport) =>
                             sport.nameEn.toLowerCase().contains(_searchQuery) ||
+                            sport
+                                .localizedName(context)
+                                .toLowerCase()
+                                .contains(_searchQuery) ||
                             (sport.emoji?.contains(_searchQuery) ?? false),
                       )
                       .toList();
@@ -269,7 +284,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
               return Padding(
                 padding: const EdgeInsets.all(DabblerSpacing.space8),
                 child: DabblerText(
-                  'No sports match your search',
+                  AppLocalizations.of(context).manage_sports_no_match,
                   textAlign: TextAlign.center,
                   style: DabblerType.subheadline,
                   tone: DabblerTextTone.secondary,
@@ -297,7 +312,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerText(
-              'Failed to load sports',
+              AppLocalizations.of(context).manage_sports_load_failed,
               textAlign: TextAlign.center,
               style: DabblerType.subheadline,
               tone: DabblerTextTone.secondary,
@@ -310,7 +325,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   }
 
   Widget _sportRow(Sport sport, DabblerColors colors) {
-    final isSelected = _selectedIds.contains(sport.id);
+    final isSelected = _selection.isTicked(sport.id);
     final key = (sport.sportKey ?? sport.nameEn.toLowerCase())
         .toLowerCase()
         .replaceAll('_', '-')
@@ -318,7 +333,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     return DabblerInputRow(
       // The sport emoji is replaced by the DS sport glyph.
       leading: DabblerSportIcon.fromKey(key),
-      title: sport.nameEn,
+      title: sport.localizedName(context),
       trailing: DabblerIcon(
         isSelected ? 'tick-circle' : 'record',
         weight: isSelected ? DabblerIconWeight.bold : DabblerIconWeight.linear,

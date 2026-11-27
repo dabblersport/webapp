@@ -2,6 +2,7 @@ import 'package:dabbler/core/sync/settings_sync.dart';
 import 'package:dabbler/core/services/connectivity_service.dart';
 import 'dart:async';
 import 'package:dabbler/core/system_ui/system_chrome_sync.dart';
+import 'package:dabbler/core/providers/locale_account_sync.dart';
 import 'package:dabbler/core/providers/locale_provider.dart';
 import 'package:dabbler/core/providers/time_format_provider.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
@@ -322,6 +323,8 @@ class MyApp extends ConsumerWidget {
     ref.watch(connectivityProvider);
     // KAN-608: the offline settings queue lives as long as the app.
     ref.watch(settingsSyncProvider.notifier);
+    // KAN-1058: the saved account language drives the locale from app start.
+    ref.watch(localeAccountSyncProvider);
     final locale = ref.watch(localeProvider);
     final hourFormat = ref.watch(hourFormatProvider);
     ref.listen<UserProfile?>(currentUserProfileProvider, (prev, next) {

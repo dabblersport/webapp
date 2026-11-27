@@ -11545,6 +11545,26 @@ class AppLocalizationsAr extends AppLocalizations {
       'لا يمكن إزالة رياضتك الأساسية. غيّر رياضتك الأساسية أولاً.';
 
   @override
+  String get manage_sports_title => 'إدارة الرياضات';
+
+  @override
+  String get manage_sports_subtitle =>
+      'اضغط على رياضة لإضافتها إلى ملفك الشخصي أو إزالتها منه.';
+
+  @override
+  String get manage_sports_search => 'ابحث عن رياضة';
+
+  @override
+  String get manage_sports_no_match => 'لا توجد رياضات تطابق بحثك';
+
+  @override
+  String get manage_sports_load_failed => 'تعذّر تحميل الرياضات';
+
+  @override
+  String get manage_sports_last_sport =>
+      'يجب أن تكون لديك رياضة واحدة على الأقل';
+
+  @override
   String get sports_browse_all => 'تصفح كل الرياضات';
 
   @override

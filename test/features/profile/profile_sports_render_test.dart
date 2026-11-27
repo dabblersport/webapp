@@ -163,7 +163,9 @@ void main() {
       expect(find.text(l10n.sports_prefs_title), findsOneWidget);
       expect(find.text(l10n.sports_prefs_my_sports), findsOneWidget);
       expect(
-        find.textContaining(l10n.sports_prefs_load_failed('').replaceAll(RegExp(r'[:：]\s*$'), '')),
+        find.textContaining(
+          l10n.sports_prefs_load_failed('').replaceAll(RegExp(r'[:：]\s*$'), ''),
+        ),
         findsOneWidget,
       );
     });
@@ -191,7 +193,10 @@ void main() {
       await tester.tap(find.text('open'));
       await _settle(tester);
       expect(tester.takeException(), isNull);
-      expect(find.text('Manage Sports'), findsOneWidget);
+      expect(
+        find.text(lookupAppLocalizations(locale).manage_sports_title),
+        findsOneWidget,
+      );
       expect(find.byType(DabblerSearchField), findsOneWidget);
       expect(find.byType(DabblerInputRow), findsNWidgets(4));
       await _shoot(tester, 'manage-sports-sheet-$dir');

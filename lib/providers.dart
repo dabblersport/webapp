@@ -1,6 +1,7 @@
 library;
 
 export 'core/providers/locale_provider.dart';
+export 'core/providers/locale_account_sync.dart';
 export 'core/providers/time_format_provider.dart';
 export 'core/services/analytics/analytics_service.dart';
 export 'core/services/connectivity_service.dart';
