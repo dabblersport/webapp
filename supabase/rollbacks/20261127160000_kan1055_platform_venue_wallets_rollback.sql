@@ -4,10 +4,15 @@
 BEGIN;
 ALTER TABLE public.wallets DROP CONSTRAINT wallets_owner_user_consistent;
 ALTER TABLE public.wallets DROP CONSTRAINT wallets_user_id_key;
+-- financial_ledger_wallet_fkey depends on the pkey index on id: Postgres does not re-bind an FK to another
+-- unique index, so the FK is dropped and re-created (same definition) around the key swap.
+ALTER TABLE public.financial_ledger DROP CONSTRAINT financial_ledger_wallet_fkey;
 ALTER TABLE public.wallets DROP CONSTRAINT wallets_pkey;
+CREATE UNIQUE INDEX wallets_id_unique ON public.wallets USING btree (id);
 ALTER TABLE public.wallets ALTER COLUMN user_id SET NOT NULL;
 ALTER TABLE public.wallets ADD CONSTRAINT wallets_pkey PRIMARY KEY (user_id);
-CREATE UNIQUE INDEX wallets_id_unique ON public.wallets USING btree (id);
+ALTER TABLE public.financial_ledger ADD CONSTRAINT financial_ledger_wallet_fkey
+  FOREIGN KEY (wallet_id) REFERENCES public.wallets(id) ON DELETE SET NULL;
 ALTER TABLE public.wallets ALTER COLUMN owner_type DROP NOT NULL;
 ALTER TABLE public.wallets ALTER COLUMN id DROP NOT NULL;
 
