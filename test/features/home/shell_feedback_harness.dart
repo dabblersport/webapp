@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/features/sports/presentation/providers/my_sports_provider.dart';
 import 'package:dabbler/core/feedback/feedback_center.dart';
 import 'package:dabbler/core/feedback/shell_toast_bridge.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
@@ -104,6 +105,7 @@ Future<ShellHarness> pumpShell(
     ProviderScope(
       overrides: [
         initializeProfileDataProvider.overrideWith((ref) async => false),
+        mySportsNavProvider.overrideWithValue(MySports.none),
         meetupActorProfileIdProvider.overrideWithValue(null),
         activePersonaProvider.overrideWithValue(PersonaType.player),
         meetupsEnabledProvider.overrideWithValue(true),

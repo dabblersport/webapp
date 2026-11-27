@@ -3752,6 +3752,7 @@
   "notif_channels_update_failed": "تعذّر حفظ هذا التغيير. حاول مرة أخرى.",
   "manage_sports_add_failed": "تعذّرت إضافة هذه الرياضة. حاول مرة أخرى.",
   "manage_sports_remove_failed": "تعذّرت إزالة هذه الرياضة. حاول مرة أخرى.",
+  "manage_sports_remove_primary": "لا يمكن إزالة رياضتك الأساسية. غيّر رياضتك الأساسية أولاً.",
   "sports_browse_all": "تصفح كل الرياضات",
   "sports_show_mine": "اعرض رياضاتي فقط"
 }

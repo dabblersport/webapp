@@ -11541,6 +11541,10 @@ class AppLocalizationsAr extends AppLocalizations {
       'تعذّرت إزالة هذه الرياضة. حاول مرة أخرى.';
 
   @override
+  String get manage_sports_remove_primary =>
+      'لا يمكن إزالة رياضتك الأساسية. غيّر رياضتك الأساسية أولاً.';
+
+  @override
   String get sports_browse_all => 'تصفح كل الرياضات';
 
   @override

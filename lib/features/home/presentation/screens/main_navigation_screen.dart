@@ -367,10 +367,12 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
     final l = AppLocalizations.of(context);
     // KAN-1052: Games and Meetups follow the viewer's sports; a hidden branch
     // that is current (e.g. its last sport was just removed) falls back Home.
-    final mySports = ref.watch(mySportsNowProvider);
+    // KAN-1056: null while loading; the gated tabs wait for the data.
+    final mySports = ref.watch(mySportsNavProvider);
     final branch = NavigationBranch.values[_currentIndex];
-    if ((branch == NavigationBranch.games && !mySports.showsGames) ||
-        (branch == NavigationBranch.meetups && !mySports.showsMeetups)) {
+    if (mySports != null &&
+        ((branch == NavigationBranch.games && !mySports.showsGames) ||
+            (branch == NavigationBranch.meetups && !mySports.showsMeetups))) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _goBranch(NavigationBranch.home);
       });
@@ -460,13 +462,14 @@ class _MainNavigationScreenState extends ConsumerState<MainNavigationScreen> {
                   icon: 'location',
                   label: l.nav_venues,
                 ),
-                if (mySports.showsGames)
+                if (mySports?.showsGames ?? false)
                   DabblerNavigationItem(
                     id: _idGames,
                     icon: 'game',
                     label: l.nav_games,
                   ),
-                if (FeatureFlags.enableMeetups && mySports.showsMeetups)
+                if (FeatureFlags.enableMeetups &&
+                    (mySports?.showsMeetups ?? false))
                   DabblerNavigationItem(
                     id: _idMeetups,
                     icon: 'calendar-1',

@@ -19735,6 +19735,12 @@ abstract class AppLocalizations {
   /// **'Couldn\'t remove this sport. Try again.'**
   String get manage_sports_remove_failed;
 
+  /// No description provided for @manage_sports_remove_primary.
+  ///
+  /// In en, this message translates to:
+  /// **'Your primary sport can\'t be removed. Change your primary sport first.'**
+  String get manage_sports_remove_primary;
+
   /// KAN-1052: header action and rail chip that shows sports outside the viewer's own list
   ///
   /// In en, this message translates to:

@@ -4708,6 +4708,7 @@
   "notif_channels_update_failed": "Couldn't save that change. Try again.",
   "manage_sports_add_failed": "Couldn't add this sport. Try again.",
   "manage_sports_remove_failed": "Couldn't remove this sport. Try again.",
+  "manage_sports_remove_primary": "Your primary sport can't be removed. Change your primary sport first.",
   "sports_browse_all": "Browse all sports",
   "@sports_browse_all": {"description": "KAN-1052: header action and rail chip that shows sports outside the viewer's own list"},
   "sports_show_mine": "Show only my sports",

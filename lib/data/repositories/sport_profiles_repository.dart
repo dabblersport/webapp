@@ -28,6 +28,9 @@ abstract class SportProfilesRepository {
   /// Remove my sport preference (hard delete; no deleted_at column present).
   Future<Result<void, Failure>> removeMySport({required String sportKey});
 
+  /// The `sport_id`s of [profileId]'s `sport_profiles` rows (KAN-1056).
+  Future<Result<List<String>, Failure>> getSportIdsForProfile(String profileId);
+
   /// Realtime stream of my preferences (composite PK uses user_id + sport_key).
   Stream<Result<List<SportProfile>, Failure>> watchMySports();
 }

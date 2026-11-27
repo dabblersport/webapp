@@ -60,6 +60,7 @@ Future<GoRouter> _pump(
           (ref) => FakeFeed(const FeedLoading()),
         ),
         mySportsNowProvider.overrideWithValue(mine),
+        mySportsNavProvider.overrideWithValue(mine),
       ],
       child: MaterialApp.router(
         routerConfig: router,

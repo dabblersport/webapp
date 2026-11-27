@@ -11441,6 +11441,10 @@ class AppLocalizationsEn extends AppLocalizations {
       'Couldn\'t remove this sport. Try again.';
 
   @override
+  String get manage_sports_remove_primary =>
+      'Your primary sport can\'t be removed. Change your primary sport first.';
+
+  @override
   String get sports_browse_all => 'Browse all sports';
 
   @override

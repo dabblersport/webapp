@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'dart:ui' as ui;
 
+import 'package:dabbler/features/sports/presentation/providers/my_sports_provider.dart';
 import 'package:dabbler/features/home/presentation/screens/main_navigation_screen.dart';
 import 'package:dabbler/features/meetups/presentation/providers/meetup_create_entry.dart';
 import 'package:dabbler/features/profile/domain/models/persona_rules.dart';
@@ -100,6 +101,7 @@ Future<void> _pump(
     ProviderScope(
       overrides: [
         initializeProfileDataProvider.overrideWith((ref) async => false),
+        mySportsNavProvider.overrideWithValue(MySports.none),
         // No profile in the shell harness, so the provider chain never reaches the live Supabase client.
         meetupActorProfileIdProvider.overrideWithValue(null),
         // The measured menu is the three-tile one: a persona that may create.

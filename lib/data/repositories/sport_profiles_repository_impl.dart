@@ -58,6 +58,20 @@ class SportProfilesRepositoryImpl extends BaseRepository
   }
 
   @override
+  Future<Result<List<String>, Failure>> getSportIdsForProfile(
+    String profileId,
+  ) => Result.guard(() async {
+    final rows = await svc.client
+        .from(_table)
+        .select('sport_id')
+        .eq('profile_id', profileId);
+    return [
+      for (final row in rows as List<dynamic>)
+        if ((row as Map)['sport_id'] is String) row['sport_id'] as String,
+    ];
+  }, (e) => svc.mapPostgrestError(e));
+
+  @override
   Future<Result<SportProfile?, Failure>> getMySportByKey(
     String sportKey,
   ) async {

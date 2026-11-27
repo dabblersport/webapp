@@ -97,20 +97,22 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
 
     final isAdding = !_selectedIds.contains(sport.id);
 
-    // Prevent removing the last sport.
-    if (!isAdding && _selectedIds.length <= 1) {
+    final block = isAdding
+        ? null
+        : sportRemovalBlock(
+            sportId: sport.id,
+            selectedCount: _selectedIds.length,
+            profileType: _profileType ?? 'player',
+            primarySport: _primarySport,
+          );
+    if (block != null) {
       if (mounted) {
-        _toast('You must have at least one sport');
-      }
-      return;
-    }
-
-    // A contributor's primary sport must stay (trigger rule).
-    if (!isAdding &&
-        _profileType == 'contributor' &&
-        sport.id == _primarySport) {
-      if (mounted) {
-        _toast(AppLocalizations.of(context).manage_sports_remove_failed);
+        _toast(switch (block) {
+          SportRemovalBlock.lastSport => 'You must have at least one sport',
+          SportRemovalBlock.primarySport => AppLocalizations.of(
+            context,
+          ).manage_sports_remove_primary,
+        });
       }
       return;
     }

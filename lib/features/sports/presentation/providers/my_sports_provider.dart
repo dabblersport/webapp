@@ -1,13 +1,15 @@
 // KAN-1052: the viewer's own sports scope Games, Meetups and Venues.
 //
-// One source of truth, the same one the Manage Sports sheet edits: the
-// profile's `interests` (sport ids, mirrored row-for-row in `sport_profiles`)
-// plus its primary sport. The flags come from the active sports catalogue
+// KAN-1056: the viewer's sports are the union of the profile's `interests`,
+// the active profile's `sport_profiles.sport_id` rows and its primary sport.
+// Interests mirror `sport_profiles` only for contributors (a trigger enforces
+// it); legacy personas can hold sport_profiles rows missing from interests. The flags come from the active sports catalogue
 // (`sportsProvider`, `public.sports`), so no new query is made. Manage Sports
 // refreshes the profile, and every section watching this provider follows.
 
 import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
+import 'package:dabbler/features/profile/presentation/providers/sport_profiles_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -105,8 +107,13 @@ class MySports {
 final mySportsProvider = FutureProvider.autoDispose<MySports>((ref) async {
   final profile = ref.watch(profileControllerProvider.select((s) => s.profile));
   if (profile == null) return MySports.none;
+  // Re-fetched whenever the profile changes (Manage Sports refreshes it).
+  final rows = await ref
+      .watch(sportProfilesRepositoryProvider)
+      .getSportIdsForProfile(profile.id);
   final ids = <String?>[
     ...?profile.interests,
+    ...rows.fold((_) => const <String>[], (v) => v),
     profile.primarySport,
     profile.preferredSport,
   ];
@@ -117,6 +124,21 @@ final mySportsProvider = FutureProvider.autoDispose<MySports>((ref) async {
   } catch (_) {
     return MySports.none;
   }
+});
+
+/// The viewer's sports for the main navigation (KAN-1056): null while they
+/// are still loading, so the gated Games / Meetups tabs stay out of the bar
+/// instead of flashing in. Signed out or without a profile resolves at once.
+final mySportsNavProvider = Provider.autoDispose<MySports?>((ref) {
+  final bootstrapping = ref.watch(initializeProfileDataProvider).isLoading;
+  final profileState = ref.watch(
+    profileControllerProvider.select((s) => (s.profile == null, s.isLoading)),
+  );
+  if (profileState.$1) {
+    return (bootstrapping || profileState.$2) ? null : MySports.none;
+  }
+  final mine = ref.watch(mySportsProvider);
+  return mine.hasValue ? mine.value : (mine.isLoading ? null : MySports.none);
 });
 
 /// The viewer's sports, synchronously: [MySports.none] until resolved, so

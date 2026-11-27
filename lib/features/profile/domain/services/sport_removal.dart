@@ -55,3 +55,27 @@ Future<Result<Unit, Failure>> removeSportInOrder(
   }
   return written;
 }
+
+/// Why a sport cannot be removed, or null when it can (KAN-1056).
+enum SportRemovalBlock {
+  /// It is the profile's only sport.
+  lastSport,
+
+  /// It is a contributor's primary sport (trigger rule): retrying never
+  /// helps, the primary sport has to change first.
+  primarySport,
+}
+
+/// Checks a removal of [sportId] before any database call is made.
+SportRemovalBlock? sportRemovalBlock({
+  required String sportId,
+  required int selectedCount,
+  required String profileType,
+  required String? primarySport,
+}) {
+  if (selectedCount <= 1) return SportRemovalBlock.lastSport;
+  if (profileType == 'contributor' && sportId == primarySport) {
+    return SportRemovalBlock.primarySport;
+  }
+  return null;
+}
