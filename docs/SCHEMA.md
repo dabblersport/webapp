@@ -481,9 +481,9 @@ KAN-106's scope.
 filtered by a *different* mechanism than the one this file claimed, and none of that was
 knowable from the definition text.
 
-### 2c. Anon-revoked — 23 views safe by grant
+### 2c. Anon-revoked — 22 views safe by grant
 
-`any_user_id` · `v_admin_overview` · `v_any_author` · `v_autocomplete_debug_prefix` ·
+`any_user_id` · `v_any_author` · `v_autocomplete_debug_prefix` ·
 `v_autocomplete_internal_checks` · `v_bench_status` · `v_frozen_users` ·
 `v_host_weekly_metrics` · `v_moderation_metrics` · `v_needs_organiser` ·
 `v_posts_integrity_violations` · `v_posts_time_preview` · `v_reliable_teammate_candidates` ·
@@ -741,7 +741,7 @@ rows above is anon-executable today. `settle_game(uuid, boolean)`, `create_syste
 `admin_cleanup_user_data`, `admin_force_delete_auth_user`, `admin_is_hidden`, `admin_mark_payout_paid`,
 `admin_mark_payout_processing`, `admin_overview_row`, `admin_resolve_report`, `admin_take_action`,
 `rpc_admin_submission_action_state`, `rpc_submission_approval_state`, `rpc_submission_audit_timeline` and
-`upsert_area_from_mapbox`. `_debug_can_view`, `_whoami_definer`, `effective_actor_uid_debug`: service_role only.
+`upsert_area_from_mapbox`. `_debug_can_view`, `_whoami_definer`, `effective_actor_uid_debug`: service_role only. (`admin_is_hidden` and `admin_overview_row`, with `v_admin_overview`, were later dropped by `KAN-1041`.)
 `rpc_expire_freezes`: service_role only. `rpc_toggle_post_vibe` dropped (its table `post_vibes` is gone).
 `rpc_squad_request_join` now raises 42501 unless `p_profile_id` is the caller's profile. **Kept anon on purpose:**
 `admin_override()` and `can_review_venue_submission(uuid)`, because RLS policies with role PUBLIC on `challenges`,
@@ -829,7 +829,6 @@ request_payout(p_amount_aed numeric, p_beneficiary_id uuid)
 respond_vibe_request(p_other_user uuid, p_action text)
 rpc_feed_ranked(p_scope text, p_author_user_id uuid, p_sport text, p_lat double precision, p_lng double precision, p_radius_km numeric, p_since timestamp with time zone, p_limit integer)
 rpc_is_following_user(p_target_profile_id uuid)
-send_vibe_request(p_to_user uuid)
 set_hidden_mode(p_target_user uuid, p_enable boolean, p_reason text)
 switch_active_profile(p_profile_id uuid)
 unsync(p_other_user uuid)
@@ -957,8 +956,8 @@ Also near-duplicates by name: `rpc_admin_revoke_venue` and
 **Meetups:** `rpc_create_meetup`, `rpc_meetup_rsvp`, `rpc_meetup_cancel`,
 `rpc_meetup_attendees`, `rpc_meetup_card`, `rpc_meetup_mint_link`, `rpc_meetup_my`,
 `rpc_meetup_invite_user`, `rpc_meetup_set_attendee`, `rpc_meetup_unrsvp`
-**Social:** `rpc_create_post`, `rpc_delete_post`, `rpc_add_comment`, `rpc_toggle_like`,
-`rpc_repost_post`, `rpc_hide_post`, `rpc_report_post`, `rpc_feed_ranked`,
+**Social:** `rpc_delete_post`, `rpc_add_comment`,
+`rpc_repost_post`, `rpc_hide_post`, `rpc_feed_ranked`,
 `rpc_toggle_post_vibe`, `rpc_set_post_primary_vibe`
 **Friends:** none. There is no friendship relation; "friends" is a mutual follow on `profile_follows`
 (`are_synced`, KAN-931). Blocking is `rpc_block_user(p_peer)` / `rpc_unblock_user(p_peer)` on `user_blocks`.
@@ -973,7 +972,7 @@ ways); `can_view_post(p_viewer uuid, p_post posts)` decides `circle` by delegati
 `can_view_post(p_post_id, p_user_id, p_profile_id)`, the `posts_select_policy` function (`post_circles`
 membership: private circle member, followers-circle follower of the owner, or public circle), so the two
 overloads cannot disagree; a mutual follower outside the circle sees the post through neither.
-**Squads & challenges:** `rpc_squad_create`, `rpc_create_squad`, `rpc_squad_add_member`,
+**Squads & challenges:** `rpc_squad_create(p_sport, p_name, p_bio, p_logo_url, p_listing_visibility, p_join_policy, p_max_members, p_city)`, `rpc_squad_add_member`,
 `rpc_squad_invite`, `rpc_squad_request_join`, `rpc_squad_respond_invite`,
 `rpc_squad_set_captain`, `rpc_squad_remove_member`, `rpc_challenge_create`,
 `rpc_challenge_add_squad`, `rpc_challenge_generate_fixtures`, `rpc_challenge_record_result`,
@@ -985,9 +984,9 @@ overloads cannot disagree; a mutual follower outside the circle sees the post th
 **Usernames:** `rpc_username_availability`, `rpc_username_claim`, `rpc_username_release`,
 `rpc_username_suggest`, `rpc_ban_username`, `rpc_ban_display_name` *(`list_active_usernames`
 dropped by `KAN-141`)*
-**Moderation:** `rpc_flag_content`, `rpc_report_rating`, `rpc_review_report`,
+**Moderation:** `rpc_report_rating`,
 `rpc_moderation_take_ticket`, `rpc_moderation_resolve_ticket`, `rpc_admin_hide_post`,
-`rpc_shadow_hide`, `rpc_shadow_unhide`, `rpc_takedown`, `rpc_freeze_user`,
+`is_takedown(mod_target, uuid)` (reads `safety_takedowns`), `rpc_freeze_user`,
 `rpc_admin_freeze_user`, `rpc_expire_freezes`, `rpc_ban_term_upsert`, `rpc_restrict_set/clear`
 **Venue submissions:** `rpc_submit_venue_submission`, `rpc_admin_approve_venue_submission`,
 `rpc_admin_reject_venue_submission`, `rpc_admin_return_venue_submission`,
@@ -996,7 +995,16 @@ dropped by `KAN-141`)*
 `rpc_my_venue_permissions`
 **Bookings:** `rpc_booking_hold_for_game`, `rpc_booking_hold_for_meetup`, `rpc_booking_cancel`
 **Ratings:** `rpc_rate_game`, `rpc_rate_user`, `rpc_rate_venue`
-**Drafts:** `rpc_draft_create/update/archive`, `rpc_draft_publish_game/meetup/challenge`
+**Drafts:** `rpc_draft_create/update/archive`
+
+**`KAN-1044`, 2026-11-27, migration `20261127090000_kan1044_broken_functions`:** dropped (each referenced a missing
+relation or function, no caller): `rpc_create_squad`, `rpc_flag_content`, `rpc_review_report`, `rpc_shadow_hide`,
+`rpc_shadow_unhide`, `rpc_takedown`, `is_shadow_hidden(text,uuid)`, `is_takedown(text,uuid)`, `rpc_create_post`,
+`rpc_report_post`, `rpc_toggle_like`, `rpc_draft_publish_game/meetup/challenge`, `send_vibe_request`,
+`toggle_venue_favorite_legacy_v1` (both overloads), `trg_scan_post`. `rpc_squad_create` re-signed to the app's params
+(creator = the caller's own player profile, owner_user_id). Squad join errors say `profile_not_player`. Unique partial
+index `squad_join_requests_pending_uniq (squad_id, profile_id) WHERE status='pending'`. `enforce_single_level_reply`
+reads `public.comments`. `plpgsql_check` extension installed.
 **Search:** `rpc_unified_search_sectioned`,
 `rpc_autocomplete_entities`, `rpc_autocomplete_people`
 **Notifications:** `rpc_mark_all_read`, `rpc_notification_clicked`,

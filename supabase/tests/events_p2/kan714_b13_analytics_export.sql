@@ -1,3 +1,6 @@
+-- RETIRED (KAN-1044): KAN-1041 (20261124200000) dropped admin_overview_row, v_admin_overview and admin_is_hidden
+-- live. This probe is kept as the KAN-732 record only; it re-creates those objects as a local fixture and must not be
+-- read as evidence that they exist. Do not run it against a hosted project.
 -- KAN-732 (KAN-714 piece B13) test: admin_cleanup_user_data reads game ownership (creator_profile_id) and
 -- admin_overview_row reads game creation time (created_at) from public.events.
 -- LOCAL THROWAWAY POSTGRES ONLY. NEVER RUN AGAINST SUPABASE. Run as postgres (superuser), psql -v ON_ERROR_STOP=1.

@@ -57,7 +57,7 @@ SELECT 'meetups', unnest(ARRAY['creator_profile_id','creator_user_id','title','s
 CREATE TEMP TABLE k770_b15(kind text, name text);
 INSERT INTO k770_b15 VALUES
  ('function','_can_view_game'),('function','_can_view_game_for_join'),('function','_is_game_host'),('function','_slot_conflicts_game'),
- ('function','active_stream'),('function','admin_cleanup_user_data'),('function','admin_overview_row'),
+ ('function','active_stream'),('function','admin_cleanup_user_data'),  -- KAN-1044: admin_overview_row dropped by KAN-1041
  ('function','can_current_user_join_game'),('function','can_current_user_rsvp_meetup'),('function','game_slots_left'),
  ('function','meetup_slots_left'),('function','msg_authorize'),('function','msg_evaluate'),('function','msg_my_conversations'),
  ('function','rpc_booking_hold_for_meetup'),('function','rpc_cancel_game_series'),('function','rpc_edit_game_series_future'),
