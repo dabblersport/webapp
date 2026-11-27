@@ -13,6 +13,7 @@ import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show activeSportsByProfileCountryProvider;
+import 'package:dabbler/features/sports/presentation/providers/my_sports_provider.dart';
 
 /// Bottom sheet for adding/removing sports from the user's profile.
 ///
@@ -54,14 +55,20 @@ class ManageSportsSheet extends ConsumerStatefulWidget {
 }
 
 class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
-  /// Currently selected sport IDs (UUIDs).
+  /// Currently selected sport IDs (UUIDs): the same union as
+  /// [mySportsProvider] (interests, sport_profiles rows, primary sport).
   Set<String> _selectedIds = {};
+
+  /// The profile's `interests` alone. Writes go to this set, never to
+  /// [_selectedIds], so a card-only sport is not copied into interests.
+  Set<String> _interests = {};
   bool _isSaving = false;
   String? _profileId;
   String? _profileType;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String? _primarySport;
+  String? _preferredSport;
 
   @override
   void initState() {
@@ -71,9 +78,18 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
 
   void _loadCurrent() {
     final profile = ref.read(profileControllerProvider).profile;
-    _selectedIds = Set<String>.from(profile?.interests ?? []);
+    _interests = Set<String>.from(profile?.interests ?? []);
+    _selectedIds = {..._interests};
+    // KAN-1057: legacy profiles hold sport_profiles rows missing from
+    // interests; tick those chips too, from the provider the nav uses.
+    ref.listenManual<AsyncValue<MySports>>(mySportsProvider, (_, next) {
+      final mine = next.valueOrNull;
+      if (!mounted || mine == null || mine.sports.isEmpty) return;
+      setState(() => _selectedIds.addAll(mine.sports.map((s) => s.id)));
+    }, fireImmediately: true);
     _profileId = profile?.id;
     _primarySport = profile?.primarySport;
+    _preferredSport = profile?.preferredSport;
     _profileType = profile?.personaType ?? profile?.profileType ?? 'player';
   }
 
@@ -104,6 +120,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             selectedCount: _selectedIds.length,
             profileType: _profileType ?? 'player',
             primarySport: _primarySport,
+            preferredSport: _preferredSport,
           );
     if (block != null) {
       if (mounted) {
@@ -123,7 +140,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     try {
       if (isAdding) {
         // 1. Add UUID to interests array.
-        final newInterests = {..._selectedIds, sport.id}.toList();
+        final newInterests = {..._interests, sport.id}.toList();
         await supabase
             .from(SupabaseConfig.usersTable)
             .update({'interests': newInterests})
@@ -148,13 +165,14 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           }, onConflict: 'profile_id,sport');
         }
 
-        setState(() => _selectedIds.add(sport.id));
+        setState(() {
+          _selectedIds.add(sport.id);
+          _interests.add(sport.id);
+        });
       } else {
         // Row first, then interests: the contributor trigger requires every
         // sport row to have its sport in interests (KAN-1051).
-        final newInterests = _selectedIds
-            .where((id) => id != sport.id)
-            .toList();
+        final newInterests = _interests.where((id) => id != sport.id).toList();
         final result = await removeSportInOrder(
           _SupabaseSportRemovalSteps(
             client: supabase,
@@ -168,7 +186,10 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           throw Exception((result as Err<Unit, Failure>).error.message);
         }
 
-        setState(() => _selectedIds.remove(sport.id));
+        setState(() {
+          _selectedIds.remove(sport.id);
+          _interests.remove(sport.id);
+        });
       }
 
       // Refresh the relevant controller so the profile screen updates.

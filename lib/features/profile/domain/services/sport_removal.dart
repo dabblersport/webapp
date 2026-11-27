@@ -61,8 +61,9 @@ enum SportRemovalBlock {
   /// It is the profile's only sport.
   lastSport,
 
-  /// It is a contributor's primary sport (trigger rule): retrying never
-  /// helps, the primary sport has to change first.
+  /// It is the profile's primary or preferred sport (any persona, KAN-1057):
+  /// the sport stays in the viewer's sports through that field, so removing
+  /// it would write nothing useful. The field has to change first.
   primarySport,
 }
 
@@ -72,9 +73,10 @@ SportRemovalBlock? sportRemovalBlock({
   required int selectedCount,
   required String profileType,
   required String? primarySport,
+  String? preferredSport,
 }) {
   if (selectedCount <= 1) return SportRemovalBlock.lastSport;
-  if (profileType == 'contributor' && sportId == primarySport) {
+  if (sportId == primarySport || sportId == preferredSport) {
     return SportRemovalBlock.primarySport;
   }
   return null;

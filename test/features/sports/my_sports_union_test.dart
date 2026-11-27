@@ -139,6 +139,38 @@ void main() {
       );
     });
 
+    test('a legacy player\'s primary or preferred sport is blocked too', () {
+      expect(
+        sportRemovalBlock(
+          sportId: 'fb',
+          selectedCount: 2,
+          profileType: 'player',
+          primarySport: 'fb',
+        ),
+        SportRemovalBlock.primarySport,
+      );
+      expect(
+        sportRemovalBlock(
+          sportId: 'gym',
+          selectedCount: 2,
+          profileType: 'player',
+          primarySport: null,
+          preferredSport: 'gym',
+        ),
+        SportRemovalBlock.primarySport,
+      );
+      expect(
+        sportRemovalBlock(
+          sportId: 'gym',
+          selectedCount: 2,
+          profileType: 'player',
+          primarySport: 'fb',
+          preferredSport: 'fb',
+        ),
+        isNull,
+      );
+    });
+
     test('the primary-sport message is specific, EN and AR', () {
       final en = AppLocalizationsEn().manage_sports_remove_primary;
       expect(en, contains('primary sport'));
