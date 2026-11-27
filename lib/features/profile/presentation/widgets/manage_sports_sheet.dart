@@ -2,6 +2,9 @@ import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:dabbler/core/config/supabase_config.dart';
+import 'package:dabbler/core/fp/failure.dart';
+import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/profile/domain/services/sport_removal.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -58,6 +61,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   String? _profileType;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
+  String? _primarySport;
 
   @override
   void initState() {
@@ -69,6 +73,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     final profile = ref.read(profileControllerProvider).profile;
     _selectedIds = Set<String>.from(profile?.interests ?? []);
     _profileId = profile?.id;
+    _primarySport = profile?.primarySport;
     _profileType = profile?.personaType ?? profile?.profileType ?? 'player';
   }
 
@@ -96,6 +101,16 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     if (!isAdding && _selectedIds.length <= 1) {
       if (mounted) {
         _toast('You must have at least one sport');
+      }
+      return;
+    }
+
+    // A contributor's primary sport must stay (trigger rule).
+    if (!isAdding &&
+        _profileType == 'contributor' &&
+        sport.id == _primarySport) {
+      if (mounted) {
+        _toast(AppLocalizations.of(context).manage_sports_remove_failed);
       }
       return;
     }
@@ -133,28 +148,22 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
 
         setState(() => _selectedIds.add(sport.id));
       } else {
-        // 1. Remove UUID from interests array.
+        // Row first, then interests: the contributor trigger requires every
+        // sport row to have its sport in interests (KAN-1051).
         final newInterests = _selectedIds
             .where((id) => id != sport.id)
             .toList();
-        await supabase
-            .from(SupabaseConfig.usersTable)
-            .update({'interests': newInterests})
-            .eq('id', _profileId!);
-
-        // 2. Delete sport_profile / organiser record.
-        if (!_isOrganiserType) {
-          await supabase
-              .from(SupabaseConfig.sportProfilesTable)
-              .delete()
-              .eq('profile_id', _profileId!)
-              .eq('sport', sportKey);
-        } else {
-          await supabase
-              .from(SupabaseConfig.organiserTable)
-              .delete()
-              .eq('profile_id', _profileId!)
-              .eq('sport', sportKey);
+        final result = await removeSportInOrder(
+          _SupabaseSportRemovalSteps(
+            client: supabase,
+            profileId: _profileId!,
+            sportKey: sportKey,
+            organiser: _isOrganiserType,
+          ),
+          newInterests,
+        );
+        if (result.isFailure) {
+          throw Exception((result as Err<Unit, Failure>).error.message);
         }
 
         setState(() => _selectedIds.remove(sport.id));
@@ -296,4 +305,44 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       onTap: () => _toggle(sport),
     );
   }
+}
+
+/// Supabase implementation of [SportRemovalSteps] for one profile and sport.
+class _SupabaseSportRemovalSteps implements SportRemovalSteps {
+  _SupabaseSportRemovalSteps({
+    required this.client,
+    required this.profileId,
+    required this.sportKey,
+    required this.organiser,
+  });
+
+  final SupabaseClient client;
+  final String profileId;
+  final String sportKey;
+  final bool organiser;
+
+  String get _table => organiser
+      ? SupabaseConfig.organiserTable
+      : SupabaseConfig.sportProfilesTable;
+
+  @override
+  Future<List<Map<String, dynamic>>> deleteSportRecord() async {
+    final rows = await client
+        .from(_table)
+        .delete()
+        .eq('profile_id', profileId)
+        .eq('sport', sportKey)
+        .select();
+    return List<Map<String, dynamic>>.from(rows);
+  }
+
+  @override
+  Future<void> updateInterests(List<String> interests) => client
+      .from(SupabaseConfig.usersTable)
+      .update({'interests': interests})
+      .eq('id', profileId);
+
+  @override
+  Future<void> restoreSportRecord(List<Map<String, dynamic>> rows) =>
+      client.from(_table).insert(rows);
 }
