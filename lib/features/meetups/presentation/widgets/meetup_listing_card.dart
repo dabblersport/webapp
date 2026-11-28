@@ -13,6 +13,7 @@ import 'package:dabbler/features/meetups/presentation/rsvp_state.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_formatters.dart';
 import 'package:dabbler/features/meetups/presentation/widgets/meetup_feedback.dart';
+import 'package:dabbler/features/sports/presentation/join_gate.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
@@ -105,6 +106,19 @@ class _MeetupListingCardState extends ConsumerState<MeetupListingCard> {
   Future<void> _run(RsvpAction action) async {
     if (_busy) return;
     setState(() => _busy = true);
+    // KAN-1060: a join first makes sure the sport is in My sports.
+    if (action == RsvpAction.going || action == RsvpAction.request) {
+      final bool go = await confirmSportForJoin(
+        context: context,
+        ref: ref,
+        sportKey: widget.meetup.sportKey,
+        sportName: widget.meetup.sportNameEn,
+      );
+      if (!go || !mounted) {
+        if (mounted) setState(() => _busy = false);
+        return;
+      }
+    }
     // The Action Area reports a failure with Retry (feedback center); the
     // button keeps its own local busy state. Success stays silent, as before.
     await rsvpWithFeedback(

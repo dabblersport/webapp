@@ -314,6 +314,12 @@ class SupabaseConfig {
   static const String rpcEditGameSeriesFutureFn = 'rpc_edit_game_series_future';
   static const String rpcCancelGameSeriesFn = 'rpc_cancel_game_series';
   static const String rpcCreateSportProfileFn = 'rpc_create_sport_profile';
+  // KAN-1059 sports model: follow (interests) vs my sports (active cards).
+  static const String rpcFollowSportFn = 'rpc_follow_sport';
+  static const String rpcUnfollowSportFn = 'rpc_unfollow_sport';
+  static const String rpcAddMySportFn = 'rpc_add_my_sport';
+  static const String rpcRemoveMySportFn = 'rpc_remove_my_sport';
+  static const String rpcSetSportLevelFn = 'rpc_set_sport_level';
 
   /// KAN-678/KAN-680: the 5-argument overload that carries the sport key.
   static const String rpcChallengeCreateFn = 'rpc_challenge_create';

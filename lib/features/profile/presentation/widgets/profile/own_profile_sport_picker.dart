@@ -96,7 +96,7 @@ class OwnProfileSportPicker extends StatelessWidget {
               ),
               for (final Sport s in sports)
                 DabblerChipRailItem(
-                  label: s.nameEn,
+                  label: s.localizedName(context),
                   selected: selectedId == s.id,
                   accent: DabblerSportAccent.of(sportKeyOf(s)),
                   dot: s.id == primaryId,

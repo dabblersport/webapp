@@ -24,6 +24,7 @@ import 'package:dabbler/features/games/presentation/screens/join_game/game_host_
 import 'package:dabbler/features/games/presentation/screens/join_game/game_join_labels.dart';
 import 'package:dabbler/features/games/presentation/screens/join_game/game_series_widgets.dart';
 import 'package:dabbler/features/messaging/presentation/widgets/game_chat_entry.dart';
+import 'package:dabbler/features/sports/presentation/join_gate.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:dabbler/utils/constants/route_constants.dart';
 
@@ -426,10 +427,23 @@ class _GameDetailScreenState extends ConsumerState<GameDetailScreen>
         size: DabblerButtonSize.full,
         fullWidth: true,
         loading: state.isActing,
-        onPressed: ctrl.joinGame,
+        onPressed: () => _join(ctrl),
       );
     }
     return DabblerActionBar(price: gameEntryLabel(game), primary: cta);
+  }
+
+  /// KAN-1060: a join first makes sure the sport is in My sports.
+  Future<void> _join(GameViewController ctrl) async {
+    final game = ref.read(gameViewControllerProvider(widget.gameId)).game;
+    final bool go = await confirmSportForJoin(
+      context: context,
+      ref: ref,
+      sportId: game?.sportId,
+      sportKey: game?.sportKey,
+      sportName: game?.sportNameEn,
+    );
+    if (go && mounted) await ctrl.joinGame();
   }
 
   Future<void> _openEditGame(String gameId, GameViewController ctrl) async {

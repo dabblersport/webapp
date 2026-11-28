@@ -33,7 +33,7 @@ class OwnProfileFollowedSports extends StatelessWidget {
             runSpacing: DabblerSpacing.space2,
             children: <Widget>[
               for (final Sport s in sports)
-                DabblerChip(label: s.nameEn, compact: true),
+                DabblerChip(label: s.localizedName(context), compact: true),
             ],
           ),
         ],

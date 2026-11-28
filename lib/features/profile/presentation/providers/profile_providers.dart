@@ -408,7 +408,8 @@ final availableProfilesProvider = FutureProvider.autoDispose<List<UserProfile>>(
               .select(
                 'sport, skill_level, matches_played, primary_position, rating_total, rating_count',
               )
-              .eq('profile_id', profileId);
+              .eq('profile_id', profileId)
+              .isFilter('hidden_at', null);
 
           final sportProfiles = (sportProfilesResponse as List)
               .map((sp) => SportProfile.fromJson(Map<String, dynamic>.from(sp)))

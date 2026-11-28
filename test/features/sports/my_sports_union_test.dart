@@ -139,7 +139,7 @@ void main() {
       );
     });
 
-    test('a legacy player\'s primary or preferred sport is blocked too', () {
+    test('a legacy player\'s primary sport is blocked too', () {
       expect(
         sportRemovalBlock(
           sportId: 'fb',
@@ -149,23 +149,14 @@ void main() {
         ),
         SportRemovalBlock.primarySport,
       );
-      expect(
-        sportRemovalBlock(
-          sportId: 'gym',
-          selectedCount: 2,
-          profileType: 'player',
-          primarySport: null,
-          preferredSport: 'gym',
-        ),
-        SportRemovalBlock.primarySport,
-      );
+      // KAN-1061: preferred_sport no longer blocks (the guard reads
+      // primary_sport only).
       expect(
         sportRemovalBlock(
           sportId: 'gym',
           selectedCount: 2,
           profileType: 'player',
           primarySport: 'fb',
-          preferredSport: 'fb',
         ),
         isNull,
       );

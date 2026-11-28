@@ -2,6 +2,8 @@
 //
 // KAN-1056: the viewer's sports are the union of the profile's `interests`,
 // the active profile's `sport_profiles.sport_id` rows and its primary sport.
+// KAN-1061: only active cards (`hidden_at IS NULL`); `preferred_sport` is
+// never read.
 // Interests mirror `sport_profiles` only for contributors (a trigger enforces
 // it); legacy personas can hold sport_profiles rows missing from interests. The flags come from the active sports catalogue
 // (`sportsProvider`, `public.sports`), so no new query is made. Manage Sports
@@ -115,7 +117,6 @@ final mySportsProvider = FutureProvider.autoDispose<MySports>((ref) async {
     ...?profile.interests,
     ...rows.fold((_) => const <String>[], (v) => v),
     profile.primarySport,
-    profile.preferredSport,
   ];
   if (ids.every((id) => id == null || id.isEmpty)) return MySports.none;
   try {

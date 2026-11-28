@@ -39,6 +39,19 @@ class SportInfo {
   }
 }
 
+/// KAN-1060: the active persona's card for a sport. Hidden cards
+/// (`hidden_at` set) count as none.
+enum MySportCard {
+  /// No active card: the sport is not in My sports.
+  none,
+
+  /// An active card whose level was never chosen (`skill_level_set_at` null).
+  levelUnset,
+
+  /// An active card with a chosen level.
+  ready,
+}
+
 /// One of up to three people the viewer follows who also follow the sport.
 class MutualFollower {
   const MutualFollower({this.displayName, this.username, this.avatarUrl});
@@ -80,10 +93,14 @@ class SportOverviewCounts {
     required this.spaces,
     required this.posts,
     required this.news,
+    this.players = 0,
     this.mutualFollowers = const <MutualFollower>[],
   });
 
   final int followers;
+
+  /// KAN-1059: profiles with an active card for the sport.
+  final int players;
   final int gamesNext7;
   final int meetupsNext7;
   final int venues;
@@ -113,6 +130,7 @@ class SportOverviewCounts {
       spaces: count('spaces'),
       posts: count('posts'),
       news: count('news'),
+      players: count('players'),
       mutualFollowers: mutual,
     );
   }

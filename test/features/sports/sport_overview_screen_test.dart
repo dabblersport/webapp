@@ -124,15 +124,13 @@ void main() {
     testWidgets('Following says Follow never adds the sport to the profile', (
       tester,
     ) async {
-      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      final SportHarness h = SportHarness(following: <String>[kTennis]);
       await pumpSport(tester, h);
       expect(
-        find.text(
-          'Football posts, games and news will show in your feed. '
-          'This doesn’t add Football to your sports profile.',
-        ),
+        find.text('Follow to see Football posts and games.'),
         findsOneWidget,
       );
+      expect(h.follow.adds, isEmpty);
     });
 
     testWidgets('an unknown sport id shows the error state, not a crash', (
@@ -582,7 +580,7 @@ void main() {
       await _tapText(tester, 'Follow');
       expect(h.follow.follows, <String>['me:$kTennis']);
       expect(find.text('Following'), findsOneWidget);
-      expect(h.repo.createdProfiles, isEmpty);
+      expect(h.follow.adds, isEmpty);
       expect(h.follow.unfollows, isEmpty);
     });
 
@@ -612,14 +610,14 @@ void main() {
       await _tapText(tester, 'Unfollow');
       expect(h.follow.unfollows, <String>['me:$kTennis']);
       expect(find.text('Follow'), findsOneWidget);
-      expect(h.repo.createdProfiles, isEmpty);
+      expect(h.follow.adds, isEmpty);
     });
 
     for (final (SportFollowOutcome, String) c in <(SportFollowOutcome, String)>[
       (SportFollowOutcome.blockedLast, 'You must follow at least one sport.'),
       (
-        SportFollowOutcome.blockedPracticing,
-        "You play this sport, so you can't unfollow it.",
+        SportFollowOutcome.blockedInMySports,
+        'Remove it from your sports first',
       ),
       (
         SportFollowOutcome.blockedPrimary,
@@ -638,7 +636,7 @@ void main() {
         expect(find.text('Following'), findsOneWidget);
         // Nothing was reloaded or written: the guard refused first.
         expect(h.profile.refreshes, 0);
-        expect(h.repo.createdProfiles, isEmpty);
+        expect(h.follow.adds, isEmpty);
       });
     }
 
@@ -671,25 +669,81 @@ void main() {
     );
   });
 
+  group('AC6b My sports control (KAN-1060)', () {
+    testWidgets('Add to my sports adds at once and says so', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      h.repo.cardResult = const Ok(MySportCard.none);
+      await pumpSport(tester, h);
+      expect(find.text('Add to my sports'), findsOneWidget);
+      h.repo.cardResult = const Ok(MySportCard.levelUnset);
+      await _tapText(tester, 'Add to my sports');
+      expect(h.follow.adds, <String>['me:$kFootball:-']);
+      expect(find.text('Added to your sports'), findsOneWidget);
+      expect(find.text('In my sports'), findsOneWidget);
+      expect(h.profile.refreshes, 1);
+    });
+
+    testWidgets('In my sports asks first, then removes', (tester) async {
+      final SportHarness h = SportHarness(following: <String>[kFootball]);
+      await pumpSport(tester, h);
+      await _tapText(tester, 'In my sports');
+      expect(find.text('Remove Football from your sports?'), findsOneWidget);
+      await _tapText(tester, 'Cancel');
+      expect(h.follow.removes, isEmpty);
+      await _tapText(tester, 'In my sports');
+      h.repo.cardResult = const Ok(MySportCard.none);
+      await _tapText(tester, 'Remove');
+      expect(h.follow.removes, <String>['me:$kFootball']);
+      expect(find.text('Removed from your sports'), findsOneWidget);
+      expect(find.text('Add to my sports'), findsOneWidget);
+    });
+
+    for (final (SportFollowOutcome, String) c in <(SportFollowOutcome, String)>[
+      (
+        SportFollowOutcome.blockedPrimary,
+        "This is your primary sport, so you can't remove it.",
+      ),
+      (
+        SportFollowOutcome.blockedLast,
+        "This is your last sport, so you can't remove it.",
+      ),
+    ]) {
+      testWidgets('a blocked remove (${c.$1.name}) says why', (tester) async {
+        final SportHarness h = SportHarness(following: <String>[kFootball]);
+        h.follow.removeResult = Ok(c.$1);
+        await pumpSport(tester, h);
+        await _tapText(tester, 'In my sports');
+        await _tapText(tester, 'Remove');
+        expect(find.text(c.$2), findsOneWidget);
+        expect(find.text('In my sports'), findsOneWidget);
+        expect(h.profile.refreshes, 0);
+      });
+    }
+  });
+
   group('AC7 join', () {
     Future<SportHarness> pumpWithGame(
       WidgetTester tester, {
-      required bool hasProfile,
+      required MySportCard card,
     }) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
-      h.repo.hasProfileResult = Ok(hasProfile);
+      h.repo.cardResult = Ok(card);
       h.repo.gamesResult = Ok([game('g1', title: 'Join me')]);
       await pumpSport(tester, h);
       await _openGames(tester);
       return h;
     }
 
-    testWidgets('with a sport profile, Join goes straight to the real join', (
+    testWidgets('with a card and a level, Join goes straight to the join', (
       tester,
     ) async {
-      final SportHarness h = await pumpWithGame(tester, hasProfile: true);
+      final SportHarness h = await pumpWithGame(
+        tester,
+        card: MySportCard.ready,
+      );
       await _tapText(tester, 'Join');
-      expect(find.text('Do you want to create profile?'), findsNothing);
+      expect(find.text('Add Football to your sports'), findsNothing);
+      expect(find.text('Set your Football level'), findsNothing);
       expect(h.joinedGames, <String>['g1']);
     });
 
@@ -701,56 +755,71 @@ void main() {
       expect(h.joinedGames, <String>['g1']);
     });
 
-    testWidgets('No performs no join and creates no profile', (tester) async {
-      final SportHarness h = await pumpWithGame(tester, hasProfile: false);
+    testWidgets('no card: the add sheet; a dismissal joins nothing', (
+      tester,
+    ) async {
+      final SportHarness h = await pumpWithGame(tester, card: MySportCard.none);
       await _tapText(tester, 'Join');
-      expect(find.text('Do you want to create profile?'), findsOneWidget);
-      await _tapText(tester, 'No');
-      expect(h.repo.createdProfiles, isEmpty);
+      expect(find.text('Add Football to your sports'), findsOneWidget);
+      await tester.tapAt(const Offset(10, 10));
+      await settle(tester);
+      expect(h.follow.adds, isEmpty);
       expect(h.joinedGames, isEmpty);
-      expect(h.follow.follows, isEmpty);
-      // The button is usable again.
       expect(find.text('Join'), findsOneWidget);
     });
 
-    testWidgets('Yes creates the profile, adds Following, then joins', (
+    testWidgets('no card: the chosen level is added, then the join runs', (
       tester,
     ) async {
-      final SportHarness h = await pumpWithGame(tester, hasProfile: false);
+      final SportHarness h = await pumpWithGame(tester, card: MySportCard.none);
       await _tapText(tester, 'Join');
-      await _tapText(tester, 'Yes');
-      expect(h.repo.createdProfiles, <String>['me:$kFootball']);
-      expect(h.follow.follows, <String>['me:$kFootball']);
+      await _tapText(tester, 'Intermediate');
+      await _tapText(tester, 'Add and join');
+      expect(h.follow.adds, <String>['me:$kFootball:5']);
       expect(h.joinedGames, <String>['g1']);
     });
 
-    testWidgets('a failed profile create stops the join and says so', (
+    testWidgets('a card without a level asks the level, then joins', (
       tester,
     ) async {
-      final SportHarness h = await pumpWithGame(tester, hasProfile: false);
-      h.repo.createProfileResult = const Err(Failure(message: 'nope'));
+      final SportHarness h = await pumpWithGame(
+        tester,
+        card: MySportCard.levelUnset,
+      );
       await _tapText(tester, 'Join');
-      await _tapText(tester, 'Yes');
+      expect(find.text('Set your Football level'), findsOneWidget);
+      await _tapText(tester, 'Advanced');
+      await _tapText(tester, 'Save and join');
+      expect(h.follow.levels, <String>['me:$kFootball:7']);
+      expect(h.follow.adds, isEmpty);
+      expect(h.joinedGames, <String>['g1']);
+    });
+
+    testWidgets('a failed add stops the join and says so', (tester) async {
+      final SportHarness h = await pumpWithGame(tester, card: MySportCard.none);
+      h.follow.addResult = const Err(Failure(message: 'nope'));
+      await _tapText(tester, 'Join');
+      await _tapText(tester, 'Add and join');
       expect(h.joinedGames, isEmpty);
       expect(
         find.text(
-          "Couldn't create your profile, so you haven't joined. Try again.",
+          "Couldn't save your sport, so you haven't joined. Try again.",
         ),
         findsOneWidget,
       );
     });
 
-    testWidgets('a meetup RSVP asks the same question first', (tester) async {
+    testWidgets('a meetup RSVP shows the same sheet first', (tester) async {
       final SportHarness h = SportHarness(following: <String>[kFootball]);
-      h.repo.hasProfileResult = const Ok(false);
+      h.repo.cardResult = const Ok(MySportCard.none);
       h.repo.meetupsResult = Ok([meetup('m1')]);
       await pumpSport(tester, h);
       await _openGames(tester);
       await _tap(tester, find.byType(DabblerRsvpCta).first);
-      expect(find.text('Do you want to create profile?'), findsOneWidget);
-      await _tapText(tester, 'No');
-      expect(h.rsvpMeetups, isEmpty);
-      expect(h.repo.createdProfiles, isEmpty);
+      expect(find.text('Add Football to your sports'), findsOneWidget);
+      await _tapText(tester, 'Add and join');
+      expect(h.follow.adds, <String>['me:$kFootball:2']);
+      expect(h.rsvpMeetups, <String>['m1']);
     });
   });
 

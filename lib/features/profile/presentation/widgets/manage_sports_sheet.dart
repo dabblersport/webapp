@@ -1,10 +1,9 @@
 import 'package:dabbler/utils/transitions/app_sheet_route.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
-import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/core/fp/failure.dart';
-import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/features/profile/domain/services/sport_removal.dart';
+import 'package:dabbler/features/profile/presentation/providers/sport_profiles_providers.dart';
+import 'package:dabbler/features/sports/data/my_sports_rpc.dart';
 import 'package:dabbler/features/profile/domain/services/sport_selection.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -14,12 +13,14 @@ import 'package:dabbler/data/models/social/sport.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/social/providers/post_providers.dart'
     show activeSportsByProfileCountryProvider;
-import 'package:dabbler/features/sports/presentation/providers/my_sports_provider.dart';
 
-/// Bottom sheet for adding/removing sports from the user's profile.
+/// Bottom sheet for the profile's sports, in two sections (KAN-1061):
 ///
-/// Updates both the profile `interests` array and the corresponding
-/// `sport_profiles` / `organiser` records in the database.
+/// * **My sports**: the active `sport_profiles` cards (`hidden_at IS NULL`).
+///   Adding calls `rpc_add_my_sport`, removing `rpc_remove_my_sport` (the card
+///   is hidden, never deleted).
+/// * **Following**: the profile's `interests`, through `rpc_follow_sport` /
+///   `rpc_unfollow_sport`.
 class ManageSportsSheet extends ConsumerStatefulWidget {
   const ManageSportsSheet({super.key, required this.saving});
 
@@ -59,20 +60,17 @@ class ManageSportsSheet extends ConsumerStatefulWidget {
 }
 
 class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
-  /// Currently selected sport IDs (UUIDs): the same union as
-  /// [mySportsProvider] (interests, sport_profiles rows, primary sport).
-  SportSelection _selection = SportSelection(const []);
+  /// Active cards (My sports).
+  SportSelection _mine = SportSelection(const []);
 
-  /// The profile's `interests` alone. Writes go to this set, never to
-  /// [_selection], so a card-only sport is not copied into interests.
-  Set<String> _interests = {};
+  /// The profile's `interests` (Following).
+  SportSelection _following = SportSelection(const []);
   bool _isSaving = false;
   String? _profileId;
   String? _profileType;
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = '';
   String? _primarySport;
-  String? _preferredSport;
 
   @override
   void initState() {
@@ -82,19 +80,20 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
 
   void _loadCurrent() {
     final profile = ref.read(profileControllerProvider).profile;
-    _interests = Set<String>.from(profile?.interests ?? []);
-    _selection = SportSelection(_interests);
-    // KAN-1057: legacy profiles hold sport_profiles rows missing from
-    // interests; tick those chips too, from the provider the nav uses.
-    ref.listenManual<AsyncValue<MySports>>(mySportsProvider, (_, next) {
-      final mine = next.valueOrNull;
-      if (!mounted || mine == null || mine.sports.isEmpty) return;
-      setState(() => _selection.mergeFromProvider(mine.sports.map((s) => s.id)));
-    }, fireImmediately: true);
+    _following = SportSelection(profile?.interests ?? const []);
+    _mine = SportSelection(const []);
     _profileId = profile?.id;
     _primarySport = profile?.primarySport;
-    _preferredSport = profile?.preferredSport;
     _profileType = profile?.personaType ?? profile?.profileType ?? 'player';
+    final id = _profileId;
+    if (id == null) return;
+    ref.read(sportProfilesRepositoryProvider).getSportIdsForProfile(id).then((
+      r,
+    ) {
+      final ids = r.fold((_) => const <String>[], (v) => v);
+      if (!mounted || ids.isEmpty) return;
+      setState(() => _mine.mergeFromProvider(ids));
+    });
   }
 
   @override
@@ -106,117 +105,92 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
   bool get _isOrganiserType =>
       _profileType == 'organiser' || _profileType == 'business';
 
-  Future<void> _toggle(Sport sport) async {
+  /// The client pre-check for instant feedback; the RPC checks again.
+  SportOutcome? _preCheck(Sport sport, {required bool mine}) {
+    if (sport.id == _primarySport) return SportOutcome.blockedPrimary;
+    if (!mine && _mine.isTicked(sport.id)) {
+      return SportOutcome.blockedInMySports;
+    }
+    final block = sportRemovalBlock(
+      sportId: sport.id,
+      selectedCount: (mine ? _mine : _following).count,
+      profileType: _profileType ?? 'player',
+      primarySport: _primarySport,
+    );
+    return block == null ? null : SportOutcome.blockedLast;
+  }
+
+  Future<void> _toggle(Sport sport, {required bool mine}) async {
     final supabase = Supabase.instance.client;
     final userId = supabase.auth.currentUser?.id;
-    if (userId == null || _profileId == null) return;
+    final profileId = _profileId;
+    if (userId == null || profileId == null || _isSaving) return;
 
-    final sportKey =
-        (sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_'))
-            .toLowerCase();
+    final selection = mine ? _mine : _following;
+    if (selection.isPending(sport.id)) return;
+    final isAdding = !selection.isTicked(sport.id);
 
-    if (_selection.isPending(sport.id)) return;
-    final isAdding = !_selection.isTicked(sport.id);
-
-    final block = isAdding
-        ? null
-        : sportRemovalBlock(
-            sportId: sport.id,
-            selectedCount: _selection.count,
-            profileType: _profileType ?? 'player',
-            primarySport: _primarySport,
-            preferredSport: _preferredSport,
-          );
+    final block = isAdding ? null : _preCheck(sport, mine: mine);
     if (block != null) {
-      if (mounted) {
-        _toast(switch (block) {
-          SportRemovalBlock.lastSport => AppLocalizations.of(
-            context,
-          ).manage_sports_last_sport,
-          SportRemovalBlock.primarySport => AppLocalizations.of(
-            context,
-          ).manage_sports_remove_primary,
-        });
-      }
+      final message = manageSportsOutcomeMessage(
+        block,
+        AppLocalizations.of(context),
+      );
+      if (message != null) _toast(message);
       return;
     }
 
     setState(() {
       _isSaving = true;
-      isAdding
-          ? _selection.startAdd(sport.id)
-          : _selection.startRemove(sport.id);
+      isAdding ? selection.startAdd(sport.id) : selection.startRemove(sport.id);
     });
     widget.saving.value = true;
     var ok = false;
 
     try {
-      if (isAdding) {
-        // 1. Add UUID to interests array.
-        final newInterests = {..._interests, sport.id}.toList();
-        await supabase
-            .from(SupabaseConfig.usersTable)
-            .update({'interests': newInterests})
-            .eq('id', _profileId!);
-
-        // 2. Create sport_profile / organiser record.
-        if (!_isOrganiserType) {
-          await supabase.from(SupabaseConfig.sportProfilesTable).upsert({
-            'profile_id': _profileId,
-            'sport': sportKey,
-            'skill_level': 1,
-          }, onConflict: 'profile_id,sport');
-        } else {
-          await supabase.from(SupabaseConfig.organiserTable).upsert({
-            'profile_id': _profileId,
-            'sport': sportKey,
-            'organiser_level': 1,
-            'commission_type': 'percent',
-            'commission_value': 0.0,
-            'is_verified': false,
-            'is_active': true,
-          }, onConflict: 'profile_id,sport');
+      final rpc = MySportsRpc(supabase);
+      final result = await (mine
+          ? (isAdding
+                ? rpc.add(profileId, sport.id)
+                : rpc.remove(profileId, sport.id))
+          : (isAdding
+                ? rpc.follow(profileId, sport.id)
+                : rpc.unfollow(profileId, sport.id)));
+      final outcome = result.fold((_) => SportOutcome.invalid, (o) => o);
+      ok = outcome == SportOutcome.done || outcome == SportOutcome.unchanged;
+      if (!ok) {
+        if (mounted) {
+          final l10n = AppLocalizations.of(context);
+          _toast(
+            manageSportsOutcomeMessage(outcome, l10n) ??
+                (isAdding
+                    ? l10n.manage_sports_add_failed
+                    : l10n.manage_sports_remove_failed),
+          );
         }
-
-        _interests.add(sport.id);
-        ok = true;
-      } else {
-        // Row first, then interests: the contributor trigger requires every
-        // sport row to have its sport in interests (KAN-1051).
-        final newInterests = _interests.where((id) => id != sport.id).toList();
-        final result = await removeSportInOrder(
-          _SupabaseSportRemovalSteps(
-            client: supabase,
-            profileId: _profileId!,
-            sportKey: sportKey,
-            organiser: _isOrganiserType,
-          ),
-          newInterests,
-        );
-        if (result.isFailure) {
-          throw Exception((result as Err<Unit, Failure>).error.message);
-        }
-
-        _interests.remove(sport.id);
-        // The write landed: a later refresh failure must not re-tick it.
-        ok = true;
+        return;
+      }
+      // rpc_add_my_sport follows the sport too.
+      if (mine && isAdding) {
+        _following.finish(sport.id, removing: false, ok: true);
       }
 
       // Refresh the relevant controller so the profile screen updates.
       if (!_isOrganiserType) {
         await ref
             .read(sportsProfileControllerProvider.notifier)
-            .loadSportsProfiles(userId, profileId: _profileId);
+            .loadSportsProfiles(userId, profileId: profileId);
       } else {
         await ref
             .read(organiserProfileControllerProvider.notifier)
-            .loadOrganiserProfiles(userId, profileId: _profileId);
+            .loadOrganiserProfiles(userId, profileId: profileId);
       }
 
       // Refresh profile so interests list updates in the UI.
       await ref.read(profileControllerProvider.notifier).refreshProfile();
     } catch (e) {
-      if (mounted) {
+      // The write landed when ok is set: a refresh failure is not shown.
+      if (mounted && !ok) {
         final l10n = AppLocalizations.of(context);
         _toast(
           isAdding
@@ -226,7 +200,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       }
     } finally {
       widget.saving.value = false;
-      _selection.finish(sport.id, removing: !isAdding, ok: ok);
+      selection.finish(sport.id, removing: !isAdding, ok: ok);
       if (mounted) setState(() => _isSaving = false);
     }
   }
@@ -239,8 +213,8 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
 
   @override
   Widget build(BuildContext context) {
-    final colors = DabblerColors.of(context);
     final sportsAsync = ref.watch(activeSportsByProfileCountryProvider);
+    final l10n = AppLocalizations.of(context);
 
     // The DabblerSheet body is already a scroll view, so this shrink-wraps
     // (the old DraggableScrollableSheet hosted its own list).
@@ -249,7 +223,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         DabblerText(
-          AppLocalizations.of(context).manage_sports_subtitle,
+          l10n.manage_sports_subtitle,
           style: DabblerType.subheadline,
           tone: DabblerTextTone.secondary,
         ),
@@ -257,7 +231,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         DabblerSearchField(
           controller: _searchController,
           enabled: !_isSaving,
-          placeholder: AppLocalizations.of(context).manage_sports_search,
+          placeholder: l10n.manage_sports_search,
           onChanged: (value) {
             setState(() => _searchQuery = value.trim().toLowerCase());
           },
@@ -265,6 +239,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
         ),
         const DabblerGap.v(DabblerSpacing.space4),
         sportsAsync.when(
+          skipLoadingOnReload: true,
           data: (sports) {
             final filteredSports = _searchQuery.isEmpty
                 ? sports
@@ -284,7 +259,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
               return Padding(
                 padding: const EdgeInsets.all(DabblerSpacing.space8),
                 child: DabblerText(
-                  AppLocalizations.of(context).manage_sports_no_match,
+                  l10n.manage_sports_no_match,
                   textAlign: TextAlign.center,
                   style: DabblerType.subheadline,
                   tone: DabblerTextTone.secondary,
@@ -295,13 +270,13 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
             return Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                for (final sport in filteredSports)
-                  Padding(
-                    padding: const EdgeInsetsDirectional.only(
-                      bottom: DabblerSpacing.space2,
-                    ),
-                    child: _sportRow(sport, colors),
-                  ),
+                _section(l10n.manage_sports_section_mine, filteredSports, true),
+                const DabblerGap.v(DabblerSpacing.space5),
+                _section(
+                  l10n.manage_sports_section_following,
+                  filteredSports,
+                  false,
+                ),
               ],
             );
           },
@@ -312,7 +287,7 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
           error: (e, _) => Padding(
             padding: const EdgeInsets.all(DabblerSpacing.space8),
             child: DabblerText(
-              AppLocalizations.of(context).manage_sports_load_failed,
+              l10n.manage_sports_load_failed,
               textAlign: TextAlign.center,
               style: DabblerType.subheadline,
               tone: DabblerTextTone.secondary,
@@ -324,63 +299,43 @@ class _ManageSportsSheetState extends ConsumerState<ManageSportsSheet> {
     );
   }
 
-  Widget _sportRow(Sport sport, DabblerColors colors) {
-    final isSelected = _selection.isTicked(sport.id);
-    final key = (sport.sportKey ?? sport.nameEn.toLowerCase())
-        .toLowerCase()
-        .replaceAll('_', '-')
-        .replaceAll(' ', '-');
-    return DabblerInputRow(
-      // The sport emoji is replaced by the DS sport glyph.
-      leading: DabblerSportIcon.fromKey(key),
-      title: sport.localizedName(context),
-      trailing: DabblerIcon(
-        isSelected ? 'tick-circle' : 'record',
-        weight: isSelected ? DabblerIconWeight.bold : DabblerIconWeight.linear,
-        color: isSelected ? colors.brandPrimary : colors.textTertiary,
+  Widget _section(String title, List<Sport> sports, bool mine) {
+    final selection = mine ? _mine : _following;
+    return Column(
+      key: ValueKey<String>(
+        mine ? 'manage-sports-mine' : 'manage-sports-following',
       ),
-      enabled: !_isSaving,
-      onTap: () => _toggle(sport),
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        DabblerText(title, style: DabblerType.headline),
+        const DabblerGap.v(DabblerSpacing.space3),
+        Wrap(
+          spacing: DabblerSpacing.space2,
+          runSpacing: DabblerSpacing.space2,
+          children: [
+            for (final sport in sports)
+              DabblerChip(
+                label: sport.localizedName(context),
+                selected: selection.isTicked(sport.id),
+                // The primary sport is marked in My sports.
+                leadingIcon: mine && sport.id == _primarySport
+                    ? const DabblerIcon('star', weight: DabblerIconWeight.bold)
+                    : null,
+                onTap: () => _toggle(sport, mine: mine),
+              ),
+          ],
+        ),
+      ],
     );
   }
 }
 
-/// Supabase implementation of [SportRemovalSteps] for one profile and sport.
-class _SupabaseSportRemovalSteps implements SportRemovalSteps {
-  _SupabaseSportRemovalSteps({
-    required this.client,
-    required this.profileId,
-    required this.sportKey,
-    required this.organiser,
-  });
-
-  final SupabaseClient client;
-  final String profileId;
-  final String sportKey;
-  final bool organiser;
-
-  String get _table => organiser
-      ? SupabaseConfig.organiserTable
-      : SupabaseConfig.sportProfilesTable;
-
-  @override
-  Future<List<Map<String, dynamic>>> deleteSportRecord() async {
-    final rows = await client
-        .from(_table)
-        .delete()
-        .eq('profile_id', profileId)
-        .eq('sport', sportKey)
-        .select();
-    return List<Map<String, dynamic>>.from(rows);
-  }
-
-  @override
-  Future<void> updateInterests(List<String> interests) => client
-      .from(SupabaseConfig.usersTable)
-      .update({'interests': interests})
-      .eq('id', profileId);
-
-  @override
-  Future<void> restoreSportRecord(List<Map<String, dynamic>> rows) =>
-      client.from(_table).insert(rows);
-}
+/// The message for a blocked or failed [outcome], or null when it landed.
+String? manageSportsOutcomeMessage(SportOutcome outcome, AppLocalizations l) =>
+    switch (outcome) {
+      SportOutcome.done || SportOutcome.unchanged => null,
+      SportOutcome.blockedPrimary => l.manage_sports_remove_primary,
+      SportOutcome.blockedLast => l.manage_sports_last_sport,
+      SportOutcome.blockedInMySports => l.manage_sports_unfollow_in_my_sports,
+      SportOutcome.invalid => null,
+    };

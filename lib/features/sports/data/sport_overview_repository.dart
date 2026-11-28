@@ -70,14 +70,9 @@ abstract class SportOverviewRepository {
     int limit = kSportOverviewPostsPage,
   });
 
-  /// Whether the active persona already has a sport profile for the sport.
-  Future<Result<bool, Failure>> hasSportProfile(
-    String profileId,
-    SportInfo sport,
-  );
-
-  /// `rpc_create_sport_profile`: adds the sport as Practicing.
-  Future<Result<void, Failure>> createSportProfile(
+  /// KAN-1060: the persona's active card for the sport, and whether its
+  /// level was chosen. Hidden cards are ignored.
+  Future<Result<MySportCard, Failure>> mySportCard(
     String profileId,
     SportInfo sport,
   );
@@ -413,36 +408,31 @@ class SupabaseSportOverviewRepository implements SportOverviewRepository {
   });
 
   @override
-  Future<Result<bool, Failure>> hasSportProfile(
+  Future<Result<MySportCard, Failure>> mySportCard(
     String profileId,
     SportInfo sport,
   ) => guardWithTimeout(() async {
     final List<dynamic> rows = await _db
         .from(SupabaseConfig.sportProfilesTable)
-        .select('sport, sport_id')
-        .eq('profile_id', profileId);
-    final String? key = sport.sportKey?.toLowerCase();
-    return rows.any((Object? r) {
-      if (r is! Map) return false;
-      final String? sid = r['sport_id'] as String?;
-      final String? skey = (r['sport'] as String?)?.toLowerCase();
-      return sid == sport.id || (key != null && skey == key);
-    });
+        .select('sport, sport_id, skill_level_set_at')
+        .eq('profile_id', profileId)
+        .isFilter('hidden_at', null);
+    return mySportCardFromRows(rows, sport);
   });
+}
 
-  @override
-  Future<Result<void, Failure>> createSportProfile(
-    String profileId,
-    SportInfo sport,
-  ) => guardWithTimeout(() async {
-    await _db.rpc(
-      SupabaseConfig.rpcCreateSportProfileFn,
-      params: <String, dynamic>{
-        'p_profile_id': profileId,
-        'p_sport_id': sport.id,
-        'p_sport_key': sport.sportKey ?? sport.nameEn.toLowerCase(),
-        'p_skill_level': 1,
-      },
-    );
-  });
+/// The [MySportCard] of [sport] among active `sport_profiles` [rows]
+/// (matched by `sport_id`, or by `sport` key on legacy rows).
+MySportCard mySportCardFromRows(List<dynamic> rows, SportInfo sport) {
+  final String? key = sport.sportKey?.toLowerCase();
+  MySportCard best = MySportCard.none;
+  for (final Object? r in rows) {
+    if (r is! Map) continue;
+    final String? sid = r['sport_id'] as String?;
+    final String? skey = (r['sport'] as String?)?.toLowerCase();
+    if (sid != sport.id && (key == null || skey != key)) continue;
+    if (r['skill_level_set_at'] != null) return MySportCard.ready;
+    best = MySportCard.levelUnset;
+  }
+  return best;
 }

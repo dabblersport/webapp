@@ -1,12 +1,10 @@
-// KAN-1057: a legacy profile's sport_profiles card that is not in interests
-// shows ticked in Manage Sports, and can be removed (row deleted, interests
-// left without it).
+// KAN-1057 / KAN-1061: a legacy profile's sport_profiles card that is not in
+// interests shows ticked under My sports; its interest under Following.
 
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
 import 'package:dabbler/data/models/profile/user_profile.dart';
 import 'package:dabbler/data/repositories/sport_profiles_repository.dart';
-import 'package:dabbler/features/profile/domain/services/sport_removal.dart';
 import 'package:dabbler/features/profile/presentation/controllers/profile_controller.dart';
 import 'package:dabbler/features/profile/presentation/providers/profile_providers.dart';
 import 'package:dabbler/features/profile/presentation/providers/sport_profiles_providers.dart';
@@ -35,28 +33,6 @@ class _Repo implements SportProfilesRepository {
   ) async => const Ok(['gym']);
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
-class _Steps implements SportRemovalSteps {
-  final calls = <String>[];
-  List<String>? interests;
-  @override
-  Future<List<Map<String, dynamic>>> deleteSportRecord() async {
-    calls.add('delete');
-    return [
-      {'profile_id': 'p1', 'sport': 'gym'},
-    ];
-  }
-
-  @override
-  Future<void> updateInterests(List<String> i) async {
-    calls.add('interests');
-    interests = i;
-  }
-
-  @override
-  Future<void> restoreSportRecord(List<Map<String, dynamic>> rows) async =>
-      calls.add('restore');
 }
 
 void main() {
@@ -100,31 +76,9 @@ void main() {
       await tester.pump(const Duration(milliseconds: 50));
     }
     final ticked = find.byWidgetPredicate(
-      (w) => w is DabblerIcon && w.name == 'tick-circle',
+      (w) => w is DabblerChip && w.selected,
     );
+    // Gym under My sports (card), Football under Following (interest).
     expect(ticked, findsNWidgets(2));
   });
-
-  test(
-    'card-only sport can be removed: row deleted, interests unchanged',
-    () async {
-      expect(
-        sportRemovalBlock(
-          sportId: 'gym',
-          selectedCount: 2,
-          profileType: 'player',
-          primarySport: null,
-        ),
-        isNull,
-      );
-      final steps = _Steps();
-      final r = await removeSportInOrder(
-        steps,
-        profile.interests!.where((id) => id != 'gym').toList(),
-      );
-      expect(r.isSuccess, isTrue);
-      expect(steps.calls, ['delete', 'interests']);
-      expect(steps.interests, ['fb']);
-    },
-  );
 }

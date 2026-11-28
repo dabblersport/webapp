@@ -22,6 +22,7 @@ import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profi
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_models.dart';
 import 'package:dabbler/features/profile/presentation/widgets/profile_edit/profile_edit_sports.dart';
 import 'package:dabbler/l10n/app_localizations.dart';
+import 'package:dabbler/features/sports/data/my_sports_rpc.dart';
 
 /// Screen for editing user profile information
 class ProfileEditScreen extends StatefulWidget {
@@ -52,8 +53,10 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
   // Sports & Preferences state
   Set<String> _selectedInterests = {}; // sport UUIDs (profiles.interests)
   Map<String, SkillLevel> _selectedSports = {}; // sportKey -> skillLevel
-  String? _preferredSport; // UUID from sports.id (profiles.preferred_sport)
   String? _primarySport; // UUID from sports.id (profiles.primary_sport)
+  // KAN-1061: what was loaded, so a save only sends the changes.
+  Set<String> _loadedInterests = {};
+  Map<String, SkillLevel> _loadedCardLevels = {}; // active cards only
   List<Sport> _availableSports = []; // Loaded from Supabase
   Map<String, Sport> _sportsByKey = {}; // sport_key -> Sport lookup
   Map<String, Sport> _sportsById = {}; // sports.id -> Sport lookup
@@ -200,14 +203,14 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         final rawInterests = response['interests'];
         if (rawInterests is List) {
           _selectedInterests = rawInterests.cast<String>().toSet();
+          _loadedInterests = {..._selectedInterests};
         }
         _selectedGender = (response['gender'] as String?)?.toLowerCase();
         _selectedLanguage = response['language'] as String?;
         _avatarPath = response['avatar_url'] as String?;
         _avatarUrl = resolveAvatarUrl(_avatarPath) ?? _avatarPath;
 
-        // Load preferred & primary sport
-        _preferredSport = response['preferred_sport'] as String?;
+        // Load primary sport (KAN-1061: preferred_sport is never read)
         _primarySport = response['primary_sport'] as String?;
 
         // Load sports profiles
@@ -232,7 +235,8 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       final sportsResponse = await Supabase.instance.client
           .from(SupabaseConfig.sportProfilesTable)
           .select()
-          .eq('profile_id', profileId);
+          .eq('profile_id', profileId)
+          .isFilter('hidden_at', null);
 
       final sportsMap = <String, SkillLevel>{};
       for (final sport in sportsResponse) {
@@ -249,6 +253,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
       if (mounted) {
         setState(() {
           _selectedSports = sportsMap;
+          _loadedCardLevels = {...sportsMap};
         });
       }
     } catch (e) {
@@ -342,7 +347,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         _selectedSports[key] = SkillLevel.beginner;
       }
       if (_selectedInterests.length == 1) {
-        _preferredSport ??= sport.id;
         _primarySport ??= sport.id;
       }
       return;
@@ -352,11 +356,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     final key =
         sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
     _selectedSports.remove(key);
-    if (_preferredSport == sport.id) {
-      _preferredSport = _selectedInterests.isNotEmpty
-          ? _selectedInterests.first
-          : null;
-    }
     if (_primarySport == sport.id) {
       _primarySport = _selectedInterests.isNotEmpty
           ? _selectedInterests.first
@@ -377,7 +376,7 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         sports: sports,
         isSelected: (sport) => _selectedInterests.contains(sport.id),
         isPrimary: (sport) => _primarySport == sport.id,
-        isPreferred: (sport) => _preferredSport == sport.id,
+        isPreferred: (sport) => false,
         onToggle: (sport, selected) {
           setState(() {
             _toggleInterestSportSelection(sport, selected);
@@ -762,13 +761,6 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
         ),
         sectionGap,
         _buildInterestSportSelect(
-          label: 'Preferred Sport',
-          placeholder: 'Select preferred sport',
-          current: _preferredSport,
-          onSelected: (value) => setState(() => _preferredSport = value),
-        ),
-        gap,
-        _buildInterestSportSelect(
           label: 'Primary Sport',
           placeholder: 'Select primary sport',
           current: _primarySport,
@@ -868,9 +860,9 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
                   ? null
                   : _cityController.text.trim(),
               'country': countryToSave,
-              'preferred_sport': _preferredSport,
+              // KAN-1061 compat: preferred_sport mirrors primary_sport.
+              'preferred_sport': _primarySport,
               'primary_sport': _primarySport,
-              'interests': _selectedInterests.toList(),
               'updated_at': DateTime.now().toIso8601String(),
             })
             .eq('id', _profileId!);
@@ -894,69 +886,33 @@ class _ProfileEditScreenState extends State<ProfileEditScreen> {
     }
   }
 
+  /// KAN-1061: interests are Following, cards are My sports; nothing is
+  /// mirrored or deleted. Unticked sports leave My sports first (the card is
+  /// hidden), then Following; new ones are followed; a level change on an
+  /// active card goes through `rpc_set_sport_level`.
   Future<void> _saveSportsProfiles(String profileId) async {
-    try {
-      // Build desired sport key -> skill level map
-      // The trigger trgfn_set_sport_profile_sport_id expects `sport` to be a
-      // text key (e.g. "football") and auto-resolves sport_id from the sports table.
-      final desiredKeys = <String>{};
-      final sportsData = <Map<String, dynamic>>[];
-      for (final sportId in _selectedInterests) {
-        final sport = _sportsById[sportId];
-        if (sport == null) continue;
-        final key =
-            sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
-        final skillLevel = _selectedSports[key] ?? SkillLevel.beginner;
-        desiredKeys.add(key);
-        sportsData.add({
-          'profile_id': profileId,
-          'sport': key,
-          'skill_level': _skillLevelToInt(skillLevel),
-        });
+    final rpc = MySportsRpc(Supabase.instance.client);
+    String? keyOf(String id) {
+      final sport = _sportsById[id];
+      if (sport == null) return null;
+      return sport.sportKey ?? sport.nameEn.toLowerCase().replaceAll(' ', '_');
+    }
+
+    for (final id in _loadedInterests.difference(_selectedInterests)) {
+      if (_loadedCardLevels.containsKey(keyOf(id))) {
+        await rpc.remove(profileId, id);
       }
-
-      // Fetch existing rows — sport column stores the text key
-      final existing = await Supabase.instance.client
-          .from(SupabaseConfig.sportProfilesTable)
-          .select('sport')
-          .eq('profile_id', profileId);
-
-      final existingKeys = existing
-          .map<String>((r) => r['sport'] as String)
-          .toSet();
-
-      // Delete removed sports
-      final toDelete = existingKeys.difference(desiredKeys);
-      if (toDelete.isNotEmpty) {
-        await Supabase.instance.client
-            .from(SupabaseConfig.sportProfilesTable)
-            .delete()
-            .eq('profile_id', profileId)
-            .inFilter('sport', toDelete.toList());
-      }
-
-      // Insert only newly added sports
-      final toInsert = sportsData
-          .where((r) => !existingKeys.contains(r['sport']))
-          .toList();
-      if (toInsert.isNotEmpty) {
-        await Supabase.instance.client
-            .from(SupabaseConfig.sportProfilesTable)
-            .insert(toInsert);
-      }
-
-      // Update skill level for sports that already existed
-      for (final row in sportsData) {
-        if (existingKeys.contains(row['sport'])) {
-          await Supabase.instance.client
-              .from(SupabaseConfig.sportProfilesTable)
-              .update({'skill_level': row['skill_level']})
-              .eq('sport', row['sport'] as String)
-              .eq('profile_id', profileId);
-        }
-      }
-    } catch (e) {
-      debugPrint('Error saving sports profiles: $e');
+      await rpc.unfollow(profileId, id);
+    }
+    for (final id in _selectedInterests.difference(_loadedInterests)) {
+      await rpc.follow(profileId, id);
+    }
+    for (final id in _selectedInterests) {
+      final key = keyOf(id);
+      final was = _loadedCardLevels[key];
+      final now = _selectedSports[key];
+      if (was == null || now == null || was == now) continue;
+      await rpc.setLevel(profileId, id, _skillLevelToInt(now));
     }
   }
 

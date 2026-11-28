@@ -708,11 +708,16 @@ class _SportMeetupRowState extends ConsumerState<SportMeetupRow> {
       listen: false,
     );
     final AppLocalizations l = AppLocalizations.of(context);
-    final bool go = await confirmSportProfileForJoin(
-      context: context,
-      ref: ref,
-      sport: widget.sport,
-    );
+    // Only a join asks for the sport; cancel / interested never do.
+    final bool joining =
+        action == RsvpAction.going || action == RsvpAction.request;
+    final bool go =
+        !joining ||
+        await confirmSportProfileForJoin(
+          context: context,
+          ref: ref,
+          sport: widget.sport,
+        );
     if (!go) {
       if (mounted) setState(() => _busy = false);
       return;

@@ -1,36 +1,57 @@
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-import 'package:dabbler/core/config/supabase_config.dart';
-import 'package:dabbler/core/errors/request_timeout.dart';
 import 'package:dabbler/core/fp/failure.dart';
 import 'package:dabbler/core/fp/result.dart';
+import 'package:dabbler/features/sports/data/my_sports_rpc.dart';
 import 'package:dabbler/features/sports/data/sport_overview_models.dart';
 
-/// What a Follow / Unfollow ended in (KAN-622, decisions of KAN-590/591).
+/// What a sport-page write ended in (KAN-1060, on the KAN-1059 RPCs).
 enum SportFollowOutcome {
   followed,
   unfollowed,
 
+  /// Added to (or restored into) My sports; the sport is followed too.
+  added,
+
+  /// Removed from My sports (the card is hidden, its stats kept).
+  removed,
+
+  /// The level was saved.
+  levelSet,
+
   /// Already in the wanted state; nothing was written.
   unchanged,
 
-  /// Unfollow refused: it would leave the persona with no Following sport.
+  /// Refused: it would leave the persona with no sport.
   blockedLast,
 
-  /// Unfollow refused: the sport is one the persona Practices (has a sport
-  /// profile for).
-  blockedPracticing,
-
-  /// Unfollow refused: the sport is the persona's Primary sport.
+  /// Refused: the sport is the persona's Primary sport.
   blockedPrimary,
+
+  /// Unfollow refused: the sport is still in My sports.
+  blockedInMySports,
+
+  /// The sport is unknown or inactive.
+  invalid,
 }
 
-/// Follow / Unfollow on the active persona's Following (`profiles.interests`).
-///
-/// Following is only that array. This never creates or deletes a sport
-/// profile and never touches Practicing or Primary: a refused unfollow writes
-/// nothing at all. The guards read the database fresh, so a stale screen
-/// cannot unfollow a protected sport.
+/// The [SportFollowOutcome] of an RPC [outcome] for a write whose success is
+/// [done].
+SportFollowOutcome sportFollowOutcomeOf(
+  SportOutcome outcome,
+  SportFollowOutcome done,
+) => switch (outcome) {
+  SportOutcome.done => done,
+  SportOutcome.unchanged => SportFollowOutcome.unchanged,
+  SportOutcome.blockedPrimary => SportFollowOutcome.blockedPrimary,
+  SportOutcome.blockedInMySports => SportFollowOutcome.blockedInMySports,
+  SportOutcome.blockedLast => SportFollowOutcome.blockedLast,
+  SportOutcome.invalid => SportFollowOutcome.invalid,
+};
+
+/// Follow / My sports writes for the active persona. Every write is an
+/// owner-checked RPC; the server enforces the guards (primary, last, still in
+/// My sports), so a stale screen cannot break them. Nothing deletes a card.
 abstract class SportFollowRepository {
   Future<Result<SportFollowOutcome, Failure>> follow(
     String profileId,
@@ -41,90 +62,78 @@ abstract class SportFollowRepository {
     String profileId,
     SportInfo sport,
   );
+
+  /// `rpc_add_my_sport`: adds (or restores) the card, and follows.
+  Future<Result<SportFollowOutcome, Failure>> addToMySports(
+    String profileId,
+    SportInfo sport, {
+    int? skillLevel,
+  });
+
+  /// `rpc_remove_my_sport`: hides the card.
+  Future<Result<SportFollowOutcome, Failure>> removeFromMySports(
+    String profileId,
+    SportInfo sport,
+  );
+
+  /// `rpc_set_sport_level` on an active card.
+  Future<Result<SportFollowOutcome, Failure>> setLevel(
+    String profileId,
+    SportInfo sport,
+    int skillLevel,
+  );
 }
 
 class SupabaseSportFollowRepository implements SportFollowRepository {
-  const SupabaseSportFollowRepository(this._db);
+  SupabaseSportFollowRepository(SupabaseClient db) : _rpc = MySportsRpc(db);
 
-  final SupabaseClient _db;
+  final MySportsRpc _rpc;
 
-  Future<Map<String, dynamic>> _profile(String profileId) async {
-    final Map<String, dynamic> row = await _db
-        .from(SupabaseConfig.usersTable)
-        .select('interests, preferred_sport, primary_sport, persona_type')
-        .eq('id', profileId)
-        .single();
-    return row;
-  }
-
-  static List<String> _interests(Map<String, dynamic> row) => [
-    for (final Object? v in (row['interests'] as List?) ?? const <Object?>[])
-      if (v is String && v.isNotEmpty) v,
-  ];
-
-  Future<void> _write(String profileId, List<String> interests) => _db
-      .from(SupabaseConfig.usersTable)
-      .update(<String, dynamic>{'interests': interests})
-      .eq('id', profileId);
+  Result<SportFollowOutcome, Failure> _map(
+    Result<SportOutcome, Failure> r,
+    SportFollowOutcome done,
+  ) => r.map((SportOutcome o) => sportFollowOutcomeOf(o, done));
 
   @override
   Future<Result<SportFollowOutcome, Failure>> follow(
     String profileId,
     SportInfo sport,
-  ) => guardWithTimeout(() async {
-    final List<String> current = _interests(await _profile(profileId));
-    if (current.contains(sport.id)) return SportFollowOutcome.unchanged;
-    await _write(profileId, <String>[...current, sport.id]);
-    return SportFollowOutcome.followed;
-  });
+  ) async =>
+      _map(await _rpc.follow(profileId, sport.id), SportFollowOutcome.followed);
 
   @override
   Future<Result<SportFollowOutcome, Failure>> unfollow(
     String profileId,
     SportInfo sport,
-  ) => guardWithTimeout(() async {
-    final Map<String, dynamic> row = await _profile(profileId);
-    final List<String> current = _interests(row);
-    if (!current.contains(sport.id)) return SportFollowOutcome.unchanged;
+  ) async => _map(
+    await _rpc.unfollow(profileId, sport.id),
+    SportFollowOutcome.unfollowed,
+  );
 
-    if (row['primary_sport'] == sport.id ||
-        row['preferred_sport'] == sport.id) {
-      return SportFollowOutcome.blockedPrimary;
-    }
-    if (await _practices(profileId, row['persona_type'] as String?, sport)) {
-      return SportFollowOutcome.blockedPracticing;
-    }
-    if (current.length <= 1) return SportFollowOutcome.blockedLast;
-
-    await _write(profileId, <String>[
-      for (final String id in current)
-        if (id != sport.id) id,
-    ]);
-    return SportFollowOutcome.unfollowed;
-  });
-
-  /// Whether the persona has a sport profile (player) or organiser record for
-  /// the sport: the two places Practicing lives.
-  Future<bool> _practices(
+  @override
+  Future<Result<SportFollowOutcome, Failure>> addToMySports(
     String profileId,
-    String? personaType,
+    SportInfo sport, {
+    int? skillLevel,
+  }) async => _map(
+    await _rpc.add(profileId, sport.id, skillLevel: skillLevel),
+    SportFollowOutcome.added,
+  );
+
+  @override
+  Future<Result<SportFollowOutcome, Failure>> removeFromMySports(
+    String profileId,
     SportInfo sport,
-  ) async {
-    final bool organiser =
-        personaType == 'organiser' || personaType == 'business';
-    final List<dynamic> rows = await _db
-        .from(
-          organiser
-              ? SupabaseConfig.organiserTable
-              : SupabaseConfig.sportProfilesTable,
-        )
-        .select(organiser ? 'sport' : 'sport, sport_id')
-        .eq('profile_id', profileId);
-    final String? key = sport.sportKey?.toLowerCase();
-    return rows.any((Object? r) {
-      if (r is! Map) return false;
-      if (r['sport_id'] == sport.id) return true;
-      return key != null && (r['sport'] as String?)?.toLowerCase() == key;
-    });
-  }
+  ) async =>
+      _map(await _rpc.remove(profileId, sport.id), SportFollowOutcome.removed);
+
+  @override
+  Future<Result<SportFollowOutcome, Failure>> setLevel(
+    String profileId,
+    SportInfo sport,
+    int skillLevel,
+  ) async => _map(
+    await _rpc.setLevel(profileId, sport.id, skillLevel),
+    SportFollowOutcome.levelSet,
+  );
 }

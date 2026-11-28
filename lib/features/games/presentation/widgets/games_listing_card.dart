@@ -14,6 +14,7 @@ import 'package:dabbler/utils/constants/route_constants.dart';
 import 'package:dabbler_design_system/dabbler_design_system.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dabbler/features/sports/presentation/join_gate.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 import 'package:share_plus/share_plus.dart';
@@ -226,6 +227,16 @@ class _JoinActionState extends ConsumerState<_JoinAction> {
   Future<void> _join() async {
     if (_joining) return;
     setState(() => _joining = true);
+    // KAN-1060: a join first makes sure the sport is in My sports.
+    final bool go = await confirmSportForJoin(
+      context: context,
+      ref: ref,
+      sportName: widget.game.sportName,
+    );
+    if (!go || !mounted) {
+      if (mounted) setState(() => _joining = false);
+      return;
+    }
     // The Action Area reports the join (feedback center); the button keeps
     // its own local loading and outcome.
     final r = await joinGameWithFeedback(

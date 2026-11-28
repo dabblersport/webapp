@@ -78,17 +78,33 @@ final organiserProfileIdProvider = FutureProvider<Result<String>>((ref) async {
   final svc = ref.watch(supabaseServiceProvider);
 
   try {
-    final preferredSport = profile.preferredSport?.toLowerCase().trim();
+    // KAN-1061: match on the primary sport (preferred_sport is never read;
+    // the old UUID-vs-text-key comparison never matched). `organiser.sport`
+    // is a text key, so the primary sport's id is resolved to its key.
+    final Map<String, dynamic>? own = await svc
+        .from(SupabaseConfig.usersTable)
+        .select('primary_sport')
+        .eq('id', profile.id)
+        .maybeSingle();
+    final primaryId = own?['primary_sport'] as String?;
+    final Map<String, dynamic>? sportRow = primaryId == null
+        ? null
+        : await svc
+              .from(SupabaseConfig.sportsTable)
+              .select('sport_key')
+              .eq('id', primaryId)
+              .maybeSingle();
+    final primarySport = (sportRow?['sport_key'] as String?)?.toLowerCase();
 
     Map<String, dynamic>? row;
 
-    // Prefer matching the organiser row for the preferred sport.
-    if (preferredSport != null && preferredSport.isNotEmpty) {
+    // Prefer matching the organiser row for the primary sport.
+    if (primarySport != null && primarySport.isNotEmpty) {
       row = await svc
           .from(SupabaseConfig.organiserTable)
           .select('id')
           .eq('profile_id', profile.id)
-          .eq('sport', preferredSport)
+          .eq('sport', primarySport)
           .eq('is_active', true)
           .maybeSingle();
     }

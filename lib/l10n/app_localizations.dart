@@ -13874,7 +13874,7 @@ abstract class AppLocalizations {
   /// KAN-591 Sport Overview v2.
   ///
   /// In en, this message translates to:
-  /// **'{sport} posts, games and news will show in your feed. This doesn’t add {sport} to your sports profile.'**
+  /// **'Follow to see {sport} posts and games.'**
   String sport_overview_follow_note(String sport);
 
   /// KAN-591 Sport Overview v2.
@@ -19777,6 +19777,24 @@ abstract class AppLocalizations {
   /// **'You must have at least one sport'**
   String get manage_sports_last_sport;
 
+  /// KAN-1061: Manage Sports section for the sports the user plays (active sport cards)
+  ///
+  /// In en, this message translates to:
+  /// **'My sports'**
+  String get manage_sports_section_mine;
+
+  /// KAN-1061: Manage Sports section for followed sports (interests)
+  ///
+  /// In en, this message translates to:
+  /// **'Following'**
+  String get manage_sports_section_following;
+
+  /// KAN-1061: unfollow blocked because the sport is still in My sports
+  ///
+  /// In en, this message translates to:
+  /// **'Remove it from your sports first'**
+  String get manage_sports_unfollow_in_my_sports;
+
   /// KAN-1052: header action and rail chip that shows sports outside the viewer's own list
   ///
   /// In en, this message translates to:
@@ -19788,6 +19806,150 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Show only my sports'**
   String get sports_show_mine;
+
+  /// KAN-1062 notification-permission sheet (Home).
+  ///
+  /// In en, this message translates to:
+  /// **'Stay Updated'**
+  String get notif_perm_title;
+
+  /// KAN-1062 notification-permission sheet (Home).
+  ///
+  /// In en, this message translates to:
+  /// **'Get notified about game invites, squad updates, and messages. Never miss out on the action!'**
+  String get notif_perm_body;
+
+  /// KAN-1062 notification-permission sheet (Home).
+  ///
+  /// In en, this message translates to:
+  /// **'Enable Notifications'**
+  String get notif_perm_enable;
+
+  /// KAN-1062 notification-permission sheet (Home).
+  ///
+  /// In en, this message translates to:
+  /// **'Remind Me Later'**
+  String get notif_perm_remind_later;
+
+  /// KAN-1062 notification-permission sheet (Home).
+  ///
+  /// In en, this message translates to:
+  /// **'No Thanks'**
+  String get notif_perm_no_thanks;
+
+  /// KAN-1062 notification-permission sheet (Home).
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications enabled!'**
+  String get notif_perm_enabled_toast;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove it from your sports first'**
+  String get sport_overview_unfollow_in_my_sports;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to my sports'**
+  String get sport_overview_add_to_my_sports;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'In my sports'**
+  String get sport_overview_in_my_sports;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {sport} from your sports?'**
+  String sport_overview_remove_from_my_sports_title(String sport);
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Your {sport} card is hidden and its stats are kept. You still follow {sport}.'**
+  String sport_overview_remove_from_my_sports_text(String sport);
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove'**
+  String get sport_overview_remove_from_my_sports_confirm;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to your sports'**
+  String get sport_overview_added_to_my_sports;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Removed from your sports'**
+  String get sport_overview_removed_from_my_sports;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t update your sports. Try again.'**
+  String get sport_overview_my_sports_failed;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your last sport, so you can\'t remove it.'**
+  String get sport_overview_remove_last;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'This is your primary sport, so you can\'t remove it.'**
+  String get sport_overview_remove_primary;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{Player} other{Players}}'**
+  String sport_overview_players_label(int count);
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {sport} to your sports'**
+  String sport_overview_join_add_title(String sport);
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Set your {sport} level'**
+  String sport_overview_join_level_title(String sport);
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick your level to join. You can change it later.'**
+  String get sport_overview_join_level_text;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Add and join'**
+  String get sport_overview_join_add_confirm;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Save and join'**
+  String get sport_overview_join_level_confirm;
+
+  /// KAN-1060 sport page and join gate.
+  ///
+  /// In en, this message translates to:
+  /// **'Couldn\'t save your sport, so you haven\'t joined. Try again.'**
+  String get sport_overview_join_failed;
 }
 
 class _AppLocalizationsDelegate

@@ -68,34 +68,32 @@ class _SportOverviewScreenState extends ConsumerState<SportOverviewScreen> {
     final SportFollowController controller = ref.read(
       sportFollowControllerProvider.notifier,
     );
-    final DabblerToastSpec? spec = switch (next.blocked) {
-      SportFollowOutcome.blockedLast => DabblerToastSpec(
-        message: l.sport_overview_unfollow_last,
-        tone: DabblerToastTone.error,
-      ),
-      SportFollowOutcome.blockedPracticing => DabblerToastSpec(
-        message: l.sport_overview_unfollow_practicing,
-        tone: DabblerToastTone.error,
-      ),
-      SportFollowOutcome.blockedPrimary => DabblerToastSpec(
-        message: l.sport_overview_unfollow_primary,
-        tone: DabblerToastTone.error,
-      ),
-      _ when next.error != null => DabblerToastSpec(
-        message: l.sport_overview_follow_failed,
-        tone: DabblerToastTone.error,
-        action: DabblerToastAction(
-          label: l.sport_overview_retry,
-          onPressed: () {
-            final SportInfo? sport = ref
-                .read(sportInfoProvider(widget.sportId))
-                .valueOrNull;
-            if (sport != null) controller.toggle(sport);
-          },
-        ),
-      ),
-      _ => null,
-    };
+    final SportWrite? write = next.write;
+    final DabblerToastSpec? spec = next.error != null && write != null
+        ? DabblerToastSpec(
+            message:
+                write == SportWrite.addToMySports ||
+                    write == SportWrite.removeFromMySports
+                ? l.sport_overview_my_sports_failed
+                : l.sport_overview_follow_failed,
+            tone: DabblerToastTone.error,
+            action: DabblerToastAction(
+              label: l.sport_overview_retry,
+              onPressed: () {
+                final SportInfo? sport = ref
+                    .read(sportInfoProvider(widget.sportId))
+                    .valueOrNull;
+                if (sport != null) controller.retry(write, sport);
+              },
+            ),
+          )
+        : switch (sportNoticeMessage(l, next.notice, write)) {
+            (final String m, final bool ok) => DabblerToastSpec(
+              message: m,
+              tone: ok ? DabblerToastTone.success : DabblerToastTone.error,
+            ),
+            null => null,
+          };
     if (spec == null) return;
     DabblerToastProvider.of(context).show(spec);
     controller.clearNotice();
@@ -251,4 +249,37 @@ class _PageError extends StatelessWidget {
       ),
     );
   }
+}
+
+/// KAN-1060: the toast for a sport-page write that ended in [notice], with
+/// whether it is a success; null when there is nothing to say.
+(String, bool)? sportNoticeMessage(
+  AppLocalizations l,
+  SportFollowOutcome? notice,
+  SportWrite? write,
+) {
+  final bool removing = write == SportWrite.removeFromMySports;
+  return switch (notice) {
+    SportFollowOutcome.added => (l.sport_overview_added_to_my_sports, true),
+    SportFollowOutcome.removed => (
+      l.sport_overview_removed_from_my_sports,
+      true,
+    ),
+    SportFollowOutcome.blockedLast => (
+      removing ? l.sport_overview_remove_last : l.sport_overview_unfollow_last,
+      false,
+    ),
+    SportFollowOutcome.blockedPrimary => (
+      removing
+          ? l.sport_overview_remove_primary
+          : l.sport_overview_unfollow_primary,
+      false,
+    ),
+    SportFollowOutcome.blockedInMySports => (
+      l.sport_overview_unfollow_in_my_sports,
+      false,
+    ),
+    SportFollowOutcome.invalid => (l.sport_overview_my_sports_failed, false),
+    _ => null,
+  };
 }

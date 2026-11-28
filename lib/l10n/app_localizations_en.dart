@@ -7768,7 +7768,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String sport_overview_follow_note(String sport) {
-    return '$sport posts, games and news will show in your feed. This doesn’t add $sport to your sports profile.';
+    return 'Follow to see $sport posts and games.';
   }
 
   @override
@@ -11464,8 +11464,114 @@ class AppLocalizationsEn extends AppLocalizations {
   String get manage_sports_last_sport => 'You must have at least one sport';
 
   @override
+  String get manage_sports_section_mine => 'My sports';
+
+  @override
+  String get manage_sports_section_following => 'Following';
+
+  @override
+  String get manage_sports_unfollow_in_my_sports =>
+      'Remove it from your sports first';
+
+  @override
   String get sports_browse_all => 'Browse all sports';
 
   @override
   String get sports_show_mine => 'Show only my sports';
+
+  @override
+  String get notif_perm_title => 'Stay Updated';
+
+  @override
+  String get notif_perm_body =>
+      'Get notified about game invites, squad updates, and messages. Never miss out on the action!';
+
+  @override
+  String get notif_perm_enable => 'Enable Notifications';
+
+  @override
+  String get notif_perm_remind_later => 'Remind Me Later';
+
+  @override
+  String get notif_perm_no_thanks => 'No Thanks';
+
+  @override
+  String get notif_perm_enabled_toast => 'Notifications enabled!';
+
+  @override
+  String get sport_overview_unfollow_in_my_sports =>
+      'Remove it from your sports first';
+
+  @override
+  String get sport_overview_add_to_my_sports => 'Add to my sports';
+
+  @override
+  String get sport_overview_in_my_sports => 'In my sports';
+
+  @override
+  String sport_overview_remove_from_my_sports_title(String sport) {
+    return 'Remove $sport from your sports?';
+  }
+
+  @override
+  String sport_overview_remove_from_my_sports_text(String sport) {
+    return 'Your $sport card is hidden and its stats are kept. You still follow $sport.';
+  }
+
+  @override
+  String get sport_overview_remove_from_my_sports_confirm => 'Remove';
+
+  @override
+  String get sport_overview_added_to_my_sports => 'Added to your sports';
+
+  @override
+  String get sport_overview_removed_from_my_sports =>
+      'Removed from your sports';
+
+  @override
+  String get sport_overview_my_sports_failed =>
+      'Couldn\'t update your sports. Try again.';
+
+  @override
+  String get sport_overview_remove_last =>
+      'This is your last sport, so you can\'t remove it.';
+
+  @override
+  String get sport_overview_remove_primary =>
+      'This is your primary sport, so you can\'t remove it.';
+
+  @override
+  String sport_overview_players_label(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Players',
+      one: 'Player',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_join_add_title(String sport) {
+    return 'Add $sport to your sports';
+  }
+
+  @override
+  String sport_overview_join_level_title(String sport) {
+    return 'Set your $sport level';
+  }
+
+  @override
+  String get sport_overview_join_level_text =>
+      'Pick your level to join. You can change it later.';
+
+  @override
+  String get sport_overview_join_add_confirm => 'Add and join';
+
+  @override
+  String get sport_overview_join_level_confirm => 'Save and join';
+
+  @override
+  String get sport_overview_join_failed =>
+      'Couldn\'t save your sport, so you haven\'t joined. Try again.';
 }

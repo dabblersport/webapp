@@ -115,7 +115,8 @@ class SportsProfileController extends StateNotifier<SportsProfileState> {
           .select(
             'sport, skill_level, matches_played, primary_position, rating_total, rating_count, profile_id',
           )
-          .eq('profile_id', resolvedProfileId);
+          .eq('profile_id', resolvedProfileId)
+          .isFilter('hidden_at', null);
 
       final profiles = rows
           .map(

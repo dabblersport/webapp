@@ -131,8 +131,9 @@ class FakeSportOverviewRepository implements SportOverviewRepository {
   Result<List<SportVenue>, Failure> venuesResult = const Ok(<SportVenue>[]);
   Result<List<SportSpace>, Failure> spacesResult = const Ok(<SportSpace>[]);
   Result<List<String>, Failure> postIdsResult = const Ok(<String>[]);
-  Result<bool, Failure> hasProfileResult = const Ok(true);
-  Result<void, Failure> createProfileResult = const Ok(null);
+
+  /// KAN-1060: the persona's card for the sport (ready = no gate sheet).
+  Result<MySportCard, Failure> cardResult = const Ok(MySportCard.ready);
 
   /// `ref_cities.code` by city name; a name not listed is unmapped.
   final Map<String, String> cityCodes = <String, String>{'Dubai': 'dubai'};
@@ -142,7 +143,6 @@ class FakeSportOverviewRepository implements SportOverviewRepository {
 
   final List<String> calls = <String>[];
   final List<String?> overviewCities = <String?>[];
-  final List<String> createdProfiles = <String>[];
   int overviewCalls = 0;
   int gamesCalls = 0;
 
@@ -216,19 +216,10 @@ class FakeSportOverviewRepository implements SportOverviewRepository {
   }
 
   @override
-  Future<Result<bool, Failure>> hasSportProfile(
+  Future<Result<MySportCard, Failure>> mySportCard(
     String profileId,
     SportInfo sport,
-  ) async => hasProfileResult;
-
-  @override
-  Future<Result<void, Failure>> createSportProfile(
-    String profileId,
-    SportInfo sport,
-  ) async {
-    createdProfiles.add('$profileId:${sport.id}');
-    return createProfileResult;
-  }
+  ) async => cardResult;
 }
 
 /// Follow / Unfollow whose outcome each test sets. A real implementation would
@@ -240,8 +231,51 @@ class FakeSportFollowRepository implements SportFollowRepository {
   Result<SportFollowOutcome, Failure> unfollowResult = const Ok(
     SportFollowOutcome.unfollowed,
   );
+  Result<SportFollowOutcome, Failure> addResult = const Ok(
+    SportFollowOutcome.added,
+  );
+  Result<SportFollowOutcome, Failure> removeResult = const Ok(
+    SportFollowOutcome.removed,
+  );
+  Result<SportFollowOutcome, Failure> levelResult = const Ok(
+    SportFollowOutcome.levelSet,
+  );
   final List<String> follows = <String>[];
   final List<String> unfollows = <String>[];
+
+  /// `profile:sport:level` per add (level `-` when none).
+  final List<String> adds = <String>[];
+  final List<String> removes = <String>[];
+  final List<String> levels = <String>[];
+
+  @override
+  Future<Result<SportFollowOutcome, Failure>> addToMySports(
+    String profileId,
+    SportInfo sport, {
+    int? skillLevel,
+  }) async {
+    adds.add('$profileId:${sport.id}:${skillLevel ?? '-'}');
+    return addResult;
+  }
+
+  @override
+  Future<Result<SportFollowOutcome, Failure>> removeFromMySports(
+    String profileId,
+    SportInfo sport,
+  ) async {
+    removes.add('$profileId:${sport.id}');
+    return removeResult;
+  }
+
+  @override
+  Future<Result<SportFollowOutcome, Failure>> setLevel(
+    String profileId,
+    SportInfo sport,
+    int skillLevel,
+  ) async {
+    levels.add('$profileId:${sport.id}:$skillLevel');
+    return levelResult;
+  }
 
   @override
   Future<Result<SportFollowOutcome, Failure>> follow(

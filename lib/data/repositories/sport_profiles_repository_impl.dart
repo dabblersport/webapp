@@ -44,6 +44,7 @@ class SportProfilesRepositoryImpl extends BaseRepository
           .from(table)
           .select()
           .eq('profile_id', profileId)
+          .isFilter('hidden_at', null)
           .order('sport_key');
 
       final rows = (response as List<dynamic>)
@@ -64,7 +65,8 @@ class SportProfilesRepositoryImpl extends BaseRepository
     final rows = await svc.client
         .from(_table)
         .select('sport_id')
-        .eq('profile_id', profileId);
+        .eq('profile_id', profileId)
+        .isFilter('hidden_at', null);
     return [
       for (final row in rows as List<dynamic>)
         if ((row as Map)['sport_id'] is String) row['sport_id'] as String,

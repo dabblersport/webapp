@@ -292,12 +292,13 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
         profile?.personaType ?? profile?.profileType ?? 'player';
     final List<String> primaryNames = [
       for (final p in sportProfiles)
-        if (p.isPrimarySport) p.sportName,
+        if (p.isPrimarySport)
+          byId[p.sportId]?.localizedName(context) ?? p.sportName,
     ];
     final String allSub =
         (primaryNames.isNotEmpty
                 ? primaryNames
-                : [for (final s in mySports) s.nameEn])
+                : [for (final s in mySports) s.localizedName(context)])
             .take(3)
             .join(' · ');
     final isContributor =
@@ -418,7 +419,7 @@ class _ProfileScreenState extends ConsumerState<ProfileScreen> with RouteAware {
               newContributor: newContributor && selected == null,
               heroLabel: selected == null
                   ? null
-                  : l10n.profile_stat_sport_matches(selected.nameEn),
+                  : l10n.profile_stat_sport_matches(selected.localizedName(context)),
               heroSub: selected == null
                   ? (allSub.isEmpty ? null : allSub)
                   : (shown.isEmpty ? null : shown.first.getSkillLevelName()),

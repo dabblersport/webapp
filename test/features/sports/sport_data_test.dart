@@ -46,12 +46,14 @@ void main() {
           'spaces': 9,
           'posts': 17,
           'news': 1,
+          'players': 12,
           'mutual_followers': <Map<String, dynamic>>[
             <String, dynamic>{'display_name': 'Aisha', 'username': 'aisha'},
           ],
         },
       );
       expect(c.followers, 1204);
+      expect(c.players, 12);
       expect(c.gamesNext7, 3);
       expect(c.venues, 4);
       expect(c.spaces, 9);
@@ -262,185 +264,126 @@ void main() {
     );
   });
 
-  group(
-    'SupabaseSportFollowRepository (Following = profiles.interests only)',
-    () {
-      SupabaseSportFollowRepository build({
-        required Map<String, dynamic> profile,
-        List<Map<String, dynamic>> practicing = const <Map<String, dynamic>>[],
-        required List<http.Request> seen,
-      }) => SupabaseSportFollowRepository(
-        client((http.Request r) async {
-          seen.add(r);
-          if (r.method == 'GET' && r.url.path.endsWith('/profiles')) {
-            return jsonObjectResponse(profile);
-          }
-          if (r.method == 'GET') return jsonListResponse(practicing);
-          return emptyOkResponse();
-        }),
-      );
+  group('SupabaseSportFollowRepository (KAN-1059 RPCs, KAN-1060)', () {
+    const SportInfo tennis = SportInfo(
+      id: kTennis,
+      nameEn: 'Tennis',
+      sportKey: 'tennis',
+    );
 
-      List<http.Request> writes(List<http.Request> seen) =>
-          seen.where((http.Request r) => r.method != 'GET').toList();
+    /// A repository whose every RPC answers [answer]; [seen] records each
+    /// request.
+    SupabaseSportFollowRepository build(
+      String answer,
+      List<http.Request> seen, {
+      int status = 200,
+    }) => SupabaseSportFollowRepository(
+      client((http.Request r) {
+        seen.add(r);
+        return http.Response(
+          status == 200 ? jsonEncode(answer) : '{"message":"boom"}',
+          status,
+          headers: <String, String>{'content-type': 'application/json'},
+        );
+      }),
+    );
 
-      test('follow appends the sport and touches nothing else', () async {
+    for (final (String, String, SportFollowOutcome) c
+        in <(String, String, SportFollowOutcome)>[
+          ('follow', 'followed', SportFollowOutcome.followed),
+          ('follow', 'unchanged', SportFollowOutcome.unchanged),
+          ('follow', 'invalid_sport', SportFollowOutcome.invalid),
+          ('unfollow', 'unfollowed', SportFollowOutcome.unfollowed),
+          ('unfollow', 'blocked_primary', SportFollowOutcome.blockedPrimary),
+          (
+            'unfollow',
+            'blocked_in_my_sports',
+            SportFollowOutcome.blockedInMySports,
+          ),
+          ('unfollow', 'blocked_last', SportFollowOutcome.blockedLast),
+          ('add', 'added', SportFollowOutcome.added),
+          ('add', 'restored', SportFollowOutcome.added),
+          ('remove', 'removed', SportFollowOutcome.removed),
+          ('remove', 'blocked_primary', SportFollowOutcome.blockedPrimary),
+          ('remove', 'blocked_last', SportFollowOutcome.blockedLast),
+          ('level', 'set', SportFollowOutcome.levelSet),
+        ]) {
+      test('${c.$1} "${c.$2}" is ${c.$3.name}', () async {
         final List<http.Request> seen = <http.Request>[];
-        final SupabaseSportFollowRepository repo = build(
-          profile: <String, dynamic>{
-            'interests': <String>[kFootball],
-            'primary_sport': kFootball,
-            'persona_type': 'player',
-          },
-          seen: seen,
-        );
-        final Result<SportFollowOutcome, Failure> r = await repo.follow(
-          'me',
-          const SportInfo(id: kTennis, nameEn: 'Tennis', sportKey: 'tennis'),
-        );
-        expect(r.requireValue, SportFollowOutcome.followed);
-        final List<http.Request> w = writes(seen);
-        expect(w.length, 1);
-        expect(w.single.url.path, endsWith('/profiles'));
-        expect(jsonDecode(w.single.body), <String, dynamic>{
-          'interests': <String>[kFootball, kTennis],
-        });
-        // No sport profile, no rpc_create_sport_profile.
+        final SupabaseSportFollowRepository repo = build(c.$2, seen);
+        final Result<SportFollowOutcome, Failure> r = switch (c.$1) {
+          'follow' => await repo.follow('me', tennis),
+          'unfollow' => await repo.unfollow('me', tennis),
+          'add' => await repo.addToMySports('me', tennis, skillLevel: 5),
+          'remove' => await repo.removeFromMySports('me', tennis),
+          _ => await repo.setLevel('me', tennis, 7),
+        };
+        expect(r.requireValue, c.$3);
+        final http.Request req = seen.single;
         expect(
-          seen.where((http.Request r) => r.url.path.contains('sport_profiles')),
-          isEmpty,
+          req.url.path,
+          endsWith(switch (c.$1) {
+            'follow' => '/rpc/rpc_follow_sport',
+            'unfollow' => '/rpc/rpc_unfollow_sport',
+            'add' => '/rpc/rpc_add_my_sport',
+            'remove' => '/rpc/rpc_remove_my_sport',
+            _ => '/rpc/rpc_set_sport_level',
+          }),
         );
-        expect(
-          seen.where((http.Request r) => r.url.path.contains('rpc')),
-          isEmpty,
-        );
+        final Map<String, dynamic> body =
+            jsonDecode(req.body) as Map<String, dynamic>;
+        expect(body['p_profile_id'], 'me');
+        expect(body['p_sport_id'], kTennis);
+        if (c.$1 == 'add') expect(body['p_skill_level'], 5);
+        if (c.$1 == 'level') expect(body['p_skill_level'], 7);
       });
+    }
 
-      test('following twice writes nothing', () async {
-        final List<http.Request> seen = <http.Request>[];
-        final SupabaseSportFollowRepository repo = build(
-          profile: <String, dynamic>{
-            'interests': <String>[kTennis],
-          },
-          seen: seen,
-        );
-        final r = await repo.follow(
-          'me',
-          const SportInfo(id: kTennis, nameEn: 'Tennis'),
-        );
-        expect(r.requireValue, SportFollowOutcome.unchanged);
-        expect(writes(seen), isEmpty);
-      });
-
-      test('unfollow removes the sport and deletes no sport profile', () async {
-        final List<http.Request> seen = <http.Request>[];
-        final SupabaseSportFollowRepository repo = build(
-          profile: <String, dynamic>{
-            'interests': <String>[kFootball, kTennis],
-            'primary_sport': kFootball,
-            'persona_type': 'player',
-          },
-          seen: seen,
-        );
-        final r = await repo.unfollow(
-          'me',
-          const SportInfo(id: kTennis, nameEn: 'Tennis', sportKey: 'tennis'),
-        );
-        expect(r.requireValue, SportFollowOutcome.unfollowed);
-        final List<http.Request> w = writes(seen);
-        expect(w.length, 1);
-        expect(w.single.method, 'PATCH');
-        expect(jsonDecode(w.single.body), <String, dynamic>{
-          'interests': <String>[kFootball],
-        });
-      });
-
-      test(
-        'the Primary sport cannot be unfollowed; nothing is written',
-        () async {
-          final List<http.Request> seen = <http.Request>[];
-          final SupabaseSportFollowRepository repo = build(
-            profile: <String, dynamic>{
-              'interests': <String>[kFootball, kTennis],
-              'primary_sport': kTennis,
-              'persona_type': 'player',
-            },
-            seen: seen,
-          );
-          final r = await repo.unfollow(
-            'me',
-            const SportInfo(id: kTennis, nameEn: 'Tennis', sportKey: 'tennis'),
-          );
-          expect(r.requireValue, SportFollowOutcome.blockedPrimary);
-          expect(writes(seen), isEmpty);
-        },
+    test('a server error is a Failure, not a flipped state', () async {
+      final SupabaseSportFollowRepository repo = build(
+        '',
+        <http.Request>[],
+        status: 500,
       );
+      final r = await repo.unfollow('me', tennis);
+      expect(r, isA<Err<SportFollowOutcome, Failure>>());
+    });
+  });
 
-      test(
-        'a Practicing sport cannot be unfollowed; nothing is written',
-        () async {
-          final List<http.Request> seen = <http.Request>[];
-          final SupabaseSportFollowRepository repo = build(
-            profile: <String, dynamic>{
-              'interests': <String>[kFootball, kTennis],
-              'primary_sport': kFootball,
-              'persona_type': 'player',
-            },
-            practicing: <Map<String, dynamic>>[
-              <String, dynamic>{'sport': 'tennis', 'sport_id': kTennis},
-            ],
-            seen: seen,
-          );
-          final r = await repo.unfollow(
-            'me',
-            const SportInfo(id: kTennis, nameEn: 'Tennis', sportKey: 'tennis'),
-          );
-          expect(r.requireValue, SportFollowOutcome.blockedPracticing);
-          expect(writes(seen), isEmpty);
-        },
+  group('mySportCardFromRows (active cards only)', () {
+    const SportInfo tennis = SportInfo(
+      id: kTennis,
+      nameEn: 'Tennis',
+      sportKey: 'tennis',
+    );
+    test('no matching card is none', () {
+      expect(
+        mySportCardFromRows(<dynamic>[
+          <String, dynamic>{'sport_id': kFootball, 'sport': 'football'},
+        ], tennis),
+        MySportCard.none,
       );
-
-      test('the last Following sport cannot be unfollowed', () async {
-        final List<http.Request> seen = <http.Request>[];
-        final SupabaseSportFollowRepository repo = build(
-          profile: <String, dynamic>{
-            'interests': <String>[kTennis],
-            'primary_sport': kFootball,
-            'persona_type': 'player',
+    });
+    test('a card with no level chosen is levelUnset', () {
+      expect(
+        mySportCardFromRows(<dynamic>[
+          <String, dynamic>{'sport_id': kTennis, 'skill_level_set_at': null},
+        ], tennis),
+        MySportCard.levelUnset,
+      );
+    });
+    test('a legacy key-only card with a level is ready', () {
+      expect(
+        mySportCardFromRows(<dynamic>[
+          <String, dynamic>{
+            'sport': 'Tennis',
+            'skill_level_set_at': '2026-11-28T00:00:00Z',
           },
-          seen: seen,
-        );
-        final r = await repo.unfollow(
-          'me',
-          const SportInfo(id: kTennis, nameEn: 'Tennis', sportKey: 'tennis'),
-        );
-        expect(r.requireValue, SportFollowOutcome.blockedLast);
-        expect(writes(seen), isEmpty);
-      });
-
-      test('a write failure is a Failure, not a flipped state', () async {
-        final SupabaseSportFollowRepository repo =
-            SupabaseSportFollowRepository(
-              client((http.Request r) async {
-                if (r.method == 'GET') {
-                  return jsonObjectResponse(<String, dynamic>{
-                    'interests': <String>[kFootball],
-                  });
-                }
-                return postgrestErrorResponse(
-                  message: 'denied',
-                  code: '42501',
-                  status: 403,
-                );
-              }),
-            );
-        final r = await repo.follow(
-          'me',
-          const SportInfo(id: kTennis, nameEn: 'Tennis'),
-        );
-        expect(r, isA<Err<SportFollowOutcome, Failure>>());
-      });
-    },
-  );
+        ], tennis),
+        MySportCard.ready,
+      );
+    });
+  });
 
   group('SportPostsNotifier', () {
     test('pages through the sport posts in the order the ids came', () async {

@@ -155,7 +155,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
   Future<void> _showNotificationDrawer() async {
     final didTakeAction = await showAppSheet<bool>(
       context: context,
-      title: 'Stay Updated',
+      title: AppLocalizations.of(context).notif_perm_title,
       detent: DabblerSheetDetent.content,
       builder: (context) {
         return NotificationPermissionDrawer(
@@ -174,7 +174,13 @@ class _HomeScreenState extends ConsumerState<HomeScreen> with RouteAware {
               if (!mounted) return;
               DabblerToastProvider.of(
                 this.context,
-              ).show(const DabblerToastSpec(message: 'Notifications enabled!'));
+              ).show(
+                DabblerToastSpec(
+                  message: AppLocalizations.of(
+                    this.context,
+                  ).notif_perm_enabled_toast,
+                ),
+              );
             } else {
               // Don't mark as "allow" unless permission is actually granted.
               // Also avoid re-prompting immediately.

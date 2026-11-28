@@ -7815,7 +7815,7 @@ class AppLocalizationsAr extends AppLocalizations {
 
   @override
   String sport_overview_follow_note(String sport) {
-    return 'ستظهر منشورات $sport ومبارياته وأخباره في خلاصتك. هذا لا يضيف $sport إلى ملفك الرياضي.';
+    return 'تابِع لترى منشورات $sport ومبارياته.';
   }
 
   @override
@@ -11565,8 +11565,111 @@ class AppLocalizationsAr extends AppLocalizations {
       'يجب أن تكون لديك رياضة واحدة على الأقل';
 
   @override
+  String get manage_sports_section_mine => 'رياضاتي';
+
+  @override
+  String get manage_sports_section_following => 'أتابعها';
+
+  @override
+  String get manage_sports_unfollow_in_my_sports => 'أزلها من رياضاتك أولاً';
+
+  @override
   String get sports_browse_all => 'تصفح كل الرياضات';
 
   @override
   String get sports_show_mine => 'اعرض رياضاتي فقط';
+
+  @override
+  String get notif_perm_title => 'ابقَ على اطلاع';
+
+  @override
+  String get notif_perm_body =>
+      'استلم إشعارات بدعوات المباريات وتحديثات الفرق والرسائل. لا يفوتك أي حماس!';
+
+  @override
+  String get notif_perm_enable => 'تفعيل الإشعارات';
+
+  @override
+  String get notif_perm_remind_later => 'ذكّرني لاحقًا';
+
+  @override
+  String get notif_perm_no_thanks => 'لا، شكرًا';
+
+  @override
+  String get notif_perm_enabled_toast => 'تم تفعيل الإشعارات!';
+
+  @override
+  String get sport_overview_unfollow_in_my_sports => 'شيلها من رياضاتك أولاً';
+
+  @override
+  String get sport_overview_add_to_my_sports => 'أضف إلى رياضاتي';
+
+  @override
+  String get sport_overview_in_my_sports => 'ضمن رياضاتي';
+
+  @override
+  String sport_overview_remove_from_my_sports_title(String sport) {
+    return 'إزالة $sport من رياضاتك؟';
+  }
+
+  @override
+  String sport_overview_remove_from_my_sports_text(String sport) {
+    return 'ستُخفى بطاقة $sport وتبقى إحصاءاتها محفوظة. ستظل تتابع $sport.';
+  }
+
+  @override
+  String get sport_overview_remove_from_my_sports_confirm => 'إزالة';
+
+  @override
+  String get sport_overview_added_to_my_sports => 'أُضيفت إلى رياضاتك';
+
+  @override
+  String get sport_overview_removed_from_my_sports => 'أُزيلت من رياضاتك';
+
+  @override
+  String get sport_overview_my_sports_failed =>
+      'تعذّر تحديث رياضاتك. حاول مرة أخرى.';
+
+  @override
+  String get sport_overview_remove_last =>
+      'هذه آخر رياضة لديك، لذا لا يمكنك إزالتها.';
+
+  @override
+  String get sport_overview_remove_primary =>
+      'هذه رياضتك الأساسية، لذا لا يمكنك إزالتها.';
+
+  @override
+  String sport_overview_players_label(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'لاعبون',
+      one: 'لاعب',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String sport_overview_join_add_title(String sport) {
+    return 'أضف $sport إلى رياضاتك';
+  }
+
+  @override
+  String sport_overview_join_level_title(String sport) {
+    return 'حدّد مستواك في $sport';
+  }
+
+  @override
+  String get sport_overview_join_level_text =>
+      'اختر مستواك للانضمام. يمكنك تغييره لاحقًا.';
+
+  @override
+  String get sport_overview_join_add_confirm => 'أضف وانضم';
+
+  @override
+  String get sport_overview_join_level_confirm => 'احفظ وانضم';
+
+  @override
+  String get sport_overview_join_failed =>
+      'تعذّر حفظ رياضتك، لذا لم تنضم. حاول مرة أخرى.';
 }

@@ -198,12 +198,13 @@ void main() {
         findsOneWidget,
       );
       expect(find.byType(DabblerSearchField), findsOneWidget);
-      expect(find.byType(DabblerInputRow), findsNWidgets(4));
+      // KAN-1061: every sport appears in My sports and in Following.
+      expect(find.byType(DabblerChip), findsNWidgets(8));
       await _shoot(tester, 'manage-sports-sheet-$dir');
 
       await tester.enterText(find.byType(EditableText), 'pad');
       await _settle(tester);
-      expect(find.byType(DabblerInputRow), findsOneWidget);
+      expect(find.byType(DabblerChip), findsNWidgets(2));
     });
   }
 }

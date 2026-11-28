@@ -31,7 +31,7 @@ String sportShortCount(int n, String locale) {
 
 /// The page's identity block (the Profiles header): sport-tinted ground, the
 /// supplied artwork, name and formats, the public-page and city chips, the
-/// counters, Follow and Create game or meetup, the follow note and the mutuals.
+/// counters, Follow, Add to my sports, Create game or meetup, the follow note and the mutuals.
 ///
 /// The follower counter is not tappable and there is no Share or More control:
 /// neither has a specified destination (recorded on KAN-591 and KAN-622), so
@@ -56,38 +56,30 @@ class SportHeader extends ConsumerWidget {
   final VoidCallback onPickCity;
   final VoidCallback onOpenPosts;
 
-  Future<void> _toggle(
-    BuildContext context,
-    WidgetRef ref,
-    bool following,
-  ) async {
-    final SportFollowController controller = ref.read(
-      sportFollowControllerProvider.notifier,
-    );
-    if (!following) {
-      await controller.toggle(sport);
-      return;
-    }
+  /// The confirmation sheet of a destructive sport-page action.
+  static Future<bool> _confirm(
+    BuildContext context, {
+    required String title,
+    required String text,
+    required String confirm,
+  }) async {
     final AppLocalizations l = AppLocalizations.of(context);
-    final String name = sport.name(
-      Localizations.localeOf(context).languageCode,
-    );
     final bool? confirmed = await showAppSheet<bool>(
       context: context,
-      title: l.sport_overview_unfollow_title(name),
+      title: title,
       detent: DabblerSheetDetent.content,
       builder: (BuildContext sheet) => Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: <Widget>[
           DabblerText(
-            l.sport_overview_unfollow_text(name),
+            text,
             style: DabblerType.smallTight,
             tone: DabblerTextTone.secondary,
           ),
           const DabblerGap.v(DabblerSpacing.space5),
           DabblerButton(
-            label: l.sport_overview_unfollow_confirm,
+            label: confirm,
             tone: DabblerButtonTone.destructive,
             size: DabblerButtonSize.block,
             fullWidth: true,
@@ -104,7 +96,57 @@ class SportHeader extends ConsumerWidget {
         ],
       ),
     );
-    if (confirmed == true) await controller.toggle(sport);
+    return confirmed == true;
+  }
+
+  Future<void> _toggle(
+    BuildContext context,
+    WidgetRef ref,
+    bool following,
+  ) async {
+    final SportFollowController controller = ref.read(
+      sportFollowControllerProvider.notifier,
+    );
+    if (!following) {
+      await controller.toggle(sport);
+      return;
+    }
+    final AppLocalizations l = AppLocalizations.of(context);
+    final String name = sport.name(
+      Localizations.localeOf(context).languageCode,
+    );
+    final bool ok = await _confirm(
+      context,
+      title: l.sport_overview_unfollow_title(name),
+      text: l.sport_overview_unfollow_text(name),
+      confirm: l.sport_overview_unfollow_confirm,
+    );
+    if (ok) await controller.toggle(sport);
+  }
+
+  /// Add to my sports at once; "In my sports" asks first, then hides the card.
+  Future<void> _toggleMySports(
+    BuildContext context,
+    WidgetRef ref,
+    bool inMySports,
+  ) async {
+    final SportFollowController controller = ref.read(
+      sportFollowControllerProvider.notifier,
+    );
+    if (inMySports) {
+      final AppLocalizations l = AppLocalizations.of(context);
+      final String name = sport.name(
+        Localizations.localeOf(context).languageCode,
+      );
+      final bool ok = await _confirm(
+        context,
+        title: l.sport_overview_remove_from_my_sports_title(name),
+        text: l.sport_overview_remove_from_my_sports_text(name),
+        confirm: l.sport_overview_remove_from_my_sports_confirm,
+      );
+      if (!ok) return;
+    }
+    await controller.toggleMySports(sport, inMySports: inMySports);
   }
 
   @override
@@ -126,6 +168,10 @@ class SportHeader extends ConsumerWidget {
       ref.watch(initializeProfileDataProvider);
     }
     final SportFollowState follow = ref.watch(sportFollowControllerProvider);
+    final bool inMySports =
+        (ref.watch(mySportCardProvider(sportRefOf(sport))).valueOrNull ??
+            MySportCard.none) !=
+        MySportCard.none;
     final bool canCreate = canCreateGameOrMeetup(
       ref.watch(activePersonaProvider),
     );
@@ -214,7 +260,9 @@ class SportHeader extends ConsumerWidget {
               ),
               if (counts != null) ...<Widget>[
                 const DabblerGap.v(DabblerSpacing.space4),
-                Row(
+                Wrap(
+                  spacing: DabblerSpacing.space6,
+                  runSpacing: DabblerSpacing.space2,
                   children: <Widget>[
                     _Counter(
                       value: sportShortCount(counts!.followers, locale),
@@ -222,7 +270,10 @@ class SportHeader extends ConsumerWidget {
                         counts!.followers,
                       ),
                     ),
-                    const DabblerGap.h(DabblerSpacing.space6),
+                    _Counter(
+                      value: sportShortCount(counts!.players, locale),
+                      label: l.sport_overview_players_label(counts!.players),
+                    ),
                     _Counter(
                       value: sportShortCount(counts!.posts, locale),
                       label: l.sport_overview_posts_label,
@@ -232,9 +283,10 @@ class SportHeader extends ConsumerWidget {
                 ),
               ],
               const DabblerGap.v(DabblerSpacing.space4),
-              Row(
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: <Widget>[
-                  Expanded(
+                  SizedBox(
                     child: DabblerButton(
                       label: following
                           ? l.sport_overview_following
@@ -243,7 +295,10 @@ class SportHeader extends ConsumerWidget {
                           ? DabblerButtonTone.outlined
                           : DabblerButtonTone.primary,
                       fullWidth: true,
-                      loading: follow.busy,
+                      loading:
+                          follow.busy &&
+                          (follow.busyWrite == SportWrite.follow ||
+                              follow.busyWrite == SportWrite.unfollow),
                       leadingWidget: DabblerIcon(
                         following ? 'tick-circle' : 'add',
                         weight: DabblerIconWeight.bold,
@@ -252,23 +307,54 @@ class SportHeader extends ConsumerWidget {
                       onPressed: () => _toggle(context, ref, following),
                     ),
                   ),
-                  if (canCreate) ...<Widget>[
-                    const DabblerGap.h(DabblerSpacing.space3),
-                    DabblerButton(
-                      label: l.sport_overview_create_game_or_meetup,
-                      tone: DabblerButtonTone.outlined,
-                      leadingWidget: const DabblerIcon(
-                        'calendar-add',
+                  const DabblerGap.v(DabblerSpacing.space3),
+                  SizedBox(
+                    child: DabblerButton(
+                      label: inMySports
+                          ? l.sport_overview_in_my_sports
+                          : l.sport_overview_add_to_my_sports,
+                      tone: inMySports
+                          ? DabblerButtonTone.outlined
+                          : DabblerButtonTone.primary,
+                      fullWidth: true,
+                      loading:
+                          follow.busy &&
+                          (follow.busyWrite == SportWrite.addToMySports ||
+                              follow.busyWrite ==
+                                  SportWrite.removeFromMySports),
+                      leadingWidget: DabblerIcon(
+                        inMySports ? 'tick-circle' : 'add',
+                        weight: DabblerIconWeight.bold,
                         size: DabblerSizing.iconSm,
                       ),
-                      onPressed: () => context.push(
-                        '${RoutePaths.createGame}?sport=${Uri.encodeQueryComponent(sport.id)}',
+                      onPressed: () =>
+                          _toggleMySports(context, ref, inMySports),
+                    ),
+                  ),
+                ],
+              ),
+              if (canCreate) ...<Widget>[
+                const DabblerGap.v(DabblerSpacing.space3),
+                Row(
+                  children: <Widget>[
+                    Expanded(
+                      child: DabblerButton(
+                        label: l.sport_overview_create_game_or_meetup,
+                        tone: DabblerButtonTone.outlined,
+                        fullWidth: true,
+                        leadingWidget: const DabblerIcon(
+                          'calendar-add',
+                          size: DabblerSizing.iconSm,
+                        ),
+                        onPressed: () => context.push(
+                          '${RoutePaths.createGame}?sport=${Uri.encodeQueryComponent(sport.id)}',
+                        ),
                       ),
                     ),
                   ],
-                ],
-              ),
-              if (following) ...<Widget>[
+                ),
+              ],
+              if (!following) ...<Widget>[
                 const DabblerGap.v(DabblerSpacing.space4),
                 DabblerSurface(
                   radius: DabblerRadius.md,

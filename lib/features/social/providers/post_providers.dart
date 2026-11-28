@@ -380,7 +380,7 @@ final activeSportsByProfileCountryProvider =
       final repo = ref.watch(sportsRepositoryProvider);
       final profile = ref.watch(profileControllerProvider).profile;
       final countryCode = profile?.country; // already an ISO code (e.g. "AE")
-      final primarySportId = profile?.preferredSport;
+      final primarySportId = profile?.primarySport;
 
       final result = await repo.getActiveSportsForCountry(countryCode);
       final sports = result.fold(
@@ -402,7 +402,7 @@ final activeChallengeSportsByProfileCountryProvider =
       final repo = ref.watch(sportsRepositoryProvider);
       final profile = ref.watch(profileControllerProvider).profile;
       final countryCode = profile?.country;
-      final primarySportId = profile?.preferredSport;
+      final primarySportId = profile?.primarySport;
 
       final result = await repo.getActiveChallengeSportsForCountry(countryCode);
       final sports = result.fold(

@@ -283,19 +283,58 @@ final sportPostsProvider = StateNotifierProvider.autoDispose
       ),
     );
 
-// follow ----------------------------------------------------------------------
+// follow / my sports -----------------------------------------------------------
+
+/// The sport-page write a [SportFollowState] is about.
+enum SportWrite { follow, unfollow, addToMySports, removeFromMySports }
 
 class SportFollowState {
-  const SportFollowState({this.busy = false, this.error, this.blocked});
+  const SportFollowState({
+    this.busy = false,
+    this.busyWrite,
+    this.error,
+    this.write,
+    this.notice,
+  });
 
   final bool busy;
 
-  /// The last attempt failed; the button did not flip. Retry repeats it.
+  /// The write in flight (which button spins).
+  final SportWrite? busyWrite;
+
+  /// The last attempt failed; nothing flipped. Retry repeats [write].
   final Failure? error;
 
-  /// The last unfollow was refused by a guard (nothing was written).
-  final SportFollowOutcome? blocked;
+  /// The write [error] or [notice] is about.
+  final SportWrite? write;
+
+  /// What the last write ended in, to toast (a refusal or a My sports
+  /// change). Null when there is nothing to say.
+  final SportFollowOutcome? notice;
 }
+
+/// The identity of a sport for [mySportCardProvider].
+typedef SportRef = ({String id, String? key});
+
+SportRef sportRefOf(SportInfo s) => (id: s.id, key: s.sportKey);
+
+/// KAN-1060: the active persona's card for a sport (In my sports when not
+/// [MySportCard.none]).
+final mySportCardProvider = FutureProvider.autoDispose
+    .family<MySportCard, SportRef>((ref, sport) async {
+      final String? profileId = ref.watch(
+        profileControllerProvider.select((s) => s.profile?.id),
+      );
+      if (profileId == null) return MySportCard.none;
+      return _unwrap(
+        await ref
+            .watch(sportOverviewRepositoryProvider)
+            .mySportCard(
+              profileId,
+              SportInfo(id: sport.id, nameEn: '', sportKey: sport.key),
+            ),
+      );
+    });
 
 class SportFollowController extends StateNotifier<SportFollowState> {
   SportFollowController(this._ref) : super(const SportFollowState());
@@ -311,52 +350,105 @@ class SportFollowController extends StateNotifier<SportFollowState> {
           ?.contains(sportId) ??
       false;
 
+  Future<String?> _profileId() async {
+    var profile = _ref.read(profileControllerProvider).profile;
+    if (profile == null) {
+      // Not loaded yet (page opened from a link, outside the shell): load the
+      // active profile before deciding (KAN-970).
+      await _ref.read(initializeProfileDataProvider.future);
+      if (!mounted) return null;
+      profile = _ref.read(profileControllerProvider).profile;
+    }
+    return profile?.id;
+  }
+
   /// Follows or unfollows [sport] on the active persona. The profile is
   /// reloaded after a write, so the button (which reads the profile) flips
   /// only once the write succeeded.
   Future<void> toggle(SportInfo sport) async {
     if (state.busy) return;
-    var profile = _ref.read(profileControllerProvider).profile;
-    if (profile == null) {
-      // Not loaded yet (page opened from a link, outside the shell): load the
-      // active profile before deciding follow vs unfollow (KAN-970).
-      await _ref.read(initializeProfileDataProvider.future);
-      if (!mounted) return;
-      profile = _ref.read(profileControllerProvider).profile;
-      if (profile == null) return;
-    }
-    final bool follow = !isFollowing(sport.id);
-    state = const SportFollowState(busy: true);
-    final repo = _ref.read(sportFollowRepositoryProvider);
-    final Result<SportFollowOutcome, Failure> result = follow
-        ? await repo.follow(profile.id, sport)
-        : await repo.unfollow(profile.id, sport);
+    final String? id = await _profileId();
+    if (id == null || !mounted) return;
+    await run(
+      isFollowing(sport.id) ? SportWrite.unfollow : SportWrite.follow,
+      sport,
+      profileId: id,
+    );
+  }
+
+  /// Adds [sport] to My sports, or removes it when [inMySports].
+  Future<void> toggleMySports(
+    SportInfo sport, {
+    required bool inMySports,
+  }) async {
+    if (state.busy) return;
+    final String? id = await _profileId();
+    if (id == null || !mounted) return;
+    await run(
+      inMySports ? SportWrite.removeFromMySports : SportWrite.addToMySports,
+      sport,
+      profileId: id,
+    );
+  }
+
+  /// Repeats write [w] (the Retry of a failed one).
+  Future<void> retry(SportWrite w, SportInfo sport) async {
+    final String? id = await _profileId();
+    if (id == null || !mounted) return;
+    await run(w, sport, profileId: id);
+  }
+
+  Future<void> run(
+    SportWrite write,
+    SportInfo sport, {
+    required String profileId,
+  }) async {
+    if (state.busy) return;
+    state = SportFollowState(busy: true, busyWrite: write);
+    final SportFollowRepository repo = _ref.read(sportFollowRepositoryProvider);
+    final Result<SportFollowOutcome, Failure> result = switch (write) {
+      SportWrite.follow => await repo.follow(profileId, sport),
+      SportWrite.unfollow => await repo.unfollow(profileId, sport),
+      SportWrite.addToMySports => await repo.addToMySports(profileId, sport),
+      SportWrite.removeFromMySports => await repo.removeFromMySports(
+        profileId,
+        sport,
+      ),
+    };
     if (!mounted) return;
-    await result.fold((e) async => state = SportFollowState(error: e), (
-      outcome,
-    ) async {
-      final bool wrote =
-          outcome == SportFollowOutcome.followed ||
-          outcome == SportFollowOutcome.unfollowed;
-      if (wrote) {
-        await _ref.read(profileControllerProvider.notifier).refreshProfile();
-        // KAN-1030: the follower count is server-side; re-read it.
-        _ref.invalidate(sportOverviewCountsProvider);
-      }
-      if (!mounted) return;
-      state = SportFollowState(
-        blocked:
-            outcome == SportFollowOutcome.blockedLast ||
-                outcome == SportFollowOutcome.blockedPracticing ||
-                outcome == SportFollowOutcome.blockedPrimary
-            ? outcome
-            : null,
-      );
-    });
+    await result.fold(
+      (e) async => state = SportFollowState(error: e, write: write),
+      (outcome) async {
+        final bool wrote = switch (outcome) {
+          SportFollowOutcome.followed ||
+          SportFollowOutcome.unfollowed ||
+          SportFollowOutcome.added ||
+          SportFollowOutcome.removed ||
+          SportFollowOutcome.levelSet => true,
+          _ => false,
+        };
+        if (wrote) {
+          await _ref.read(profileControllerProvider.notifier).refreshProfile();
+          // KAN-1030: the counts are server-side; re-read them.
+          _ref.invalidate(sportOverviewCountsProvider);
+          _ref.invalidate(mySportCardProvider);
+        }
+        if (!mounted) return;
+        state = SportFollowState(
+          notice:
+              outcome == SportFollowOutcome.followed ||
+                  outcome == SportFollowOutcome.unfollowed ||
+                  outcome == SportFollowOutcome.unchanged
+              ? null
+              : outcome,
+          write: write,
+        );
+      },
+    );
   }
 
   void clearNotice() {
-    if (state.error != null || state.blocked != null) {
+    if (state.error != null || state.notice != null) {
       state = const SportFollowState();
     }
   }

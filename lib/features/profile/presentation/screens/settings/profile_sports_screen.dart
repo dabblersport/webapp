@@ -11,6 +11,7 @@ import 'package:dabbler/features/profile/presentation/widgets/profile_sports_vie
 import 'package:dabbler/l10n/app_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:dabbler/core/config/feature_flags.dart';
+import 'package:dabbler/features/sports/data/my_sports_rpc.dart';
 
 /// Screen for managing user's sports and game preferences
 class ProfileSportsScreen extends ConsumerStatefulWidget {
@@ -124,7 +125,8 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
         final response = await supabase
             .from(SupabaseConfig.sportProfilesTable)
             .select('*')
-            .eq('profile_id', profileId);
+            .eq('profile_id', profileId)
+            .isFilter('hidden_at', null);
 
         for (final sportData in response as List) {
           final sportKey = (sportData['sport'] as String? ?? '').toLowerCase();
@@ -401,28 +403,30 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
           profileType == 'organiser' || profileType == 'business';
 
       if (!isOrganiserType) {
-        // Delete all existing sport_profiles for this profile (player profiles)
-        await supabase
-            .from(SupabaseConfig.sportProfilesTable)
-            .delete()
-            .eq('profile_id', profileId);
-
-        // Insert new/updated sports profiles
-        final sportsData = enabledSports.map((entry) {
+        // KAN-1061: no delete-all/insert. Enabled sports are added (or
+        // restored) and get their level. Disabling a sport already hid its
+        // card when it was toggled off (_disableSport).
+        final rpc = MySportsRpc(supabase);
+        for (final entry in enabledSports) {
           final sportKey = entry.key.toLowerCase();
-          return {
-            'profile_id': profileId,
-            'sport': sportKey,
-            'skill_level': _skillLevelToInt(entry.value.skillLevel),
-            if (entry.value.preferredPosition != null &&
-                entry.value.preferredPosition!.isNotEmpty)
-              'primary_position': entry.value.preferredPosition,
-          };
-        }).toList();
-
-        await supabase
-            .from(SupabaseConfig.sportProfilesTable)
-            .insert(sportsData);
+          final idResult = await rpc.sportIdForKey(sportKey);
+          final sportId = idResult.fold((_) => null, (v) => v);
+          if (sportId == null) continue;
+          final level = _skillLevelToInt(entry.value.skillLevel);
+          final added = await rpc.add(profileId, sportId, skillLevel: level);
+          if (added.isFailure) {
+            throw Exception('Could not save $sportKey');
+          }
+          await rpc.setLevel(profileId, sportId, level);
+          final position = entry.value.preferredPosition;
+          if (position != null && position.isNotEmpty) {
+            await supabase
+                .from(SupabaseConfig.sportProfilesTable)
+                .update({'primary_position': position})
+                .eq('profile_id', profileId)
+                .eq('sport_id', sportId);
+          }
+        }
 
         // Refresh sports profiles in the controller
         final sportsController = ref.read(
@@ -467,17 +471,8 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
         );
       }
 
-      // Also update the user's preferred sport in the profiles table
-      final primarySport = enabledSports.isNotEmpty
-          ? enabledSports.first.key.toLowerCase()
-          : null;
-
-      if (primarySport != null) {
-        await supabase
-            .from(SupabaseConfig.usersTable)
-            .update({'preferred_sport': primarySport})
-            .eq('id', profileId);
-      }
+      // KAN-1061: preferred_sport is no longer written here (it mirrors
+      // primary_sport, which this screen does not change).
 
       if (mounted) {
         _toast(
@@ -551,15 +546,19 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       final profileId = profileResponse['id'] as String;
 
       if (!isOrganiserType) {
-        // Create sport_profile in database for player profiles
-        await supabase.from(SupabaseConfig.sportProfilesTable).upsert({
-          'profile_id': profileId,
-          'sport': sportKey.toLowerCase(),
-          'skill_level': _skillLevelToInt(preference.skillLevel),
-          if (preference.preferredPosition != null &&
-              preference.preferredPosition!.isNotEmpty)
-            'primary_position': preference.preferredPosition,
-        }, onConflict: 'profile_id,sport');
+        // KAN-1061: add (or restore) the card through the RPC.
+        final rpc = MySportsRpc(supabase);
+        final sportId = (await rpc.sportIdForKey(
+          sportKey,
+        )).fold((_) => null, (v) => v);
+        if (sportId == null) throw Exception('Unknown sport');
+        final added = await rpc.add(
+          profileId,
+          sportId,
+          skillLevel: _skillLevelToInt(preference.skillLevel),
+        );
+        final outcome = added.fold((e) => throw Exception(e.message), (o) => o);
+        if (outcome == SportOutcome.invalid) throw Exception('Unknown sport');
 
         // Refresh sports profiles in the controller
         final sportsController = ref.read(
@@ -644,12 +643,26 @@ class _ProfileSportsScreenState extends ConsumerState<ProfileSportsScreen> {
       final profileId = profileResponse['id'] as String;
 
       if (!isOrganiserType) {
-        // Delete sport_profile from database for player profiles
-        await supabase
-            .from(SupabaseConfig.sportProfilesTable)
-            .delete()
-            .eq('profile_id', profileId)
-            .eq('sport', sportKey.toLowerCase());
+        // KAN-1061: hide the card through the RPC (never deleted).
+        final rpc = MySportsRpc(supabase);
+        final sportId = (await rpc.sportIdForKey(
+          sportKey,
+        )).fold((_) => null, (v) => v);
+        if (sportId == null) throw Exception('Unknown sport');
+        final removed = await rpc.remove(profileId, sportId);
+        final outcome = removed.fold(
+          (e) => throw Exception(e.message),
+          (o) => o,
+        );
+        if (outcome != SportOutcome.done &&
+            outcome != SportOutcome.unchanged) {
+          final l10n = AppLocalizations.of(context);
+          throw Exception(
+            outcome == SportOutcome.blockedPrimary
+                ? l10n.manage_sports_remove_primary
+                : l10n.manage_sports_last_sport,
+          );
+        }
 
         // Refresh sports profiles in the controller
         final sportsController = ref.read(
